@@ -11,6 +11,13 @@ import { escapeHtml, sendMail } from "../_shared/mail.ts";
 const ROLES = ["admin", "member", "kid"] as const;
 type Role = (typeof ROLES)[number];
 
+/// Every invite sends mail to an address the caller chose, so this is the same
+/// spam vector create-share-link caps — and it was the one left uncapped. Without
+/// it a single admin can point unlimited mail at any address, which costs us the
+/// Resend quota and the sending domain's reputation, and costs the recipient
+/// their inbox. A real household invites a handful of people, once.
+const MAX_INVITES_PER_DAY = 20;
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -42,6 +49,22 @@ Deno.serve(async (req) => {
   if (!membership) return fail("Kein Haushalt gefunden.", 403);
   if (membership.role !== "admin") {
     return fail("Nur Admins können Mitglieder einladen.", 403);
+  }
+
+  // Counted before the row is written, and counted per inviter rather than per
+  // household so one admin cannot spend another's allowance.
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const { count } = await db
+    .from("family_invites")
+    .select("id", { count: "exact", head: true })
+    .eq("invited_by", uid)
+    .gte("created_at", since);
+
+  if ((count ?? 0) >= MAX_INVITES_PER_DAY) {
+    return fail(
+      "Du hast heute zu viele Einladungen verschickt. Versuch es morgen wieder.",
+      429,
+    );
   }
 
   // Re-inviting an address that already has a live invite replaces it, so the

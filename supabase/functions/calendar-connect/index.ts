@@ -33,6 +33,7 @@
 
 import { callerId, corsHeaders, fail, json, serviceClient } from "../_shared/http.ts";
 import { open, seal } from "../_shared/secrets.ts";
+import { fetchWithTimeout } from "../_shared/net.ts";
 import {
   accountEmail,
   membershipOf,
@@ -143,7 +144,7 @@ async function handleCallback(url: URL): Promise<Response> {
   const redirectUri = Deno.env.get("CALENDAR_OAUTH_REDIRECT") ?? "";
   if (!cfg.clientId || !cfg.clientSecret || !redirectUri) return backToApp("error");
 
-  const tokenRes = await fetch(cfg.tokenUrl, {
+  const tokenRes = await fetchWithTimeout(cfg.tokenUrl, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
@@ -297,7 +298,7 @@ async function handleDisconnect(req: Request, uid: string): Promise<Response> {
     const token = await open(secrets?.refresh_token) ?? await open(secrets?.access_token);
     if (token) {
       try {
-        await fetch(cfg.revokeUrl, {
+        await fetchWithTimeout(cfg.revokeUrl, {
           method: "POST",
           headers: { "Content-Type": "application/x-www-form-urlencoded" },
           body: new URLSearchParams({ token }),

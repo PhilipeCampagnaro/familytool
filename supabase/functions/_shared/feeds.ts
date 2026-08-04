@@ -16,6 +16,7 @@
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { readAbfallEvents } from "./abfall.ts";
 import type { SyncedEvent } from "./calendar.ts";
+import { fetchWithTimeout } from "./net.ts";
 
 export type FeedKind = "ferien" | "abfall";
 
@@ -132,7 +133,7 @@ export async function readFerienEvents(stateCode: string): Promise<SyncedEvent[]
   url.searchParams.set("validFrom", from.toISOString().slice(0, 10));
   url.searchParams.set("validTo", to.toISOString().slice(0, 10));
 
-  const res = await fetch(url, { headers: { Accept: "application/json" } });
+  const res = await fetchWithTimeout(url, { headers: { Accept: "application/json" } });
   if (!res.ok) throw new Error(`OpenHolidays ${res.status}`);
 
   const out: SyncedEvent[] = [];

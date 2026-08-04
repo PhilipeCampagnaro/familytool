@@ -22,6 +22,7 @@ import {
   type SyncedEvent,
 } from "./calendar.ts";
 import { collections, readEvents } from "./caldav.ts";
+import { fetchWithTimeout } from "./net.ts";
 
 /// Signals "the user has to do something" as opposed to "this failed, try
 /// later". Only the former flips a connection to reconnect_required.
@@ -100,7 +101,7 @@ async function listGoogle(token: string): Promise<RemoteCalendar[]> {
     url.searchParams.set("maxResults", "250");
     if (pageToken) url.searchParams.set("pageToken", pageToken);
 
-    const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+    const res = await fetchWithTimeout(url, { headers: { Authorization: `Bearer ${token}` } });
     if (res.status === 401 || res.status === 403) {
       // 403 here is almost always a connection made before the calendarlist
       // scope was requested. Reconnecting is the fix, and it is what the
@@ -140,7 +141,7 @@ async function listOutlook(token: string): Promise<RemoteCalendar[]> {
   let guard = 0;
 
   do {
-    const res = await fetch(next, { headers: { Authorization: `Bearer ${token}` } });
+    const res = await fetchWithTimeout(next, { headers: { Authorization: `Bearer ${token}` } });
     if (res.status === 401 || res.status === 403) throw new ReconnectRequired(`calendars ${res.status}`);
     if (!res.ok) throw new Error(`calendars ${res.status}`);
 
@@ -214,7 +215,7 @@ async function readGoogle(
     url.searchParams.set("maxResults", "2500");
     if (pageToken) url.searchParams.set("pageToken", pageToken);
 
-    const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+    const res = await fetchWithTimeout(url, { headers: { Authorization: `Bearer ${token}` } });
     if (res.status === 401) throw new ReconnectRequired("events 401");
     // One calendar can vanish between the listing and the read (unsubscribed a
     // second ago). That is not a reason to fail the other eleven.
@@ -266,7 +267,7 @@ async function readOutlook(
     value ? new Date(value.endsWith("Z") ? value : `${value}Z`).toISOString() : null;
 
   do {
-    const res = await fetch(next, {
+    const res = await fetchWithTimeout(next, {
       headers: {
         Authorization: `Bearer ${token}`,
         // Graph otherwise answers in the mailbox's own zone and does not always

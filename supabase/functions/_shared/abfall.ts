@@ -23,6 +23,7 @@
 import { parseIcs } from "./caldav.ts";
 import type { SyncedEvent } from "./calendar.ts";
 import { ABFALL_PROVIDERS } from "./abfall_providers.ts";
+import { fetchUntrusted, fetchWithTimeout } from "./net.ts";
 
 // What `calendar_connections.config` holds for an abfall connection. It is a
 // jsonb column here, not the JSON *string* the old web app kept in `account`,
@@ -74,7 +75,7 @@ const JSON_HEADERS = {
 }
 
 async function getJson(url: string, extraHeaders?: Record<string, string>): Promise<unknown> {
-  const res = await fetch(url, { headers: { ...JSON_HEADERS, ...extraHeaders } })
+  const res = await fetchWithTimeout(url, { headers: { ...JSON_HEADERS, ...extraHeaders } })
   if (!res.ok) throw new Error(`abfall upstream ${res.status}`)
   return res.json()
 }
@@ -138,7 +139,7 @@ async function abfallioPost(
 ): Promise<AbfallioPage> {
   const body = new URLSearchParams()
   for (const [n, v] of form) body.append(n, v)
-  const res = await fetch(
+  const res = await fetchWithTimeout(
     `${ABFALLIO_BASE}/?key=${key}&modus=${ABFALLIO_MODUS}&waction=${waction}`,
     {
       method: 'POST',
@@ -356,7 +357,7 @@ export async function geocode(query: string, opts: { worldwide?: boolean } = {})
   if (raw.length < 3) return []
   const barePlz = !opts.worldwide && /^\d{4,5}$/.test(raw)
   const url = `${PHOTON}?q=${encodeURIComponent(raw)}&lang=de&limit=8`
-  const res = await fetch(url, { headers: JSON_HEADERS })
+  const res = await fetchWithTimeout(url, { headers: JSON_HEADERS })
   if (!res.ok) throw new Error(`abfall geocode ${res.status}`)
   const data = await res.json() as {
     features?: Array<{ properties?: Record<string, string> }>
@@ -454,7 +455,7 @@ export async function resolveAddress(addr: GeoAddress): Promise<ResolveResult> {
 
   if (addr.postcode) {
     try {
-      const res = await fetch(
+      const res = await fetchWithTimeout(
         `https://api.zippopotam.us/de/${encodeURIComponent(addr.postcode)}`,
         { headers: JSON_HEADERS },
       )
@@ -860,7 +861,7 @@ async function readAwidoIcs(cfg: AbfallConfig, oid: string): Promise<SyncedEvent
       + `?oid=${encodeURIComponent(oid)}&jahr=${year}&fraktionen=&reminder=${encodeURIComponent('-1.17:00')}`
     let ics: string
     try {
-      const res = await fetch(url, { headers: { Accept: 'text/calendar', 'User-Agent': UA } })
+      const res = await fetchWithTimeout(url, { headers: { Accept: 'text/calendar', 'User-Agent': UA } })
       if (!res.ok) continue
       ics = await res.text()
     } catch { continue }
@@ -930,7 +931,7 @@ async function ctraceFetchIcs(cfg: AbfallConfig): Promise<string> {
   if (!cfg.host || !cfg.service) throw new Error('reconnect_required')
   const base = `https://${cfg.host}/${cfg.service}`
   // First hit redirects to /<service>/(S(<session>))/... — grab the session.
-  const r0 = await fetch(`${base}/Abfallkalender`, {
+  const r0 = await fetchWithTimeout(`${base}/Abfallkalender`, {
     redirect: 'manual', headers: { 'User-Agent': UA },
   })
   await r0.body?.cancel()
@@ -943,7 +944,7 @@ async function ctraceFetchIcs(cfg: AbfallConfig): Promise<string> {
     Hausnr: cfg.hnr || '',
     Abfall: CTRACE_ALL_TYPES,
   })
-  const res = await fetch(
+  const res = await fetchWithTimeout(
     `${base}${sess ? `/${sess}` : ''}/abfallkalender/${cfg.icalFile || 'cal'}?${params}`,
     { headers: { 'User-Agent': UA, Accept: 'text/calendar, */*' } },
   )
@@ -1015,50 +1016,10 @@ export function normalizeIcsUrl(raw?: string): string | null {
   return u.href
 }
 
-// Is a resolved IP in a private / loopback / link-local / reserved range? The
-// literal checks in normalizeIcsUrl catch a URL that IS an IP; this catches a
-// hostname that RESOLVES to one (the real SSRF vector — a public-looking domain
-// pointing at 169.254.169.254, 127.0.0.1, 10.x, etc.).
-function isPrivateIp(ip: string): boolean {
-  const s = ip.toLowerCase()
-  // IPv4-mapped IPv6 (::ffff:10.0.0.1) — check the embedded v4.
-  const mapped = s.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/)
-  const v4 = mapped ? mapped[1] : (/^\d+\.\d+\.\d+\.\d+$/.test(s) ? s : null)
-  if (v4) {
-    const [a, b] = v4.split('.').map(Number)
-    if (a === 10 || a === 127 || a === 0) return true
-    if (a === 172 && b >= 16 && b <= 31) return true
-    if (a === 192 && b === 168) return true
-    if (a === 169 && b === 254) return true      // link-local (cloud metadata)
-    if (a === 100 && b >= 64 && b <= 127) return true // CGNAT
-    if (a >= 224) return true                     // multicast / reserved
-    return false
-  }
-  // IPv6
-  if (s === '::1' || s === '::') return true      // loopback / unspecified
-  if (s.startsWith('fc') || s.startsWith('fd')) return true // unique-local fc00::/7
-  if (s.startsWith('fe8') || s.startsWith('fe9') || s.startsWith('fea') || s.startsWith('feb')) return true // link-local fe80::/10
-  return false
-}
-
-// SSRF guard for user-pasted ICS links: resolve the hostname and refuse if it
-// points at a private/reserved address. Fails OPEN if the resolver itself is
-// unavailable (the literal checks in normalizeIcsUrl already stopped the obvious
-// cases) so a resolver hiccup never breaks a legitimate connection.
-async function assertPublicHost(hostname: string): Promise<void> {
-  let ips: string[] = []
-  try {
-    const [a, aaaa] = await Promise.allSettled([
-      Deno.resolveDns(hostname, 'A'),
-      Deno.resolveDns(hostname, 'AAAA'),
-    ])
-    if (a.status === 'fulfilled') ips = ips.concat(a.value)
-    if (aaaa.status === 'fulfilled') ips = ips.concat(aaaa.value)
-  } catch {
-    return // resolver unavailable — don't hard-fail a real connection
-  }
-  if (ips.some(isPrivateIp)) throw new Error('reconnect_required')
-}
+// The SSRF guard (isPrivateIp + assertPublicHost) used to live here. It moved to
+// _shared/net.ts so the CalDAV transport can use the same one — that path takes
+// a server address the user typed too, and was making do with a weaker
+// hostname-pattern check. One implementation, both callers.
 
 // Read a user-pasted ICS link. Kept inside the abfall family (vendor 'ics') so
 // the pickup overlay, bin colours, and sync flow all apply unchanged. Also
@@ -1074,8 +1035,9 @@ function shortHash(s: string): string {
 export async function readIcsUrl(cfg: AbfallConfig): Promise<SyncedEvent[]> {
   const url = normalizeIcsUrl(cfg.url)
   if (!url) throw new Error('reconnect_required')
-  await assertPublicHost(new URL(url).hostname)
-  const res = await fetch(url, { headers: { Accept: 'text/calendar, */*', 'User-Agent': UA } })
+  // fetchUntrusted resolves the host and refuses a private address on *every*
+  // hop, so a link that redirects into the private range is caught too.
+  const res = await fetchUntrusted(url, { headers: { Accept: 'text/calendar, */*', 'User-Agent': UA } })
   if (!res.ok) throw new Error(`abfall upstream ${res.status}`)
   const ics = (await res.text()).replace(/^﻿/, '')
   if (!ics.includes('BEGIN:VEVENT')) return []
@@ -1130,7 +1092,7 @@ async function readAbfallio(cfg: AbfallConfig): Promise<SyncedEvent[]> {
 
   const body = new URLSearchParams()
   for (const [n, v] of form) body.append(n, v)
-  const res = await fetch(
+  const res = await fetchWithTimeout(
     `${ABFALLIO_BASE}/?key=${cfg.key}&modus=${ABFALLIO_MODUS}&waction=export_ics`,
     {
       method: 'POST',
@@ -1181,7 +1143,7 @@ async function readAwgBassum(cfg: AbfallConfig): Promise<SyncedEvent[]> {
       + `&slug=${encodeURIComponent(cfg.slug)}&ical=1`
     let ics: string
     try {
-      const res = await fetch(url, { headers: { Accept: 'text/calendar', 'User-Agent': UA } })
+      const res = await fetchWithTimeout(url, { headers: { Accept: 'text/calendar', 'User-Agent': UA } })
       if (!res.ok) continue
       ics = await res.text()
     } catch { continue }

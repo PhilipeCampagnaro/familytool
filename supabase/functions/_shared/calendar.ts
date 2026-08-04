@@ -4,6 +4,7 @@
 
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { open, seal } from "./secrets.ts";
+import { fetchWithTimeout } from "./net.ts";
 
 /// The provider vocabulary is shared verbatim with calendars.provider and
 /// calendar_connections.provider. There is no second spelling anywhere — the
@@ -190,7 +191,7 @@ export async function freshAccessToken(
   const cfg = oauthConfig(provider);
   if (!cfg.clientId || !cfg.clientSecret) return null;
 
-  const res = await fetch(cfg.tokenUrl, {
+  const res = await fetchWithTimeout(cfg.tokenUrl, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
@@ -227,7 +228,9 @@ export async function accountEmail(
     : "https://www.googleapis.com/oauth2/v2/userinfo";
 
   try {
-    const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+    const res = await fetchWithTimeout(url, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
     if (!res.ok) return null;
     const body = await res.json();
     return body.email ?? body.mail ?? body.userPrincipalName ?? null;
@@ -251,38 +254,8 @@ export function syncWindow(): { from: Date; to: Date } {
   };
 }
 
-/// Blocks the direct "make the server fetch my internal endpoint" case for any
-/// URL the user typed — the IServ server field and the Abfall ICS fallback. Not
-/// a defence against DNS rebinding; a hostname resolving to a private address
-/// still gets through, which is why neither of those inputs is ever echoed back
-/// to the caller.
-export function assertPublicUrl(raw: unknown): URL {
-  if (typeof raw !== "string" || !raw.trim()) throw new Error("Ungültige Adresse.");
-
-  let url: URL;
-  try {
-    url = new URL(raw.trim());
-  } catch {
-    throw new Error("Ungültige Adresse.");
-  }
-
-  if (url.protocol !== "https:") throw new Error("Nur HTTPS-Adressen sind erlaubt.");
-  if (url.username || url.password) throw new Error("Ungültige Adresse.");
-
-  const host = url.hostname.toLowerCase().replace(/^\[|\]$/g, "");
-  const blockedSuffix = [".local", ".internal", ".localhost"];
-  if (host === "localhost" || blockedSuffix.some((s) => host.endsWith(s))) {
-    throw new Error("Diese Adresse ist nicht erreichbar.");
-  }
-  if (host === "::1" || host === "::" || /^(fe80|fc|fd)/.test(host)) {
-    throw new Error("Diese Adresse ist nicht erreichbar.");
-  }
-  if (
-    /^\d{1,3}(\.\d{1,3}){3}$/.test(host) &&
-    /^(0\.|10\.|127\.|169\.254\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(host)
-  ) {
-    throw new Error("Diese Adresse ist nicht erreichbar.");
-  }
-
-  return url;
-}
+/// Re-exported so the calendar functions keep one import. The guard itself lives
+/// in net.ts next to `fetchUntrusted`, which re-runs the same check on every
+/// redirect hop — validating only the address the user typed is not enough when
+/// the server on the other end can answer with a 302.
+export { assertPublicUrl } from "./net.ts";

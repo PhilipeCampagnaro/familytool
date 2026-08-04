@@ -13,6 +13,7 @@
 /// in CDATA while everyone else XML-escapes it inline.
 
 import ICAL from "npm:ical.js@2";
+import { fetchUntrusted } from "./net.ts";
 
 export interface Collection {
   url: string;
@@ -69,7 +70,7 @@ async function propfind(
   body: string,
   depth: "0" | "1",
 ): Promise<{ status: number; xml: string; finalUrl: string }> {
-  const res = await fetch(url, {
+  const res = await fetchUntrusted(url, {
     method: "PROPFIND",
     headers: {
       Authorization: basic(user, password),
@@ -78,7 +79,6 @@ async function propfind(
       Depth: depth,
     },
     body,
-    redirect: "follow",
   });
   return { status: res.status, xml: await res.text(), finalUrl: res.url || url };
 }
@@ -289,7 +289,7 @@ export async function readEvents(
     `<c:time-range start="${caldavTime(from)}" end="${caldavTime(to)}"/>` +
     `</c:comp-filter></c:comp-filter></c:filter></c:calendar-query>`;
 
-  const res = await fetch(collectionUrl, {
+  const res = await fetchUntrusted(collectionUrl, {
     method: "REPORT",
     headers: {
       Authorization: basic(user, password),
@@ -298,7 +298,6 @@ export async function readEvents(
       Depth: "1",
     },
     body,
-    redirect: "follow",
   });
 
   const xml = await res.text();
@@ -415,7 +414,7 @@ export async function putEvent(
   password: string,
   ev: CalDavEventInput,
 ): Promise<void> {
-  const res = await fetch(href, {
+  const res = await fetchUntrusted(href, {
     method: "PUT",
     headers: {
       Authorization: basic(user, password),
@@ -423,7 +422,6 @@ export async function putEvent(
       "User-Agent": USER_AGENT,
     },
     body: buildVEvent(ev),
-    redirect: "follow",
   });
   if (!res.ok) throw new Error(`CalDAV PUT ${res.status}`);
 }
@@ -457,7 +455,7 @@ export async function findEventHref(
     `<c:prop-filter name="UID"><c:text-match collation="i;octet">${escapeXml(uid)}</c:text-match>` +
     `</c:prop-filter></c:comp-filter></c:comp-filter></c:filter></c:calendar-query>`;
 
-  const res = await fetch(collectionUrl, {
+  const res = await fetchUntrusted(collectionUrl, {
     method: "REPORT",
     headers: {
       Authorization: basic(user, password),
@@ -466,7 +464,6 @@ export async function findEventHref(
       Depth: "1",
     },
     body,
-    redirect: "follow",
   });
 
   if (res.ok) {
@@ -499,7 +496,7 @@ async function scanForUid(
     `<c:time-range start="${caldavTime(from)}" end="${caldavTime(to)}"/>` +
     `</c:comp-filter></c:comp-filter></c:filter></c:calendar-query>`;
 
-  const res = await fetch(collectionUrl, {
+  const res = await fetchUntrusted(collectionUrl, {
     method: "REPORT",
     headers: {
       Authorization: basic(user, password),
@@ -508,7 +505,6 @@ async function scanForUid(
       Depth: "1",
     },
     body,
-    redirect: "follow",
   });
   if (!res.ok) return null;
 
@@ -532,10 +528,9 @@ async function scanForUid(
 /// Deletes one event resource. Already-gone counts as success — the user asked
 /// for it not to be there.
 export async function deleteEvent(href: string, user: string, password: string): Promise<void> {
-  const res = await fetch(href, {
+  const res = await fetchUntrusted(href, {
     method: "DELETE",
     headers: { Authorization: basic(user, password), "User-Agent": USER_AGENT },
-    redirect: "follow",
   });
   if (!res.ok && res.status !== 404 && res.status !== 410) {
     throw new Error(`CalDAV DELETE ${res.status}`);

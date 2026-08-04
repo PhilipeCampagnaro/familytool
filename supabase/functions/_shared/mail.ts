@@ -5,6 +5,8 @@
 /// reports that nothing was sent, so the caller can surface "Link kopieren" as
 /// the fallback instead of claiming an e-mail is on its way.
 
+import { fetchWithTimeout } from "./net.ts";
+
 export type MailResult = { sent: boolean; reason?: string };
 
 export async function sendMail(
@@ -20,7 +22,7 @@ export async function sendMail(
     return { sent: false, reason: "mail_not_configured" };
   }
 
-  const res = await fetch("https://api.resend.com/emails", {
+  const res = await fetchWithTimeout("https://api.resend.com/emails", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${apiKey}`,

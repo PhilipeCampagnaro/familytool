@@ -29,6 +29,7 @@
 import { callerId, corsHeaders, fail, json, serviceClient } from "../_shared/http.ts";
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { membershipOf } from "../_shared/calendar.ts";
+import { fetchWithTimeout } from "../_shared/net.ts";
 import {
   accessToken,
   caldavCredentials,
@@ -252,7 +253,7 @@ async function writeGoogle(
   };
 
   if (action === "delete") {
-    const res = await fetch(`${base}/${encodeURIComponent(uid)}`, {
+    const res = await fetchWithTimeout(`${base}/${encodeURIComponent(uid)}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -278,7 +279,7 @@ async function writeGoogle(
       : { date: e.endDate, dateTime: null, timeZone: null },
   };
 
-  const res = await fetch(
+  const res = await fetchWithTimeout(
     action === "create" ? base : `${base}/${encodeURIComponent(uid)}`,
     { method: action === "create" ? "POST" : "PATCH", headers, body: JSON.stringify(payload) },
   );
@@ -307,7 +308,7 @@ async function writeOutlook(
   const existing = `https://graph.microsoft.com/v1.0/me/events/${encodeURIComponent(uid)}`;
 
   if (action === "delete") {
-    const res = await fetch(existing, {
+    const res = await fetchWithTimeout(existing, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -332,7 +333,7 @@ async function writeOutlook(
       : { dateTime: `${e.endDate}T00:00:00`, timeZone: TZ },
   };
 
-  const res = await fetch(
+  const res = await fetchWithTimeout(
     action === "create"
       ? `https://graph.microsoft.com/v1.0/me/calendars/${encodeURIComponent(calendarId)}/events`
       : existing,
