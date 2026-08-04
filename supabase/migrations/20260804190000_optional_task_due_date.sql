@@ -1,0 +1,13 @@
+-- A Board task no longer has to be due on a day.
+--
+-- `due_date` was `not null` because the Board *was* a day: a week strip picked
+-- one and that day's tasks hung underneath it, so a task without a date had
+-- nowhere on the screen to live. The Board now reads as a grouped list
+-- (Überfällig / Heute / Morgen / Diese Woche / Später / Ohne Datum) and the date
+-- is a property of the row, so "Ohne Datum" is a real section — and the one a
+-- new task starts in. Capture first, schedule later.
+--
+-- Loosening a constraint, so no existing row has to move: every task keeps the
+-- date it already has. `tasks_family_due_idx` needs no rebuild either — a btree
+-- indexes nulls, and they sort last, which is where undated tasks belong.
+alter table public.tasks alter column due_date drop not null;

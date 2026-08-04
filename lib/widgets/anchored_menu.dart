@@ -5,6 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../theme/tokens.dart';
 import 'bottom_nav.dart';
 import 'glass.dart';
+import '../l10n/l10n.dart';
 
 /// One row of a [showAnchoredMenu] dropdown.
 class AnchoredMenuItem {
@@ -79,7 +80,7 @@ class _AnchoredMenuRoute extends PopupRoute<AnchoredMenuItem> {
   bool get barrierDismissible => true;
 
   @override
-  String get barrierLabel => 'Schließen';
+  String get barrierLabel => L.s.close;
 
   @override
   Duration get transitionDuration => const Duration(milliseconds: 200);
@@ -252,7 +253,7 @@ class _AnchoredMenuRow extends StatelessWidget {
                   item.label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontFamily: 'Poppins', fontSize: 14.5, fontWeight: FontWeight.w400, color: color),
+                  style: AppText.input.copyWith(color: color),
                 ),
               ),
             ],

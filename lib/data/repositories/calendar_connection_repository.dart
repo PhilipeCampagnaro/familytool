@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../models/calendar_connection.dart';
 import '../../services/supabase.dart';
+import '../../l10n/l10n.dart';
 
 /// Raised for anything the user should read. The message is always German and
 /// always something they can act on — the Edge Functions are written to return
@@ -81,7 +82,7 @@ class CalendarConnectionRepository {
     );
     final url = body['url'] as String?;
     if (url == null || url.isEmpty) {
-      throw const CalendarConnectionException('Die Verbindung konnte nicht gestartet werden.');
+      throw CalendarConnectionException(L.s.connectionStartFailed);
     }
     return url;
   }
@@ -291,13 +292,11 @@ class CalendarConnectionRepository {
       if (details is Map && details['error'] is String) {
         throw CalendarConnectionException(details['error'] as String);
       }
-      throw const CalendarConnectionException('Das hat gerade nicht geklappt.');
+      throw CalendarConnectionException(L.s.somethingWentWrong);
     } on TimeoutException {
-      throw const CalendarConnectionException(
-        'Der Server hat zu lange gebraucht. Versuch es bitte noch einmal.',
-      );
+      throw CalendarConnectionException(L.s.serverTooSlow);
     } catch (_) {
-      throw const CalendarConnectionException('Keine Verbindung zum Server.');
+      throw CalendarConnectionException(L.s.noServerConnection);
     }
   }
 }

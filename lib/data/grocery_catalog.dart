@@ -1,23 +1,28 @@
-/// The `assets/grocery/` icon set, with a German name for every file.
+/// The `assets/grocery/` icon set, named in both interface languages.
 ///
-/// The files are named in English (`Dairy_Milk.png`), the app speaks German,
-/// and people type both — so an entry pairs the file with the German label the
-/// UI shows. The English side is **not** listed by hand: `grocery_search.dart`
-/// reads it off the file name, so a PNG dropped into the folder only ever needs
-/// its German name here. [GroceryIcon.alias] is for what neither side says —
-/// plurals, synonyms, and the odd file name that spells its own contents wrong
-/// (`Disposable_Glovespng`).
+/// The files are named in English (`Dairy_Milk.png`) and people type either
+/// language, so an entry pairs the file with the German label and the English
+/// one is **still not listed by hand**: [englishGroceryLabel] reads it off the
+/// file name, exactly as `grocery_search.dart` reads the English search terms
+/// off it. A PNG dropped into the folder needs its German name here and nothing
+/// else — unless its file name lies about its contents, which is what
+/// [_englishLabelOverrides] is for.
+///
+/// [GroceryIcon.alias] is for what neither side says — plurals, synonyms, and
+/// the odd file that spells its own contents wrong (`Disposable_Glovespng`).
 ///
 /// Ordering does a little work: on an equally good match the shorter name wins
 /// (see `grocery_search.dart`), so plain "Milch" beats "Schokomilch" for the
 /// query *Milch* without either having to be marked special.
 library;
 
+import '../l10n/l10n.dart';
+
 class GroceryIcon {
   /// File name inside `assets/grocery/`.
   final String file;
 
-  /// German label — what a suggestion chip and a new item show.
+  /// German label.
   final String de;
 
   /// Extra names this icon answers to.
@@ -26,6 +31,12 @@ class GroceryIcon {
   const GroceryIcon(this.file, this.de, [this.alias = const []]);
 
   String get asset => '$groceryAssetDir$file';
+
+  /// English label, derived from the file name — see [englishGroceryLabel].
+  String get en => englishGroceryLabel(file);
+
+  /// What a suggestion chip and a new item actually show.
+  String get label => L.s.localeCode == 'en' ? en : de;
 }
 
 const groceryAssetDir = 'assets/grocery/';
@@ -33,15 +44,22 @@ const groceryAssetDir = 'assets/grocery/';
 class GroceryCategory {
   /// German section name — also searchable, so "Gemüse" offers vegetables.
   final String de;
+
+  /// English section name. Hand-written, unlike the icon labels: a section has
+  /// no file name to read one off.
+  final String en;
+
   final List<GroceryIcon> icons;
 
-  const GroceryCategory(this.de, this.icons);
+  const GroceryCategory(this.de, this.en, this.icons);
+
+  String get label => L.s.localeCode == 'en' ? en : de;
 }
 
 /// Grouped the way the files are named, so a category stays easy to eyeball
 /// against the folder.
 const groceryCategories = <GroceryCategory>[
-  GroceryCategory('Obst', [
+  GroceryCategory('Obst', 'Fruit', [
     GroceryIcon('Fruits_Apple.png', 'Apfel', ['Äpfel']),
     GroceryIcon('Fruits_Avocado.png', 'Avocado', ['Avocados']),
     GroceryIcon('Fruits_Banana.png', 'Banane', ['Bananen']),
@@ -64,7 +82,7 @@ const groceryCategories = <GroceryCategory>[
     GroceryIcon('Fruits_grapes.png', 'Weintrauben', ['Trauben', 'Weintraube']),
     GroceryIcon('Fruits_mango.png', 'Mango', ['Mangos']),
   ]),
-  GroceryCategory('Gemüse', [
+  GroceryCategory('Gemüse', 'Vegetables', [
     GroceryIcon('Vegetables_Acorn_Squash.png', 'Eichelkürbis'),
     GroceryIcon('Vegetables_Artichoke.png', 'Artischocke', ['Artischocken']),
     GroceryIcon('Vegetables_Arugula.png', 'Rucola', ['Rauke']),
@@ -140,7 +158,7 @@ const groceryCategories = <GroceryCategory>[
     GroceryIcon('Vegetables_Yardlong_Bean.png', 'Spargelbohne'),
     GroceryIcon('Vegetables_Zucchini.png', 'Zucchini'),
   ]),
-  GroceryCategory('Frische Kräuter', [
+  GroceryCategory('Frische Kräuter', 'Fresh herbs', [
     GroceryIcon('Fresh_Herbs_Fresh_Basil.png', 'Basilikum'),
     GroceryIcon('Fresh_Herbs_Fresh_Chives.png', 'Schnittlauch'),
     GroceryIcon('Fresh_Herbs_Fresh_Cilantro.png', 'Koriander', ['Koriandergrün']),
@@ -152,7 +170,7 @@ const groceryCategories = <GroceryCategory>[
     GroceryIcon('Fresh_Herbs_Fresh_Sage.png', 'Salbei'),
     GroceryIcon('Fresh_Herbs_Fresh_Thyme.png', 'Thymian'),
   ]),
-  GroceryCategory('Fleisch & Fisch', [
+  GroceryCategory('Fleisch & Fisch', 'Meat & fish', [
     GroceryIcon('Meat_Bacon.png', 'Speck', ['Bacon', 'Frühstücksspeck']),
     GroceryIcon('Meat_Bison.png', 'Bisonfleisch'),
     GroceryIcon('Meat_Bratwurst.png', 'Bratwurst', ['Rostbratwurst']),
@@ -205,7 +223,7 @@ const groceryCategories = <GroceryCategory>[
     GroceryIcon('Meat_Veal.png', 'Kalbfleisch', ['Kalb']),
     GroceryIcon('Meat_Venison.png', 'Wildfleisch', ['Wild', 'Hirsch', 'Reh']),
   ]),
-  GroceryCategory('Milchprodukte', [
+  GroceryCategory('Milchprodukte', 'Dairy', [
     GroceryIcon('Dairy_Blue_Cheese.png', 'Blauschimmelkäse', ['Gorgonzola']),
     GroceryIcon('Dairy_Brie.png', 'Brie'),
     GroceryIcon('Dairy_Butter.png', 'Butter'),
@@ -246,7 +264,7 @@ const groceryCategories = <GroceryCategory>[
     GroceryIcon('Dairy_Whipping_Cream.png', 'Sahne zum Schlagen'),
     GroceryIcon('Dairy_Yogurt.png', 'Joghurt'),
   ]),
-  GroceryCategory('Brot & Backwaren', [
+  GroceryCategory('Brot & Backwaren', 'Bread & bakery', [
     GroceryIcon('Bread_Bagel.png', 'Bagel', ['Bagels']),
     GroceryIcon('Bread_Baguette.png', 'Baguette'),
     GroceryIcon('Bread_Brioche.png', 'Brioche'),
@@ -268,7 +286,7 @@ const groceryCategories = <GroceryCategory>[
     GroceryIcon('Bread_White_Bread.png', 'Weißbrot', ['Brot', 'Toastbrot', 'bread']),
     GroceryIcon('Bread_Whole_Wheat_Bread.png', 'Vollkornbrot'),
   ]),
-  GroceryCategory('Frühstück & Müsli', [
+  GroceryCategory('Frühstück & Müsli', 'Breakfast & cereal', [
     GroceryIcon('Cereals_Cornflakes.png', 'Cornflakes', ['Maisflocken', 'Müsli', 'Frühstücksflocken']),
     GroceryIcon('Cereals_Fruit_Loops.png', 'Froot Loops', ['Fruchtringe']),
     GroceryIcon("Cereals_Kellogg's_Corn_Flakes.png", "Kellogg's Cornflakes"),
@@ -282,7 +300,7 @@ const groceryCategories = <GroceryCategory>[
     GroceryIcon("Cereals_Nature's_Path_Organic_Corn_Flakes.png", "Nature's Path Bio-Cornflakes"),
     GroceryIcon('Cereals_Three_Wishes_Cereal_Corn_Flakes.png', 'Three Wishes Cornflakes'),
   ]),
-  GroceryCategory('Nudeln & Pasta', [
+  GroceryCategory('Nudeln & Pasta', 'Pasta & noodles', [
     GroceryIcon('Noodles_&_Pasta_Spaghetti.png', 'Spaghetti', ['Nudeln', 'Pasta']),
     GroceryIcon('Noodles_&_Pasta_Angel_hair.png', 'Engelshaar', ['Capellini']),
     GroceryIcon('Noodles_&_Pasta_Couscous.png', 'Couscous'),
@@ -304,7 +322,7 @@ const groceryCategories = <GroceryCategory>[
     GroceryIcon('Noodles_&_Pasta_Udon.png', 'Udon-Nudeln'),
     GroceryIcon('Noodles_&_Pasta_Ziti.png', 'Ziti'),
   ]),
-  GroceryCategory('Reis', [
+  GroceryCategory('Reis', 'Rice', [
     GroceryIcon('Rice_White_Rice.png', 'Weißer Reis', ['Reis', 'rice']),
     GroceryIcon('Rice_Arborio_Rice.png', 'Arborio-Reis'),
     GroceryIcon('Rice_Brown_Rice.png', 'Naturreis', ['Brauner Reis', 'Vollkornreis']),
@@ -316,7 +334,7 @@ const groceryCategories = <GroceryCategory>[
     GroceryIcon('Rice_Sushi_Rice.png', 'Sushireis'),
     GroceryIcon('Rice_Wild_Rice.png', 'Wildreis'),
   ]),
-  GroceryCategory('Getreide, Hülsenfrüchte & Samen', [
+  GroceryCategory('Getreide, Hülsenfrüchte & Samen', 'Grains, pulses & seeds', [
     GroceryIcon('Grains_Beans_and_Seeds_Barley.png', 'Gerste', ['Graupen']),
     GroceryIcon('Grains_Beans_and_Seeds_Black_Bean.png', 'Schwarze Bohnen'),
     GroceryIcon('Grains_Beans_and_Seeds_Brown_Rice.png', 'Vollkornreis'),
@@ -329,7 +347,7 @@ const groceryCategories = <GroceryCategory>[
     GroceryIcon('Grains_Beans_and_Seeds_Quinoa.png', 'Quinoa'),
     GroceryIcon('Grains_Beans_and_Seeds_Sesame_Seed.png', 'Sesam'),
   ]),
-  GroceryCategory('Backzutaten', [
+  GroceryCategory('Backzutaten', 'Baking', [
     GroceryIcon('Baking_Supplies_Baking_Powder.png', 'Backpulver'),
     GroceryIcon('Baking_Supplies_Baking_Soda.png', 'Natron'),
     GroceryIcon('Baking_Supplies_Cocoa_powder_(for_chocolate_cakes).png', 'Kakaopulver'),
@@ -344,7 +362,7 @@ const groceryCategories = <GroceryCategory>[
     GroceryIcon('Baking_Supplies_Vanilla_extract_(or_other_flavorings).png', 'Vanilleextrakt', ['Backaroma']),
     GroceryIcon('Baking_Supplies_Vanilla_sugar.png', 'Vanillezucker'),
   ]),
-  GroceryCategory('Gewürze', [
+  GroceryCategory('Gewürze', 'Spices', [
     GroceryIcon('Spices_Cinnamon.png', 'Zimt'),
     GroceryIcon('_Spices_and_Seasonings_Allspice.png', 'Piment'),
     GroceryIcon('_Spices_and_Seasonings_Basil_(ground).png', 'Basilikum getrocknet'),
@@ -378,7 +396,7 @@ const groceryCategories = <GroceryCategory>[
     GroceryIcon('_Spices_and_Seasonings_White_mustard.png', 'Weißer Senf', ['Senfkörner']),
     GroceryIcon('_Spices_and_Seasonings_White_pepper.png', 'Weißer Pfeffer'),
   ]),
-  GroceryCategory('Saucen & Aufstriche', [
+  GroceryCategory('Saucen & Aufstriche', 'Sauces & spreads', [
     GroceryIcon('Sauces_Barbecue_Sauce.png', 'Barbecuesauce', ['BBQ-Sauce', 'Grillsoße']),
     GroceryIcon('Sauces_Chili_Sauce.png', 'Chilisauce', ['Scharfe Sauce', 'Sriracha']),
     GroceryIcon('Sauces_Dips.png', 'Dips', ['Dip']),
@@ -390,7 +408,7 @@ const groceryCategories = <GroceryCategory>[
     GroceryIcon('Sauces_Soy_Sauce.png', 'Sojasauce', ['Sojasoße']),
     GroceryIcon('Sauces_Tomato_Sauce_(Glass_Bottle).png', 'Tomatensauce', ['Passata', 'Pastasauce']),
   ]),
-  GroceryCategory('Konserven', [
+  GroceryCategory('Konserven', 'Tinned food', [
     GroceryIcon('Canned_Goods_Canned_beans.png', 'Bohnen aus der Dose', ['Dosenbohnen']),
     GroceryIcon('Canned_Goods_Canned_corn.png', 'Mais aus der Dose', ['Dosenmais']),
     GroceryIcon('Canned_Goods_Canned_fish_(salmon,_sardines).png', 'Fisch aus der Dose', ['Dosenfisch']),
@@ -401,7 +419,7 @@ const groceryCategories = <GroceryCategory>[
     GroceryIcon('Canned_Goods_Condensed_milk.png', 'Gezuckerte Kondensmilch'),
     GroceryIcon('Canned_Goods_Tomato_paste.png', 'Tomatenmark'),
   ]),
-  GroceryCategory('Tiefkühlkost', [
+  GroceryCategory('Tiefkühlkost', 'Frozen food', [
     GroceryIcon('Frozen_Foods_Chicken_nuggets.png', 'Chicken Nuggets', ['Hähnchen-Nuggets']),
     GroceryIcon('Frozen_Foods_Fish_sticks.png', 'Fischstäbchen'),
     GroceryIcon('Frozen_Foods_French_fries_(frozen).png', 'Pommes frites', ['Pommes']),
@@ -423,7 +441,7 @@ const groceryCategories = <GroceryCategory>[
     GroceryIcon('Frozen_Foods_gyoza.png', 'Gyoza', ['Teigtaschen', 'Dumplings']),
     GroceryIcon('Frozen_Foods_pastries.png', 'Backwaren TK', ['Blätterteig']),
   ]),
-  GroceryCategory('Schokolade & Süßes', [
+  GroceryCategory('Schokolade & Süßes', 'Chocolate & sweets', [
     GroceryIcon('Chocolate_Milk_chocolate_bar.png', 'Vollmilchschokolade', ['Schokolade', 'Tafel Schokolade']),
     GroceryIcon('Chocolate_Dark_chocolate_bar.png', 'Zartbitterschokolade', ['Bitterschokolade', 'Dunkle Schokolade']),
     GroceryIcon('Chocolate_White_chocolate_bar.png', 'Weiße Schokolade'),
@@ -434,7 +452,7 @@ const groceryCategories = <GroceryCategory>[
     GroceryIcon('Chocolate_Novelty_&_Seasonal.png', 'Schokofiguren', ['Saisonartikel', 'Adventskalender']),
     GroceryIcon('Chocolate_hot_chocolate_mix.png', 'Trinkschokolade', ['Heiße Schokolade']),
   ]),
-  GroceryCategory('Getränke', [
+  GroceryCategory('Getränke', 'Drinks', [
     GroceryIcon('Drinks_Bottle_of_water.png', 'Wasser', ['Mineralwasser', 'Sprudel', 'water']),
     GroceryIcon('Coffee_&_Tea_Coffee_Beans.png', 'Kaffeebohnen', ['Bohnenkaffee']),
     GroceryIcon('Coffee_Tea_Coffee_Beans.png', 'Kaffee', ['Filterkaffee', 'Gemahlener Kaffee']),
@@ -450,7 +468,7 @@ const groceryCategories = <GroceryCategory>[
     GroceryIcon('Beverages_White_Wine.png', 'Weißwein'),
     GroceryIcon('Beverages_Wine.png', 'Wein', ['Rotwein']),
   ]),
-  GroceryCategory('Säfte', [
+  GroceryCategory('Säfte', 'Juices', [
     GroceryIcon('Juice_Apple_Juice.png', 'Apfelsaft'),
     GroceryIcon('Juice_Blueberry_Juice.png', 'Heidelbeersaft'),
     GroceryIcon('Juice_Carrot_Juice.png', 'Karottensaft'),
@@ -472,7 +490,7 @@ const groceryCategories = <GroceryCategory>[
     GroceryIcon('Juice_Tomato_Juice.png', 'Tomatensaft'),
     GroceryIcon('Juice_Watermelon_Juice.png', 'Wassermelonensaft'),
   ]),
-  GroceryCategory('Erfrischungsgetränke', [
+  GroceryCategory('Erfrischungsgetränke', 'Soft drinks', [
     GroceryIcon('Soft_Drinks_Coca-Cola.png', 'Coca-Cola', ['Cola', 'Coke']),
     GroceryIcon('Soft_Drinks_Coca-Cola_Zero_Sugar_(Coke_Zero).png', 'Cola Zero', ['Coke Zero']),
     GroceryIcon('Soft_Drinks_Diet_Coke.png', 'Cola light'),
@@ -484,7 +502,7 @@ const groceryCategories = <GroceryCategory>[
     GroceryIcon('Soft_Drinks_Ginger_Ale.png', 'Ginger Ale'),
     GroceryIcon('Soft_Drinks_Mountain_Dew.png', 'Mountain Dew'),
   ]),
-  GroceryCategory('Hygiene', [
+  GroceryCategory('Hygiene', 'Hygiene', [
     GroceryIcon('Hygiene_Bar_soap.png', 'Seifenstück', ['Seife']),
     GroceryIcon('Hygiene_Body_lotion.png', 'Bodylotion', ['Körperlotion']),
     GroceryIcon('Hygiene_Conditioner.png', 'Spülung', ['Conditioner', 'Haarspülung']),
@@ -517,7 +535,7 @@ const groceryCategories = <GroceryCategory>[
     GroceryIcon('Hygiene_Toothpaste.png', 'Zahnpasta', ['Zahncreme']),
     GroceryIcon('Hygiene_comb.png', 'Kamm'),
   ]),
-  GroceryCategory('Putzmittel', [
+  GroceryCategory('Putzmittel', 'Cleaning', [
     GroceryIcon('Cleaning_Supplies_All-purpose_cleaner.png', 'Allzweckreiniger'),
     GroceryIcon('Cleaning_Supplies_Bathroom_cleaner_(tile_&_grout).png', 'Badreiniger'),
     GroceryIcon('Cleaning_Supplies_Bleach.png', 'Bleichmittel', ['Chlorreiniger']),
@@ -538,7 +556,7 @@ const groceryCategories = <GroceryCategory>[
     GroceryIcon('Cleaning_Supplies_mop_solution.png', 'Bodenreiniger', ['Wischmittel']),
     GroceryIcon('Cleaning_Supplies_room_spray.png', 'Raumspray', ['Duftspray']),
   ]),
-  GroceryCategory('Baby', [
+  GroceryCategory('Baby', 'Baby', [
     GroceryIcon('Baby_Care_Diapers.png', 'Windeln'),
     GroceryIcon('Baby_Care_&_Hygiene_Diapers.png', 'Windelpackung'),
     GroceryIcon('Baby_Care_&_Hygiene_Baby_lotion.png', 'Babylotion'),
@@ -555,13 +573,13 @@ const groceryCategories = <GroceryCategory>[
     GroceryIcon('Baby_Food_&_Drinks_Baby_snacks.png', 'Babysnacks'),
     GroceryIcon('Baby_Food_&_Drinks_Infant_formula.png', 'Säuglingsnahrung', ['Babymilch', 'Pre-Nahrung']),
   ]),
-  GroceryCategory('Tierbedarf', [
+  GroceryCategory('Tierbedarf', 'Pet supplies', [
     GroceryIcon('Pet_Food_Cat_food_(dry).png', 'Katzentrockenfutter', ['Katzenfutter']),
     GroceryIcon('Pet_Food_Cat_food_(wet).png', 'Katzennassfutter'),
     GroceryIcon('Pet_Food_Dog_food_(dry).png', 'Hundetrockenfutter', ['Hundefutter']),
     GroceryIcon('Pet_Food_Dog_food_(wet).png', 'Hundenassfutter'),
   ]),
-  GroceryCategory('Sonstiges', [
+  GroceryCategory('Sonstiges', 'Other', [
     GroceryIcon('BBQ_Charcoal.png', 'Grillkohle', ['Holzkohle', 'Kohle']),
     GroceryIcon('General_Shopping_cart.png', 'Einkaufswagen', ['Einkauf']),
     GroceryIcon('Other_Other.png', 'Sonstiges', ['Anderes']),
@@ -571,11 +589,170 @@ const groceryCategories = <GroceryCategory>[
 /// Flat view of [groceryCategories], in the same order.
 final List<GroceryIcon> groceryIcons = [for (final c in groceryCategories) ...c.icons];
 
-/// Category label per icon — the section a suggestion came from.
-final Map<String, String> groceryCategoryByFile = {
+/// The category an icon came from, in the interface language.
+final Map<String, GroceryCategory> groceryCategoryByFile = {
   for (final c in groceryCategories)
-    for (final i in c.icons) i.file: c.de,
+    for (final i in c.icons) i.file: c,
 };
 
 /// Icon by asset path, for looking up what an item already carries.
 final Map<String, GroceryIcon> groceryIconByAsset = {for (final i in groceryIcons) i.asset: i};
+
+// ---------------------------------------------------------------------------
+// English labels, read off the file names
+// ---------------------------------------------------------------------------
+
+/// Longest run of leading `_`-separated words shared by every file in a
+/// section, e.g. `Fresh_Herbs_Fresh_` or `Baby_`. Empty when they don't agree —
+/// the drinks sit in `Drinks_`, `Beverages_` and `Coffee_&_Tea_` files — in
+/// which case nothing is stripped.
+///
+/// Public because `grocery_search.dart` strips exactly the same prefix before
+/// folding the English search terms. If the two disagreed, an icon could show a
+/// name it could not be found by.
+String sharedFilePrefix(List<GroceryIcon> icons) {
+  if (icons.length < 2) return '';
+  final first = icons.first.file.split('_');
+  var shared = first.length - 1;
+  for (final icon in icons.skip(1)) {
+    final words = icon.file.split('_');
+    shared = shared.clamp(0, words.length - 1);
+    for (var i = 0; i < shared; i++) {
+      if (words[i] != first[i]) {
+        shared = i;
+        break;
+      }
+    }
+  }
+  return shared == 0 ? '' : '${first.take(shared).join('_')}_';
+}
+
+/// Where the file name is not a usable English label on its own.
+///
+/// Three kinds of problem, and nothing else belongs here:
+///
+/// * **The section prefix survives.** `Gewürze`, `Getränke` and `Baby` have
+///   files whose leading words don't agree (`Spices_Cinnamon` beside
+///   `_Spices_and_Seasonings_Allspice`), so [sharedFilePrefix] finds nothing to
+///   strip and the label would read "Spices and Seasonings Allspice".
+/// * **Two files reduce to the same label.** `Cat_food_(dry)` and
+///   `Cat_food_(wet)` both lose their parenthetical and become "Cat food".
+/// * **The file name is simply wrong** — `Disposable_Glovespng`,
+///   `Oliven_Oil`, `Novelty_&_Seasonal` for the chocolate figures.
+const _englishLabelOverrides = <String, String>{
+  // Spices: the section prefix is not shared, so it would survive in full.
+  'Spices_Cinnamon.png': 'Cinnamon',
+  '_Spices_and_Seasonings_Allspice.png': 'Allspice',
+  '_Spices_and_Seasonings_Basil_(ground).png': 'Dried basil',
+  '_Spices_and_Seasonings_Bay_leaf_(ground).png': 'Bay leaf',
+  '_Spices_and_Seasonings_Black_pepper.png': 'Black pepper',
+  '_Spices_and_Seasonings_Cardamom.png': 'Cardamom',
+  '_Spices_and_Seasonings_Cayenne_pepper.png': 'Cayenne pepper',
+  '_Spices_and_Seasonings_Celery_seed_(ground).png': 'Celery seed',
+  '_Spices_and_Seasonings_Chili_powder.png': 'Chilli powder',
+  '_Spices_and_Seasonings_Cinnamon.png': 'Ground cinnamon',
+  '_Spices_and_Seasonings_Cloves.png': 'Cloves',
+  '_Spices_and_Seasonings_Coriander.png': 'Ground coriander',
+  '_Spices_and_Seasonings_Cumin.png': 'Cumin',
+  '_Spices_and_Seasonings_Fennel_seeds_(ground).png': 'Fennel seeds',
+  '_Spices_and_Seasonings_Fenugreek_(ground).png': 'Fenugreek',
+  '_Spices_and_Seasonings_Garlic_powder.png': 'Garlic powder',
+  '_Spices_and_Seasonings_Ginger_powder.png': 'Ground ginger',
+  '_Spices_and_Seasonings_Marjoram_(ground).png': 'Marjoram',
+  '_Spices_and_Seasonings_Mustard_powder.png': 'Mustard powder',
+  '_Spices_and_Seasonings_Nutmeg.png': 'Nutmeg',
+  '_Spices_and_Seasonings_Onion_powder.png': 'Onion powder',
+  '_Spices_and_Seasonings_Oregano.png': 'Dried oregano',
+  '_Spices_and_Seasonings_Paprika.png': 'Paprika',
+  '_Spices_and_Seasonings_Rosemary_(ground).png': 'Ground rosemary',
+  '_Spices_and_Seasonings_Sage_(ground).png': 'Ground sage',
+  '_Spices_and_Seasonings_Smoked_paprika.png': 'Smoked paprika',
+  '_Spices_and_Seasonings_Star_anise_(ground).png': 'Star anise',
+  '_Spices_and_Seasonings_Sumac.png': 'Sumac',
+  '_Spices_and_Seasonings_Thyme_(ground).png': 'Ground thyme',
+  '_Spices_and_Seasonings_Turmeric.png': 'Turmeric',
+  '_Spices_and_Seasonings_White_mustard.png': 'White mustard',
+  '_Spices_and_Seasonings_White_pepper.png': 'White pepper',
+
+  // Drinks: three different file prefixes in one section.
+  'Drinks_Bottle_of_water.png': 'Water',
+  'Coffee_&_Tea_Coffee_Beans.png': 'Coffee beans',
+  'Coffee_Tea_Coffee_Beans.png': 'Coffee',
+  'Beverages_Beer.png': 'Beer',
+  'Beverages_Champagne.png': 'Champagne',
+  'Beverages_Gin_&_Tonic.png': 'Gin & tonic',
+  'Beverages_Margarita.png': 'Margarita',
+  'Beverages_Martini.png': 'Martini',
+  'Beverages_Rum.png': 'Rum',
+  'Beverages_Tequila.png': 'Tequila',
+  'Beverages_Vodka.png': 'Vodka',
+  'Beverages_Whiskey.png': 'Whiskey',
+  'Beverages_White_Wine.png': 'White wine',
+  'Beverages_Wine.png': 'Wine',
+
+  // Baby: `Baby_` is shared, the sub-section after it is not.
+  'Baby_Care_Diapers.png': 'Nappies',
+  'Baby_Care_&_Hygiene_Diapers.png': 'Pack of nappies',
+  'Baby_Care_&_Hygiene_Baby_lotion.png': 'Baby lotion',
+  'Baby_Care_&_Hygiene_Baby_shampoo_&_body_wash.png': 'Baby shampoo',
+  'Baby_Care_&_Hygiene_Baby_wipes.png': 'Baby wipes',
+  'Baby_Care_&_Hygiene_Diaper_rash_cream.png': 'Nappy rash cream',
+  'Baby_Feeding_Baby_spoons.png': 'Baby spoons',
+  'Baby_Feeding_Bibs.png': 'Bibs',
+  'Baby_Feeding_Bottles_&_nipples.png': 'Baby bottle',
+  'Baby_Feeding_Pacifiers.png': 'Dummies',
+  'Baby_Feeding_Sippy_cups.png': 'Sippy cups',
+  'Baby_Food_&_Drinks_Baby_cereal.png': 'Baby cereal',
+  'Baby_Food_&_Drinks_Baby_purees.png': 'Baby purees',
+  'Baby_Food_&_Drinks_Baby_snacks.png': 'Baby snacks',
+  'Baby_Food_&_Drinks_Infant_formula.png': 'Infant formula',
+
+  // Pet food: the parenthetical is the whole distinction.
+  'Pet_Food_Cat_food_(dry).png': 'Dry cat food',
+  'Pet_Food_Cat_food_(wet).png': 'Wet cat food',
+  'Pet_Food_Dog_food_(dry).png': 'Dry dog food',
+  'Pet_Food_Dog_food_(wet).png': 'Wet dog food',
+
+  // Miscellany: a section of three unrelated files shares no prefix.
+  'BBQ_Charcoal.png': 'Charcoal',
+  'General_Shopping_cart.png': 'Shopping cart',
+  'Other_Other.png': 'Other',
+
+  // File names that are wrong or unhelpful.
+  'Hygiene_Disposable_Glovespng.png': 'Disposable gloves',
+  'Baking_Supplies_Oliven_Oil.png': 'Olive oil',
+  'Chocolate_Novelty_&_Seasonal.png': 'Chocolate figures',
+  'Frozen_Foods_pastries.png': 'Frozen pastries',
+  'Frozen_Foods_French_fries_(frozen).png': 'Chips',
+  'Frozen_Foods_Frozen_fries_with_seasoning.png': 'Seasoned chips',
+  'Cereals_Fruit_Loops.png': 'Froot Loops',
+};
+
+/// File name → English label, built once. Everything not overridden is the file
+/// name with its section prefix, its parenthetical asides and its `.png` taken
+/// off, and the first letter capitalised.
+final Map<String, String> _englishLabels = {
+  for (final category in groceryCategories)
+    ...() {
+      final prefix = sharedFilePrefix(category.icons);
+      return {
+        for (final icon in category.icons)
+          icon.file: _englishLabelOverrides[icon.file] ??
+              _labelFromFile(icon.file.substring(prefix.length)),
+      };
+    }(),
+};
+
+String _labelFromFile(String stem) {
+  final withoutExtension = stem.replaceAll(RegExp(r'\.png$'), '');
+  final withoutAsides = withoutExtension.replaceAll(RegExp(r'\([^)]*\)'), ' ');
+  final words = withoutAsides.replaceAll('_', ' ').split(RegExp(r'\s+')).where((w) => w.isNotEmpty);
+  final joined = words.join(' ');
+  if (joined.isEmpty) return withoutExtension.replaceAll('_', ' ');
+  return joined[0].toUpperCase() + joined.substring(1);
+}
+
+/// The English name of a grocery file. Falls back to the bare file name for a
+/// file that isn't in the catalog at all, which only a stale `icon_asset` in the
+/// database can produce.
+String englishGroceryLabel(String file) => _englishLabels[file] ?? _labelFromFile(file);

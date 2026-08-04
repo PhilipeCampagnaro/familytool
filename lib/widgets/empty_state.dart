@@ -46,12 +46,7 @@ class EmptyState extends StatelessWidget {
           Text(
             message,
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 15,
-              fontWeight: FontWeight.w300,
-              color: AppColors.inkTertiary,
-            ),
+            style: AppText.body.copyWith(color: AppColors.inkTertiary),
           ),
         ],
       ),

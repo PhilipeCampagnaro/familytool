@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import '../l10n/l10n.dart';
 
 /// The six calendar sources, spelled exactly as `calendar_connections.provider`
 /// and `calendars.provider` store them.
@@ -35,17 +36,17 @@ extension CalendarProviderMeta on CalendarProvider {
     CalendarProvider.outlook => 'Outlook',
     CalendarProvider.icloud => 'iCloud',
     CalendarProvider.iserv => 'IServ',
-    CalendarProvider.ferien => 'Ferien',
-    CalendarProvider.abfall => 'Abfall',
+    CalendarProvider.ferien => L.s.providerHolidaysLabel,
+    CalendarProvider.abfall => L.s.providerWasteLabel,
   };
 
   String get blurb => switch (this) {
-    CalendarProvider.google => 'Google Kalender verbinden.',
-    CalendarProvider.outlook => 'Outlook oder Microsoft 365 verbinden.',
-    CalendarProvider.icloud => 'iCloud mit einem app-spezifischen Passwort verbinden.',
-    CalendarProvider.iserv => 'Den Schulkalender von IServ verbinden.',
-    CalendarProvider.ferien => 'Schulferien deines Bundeslands anzeigen.',
-    CalendarProvider.abfall => 'Abfuhrtermine für deine Adresse anzeigen.',
+    CalendarProvider.google => L.s.providerGoogleDesc,
+    CalendarProvider.outlook => L.s.providerOutlookDesc,
+    CalendarProvider.icloud => L.s.providerIcloudDesc,
+    CalendarProvider.iserv => L.s.providerIservDesc,
+    CalendarProvider.ferien => L.s.providerHolidaysDesc,
+    CalendarProvider.abfall => L.s.providerWasteDesc,
   };
 
   ConnectKind get kind => switch (this) {

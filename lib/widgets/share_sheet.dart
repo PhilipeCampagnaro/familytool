@@ -11,6 +11,7 @@ import 'avatar.dart';
 import 'empty_state.dart';
 import 'error_note.dart';
 import 'native_switch.dart';
+import '../l10n/l10n.dart';
 
 /// "Teilen" — the third visibility axis, and the only one that leaves the
 /// household.
@@ -31,7 +32,7 @@ Future<void> showShareSheet(
 }) {
   return showAppSheet<void>(
     context: context,
-    header: const SheetPickerHeader(title: 'Teilen'),
+    header: SheetPickerHeader(title: L.s.shareTitle),
     heightFactor: 0.8,
     child: _ShareSheetBody(
       target: (kind: kind, id: resourceId),
@@ -94,8 +95,8 @@ class _ShareSheetBodyState extends ConsumerState<_ShareSheetBody> {
         Padding(
           padding: const EdgeInsets.only(left: 4, bottom: 12, right: 4),
           child: Text(
-            '„${widget.resourceName}" mit Leuten außerhalb eurer Familie teilen. '
-            'Sie sehen ausschließlich ${widget.target.kind.noun} — sonst nichts von euch.',
+            L.s.shareIntro(widget.resourceName) +
+                L.s.shareIntroSecond(widget.target.kind.noun),
             style: AppText.label.copyWith(fontSize: 12.5),
           ),
         ),
@@ -119,9 +120,9 @@ class _ShareSheetBodyState extends ConsumerState<_ShareSheetBody> {
                 keyboardType: TextInputType.emailAddress,
                 autocorrect: false,
                 style: AppText.searchInput,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   border: InputBorder.none,
-                  hintText: 'E-Mail (optional)',
+                  hintText: L.s.emailOptional,
                   isDense: true,
                 ),
               ),
@@ -135,10 +136,10 @@ class _ShareSheetBodyState extends ConsumerState<_ShareSheetBody> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Bearbeiten erlaubt', style: AppText.rowTitle),
+                        Text(L.s.editingAllowed, style: AppText.rowTitle),
                         const SizedBox(height: 2),
                         Text(
-                          _canEdit ? 'Kann abhaken und ergänzen' : 'Kann nur ansehen',
+                          _canEdit ? L.s.canCheckAndAdd : L.s.canOnlyView,
                           style: AppText.label.copyWith(fontSize: 12),
                         ),
                       ],
@@ -155,7 +156,7 @@ class _ShareSheetBodyState extends ConsumerState<_ShareSheetBody> {
         const SizedBox(height: 12),
         _PrimaryAction(
           icon: LucideIcons.link,
-          label: _email.text.trim().isEmpty ? 'Link erstellen' : 'Einladung senden',
+          label: _email.text.trim().isEmpty ? L.s.createLink : L.s.sendInvite,
           accent: accent,
           busy: _busy,
           onTap: _create,
@@ -166,18 +167,13 @@ class _ShareSheetBodyState extends ConsumerState<_ShareSheetBody> {
           const SizedBox(height: 22),
           Padding(
             padding: const EdgeInsets.only(left: 4, bottom: 9),
-            child: Text('Gäste', style: AppText.microLabel),
+            child: Text(L.s.guests, style: AppText.microLabel),
           ),
           SectionCard(
-            children: [
-              for (var i = 0; i < state.guests.length; i++) ...[
-                if (i > 0) CardDivider(),
-                _GuestRow(
-                  guest: state.guests[i],
-                  onRemove: () => notifier.removeGuest(state.guests[i].userId),
-                ),
-              ],
-            ],
+            children: dividedRows([
+              for (final guest in state.guests)
+                _GuestRow(guest: guest, onRemove: () => notifier.removeGuest(guest.userId)),
+            ]),
           ),
         ],
 
@@ -186,15 +182,13 @@ class _ShareSheetBodyState extends ConsumerState<_ShareSheetBody> {
           const SizedBox(height: 22),
           Padding(
             padding: const EdgeInsets.only(left: 4, bottom: 9),
-            child: Text('Aktive Links', style: AppText.microLabel),
+            child: Text(L.s.activeLinks, style: AppText.microLabel),
           ),
           SectionCard(
-            children: [
-              for (var i = 0; i < state.links.length; i++) ...[
-                if (i > 0) CardDivider(),
-                _LinkRow(link: state.links[i], onRevoke: () => notifier.revokeLink(state.links[i].id)),
-              ],
-            ],
+            children: dividedRows([
+              for (final link in state.links)
+                _LinkRow(link: link, onRevoke: () => notifier.revokeLink(link.id)),
+            ]),
           ),
         ],
 
@@ -202,7 +196,7 @@ class _ShareSheetBodyState extends ConsumerState<_ShareSheetBody> {
           const SizedBox(height: 18),
           EmptyState(
             icon: LucideIcons.userPlus,
-            message: 'Noch nicht geteilt.\nErstell einen Link, um jemanden hineinzulassen.',
+            message: L.s.notSharedYet,
           ),
         ],
       ],
@@ -239,7 +233,7 @@ class _FreshLinkCardState extends State<_FreshLinkCard> {
                 children: [
                   Icon(LucideIcons.link, size: 15, color: widget.accent),
                   const SizedBox(width: 8),
-                  Text('Neuer Link', style: AppText.rowTitle),
+                  Text(L.s.newLink, style: AppText.rowTitle),
                   const Spacer(),
                   GestureDetector(
                     onTap: widget.onDone,
@@ -253,7 +247,7 @@ class _FreshLinkCardState extends State<_FreshLinkCard> {
                 widget.url,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontFamily: 'Poppins', fontSize: 13, color: AppColors.inkSecondary),
+                style: AppText.caption.copyWith(fontWeight: FontWeight.w400, color: AppColors.inkSecondary),
               ),
               const SizedBox(height: 10),
               GestureDetector(
@@ -267,15 +261,15 @@ class _FreshLinkCardState extends State<_FreshLinkCard> {
                     Icon(_copied ? LucideIcons.check : LucideIcons.copy, size: 15, color: widget.accent),
                     const SizedBox(width: 7),
                     Text(
-                      _copied ? 'Kopiert' : 'Link kopieren',
-                      style: TextStyle(fontFamily: 'Poppins', fontSize: 14, fontWeight: FontWeight.w500, color: widget.accent),
+                      _copied ? L.s.copied : L.s.copyLink,
+                      style: AppText.buttonSmall.copyWith(color: widget.accent),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 6),
               Text(
-                'Dieser Link wird nur jetzt angezeigt — wir speichern ihn nicht.',
+                L.s.linkShownOnce,
                 style: AppText.label.copyWith(fontSize: 11.5),
               ),
             ],
@@ -307,7 +301,7 @@ class _GuestRow extends StatelessWidget {
               children: [
                 Text(guest.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.rowTitle),
                 Text(
-                  guest.canEdit ? 'Darf bearbeiten' : 'Nur ansehen',
+                  guest.canEdit ? L.s.mayEdit : L.s.viewOnly,
                   style: AppText.label.copyWith(fontSize: 12),
                 ),
               ],
@@ -335,9 +329,9 @@ class _LinkRow extends StatelessWidget {
 
   String get _subtitle {
     final parts = <String>[
-      link.canEdit ? 'Bearbeiten' : 'Nur ansehen',
-      if (link.useCount == 1) '1× benutzt' else if (link.useCount > 1) '${link.useCount}× benutzt',
-      if (link.expired) 'abgelaufen' else if (link.usedUp) 'aufgebraucht',
+      link.canEdit ? L.s.edit : L.s.viewOnly,
+      if (link.useCount >= 1) L.s.usedTimes(link.useCount),
+      if (link.expired) L.s.linkExpired else if (link.usedUp) L.s.linkUsedUp,
     ];
     return parts.join(' · ');
   }
@@ -356,7 +350,7 @@ class _LinkRow extends StatelessWidget {
               children: [
                 // No URL: only the hash is stored, so there is nothing to print
                 // here. That is the point of storing it that way.
-                Text('Freigabe-Link', style: AppText.rowTitle),
+                Text(L.s.shareLink, style: AppText.rowTitle),
                 Text(_subtitle, style: AppText.label.copyWith(fontSize: 12)),
               ],
             ),
@@ -367,8 +361,8 @@ class _LinkRow extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
               child: Text(
-                'Zurückziehen',
-                style: TextStyle(fontFamily: 'Poppins', fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.danger),
+                L.s.revoke,
+                style: AppText.caption.copyWith(color: AppColors.danger),
               ),
             ),
           ),
@@ -418,7 +412,7 @@ class _PrimaryAction extends StatelessWidget {
             const SizedBox(width: 10),
             Text(
               label,
-              style: const TextStyle(fontFamily: 'Poppins', fontSize: 15, fontWeight: FontWeight.w600, color: Colors.white),
+              style: AppText.itemTitle.copyWith(color: Colors.white),
             ),
           ],
         ),

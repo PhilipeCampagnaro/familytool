@@ -18,10 +18,14 @@ class BoardTask {
   final String id;
   final String familyId;
 
-  /// Midnight-normalised local date. `due_date` is a Postgres `date`, so it
-  /// carries no time and no zone — a task due "Donnerstag" is due Donnerstag
-  /// wherever the phone is.
-  final DateTime dueDate;
+  /// Midnight-normalised local date, or **null for a task with no date at all**.
+  /// `due_date` is a Postgres `date`, so it carries no time and no zone — a task
+  /// due "Donnerstag" is due Donnerstag wherever the phone is.
+  ///
+  /// Nullable because the Board is a grouped list rather than a day: "Ohne
+  /// Datum" is a section like any other, and it is where a new task starts.
+  /// Anything reading this has to answer for the null — see [boardSectionOf].
+  final DateTime? dueDate;
 
   final String text;
   final String? meta;
@@ -46,7 +50,7 @@ class BoardTask {
   const BoardTask({
     required this.id,
     required this.familyId,
-    required this.dueDate,
+    this.dueDate,
     required this.text,
     required this.ownerId,
     this.meta,
@@ -64,7 +68,10 @@ class BoardTask {
     return BoardTask(
       id: map['id'] as String,
       familyId: map['family_id'] as String,
-      dueDate: parseDueDate(map['due_date'] as String),
+      dueDate: switch (map['due_date']) {
+        final String value => parseDueDate(value),
+        _ => null,
+      },
       text: map['text'] as String,
       meta: map['meta'] as String?,
       assigneeId: map['assignee_id'] as String?,
@@ -82,7 +89,7 @@ class BoardTask {
   /// `owner_id`/`family_id` only on insert — on update
   /// `enforce_container_ownership` rejects them from anyone but the owner.
   Map<String, dynamic> toMap({bool forInsert = false}) => {
-    'due_date': formatDueDate(dueDate),
+    'due_date': dueDate == null ? null : formatDueDate(dueDate!),
     'text': text,
     'meta': meta,
     'assignee_id': assigneeId,
@@ -95,6 +102,7 @@ class BoardTask {
 
   BoardTask copyWith({
     DateTime? dueDate,
+    bool clearDueDate = false,
     String? text,
     String? meta,
     bool clearMeta = false,
@@ -110,7 +118,7 @@ class BoardTask {
   }) => BoardTask(
     id: id,
     familyId: familyId,
-    dueDate: dueDate ?? this.dueDate,
+    dueDate: clearDueDate ? null : (dueDate ?? this.dueDate),
     text: text ?? this.text,
     meta: clearMeta ? null : (meta ?? this.meta),
     assigneeId: clearAssignee ? null : (assigneeId ?? this.assigneeId),

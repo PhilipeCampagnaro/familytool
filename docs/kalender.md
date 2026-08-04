@@ -81,6 +81,61 @@ The close button is the Stack's *last* child on purpose: `GlassIconButton` is a 
 view on iOS, which composites above anything Flutter paints after it. The chips vanished on
 device (but not in widget tests) while they were painted after it.
 
+## All-day events are dates, not instants
+
+Every source writes an all-day event as **midnight UTC** — Google's `start.date`, OpenHolidays'
+Ferien block, all six Abfall vendors, a DATE-valued `DTSTART` over CalDAV. `CalendarEvent._readAt`
+therefore reads the UTC calendar date and rebuilds it as a *local* midnight; `_writeAt` is its
+inverse for our own rows. **Don't `.toLocal()` an all-day timestamp.** East of UTC it shifts the
+exclusive end onto the next day, `days` then lists that day too, and every waste pickup rendered on
+its day *and* the day after — which is what "Abfall on the wrong dates" was. `durationLabel`
+restates both ends in UTC for the same reason: a Ferien block spanning a clock change is 42 days
+minus an hour, and `inDays` calls that 41.
+
+## Day dots
+
+`dayColors` returns **one dot per event**, not per calendar. It used to de-duplicate by
+`calendarId`, so four appointments in one Google calendar drew a single dot and a full day read as
+an empty one. Both cells (`_DayStripCell`, `_MonthCell`) `take(3)` and hand the remainder to
+`EventDots.overflowCount`, which turns the fourth slot into a gray "+" badge — so the row can't
+grow past four dots' width however busy the day is.
+
+## The month grid's holiday tint
+
+`holidaysIn` reads the **Ferien feed only** (`feedKind == 'ferien'`), and the legend says
+"Ferien" / "School holidays" to match. It used to mean "all-day event on a read-only calendar",
+which is equally true of every bin pickup and every subscribed Google calendar — a household with
+Abfall connected saw a third of the month tinted. Keep the tint to one meaning.
+
+## Agenda cards
+
+- **Every card is white** (`_EventCard`). The live event used to take an accent fill; since an
+  all-day event is "live" for its whole span, a normal day read blue/white/blue. The rail beside
+  the card already carries the phase (filled dot, accent line, accent time) — don't put it back on
+  the card.
+- No body text means **no subtitle line at all**. An empty `Text` still occupies a line, which is
+  where the gap between a bare title and its chips came from.
+- The rail is `_railWidth` wide with the time label in a `FittedBox(scaleDown)`. A clock time fits
+  at full size; "Ganztägig" doesn't and used to wrap to two lines, which pushed that row's dot out
+  of line with its neighbours'.
+- **Weather sits where the avatar used to**, on the chip row: icon + temperature, and nothing at
+  all when there is no forecast (a past event, one past the 16-day horizon, or a household with no
+  address). The detail sheet shows the fuller card — icon, temperature, condition — beside the
+  date, and the date card takes the full width when there is none. Both go through `_weatherFor`
+  in [../lib/screens/calendar_screen.dart](../lib/screens/calendar_screen.dart), which keys the
+  lookup on the event **and the selected day** — that second half matters, because an all-day
+  event spanning a week is forecast per day. `_EventCard` itself stays a `StatelessWidget` and is
+  handed the reading by `_EventAgendaRow`, which has the `ref`. The service behind it is described
+  in the weather section of [ported-features.md](ported-features.md).
+
+## Empty day
+
+`_EmptyDayActions` (shared by both views) offers **"Kalender verbinden"** instead of "Termin
+hinzufügen" when the household has no connected calendar (`calendars.any((c) => !c.isOwn)` is
+false), pushing `CalendarConnectionsPage` directly. Somebody who skipped onboarding lands on
+Kalender first, and an own-calendar event wouldn't give them their school or bin dates. Guarded on
+`state.loaded` so the button doesn't flip a moment after paint.
+
 ## Events + persistence
 
 `CalendarScreenState.eventsFor(y, m, d)` merges three layers: seed `schedule` from

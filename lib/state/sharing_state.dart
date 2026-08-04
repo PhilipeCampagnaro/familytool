@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/who.dart';
 import '../services/supabase.dart';
+import '../l10n/l10n.dart';
 
 /// What can be shared outside the household — exactly `public.shareable_kind`.
 ///
@@ -17,9 +18,9 @@ extension ShareableKindLabel on ShareableKind {
 
   /// What the sheet calls it, in the accusative — "… teilen".
   String get noun => switch (this) {
-    ShareableKind.list => 'die Liste',
-    ShareableKind.box => 'die Box',
-    ShareableKind.task => 'die Aufgabe',
+    ShareableKind.list => L.s.theList,
+    ShareableKind.box => L.s.theBox,
+    ShareableKind.task => L.s.theTask,
   };
 }
 
@@ -171,7 +172,7 @@ class SharingNotifier extends StateNotifier<SharingState> {
               final p = profiles[id];
               return Guest(
                 userId: id,
-                name: (p?['display_name'] as String?) ?? 'Gast',
+                name: (p?['display_name'] as String?) ?? L.s.guest,
                 initials: (p?['initials'] as String?) ?? '?',
                 tone: (p?['tone'] as num?)?.toInt() ?? 0,
                 canEdit: r['can_edit'] as bool? ?? true,
@@ -181,7 +182,7 @@ class SharingNotifier extends StateNotifier<SharingState> {
       );
     } catch (_) {
       if (!mounted) return;
-      state = state.copyWith(loading: false, error: 'Die Freigaben konnten nicht geladen werden.');
+      state = state.copyWith(loading: false, error: L.s.sharesLoadFailed);
     }
   }
 
@@ -211,9 +212,9 @@ class SharingNotifier extends StateNotifier<SharingState> {
       // daily cap reached — and beats anything generic invented here.
       final details = e.details;
       _fail((details is Map ? details['error'] as String? : null) ??
-          'Der Freigabe-Link konnte nicht erstellt werden.');
+          L.s.shareLinkCreateFailed);
     } catch (_) {
-      _fail('Der Freigabe-Link konnte nicht erstellt werden.');
+      _fail(L.s.shareLinkCreateFailed);
     }
   }
 
@@ -233,7 +234,7 @@ class SharingNotifier extends StateNotifier<SharingState> {
       await load();
     } catch (_) {
       if (!mounted) return;
-      state = state.copyWith(links: previous, error: 'Der Link konnte nicht zurückgezogen werden.');
+      state = state.copyWith(links: previous, error: L.s.linkRevokeFailed);
     }
   }
 
@@ -253,7 +254,7 @@ class SharingNotifier extends StateNotifier<SharingState> {
       if (deleted.isEmpty) throw StateError('refused');
     } catch (_) {
       if (!mounted) return;
-      state = state.copyWith(guests: previous, error: 'Der Gast konnte nicht entfernt werden.');
+      state = state.copyWith(guests: previous, error: L.s.guestRemoveFailed);
     }
   }
 

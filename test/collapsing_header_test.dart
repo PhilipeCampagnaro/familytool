@@ -104,9 +104,9 @@ void main() {
     await pump(tester, const BoxScreen());
 
     // The header sizes itself from the content it actually laid out. A constant
-    // would have to be tuned against a font — and the app's Poppins is fetched
-    // at runtime by google_fonts, so it is *not* the font a widget test
-    // measures. Getting that wrong clips the bottom row on a real phone, which
+    // would have to be tuned against a font — and the app's bundled Poppins is
+    // *not* the font a widget test renders with. Getting that wrong clips the
+    // bottom row on a real phone, which
     // is exactly what this catches: the last thing in the block has to still
     // clear the gray panel by the header's own trailing gap.
     final lastRowBottom = tester.getRect(find.text('Artikel')).bottom;

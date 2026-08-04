@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../data/abfall_bins.dart';
+import '../l10n/l10n.dart';
 
 enum EventPhase { done, now, next }
 
@@ -69,7 +70,7 @@ class CalendarSource {
   /// which is exactly right.
   factory CalendarSource.fromMap(Map<String, dynamic> map) => CalendarSource(
     id: map['id'] as String,
-    name: map['name'] as String? ?? 'Kalender',
+    name: map['name'] as String? ?? L.s.calendar,
     color: Color((map['color'] as num?)?.toInt().toUnsigned(32) ?? 0xff1668ff),
     readOnly: map['is_read_only'] == true,
     isOwn: map['provider'] == 'aporah',
@@ -211,11 +212,11 @@ class CalendarEvent {
   final String source;
   final Color srcColor;
 
-  /// Weather. No service is wired up yet, so these stay empty and the detail
-  /// sheet hides the block — see docs/ported-features.md.
-  final String temp;
-  final String cond;
-  final String condLabel;
+  // No weather here. It is not a property of the event — it is what the sky
+  // happens to be doing where and when the event is, it changes hourly, and it
+  // comes from a service that has nothing to do with any calendar. So it lives
+  // in `weatherProvider` ([lib/state/weather_state.dart]), keyed by this event's
+  // place and moment, and the agenda row looks it up.
 
   const CalendarEvent({
     required this.id,
@@ -236,24 +237,48 @@ class CalendarEvent {
     this.owner = '',
     this.ownerInitial = '',
     this.ownerTone = 0,
-    this.temp = '',
-    this.cond = '',
-    this.condLabel = '',
   });
 
-  /// "09:15". Empty for an all-day event, which has no meaningful clock time —
-  /// callers should prefer [timeLabel], which says so in German.
+  /// "09:15" (or "9:15 AM"). Empty for an all-day event, which has no
+  /// meaningful clock time — callers should prefer [timeLabel], which says so
+  /// in words.
   String get time => allDay ? '' : _hm(startsAt);
   String get endTime => allDay ? '' : _hm(endsAt);
 
-  String get timeLabel => allDay ? 'Ganztägig' : _hm(startsAt);
+  String get timeLabel => allDay ? L.s.allDayDuration : _hm(startsAt);
 
   /// The line the agenda and detail sheet print. All-day events say so instead
   /// of printing "00:00 – 00:00 Uhr".
-  String get timeRangeLabel => allDay ? 'Ganztägig' : '${_hm(startsAt)} – ${_hm(endsAt)} Uhr';
+  String get timeRangeLabel =>
+      allDay ? L.s.allDayDuration : L.s.timeRange(_hm(startsAt), _hm(endsAt));
 
-  static String _hm(DateTime t) =>
-      '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
+  static String _hm(DateTime t) => formatTime(t);
+
+  /// An all-day event carries a **date**, not an instant, and every source
+  /// agrees on how to write one: midnight UTC. Google sends `start.date`,
+  /// OpenHolidays' Ferien block and the Abfall vendors are built as
+  /// `…T00:00:00Z`, and a DATE-valued `DTSTART` over CalDAV lands there too.
+  ///
+  /// `.toLocal()` on that is wrong in a way that is invisible until it isn't:
+  /// in Berlin (UTC+1/+2) midnight UTC becomes 01:00/02:00 the *same* day, so
+  /// the start still looks right — but the exclusive end lands at 02:00 the
+  /// following day instead of on its midnight, and [days] then counts that
+  /// day too. Every waste pickup rendered on its day *and the day after*, and
+  /// every one of those extra days picked up the holiday tint in the month
+  /// grid. So an all-day date is read as the calendar date it says it is, in
+  /// local time, and never shifted.
+  static DateTime _readAt(String raw, bool allDay) {
+    final parsed = DateTime.parse(raw);
+    if (!allDay) return parsed.toLocal();
+    final utc = parsed.toUtc();
+    return DateTime(utc.year, utc.month, utc.day);
+  }
+
+  /// The inverse of [_readAt] — an all-day event of ours has to go back as the
+  /// same midnight-UTC date, or it would read back a day early west of UTC.
+  static String _writeAt(DateTime at, bool allDay) => allDay
+      ? DateTime.utc(at.year, at.month, at.day).toIso8601String()
+      : at.toUtc().toIso8601String();
 
   /// Done / live / upcoming against the wall clock.
   ///
@@ -266,18 +291,26 @@ class CalendarEvent {
     return EventPhase.next;
   }
 
-  /// "1 Std 30", or the day count for an all-day span.
+  /// "1 Std 30" / "1h 30", or the day count for an all-day span.
   String get durationLabel {
     if (allDay) {
-      final days = endsAt.difference(startsAt).inDays;
-      if (days <= 1) return 'Ganztägig';
-      return '$days Tage';
+      // Counted between the two *dates*, not as an elapsed duration: an all-day
+      // span is anchored to local midnights, and a Ferien block containing a
+      // clock change is 42 days minus an hour — which `inDays` reports as 41.
+      // Restating both ends in UTC removes the offset without moving the dates.
+      final days = DateTime.utc(endsAt.year, endsAt.month, endsAt.day)
+          .difference(DateTime.utc(startsAt.year, startsAt.month, startsAt.day))
+          .inDays;
+      if (days <= 1) return L.s.allDayDuration;
+      return L.s.durationDays(days);
     }
     final minutes = endsAt.difference(startsAt).inMinutes;
     if (minutes >= 60) {
-      return minutes % 60 == 0 ? '${minutes ~/ 60} Std' : '${minutes ~/ 60} Std ${minutes % 60}';
+      return minutes % 60 == 0
+          ? L.s.durationHours(minutes ~/ 60)
+          : L.s.durationHoursMinutes(minutes ~/ 60, minutes % 60);
     }
-    return '$minutes Min';
+    return L.s.durationMinutes(minutes);
   }
 
   /// Every date this event covers, midnight-normalised.
@@ -331,9 +364,6 @@ class CalendarEvent {
       ownerTone: ownerTone,
       source: source ?? this.source,
       srcColor: srcColor ?? this.srcColor,
-      temp: temp,
-      cond: cond,
-      condLabel: condLabel,
     );
   }
 
@@ -346,7 +376,8 @@ class CalendarEvent {
     String ownerInitial = '',
     int ownerTone = 0,
   }) {
-    final starts = DateTime.parse(map['starts_at'] as String).toLocal();
+    final allDay = map['all_day'] == true;
+    final starts = _readAt(map['starts_at'] as String, allDay);
     final endsRaw = map['ends_at'] as String?;
     final minutes = (map['reminder_minutes'] as num?)?.toInt();
     final title = (map['title'] as String? ?? '').trim();
@@ -365,16 +396,16 @@ class CalendarEvent {
       // Absent on a PostgREST row by design: our own events have no provider
       // identity, and inventing one would make them look proxied.
       uid: map['uid'] as String? ?? '',
-      title: title.isEmpty ? 'Ohne Titel' : title,
+      title: title.isEmpty ? L.s.untitledEvent : title,
       startsAt: starts,
-      endsAt: endsRaw == null ? starts : DateTime.parse(endsRaw).toLocal(),
-      allDay: map['all_day'] == true,
+      endsAt: endsRaw == null ? starts : _readAt(endsRaw, allDay),
+      allDay: allDay,
       body: map['notes'] as String? ?? '',
       loc: map['location'] as String? ?? '',
       locSub: map['location_sub'] as String? ?? '',
       online: map['online'] == true,
       url: map['url'] as String? ?? '',
-      reminder: minutes == null ? '' : '$minutes Minuten vorher',
+      reminder: minutes == null ? '' : L.s.reminderMinutesBefore(minutes),
       owner: owner,
       ownerInitial: ownerInitial,
       ownerTone: ownerTone,
@@ -390,8 +421,8 @@ class CalendarEvent {
   Map<String, dynamic> toMap() => {
     'calendar_id': calendarId,
     'title': title,
-    'starts_at': startsAt.toUtc().toIso8601String(),
-    'ends_at': endsAt.toUtc().toIso8601String(),
+    'starts_at': _writeAt(startsAt, allDay),
+    'ends_at': _writeAt(endsAt, allDay),
     'all_day': allDay,
     'notes': body.isEmpty ? null : body,
     'location': loc.isEmpty ? null : loc,

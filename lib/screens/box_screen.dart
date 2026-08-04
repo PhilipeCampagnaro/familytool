@@ -16,10 +16,13 @@ import '../widgets/empty_state.dart';
 import '../widgets/error_note.dart';
 import '../widgets/glass.dart';
 import '../widgets/icon_picker.dart';
+import '../widgets/overview_screen.dart';
 import '../widgets/search.dart';
 import '../widgets/share_sheet.dart';
 import '../widgets/swipe_actions.dart';
+import '../widgets/toast_chip.dart';
 import '../widgets/visibility_picker.dart';
+import '../l10n/l10n.dart';
 
 class BoxScreen extends ConsumerWidget {
   const BoxScreen({super.key});
@@ -51,136 +54,88 @@ class BoxScreen extends ConsumerWidget {
   }
 }
 
-class _BoxOverview extends ConsumerStatefulWidget {
+class _BoxOverview extends ConsumerWidget {
   final BoxScreenState state;
 
   const _BoxOverview({required this.state});
 
-  @override
-  ConsumerState<_BoxOverview> createState() => _BoxOverviewState();
-}
-
-class _BoxOverviewState extends ConsumerState<_BoxOverview> {
-  /// First-frame estimate only — [CollapsingHeaderScreen] re-measures the real
-  /// thing once it's laid out.
+  /// First-frame estimate only — the search pill plus the stat tiles.
+  /// [CollapsingHeaderScreen] re-measures the real thing once it's laid out.
   static const _extraHeight = 163.0;
 
-  static const _searchHint = 'Boxen und Artikel durchsuchen';
-
-  /// Search runs *in* the screen (see [HeaderSearchBar]): the header turns into
-  /// the system search field and this body shows the hits — no sheet over the
-  /// content.
-  bool _searching = false;
-  String _query = '';
-
-  void _openSearch() => setState(() => _searching = true);
-
-  void _closeSearch() {
-    setState(() {
-      _searching = false;
-      _query = '';
-    });
-  }
-
-  void _open(String id) {
-    _closeSearch();
-    ref.read(boxProvider.notifier).open(id);
-  }
-
   @override
-  Widget build(BuildContext context) {
-    final state = widget.state;
+  Widget build(BuildContext context, WidgetRef ref) {
     final accent = Theme.of(context).colorScheme.primary;
-    final query = _query.trim();
-    return CollapsingHeaderScreen(
-      titleRowBuilder: (context, t) => HeaderSearchBar(
-        active: _searching,
-        hint: _searchHint,
-        onChanged: (v) => setState(() => _query = v),
-        onClose: _closeSearch,
-        // `leadingWidth: 0` on purpose even though there's a leading button: it
-        // only fades in once the header is collapsed (see [HeaderSearchButton]),
-        // and reserving room for it at rest would push the big "Boxen" heading
-        // off the left margin.
-        child: CollapsingScreenTitle(
-          title: 'Boxen',
-          t: t,
-          trailingWidth: 48,
-          leading: HeaderSearchButton(t: t, onTap: _openSearch),
-          trailing: GlassIconButton(icon: LucideIcons.plus, onTap: () => openBoxSheet(context, ref)),
-        ),
+    return SearchableOverviewScreen(
+      title: L.s.boxes,
+      searchHint: L.s.searchBoxesAndItems,
+      searchPrompt: L.s.searchBoxesAndItemsLong,
+      onAdd: () => openBoxSheet(context, ref),
+      extraHeight: _extraHeight,
+      headerExtra: Row(
+        children: [
+          Expanded(
+            child: _StatTile(value: '${state.boxes.length}', icon: LucideIcons.box, label: L.s.boxes, accent: accent),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: _StatTile(value: '${state.totalItems}', icon: LucideIcons.clipboardList, label: L.s.items, accent: accent),
+          ),
+        ],
       ),
-      // While searching the header is only the field: the trigger pill would be
-      // a second search box for the same query, and dropping it (with the stat
-      // tiles) gives the results the screen.
-      estimatedExtraHeight: _searching ? 0 : _extraHeight,
-      extra: _searching
-          ? const SizedBox.shrink()
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 16),
-                SearchTriggerField(hint: _searchHint, onTap: _openSearch),
-                const SizedBox(height: 14),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _StatTile(value: '${state.boxes.length}', icon: LucideIcons.box, label: 'Boxen', accent: accent),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _StatTile(value: '${state.totalItems}', icon: LucideIcons.clipboardList, label: 'Artikel', accent: accent),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-      body: ScreenBodyPanel(
-        child: ListView(
-          padding: EdgeInsets.fromLTRB(16, 18, 16, navContentInset(context, pill: 140)),
-          children: _searching
-              ? [_searchResults(context, state, accent, query)]
-              : _loadFailed(state)
-                  ? [
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8),
-                        child: ErrorNote(message: state.error!, onRetry: () => ref.read(boxProvider.notifier).load()),
+      body: (context) => _loadFailed
+          ? [
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: ErrorNote(message: state.error!, onRetry: () => ref.read(boxProvider.notifier).load()),
+              ),
+            ]
+          : [
+              SectionCard(
+                children: [
+                  ...dividedRows([
+                    for (final box in state.boxes)
+                      SwipeToEditDelete(
+                        onTap: () => ref.read(boxProvider.notifier).open(box.id),
+                        onEdit: () => openBoxSheet(context, ref, box: box),
+                        onDelete: () async {
+                          final confirm = confirmChipOf(context);
+                          final notifier = ref.read(boxProvider.notifier);
+                          if (await notifier.deleteBox(box.id) case final deleted?) {
+                            confirm(L.s.boxDeleted, undo: () => notifier.restoreBox(deleted));
+                          }
+                        },
+                        child: _BoxRow(box: box, itemCount: state.itemsFor(box.id).length, accent: accent),
                       ),
-                    ]
-                  : [
-                      SectionCard(
-                        children: [
-                          for (var i = 0; i < state.boxes.length; i++) ...[
-                            if (i > 0) CardDivider(),
-                            _swipeBoxRow(context, ref, state.boxes[i], state.itemsFor(state.boxes[i].id).length, accent),
-                          ],
-                          // Not while the first load is still out — an account
-                          // with twelve boxes must not be told it has none.
-                          if (state.boxes.isEmpty && !state.loading)
-                            EmptyState(
-                              icon: LucideIcons.box,
-                              iconColor: accent,
-                              message: 'Noch keine Box angelegt.\nLeg eine an, um Verstautes wiederzufinden.',
-                            ),
-                        ],
-                      ),
-                    ],
-        ),
-      ),
+                  ]),
+                  // Not while the first load is still out — an account with
+                  // twelve boxes must not be told it has none.
+                  if (state.boxes.isEmpty && !state.loading)
+                    EmptyState(
+                      icon: LucideIcons.box,
+                      iconColor: accent,
+                      message: L.s.noBoxesYet,
+                    ),
+                ],
+              ),
+            ],
+      results: (context, query, closeSearch) => _searchResults(context, ref, accent, query, closeSearch),
     );
   }
 
   /// Nothing on screen and a message saying why — as opposed to a write that
   /// failed while the screen still has content, which gets a snack instead.
-  bool _loadFailed(BoxScreenState state) => state.error != null && !state.loading && state.boxes.isEmpty;
+  bool get _loadFailed => state.error != null && !state.loading && state.boxes.isEmpty;
 
   /// Search covers what's *in* the boxes, not just their names — a box is only
   /// worth finding because of what you stored in it. Article hits are grouped
   /// under their box and open it, so a result is also the way there.
-  Widget _searchResults(BuildContext context, BoxScreenState state, Color accent, String query) {
+  Widget? _searchResults(BuildContext context, WidgetRef ref, Color accent, String query, VoidCallback closeSearch) {
     final q = query.toLowerCase();
-    if (q.isEmpty) {
-      return SearchResultsPlaceholder(query: '', prompt: 'Nach Boxen und Artikeln suchen');
+
+    void open(String id) {
+      closeSearch();
+      ref.read(boxProvider.notifier).open(id);
     }
 
     final matchedBoxes = state.boxes.where((b) => b.name.toLowerCase().contains(q) || b.place.toLowerCase().contains(q)).toList();
@@ -193,69 +148,54 @@ class _BoxOverviewState extends ConsumerState<_BoxOverview> {
       if (hits.isNotEmpty) itemHits.add((b, hits));
     }
 
-    if (matchedBoxes.isEmpty && itemHits.isEmpty) {
-      return SearchResultsPlaceholder(query: query, prompt: '');
-    }
+    if (matchedBoxes.isEmpty && itemHits.isEmpty) return null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (matchedBoxes.isNotEmpty) ...[
-          SearchGroupHeading(label: 'Boxen', count: matchedBoxes.length == 1 ? '1 Treffer' : '${matchedBoxes.length} Treffer'),
-          SectionCard(
-            children: [
-              for (var i = 0; i < matchedBoxes.length; i++) ...[
-                if (i > 0) CardDivider(),
+        if (matchedBoxes.isNotEmpty)
+          SearchHitGroup(
+            first: true,
+            label: L.s.boxes,
+            count: L.s.matchCount(matchedBoxes.length),
+            rows: [
+              for (final box in matchedBoxes)
                 GestureDetector(
                   // Without this the row is only tappable where a glyph is
                   // actually painted — the padding and the gap before the
                   // chevron fall through.
                   behavior: HitTestBehavior.opaque,
-                  onTap: () => _open(matchedBoxes[i].id),
-                  child: _BoxRow(box: matchedBoxes[i], itemCount: state.itemsFor(matchedBoxes[i].id).length, accent: accent),
+                  onTap: () => open(box.id),
+                  child: _BoxRow(box: box, itemCount: state.itemsFor(box.id).length, accent: accent),
                 ),
-              ],
             ],
           ),
-        ],
         for (final (index, (box, hits)) in itemHits.indexed)
-          Padding(
-            padding: EdgeInsets.only(top: index == 0 && matchedBoxes.isEmpty ? 0 : 18),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SearchGroupHeading(
-                  label: box.name,
-                  count: hits.length == 1 ? '1 Artikel' : '${hits.length} Artikel',
-                  icon: _BoxBadge(box: box, size: 26, iconSize: 14, accent: accent),
+          SearchHitGroup(
+            first: index == 0 && matchedBoxes.isEmpty,
+            label: box.name,
+            count: L.s.itemCount(hits.length),
+            icon: _BoxBadge(box: box, size: 26, iconSize: 14, accent: accent),
+            rows: [
+              for (final hit in hits)
+                SearchResultRow(
+                  leading: IconTile(
+                    iconKey: hit.iconKey,
+                    size: 38,
+                    imageSize: 24,
+                    glyphSize: 18,
+                    fallbackIcon: LucideIcons.clipboardList,
+                    glyphColor: accent,
+                  ),
+                  title: hit.name,
+                  subtitle: hit.meta.isEmpty ? '${box.name} · ${box.place}' : '${hit.meta} · ${box.place}',
+                  onTap: () => open(box.id),
                 ),
-                SectionCard(
-                  children: [
-                    for (var i = 0; i < hits.length; i++) ...[
-                      if (i > 0) CardDivider(),
-                      SearchResultRow(
-                        leading: IconTile(
-                          iconKey: hits[i].iconKey,
-                          size: 38,
-                          imageSize: 24,
-                          glyphSize: 18,
-                          fallbackIcon: LucideIcons.clipboardList,
-                          glyphColor: accent,
-                        ),
-                        title: hits[i].name,
-                        subtitle: hits[i].meta.isEmpty ? '${box.name} · ${box.place}' : '${hits[i].meta} · ${box.place}',
-                        onTap: () => _open(box.id),
-                      ),
-                    ],
-                  ],
-                ),
-              ],
-            ),
+            ],
           ),
       ],
     );
   }
-
 }
 
 /// The create/edit sheet for a box. Same sheet either way — [box] set means
@@ -272,13 +212,21 @@ void openBoxSheet(BuildContext context, WidgetRef ref, {StorageBox? box}) {
   ref.read(boxProvider.notifier).primeVisibility(box);
   showAppSheet(
     context: context,
-    title: box == null ? 'Neue Box' : 'Box bearbeiten',
+    title: box == null ? L.s.newBox : L.s.editBox,
     heightFactor: 0.64,
-    onSave: () {
-      if (box == null) {
-        ref.read(boxProvider.notifier).createBox(name: nameController.text, place: placeController.text, iconKey: draft.picked);
-      } else {
-        ref.read(boxProvider.notifier).updateBox(box.id, name: nameController.text, place: placeController.text, iconKey: draft.picked);
+    onSave: () async {
+      final notifier = ref.read(boxProvider.notifier);
+      // The sheet is already gone by the time the write comes back, so the chip
+      // lands on the screen behind it, next to the row it is talking about.
+      final confirm = confirmChipOf(context);
+      if (box != null) {
+        if (await notifier.updateBox(box.id, name: nameController.text, place: placeController.text, iconKey: draft.picked)) {
+          confirm(L.s.boxUpdated);
+        }
+        return;
+      }
+      if (await notifier.createBox(name: nameController.text, place: placeController.text, iconKey: draft.picked)) {
+        confirm(L.s.boxCreated);
       }
     },
     child: _BoxSheetBody(nameController: nameController, placeController: placeController, draft: draft, box: box),
@@ -321,8 +269,8 @@ class _BoxSheetBodyState extends ConsumerState<_BoxSheetBody> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
               child: TextField(
                 controller: widget.nameController,
-                style: TextStyle(fontFamily: 'Poppins', fontSize: 16, color: AppColors.ink),
-                decoration: const InputDecoration(border: InputBorder.none, hintText: 'Box-Name', isDense: true),
+                style: AppText.inputTitle,
+                decoration: InputDecoration(border: InputBorder.none, hintText: L.s.boxName, isDense: true),
                 onChanged: (_) => setState(() {}),
               ),
             ),
@@ -344,16 +292,16 @@ class _BoxSheetBodyState extends ConsumerState<_BoxSheetBody> {
               child: Row(
                 children: [
                   Text(
-                    'Ort',
-                    style: TextStyle(fontFamily: 'Poppins', fontSize: 14.5, fontWeight: FontWeight.w500, color: AppColors.ink),
+                    L.s.place,
+                    style: AppText.rowTitle,
                   ),
                   const SizedBox(width: 11),
                   Expanded(
                     child: TextField(
                       controller: widget.placeController,
                       textAlign: TextAlign.right,
-                      style: TextStyle(fontFamily: 'Poppins', fontSize: 15, color: AppColors.ink),
-                      decoration: const InputDecoration(border: InputBorder.none, hintText: 'z.B. Keller, Dachboden', isDense: true),
+                      style: AppText.input,
+                      decoration: InputDecoration(border: InputBorder.none, hintText: L.s.placeExample, isDense: true),
                     ),
                   ),
                 ],
@@ -374,7 +322,7 @@ class _BoxSheetBodyState extends ConsumerState<_BoxSheetBody> {
           members: ref.watch(householdMembersProvider),
           currentUserId: ref.watch(currentUserIdProvider),
           allowMembers: !s.isGuest,
-          noun: 'die Box',
+          noun: L.s.theBox,
         ),
       ],
     );
@@ -406,7 +354,7 @@ class _BoxDetail extends ConsumerWidget {
       // name is the big row below it — and swaps to that name as the big one
       // scrolls away, so the bar never stops saying which box you're in.
       titleRowBuilder: (context, t) => CollapsingScreenTitle(
-        title: 'Box',
+        title: L.s.boxLabel,
         collapsedTitle: box.name,
         collapsedIcon: _BoxBadge(box: box, size: 24, iconSize: 13, accent: accent),
         t: t,
@@ -418,10 +366,10 @@ class _BoxDetail extends ConsumerWidget {
         leading: GlassIconButton(icon: LucideIcons.chevronLeft, onTap: () => ref.read(boxProvider.notifier).back()),
         trailing: GlassMenuButton(
           items: [
-            AnchoredMenuItem(label: 'Bearbeiten', icon: LucideIcons.pencil, onSelected: () => openBoxSheet(context, ref, box: box)),
+            AnchoredMenuItem(label: L.s.edit, icon: LucideIcons.pencil, onSelected: () => openBoxSheet(context, ref, box: box)),
             if (ref.watch(canShareExternallyProvider) && !state.guestBoxIds.contains(box.id))
               AnchoredMenuItem(
-                label: 'Teilen',
+                label: L.s.share,
                 icon: LucideIcons.userPlus,
                 onSelected: () => showShareSheet(
                   context,
@@ -431,10 +379,18 @@ class _BoxDetail extends ConsumerWidget {
                 ),
               ),
             AnchoredMenuItem(
-              label: 'Löschen',
+              label: L.s.delete,
               icon: LucideIcons.trash2,
               destructive: true,
-              onSelected: () => ref.read(boxProvider.notifier).deleteBox(box.id),
+              onSelected: () async {
+                // Captured before the write: this menu lives in the detail
+                // view, which the delete itself unmounts.
+                final confirm = confirmChipOf(context);
+                final notifier = ref.read(boxProvider.notifier);
+                if (await notifier.deleteBox(box.id) case final deleted?) {
+                  confirm(L.s.boxDeleted, undo: () => notifier.restoreBox(deleted));
+                }
+              },
             ),
           ],
         ),
@@ -453,7 +409,7 @@ class _BoxDetail extends ConsumerWidget {
                   box.name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontFamily: 'Poppins', fontSize: 23, fontWeight: FontWeight.w600, letterSpacing: -0.4, color: AppColors.ink),
+                  style: AppText.detailTitle,
                 ),
               ),
             ],
@@ -466,12 +422,14 @@ class _BoxDetail extends ConsumerWidget {
           children: [
             SectionCard(
               children: [
-                const _AddItemRow(),
-                for (var i = 0; i < items.length; i++) ...[CardDivider(), _ItemRow(item: items[i], accent: accent)],
+                ...dividedRows([
+                  const _AddItemRow(),
+                  for (final item in items) _ItemRow(item: item, accent: accent),
+                ]),
                 if (items.isEmpty)
-                  const EmptyState(
+                  EmptyState(
                     icon: LucideIcons.clipboardList,
-                    message: 'Oben tippen, um das erste Element hinzuzufügen',
+                    message: L.s.tapAboveToAddFirst,
                   ),
               ],
             ),
@@ -515,72 +473,59 @@ class _ItemRow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // Swiping the row left reveals Delete, the same gesture the Kalender event
-    // cards use. The row is inside a [SectionCard], which owns the rounded
-    // corners and the white fill the row doesn't paint itself — hence the
-    // square corners here and the explicit [ColoredBox], without which the
-    // action would show straight through the sliding row.
-    return SwipeActionsRow(
+    // cards and the Listen article rows use.
+    return SwipeToEditDelete(
       onTap: () => _openItemSheet(context, ref, item),
-      actions: [
-        SwipeAction(
-          icon: LucideIcons.trash2,
-          color: AppColors.danger,
-          closesRow: false,
-          onTap: () => ref.read(boxProvider.notifier).removeItem(item),
-        ),
-      ],
-      child: ColoredBox(
-        color: AppColors.surface,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 15),
-          child: Row(
-            children: [
-              IconTile(
-                iconKey: item.iconKey,
-                size: 44,
-                imageSize: 28,
-                glyphSize: 20,
-                fallbackIcon: LucideIcons.clipboardList,
-                glyphColor: accent,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+      onDelete: () => ref.read(boxProvider.notifier).removeItem(item),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 15),
+        child: Row(
+          children: [
+            IconTile(
+              iconKey: item.iconKey,
+              size: 44,
+              imageSize: 28,
+              glyphSize: 20,
+              fallbackIcon: LucideIcons.clipboardList,
+              glyphColor: accent,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppText.itemTitle,
+                  ),
+                  if (item.meta.isNotEmpty)
                     Text(
-                      item.name,
+                      item.meta,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontFamily: 'Poppins', fontSize: 15, fontWeight: FontWeight.w500, color: AppColors.ink),
+                      style: AppText.label,
                     ),
-                    if (item.meta.isNotEmpty)
-                      Text(
-                        item.meta,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontFamily: 'Poppins', fontSize: 12, fontWeight: FontWeight.w300, color: AppColors.muted),
-                      ),
-                  ],
-                ),
-              ),
-              RowMenuButton(
-                items: [
-                  AnchoredMenuItem(
-                    label: 'Bearbeiten',
-                    icon: LucideIcons.pencil,
-                    onSelected: () => _openItemSheet(context, ref, item),
-                  ),
-                  AnchoredMenuItem(
-                    label: 'Löschen',
-                    icon: LucideIcons.trash2,
-                    destructive: true,
-                    onSelected: () => ref.read(boxProvider.notifier).removeItem(item),
-                  ),
                 ],
               ),
-            ],
-          ),
+            ),
+            RowMenuButton(
+              items: [
+                AnchoredMenuItem(
+                  label: L.s.edit,
+                  icon: LucideIcons.pencil,
+                  onSelected: () => _openItemSheet(context, ref, item),
+                ),
+                AnchoredMenuItem(
+                  label: L.s.delete,
+                  icon: LucideIcons.trash2,
+                  destructive: true,
+                  onSelected: () => ref.read(boxProvider.notifier).removeItem(item),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
@@ -590,7 +535,7 @@ class _ItemRow extends ConsumerWidget {
     final form = _ItemForm(item);
     showAppSheet(
       context: context,
-      title: 'Artikel bearbeiten',
+      title: L.s.editItem,
       // An emptied *name* means "left it alone", not "call this item ''" —
       // whereas an emptied Größe or Notiz does mean "drop it", since both are
       // optional to begin with.
@@ -669,8 +614,8 @@ class _ItemSheetBodyState extends ConsumerState<_ItemSheetBody> {
                   Expanded(
                     child: TextField(
                       controller: nameController,
-                      style: TextStyle(fontFamily: 'Poppins', fontSize: 16, color: AppColors.ink),
-                      decoration: const InputDecoration(border: InputBorder.none, hintText: 'Artikelname', isDense: true),
+                      style: AppText.inputTitle,
+                      decoration: InputDecoration(border: InputBorder.none, hintText: L.s.itemName, isDense: true),
                       onChanged: (_) => setState(() {}),
                     ),
                   ),
@@ -700,16 +645,16 @@ class _ItemSheetBodyState extends ConsumerState<_ItemSheetBody> {
               child: Row(
                 children: [
                   Text(
-                    'Größe',
-                    style: TextStyle(fontFamily: 'Poppins', fontSize: 14.5, fontWeight: FontWeight.w500, color: AppColors.ink),
+                    L.s.size,
+                    style: AppText.rowTitle,
                   ),
                   const SizedBox(width: 11),
                   Expanded(
                     child: TextField(
                       controller: widget.form.size,
                       textAlign: TextAlign.right,
-                      style: TextStyle(fontFamily: 'Poppins', fontSize: 15, color: AppColors.ink),
-                      decoration: const InputDecoration(border: InputBorder.none, hintText: 'z.B. EU 38, XL, 500ml', isDense: true),
+                      style: AppText.input,
+                      decoration: InputDecoration(border: InputBorder.none, hintText: L.s.sizeExample, isDense: true),
                     ),
                   ),
                 ],
@@ -722,8 +667,8 @@ class _ItemSheetBodyState extends ConsumerState<_ItemSheetBody> {
                 children: [
                   Expanded(
                     child: Text(
-                      'Menge',
-                      style: TextStyle(fontFamily: 'Poppins', fontSize: 14.5, fontWeight: FontWeight.w500, color: AppColors.ink),
+                      L.s.quantity,
+                      style: AppText.rowTitle,
                     ),
                   ),
                   _QtyStepper(
@@ -742,8 +687,8 @@ class _ItemSheetBodyState extends ConsumerState<_ItemSheetBody> {
                 controller: widget.form.note,
                 maxLines: null,
                 textCapitalization: TextCapitalization.sentences,
-                style: TextStyle(fontFamily: 'Poppins', fontSize: 15, color: AppColors.ink),
-                decoration: const InputDecoration(border: InputBorder.none, hintText: 'Notizen, Zustand, Ort...', isDense: true),
+                style: AppText.input,
+                decoration: InputDecoration(border: InputBorder.none, hintText: L.s.itemNotePlaceholder, isDense: true),
               ),
             ),
           ],
@@ -760,8 +705,8 @@ class _ItemSheetBodyState extends ConsumerState<_ItemSheetBody> {
             decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(20), boxShadow: AppShadows.card),
             alignment: Alignment.center,
             child: Text(
-              'Artikel löschen',
-              style: TextStyle(fontFamily: 'Poppins', fontSize: 15, fontWeight: FontWeight.w500, color: AppColors.danger),
+              L.s.deleteItem,
+              style: AppText.rowTitle.copyWith(color: AppColors.danger),
             ),
           ),
         ),
@@ -793,7 +738,7 @@ class _QtyStepper extends StatelessWidget {
           child: Text(
             '$value',
             textAlign: TextAlign.center,
-            style: TextStyle(fontFamily: 'Poppins', fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.ink),
+            style: AppText.itemTitle,
           ),
         ),
         _QtyButton(icon: LucideIcons.plus, accent: accent, enabled: true, onTap: () => onChanged(value + 1)),
@@ -874,8 +819,8 @@ class _AddItemRowState extends ConsumerState<_AddItemRow> {
           Expanded(
             child: TextField(
               controller: _controller,
-              style: TextStyle(fontFamily: 'Poppins', fontSize: 16, color: AppColors.ink),
-              decoration: const InputDecoration(border: InputBorder.none, hintText: 'Artikel hinzufügen...', isDense: true),
+              style: AppText.inputTitle,
+              decoration: InputDecoration(border: InputBorder.none, hintText: L.s.addItemPlaceholder, isDense: true),
               textInputAction: TextInputAction.done,
               onChanged: (v) => setState(() => _draft = v),
               onSubmitted: _add,
@@ -894,36 +839,9 @@ class _AddItemRowState extends ConsumerState<_AddItemRow> {
   }
 }
 
-/// Swiping a box row left reveals Bearbeiten and Löschen — the same gesture and
-/// the same two actions as a list row and as the item rows inside a box, so
-/// renaming a box doesn't mean opening it first and going through its menu.
-///
-/// The opaque [ColoredBox] is what keeps the actions from showing through the
-/// sliding row: the row paints nothing, the [SectionCard] around it does.
-Widget _swipeBoxRow(BuildContext context, WidgetRef ref, StorageBox box, int itemCount, Color accent) {
-  return SwipeActionsRow(
-    onTap: () => ref.read(boxProvider.notifier).open(box.id),
-    actions: [
-      SwipeAction(
-        icon: LucideIcons.pencil,
-        color: accent,
-        onTap: () => openBoxSheet(context, ref, box: box),
-      ),
-      SwipeAction(
-        icon: LucideIcons.trash2,
-        color: AppColors.danger,
-        // Nothing left to close once the row is gone.
-        closesRow: false,
-        onTap: () => ref.read(boxProvider.notifier).deleteBox(box.id),
-      ),
-    ],
-    child: ColoredBox(color: AppColors.surface, child: _BoxRow(box: box, itemCount: itemCount, accent: accent)),
-  );
-}
-
 /// One box on the overview card. Carries no tap target of its own — the row is
-/// wrapped either by [_swipeBoxRow] or by a plain [GestureDetector], and a
-/// second detector inside would swallow the tap that closes an open swipe.
+/// wrapped either by a [SwipeToEditDelete] or by a plain [GestureDetector], and
+/// a second detector inside would swallow the tap that closes an open swipe.
 class _BoxRow extends StatelessWidget {
   final StorageBox box;
   final int itemCount;
@@ -947,11 +865,11 @@ class _BoxRow extends StatelessWidget {
                   box.name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontFamily: 'Poppins', fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.ink),
+                  style: AppText.itemTitle,
                 ),
                 Text(
-                  itemCount == 0 ? 'Leer · ${box.place}' : '$itemCount Artikel · ${box.place}',
-                  style: TextStyle(fontFamily: 'Poppins', fontSize: 12.5, fontWeight: FontWeight.w300, color: AppColors.muted),
+                  itemCount == 0 ? L.s.emptyWithPlace(box.place) : L.s.itemsWithPlace(itemCount, box.place),
+                  style: AppText.label,
                 ),
               ],
             ),
@@ -981,7 +899,7 @@ class _StatTile extends StatelessWidget {
         children: [
           Text(
             value,
-            style: TextStyle(fontFamily: 'Poppins', fontSize: 24, fontWeight: FontWeight.w600, letterSpacing: -0.5, height: 1.1, color: AppColors.ink),
+            style: AppText.statValue,
           ),
           const SizedBox(height: 3),
           Row(
@@ -990,7 +908,7 @@ class _StatTile extends StatelessWidget {
               const SizedBox(width: 5),
               Text(
                 label,
-                style: TextStyle(fontFamily: 'Poppins', fontSize: 12.5, fontWeight: FontWeight.w300, color: AppColors.muted),
+                style: AppText.label,
               ),
             ],
           ),

@@ -85,6 +85,12 @@ class _NativeSearchFieldState extends State<NativeSearchField> {
   void didUpdateWidget(NativeSearchField oldWidget) {
     super.didUpdateWidget(oldWidget);
     _syncBrightness();
+    // Same one-shot problem as the brightness: `placeholder` goes to UIKit in
+    // `creationParams` and never again, so a field that is still mounted when
+    // the interface language changes keeps the old wording.
+    if (widget.placeholder != oldWidget.placeholder) {
+      _channel?.invokeMethod('setPlaceholder', {'placeholder': widget.placeholder});
+    }
   }
 
   @override

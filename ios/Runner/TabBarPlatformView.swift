@@ -126,6 +126,17 @@ class TabBarPlatformView: NSObject, FlutterPlatformView, UITabBarDelegate {
         let index = (call.arguments as? [String: Any]).flatMap { ($0["index"] as? NSNumber)?.intValue }
         self.setSelectedIndex(index ?? 0)
         result(nil)
+      // The interface language is an in-app setting too, so the titles have to
+      // be pushed down the same way the theme is. Rebuilding the items would
+      // drop the selection, so the existing ones are retitled in place.
+      case "setLabels":
+        let labels = (call.arguments as? [String: Any])?["labels"] as? [String] ?? []
+        if let items = self.tabBar.items {
+          for (i, item) in items.enumerated() where i < labels.count {
+            item.title = labels[i]
+          }
+        }
+        result(nil)
       default:
         result(FlutterMethodNotImplemented)
       }

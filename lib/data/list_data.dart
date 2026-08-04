@@ -9,7 +9,9 @@ const _g = 'assets/grocery/';
 ///
 /// Lists and their articles themselves come from Supabase now; nothing ships
 /// with the app. See `data/repositories/list_repository.dart`.
-const allList = ShoppingList.summary(iconKey: '${_g}General_Shopping_cart.png');
+/// A getter rather than a `const`: its name is "Alle Artikel" / "All items",
+/// so it has to be rebuilt whenever the interface language changes.
+ShoppingList get allList => ShoppingList.summary(iconKey: '${_g}General_Shopping_cart.png');
 
 /// Suggestions while typing aren't seeded here — they come out of the whole
 /// `assets/grocery/` catalog, see `data/grocery_search.dart`.

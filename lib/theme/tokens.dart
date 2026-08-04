@@ -493,11 +493,56 @@ class AppShadows {
   static List<BoxShadow> get thumb => AppColors.palette.shadowThumb;
 }
 
+/// The app's type scale. **Every piece of text goes through one of these** —
+/// there is no hand-written `TextStyle` left in `lib/screens/` or
+/// `lib/widgets/`, and a new one is almost always a sign that an existing role
+/// fits.
+///
+/// It is a *closed* scale on purpose. It replaced 139 hand-written styles that
+/// had drifted to 22 sizes and 5 weights for about 17 real roles: the same list
+/// row was 15/w500 in Settings, 15/w600 in Listen and 15.5/w600 in Board, and a
+/// single Board task changed weight when you checked it off. Sizes half a point
+/// apart (13/13.5, 14/14.5, 15/15.5, 12/12.5) carried no meaning, so they are
+/// collapsed — reach for the neighbouring token rather than reintroducing one.
+///
+/// Two rules for extending it:
+///
+/// - **Adjust colour and nothing else at the call site.** `.copyWith(color: …)`
+///   is expected — a token names a *role*, and the same role is ink here and
+///   accent or danger there. `.copyWith(fontSize:)` / `.copyWith(fontWeight:)`
+///   is how the drift started; the only legitimate use is an animated size (see
+///   [screenTitle]'s use in the collapsing headers).
+/// - **A new weight needs a new .ttf.** `pubspec.yaml` ships only w300/400/500/
+///   600/800; asking for w700 gets a synthesised or snapped weight, not Poppins
+///   Bold.
+///
+/// ### The scale
+///
+/// | Role | Size / weight |
+/// |---|---|
+/// | [screenTitle] | 26 w600 |
+/// | [statValue] | 24 w600 |
+/// | [detailTitle] | 23 w600 |
+/// | [cardTitle] | 18 w600 |
+/// | [sheetTitle] / [inputTitle] | 17 w600 / w500 |
+/// | [sectionHeading] / [buttonLarge] / [searchInput] | 16 w500 / w600 / w300 |
+/// | [itemTitle] / [rowTitle] / [input] | 15 w600 / w500 / w400 |
+/// | [body] / [buttonSmall] | 14 w300 / w500 |
+/// | [groupHeading] / [caption] | 13 w600 / w500 |
+/// | [label] | 12.5 w300 |
+/// | [microLabel] | 11.5 w500 |
 class AppText {
   AppText._();
 
+  /// Bundled in `pubspec.yaml`, **not** fetched by `google_fonts` — see the
+  /// comment there for why the distinction matters.
   static const _family = 'Poppins';
 
+  // ---------------------------------------------------------------- Titles
+
+  /// A tab's own title, the largest type in the app. The collapsing headers
+  /// animate its `fontSize` down to [sheetTitle]'s 17 as the header pins, which
+  /// is the one sanctioned `copyWith(fontSize:)`.
   static TextStyle get screenTitle => TextStyle(
     fontFamily: _family,
     fontSize: 26,
@@ -506,11 +551,91 @@ class AppText {
     color: AppColors.ink,
   );
 
+  /// A big numeric readout that is the *point* of its tile — a Box stat, a
+  /// temperature. Tighter leading than the other titles because it is usually a
+  /// number sitting directly on its own caption.
+  static TextStyle get statValue => TextStyle(
+    fontFamily: _family,
+    fontSize: 24,
+    fontWeight: FontWeight.w600,
+    letterSpacing: -0.5,
+    height: 1.1,
+    color: AppColors.ink,
+  );
+
+  /// The title of a *detail* screen — one box, one list, one event. A step
+  /// below [screenTitle]: it names a thing you opened, not a tab.
+  static TextStyle get detailTitle => TextStyle(
+    fontFamily: _family,
+    fontSize: 23,
+    fontWeight: FontWeight.w600,
+    letterSpacing: -0.4,
+    color: AppColors.ink,
+  );
+
+  static TextStyle get cardTitle => TextStyle(
+    fontFamily: _family,
+    fontSize: 18,
+    fontWeight: FontWeight.w600,
+    letterSpacing: -0.2,
+    color: AppColors.ink,
+  );
+
   static TextStyle get sheetTitle => TextStyle(
     fontFamily: _family,
     fontSize: 17,
     fontWeight: FontWeight.w600,
     letterSpacing: -0.2,
+    color: AppColors.ink,
+  );
+
+  static TextStyle get sectionHeading => TextStyle(
+    fontFamily: _family,
+    fontSize: 16,
+    fontWeight: FontWeight.w500,
+    color: AppColors.ink,
+  );
+
+  // ------------------------------------------------------------------ Rows
+
+  /// The title of a row you *act on* — a list or box card, a task, a search
+  /// hit, an event. Deliberately one weight above [rowTitle]: content the user
+  /// created should carry more weight than the settings that configure it.
+  static TextStyle get itemTitle => TextStyle(
+    fontFamily: _family,
+    fontSize: 15,
+    fontWeight: FontWeight.w600,
+    color: AppColors.ink,
+  );
+
+  /// The title of a *settings-shaped* row, and the label of a button. Lighter
+  /// than [itemTitle] on purpose — see there.
+  static TextStyle get rowTitle => TextStyle(
+    fontFamily: _family,
+    fontSize: 15,
+    fontWeight: FontWeight.w500,
+    color: AppColors.ink,
+  );
+
+  // ---------------------------------------------------------------- Inputs
+
+  /// The headline field of a create/edit sheet — the task text, the event
+  /// title, a list's or box's name. All four used to disagree (17/w500 in Board
+  /// and Kalender, 16/w400 in Listen and Box) for what is the same field.
+  static TextStyle get inputTitle => TextStyle(
+    fontFamily: _family,
+    fontSize: 17,
+    fontWeight: FontWeight.w500,
+    color: AppColors.ink,
+  );
+
+  /// Every other editable field, and the label of a menu item — text the user
+  /// supplies rather than text the app asserts, so a step lighter than
+  /// [rowTitle] at the same size.
+  static TextStyle get input => TextStyle(
+    fontFamily: _family,
+    fontSize: 15,
+    fontWeight: FontWeight.w400,
     color: AppColors.ink,
   );
 
@@ -523,27 +648,33 @@ class AppText {
     color: AppColors.ink,
   );
 
-  static TextStyle get sectionHeading => TextStyle(
+  // --------------------------------------------------------------- Actions
+
+  /// A full-width primary call to action (Anmelden, Weiter). Buttons at
+  /// [rowTitle]'s 15/w500 are the common case; this is for the one button a
+  /// screen is *about*.
+  static TextStyle get buttonLarge => TextStyle(
     fontFamily: _family,
     fontSize: 16,
-    fontWeight: FontWeight.w500,
-    color: AppColors.ink,
-  );
-
-  static TextStyle get cardTitle => TextStyle(
-    fontFamily: _family,
-    fontSize: 18,
     fontWeight: FontWeight.w600,
     color: AppColors.ink,
   );
 
-  static TextStyle get rowTitle => TextStyle(
+  /// A compact action — a chip, an icon-picker entry, a sheet's secondary
+  /// button.
+  static TextStyle get buttonSmall => TextStyle(
     fontFamily: _family,
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: FontWeight.w500,
     color: AppColors.ink,
   );
 
+  // ------------------------------------------------------- Body & captions
+
+  /// Running prose: a page's explanatory sentence, an error message, an empty
+  /// state. **The `height` is the reason to use the token** — six places used to
+  /// hand-write 14/w300 and drop it, so the same paragraph was set tighter
+  /// outside Settings than in it.
   static TextStyle get body => TextStyle(
     fontFamily: _family,
     fontSize: 14,
@@ -552,6 +683,26 @@ class AppText {
     color: AppColors.inkSecondary,
   );
 
+  /// The caption naming a *group* of rows — a search result section, a list's
+  /// name above its items, a Settings group.
+  static TextStyle get groupHeading => TextStyle(
+    fontFamily: _family,
+    fontSize: 13,
+    fontWeight: FontWeight.w600,
+    letterSpacing: 0.3,
+    color: AppColors.muted,
+  );
+
+  /// A small piece of status text that is not a row's subtitle — the
+  /// "Erledigt (3)" bar and the inline action beside it, a week range.
+  static TextStyle get caption => TextStyle(
+    fontFamily: _family,
+    fontSize: 13,
+    fontWeight: FontWeight.w500,
+    color: AppColors.muted,
+  );
+
+  /// The secondary line *under* a row's title.
   static TextStyle get label => TextStyle(
     fontFamily: _family,
     fontSize: 12.5,
@@ -559,6 +710,7 @@ class AppText {
     color: AppColors.muted,
   );
 
+  /// The smallest type in the app — a timeline hour, an all-day pill.
   static TextStyle get microLabel => TextStyle(
     fontFamily: _family,
     fontSize: 11.5,

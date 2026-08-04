@@ -8,6 +8,7 @@ import 'app_sheet.dart';
 import 'error_note.dart';
 import 'glass.dart';
 import 'settings_chrome.dart';
+import '../l10n/l10n.dart';
 
 /// The last step of *every* "add a calendar" flow: what you picked, what it
 /// will be called, and one blue check to say yes.
@@ -42,13 +43,20 @@ Future<bool> showConnectConfirmSheet({
   required String message,
   required String initialName,
   required Future<void> Function(String name) onConfirm,
-  String fieldLabel = 'Name',
-  String fieldHint = 'So heißt der Kalender in Aporah. Du kannst ihn später umbenennen.',
-  String busyLabel = 'Wird verbunden …',
-  String successLabel = 'Kalender verbunden',
+  // Nullable rather than defaulted: a default parameter value has to be a
+  // compile-time constant, and these follow the interface language.
+  String? fieldLabel,
+  String? fieldHint,
+  String? busyLabel,
+  String? successLabel,
   String Function(Object error)? errorText,
   List<Widget> extraFields = const [],
 }) async {
+  fieldLabel ??= L.s.name;
+  fieldHint ??= L.s.calendarNameInAporah;
+  busyLabel ??= L.s.connectingEllipsis;
+  successLabel ??= L.s.calendarConnected;
+
   final flow = _ConnectFlow(
     initialName: initialName,
     onConfirm: onConfirm,
@@ -119,7 +127,7 @@ class _ConnectFlow {
       phase.value = _Phase.success;
     } catch (e) {
       if (_disposed) return;
-      error.value = errorText?.call(e) ?? 'Das hat gerade nicht geklappt.';
+      error.value = errorText?.call(e) ?? L.s.somethingWentWrong;
       phase.value = _Phase.editing;
     }
   }

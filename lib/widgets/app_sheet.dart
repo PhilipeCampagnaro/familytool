@@ -316,7 +316,7 @@ class OutlinedSheetAction extends StatelessWidget {
             const SizedBox(width: 9),
             Text(
               label,
-              style: TextStyle(fontFamily: 'Poppins', fontSize: 15, fontWeight: FontWeight.w500, color: color),
+              style: AppText.rowTitle.copyWith(color: color),
             ),
           ],
         ),
@@ -332,3 +332,31 @@ class CardDivider extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Divider(height: 1, thickness: 1, color: AppColors.divider);
 }
+
+/// [CardDivider] inset from the card's edges — the separator between
+/// [FieldGroup]s and member rows, where a full-bleed rule cuts the card in
+/// half.
+class InsetDivider extends StatelessWidget {
+  const InsetDivider({super.key});
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 18),
+        child: CardDivider(),
+      );
+}
+
+/// [rows] with a divider dropped between every neighbouring pair — the body of
+/// almost every [SectionCard] in the app.
+///
+/// Written out by hand this is a `for (var i = 0; …) if (i > 0) CardDivider()`
+/// loop, which was copied into a dozen screens and is the kind of thing that
+/// only ever goes wrong in one direction: a card that grows a second row and
+/// keeps rendering it flush against the first. Passing an empty list yields an
+/// empty card rather than a stray rule.
+List<Widget> dividedRows(List<Widget> rows, {bool inset = false}) => [
+      for (var i = 0; i < rows.length; i++) ...[
+        if (i > 0) inset ? InsetDivider() : CardDivider(),
+        rows[i],
+      ],
+    ];

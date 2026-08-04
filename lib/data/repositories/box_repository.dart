@@ -4,6 +4,7 @@ import '../../models/box_item.dart';
 import '../../models/visibility.dart';
 import '../../services/supabase.dart';
 import 'list_repository.dart' show newUuidV4;
+import '../../l10n/l10n.dart';
 
 /// One round trip's worth of Boxen: every box the signed-in user may see, and
 /// what is in them.
@@ -44,7 +45,7 @@ class BoxRepository {
 
   String get _uid {
     final id = AporahSupabase.userId;
-    if (id == null) throw StateError('Kein angemeldeter Benutzer.');
+    if (id == null) throw StateError(L.s.notSignedIn);
     return id;
   }
 

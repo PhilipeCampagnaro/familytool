@@ -1,4 +1,5 @@
 import 'visibility.dart';
+import '../l10n/l10n.dart';
 
 /// What kind of list this is — **exactly** `public.list_kind` in Supabase.
 ///
@@ -83,8 +84,9 @@ class ShoppingList {
   /// Not seed data and not a row — it has no counterpart in `public.list_kind`
   /// (see the type migration) and exists regardless of how many real lists
   /// there are. [familyId] and [ownerId] are empty for exactly that reason.
-  const ShoppingList.summary({this.name = 'Alle Artikel', this.iconKey})
-      : id = summaryListId,
+  ShoppingList.summary({String? name, this.iconKey})
+      : name = name ?? L.s.allItems,
+        id = summaryListId,
         kind = ListKind.grocery,
         familyId = '',
         ownerId = '',

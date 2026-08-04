@@ -2,8 +2,8 @@
 
 A Flutter family-organizer app (Home, Kalender, Listen, Board, Box tabs) built from a Figma
 handoff (`design_handoff_aporah_flutter/README.md` — tokens in
-[lib/theme/tokens.dart](lib/theme/tokens.dart) come from it). **German UI strings throughout;
-keep new copy in German.**
+[lib/theme/tokens.dart](lib/theme/tokens.dart) come from it). **German and English, switched in
+Settings — never hardcode a user-facing string.** See the localization section below.
 
 Scope: **core features only** — Board, Box, Listen, Kalender. Explicitly out of scope: the KAI AI
 assistant and Apple Pay/Wallet — don't port them even if the old codebase shows them.
@@ -19,8 +19,8 @@ task:
 - [docs/design-system.md](docs/design-system.md) — glass/frosted-header gotchas, shared widget
   index, animation conventions. Read before touching `lib/widgets/` or adding animations.
 - [docs/ported-features.md](docs/ported-features.md) — knowledge captured from the old web app
-  for features not built yet (grocery lists, onboarding, Settings, Weather API, calendar
-  connections). Read the one section for the feature you're building.
+  (grocery lists, onboarding, Settings, weather, calendar connections). Read the one section for
+  the feature you're building; each says whether it is built or still groundwork.
 
 ## Stack
 
@@ -32,6 +32,28 @@ task:
   ([lib/state/](lib/state/)). Screens are `ConsumerWidget`s; read with `ref.watch`, mutate via
   `ref.read(xProvider.notifier).someMethod()`. Use this pattern for anything new rather than
   introducing another state-management approach.
+- **Localization: German + English, and every user-facing string goes through
+  [lib/l10n/](lib/l10n/).** `AppStrings` declares them, `StringsDe`/`StringsEn` answer them, and
+  `L.s.someString` reads the live one. Because `AppStrings` is abstract, a string you add to one
+  language and forget in the other **fails to compile** — that is the point, so don't work around
+  it with a map or a `??`.
+  - `L.s` is a global swapped in `AporahApp.build`, exactly like `AppColors.palette`, so it works
+    in notifiers, models and repositories where there is no `BuildContext` — which is most of the
+    error copy. There is no `AppLocalizations.of(context)`.
+  - Nothing that reads `L.s` may be `const`, and a `const` default parameter value can't hold one
+    either — make the parameter nullable and resolve it with `?? L.s.x` in the body
+    (`showConnectConfirmSheet`, `SettingsDetailPage.parentTitle` are the precedents).
+  - Dates and the 12/24-hour clock follow the language too: month and weekday names come from
+    `L.s` via [lib/data/calendar_data.dart](lib/data/calendar_data.dart), times through
+    `formatTime`, and `main.dart` overrides `MediaQuery.alwaysUse24HourFormat` so the system
+    pickers agree with the app rather than with the phone.
+  - **A UIKit platform view is told its text once, in `creationParams`.** The native tab bar and
+    search field therefore push updates over their method channel (`setLabels`,
+    `setPlaceholder`) the same way they already push `setBrightness`. Any new native view showing
+    text needs the same, or it will keep the language it was created in.
+  - What stays German on purpose: the Bundesland names, the waste-bin keywords in
+    `abfall_bins.dart` (they match German vendor feeds, not the UI), shop names in
+    `merchant_logos.dart`, and the unit words in `grocery_search.dart`'s quantity regex.
 - Backend: **Supabase, live.** Schema, roles, RLS and the Edge Functions in
   `supabase/functions/` are deployed with the Supabase CLI (`supabase functions deploy`); see
   [docs/backend.md](docs/backend.md) before touching them or before building anything that
@@ -73,6 +95,15 @@ task:
   `supabase/functions/_shared/abfall.ts`; see the Abfall section of
   [docs/ported-features.md](docs/ported-features.md) before touching them, and re-run the live
   end-to-end probe described there afterwards.
+- **Weather is per event, comes from Open-Meteo, and is decoration.** `weatherProvider`
+  ([lib/state/weather_state.dart](lib/state/weather_state.dart)) resolves each appointment's place
+  and hour and hands the agenda row and detail sheet a `WeatherReading`; `CalendarEvent` carries no
+  weather, because weather is not a property of an event. This is the **one external service the
+  app calls directly** — no key, no personal data on the wire, so an Edge Function in front of it
+  would buy nothing. Location is the event's own `loc` with the household's town from
+  `families.address` as fallback, **never device GPS**, and every failure resolves to "no icon on
+  that row" rather than an error. See the weather section of
+  [docs/ported-features.md](docs/ported-features.md) before changing any of it.
 - **All four screens are on Supabase.** One repository each in
   [lib/data/repositories/](lib/data/repositories/), and they are deliberately the same shape: the
   repository is the only file that knows about PostgREST, the models carry `fromMap`/`toMap` over
@@ -113,13 +144,17 @@ task:
 - [lib/data/](lib/data/) — reference data. The seed lists/boxes/tasks/events are all empty now
   that there is a backend; `calToday()` follows the real device clock (the old mock "today" pinned
   to 2026-08-13 is gone). The real, non-mock data behind Listen lives here:
-  `grocery_catalog.dart` names every `assets/grocery/` icon in German,
-  `grocery_search.dart` matches typed articles against it in **German or English, umlauts
-  optional**, and `merchant_logos.dart` names the shop logos. `icon_suggestions.dart` sits over all
-  three plus a curated Lucide set: `suggestIcon(name)` is the pure function behind every list, box
-  and item picking its own icon as the name is typed, and `lib/widgets/icon_picker.dart` is the
-  manual override. Adding a grocery PNG, a shop logo or a symbol means adding one line — see the
-  grocery section of [docs/ported-features.md](docs/ported-features.md).
+  `grocery_catalog.dart` names every `assets/grocery/` icon in German and derives the English name
+  from the file name (`englishGroceryLabel`; `_englishLabelOverrides` covers the files whose names
+  lie), `grocery_search.dart` matches typed articles against **both languages at once, umlauts
+  optional** — the interface language decides only what is *shown*, never what can be found — and
+  `merchant_logos.dart` names the shop logos (brands, so untranslated). `icon_suggestions.dart`
+  sits over all three plus a curated Lucide set, whose symbols carry both labels by hand:
+  `suggestIcon(name)` is the pure function behind every list, box and item picking its own icon as
+  the name is typed, and `lib/widgets/icon_picker.dart` is the manual override. Adding a grocery
+  PNG still means **one** German line — the English side comes off the file name — while a new
+  Lucide symbol needs both. See the grocery section of
+  [docs/ported-features.md](docs/ported-features.md).
 - [lib/theme/](lib/theme/) — `tokens.dart` + `app_theme.dart`. Always use tokens; never hardcode
   a new hex/size.
 - [lib/widgets/](lib/widgets/) — shared building blocks. **Check here before writing a new

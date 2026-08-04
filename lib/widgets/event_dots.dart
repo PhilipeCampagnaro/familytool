@@ -43,7 +43,14 @@ class EventDots extends StatelessWidget {
                 decoration: BoxDecoration(color: AppColors.mutedLight, shape: BoxShape.circle, border: Border.all(color: AppColors.surface, width: 1.5)),
                 child: Text(
                   '+',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: dotSize * 0.85, height: 1),
+                  // Sized off the dot it sits in, and the one w800 in the app:
+                  // a "+" this small only reads as a glyph at extra bold.
+                  style: AppText.microLabel.copyWith(
+                    fontSize: dotSize * 0.85,
+                    fontWeight: FontWeight.w800,
+                    height: 1,
+                    color: Colors.white,
+                  ),
                 ),
               ),
             ),

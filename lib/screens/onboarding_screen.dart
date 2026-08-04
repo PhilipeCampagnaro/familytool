@@ -5,6 +5,7 @@ import '../state/onboarding_state.dart';
 import '../theme/tokens.dart';
 import '../widgets/app_sheet.dart';
 import '../widgets/native_switch.dart';
+import '../l10n/l10n.dart';
 
 /// First-run wizard: welcome -> family (invite) -> address (calendar
 /// toggles) -> done. Mirrors the old web app's admin path (see CLAUDE.md's
@@ -67,7 +68,7 @@ class _TopBar extends StatelessWidget {
           if (onSkip != null)
             TextButton(
               onPressed: onSkip,
-              child: Text('Überspringen', style: TextStyle(fontFamily: 'Poppins', fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.muted)),
+              child: Text(L.s.skip, style: AppText.buttonSmall.copyWith(color: AppColors.muted)),
             )
           else
             const SizedBox(width: 48),
@@ -107,7 +108,7 @@ class _PrimaryButton extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 16),
         alignment: Alignment.center,
         decoration: BoxDecoration(color: accent, borderRadius: BorderRadius.circular(AppRadii.pill)),
-        child: Text(label, style: const TextStyle(fontFamily: 'Poppins', fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white)),
+        child: Text(label, style: AppText.buttonLarge.copyWith(color: Colors.white)),
       ),
     );
   }
@@ -130,14 +131,14 @@ class _WelcomeStep extends ConsumerWidget {
               children: [
                 const _Hero('assets/onboarding/hero_welcome.png'),
                 const SizedBox(height: 28),
-                Text('Richten wir deine Familie ein', style: AppText.screenTitle),
+                Text(L.s.onboardSetUpFamily, style: AppText.screenTitle),
                 const SizedBox(height: 10),
                 Text(
-                  'In wenigen Schritten lädst du deine Familie ein und verbindest die Kalender, die für euren Alltag wichtig sind.',
+                  L.s.onboardSetUpFamilyBody,
                   style: AppText.body,
                 ),
                 const SizedBox(height: 28),
-                _PrimaryButton(label: 'Los geht\'s', onTap: () => ref.read(onboardingProvider.notifier).next()),
+                _PrimaryButton(label: L.s.letsGo, onTap: () => ref.read(onboardingProvider.notifier).next()),
               ],
             ),
           ),
@@ -197,9 +198,9 @@ class _FamilyStepState extends ConsumerState<_FamilyStep> {
               children: [
                 const _Hero('assets/onboarding/hero_members.png'),
                 const SizedBox(height: 24),
-                Text('Lade deine Familie ein', style: AppText.screenTitle),
+                Text(L.s.onboardInviteTitle, style: AppText.screenTitle),
                 const SizedBox(height: 8),
-                Text('Jeder in deiner Familie kann Termine, Boxen und Listen sehen und mitgestalten.', style: AppText.body),
+                Text(L.s.onboardInviteBody, style: AppText.body),
                 const SizedBox(height: 20),
                 SectionCard(
                   children: [
@@ -208,8 +209,8 @@ class _FamilyStepState extends ConsumerState<_FamilyStep> {
                       child: TextField(
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
-                        style: TextStyle(fontFamily: 'Poppins', fontSize: 16, color: AppColors.ink),
-                        decoration: const InputDecoration(border: InputBorder.none, hintText: 'E-Mail-Adresse', isDense: true),
+                        style: AppText.inputTitle,
+                        decoration: InputDecoration(border: InputBorder.none, hintText: L.s.emailAddress, isDense: true),
                       ),
                     ),
                     CardDivider(),
@@ -217,8 +218,8 @@ class _FamilyStepState extends ConsumerState<_FamilyStep> {
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                       child: TextField(
                         controller: _nameController,
-                        style: TextStyle(fontFamily: 'Poppins', fontSize: 16, color: AppColors.ink),
-                        decoration: const InputDecoration(border: InputBorder.none, hintText: 'Name (optional)', isDense: true),
+                        style: AppText.inputTitle,
+                        decoration: InputDecoration(border: InputBorder.none, hintText: L.s.nameOptional, isDense: true),
                       ),
                     ),
                   ],
@@ -226,13 +227,13 @@ class _FamilyStepState extends ConsumerState<_FamilyStep> {
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    Expanded(child: _RoleChip(label: 'Erwachsener', selected: !_isChild, accent: accent, onTap: () => setState(() => _isChild = false))),
+                    Expanded(child: _RoleChip(label: L.s.adult, selected: !_isChild, accent: accent, onTap: () => setState(() => _isChild = false))),
                     const SizedBox(width: 8),
-                    Expanded(child: _RoleChip(label: 'Kind', selected: _isChild, accent: accent, onTap: () => setState(() => _isChild = true))),
+                    Expanded(child: _RoleChip(label: L.s.child, selected: _isChild, accent: accent, onTap: () => setState(() => _isChild = true))),
                   ],
                 ),
                 const SizedBox(height: 12),
-                OutlinedButton(onPressed: _addInvite, child: const Text('Hinzufügen')),
+                OutlinedButton(onPressed: _addInvite, child: Text(L.s.add)),
                 if (invites.isNotEmpty) ...[
                   const SizedBox(height: 16),
                   Wrap(
@@ -245,7 +246,7 @@ class _FamilyStepState extends ConsumerState<_FamilyStep> {
                   ),
                 ],
                 const SizedBox(height: 28),
-                _PrimaryButton(label: 'Weiter', onTap: () => ref.read(onboardingProvider.notifier).next()),
+                _PrimaryButton(label: L.s.next, onTap: () => ref.read(onboardingProvider.notifier).next()),
               ],
             ),
           ),
@@ -275,7 +276,7 @@ class _RoleChip extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppRadii.chip),
           border: Border.all(color: selected ? accent : Colors.transparent),
         ),
-        child: Text(label, style: TextStyle(fontFamily: 'Poppins', fontSize: 14, fontWeight: FontWeight.w500, color: selected ? accent : AppColors.muted)),
+        child: Text(label, style: AppText.buttonSmall.copyWith(color: selected ? accent : AppColors.muted)),
       ),
     );
   }
@@ -322,9 +323,9 @@ class _AddressStepState extends ConsumerState<_AddressStep> {
               children: [
                 const _Hero('assets/onboarding/hero_address.png'),
                 const SizedBox(height: 24),
-                Text('Adresse verbinden', style: AppText.screenTitle),
+                Text(L.s.onboardAddressTitle, style: AppText.screenTitle),
                 const SizedBox(height: 8),
-                Text('Wir schlagen euch passende Kalender vor — z. B. für Müllabfuhr und Schulferien.', style: AppText.body),
+                Text(L.s.onboardAddressBody, style: AppText.body),
                 const SizedBox(height: 20),
                 SectionCard(
                   children: [
@@ -332,8 +333,8 @@ class _AddressStepState extends ConsumerState<_AddressStep> {
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                       child: TextField(
                         controller: _addressController,
-                        style: TextStyle(fontFamily: 'Poppins', fontSize: 16, color: AppColors.ink),
-                        decoration: const InputDecoration(border: InputBorder.none, hintText: 'Adresse', isDense: true),
+                        style: AppText.inputTitle,
+                        decoration: InputDecoration(border: InputBorder.none, hintText: L.s.address, isDense: true),
                         onChanged: (v) => ref.read(onboardingProvider.notifier).setAddress(v),
                       ),
                     ),
@@ -344,21 +345,21 @@ class _AddressStepState extends ConsumerState<_AddressStep> {
                   children: [
                     _ToggleRow(
                       icon: LucideIcons.recycle,
-                      title: 'Müllabfuhr-Kalender',
+                      title: L.s.wasteCalendar,
                       value: state.trashCalendar,
                       onChanged: (v) => ref.read(onboardingProvider.notifier).setTrashCalendar(v),
                     ),
                     CardDivider(),
                     _ToggleRow(
                       icon: LucideIcons.graduationCap,
-                      title: 'Ferienkalender',
+                      title: L.s.holidayCalendar,
                       value: state.ferienCalendar,
                       onChanged: (v) => ref.read(onboardingProvider.notifier).setFerienCalendar(v),
                     ),
                   ],
                 ),
                 const SizedBox(height: 28),
-                _PrimaryButton(label: 'Weiter', onTap: () => ref.read(onboardingProvider.notifier).next()),
+                _PrimaryButton(label: L.s.next, onTap: () => ref.read(onboardingProvider.notifier).next()),
               ],
             ),
           ),
@@ -445,26 +446,26 @@ class _DoneStepState extends ConsumerState<_DoneStep> with SingleTickerProviderS
             ),
           ),
           const SizedBox(height: 24),
-          Text('Bereit!', textAlign: TextAlign.center, style: AppText.screenTitle),
+          Text(L.s.onboardReady, textAlign: TextAlign.center, style: AppText.screenTitle),
           const SizedBox(height: 8),
-          Text('Deine Familie ist eingerichtet — du kannst alles später in den Einstellungen anpassen.', textAlign: TextAlign.center, style: AppText.body),
+          Text(L.s.onboardReadyBody, textAlign: TextAlign.center, style: AppText.body),
           const SizedBox(height: 24),
           SectionCard(
             children: [
               _RecapRow(
                 icon: LucideIcons.userPlus,
-                label: state.invites.isEmpty ? 'Keine Einladungen verschickt' : '${state.invites.length} eingeladen',
+                label: state.invites.isEmpty ? L.s.noInvitesSent : L.s.invitedCount(state.invites.length),
                 done: state.invites.isNotEmpty,
               ),
               CardDivider(),
-              _RecapRow(icon: LucideIcons.recycle, label: 'Müllabfuhr-Kalender', done: state.trashCalendar),
+              _RecapRow(icon: LucideIcons.recycle, label: L.s.wasteCalendar, done: state.trashCalendar),
               CardDivider(),
-              _RecapRow(icon: LucideIcons.graduationCap, label: 'Ferienkalender', done: state.ferienCalendar),
+              _RecapRow(icon: LucideIcons.graduationCap, label: L.s.holidayCalendar, done: state.ferienCalendar),
             ],
           ),
           const SizedBox(height: 28),
           _PrimaryButton(
-            label: 'Los geht\'s',
+            label: L.s.letsGo,
             onTap: () {
               ref.read(onboardingProvider.notifier).complete();
               if (widget.replay) Navigator.of(context).maybePop();

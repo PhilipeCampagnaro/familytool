@@ -3,6 +3,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../theme/tokens.dart';
 import '../widgets/avatar.dart';
 import 'settings_screen.dart';
+import '../l10n/l10n.dart';
 
 /// The "Home" tab has no design yet in the handoff — placeholder except for
 /// the header's profile avatar, which is this app's entry point into
@@ -23,7 +24,7 @@ class StartScreen extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Expanded(child: Text('Home', style: AppText.screenTitle)),
+                  Expanded(child: Text(L.s.navHome, style: AppText.screenTitle)),
                   GestureDetector(
                     onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => SettingsScreen())),
                     // Neutral until there is an account: no name, no initials,
@@ -50,7 +51,7 @@ class StartScreen extends StatelessWidget {
                         child: Icon(LucideIcons.home, size: 28, color: AppColors.muted),
                       ),
                       const SizedBox(height: 16),
-                      Text('Noch nicht gestaltet', style: TextStyle(fontFamily: 'Poppins', fontSize: 15, fontWeight: FontWeight.w400, color: AppColors.inkTertiary)),
+                      Text(L.s.startNotDesigned, style: AppText.body.copyWith(color: AppColors.inkTertiary)),
                     ],
                   ),
                 ),

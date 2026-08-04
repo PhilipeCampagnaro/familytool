@@ -6,6 +6,7 @@ import '../data/repositories/calendar_connection_repository.dart';
 import '../models/calendar_connection.dart';
 import 'auth_state.dart';
 import 'calendar_state.dart';
+import '../l10n/l10n.dart';
 
 class CalendarConnectionsState {
   final List<CalendarConnection> connections;
@@ -72,7 +73,7 @@ class CalendarConnectionsNotifier extends StateNotifier<CalendarConnectionsState
       state = state.copyWith(connections: connections, loaded: true, clearError: true);
     } catch (_) {
       if (!mounted) return;
-      state = state.copyWith(loaded: true, error: 'Die Verbindungen konnten nicht geladen werden.');
+      state = state.copyWith(loaded: true, error: L.s.connectionsLoadFailed);
     }
   }
 

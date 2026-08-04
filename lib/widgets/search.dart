@@ -3,8 +3,10 @@ import 'dart:ui' show lerpDouble;
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../theme/tokens.dart';
+import 'app_sheet.dart';
 import 'glass.dart';
 import 'native_search_field.dart';
+import '../l10n/l10n.dart';
 
 /// The search surface Listen and Boxen share.
 ///
@@ -229,9 +231,9 @@ class SearchResultsPlaceholder extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           Text(
-            query.isEmpty ? prompt : 'Keine Treffer für „$query"',
+            query.isEmpty ? prompt : L.s.noMatchesFor(query),
             textAlign: TextAlign.center,
-            style: TextStyle(fontFamily: 'Poppins', fontSize: 15, fontWeight: FontWeight.w300, color: AppColors.muted),
+            style: AppText.body.copyWith(color: AppColors.muted),
           ),
         ],
       ),
@@ -260,14 +262,54 @@ class SearchGroupHeading extends StatelessWidget {
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontFamily: 'Poppins', fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.muted, letterSpacing: 0.3),
+              style: AppText.groupHeading,
             ),
           ),
           const SizedBox(width: 8),
           Text(
             count,
-            style: TextStyle(fontFamily: 'Poppins', fontSize: 12, fontWeight: FontWeight.w300, color: AppColors.mutedLight),
+            style: AppText.label.copyWith(color: AppColors.mutedLight),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A [SearchGroupHeading] over a card of [rows] — the unit a results list is
+/// built from, whether the group is "every list whose name matched" or "the
+/// articles found inside Wocheneinkauf".
+///
+/// Groups after the first carry the gap above them, so a screen composes its
+/// results with `SearchHitGroup(first: i == 0, …)` instead of each one working
+/// out its own padding from where it happens to sit.
+class SearchHitGroup extends StatelessWidget {
+  final String label;
+  final String count;
+  final Widget? icon;
+  final List<Widget> rows;
+
+  /// Whether this is the topmost group on screen; the rest get a gap above.
+  final bool first;
+
+  const SearchHitGroup({
+    super.key,
+    required this.label,
+    required this.count,
+    required this.rows,
+    this.icon,
+    this.first = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(top: first ? 0 : 18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SearchGroupHeading(label: label, count: count, icon: icon),
+          SectionCard(children: dividedRows(rows)),
         ],
       ),
     );
@@ -303,13 +345,13 @@ class SearchResultRow extends StatelessWidget {
                     title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontFamily: 'Poppins', fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.ink),
+                    style: AppText.itemTitle,
                   ),
                   Text(
                     subtitle,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontFamily: 'Poppins', fontSize: 12.5, fontWeight: FontWeight.w300, color: AppColors.muted),
+                    style: AppText.label,
                   ),
                 ],
               ),

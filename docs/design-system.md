@@ -62,6 +62,38 @@ that have none.
   then a getter on `AppColors`. The dark values are derived, not from the handoff (which is
   light-only) — see the `AppPalette` doc for the two rules they follow.
 
+## Typography (`AppText`, `tokens.dart`)
+
+**Poppins is bundled in `pubspec.yaml`, not fetched.** It used to come from `google_fonts`, which
+registers each weight under a *variant-suffixed* family (`Poppins_regular`, `Poppins_600`) and
+never plain `Poppins` — so every `AppText` token and every hand-written style, all of which asked
+for `'Poppins'`, silently fell back to the platform font while unstyled text rendered in real
+Poppins. The app was showing two typefaces at once, which is what made Settings look like it had a
+different weight from the content screens. Don't reintroduce `google_fonts`; the family name in
+`AppText._family` and the `family:` key in `pubspec.yaml` have to stay the same string.
+
+**Only w300/400/500/600/800 ship.** Asking for w700 gets a snapped or synthesised weight, not
+Poppins Bold — a new weight means adding its `.ttf` to `assets/fonts/` and to `pubspec.yaml`.
+
+**The scale is closed, and there is no hand-written `TextStyle` left in `lib/screens/` or
+`lib/widgets/`.** It replaced 139 of them that had drifted to 22 sizes and 5 weights for ~17 real
+roles. Half-point neighbours (13/13.5, 14/14.5, 15/15.5, 12/12.5) carried no meaning and are gone —
+reach for the neighbouring token instead of adding one back.
+
+- `.copyWith(color:)` **is** expected: a token names a role, and the same role is ink in one place
+  and accent or danger in another.
+- `.copyWith(fontSize:)` / `.copyWith(fontWeight:)` is how the drift started. The only sanctioned
+  uses are genuinely *computed*: a collapsing header interpolating `screenTitle` down to 17 on
+  every scroll frame, an avatar's initials scaling with its circle, a day number carrying
+  selected/today/holiday in its weight.
+- **`itemTitle` (15/w600) vs `rowTitle` (15/w500) is deliberate, not drift.** Content the family
+  created — a list or box card, a task, a search hit, an event — is a step heavier than the
+  settings rows that configure it. Two Board rows that changed weight the moment you checked them
+  off (open w600, done w500 — the same bug in Listen) both use the row's own token now, so a task
+  doesn't restyle itself on completion.
+- **`body` carries `height: 1.55`, and that is the reason to use it.** Six places hand-wrote its
+  14/w300 and dropped the leading, so the same paragraph was set tighter outside Settings.
+
 ## Glass (`GlassSurface` / `GlassIconButton`, `glass.dart`)
 
 Apple "Liquid Glass": a real native `UIGlassEffect` on iOS via `native_glass_view.dart`, a
@@ -116,7 +148,8 @@ edge-to-edge bar. Two things are load-bearing, both learned by shipping the naiv
 
 Board, Box and Listen all scroll the same way: `CollapsingHeaderScreen` (a `NestedScrollView` +
 pinned `SliverPersistentHeader` over `CollapsingSliverHeaderDelegate`) pins a title row while the
-block under it — search field, stat tiles, week strip, a detail screen's big name row — clips and
+block under it — search field, stat tiles, Board's today/progress line, a detail screen's big name
+row — clips and
 fades away. `CollapsingScreenTitle` morphs the heading from large-left to small-centered;
 `ScreenBodyPanel` is the rounded gray panel the body scrolls on; `HeaderBrandGlow` is the colored
 wash the detail screens put behind theirs.
@@ -291,7 +324,9 @@ Non-obvious bits, each one a bug that shipped first:
   anything that removes the row outright. `borderRadius` is the card's for a free-standing card,
   zero inside a `SectionCard` (which clips its own corners).
 - `DaySelectorCircle` (`day_circle.dart`) — day-number circle (selected/today/holiday), shared by
-  the week strip, month grid, and Board.
+  Kalender's week strip and month grid. Board used to have a week strip of its own and no longer
+  does: a task's date is a property of the task, so the Board is a grouped list with nothing to
+  select.
 - `EventDots` (`event_dots.dart`) — small overlapping source-color dots under a day cell.
 - `Avatar`, `WhoPicker` — person avatar chip and the "Alle / Nur ich / <person>" picker on
   new-item sheets. `WhoPicker` is the **assignment** axis (a single `who` string) and is what
@@ -305,11 +340,39 @@ Non-obvious bits, each one a bug that shipped first:
   `allowMembers: false` for a guest — the composite FK on `*_shares` makes picking a non-member a
   constraint error, not a polite refusal. Both pickers render the same chip
   (`PickerAvatarChip`, in `who_picker.dart`).
-- `ErrorNote` / `showErrorSnack` (`error_note.dart`) — the app's error surface, in the two shapes
-  anything on the network needs: a floating snack for a **write** that didn't land (the screen
-  still has content, the next tap may work) and an inline note with "Erneut laden" for a **read**
-  that didn't (nothing on screen, so the message has to stay put). Both take German copy written
-  for the user — the notifier translates, never the widget.
+- `ErrorNote` (`error_note.dart`) — a failed **read**: nothing on screen and no reason to expect
+  the next frame to fix it, so an inline note with "Erneut laden" that stays put. Takes German copy
+  written for the user — the notifier translates, never the widget.
+- **The toast chip (`toast_chip.dart`) — one component for every transient outcome.** A
+  liquid-glass capsule floating clear of the nav bar: coloured disc, one line, and on a delete an
+  "Rückgängig". `confirmChipOf` for a write that landed, `showToast(…, kind: ToastKind.error)` for
+  one that didn't — `showErrorSnack` is now a one-line delegate to the latter and keeps its ~8 call
+  sites. **Success and failure differ by the disc's colour and glyph and by nothing else**; they
+  used to be two unrelated objects (a hugging white pill vs. a full-width grey bar) for what is one
+  event with two outcomes. Do not give a new outcome its own shape.
+  - Shown for the twelve actions whose result isn't self-evident on screen — create / update /
+    delete of a list, a box, a task, an appointment. Not for adding an article to an open list: the
+    row appears under the finger, and a chip on every mutation is one the user stops reading.
+  - `confirmChipOf` is a *capture*, not a `show…(context, …)` call, and that is the point: half the
+    callers are deletions that unmount the widget they were tapped in (the row, the row menu, the
+    whole detail view), so the messenger and the nav-bar inset have to be taken **before** the
+    write and the returned callback invoked after. A `context.mounted` guard would drop exactly the
+    confirmations that matter most.
+  - A chip only appears on a `true` from the notifier, which is why the create/update calls return
+    `Future<bool>` and the two container deletes return `Future<DeletedList?>` / `Future<DeletedBox?>`
+    (see the undo note below). A failed write gets the error chip and no confirmation — never both.
+  - **`clipBehavior: Clip.none` on the `SnackBar` is load-bearing.** It clips its child to its own
+    barely-rounded shape by default, which cut the capsule's drop shadow off along four straight
+    edges — the rectangular smudge the chip shipped with — and would crop the native glass view
+    too. The bar itself is transparent with `elevation: 0`; it is only the carrier, so the capsule
+    can hug its text instead of spanning the display.
+- **Undo lives on the delete chip, and it is a re-insert.** `restoreList` / `restoreBox` /
+  `restoreTask` / `restoreEvent` recreate what was deleted from the snapshot the delete handed
+  back — items, done state, audience and position included. The **ids do not come back**: a
+  `share_links` row handed to somebody outside the household pointed at the old one and stays dead,
+  which is the honest price of an undo that isn't a soft-delete column. `restoreEvent` is the cheap
+  one — `_write(EventDraft.of(event))` already routes an own event to `public.events` and a
+  provider's back out through `calendar-write`.
 - `CheckOffRow` / `CheckOffArrival` / `CheckOffButton` / `StrikeThrough` (`check_off.dart`) — the
   abhaken animation shared by Board and Listen; see the animation conventions below before wiring
   a fourth screen into it.

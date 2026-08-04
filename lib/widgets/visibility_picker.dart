@@ -5,6 +5,7 @@ import '../models/visibility.dart';
 import '../models/who.dart';
 import '../theme/tokens.dart';
 import 'avatar.dart';
+import '../l10n/l10n.dart';
 
 /// The "Für wen?" section of a create/edit sheet, writing the two things the
 /// database actually has: `visibility` and the rows in `*_shares`.
@@ -75,7 +76,7 @@ class VisibilityPicker extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.only(left: 4, bottom: 9),
-          child: Text('Für wen?', style: AppText.microLabel),
+          child: Text(L.s.forWhom, style: AppText.microLabel),
         ),
         SizedBox(
           height: avatarSize + 46,
@@ -84,7 +85,7 @@ class VisibilityPicker extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
             children: [
               PickerAvatarChip(
-                label: 'Alle',
+                label: L.s.everyone,
                 bg: AppColors.alleBg,
                 fg: AppColors.alleFg,
                 icon: LucideIcons.users,
@@ -95,7 +96,7 @@ class VisibilityPicker extends StatelessWidget {
               ),
               const SizedBox(width: 9),
               PickerAvatarChip(
-                label: 'Nur ich',
+                label: L.s.onlyMe,
                 bg: AppColors.nurIchBg,
                 fg: AppColors.nurIchFg,
                 icon: LucideIcons.lock,
@@ -144,24 +145,17 @@ class VisibilityPicker extends StatelessWidget {
   String _hint(List<FamilyMember> others) {
     switch (visibility) {
       case ItemVisibility.family:
-        return 'Für die ganze Familie — alle können $noun sehen und bearbeiten.';
+        return L.s.wholeFamilySees(noun);
       case ItemVisibility.private:
-        return 'Nur für dich sichtbar — niemand sonst sieht $noun.';
+        return L.s.onlyYouSee(noun);
       case ItemVisibility.custom:
         final names = [
           for (final m in others)
             if (sharedWith.contains(m.id)) m.name,
         ];
-        if (names.isEmpty) return 'Nur für dich sichtbar — niemand sonst sieht $noun.';
-        return 'Nur du und ${_joinGerman(names)} sehen $noun.';
+        if (names.isEmpty) return L.s.onlyYouSee(noun);
+        return L.s.youAndOthersSee(L.s.joinNames(names), noun);
     }
-  }
-
-  /// "Lea", "Lea und Tom", "Lea, Tom und Max" — the Oxford comma is not a thing
-  /// in German, so the last item is joined with "und" and nothing else.
-  static String _joinGerman(List<String> names) {
-    if (names.length == 1) return names.first;
-    return '${names.sublist(0, names.length - 1).join(', ')} und ${names.last}';
   }
 }
 
@@ -229,9 +223,7 @@ class PickerAvatarChip extends StatelessWidget {
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 12,
+              style: AppText.label.copyWith(
                 fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
                 color: selected ? AppColors.ink : AppColors.muted,
               ),

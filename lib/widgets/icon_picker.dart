@@ -4,6 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../data/icon_suggestions.dart';
 import '../theme/tokens.dart';
 import 'app_sheet.dart';
+import '../l10n/l10n.dart';
 
 /// The one place an icon is *drawn* and the one place an icon is *chosen*.
 ///
@@ -152,10 +153,10 @@ class IconFieldRow extends StatelessWidget {
                 children: [
                   Flexible(
                     child: Text(
-                      label ?? 'Symbol',
+                      label ?? L.s.symbol,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontFamily: 'Poppins', fontSize: 14.5, fontWeight: FontWeight.w500, color: AppColors.ink),
+                      style: AppText.rowTitle,
                     ),
                   ),
                   if (suggested && label != null) ...[
@@ -167,8 +168,8 @@ class IconFieldRow extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             Text(
-              'Ändern',
-              style: TextStyle(fontFamily: 'Poppins', fontSize: 14, color: AppColors.muted),
+              L.s.change,
+              style: AppText.buttonSmall.copyWith(color: AppColors.muted),
             ),
             const SizedBox(width: 4),
             Icon(LucideIcons.chevronRight, size: 16, color: AppColors.mutedLight),
@@ -201,7 +202,7 @@ Future<String?> showIconPicker(
     context: context,
     // A tap on an icon *is* the save, so the header carries no check — see
     // [SheetPickerHeader].
-    header: const SheetPickerHeader(title: 'Symbol wählen'),
+    header: SheetPickerHeader(title: L.s.chooseSymbol),
     child: _IconPickerBody(selected: selected, name: name, subject: subject),
   );
 }
@@ -251,7 +252,7 @@ class _IconPickerBodyState extends State<_IconPickerBody> {
                       decoration: InputDecoration(
                         border: InputBorder.none,
                         isDense: true,
-                        hintText: 'Symbol oder Geschäft suchen',
+                        hintText: L.s.searchSymbolOrShop,
                         hintStyle: AppText.searchInput.copyWith(color: AppColors.muted),
                       ),
                       onChanged: (v) => setState(() => _query = v),
@@ -265,23 +266,23 @@ class _IconPickerBodyState extends State<_IconPickerBody> {
         const SizedBox(height: 16),
         if (query.isNotEmpty)
           _Section(
-            title: 'Treffer',
+            title: L.s.matches,
             choices: searchIcons(query, subject: widget.subject),
             selected: widget.selected,
             onSelect: _choose,
-            emptyMessage: 'Nichts gefunden für "$query"',
+            emptyMessage: L.s.nothingFoundFor(query),
           )
         else ...[
           if (suggestion != null)
             _Section(
-              title: 'Vorschlag zum Namen',
+              title: L.s.suggestionFromName,
               choices: [suggestion],
               selected: widget.selected,
               onSelect: _choose,
             ),
           for (final group in symbolGroups)
             _Section(
-              title: group.de,
+              title: group.label,
               choices: [for (final icon in group.icons) icon.choice],
               selected: widget.selected,
               onSelect: _choose,
@@ -334,7 +335,7 @@ class _Section extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(6, 0, 6, 9),
             child: Text(
               title,
-              style: TextStyle(fontFamily: 'Poppins', fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.muted, letterSpacing: 0.3),
+              style: AppText.groupHeading,
             ),
           ),
           if (choices.isEmpty)
@@ -344,13 +345,11 @@ class _Section extends StatelessWidget {
             )
           else
             SectionCard(
-              children: [
-                for (var i = 0; i < choices.length; i++) ...[
-                  if (i > 0) CardDivider(),
-                  _IconRow(choice: choices[i], selected: choices[i].key == selected, onTap: () => onSelect(choices[i])),
-                ],
-                if (footer != null) ...[CardDivider(), footer!],
-              ],
+              children: dividedRows([
+                for (final choice in choices)
+                  _IconRow(choice: choice, selected: choice.key == selected, onTap: () => onSelect(choice)),
+                ?footer,
+              ]),
             ),
         ],
       ),
@@ -387,14 +386,14 @@ class _MerchantSectionState extends State<_MerchantSection> {
     final hidden = _all.length - _shown;
     final visible = _expanded ? _all : _all.take(_shown).toList();
     return _Section(
-      title: 'Geschäfte',
+      title: L.s.shops,
       choices: visible,
       selected: widget.selected,
       onSelect: widget.onSelect,
       footer: hidden <= 0
           ? null
           : _MoreRow(
-              label: _expanded ? 'Weniger anzeigen' : 'Alle $hidden weiteren Geschäfte',
+              label: _expanded ? L.s.showLess : L.s.allMoreShops(hidden),
               expanded: _expanded,
               onTap: () => setState(() => _expanded = !_expanded),
             ),
@@ -423,7 +422,7 @@ class _MoreRow extends StatelessWidget {
           children: [
             Text(
               label,
-              style: TextStyle(fontFamily: 'Poppins', fontSize: 14, fontWeight: FontWeight.w500, color: accent),
+              style: AppText.buttonSmall.copyWith(color: accent),
             ),
             const SizedBox(width: 6),
             Icon(expanded ? LucideIcons.chevronUp : LucideIcons.chevronDown, size: 16, color: accent),
@@ -463,10 +462,7 @@ class _IconRow extends StatelessWidget {
                 choice.label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 15,
-                  fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                style: (selected ? AppText.itemTitle : AppText.rowTitle).copyWith(
                   color: selected ? accent : AppColors.ink,
                 ),
               ),

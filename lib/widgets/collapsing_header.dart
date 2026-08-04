@@ -35,10 +35,10 @@ class CollapsingHeaderScreen extends StatefulWidget {
   /// It exists only because a [SliverPersistentHeader] has to publish its
   /// extents *before* anything under it can be laid out, so frame one has
   /// nothing to go on. Being a few px out costs one frame and nothing else —
-  /// which is the point of measuring rather than hardcoding: the app's type is
-  /// Poppins, loaded at runtime by `google_fonts`, so the line heights a widget
-  /// test measures aren't the ones the device renders and a constant tuned
-  /// against a test would silently clip the last row on a phone.
+  /// which is the point of measuring rather than hardcoding: a widget test does
+  /// not render the app's bundled Poppins, so the line heights it measures
+  /// aren't the ones the device renders and a constant tuned against a test
+  /// would silently clip the last row on a phone.
   final double estimatedExtraHeight;
 
   /// The scrolling content. Must contain a scrollable (it picks up
@@ -151,12 +151,31 @@ class _CollapsingHeaderScreenState extends State<CollapsingHeaderScreen> {
     // The blur stops it reading as content while still showing it's there,
     // passing underneath.
     //
-    // A Stack, not a wrapper around the Column, so the frost is a sibling layer
+    // A Stack, not a wrapper around a Column, so the frost is a sibling layer
     // filling the header's *current* extent: as the sliver shrinks, so does the
     // blurred band.
+    //
+    // Everything is `Positioned` rather than stacked in a Column for one
+    // reason, and it is not layout: **nothing may paint after the title row.**
+    // Its glass buttons are native `UIGlassEffect` platform views on iOS, and
+    // Flutter content painted after a platform view is composited into a
+    // separate overlay `UIView` rather than the main surface. That overlay is
+    // created and positioned by the embedder, and while a route is animating in
+    // it lags the content it belongs to — which is exactly the white rectangle
+    // that sat over a Settings sub-page's hero for the length of the push and
+    // then vanished: not a rectangle at all, but the header's own material
+    // showing through a block whose overlay hadn't landed yet. (It was there
+    // all along; it only became *visible* once the hero stopped being a white
+    // card on a white header, where a missing layer and a present one look the
+    // same.) Painted before the buttons, the block is in the base surface with
+    // everything else and has no layer of its own to wait for.
+    //
+    // Same rule as `showAppSheet`'s header row and [CollapsingScreenTitle], for
+    // the same reason — see the glass section of docs/design-system.md.
+    final titleRowTop = topInset + CollapsingHeaderScreen.topPad;
     return Stack(
       children: [
-        Positioned.fill(child: FrostedHeaderBackground()),
+        Positioned.fill(child: _HeaderMaterial()),
         if (widget.backdrop != null)
           Positioned.fill(
             child: IgnorePointer(
@@ -180,40 +199,81 @@ class _CollapsingHeaderScreenState extends State<CollapsingHeaderScreen> {
               ),
             ),
           ),
-        Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: EdgeInsets.fromLTRB(AppSpacing.screenPad, topInset + CollapsingHeaderScreen.topPad, AppSpacing.screenPad, 0),
-              child: SizedBox(height: widget.titleRowHeight, child: widget.titleRowBuilder(context, t)),
-            ),
-            // The OverflowBox leaves the height unbounded so `extra` keeps its
-            // natural size while the SizedBox around it shrinks: its rows slide
-            // up under the title and get clipped, instead of being squeezed into
-            // less and less space (which would re-flow them, and overflow once
-            // there's no room left). It's also what makes the measurement above
-            // meaningful — there's a real, unconstrained height to read.
-            SizedBox(
-              height: extraHeight * visible,
-              child: ClipRect(
-                child: OverflowBox(
-                  alignment: Alignment.topCenter,
-                  minHeight: 0,
-                  maxHeight: double.infinity,
-                  child: Opacity(
-                    opacity: visible,
-                    child: Padding(
-                      padding: widget.extraPadding,
-                      child: KeyedSubtree(key: _extraKey, child: widget.extra),
-                    ),
-                  ),
+        // The OverflowBox leaves the height unbounded so `extra` keeps its
+        // natural size while the box around it shrinks: its rows slide up under
+        // the title and get clipped, instead of being squeezed into less and
+        // less space (which would re-flow them, and overflow once there's no
+        // room left). It's also what makes the measurement above meaningful —
+        // there's a real, unconstrained height to read.
+        //
+        // The height it's given is what the sliver has left below the title row
+        // once [CollapsingHeaderScreen.collapsedGap] is reserved at the bottom:
+        // `currentExtent` is `collapsedHeight + extraHeight * visible`, so this
+        // lands exactly where the Column that used to be here put it.
+        Positioned(
+          top: titleRowTop + widget.titleRowHeight,
+          left: 0,
+          right: 0,
+          height: extraHeight * visible,
+          child: ClipRect(
+            child: OverflowBox(
+              alignment: Alignment.topCenter,
+              minHeight: 0,
+              maxHeight: double.infinity,
+              child: Opacity(
+                opacity: visible,
+                child: Padding(
+                  padding: widget.extraPadding,
+                  child: KeyedSubtree(key: _extraKey, child: widget.extra),
                 ),
               ),
             ),
-            const SizedBox(height: CollapsingHeaderScreen.collapsedGap),
-          ],
+          ),
+        ),
+        // Last, always — see the note at the top of this method.
+        Positioned(
+          top: titleRowTop,
+          left: AppSpacing.screenPad,
+          right: AppSpacing.screenPad,
+          height: widget.titleRowHeight,
+          child: widget.titleRowBuilder(context, t),
         ),
       ],
+    );
+  }
+}
+
+/// [FrostedHeaderBackground], except while the page it belongs to is animating
+/// *in* — then it's opaque [AppColors.surface].
+///
+/// A `BackdropFilter` samples the whole composited scene behind it, and during a
+/// push that scene still contains the outgoing page — so the previous screen's
+/// content drifts across the header, blurred, for the length of the transition.
+/// (This is *not* what put a white block over the Settings hero; that was the
+/// platform-view overlay described in `_buildHeader`. It's a smaller, real
+/// artifact of its own, and free to close.)
+///
+/// Opaque is not a compromise here: a page animating in hasn't been scrolled, so
+/// there is nothing under the bar for the frost to show. The instant the push
+/// completes it goes back to being real frosted material, before the user can
+/// scroll anything under it. Only the forward direction is swapped — on the way
+/// back out the content *is* scrolled, and killing the blur there would be a
+/// visible change rather than a hidden one.
+class _HeaderMaterial extends StatelessWidget {
+  const _HeaderMaterial();
+
+  @override
+  Widget build(BuildContext context) {
+    final animation = ModalRoute.of(context)?.animation;
+    // Screens that aren't inside a route of their own (the five tabs, mounted
+    // in main.dart's IndexedStack) never transition — nothing to guard.
+    if (animation == null) return const FrostedHeaderBackground();
+    return AnimatedBuilder(
+      animation: animation,
+      builder: (context, child) => animation.status == AnimationStatus.forward
+          ? ColoredBox(color: AppColors.surface)
+          : child!,
+      child: const FrostedHeaderBackground(),
     );
   }
 }
@@ -309,7 +369,10 @@ class CollapsingScreenTitle extends StatelessWidget {
         text,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: TextStyle(fontFamily: 'Poppins', fontWeight: fontWeight, letterSpacing: -0.3, fontSize: fontSize, color: AppColors.ink),
+        // The size is interpolated between [expandedFontSize] and
+        // [collapsedFontSize] every scroll frame, which is why this can't be a
+        // plain token — everything else about it is [AppText.screenTitle].
+        style: AppText.screenTitle.copyWith(fontSize: fontSize, fontWeight: fontWeight),
       );
       return Align(
         alignment: alignment,

@@ -5,6 +5,7 @@ import '../theme/tokens.dart';
 import 'app_sheet.dart';
 import 'collapsing_header.dart';
 import 'glass.dart';
+import '../l10n/l10n.dart';
 
 /// The chrome every Settings sub-page is built from — the collapsing header and
 /// hero card, the row, the field box, the divider rules.
@@ -13,13 +14,6 @@ import 'glass.dart';
 /// the same shell. Keeping one copy is the point: a second page that hand-rolls
 /// its own row is how two screens in one settings tree start disagreeing about
 /// padding, divider insets and where the chevron sits.
-
-List<Widget> dividedRows(List<Widget> rows, {bool inset = false}) => [
-      for (var i = 0; i < rows.length; i++) ...[
-        if (i > 0) inset ? InsetDivider() : CardDivider(),
-        rows[i],
-      ],
-    ];
 
 /// Chrome shared by every Settings sub-page: the same frosted collapsing
 /// header as the root, with a [HeroCard] as the collapsing content and the
@@ -30,6 +24,13 @@ class SettingsDetailPage extends StatelessWidget {
   final String description;
   final List<Widget> children;
 
+  /// The page you came *from*, shown centred in the nav bar at rest — the back
+  /// chevron beside it says where it goes, this says where. Defaults to the
+  /// Settings root, which is where all but the provider pages are pushed from.
+  /// Null means "Einstellungen" / "Settings" — resolved at build rather than
+  /// defaulted, because a default parameter value has to be constant.
+  final String? parentTitle;
+
   /// First-frame guess at the hero's height; re-measured immediately.
   final double estimatedHeroHeight;
 
@@ -39,7 +40,8 @@ class SettingsDetailPage extends StatelessWidget {
     required this.title,
     required this.description,
     required this.children,
-    this.estimatedHeroHeight = 180,
+    this.parentTitle,
+    this.estimatedHeroHeight = 200,
   });
 
   @override
@@ -49,20 +51,25 @@ class SettingsDetailPage extends StatelessWidget {
       body: SafeArea(
         bottom: false,
         child: CollapsingHeaderScreen(
-          // No expanded title: the hero card below carries the page's name at
-          // rest, and only hands it to the bar as it scrolls out of sight.
+          // At rest the bar names the page *behind* this one — the hero card
+          // below is already saying where you are, and the chevron beside it
+          // needs a label. Once the card scrolls out of sight the bar takes
+          // this page's own title over, so the name is never missing, just
+          // never duplicated. Both ends are nav-bar sized: there's no large
+          // heading here to collapse, only a crossfade between two 17pt labels.
           titleRowBuilder: (context, t) => CollapsingScreenTitle(
-            title: '',
+            title: parentTitle ?? L.s.settingsTitle,
             collapsedTitle: title,
             t: t,
             expandedAlignment: Alignment.center,
+            expandedFontSize: 17,
             leading: GlassIconButton(icon: LucideIcons.chevronLeft, onTap: () => Navigator.of(context).pop()),
             leadingWidth: 48,
             trailing: CloseSettingsButton(),
             trailingWidth: 48,
           ),
           estimatedExtraHeight: estimatedHeroHeight,
-          extraPadding: const EdgeInsets.symmetric(horizontal: 16),
+          extraPadding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
           extra: HeroCard(icon: icon, title: title, description: description),
           body: ScreenBodyPanel(
             child: ListView(
@@ -120,10 +127,16 @@ class GlassPillButton extends StatelessWidget {
 /// nav-bar title on those pages, which is why the pinned row above it is empty
 /// until this scrolls away.
 ///
-/// Deliberately *not* a [SectionCard]: it sits on [AppColors.surface], so a
-/// white card on white read as a barely-there rectangle whose height jumped
-/// with every description's line count. Only the icon carries colour; the
-/// title stays ink.
+/// A card's geometry with none of a card's material: the same 20/22 insets a
+/// [SectionCard] would give it, on the plain white header, with no fill, border
+/// or shadow. The spacing is what the card was buying — drawing it as well only
+/// added a rectangle you could barely see, whose height moved with each page's
+/// description.
+///
+/// Keep the [SizedBox]: the header's `extra` slot is laid out loose inside a
+/// centring Column, so a shrink-wrapping child drifts to the middle — which is
+/// why this block used to look left-aligned on pages with a long description
+/// and centred on pages with a short one ("Google Kalender verbinden.").
 class HeroCard extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -133,19 +146,20 @@ class HeroCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      // Horizontal 6 lines the text up with [GroupLabel] and the edge of the
-      // cards below, both of which sit inside the same 16pt page gutter.
-      padding: const EdgeInsets.fromLTRB(6, 12, 6, 18),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 26, color: Theme.of(context).colorScheme.primary),
-          const SizedBox(height: 22),
-          Text(title, style: AppText.screenTitle),
-          const SizedBox(height: 10),
-          Text(description, style: AppText.body.copyWith(color: AppColors.muted)),
-        ],
+    return SizedBox(
+      width: double.infinity,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 22),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, size: 26, color: Theme.of(context).colorScheme.primary),
+            const SizedBox(height: 18),
+            Text(title, style: AppText.screenTitle),
+            const SizedBox(height: 8),
+            Text(description, style: AppText.body.copyWith(color: AppColors.muted)),
+          ],
+        ),
       ),
     );
   }
@@ -267,19 +281,6 @@ class FieldGroup extends StatelessWidget {
   }
 }
 
-/// [CardDivider] inset from the card's edges — the separator between
-/// [FieldGroup]s and member rows, where a full-bleed rule cuts the card in
-/// half.
-class InsetDivider extends StatelessWidget {
-  const InsetDivider({super.key});
-
-  @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 18),
-        child: CardDivider(),
-      );
-}
-
 /// The rounded outline every editable/selectable field in the profile form
 /// sits in, so a text input and a read-only value read as the same control.
 class FieldBox extends StatelessWidget {
@@ -333,7 +334,7 @@ class GroupLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(6, 18, 6, 9),
-      child: Text(label, style: AppText.microLabel.copyWith(letterSpacing: 0.3)),
+      child: Text(label, style: AppText.groupHeading),
     );
   }
 }

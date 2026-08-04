@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../theme/tokens.dart';
+import '../l10n/l10n.dart';
+import 'toast_chip.dart';
 
 /// The app's error surface, in the two shapes anything backed by the network
 /// needs. Listen is the first user; Board, Box and Kalender get the same two
@@ -13,34 +15,12 @@ import '../theme/tokens.dart';
 /// A failed *write*: the screen still has content, one action didn't land.
 /// Transient, because the state it reports is transient — the next tap may well
 /// succeed.
-void showErrorSnack(BuildContext context, String message) {
-  final messenger = ScaffoldMessenger.maybeOf(context);
-  if (messenger == null) return;
-  messenger
-    ..hideCurrentSnackBar()
-    ..showSnackBar(
-      SnackBar(
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: AppColors.surfaceAlt,
-        elevation: 0,
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.cardSmall)),
-        duration: const Duration(seconds: 4),
-        content: Row(
-          children: [
-            Icon(LucideIcons.info, size: 17, color: AppColors.danger),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                message,
-                style: TextStyle(fontFamily: 'Poppins', fontSize: 14, fontWeight: FontWeight.w300, color: AppColors.inkSecondary),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-}
+///
+/// The same floating glass capsule a confirmation gets (`toast_chip.dart`), in red
+/// rather than green — a write landing and a write failing are one event with
+/// two outcomes, so they are one component with two colours. Kept under this
+/// name because the ~8 call sites read as what they are.
+void showErrorSnack(BuildContext context, String message) => showToast(context, message, kind: ToastKind.error);
 
 /// A failed *read*: there is nothing on screen and no reason to believe the
 /// next frame will fix it, so the message stays put and offers the retry.
@@ -66,7 +46,7 @@ class ErrorNote extends StatelessWidget {
           Expanded(
             child: Text(
               message,
-              style: TextStyle(fontFamily: 'Poppins', fontSize: 14, fontWeight: FontWeight.w300, color: AppColors.inkSecondary),
+              style: AppText.body,
             ),
           ),
           if (onRetry != null) ...[
@@ -75,8 +55,8 @@ class ErrorNote extends StatelessWidget {
               onTap: onRetry,
               behavior: HitTestBehavior.opaque,
               child: Text(
-                'Erneut laden',
-                style: TextStyle(fontFamily: 'Poppins', fontSize: 13.5, fontWeight: FontWeight.w500, color: accent),
+                L.s.reload,
+                style: AppText.caption.copyWith(color: accent),
               ),
             ),
           ],

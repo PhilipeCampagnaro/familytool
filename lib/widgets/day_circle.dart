@@ -49,7 +49,10 @@ class DaySelectorCircle extends StatelessWidget {
     final textColor = selected ? Colors.white : (today ? accent : (holiday ? holidayText : dayText));
     final weight = (selected || today) ? FontWeight.w600 : (holiday ? FontWeight.w500 : FontWeight.w400);
 
-    final text = Text('$day', style: TextStyle(fontFamily: 'Poppins', fontSize: fontSize, fontWeight: weight, color: textColor));
+    // Both size and weight are the caller's / the day's own — a day number is
+    // the one place where the *state* (selected, today, holiday) is carried by
+    // weight rather than colour alone. The family comes from the scale.
+    final text = Text('$day', style: AppText.input.copyWith(fontSize: fontSize, fontWeight: weight, color: textColor));
 
     final fillCircle = Container(
       decoration: BoxDecoration(color: selected ? accent : (holiday ? holidayFill : fill), shape: BoxShape.circle),

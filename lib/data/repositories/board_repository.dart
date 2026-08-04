@@ -4,19 +4,7 @@ import '../../models/task.dart';
 import '../../models/visibility.dart';
 import '../../services/supabase.dart';
 import 'list_repository.dart' show newUuidV4;
-
-/// One round trip's worth of Board: every task the signed-in user may see,
-/// grouped by the day it is due.
-class BoardSnapshot {
-  /// Midnight-normalised day → its tasks. The Board renders one day at a time
-  /// and paints dots on the week strip, so both want this shape rather than a
-  /// flat list.
-  final Map<DateTime, List<BoardTask>> tasksByDay;
-
-  const BoardSnapshot({required this.tasksByDay});
-
-  static const empty = BoardSnapshot(tasksByDay: {});
-}
+import '../../l10n/l10n.dart';
 
 /// The only file in the app that knows Board tasks are stored in PostgREST.
 ///
@@ -33,7 +21,7 @@ class BoardRepository {
 
   String get _uid {
     final id = AporahSupabase.userId;
-    if (id == null) throw StateError('Kein angemeldeter Benutzer.');
+    if (id == null) throw StateError(L.s.notSignedIn);
     return id;
   }
 
@@ -41,20 +29,29 @@ class BoardRepository {
   // Read
   // -------------------------------------------------------------------------
 
-  /// Every task in a date window, which is what the Board actually shows.
+  /// How far back finished tasks are still worth showing. The "Erledigt" card is
+  /// a record of the last few days, not an archive — and without a cut-off it
+  /// would be the longest thing on the screen within a month.
+  static const _doneWindowDays = 14;
+
+  /// Everything the Board shows, in one round trip: every open task the
+  /// signed-in user may see, whatever its date or lack of one, plus the tasks
+  /// finished in the last [_doneWindowDays].
   ///
-  /// Bounded rather than "all of them": a household two years in has a few
-  /// thousand tasks and looks at seven days of them. The window is generous —
-  /// the strip only moves a week at a time — and re-fetched when it is left.
-  Future<BoardSnapshot> fetchRange(DateTime from, DateTime to) async {
+  /// The old `fetchRange(from, to)` was bounded by the week strip's date window
+  /// and re-fetched when the strip walked out of it. With the strip gone there
+  /// is no window to page — and a `due_date` window could not have loaded an
+  /// undated task at all, since `null` satisfies neither `gte` nor `lte`. What
+  /// bounds this instead is *done*: open tasks are the Board's whole job and a
+  /// household has tens of them, while finished ones accumulate forever.
+  Future<List<BoardTask>> fetchBoard() async {
+    final since = DateTime.now().toUtc().subtract(const Duration(days: _doneWindowDays));
     final rows = await _db
         .from('tasks')
         .select(_columns)
-        .gte('due_date', formatDueDate(from))
-        .lte('due_date', formatDueDate(to))
-        .order('due_date')
-        .order('created_at');
-    if (rows.isEmpty) return BoardSnapshot.empty;
+        .or('done.eq.false,done_at.gte.${since.toIso8601String()}')
+        .order('created_at', ascending: true);
+    if (rows.isEmpty) return const [];
 
     final ids = [for (final r in rows) r['id'] as String];
     final shareRows = await _db.from('task_shares').select('task_id, user_id').inFilter('task_id', ids);
@@ -64,12 +61,9 @@ class BoardRepository {
       (sharedWith[r['task_id'] as String] ??= []).add(r['user_id'] as String);
     }
 
-    final byDay = <DateTime, List<BoardTask>>{};
-    for (final r in rows) {
-      final task = BoardTask.fromMap(r, sharedWith: sharedWith[r['id'] as String] ?? const []);
-      (byDay[task.dueDate] ??= []).add(task);
-    }
-    return BoardSnapshot(tasksByDay: byDay);
+    return [
+      for (final r in rows) BoardTask.fromMap(r, sharedWith: sharedWith[r['id'] as String] ?? const []),
+    ];
   }
 
   // -------------------------------------------------------------------------
@@ -81,7 +75,7 @@ class BoardRepository {
   /// policy on every container table.
   Future<BoardTask> createTask({
     required String familyId,
-    required DateTime dueDate,
+    DateTime? dueDate,
     required String text,
     String? meta,
     String? assigneeId,
@@ -115,6 +109,7 @@ class BoardRepository {
     required String text,
     String? meta,
     DateTime? dueDate,
+    bool clearDueDate = false,
     String? assigneeId,
     bool clearAssignee = false,
     ItemVisibility? visibility,
@@ -124,7 +119,10 @@ class BoardRepository {
       'text': text,
       'meta': meta,
       'assignee_id': clearAssignee ? null : assigneeId,
-      if (dueDate != null) 'due_date': formatDueDate(dueDate),
+      // Three states, not two: leave the date alone, set it, or take it away.
+      // Without [clearDueDate] a null `dueDate` could only ever mean the first,
+      // and "Kein Datum" in the sheet would silently do nothing.
+      if (clearDueDate) 'due_date': null else if (dueDate != null) 'due_date': formatDueDate(dueDate),
       if (visibility != null && visibility != task.visibility) 'visibility': visibility.name,
     };
 

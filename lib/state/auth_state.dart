@@ -1,8 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../services/board_streak_cache.dart';
 import '../services/calendar_cache.dart';
 import '../services/supabase.dart';
+import '../l10n/l10n.dart';
 
 /// Where the app is in the sign-in flow. Kept separate from "is there a
 /// session" because two of these states have a session of *some* kind and
@@ -104,7 +106,7 @@ class AuthNotifier extends StateNotifier<AuthScreenState> {
   }) async {
     final name = displayName.trim();
     if (name.isEmpty) {
-      state = state.copyWith(error: 'Bitte gib deinen Namen ein.');
+      state = state.copyWith(error: L.s.pleaseEnterName);
       return;
     }
 
@@ -131,7 +133,7 @@ class AuthNotifier extends StateNotifier<AuthScreenState> {
       if (mounted) state = state.copyWith(busy: false, error: _german(e));
     } catch (_) {
       if (mounted) {
-        state = state.copyWith(busy: false, error: 'Keine Verbindung. Bitte versuch es noch einmal.');
+        state = state.copyWith(busy: false, error: L.s.noConnectionTryAgain);
       }
     }
   }
@@ -148,7 +150,7 @@ class AuthNotifier extends StateNotifier<AuthScreenState> {
       if (mounted) state = state.copyWith(busy: false, error: _german(e));
     } catch (_) {
       if (mounted) {
-        state = state.copyWith(busy: false, error: 'Keine Verbindung. Bitte versuch es noch einmal.');
+        state = state.copyWith(busy: false, error: L.s.noConnectionTryAgain);
       }
     }
   }
@@ -156,14 +158,14 @@ class AuthNotifier extends StateNotifier<AuthScreenState> {
   Future<void> resetPassword(String email) async {
     final address = email.trim();
     if (address.isEmpty) {
-      state = state.copyWith(error: 'Bitte gib zuerst deine E-Mail-Adresse ein.');
+      state = state.copyWith(error: L.s.pleaseEnterEmailFirst);
       return;
     }
     state = state.copyWith(busy: true, clearError: true);
     try {
       await AporahSupabase.client.auth.resetPasswordForEmail(address);
       if (mounted) {
-        state = state.copyWith(busy: false, error: 'Wir haben dir eine E-Mail zum Zurücksetzen geschickt.');
+        state = state.copyWith(busy: false, error: L.s.resetMailSent);
       }
     } on AuthException catch (e) {
       if (mounted) state = state.copyWith(busy: false, error: _german(e));
@@ -173,8 +175,11 @@ class AuthNotifier extends StateNotifier<AuthScreenState> {
   Future<void> signOut() async {
     // The calendar cache is the one place this app keeps event bodies at rest.
     // Signing out has to take it with it, or the next person to open Aporah on
-    // this phone finds the last household's appointments in a file.
+    // this phone finds the last household's appointments in a file. The Board's
+    // day ledger goes the same way — it holds only counts, but how busy the last
+    // household's fortnight was is still theirs.
     await CalendarCache().clear();
+    await BoardStreakCache().clear();
     await AporahSupabase.client.auth.signOut();
     if (mounted) state = const AuthScreenState(status: AuthStatus.signedOut);
   }
@@ -190,27 +195,27 @@ class AuthNotifier extends StateNotifier<AuthScreenState> {
   String _german(AuthException e) {
     final msg = e.message.toLowerCase();
     if (msg.contains('invalid login credentials')) {
-      return 'E-Mail-Adresse oder Passwort stimmt nicht.';
+      return L.s.wrongCredentials;
     }
     if (msg.contains('email not confirmed')) {
-      return 'Bitte bestätige zuerst deine E-Mail-Adresse.';
+      return L.s.confirmEmailFirst;
     }
     if (msg.contains('already registered') || msg.contains('already been registered')) {
-      return 'Für diese E-Mail-Adresse gibt es schon ein Konto.';
+      return L.s.accountExists;
     }
     if (msg.contains('password') && msg.contains('least')) {
-      return 'Das Passwort ist zu kurz.';
+      return L.s.passwordTooShort;
     }
     if (msg.contains('pwned') || msg.contains('compromised')) {
-      return 'Dieses Passwort taucht in bekannten Daten-Leaks auf. Bitte wähl ein anderes.';
+      return L.s.passwordLeaked;
     }
     if (msg.contains('rate limit') || msg.contains('too many')) {
-      return 'Zu viele Versuche. Bitte warte einen Moment.';
+      return L.s.tooManyAttempts;
     }
     if (msg.contains('invalid') && msg.contains('email')) {
-      return 'Diese E-Mail-Adresse sieht nicht gültig aus.';
+      return L.s.emailLooksInvalid;
     }
-    return 'Anmeldung fehlgeschlagen. Bitte versuch es noch einmal.';
+    return L.s.signInFailed;
   }
 }
 

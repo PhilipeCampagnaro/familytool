@@ -456,7 +456,7 @@ class GlassAccentButton extends StatelessWidget {
                   textAlign: TextAlign.center,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontFamily: 'Poppins', fontSize: fontSize, fontWeight: FontWeight.w500, color: Colors.white),
+                  style: AppText.rowTitle.copyWith(fontSize: fontSize, color: Colors.white),
                 ),
               ),
             ],

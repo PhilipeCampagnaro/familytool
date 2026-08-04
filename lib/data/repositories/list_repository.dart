@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../models/shopping_list.dart';
 import '../../services/supabase.dart';
+import '../../l10n/l10n.dart';
 
 final _random = Random.secure();
 
@@ -71,7 +72,7 @@ class ListRepository {
 
   String get _uid {
     final id = AporahSupabase.userId;
-    if (id == null) throw StateError('Kein angemeldeter Benutzer.');
+    if (id == null) throw StateError(L.s.notSignedIn);
     return id;
   }
 

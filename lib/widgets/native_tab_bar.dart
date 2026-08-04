@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart' show Factory;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../l10n/l10n.dart';
 import '../theme/tokens.dart';
 import 'bottom_nav.dart';
 
@@ -39,6 +40,18 @@ class _NativeTabBarState extends State<NativeTabBar> {
     _channel?.invokeMethod('setBrightness', {'dark': _nativeDark});
   }
 
+  /// Same problem as the brightness, same fix: the titles go to UIKit once, in
+  /// `creationParams`, so without this the system tab bar would keep the
+  /// language it was born in while every other word in the app changed.
+  String _nativeLocale = L.s.localeCode;
+
+  void _syncLabels() {
+    if (_nativeLocale == L.s.localeCode) return;
+    _nativeLocale = L.s.localeCode;
+    _channel?.invokeMethod('setLabels', {
+      'labels': [for (final tab in navTabs) tab.label],
+    });
+  }
 
   /// The size UIKit lays the bar out at, once it has told us. On iOS 26 the
   /// width is the floating capsule's, which is narrower than the screen — so
@@ -50,6 +63,7 @@ class _NativeTabBarState extends State<NativeTabBar> {
   void didUpdateWidget(NativeTabBar oldWidget) {
     super.didUpdateWidget(oldWidget);
     _syncBrightness();
+    _syncLabels();
     if (widget.index != oldWidget.index) {
       _channel?.invokeMethod('setSelectedIndex', {'index': widget.index});
     }

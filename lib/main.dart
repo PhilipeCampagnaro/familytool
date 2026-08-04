@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'l10n/l10n.dart';
 import 'screens/auth_screen.dart';
 import 'screens/board_screen.dart';
 import 'screens/box_screen.dart';
@@ -37,6 +38,7 @@ class AporahApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final darkMode = ref.watch(settingsProvider.select((s) => s.darkMode));
+    final language = ref.watch(settingsProvider.select((s) => s.language));
     final palette = darkMode ? AppPalette.dark : AppPalette.light;
 
     // Installed here, before anything below builds, because the `AppColors`
@@ -46,18 +48,26 @@ class AporahApp extends ConsumerWidget {
     // already happening, driven by the `ref.watch` above.
     AppColors.palette = palette;
 
+    // Same trick, same reason: every string below reads `L.s` directly rather
+    // than through an `InheritedWidget`, so the language has to be in place
+    // before the subtree builds. See the `L` doc.
+    L.use(language.name);
+
     return MaterialApp(
       title: 'Aporah',
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(AppPalette.light),
       darkTheme: buildAppTheme(AppPalette.dark),
       themeMode: darkMode ? ThemeMode.dark : ThemeMode.light,
-      // German, and only German. Every string in the app is written in it, and
-      // without these the one place Flutter supplies its own copy — the date and
-      // time pickers behind the event form — would come up in English, with
-      // American month order into the bargain.
+      // `locale` is forced from Settings rather than left to the device: the
+      // family shares one interface language the same way it shares one theme,
+      // and a phone set to French must not put the pickers into a third
+      // language the app itself never speaks. The delegates are what translate
+      // the one surface Flutter supplies rather than us — the date and time
+      // pickers behind the event form.
+      locale: Locale(language.name),
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
-      supportedLocales: const [Locale('de')],
+      supportedLocales: appSupportedLocales,
       // No screen here has an `AppBar`, so nothing is setting the status-bar
       // style for us — without this the clock and battery icons stay dark and
       // disappear into a dark screen. Note the two brightness fields mean
@@ -70,7 +80,17 @@ class AporahApp extends ConsumerWidget {
           statusBarIconBrightness: darkMode ? Brightness.light : Brightness.dark,
           statusBarBrightness: darkMode ? Brightness.dark : Brightness.light,
         ),
-        child: child ?? const SizedBox.shrink(),
+        // `showTimePicker` reads its 12/24-hour dial off
+        // `MediaQuery.alwaysUse24HourFormat`, which is the *device* setting.
+        // Left alone, a German phone switched to English would show 12-hour
+        // times everywhere in the app and then open a 24-hour picker to edit
+        // them. The interface language decides both.
+        child: MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            alwaysUse24HourFormat: alwaysUse24HourFormat,
+          ),
+          child: child ?? const SizedBox.shrink(),
+        ),
       ),
       // Not `const`: a canonicalised instance would make the element below
       // identical across a theme flip, and the whole screen tree would be

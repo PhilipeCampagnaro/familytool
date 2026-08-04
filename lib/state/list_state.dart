@@ -7,6 +7,7 @@ import '../models/shopping_list.dart';
 import '../services/supabase.dart';
 import 'auth_state.dart';
 import 'family_state.dart';
+import '../l10n/l10n.dart';
 
 /// Everything the Listen screen renders, and nothing it doesn't.
 ///
@@ -143,6 +144,27 @@ class ListScreenState {
   List<ItemAttachment> attachmentsFor(ShoppingListItem item) => attachments[item.id] ?? const [];
 }
 
+/// Everything a deleted list would take with it, held just long enough for the
+/// confirmation chip's "Rückgängig" to hand it back.
+///
+/// Deliberately not kept on [ListScreenState]: it is not something the screen
+/// renders, and parking it there would make an un-undone delete linger in the
+/// state for the rest of the session. It lives for the five seconds the chip is
+/// up and is then collected with it.
+class DeletedList {
+  final ShoppingList list;
+  final List<ShoppingListItem> items;
+
+  /// Item id → the device-local photos filed against it, for the ones that had
+  /// any. Re-keyed onto the new rows by `ListNotifier.restoreList`.
+  final Map<String, List<ItemAttachment>> attachments;
+
+  /// Where it sat in the overview, so undo puts it back rather than at the end.
+  final int index;
+
+  const DeletedList({required this.list, required this.items, required this.attachments, required this.index});
+}
+
 class ListNotifier extends StateNotifier<ListScreenState> {
   ListNotifier(this._repo, this._userId, this._familyId) : super(const ListScreenState()) {
     if (_userId != null) load();
@@ -182,7 +204,7 @@ class ListNotifier extends StateNotifier<ListScreenState> {
       );
     } catch (_) {
       if (!mounted) return;
-      state = state.copyWith(loading: false, error: 'Listen konnten nicht geladen werden.');
+      state = state.copyWith(loading: false, error: L.s.listsLoadFailed);
     }
   }
 
@@ -239,13 +261,16 @@ class ListNotifier extends StateNotifier<ListScreenState> {
   /// Not optimistic, unlike [addItem]: a list is a container that the very next
   /// tap navigates into, and navigating into a row with no server id yet would
   /// mean every article typed there had nowhere to go.
-  Future<void> createList({required String name, required ListKind kind, String? iconKey}) async {
+  /// True only when the row really landed on the server — the screen shows its
+  /// confirmation chip off that, so a failed write gets the error snack and no
+  /// chip rather than both.
+  Future<bool> createList({required String name, required ListKind kind, String? iconKey}) async {
     final trimmed = name.trim();
-    if (trimmed.isEmpty) return;
+    if (trimmed.isEmpty) return false;
     final familyId = _familyId;
     if (familyId == null) {
-      _fail('Dein Haushalt ist noch nicht geladen.');
-      return;
+      _fail(L.s.householdNotLoaded);
+      return false;
     }
 
     // `allowGrocery: false`: a list is a container, and the article photos are
@@ -262,13 +287,15 @@ class ListNotifier extends StateNotifier<ListScreenState> {
         sharedWith: state.newSharedWith,
         position: state.lists.length,
       );
-      if (!mounted) return;
+      if (!mounted) return false;
       state = state.copyWith(
         lists: [...state.lists, saved],
         itemsByList: {...state.itemsByList, saved.id: const []},
       );
+      return true;
     } catch (_) {
-      _fail('Die Liste konnte nicht gespeichert werden.');
+      _fail(L.s.listSaveFailed);
+      return false;
     }
   }
 
@@ -277,9 +304,9 @@ class ListNotifier extends StateNotifier<ListScreenState> {
   /// An emptied name means "left it alone", the same rule the item rows follow.
   /// The icon follows the name unless the user has picked one: renaming a list
   /// from *Rewe* to *Baumarkt* and keeping the REWE logo would be a lie.
-  Future<void> updateList(String id, {required String name, required ListKind kind, String? iconKey}) async {
+  Future<bool> updateList(String id, {required String name, required ListKind kind, String? iconKey}) async {
     final list = state.listById(id);
-    if (list == null) return;
+    if (list == null) return false;
 
     final newName = name.trim().isEmpty ? list.name : name.trim();
     final icon = iconKey ?? (newName == list.name ? list.iconKey : suggestIcon(newName, subject: IconSubject.list)?.key);
@@ -293,17 +320,37 @@ class ListNotifier extends StateNotifier<ListScreenState> {
         visibility: state.newVisibility,
         sharedWith: state.newSharedWith,
       );
-      if (!mounted) return;
+      if (!mounted) return false;
       state = state.copyWith(lists: [for (final l in state.lists) l.id == id ? saved : l]);
+      return true;
     } catch (_) {
-      _fail('Die Änderung konnte nicht gespeichert werden.');
+      _fail(L.s.changeSaveFailed);
+      return false;
     }
   }
 
   /// Drops a list and everything filed under it, and leaves the detail view if
   /// that's the list it was showing.
-  Future<void> deleteList(String id) async {
+  ///
+  /// Returns what it took away, or null if the delete didn't land — the
+  /// confirmation chip's "Rückgängig" hands it straight back to [restoreList].
+  /// The snapshot is taken here rather than at the call site because the items
+  /// and the photos hanging off them only exist in this state.
+  Future<DeletedList?> deleteList(String id) async {
     final previous = state;
+    final list = state.listById(id);
+    if (list == null) return null;
+
+    final removedItems = state.itemsFor(id);
+    final removed = DeletedList(
+      list: list,
+      items: removedItems,
+      attachments: {
+        for (final item in removedItems) item.id: ?state.attachments[item.id],
+      },
+      index: state.lists.indexWhere((l) => l.id == id),
+    );
+
     final items = Map<String, List<ShoppingListItem>>.from(state.itemsByList)..remove(id);
     state = state.copyWith(
       lists: state.lists.where((l) => l.id != id).toList(),
@@ -315,10 +362,83 @@ class ListNotifier extends StateNotifier<ListScreenState> {
 
     try {
       await _repo.deleteList(id);
+      return removed;
     } catch (_) {
-      if (!mounted) return;
-      state = previous.copyWith(error: 'Die Liste konnte nicht gelöscht werden.');
+      if (!mounted) return null;
+      state = previous.copyWith(error: L.s.listDeleteFailed);
+      return null;
     }
+  }
+
+  /// Puts a deleted list back, articles and all.
+  ///
+  /// A re-*insert*, not a resurrection: the rows are gone, so everything comes
+  /// back under new ids. That is invisible for the list, its articles and its
+  /// audience — all of which are carried over — but a share link handed to
+  /// somebody outside the household pointed at the old id and stays dead. Undo
+  /// is for the mis-tap you notice immediately, and re-sharing is the honest
+  /// price of it.
+  Future<bool> restoreList(DeletedList deleted) async {
+    final familyId = _familyId;
+    if (familyId == null) {
+      _fail(L.s.householdNotLoaded);
+      return false;
+    }
+
+    try {
+      final list = deleted.list;
+      final saved = await _repo.createList(
+        familyId: familyId,
+        name: list.name,
+        kind: list.kind,
+        iconKey: list.iconKey,
+        visibility: list.visibility,
+        sharedWith: list.sharedWith.toSet(),
+        position: list.position,
+      );
+
+      // In parallel: each article carries its own `position`, so the order it
+      // comes back in is the order it was in, whatever sequence the inserts
+      // finish in.
+      final restored = await Future.wait([
+        for (final item in deleted.items) _restoreItem(saved.id, item),
+      ]);
+      if (!mounted) return false;
+
+      final lists = [...state.lists];
+      lists.insert(deleted.index.clamp(0, lists.length), saved);
+      state = state.copyWith(
+        lists: lists,
+        itemsByList: {...state.itemsByList, saved.id: restored},
+        // The photos were only ever on this device, and they were filed under
+        // the *old* article ids — re-key them or they are lost with rows that
+        // still exist.
+        attachments: {
+          ...state.attachments,
+          for (final (i, item) in deleted.items.indexed) restored[i].id: ?deleted.attachments[item.id],
+        },
+      );
+      return true;
+    } catch (_) {
+      _fail(L.s.listRestoreFailed);
+      return false;
+    }
+  }
+
+  /// One article of a restored list, back with everything the columns hold —
+  /// including whether it had already been checked off, which is a second
+  /// statement because `addItem` has no say over it.
+  Future<ShoppingListItem> _restoreItem(String listId, ShoppingListItem item) async {
+    final saved = await _repo.addItem(
+      listId: listId,
+      text: item.text,
+      sub: item.sub,
+      iconKey: item.iconKey,
+      assigneeId: item.assigneeId,
+      position: item.position,
+    );
+    if (!item.done) return saved;
+    return _repo.setDone(saved.id, true);
   }
 
   // ---------------------------------------------------------------------------
@@ -364,7 +484,7 @@ class ListNotifier extends StateNotifier<ListScreenState> {
     } catch (_) {
       if (!mounted) return;
       _removeItemLocally(targetId, optimistic.id);
-      _fail('Der Artikel konnte nicht gespeichert werden.');
+      _fail(L.s.itemSaveFailed);
     }
   }
 
@@ -406,7 +526,7 @@ class ListNotifier extends StateNotifier<ListScreenState> {
     } catch (_) {
       if (!mounted) return;
       _patchItem(item.listId, item.id, (_) => item);
-      _fail('Die Änderung konnte nicht gespeichert werden.');
+      _fail(L.s.changeSaveFailed);
     }
   }
 
@@ -441,7 +561,7 @@ class ListNotifier extends StateNotifier<ListScreenState> {
     } catch (_) {
       if (!mounted) return;
       _patchItem(listId, itemId, (_) => before);
-      _fail('Konnte nicht gespeichert werden.');
+      _fail(L.s.saveFailed);
     }
   }
 
@@ -462,10 +582,10 @@ class ListNotifier extends StateNotifier<ListScreenState> {
       if (refused.isEmpty) return;
       state = state.copyWith(itemsByList: previous);
       _removeItemsLocally(deleted);
-      _fail('Nicht alle erledigten Artikel konnten gelöscht werden.');
+      _fail(L.s.someDoneItemsNotDeleted);
     } catch (_) {
       if (!mounted) return;
-      state = state.copyWith(itemsByList: previous, error: 'Die erledigten Artikel konnten nicht gelöscht werden.');
+      state = state.copyWith(itemsByList: previous, error: L.s.doneItemsDeleteFailed);
     }
   }
 
@@ -481,7 +601,7 @@ class ListNotifier extends StateNotifier<ListScreenState> {
       await _repo.deleteItem(item.id);
     } catch (_) {
       if (!mounted) return;
-      state = state.copyWith(itemsByList: previous, error: 'Der Artikel konnte nicht gelöscht werden.');
+      state = state.copyWith(itemsByList: previous, error: L.s.itemDeleteFailed);
     }
   }
 

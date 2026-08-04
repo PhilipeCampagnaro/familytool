@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../l10n/l10n.dart';
 
 // `PendingInvite` moved to `family_state.dart` and became a real
 // `family_invites` row — with an id to revoke it by and a `FamilyRole` instead
@@ -11,20 +12,24 @@ import 'package:shared_preferences/shared_preferences.dart';
 // three-value copy whose third value was `child` — which the database has no
 // value for, so every attempt to save a child's role would have been rejected.
 
-/// UI languages offered in Settings. The app's copy is German-only for now
-/// (see CLAUDE.md), so this stores the preference without re-translating the
-/// interface — swapping in real localizations later only has to read this.
+/// The interface languages. `name` is the locale code (`'de'` / `'en'`) that
+/// `AporahApp` hands to both `L.use` and `MaterialApp.locale`, and the string
+/// this preference is persisted as — don't rename a value without a migration.
 enum AppLanguage { de, en }
 
 extension AppLanguageLabel on AppLanguage {
+  /// Each language named in itself, not translated: a picker that renamed
+  /// "Deutsch" to "German" would be unreadable to the person looking for it.
   String get label => switch (this) {
         AppLanguage.de => 'Deutsch',
         AppLanguage.en => 'English',
       };
 
+  /// The region under the name — this one *does* follow the interface
+  /// language, since it is a description rather than the language's own name.
   String get nativeSubtitle => switch (this) {
-        AppLanguage.de => 'Deutschland',
-        AppLanguage.en => 'United Kingdom',
+        AppLanguage.de => L.s.languageGermanRegion,
+        AppLanguage.en => L.s.languageEnglishRegion,
       };
 }
 
@@ -43,7 +48,7 @@ class SettingsScreenState {
   /// What Settings shows where a name would go. [name] stays genuinely empty
   /// until the user sets one or Supabase auth supplies it — this is a prompt,
   /// not a stand-in identity.
-  String get displayName => name.trim().isEmpty ? 'Profil einrichten' : name;
+  String get displayName => name.trim().isEmpty ? L.s.setUpProfile : name;
 
   SettingsScreenState copyWith({
     String? name,

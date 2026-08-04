@@ -151,6 +151,14 @@ class SearchFieldPlatformView: NSObject, FlutterPlatformView, UISearchBarDelegat
         let dark = (call.arguments as? [String: Any])?["dark"] as? Bool ?? false
         self.container.overrideUserInterfaceStyle = dark ? .dark : .light
         result(nil)
+      // The interface language is an in-app setting too, so the placeholder has
+      // to be pushed down the same way the theme is — a Settings page left
+      // mounted behind the language picker would otherwise keep the old one.
+      case "setPlaceholder":
+        let placeholder = (call.arguments as? [String: Any])?["placeholder"] as? String
+        self.searchBar?.placeholder = placeholder
+        self.searchField?.placeholder = placeholder
+        result(nil)
       case "focus":
         self.focus()
         result(nil)

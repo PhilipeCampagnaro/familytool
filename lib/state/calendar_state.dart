@@ -8,6 +8,7 @@ import '../data/repositories/calendar_repository.dart';
 import '../models/calendar_event.dart';
 import 'auth_state.dart';
 import 'family_state.dart';
+import '../l10n/l10n.dart';
 
 class CalSelectedDay {
   final int y;
@@ -164,28 +165,33 @@ class CalendarScreenState {
     return [for (final e in all) if (e.calendarId == calendarFilter) e];
   }
 
-  /// The source dots under a day cell, in calendar order and de-duplicated —
-  /// three events on one calendar are one dot, not three.
-  List<Color> dayColors(int y, int m, int d) {
-    final seen = <String>{};
-    final out = <Color>[];
-    for (final e in eventsFor(y, m, d)) {
-      if (seen.add(e.calendarId)) out.add(e.srcColor);
-    }
-    return out;
-  }
-
-  /// Day numbers in this month carrying an all-day event from a read-only feed
-  /// — school holidays, in practice. The month grid tints these.
+  /// The dots under a day cell — **one per event**, in the order the day is
+  /// listed in, each carrying its calendar's colour.
   ///
-  /// Derived from real events now. It used to be a hardcoded table of day
-  /// numbers, which could only ever have been decoration.
+  /// It used to de-duplicate by calendar, so four appointments in one Google
+  /// calendar drew a single dot and read as a quiet day. The dot row is how busy
+  /// a day looks at a glance, and that is a question about events, not about how
+  /// many calendars they happen to be spread across. The cells cap the row and
+  /// turn the rest into a "+" badge, so a heavy day stays the same width.
+  List<Color> dayColors(int y, int m, int d) => [
+        for (final e in eventsFor(y, m, d)) e.srcColor,
+      ];
+
+  /// Day numbers in this month that fall inside a school holiday — the days the
+  /// month grid tints, with the "Feiertag" legend above it.
+  ///
+  /// It reads the **Ferien feed and nothing else**. "All-day event on a
+  /// read-only calendar", which this used to be, is also true of every waste
+  /// pickup and of any subscribed calendar a Google account can only read, so a
+  /// household with the bin calendar connected saw a third of the month tinted
+  /// as holiday. The tint has one meaning; only the feed that carries that
+  /// meaning may set it.
   Set<int> holidaysIn(int y, int m) {
     final out = <int>{};
     final days = DateTime(y, m + 1, 0).day;
     for (var d = 1; d <= days; d++) {
       for (final e in eventsFor(y, m, d)) {
-        if (e.allDay && (sourceById(e.calendarId)?.readOnly ?? false)) {
+        if (sourceById(e.calendarId)?.feedKind == 'ferien') {
           out.add(d);
           break;
         }
@@ -253,7 +259,7 @@ class CalendarNotifier extends StateNotifier<CalendarScreenState> {
       if (!mounted) return;
       state = state.copyWith(
         loaded: true,
-        error: silent ? null : 'Der Kalender konnte nicht geladen werden.',
+        error: silent ? null : L.s.calendarLoadFailed,
       );
     }
   }
@@ -341,14 +347,14 @@ class CalendarNotifier extends StateNotifier<CalendarScreenState> {
   /// so the sheet can stay open with what the user typed still in it.
   Future<bool> createEvent(EventDraft draft) async {
     final clean = draft.copyWith(title: draft.title.trim());
-    if (clean.title.isEmpty) return _failed('Der Termin braucht einen Titel.');
+    if (clean.title.isEmpty) return _failed(L.s.eventNeedsTitle);
 
     try {
       await _write(clean);
       await refresh();
       return true;
     } catch (e) {
-      return _failed(_message(e, 'Der Termin konnte nicht gespeichert werden.'));
+      return _failed(_message(e, L.s.eventSaveFailed));
     }
   }
 
@@ -360,8 +366,8 @@ class CalendarNotifier extends StateNotifier<CalendarScreenState> {
   /// leaves a duplicate, which the user can see and remove.
   Future<bool> saveEvent(CalendarEvent event, EventDraft draft) async {
     final clean = draft.copyWith(title: draft.title.trim());
-    if (clean.title.isEmpty) return _failed('Der Termin braucht einen Titel.');
-    if (!canEdit(event)) return _failed('Dieser Kalender lässt sich in Aporah nicht bearbeiten.');
+    if (clean.title.isEmpty) return _failed(L.s.eventNeedsTitle);
+    if (!canEdit(event)) return _failed(L.s.calendarNotEditable);
 
     try {
       if (clean.calendarId == event.calendarId) {
@@ -393,12 +399,12 @@ class CalendarNotifier extends StateNotifier<CalendarScreenState> {
       await refresh();
       return true;
     } catch (e) {
-      return _failed(_message(e, 'Die Änderung konnte nicht gespeichert werden.'));
+      return _failed(_message(e, L.s.changeSaveFailed));
     }
   }
 
   Future<bool> deleteEvent(CalendarEvent event) async {
-    if (!canEdit(event)) return _failed('Dieser Kalender lässt sich in Aporah nicht bearbeiten.');
+    if (!canEdit(event)) return _failed(L.s.calendarNotEditable);
     state = state.copyWith(clearOpenEvent: true);
 
     try {
@@ -406,7 +412,26 @@ class CalendarNotifier extends StateNotifier<CalendarScreenState> {
       await refresh();
       return true;
     } catch (e) {
-      return _failed(_message(e, 'Der Termin konnte nicht gelöscht werden.'));
+      return _failed(_message(e, L.s.eventDeleteFailed));
+    }
+  }
+
+  /// Writes a deleted appointment back where it came from — the chip's
+  /// "Rückgängig".
+  ///
+  /// The cheapest restore of the four: [_write] already routes by calendar, so
+  /// an own event becomes a `public.events` row again and a Google or CalDAV one
+  /// goes back out through `calendar-write`, exactly as it was created. What it
+  /// cannot bring back is the provider's own id — the appointment returns as a
+  /// new one — which matters only to a guest who had been invited to it in
+  /// Google.
+  Future<bool> restoreEvent(CalendarEvent event) async {
+    try {
+      await _write(EventDraft.of(event));
+      await refresh();
+      return true;
+    } catch (e) {
+      return _failed(_message(e, L.s.eventRestoreFailed));
     }
   }
 
@@ -423,11 +448,11 @@ class CalendarNotifier extends StateNotifier<CalendarScreenState> {
     // first `isOwn` calendar it finds — that could be somebody else's.
     if (target == null) {
       if (draft.calendarId != CalendarSource.ownPlaceholderId) {
-        throw const CalendarWriteException('Dieser Kalender ist nicht mehr verfügbar.');
+        throw CalendarWriteException(L.s.calendarNoLongerAvailable);
       }
       final familyId = _familyId;
       if (familyId == null) {
-        throw const CalendarWriteException('Kein Haushalt gefunden.');
+        throw CalendarWriteException(L.s.noHouseholdFound);
       }
       final calendar = await _repo.ownCalendar(familyId);
       await _repo.createEvent(draft.toEvent(calendar: calendar));
@@ -466,11 +491,18 @@ class CalendarNotifier extends StateNotifier<CalendarScreenState> {
 
 final calendarRepositoryProvider = Provider<CalendarRepository>((ref) => CalendarRepository());
 
+/// `select` rather than a bare `watch(familyProvider)`, matching listProvider,
+/// boxProvider and boardProvider. Without it, saving a profile — anything that
+/// touches FamilyState at all — disposes this notifier and rebuilds it, which
+/// here means cancelling the clock ticker and re-running load(): a cache read
+/// followed by a `calendar-events` call that fans out to Google, Outlook and
+/// every CalDAV server the household has connected. It is the most expensive
+/// rebuild in the app, triggered by the least related action.
 final calendarProvider = StateNotifierProvider<CalendarNotifier, CalendarScreenState>((ref) {
   final userId = ref.watch(currentUserIdProvider);
   return CalendarNotifier(
     ref.watch(calendarRepositoryProvider),
-    ref.watch(familyProvider).household?.id,
+    ref.watch(familyProvider.select((s) => s.household?.id)),
     signedIn: userId != null,
   );
 });

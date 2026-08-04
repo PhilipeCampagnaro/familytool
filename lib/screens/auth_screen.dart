@@ -5,6 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../state/auth_state.dart';
 import '../theme/tokens.dart';
 import '../widgets/app_sheet.dart';
+import '../l10n/l10n.dart';
 
 /// Registration and sign-in — the app's front door.
 ///
@@ -71,14 +72,12 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
             children: [
               const SizedBox(height: 12),
               Text(
-                _register ? 'Willkommen bei Aporah' : 'Willkommen zurück',
+                _register ? L.s.welcomeToAporah : L.s.welcomeBack,
                 style: AppText.screenTitle,
               ),
               const SizedBox(height: 10),
               Text(
-                _register
-                    ? 'Leg dein Konto an. Dein Haushalt wird automatisch erstellt — Familie einladen kannst du danach.'
-                    : 'Melde dich mit deiner E-Mail-Adresse an.',
+                _register ? L.s.signUpBlurb : L.s.signInBlurb,
                 style: AppText.body,
               ),
               const SizedBox(height: 28),
@@ -88,7 +87,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   if (_register) ...[
                     _Field(
                       controller: _nameController,
-                      hint: 'Dein Name',
+                      hint: L.s.yourName,
                       textCapitalization: TextCapitalization.words,
                       autofillHints: const [AutofillHints.name],
                     ),
@@ -96,14 +95,14 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   ],
                   _Field(
                     controller: _emailController,
-                    hint: 'E-Mail-Adresse',
+                    hint: L.s.emailAddress,
                     keyboardType: TextInputType.emailAddress,
                     autofillHints: const [AutofillHints.email],
                   ),
                   CardDivider(),
                   _Field(
                     controller: _passwordController,
-                    hint: 'Passwort',
+                    hint: L.s.password,
                     obscure: _obscure,
                     autofillHints: _register
                         ? const [AutofillHints.newPassword]
@@ -130,13 +129,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 4),
                   child: Text(
-                    'Mindestens 8 Zeichen.',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 13,
-                      fontWeight: FontWeight.w300,
-                      color: AppColors.inkTertiary,
-                    ),
+                    L.s.atLeast8Chars,
+                    style: AppText.caption.copyWith(fontWeight: FontWeight.w300, color: AppColors.inkTertiary),
                   ),
                 ),
               ],
@@ -148,7 +142,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 
               const SizedBox(height: 24),
               _PrimaryButton(
-                label: _register ? 'Konto erstellen' : 'Anmelden',
+                label: _register ? L.s.createAccount : L.s.signIn,
                 busy: auth.busy,
                 onTap: auth.busy ? null : _submit,
               ),
@@ -164,13 +158,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
                     child: Text(
-                      _register ? 'Ich habe schon ein Konto' : 'Neu hier? Konto erstellen',
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
+                      _register ? L.s.haveAccountAlready : L.s.newHereCreateAccount,
+                      style: AppText.rowTitle.copyWith(color: Theme.of(context).colorScheme.primary),
                     ),
                   ),
                 ),
@@ -186,13 +175,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
                       child: Text(
-                        'Passwort vergessen?',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: 14,
-                          fontWeight: FontWeight.w300,
-                          color: AppColors.inkTertiary,
-                        ),
+                        L.s.forgotPassword,
+                        style: AppText.body.copyWith(color: AppColors.inkTertiary),
                       ),
                     ),
                   ),
@@ -235,16 +219,16 @@ class _ConfirmationPending extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 22),
-              Text('Fast geschafft', style: AppText.screenTitle, textAlign: TextAlign.center),
+              Text(L.s.almostThere, style: AppText.screenTitle, textAlign: TextAlign.center),
               const SizedBox(height: 10),
               Text(
-                'Wir haben dir eine E-Mail an $email geschickt. Klick den Link darin, dann kannst du dich anmelden.',
+                L.s.confirmMailSent(email),
                 style: AppText.body,
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 28),
               _PrimaryButton(
-                label: 'Zur Anmeldung',
+                label: L.s.toSignIn,
                 onTap: () => ref.read(authProvider.notifier).backToSignIn(),
               ),
             ],
@@ -291,7 +275,7 @@ class _Field extends StatelessWidget {
               autofillHints: autofillHints,
               autocorrect: false,
               onSubmitted: onSubmitted,
-              style: TextStyle(fontFamily: 'Poppins', fontSize: 16, color: AppColors.ink),
+              style: AppText.inputTitle,
               decoration: InputDecoration(border: InputBorder.none, hintText: hint, isDense: true),
             ),
           ),
@@ -323,12 +307,7 @@ class _ErrorNote extends StatelessWidget {
           Expanded(
             child: Text(
               message,
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 14,
-                fontWeight: FontWeight.w300,
-                color: AppColors.inkSecondary,
-              ),
+              style: AppText.body,
             ),
           ),
         ],
@@ -364,12 +343,7 @@ class _PrimaryButton extends StatelessWidget {
                 )
               : Text(
                   label,
-                  style: const TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
+                  style: AppText.buttonLarge.copyWith(color: Colors.white),
                 ),
         ),
       ),

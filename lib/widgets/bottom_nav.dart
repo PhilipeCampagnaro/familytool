@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import '../l10n/l10n.dart';
 import '../theme/tokens.dart';
 import 'glass.dart';
 
@@ -21,12 +22,15 @@ class NavTab {
     : sfSymbolSelected = sfSymbolSelected ?? sfSymbol;
 }
 
-const navTabs = [
-  NavTab('Home', LucideIcons.home, sfSymbol: 'house', sfSymbolSelected: 'house.fill'),
-  NavTab('Kalender', LucideIcons.calendar, sfSymbol: 'calendar'),
-  NavTab('Listen', LucideIcons.clipboardCheck, sfSymbol: 'checklist'),
-  NavTab('Board', LucideIcons.layoutPanelLeft, sfSymbol: 'square.grid.2x2', sfSymbolSelected: 'square.grid.2x2.fill'),
-  NavTab('Box', LucideIcons.box, sfSymbol: 'shippingbox', sfSymbolSelected: 'shippingbox.fill'),
+/// Rebuilt on every read so the labels follow the interface language. The
+/// native iOS bar re-sends these to UIKit when it rebuilds, so the system tab
+/// bar changes language with the rest of the app.
+List<NavTab> get navTabs => [
+  NavTab(L.s.navHome, LucideIcons.home, sfSymbol: 'house', sfSymbolSelected: 'house.fill'),
+  NavTab(L.s.navCalendar, LucideIcons.calendar, sfSymbol: 'calendar'),
+  NavTab(L.s.navLists, LucideIcons.clipboardCheck, sfSymbol: 'checklist'),
+  NavTab(L.s.navBoard, LucideIcons.layoutPanelLeft, sfSymbol: 'square.grid.2x2', sfSymbolSelected: 'square.grid.2x2.fill'),
+  NavTab(L.s.navBox, LucideIcons.box, sfSymbol: 'shippingbox', sfSymbolSelected: 'shippingbox.fill'),
 ];
 
 /// iPhone/iPad gets the real system tab bar — an actual `UITabBar` embedded as
@@ -143,12 +147,7 @@ class _NavItem extends StatelessWidget {
                 padding: const EdgeInsets.only(right: 8),
                 child: Text(
                   tab.label,
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.ink,
-                  ),
+                  style: AppText.rowTitle,
                 ),
               ),
             ],

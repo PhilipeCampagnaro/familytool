@@ -25,10 +25,13 @@ import '../widgets/empty_state.dart';
 import '../widgets/error_note.dart';
 import '../widgets/glass.dart';
 import '../widgets/icon_picker.dart';
+import '../widgets/overview_screen.dart';
 import '../widgets/search.dart';
 import '../widgets/share_sheet.dart';
 import '../widgets/swipe_actions.dart';
+import '../widgets/toast_chip.dart';
 import '../widgets/visibility_picker.dart';
+import '../l10n/l10n.dart';
 
 /// Label colour of a checked-off item — the strike-through fades the open row's
 /// text to it, so landing in "Erledigt" isn't a colour jump.
@@ -37,8 +40,8 @@ Color get _itemDoneInk => AppColors.doneInk;
 /// The two lines of an article row. Shared with the fields that replace them
 /// while the row is being edited — same family, size and weight, so tapping a
 /// name doesn't make the text move.
-TextStyle get _itemTextStyle => TextStyle(fontFamily: 'Poppins', fontSize: 15, fontWeight: FontWeight.w500, color: AppColors.ink);
-TextStyle get _itemSubStyle => TextStyle(fontFamily: 'Poppins', fontSize: 12, fontWeight: FontWeight.w300, color: AppColors.muted);
+TextStyle get _itemTextStyle => AppText.itemTitle;
+TextStyle get _itemSubStyle => AppText.label;
 
 /// A text field that has to pass for the label it replaced: no border, no
 /// underline, and none of the vertical padding a [TextField] carries by
@@ -82,100 +85,41 @@ class ListScreen extends ConsumerWidget {
   }
 }
 
-class _ListOverview extends ConsumerStatefulWidget {
+class _ListOverview extends ConsumerWidget {
   final ListScreenState state;
 
   const _ListOverview({required this.state});
 
-  @override
-  ConsumerState<_ListOverview> createState() => _ListOverviewState();
-}
-
-class _ListOverviewState extends ConsumerState<_ListOverview> {
-  /// First-frame estimate only — [CollapsingHeaderScreen] re-measures the real
-  /// thing once it's laid out.
+  /// First-frame estimate only — just the search pill, Listen having no stat
+  /// tiles. [CollapsingHeaderScreen] re-measures the real thing once it's laid
+  /// out.
   static const _extraHeight = 74.0;
 
-  static const _searchHint = 'Listen und Artikel durchsuchen';
-
-  /// Search runs *in* the screen (see [HeaderSearchBar]): the header turns into
-  /// the system search field and this body shows the hits — no sheet over the
-  /// content.
-  bool _searching = false;
-  String _query = '';
-
-  void _openSearch() => setState(() => _searching = true);
-
-  void _closeSearch() {
-    setState(() {
-      _searching = false;
-      _query = '';
-    });
-  }
-
-  void _open(String id) {
-    _closeSearch();
-    ref.read(listProvider.notifier).open(id);
-  }
-
   @override
-  Widget build(BuildContext context) {
-    final state = widget.state;
-    final query = _query.trim();
-    return CollapsingHeaderScreen(
-      titleRowBuilder: (context, t) => HeaderSearchBar(
-        active: _searching,
-        hint: _searchHint,
-        onChanged: (v) => setState(() => _query = v),
-        onClose: _closeSearch,
-        // `leadingWidth: 0` on purpose even though there's a leading button: it
-        // only fades in once the header is collapsed (see [HeaderSearchButton]),
-        // and reserving room for it at rest would push the big "Listen" heading
-        // off the left margin.
-        child: CollapsingScreenTitle(
-          title: 'Listen',
-          t: t,
-          trailingWidth: 48,
-          leading: HeaderSearchButton(t: t, onTap: _openSearch),
-          trailing: GlassIconButton(icon: LucideIcons.plus, onTap: () => openListSheet(context, ref)),
-        ),
-      ),
-      // While searching the header is only the field: the trigger pill would be
-      // a second search box for the same query, and dropping it gives the
-      // results the screen.
-      estimatedExtraHeight: _searching ? 0 : _extraHeight,
-      extra: _searching
-          ? const SizedBox.shrink()
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 16),
-                SearchTriggerField(hint: _searchHint, onTap: _openSearch),
-              ],
-            ),
-      body: ScreenBodyPanel(
-        child: ListView(
-          padding: EdgeInsets.fromLTRB(16, 18, 16, navContentInset(context, pill: 140)),
-          children: _searching
-              ? [_searchResults(context, state, query)]
-              : [
-                  if (_loadFailed(state))
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 18),
-                      child: ErrorNote(message: state.error!, onRetry: () => ref.read(listProvider.notifier).load()),
-                    ),
-                  // Not while the first load is still out — an account with
-                  // twelve lists must not be told it has none.
-                  if (state.lists.isEmpty && !state.loading && state.error == null)
-                    EmptyState(
-                      icon: LucideIcons.listPlus,
-                      iconColor: Theme.of(context).colorScheme.primary,
-                      message: 'Noch keine Liste angelegt.\nOben tippen, um die erste zu erstellen.',
-                    ),
-                  if (state.lists.isNotEmpty) _listsCard(context, state),
-                ],
-        ),
-      ),
+  Widget build(BuildContext context, WidgetRef ref) {
+    return SearchableOverviewScreen(
+      title: L.s.listsTitle,
+      searchHint: L.s.searchListsAndItems,
+      searchPrompt: L.s.searchListsAndItemsLong,
+      onAdd: () => openListSheet(context, ref),
+      extraHeight: _extraHeight,
+      body: (context) => [
+        if (_loadFailed)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 18),
+            child: ErrorNote(message: state.error!, onRetry: () => ref.read(listProvider.notifier).load()),
+          ),
+        // Not while the first load is still out — an account with twelve lists
+        // must not be told it has none.
+        if (state.lists.isEmpty && !state.loading && state.error == null)
+          EmptyState(
+            icon: LucideIcons.listPlus,
+            iconColor: Theme.of(context).colorScheme.primary,
+            message: L.s.noListsYet,
+          ),
+        if (state.lists.isNotEmpty) _listsCard(context, ref),
+      ],
+      results: (context, query, closeSearch) => _searchResults(context, ref, query, closeSearch),
     );
   }
 
@@ -189,38 +133,48 @@ class _ListOverviewState extends ConsumerState<_ListOverview> {
   /// visible in its symbol, and the pooled "Alle Artikel" row is just the first
   /// row of the same card, present only once there are two lists to pool (see
   /// [ListScreenState.showSummary]).
-  Widget _listsCard(BuildContext context, ListScreenState state) {
+  Widget _listsCard(BuildContext context, WidgetRef ref) {
     final rows = <ShoppingList>[if (state.showSummary) allList, ...state.lists];
     return SectionCard(
-      children: [
-        for (var i = 0; i < rows.length; i++) ...[
-          if (i > 0) CardDivider(),
+      children: dividedRows([
+        for (final list in rows)
           // "Alle Artikel" is computed rather than stored, so there is nothing
           // there to rename or delete — it gets the plain row.
-          if (rows[i].isSummary)
+          if (list.isSummary)
             GestureDetector(
               behavior: HitTestBehavior.opaque,
-              onTap: () => ref.read(listProvider.notifier).open(rows[i].id),
-              child: _ListRow(list: rows[i], state: state),
+              onTap: () => ref.read(listProvider.notifier).open(list.id),
+              child: _ListRow(list: list, state: state),
             )
           else
-            _swipeListRow(context, ref, rows[i], state),
-        ],
-      ],
+            SwipeToEditDelete(
+              onTap: () => ref.read(listProvider.notifier).open(list.id),
+              onEdit: () => openListSheet(context, ref, list: list),
+              onDelete: () async {
+                final confirm = confirmChipOf(context);
+                final notifier = ref.read(listProvider.notifier);
+                if (await notifier.deleteList(list.id) case final deleted?) {
+                  confirm(L.s.listDeleted, undo: () => notifier.restoreList(deleted));
+                }
+              },
+              child: _ListRow(list: list, state: state),
+            ),
+      ]),
     );
   }
 
   /// Nothing on screen and a message saying why — as opposed to a write that
   /// failed while the screen still has content, which gets a snack instead.
-  bool _loadFailed(ListScreenState state) => state.error != null && !state.loading && state.lists.isEmpty;
+  bool get _loadFailed => state.error != null && !state.loading && state.lists.isEmpty;
 
   /// Search covers the *contents* of every list, not just their names — the
   /// thing you're looking for ("Milch") is an article inside a list far more
   /// often than it is a list. Hits are grouped by the list they live in, and
   /// tapping one opens that list, so the results double as a way in.
-  Widget _searchResults(BuildContext context, ListScreenState state, String query) {
-    if (query.isEmpty) {
-      return SearchResultsPlaceholder(query: '', prompt: 'Nach Listen und Artikeln suchen');
+  Widget? _searchResults(BuildContext context, WidgetRef ref, String query, VoidCallback closeSearch) {
+    void open(String id) {
+      closeSearch();
+      ref.read(listProvider.notifier).open(id);
     }
 
     final matchedLists = state.lists.where((l) => listMatchesQuery(l.name, query, iconKey: l.iconKey)).toList();
@@ -230,62 +184,47 @@ class _ListOverviewState extends ConsumerState<_ListOverview> {
       if (hits.isNotEmpty) itemHits.add((l, hits));
     }
 
-    if (matchedLists.isEmpty && itemHits.isEmpty) {
-      return SearchResultsPlaceholder(query: query, prompt: '');
-    }
+    if (matchedLists.isEmpty && itemHits.isEmpty) return null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (matchedLists.isNotEmpty) ...[
-          SearchGroupHeading(label: 'Listen', count: matchedLists.length == 1 ? '1 Treffer' : '${matchedLists.length} Treffer'),
-          SectionCard(
-            children: [
-              for (var i = 0; i < matchedLists.length; i++) ...[
-                if (i > 0) CardDivider(),
+        if (matchedLists.isNotEmpty)
+          SearchHitGroup(
+            first: true,
+            label: L.s.listsTitle,
+            count: L.s.matchCount(matchedLists.length),
+            rows: [
+              for (final list in matchedLists)
                 GestureDetector(
                   // Without this the row is only tappable where a glyph is
                   // actually painted — the padding and the gap before the
                   // chevron fall through.
                   behavior: HitTestBehavior.opaque,
-                  onTap: () => _open(matchedLists[i].id),
-                  child: _ListRow(list: matchedLists[i], state: state),
+                  onTap: () => open(list.id),
+                  child: _ListRow(list: list, state: state),
                 ),
-              ],
             ],
           ),
-        ],
         for (final (index, (list, hits)) in itemHits.indexed)
-          Padding(
-            padding: EdgeInsets.only(top: index == 0 && matchedLists.isEmpty ? 0 : 18),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SearchGroupHeading(
-                  label: list.name,
-                  count: hits.length == 1 ? '1 Artikel' : '${hits.length} Artikel',
-                  icon: IconTile(iconKey: list.iconKey, size: 26, imageSize: 17),
+          SearchHitGroup(
+            first: index == 0 && matchedLists.isEmpty,
+            label: list.name,
+            count: L.s.itemCount(hits.length),
+            icon: IconTile(iconKey: list.iconKey, size: 26, imageSize: 17),
+            rows: [
+              for (final hit in hits)
+                SearchResultRow(
+                  leading: IconTile(iconKey: hit.iconKey ?? list.iconKey, size: 38, imageSize: 26),
+                  title: hit.text,
+                  subtitle: hit.done ? L.s.doneInList(list.name) : (hit.sub ?? L.s.inList(list.name)),
+                  onTap: () => open(list.id),
                 ),
-                SectionCard(
-                  children: [
-                    for (var i = 0; i < hits.length; i++) ...[
-                      if (i > 0) CardDivider(),
-                      SearchResultRow(
-                        leading: IconTile(iconKey: hits[i].iconKey ?? list.iconKey, size: 38, imageSize: 26),
-                        title: hits[i].text,
-                        subtitle: hits[i].done ? 'Erledigt · ${list.name}' : (hits[i].sub ?? 'in ${list.name}'),
-                        onTap: () => _open(list.id),
-                      ),
-                    ],
-                  ],
-                ),
-              ],
-            ),
+            ],
           ),
       ],
     );
   }
-
 }
 
 /// The create/edit sheet for a list. Same sheet either way — [list] set means
@@ -313,14 +252,21 @@ void openListSheet(BuildContext context, WidgetRef ref, {ShoppingList? list}) {
   final draft = IconDraft(null);
   showAppSheet(
     context: context,
-    title: list == null ? 'Neue Liste' : 'Liste bearbeiten',
+    title: list == null ? L.s.newList : L.s.editList,
     heightFactor: 0.72,
-    onSave: () {
+    onSave: () async {
       final kind = ref.read(listProvider).newType == 'grocery' ? ListKind.grocery : ListKind.other;
-      if (list == null) {
-        notifier.createList(name: nameController.text, kind: kind, iconKey: draft.picked);
-      } else {
-        notifier.updateList(list.id, name: nameController.text, kind: kind, iconKey: draft.picked);
+      // The sheet has already been popped by the chrome, so the chip lands on
+      // the screen behind it, where the row it is talking about just changed.
+      final confirm = confirmChipOf(context);
+      if (list != null) {
+        if (await notifier.updateList(list.id, name: nameController.text, kind: kind, iconKey: draft.picked)) {
+          confirm(L.s.listUpdated);
+        }
+        return;
+      }
+      if (await notifier.createList(name: nameController.text, kind: kind, iconKey: draft.picked)) {
+        confirm(L.s.listCreated);
       }
     },
     child: _ListSheetBody(nameController: nameController, draft: draft, list: list),
@@ -371,7 +317,7 @@ class _ListSheetBodyState extends ConsumerState<_ListSheetBody> {
       children: [
         Padding(
           padding: EdgeInsets.only(left: 2, bottom: 8),
-          child: Text('Welche Art von Liste?', style: AppText.microLabel),
+          child: Text(L.s.whichKindOfList, style: AppText.microLabel),
         ),
         // The track needs the hairline: `surfaceAlt` is within a percent of the
         // sheet's own `screenBg` body on light, so the segmented control had no
@@ -388,10 +334,10 @@ class _ListSheetBodyState extends ConsumerState<_ListSheetBody> {
           child: Row(
             children: [
               Expanded(
-                child: _SegButton(label: 'Lebensmittel', icon: LucideIcons.clipboardList, active: isGrocery, accent: accent, onTap: () => ref.read(listProvider.notifier).setNewType('grocery')),
+                child: _SegButton(label: L.s.groceries, icon: LucideIcons.clipboardList, active: isGrocery, accent: accent, onTap: () => ref.read(listProvider.notifier).setNewType('grocery')),
               ),
               Expanded(
-                child: _SegButton(label: 'Sonstige', icon: LucideIcons.clipboardCheck, active: !isGrocery, accent: accent, onTap: () => ref.read(listProvider.notifier).setNewType('other')),
+                child: _SegButton(label: L.s.otherKind, icon: LucideIcons.clipboardCheck, active: !isGrocery, accent: accent, onTap: () => ref.read(listProvider.notifier).setNewType('other')),
               ),
             ],
           ),
@@ -403,8 +349,8 @@ class _ListSheetBodyState extends ConsumerState<_ListSheetBody> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
               child: TextField(
                 controller: widget.nameController,
-                style: TextStyle(fontFamily: 'Poppins', fontSize: 16, color: AppColors.ink),
-                decoration: const InputDecoration(border: InputBorder.none, hintText: 'Listenname', isDense: true),
+                style: AppText.inputTitle,
+                decoration: InputDecoration(border: InputBorder.none, hintText: L.s.listName, isDense: true),
                 // A picked icon is *not* cleared by typing on: overriding the
                 // guess and then fixing a typo shouldn't undo the override.
                 onChanged: (_) => setState(() {}),
@@ -437,7 +383,7 @@ class _ListSheetBodyState extends ConsumerState<_ListSheetBody> {
           members: ref.watch(householdMembersProvider),
           currentUserId: ref.watch(currentUserIdProvider),
           allowMembers: !s.isGuest,
-          noun: 'die Liste',
+          noun: L.s.theList,
         ),
       ],
     );
@@ -471,7 +417,7 @@ class _SegButton extends StatelessWidget {
             const SizedBox(width: 7),
             Text(
               label,
-              style: TextStyle(fontFamily: 'Poppins', fontSize: 14, fontWeight: FontWeight.w500, color: active ? accent : AppColors.muted),
+              style: AppText.buttonSmall.copyWith(color: active ? accent : AppColors.muted),
             ),
           ],
         ),
@@ -480,37 +426,9 @@ class _SegButton extends StatelessWidget {
   }
 }
 
-/// Swiping a list row left reveals Bearbeiten and Löschen — the same gesture,
-/// the same two actions and the same order as an article row inside a list (see
-/// [_swipeToDelete]), so the overview doesn't make renaming a list a trip
-/// through its detail screen's menu.
-///
-/// The opaque [ColoredBox] is what keeps the actions from showing through the
-/// sliding row: the row itself paints nothing, the [SectionCard] around it does.
-Widget _swipeListRow(BuildContext context, WidgetRef ref, ShoppingList list, ListScreenState state) {
-  return SwipeActionsRow(
-    onTap: () => ref.read(listProvider.notifier).open(list.id),
-    actions: [
-      SwipeAction(
-        icon: LucideIcons.pencil,
-        color: Theme.of(context).colorScheme.primary,
-        onTap: () => openListSheet(context, ref, list: list),
-      ),
-      SwipeAction(
-        icon: LucideIcons.trash2,
-        color: AppColors.danger,
-        // Nothing left to close once the row is gone.
-        closesRow: false,
-        onTap: () => ref.read(listProvider.notifier).deleteList(list.id),
-      ),
-    ],
-    child: ColoredBox(color: AppColors.surface, child: _ListRow(list: list, state: state)),
-  );
-}
-
 /// One list on the overview card. Carries no tap target of its own — the row is
-/// wrapped either by [_swipeListRow] or by a plain [GestureDetector], and a
-/// second detector inside would swallow the tap that closes an open swipe.
+/// wrapped either by a [SwipeToEditDelete] or by a plain [GestureDetector], and
+/// a second detector inside would swallow the tap that closes an open swipe.
 class _ListRow extends StatelessWidget {
   final ShoppingList list;
   final ListScreenState state;
@@ -521,7 +439,7 @@ class _ListRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final its = state.itemsFor(list.id);
     final remaining = its.where((i) => !i.done).length;
-    final meta = its.isEmpty ? 'Leer' : (remaining == 0 ? 'Alles erledigt' : '$remaining verbleibend');
+    final meta = its.isEmpty ? L.s.empty : (remaining == 0 ? L.s.allDone : L.s.remaining(remaining));
     final metaColor = its.isNotEmpty && remaining == 0 ? AppColors.success : AppColors.muted;
 
     return Padding(
@@ -538,11 +456,11 @@ class _ListRow extends StatelessWidget {
                   list.name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontFamily: 'Poppins', fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.ink),
+                  style: AppText.itemTitle,
                 ),
                 Text(
                   meta,
-                  style: TextStyle(fontFamily: 'Poppins', fontSize: 12.5, fontWeight: FontWeight.w300, color: metaColor),
+                  style: AppText.label.copyWith(color: metaColor),
                 ),
               ],
             ),
@@ -610,16 +528,15 @@ class _ListDetail extends ConsumerWidget {
     final openItems = items.where((i) => !i.done).toList();
     final doneItems = items.where((i) => i.done).toList();
 
-    final glowColor = summary ? accent : _brandGlow(open.iconKey);
-
     return CollapsingHeaderScreen(
-      backdrop: HeaderBrandGlow(color: glowColor),
+      // "Alle Artikel" is every list at once and so belongs to no shop.
+      backdrop: _ListGlow(iconKey: summary ? null : open.iconKey),
       // The pinned row keeps the generic "Liste" label at rest — the list's
       // own name is the big row below it — and swaps to that name as the
       // big one scrolls away, so the bar never stops saying which list
       // you're in.
       titleRowBuilder: (context, t) => CollapsingScreenTitle(
-        title: 'Liste',
+        title: L.s.listLabel,
         collapsedTitle: open.name,
         collapsedIcon: IconTile(iconKey: open.iconKey, size: 24, imageSize: 17),
         t: t,
@@ -635,13 +552,13 @@ class _ListDetail extends ConsumerWidget {
             ? const SizedBox(width: 40)
             : GlassMenuButton(
                 items: [
-                  AnchoredMenuItem(label: 'Bearbeiten', icon: LucideIcons.pencil, onSelected: () => openListSheet(context, ref, list: open)),
+                  AnchoredMenuItem(label: L.s.edit, icon: LucideIcons.pencil, onSelected: () => openListSheet(context, ref, list: open)),
                   // Its own action, never part of "Für wen?" — see
                   // [showShareSheet]. Absent for kids and for a guest looking
                   // at somebody else's list, both of whom the database refuses.
                   if (ref.watch(canShareExternallyProvider) && !state.guestListIds.contains(open.id))
                     AnchoredMenuItem(
-                      label: 'Teilen',
+                      label: L.s.share,
                       icon: LucideIcons.userPlus,
                       onSelected: () => showShareSheet(
                         context,
@@ -651,10 +568,18 @@ class _ListDetail extends ConsumerWidget {
                       ),
                     ),
                   AnchoredMenuItem(
-                    label: 'Löschen',
+                    label: L.s.delete,
                     icon: LucideIcons.trash2,
                     destructive: true,
-                    onSelected: () => ref.read(listProvider.notifier).deleteList(open.id),
+                    onSelected: () async {
+                      // Captured before the write: this row lives in the detail
+                      // view, which the delete itself unmounts.
+                      final confirm = confirmChipOf(context);
+                      final notifier = ref.read(listProvider.notifier);
+                      if (await notifier.deleteList(open.id) case final deleted?) {
+                        confirm(L.s.listDeleted, undo: () => notifier.restoreList(deleted));
+                      }
+                    },
                   ),
                 ],
               ),
@@ -673,7 +598,7 @@ class _ListDetail extends ConsumerWidget {
                   open.name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontFamily: 'Poppins', fontSize: 23, fontWeight: FontWeight.w600, letterSpacing: -0.4, color: AppColors.ink),
+                  style: AppText.detailTitle,
                 ),
               ),
             ],
@@ -726,12 +651,12 @@ class _ListDetail extends ConsumerWidget {
                                 const SizedBox(width: 9),
                                 Text(
                                   l.name,
-                                  style: TextStyle(fontFamily: 'Poppins', fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.muted, letterSpacing: 0.3),
+                                  style: AppText.groupHeading,
                                 ),
                                 const SizedBox(width: 6),
                                 Text(
-                                  its.length == 1 ? '1 Artikel' : '${its.length} Artikel',
-                                  style: TextStyle(fontFamily: 'Poppins', fontSize: 12, fontWeight: FontWeight.w300, color: AppColors.mutedLight),
+                                  L.s.itemCount(its.length),
+                                  style: AppText.label.copyWith(color: AppColors.mutedLight),
                                 ),
                               ],
                             ),
@@ -771,14 +696,14 @@ class _ListDetail extends ConsumerWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Erledigt (${doneItems.length})',
-                        style: TextStyle(fontFamily: 'Poppins', fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.muted),
+                        L.s.doneWithCount(doneItems.length),
+                        style: AppText.caption,
                       ),
                       GestureDetector(
                         onTap: () => ref.read(listProvider.notifier).clearDone(doneItems),
                         child: Text(
-                          'Erledigte löschen',
-                          style: TextStyle(fontFamily: 'Poppins', fontSize: 13, fontWeight: FontWeight.w500, color: accent),
+                          L.s.deleteDone,
+                          style: AppText.caption.copyWith(color: accent),
                         ),
                       ),
                     ],
@@ -786,29 +711,27 @@ class _ListDetail extends ConsumerWidget {
                 ),
               ),
               SectionCard(
-                children: [
-                  for (var i = 0; i < doneItems.length; i++) ...[
-                    if (i > 0) CardDivider(),
+                children: dividedRows([
+                  for (final item in doneItems)
                     CheckOffArrival(
-                      key: ValueKey(doneItems[i].id),
-                      animate: doneItems[i].id == state.justMoved,
+                      key: ValueKey(item.id),
+                      animate: item.id == state.justMoved,
                       // Undo runs the same animation backwards before the item
                       // travels back up into the open list.
                       child: CheckOffRow(
                         undo: true,
-                        onCompleted: () => ref.read(listProvider.notifier).toggle(doneItems[i].id, true),
-                        builder: (context, strike, undo) => _DoneItemRow(item: doneItems[i], accent: accent, strike: strike, onUndo: undo),
+                        onCompleted: () => ref.read(listProvider.notifier).toggle(item.id, true),
+                        builder: (context, strike, undo) => _DoneItemRow(item: item, accent: accent, strike: strike, onUndo: undo),
                       ),
                     ),
-                  ],
-                ],
+                ]),
               ),
             ],
             if (items.isEmpty)
               EmptyState(
                 icon: LucideIcons.clipboardCheck,
                 iconColor: accent,
-                message: 'Oben tippen, um das erste Element hinzuzufügen',
+                message: L.s.tapAboveToAddFirst,
                 verticalPadding: 56,
                 gap: 16,
               ),
@@ -896,7 +819,7 @@ class _AddItemRowState extends ConsumerState<_AddItemRow> {
   Widget build(BuildContext context) {
     final preview = suggestIcon(_draft, subject: widget.grocery ? IconSubject.groceryArticle : IconSubject.article);
     final suggestions = widget.grocery
-        ? [for (final icon in groceryIconSuggestions(_draft)) IconChoice(kind: IconKind.grocery, key: icon.asset, label: icon.de)]
+        ? [for (final icon in groceryIconSuggestions(_draft)) IconChoice(kind: IconKind.grocery, key: icon.asset, label: icon.label)]
         : const <IconChoice>[];
     return Column(
       children: [
@@ -922,8 +845,8 @@ class _AddItemRowState extends ConsumerState<_AddItemRow> {
               Expanded(
                 child: TextField(
                   controller: _controller,
-                  style: TextStyle(fontFamily: 'Poppins', fontSize: 16, color: AppColors.ink),
-                  decoration: const InputDecoration(border: InputBorder.none, hintText: 'Artikel hinzufügen...', isDense: true),
+                  style: AppText.inputTitle,
+                  decoration: InputDecoration(border: InputBorder.none, hintText: L.s.addItemPlaceholder, isDense: true),
                   textInputAction: TextInputAction.done,
                   onChanged: (v) => setState(() => _draft = v),
                   onSubmitted: (v) => _add(v),
@@ -986,7 +909,7 @@ class _SuggestionChip extends StatelessWidget {
             const SizedBox(width: 7),
             Text(
               choice.label,
-              style: TextStyle(fontFamily: 'Poppins', fontSize: 13.5, fontWeight: FontWeight.w500, color: AppColors.inkSecondary),
+              style: AppText.caption.copyWith(color: AppColors.inkSecondary),
             ),
           ],
         ),
@@ -1106,7 +1029,7 @@ class _ItemRowState extends ConsumerState<_ItemRow> {
                     controller: _textController,
                     focusNode: _textFocus,
                     style: _itemTextStyle,
-                    decoration: _inlineFieldDecoration('Artikel', _itemTextStyle),
+                    decoration: _inlineFieldDecoration(L.s.itemLabel, _itemTextStyle),
                     textInputAction: TextInputAction.next,
                     onSubmitted: (_) => _subFocus.requestFocus(),
                   ),
@@ -1114,7 +1037,7 @@ class _ItemRowState extends ConsumerState<_ItemRow> {
                     controller: _subController,
                     focusNode: _subFocus,
                     style: _itemSubStyle,
-                    decoration: _inlineFieldDecoration('Menge', _itemSubStyle),
+                    decoration: _inlineFieldDecoration(L.s.quantity, _itemSubStyle),
                     textInputAction: TextInputAction.done,
                     onSubmitted: (_) => _commit(),
                   ),
@@ -1186,7 +1109,7 @@ class _AttachmentsLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final label = attachments.length == 1 ? attachments.first.name : '${attachments.length} Anhänge';
+    final label = attachments.length == 1 ? attachments.first.name : L.s.attachmentCount(attachments.length);
     return Padding(
       padding: const EdgeInsets.only(top: 2),
       child: Row(
@@ -1199,7 +1122,7 @@ class _AttachmentsLine extends StatelessWidget {
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontFamily: 'Poppins', fontSize: 12, fontWeight: FontWeight.w500, color: accent),
+              style: AppText.microLabel.copyWith(color: accent),
             ),
           ),
         ],
@@ -1217,21 +1140,12 @@ Future<void> _attach(WidgetRef ref, ShoppingListItem item, AttachmentSource sour
 }
 
 /// Swiping an item row left reveals Delete, the same gesture the Kalender
-/// event cards use. Square corners and an explicit white fill: the row is
-/// inside a [SectionCard], which owns the rounded corners and the background
-/// the row itself doesn't paint — and the sliding row has to be opaque or the
-/// action shows straight through it.
+/// event cards and the Boxen item rows use. No `onTap`: the article's own text
+/// and its check circle carry the handlers here.
 Widget _swipeToDelete(WidgetRef ref, ShoppingListItem item, Widget row) {
-  return SwipeActionsRow(
-    actions: [
-      SwipeAction(
-        icon: LucideIcons.trash2,
-        color: AppColors.danger,
-        closesRow: false,
-        onTap: () => ref.read(listProvider.notifier).removeItem(item),
-      ),
-    ],
-    child: ColoredBox(color: AppColors.surface, child: row),
+  return SwipeToEditDelete(
+    onDelete: () => ref.read(listProvider.notifier).removeItem(item),
+    child: row,
   );
 }
 
@@ -1243,17 +1157,17 @@ Widget _swipeToDelete(WidgetRef ref, ShoppingListItem item, Widget row) {
 List<AnchoredMenuItem> _itemMenu(WidgetRef ref, ShoppingListItem item) {
   return [
     AnchoredMenuItem(
-      label: 'Bei Amazon suchen',
+      label: L.s.searchOnAmazon,
       svgAsset: 'assets/merchants/amazon-simple.svg',
       onSelected: () => openExternalUrl(amazonSearchUrl(item.text)),
     ),
     // The three system pickers, straight through to UIKit — see
     // lib/services/media_picker.dart.
-    AnchoredMenuItem(label: 'Foto', icon: LucideIcons.image, onSelected: () => _attach(ref, item, AttachmentSource.photos)),
-    AnchoredMenuItem(label: 'Kamera', icon: LucideIcons.camera, onSelected: () => _attach(ref, item, AttachmentSource.camera)),
-    AnchoredMenuItem(label: 'Dateien', icon: LucideIcons.folder, onSelected: () => _attach(ref, item, AttachmentSource.files)),
+    AnchoredMenuItem(label: L.s.photo, icon: LucideIcons.image, onSelected: () => _attach(ref, item, AttachmentSource.photos)),
+    AnchoredMenuItem(label: L.s.camera, icon: LucideIcons.camera, onSelected: () => _attach(ref, item, AttachmentSource.camera)),
+    AnchoredMenuItem(label: L.s.files, icon: LucideIcons.folder, onSelected: () => _attach(ref, item, AttachmentSource.files)),
     AnchoredMenuItem(
-      label: 'Löschen',
+      label: L.s.delete,
       icon: LucideIcons.trash2,
       destructive: true,
       onSelected: () => ref.read(listProvider.notifier).removeItem(item),
@@ -1301,7 +1215,7 @@ class _DoneItemRow extends ConsumerWidget {
                       item.text,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontFamily: 'Poppins', fontSize: 15, fontWeight: FontWeight.w400, color: Color.lerp(AppColors.ink, _itemDoneInk, strike)),
+                      style: _itemTextStyle.copyWith(color: Color.lerp(AppColors.ink, _itemDoneInk, strike)),
                     ),
                   ),
                 ),

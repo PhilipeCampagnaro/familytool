@@ -7,8 +7,11 @@ import 'merchant_logos.dart';
 /// Two things it has to survive, both from the same household typing into the
 /// same field:
 ///
-/// * **German and English.** The files are named in English, the UI is German,
-///   and people reach for either — "Milch" and "milk" both land on `Dairy_Milk`.
+/// * **German and English.** The files are named in English and the interface
+///   is one or the other, and people reach for either regardless — "Milch" and
+///   "milk" both land on `Dairy_Milk` whichever language Settings is set to.
+///   Both names are indexed always; the interface language decides only what is
+///   *shown*, never what can be found.
 /// * **How German is actually typed.** Umlauts get spelled out or dropped, so
 ///   *Müsli*, *Muesli* and *Musli* have to be one query: [foldTerm] folds all
 ///   three to the same string, and folds the catalog the same way so the
@@ -107,14 +110,22 @@ List<_FoldedIcon> _foldCategory(GroceryCategory category) {
   // Left in, `Bread_Bagel.png` would read as "bread bagel" and win the query
   // *Brot/bread* outright — a whole category of file names all start with the
   // word people search the category by.
-  final prefix = _sharedPrefix(category.icons);
-  final categoryTerms = [foldTerm(category.de), if (prefix.isNotEmpty) foldTerm(prefix)];
+  final prefix = sharedFilePrefix(category.icons);
+  final categoryTerms = [
+    foldTerm(category.de),
+    foldTerm(category.en),
+    if (prefix.isNotEmpty) foldTerm(prefix),
+  ].where((t) => t.isNotEmpty).toList();
   return [
     for (final icon in category.icons)
       _FoldedIcon(
         icon,
         {
           foldTerm(icon.de),
+          // The English label as *shown*, which for an overridden file is not
+          // anything the file name says — "Chocolate figures" has to be
+          // findable by the name it wears.
+          foldTerm(icon.en),
           for (final term in icon.alias) foldTerm(term),
           for (final phrase in _phrases(icon.file.substring(prefix.length))) foldTerm(phrase),
         }.where((t) => t.isNotEmpty).toList(),
@@ -122,28 +133,6 @@ List<_FoldedIcon> _foldCategory(GroceryCategory category) {
         foldTerm(icon.de).length,
       ),
   ];
-}
-
-/// Longest run of leading `_`-separated words shared by every file in a
-/// section, e.g. `Fresh_Herbs_Fresh_` or `Baby_`. Empty when they don't agree
-/// (the drinks sit in `Drinks_`, `Beverages_` and `Coffee_&_Tea_` files), in
-/// which case nothing is stripped and the category word stays searchable
-/// through the file name itself.
-String _sharedPrefix(List<GroceryIcon> icons) {
-  if (icons.length < 2) return '';
-  final first = icons.first.file.split('_');
-  var shared = first.length - 1;
-  for (final icon in icons.skip(1)) {
-    final words = icon.file.split('_');
-    shared = shared.clamp(0, words.length - 1);
-    for (var i = 0; i < shared; i++) {
-      if (words[i] != first[i]) {
-        shared = i;
-        break;
-      }
-    }
-  }
-  return shared == 0 ? '' : '${first.take(shared).join('_')}_';
 }
 
 /// A file name as the phrases it's worth matching on: the name itself, and each
@@ -242,13 +231,15 @@ GroceryIcon? matchGroceryIcon(String text, {bool strict = false}) {
 }
 
 /// Autocomplete for the "Artikel hinzufügen" field: up to [limit] icons,
-/// offered under their German name. Deduped by that name, so the near-identical
-/// files in the set ("Feta" / "Feta-Käse") don't spend two chips on one thing.
+/// offered under their name in the interface language. Deduped by that name, so
+/// the near-identical files in the set ("Feta" / "Feta-Käse") don't spend two
+/// chips on one thing — and so the dedupe follows whichever language is on,
+/// since two files can collide in one language and not the other.
 List<GroceryIcon> groceryIconSuggestions(String query, {int limit = 8}) {
   final seen = <String>{};
   final out = <GroceryIcon>[];
   for (final hit in _search(foldItemText(query), matchCategory: true)) {
-    if (!seen.add(foldTerm(hit.icon.de))) continue;
+    if (!seen.add(foldTerm(hit.icon.label))) continue;
     out.add(hit.icon);
     if (out.length == limit) break;
   }

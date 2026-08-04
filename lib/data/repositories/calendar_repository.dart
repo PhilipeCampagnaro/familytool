@@ -4,6 +4,7 @@ import '../../models/calendar_event.dart';
 import '../../services/calendar_cache.dart';
 import '../../services/supabase.dart';
 import 'list_repository.dart' show newUuidV4;
+import '../../l10n/l10n.dart';
 
 /// One round trip's worth of Kalender: the household's calendars, and every
 /// event in them keyed by the day it falls on.
@@ -65,7 +66,7 @@ class CalendarRepository {
 
   String get _uid {
     final id = AporahSupabase.userId;
-    if (id == null) throw StateError('Kein angemeldeter Benutzer.');
+    if (id == null) throw StateError(L.s.notSignedIn);
     return id;
   }
 
@@ -329,11 +330,9 @@ class CalendarRepository {
       if (details is Map && details['error'] is String) {
         throw CalendarWriteException(details['error'] as String);
       }
-      throw const CalendarWriteException(
-        'Der Termin konnte nicht im verbundenen Kalender gespeichert werden.',
-      );
+      throw CalendarWriteException(L.s.eventSaveFailedRemote);
     } catch (_) {
-      throw const CalendarWriteException('Keine Verbindung zum Server.');
+      throw CalendarWriteException(L.s.noServerConnection);
     }
   }
 }

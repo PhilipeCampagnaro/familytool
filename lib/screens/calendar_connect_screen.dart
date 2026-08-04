@@ -16,6 +16,8 @@ import '../widgets/connect_confirm_sheet.dart';
 import '../widgets/error_note.dart';
 import '../widgets/settings_chrome.dart';
 import '../widgets/swipe_actions.dart';
+import '../widgets/toast_chip.dart';
+import '../l10n/l10n.dart';
 
 /// Settings → Kalender. The six providers, each saying whether this household
 /// has connected it.
@@ -49,10 +51,8 @@ class CalendarConnectionsPage extends ConsumerWidget {
 
     return SettingsDetailPage(
       icon: LucideIcons.calendarDays,
-      title: 'Kalender verbinden',
-      description:
-          'Sieh die Termine deiner Familie in der App — Schule, Abfallabfuhr und '
-          'private Kalender an einem Ort.',
+      title: L.s.connectCalendars,
+      description: L.s.connectCalendarsIntro,
       children: [
         if (state.error case final message?) ...[
           ErrorNote(message: message, onRetry: notifier.load),
@@ -62,12 +62,9 @@ class CalendarConnectionsPage extends ConsumerWidget {
         // A kid may look, not connect — so they get the plain list of what the
         // household reads, without the six ways of adding another.
         if (isKid) ...[
-          const _Note(
-            'Kalender verbindet ein Erwachsener im Haushalt. Die verbundenen '
-            'Termine siehst du danach ganz normal im Kalender.',
-          ),
+          _Note(L.s.connectCalendarsAdminNote),
           if (state.connections.isNotEmpty) ...[
-            const GroupLabel('VERBUNDEN'),
+            GroupLabel(L.s.connectedCaps),
             SectionCard(
               radius: AppRadii.card,
               children: dividedRows(inset: true, [
@@ -111,7 +108,7 @@ class CalendarConnectionsPage extends ConsumerWidget {
         if (!state.loaded) ...[
           const SizedBox(height: 16),
           Center(
-            child: Text('Wird geladen …', style: AppText.body.copyWith(color: AppColors.muted)),
+            child: Text(L.s.loadingEllipsis, style: AppText.body.copyWith(color: AppColors.muted)),
           ),
         ],
       ],
@@ -120,12 +117,12 @@ class CalendarConnectionsPage extends ConsumerWidget {
 }
 
 String lastSyncedLabel(DateTime? at) {
-  if (at == null) return 'Noch nicht synchronisiert';
+  if (at == null) return L.s.notSyncedYet;
   final ago = DateTime.now().difference(at);
-  if (ago.inMinutes < 2) return 'Gerade synchronisiert';
-  if (ago.inHours < 1) return 'Vor ${ago.inMinutes} Minuten synchronisiert';
-  if (ago.inDays < 1) return 'Vor ${ago.inHours} Stunden synchronisiert';
-  return 'Vor ${ago.inDays} Tagen synchronisiert';
+  if (ago.inMinutes < 2) return L.s.syncedJustNow;
+  if (ago.inHours < 1) return L.s.syncedMinutesAgo(ago.inMinutes);
+  if (ago.inDays < 1) return L.s.syncedHoursAgo(ago.inHours);
+  return L.s.syncedDaysAgo(ago.inDays);
 }
 
 /// One place where a failed connect becomes a German sentence, for the confirm
@@ -139,7 +136,7 @@ String lastSyncedLabel(DateTime? at) {
 String connectErrorText(Object error) {
   if (error is CalendarConnectionException) return error.message;
   debugPrint('Kalender-Verbindung: unerwarteter Fehler — $error');
-  return 'Das hat gerade nicht geklappt.';
+  return L.s.somethingWentWrong;
 }
 
 CalendarConnection? _byId(List<CalendarConnection> connections, String id) {
@@ -187,10 +184,10 @@ class _ProviderStatus extends StatelessWidget {
     final attention = connections.any((c) => c.needsAttention);
     final color = attention ? AppColors.danger : accent;
     final label = attention
-        ? 'Aktion nötig'
+        ? L.s.actionNeeded
         : connections.length == 1
-        ? 'Verbunden'
-        : '${connections.length} Kalender';
+        ? L.s.connected
+        : L.s.calendarCount(connections.length);
 
     return Container(
       margin: const EdgeInsets.only(left: 8),
@@ -248,9 +245,11 @@ class _ProviderPage extends ConsumerWidget {
       icon: provider.icon,
       title: provider.label,
       description: provider.blurb,
+      // The only Settings page pushed from something other than the root.
+      parentTitle: L.s.connectCalendars,
       children: [
         if (connections.isNotEmpty) ...[
-          const GroupLabel('VERBUNDEN'),
+          GroupLabel(L.s.connectedCaps),
           SectionCard(
             radius: AppRadii.card,
             children: dividedRows(inset: true, [
@@ -293,14 +292,13 @@ class _ConnectedRowState extends ConsumerState<_ConnectedRow> {
   Future<void> _rename() => showConnectConfirmSheet(
     context: context,
     icon: _connection.provider.icon,
-    title: 'Kalender umbenennen',
+    title: L.s.renameCalendar,
     headline: _connection.displayName,
-    message: 'Unter diesem Namen taucht der Kalender in Aporah auf — im Kalender, '
-        'in den Filtern und hier.',
+    message: L.s.renameCalendarBody,
     initialName: _connection.displayName,
-    fieldHint: 'Nur für euren Haushalt.',
-    busyLabel: 'Wird gespeichert …',
-    successLabel: 'Name geändert',
+    fieldHint: L.s.householdOnly,
+    busyLabel: L.s.savingEllipsis,
+    successLabel: L.s.nameChanged,
     errorText: connectErrorText,
     onConfirm: (name) =>
         ref.read(calendarConnectionsProvider.notifier).rename(_connection, name),
@@ -310,29 +308,29 @@ class _ConnectedRowState extends ConsumerState<_ConnectedRow> {
     showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text(_connection.isFeed ? 'Kalender entfernen?' : 'Verbindung trennen?'),
+        title: Text(_connection.isFeed ? L.s.removeCalendarQuestion : L.s.disconnectQuestion),
         content: Text(
-          '„${_connection.displayName}" verschwindet aus eurem Kalender. '
-          '${switch (_connection.provider.kind) {
-            ConnectKind.oauth => 'Der Zugriff wird auch beim Anbieter widerrufen.',
-            // A feed is shared with every other household that wants the same
-            // Bundesland or street, so leaving it removes nothing but this
-            // household's subscription.
-            ConnectKind.feed => 'Nur für euren Haushalt — andere behalten den Kalender.',
-            ConnectKind.password => 'Eure Zugangsdaten werden gelöscht.',
-          }}',
+          L.s.removeCalendarBody(_connection.displayName) +
+              switch (_connection.provider.kind) {
+                ConnectKind.oauth => L.s.accessRevokedToo,
+                // A feed is shared with every other household that wants the
+                // same Bundesland or street, so leaving it removes nothing but
+                // this household's subscription.
+                ConnectKind.feed => L.s.householdOnlyOthersKeep,
+                ConnectKind.password => L.s.credentialsDeleted,
+              },
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Abbrechen'),
+            child: Text(L.s.cancel),
           ),
           TextButton(
             onPressed: () {
               ref.read(calendarConnectionsProvider.notifier).disconnect(_connection);
               Navigator.of(dialogContext).pop();
             },
-            child: Text('Entfernen', style: TextStyle(color: AppColors.danger)),
+            child: Text(L.s.remove, style: AppText.rowTitle.copyWith(color: AppColors.danger)),
           ),
         ],
       ),
@@ -340,9 +338,9 @@ class _ConnectedRowState extends ConsumerState<_ConnectedRow> {
   }
 
   List<AnchoredMenuItem> get _menuItems => [
-    AnchoredMenuItem(label: 'Umbenennen', icon: LucideIcons.pencil, onSelected: _rename),
+    AnchoredMenuItem(label: L.s.rename, icon: LucideIcons.pencil, onSelected: _rename),
     AnchoredMenuItem(
-      label: _connection.isFeed ? 'Entfernen' : 'Trennen',
+      label: _connection.isFeed ? L.s.remove : L.s.disconnect,
       icon: LucideIcons.unlink,
       destructive: true,
       onSelected: _confirmRemove,
@@ -371,9 +369,9 @@ class _ConnectedRowState extends ConsumerState<_ConnectedRow> {
           leading: _ProviderTile(_connection.provider),
           title: _connection.displayName,
           subtitle: attention
-              ? (_connection.statusDetail ?? 'Die Verbindung braucht Aufmerksamkeit.')
+              ? (_connection.statusDetail ?? L.s.connectionNeedsAttention)
               : refreshing
-              ? 'Wird aktualisiert …'
+              ? L.s.refreshingEllipsis
               : lastSyncedLabel(_connection.lastSyncedAt),
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
@@ -454,7 +452,7 @@ class _OAuthConnectState extends ConsumerState<_OAuthConnect> with WidgetsBindin
         setState(() {
           _busy = false;
           _error = ref.read(calendarConnectionsProvider).error ??
-              '${widget.provider.label} ist noch nicht eingerichtet.';
+              L.s.providerNotSetUp(widget.provider.label);
         });
         return;
       }
@@ -464,7 +462,7 @@ class _OAuthConnectState extends ConsumerState<_OAuthConnect> with WidgetsBindin
       setState(() {
         _busy = false;
         _awaitingReturn = opened;
-        _error = opened ? null : 'Der Browser konnte nicht geöffnet werden.';
+        _error = opened ? null : L.s.browserCouldNotOpen;
       });
     } catch (e) {
       if (!mounted) return;
@@ -497,13 +495,11 @@ class _OAuthConnectState extends ConsumerState<_OAuthConnect> with WidgetsBindin
     await showConnectConfirmSheet(
       context: context,
       icon: widget.provider.icon,
-      title: '${widget.provider.label} verbinden',
+      title: L.s.connectProvider(widget.provider.label),
       headline: connection.displayName,
-      message:
-          'Aporah darf jetzt die Kalender dieses Kontos lesen. Gib dem Kalender '
-          'einen Namen, unter dem ihr ihn in Aporah wiedererkennt.',
+      message: L.s.oauthGrantedBody,
       initialName: connection.displayName,
-      busyLabel: 'Wird gespeichert …',
+      busyLabel: L.s.savingEllipsis,
       errorText: connectErrorText,
       onConfirm: (name) => notifier.rename(connection, name),
     );
@@ -515,10 +511,7 @@ class _OAuthConnectState extends ConsumerState<_OAuthConnect> with WidgetsBindin
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _Note(
-          'Du wirst zu $label weitergeleitet und meldest dich dort an. '
-          'Aporah sieht nur deine Kalender — nie dein Passwort.',
-        ),
+        _Note(L.s.redirectNotice(label)),
         if (_error case final message?) ...[
           const SizedBox(height: 14),
           ErrorNote(message: message),
@@ -526,15 +519,12 @@ class _OAuthConnectState extends ConsumerState<_OAuthConnect> with WidgetsBindin
         const SizedBox(height: 14),
         AccentAction(
           icon: _busy ? LucideIcons.loaderCircle : LucideIcons.externalLink,
-          label: _busy ? 'Wird geöffnet …' : 'Mit ${widget.provider.label} anmelden',
+          label: _busy ? L.s.openingEllipsis : L.s.signInWithProvider(widget.provider.label),
           onTap: _busy ? () {} : _start,
         ),
         if (_awaitingReturn) ...[
           const SizedBox(height: 14),
-          const _Note(
-            'Sobald du im Browser fertig bist, komm zurück zu Aporah — die '
-            'Verbindung erscheint dann hier.',
-          ),
+          _Note(L.s.comeBackWhenDone),
         ],
       ],
     );
@@ -597,22 +587,24 @@ class _CaldavConnectState extends ConsumerState<_CaldavConnect> {
           ? null
           : _byId(ref.read(calendarConnectionsProvider).connections, id);
       if (connection == null) {
-        showErrorSnack(context, 'Verbunden.');
+        // "Verbunden." — the CalDAV login worked, we just can't find the row to
+        // put a name to, so there is nothing to confirm in the sheet. Good news,
+        // and it went out through the *error* surface until the two shared one
+        // component.
+        showToast(context, L.s.connectedDot);
         return;
       }
 
       await showConnectConfirmSheet(
         context: context,
         icon: widget.provider.icon,
-        title: '${widget.provider.label} verbinden',
+        title: L.s.connectProvider(widget.provider.label),
         headline: connection.displayName,
         message: result.calendars.isEmpty
-            ? 'Die Anmeldung hat geklappt. Gib dem Kalender einen Namen, unter '
-                  'dem ihr ihn in Aporah wiedererkennt.'
-            : '${result.calendars.length} Kalender gefunden. Gib ihnen einen Namen, '
-                  'unter dem ihr sie in Aporah wiedererkennt.',
+            ? L.s.signInWorkedNameIt
+            : L.s.calendarsFoundNameThem(result.calendars.length),
         initialName: connection.displayName,
-        busyLabel: 'Wird gespeichert …',
+        busyLabel: L.s.savingEllipsis,
         errorText: connectErrorText,
         onConfirm: (name) => ref
             .read(calendarConnectionsProvider.notifier)
@@ -632,13 +624,7 @@ class _CaldavConnectState extends ConsumerState<_CaldavConnect> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _Note(
-          _isIserv
-              ? 'Gib die Adresse deiner Schule an (z. B. schule.de) und melde dich '
-                    'mit deinem IServ-Zugang an. Schulkalender werden nur gelesen.'
-              : 'iCloud verlangt ein app-spezifisches Passwort. Dein normales '
-                    'Apple-ID-Passwort funktioniert hier nicht.',
-        ),
+        _Note(_isIserv ? L.s.iservIntro : L.s.icloudIntro),
         if (!_isIserv) ...[
           const SizedBox(height: 10),
           GestureDetector(
@@ -649,7 +635,7 @@ class _CaldavConnectState extends ConsumerState<_CaldavConnect> {
                 Icon(LucideIcons.externalLink, size: 15, color: Theme.of(context).colorScheme.primary),
                 const SizedBox(width: 8),
                 Text(
-                  'App-spezifisches Passwort erstellen',
+                  L.s.createAppPassword,
                   style: AppText.body.copyWith(color: Theme.of(context).colorScheme.primary),
                 ),
               ],
@@ -662,8 +648,8 @@ class _CaldavConnectState extends ConsumerState<_CaldavConnect> {
           children: dividedRows(inset: true, [
             if (_isIserv)
               FieldGroup(
-                label: 'Schule',
-                hint: 'Die Adresse, unter der ihr IServ öffnet.',
+                label: L.s.school,
+                hint: L.s.schoolAddressHint,
                 child: FieldBox(
                   child: TextField(
                     controller: _server,
@@ -679,7 +665,7 @@ class _CaldavConnectState extends ConsumerState<_CaldavConnect> {
                 ),
               ),
             FieldGroup(
-              label: _isIserv ? 'Benutzername' : 'Apple-ID',
+              label: _isIserv ? L.s.username : L.s.appleId,
               child: FieldBox(
                 child: TextField(
                   controller: _user,
@@ -688,14 +674,14 @@ class _CaldavConnectState extends ConsumerState<_CaldavConnect> {
                   style: AppText.searchInput,
                   decoration: InputDecoration(
                     border: InputBorder.none,
-                    hintText: _isIserv ? 'vorname.nachname' : 'name@icloud.com',
+                    hintText: _isIserv ? 'vorname.nachname' : L.s.icloudEmailHint,
                     isDense: true,
                   ),
                 ),
               ),
             ),
             FieldGroup(
-              label: 'Passwort',
+              label: L.s.password,
               child: FieldBox(
                 child: TextField(
                   controller: _password,
@@ -705,7 +691,7 @@ class _CaldavConnectState extends ConsumerState<_CaldavConnect> {
                   style: AppText.searchInput,
                   decoration: InputDecoration(
                     border: InputBorder.none,
-                    hintText: _isIserv ? 'IServ-Passwort' : 'xxxx-xxxx-xxxx-xxxx',
+                    hintText: _isIserv ? L.s.iservPassword : 'xxxx-xxxx-xxxx-xxxx',
                     isDense: true,
                   ),
                 ),
@@ -720,7 +706,7 @@ class _CaldavConnectState extends ConsumerState<_CaldavConnect> {
         const SizedBox(height: 14),
         AccentAction(
           icon: _busy ? LucideIcons.loaderCircle : LucideIcons.link,
-          label: _busy ? 'Wird geprüft …' : 'Verbinden',
+          label: _busy ? L.s.checkingEllipsis : L.s.connect,
           onTap: _busy ? () {} : _connect,
         ),
       ],
@@ -748,11 +734,8 @@ class _FerienConnect extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const GroupLabel('BUNDESLAND WÄHLEN'),
-        const _Note(
-          'Die Schulferien kommen von OpenHolidays — kostenlos und ohne Konto. '
-          'Ihr könnt mehrere Bundesländer verbinden.',
-        ),
+        GroupLabel(L.s.chooseStateCaps),
+        _Note(L.s.holidaysIntro),
         const SizedBox(height: 14),
         SectionCard(
           radius: AppRadii.card,
@@ -775,12 +758,10 @@ class _FerienConnect extends ConsumerWidget {
     return showConnectConfirmSheet(
       context: context,
       icon: CalendarProvider.ferien.icon,
-      title: 'Ferien verbinden',
-      headline: 'Schulferien $name',
-      message:
-          'Du hast $name ausgewählt. Die Ferientermine erscheinen danach in eurem '
-          'Kalender — für alle im Haushalt.',
-      initialName: 'Schulferien $name',
+      title: L.s.connectHolidays,
+      headline: L.s.schoolHolidaysOf(name),
+      message: L.s.holidaysSelectedBody(name),
+      initialName: L.s.schoolHolidaysOf(name),
       errorText: connectErrorText,
       onConfirm: (label) => ref
           .read(calendarConnectionsProvider.notifier)
@@ -930,7 +911,7 @@ class _AbfallConnectState extends ConsumerState<_AbfallConnect> {
     final address = _picked!;
     final nr = _houseNumber?.nr ?? address.houseNumber;
     final street = address.street.isNotEmpty ? address.street : address.town;
-    return 'Abfall $street${nr == null || nr.isEmpty ? '' : ' $nr'}';
+    return L.s.wasteFor('$street${nr == null || nr.isEmpty ? '' : ' $nr'}');
   }
 
   /// The end of the flow, whichever way the lookup went.
@@ -955,21 +936,18 @@ class _AbfallConnectState extends ConsumerState<_AbfallConnect> {
     return showConnectConfirmSheet(
       context: context,
       icon: CalendarProvider.abfall.icon,
-      title: 'Abfall verbinden',
+      title: L.s.connectWaste,
       headline: coverage.street == null
           ? coverage.town
           : '${coverage.street}, ${coverage.town}',
-      message:
-          'Restmüll, Bio, Papier und Gelbe Tonne kommen automatisch in euren '
-          'Kalender — für alle im Haushalt.',
+      message: L.s.wasteIntro,
       initialName: _suggestedName,
       errorText: connectErrorText,
       extraFields: [
         if (coverage.houseNumbers.isNotEmpty)
           FieldGroup(
-            label: 'Hausnummer',
-            hint: 'Diese Straße hat mehrere Abfuhrbezirke. Ohne Auswahl gilt der '
-                'Plan der ganzen Straße.',
+            label: L.s.houseNumber,
+            hint: L.s.multipleDistrictsHint,
             // The chips redraw inside the sheet, so the selection needs a
             // `setState` that reaches the sheet's own subtree — this screen's
             // would rebuild the page behind it and nothing else.
@@ -1010,20 +988,16 @@ class _AbfallConnectState extends ConsumerState<_AbfallConnect> {
     return showConnectConfirmSheet(
       context: context,
       icon: CalendarProvider.abfall.icon,
-      title: 'Abfall verbinden',
+      title: L.s.connectWaste,
       headline: town,
-      message:
-          'Für $town kennen wir leider noch keinen Entsorger. Die meisten '
-          'veröffentlichen ihre Termine selbst: such auf der Seite eures '
-          'Entsorgers nach „Abfuhrkalender" oder „Kalender abonnieren" und setz '
-          'den Link hier ein.',
-      initialName: 'Abfall $town',
-      busyLabel: 'Link wird geprüft …',
+      message: L.s.noVendorForTown(town),
+      initialName: L.s.wasteForTown(town),
+      busyLabel: L.s.checkingLinkEllipsis,
       errorText: connectErrorText,
       extraFields: [
         FieldGroup(
-          label: 'Kalender-Link (ICS)',
-          hint: 'Endet meist auf .ics — der Link hinter "Kalender abonnieren".',
+          label: L.s.calendarLinkIcs,
+          hint: L.s.calendarLinkHint,
           child: FieldBox(
             child: TextField(
               controller: _icsUrl,
@@ -1043,14 +1017,11 @@ class _AbfallConnectState extends ConsumerState<_AbfallConnect> {
       onConfirm: (label) async {
         final url = _icsUrl.text.trim();
         if (url.isEmpty) {
-          throw const CalendarConnectionException('Setz hier den Kalender-Link ein.');
+          throw CalendarConnectionException(L.s.pasteLinkHere);
         }
         final ok = await ref.read(calendarConnectionRepositoryProvider).checkIcsUrl(url);
         if (!ok) {
-          throw const CalendarConnectionException(
-            'Unter diesem Link wurden keine Termine gefunden. Ist es der Link '
-            'zum Kalender selbst?',
-          );
+          throw CalendarConnectionException(L.s.noEventsAtThatLink);
         }
         await ref
             .read(calendarConnectionsProvider.notifier)
@@ -1067,11 +1038,8 @@ class _AbfallConnectState extends ConsumerState<_AbfallConnect> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const GroupLabel('ADRESSE'),
-        const _Note(
-          'Tipp eure Adresse ein und wähl sie aus — Aporah sucht den zuständigen '
-          'Entsorger und fragt dann nur noch, wie der Kalender heißen soll.',
-        ),
+        GroupLabel(L.s.addressCaps),
+        _Note(L.s.addressIntro),
         const SizedBox(height: 14),
 
         // One card for the whole lookup: the field, the suggestions and the
@@ -1091,8 +1059,8 @@ class _AbfallConnectState extends ConsumerState<_AbfallConnect> {
     if (_picked == null) {
       return [
         FieldGroup(
-          label: 'Eure Adresse',
-          hint: 'Straße und Hausnummer, dann den Ort.',
+          label: L.s.yourAddress,
+          hint: L.s.yourAddressHint,
           child: FieldBox(
             child: TextField(
               controller: _query,
@@ -1101,9 +1069,9 @@ class _AbfallConnectState extends ConsumerState<_AbfallConnect> {
               enableSuggestions: false,
               textCapitalization: TextCapitalization.words,
               style: AppText.searchInput,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 border: InputBorder.none,
-                hintText: 'Straße Hausnummer, Ort',
+                hintText: L.s.addressPlaceholder,
                 isDense: true,
               ),
               onChanged: _onQueryChanged,
@@ -1111,9 +1079,9 @@ class _AbfallConnectState extends ConsumerState<_AbfallConnect> {
           ),
         ),
         if (_searching)
-          const _BusyRow('Adressen werden gesucht …')
+          _BusyRow(L.s.searchingAddresses)
         else if (_results.isEmpty && _query.text.trim().length >= 3)
-          const _MessageRow('Keine Adresse gefunden.'),
+          _MessageRow(L.s.noAddressFound),
         for (final address in _results)
           SettingsRow(
             icon: address.prefix ? LucideIcons.mapPin : LucideIcons.house,
@@ -1134,12 +1102,14 @@ class _AbfallConnectState extends ConsumerState<_AbfallConnect> {
         icon: LucideIcons.house,
         title: _picked!.label,
         subtitle: _resolving
-            ? 'Entsorger wird gesucht …'
+            ? L.s.searchingVendor
             : failed
-            ? 'Tippen, um es noch einmal zu versuchen'
+            ? L.s.tapToRetry
             : supported
-            ? 'Gefunden: ${coverage!.town}${coverage.street == null ? '' : ', ${coverage.street}'}'
-            : 'Kein Entsorger gefunden — tippen für den Kalender-Link',
+            ? L.s.foundVendor(
+                '${coverage!.town}${coverage.street == null ? '' : ', ${coverage.street}'}',
+              )
+            : L.s.noVendorFoundTapForLink,
         onTap: _resolving ? null : (failed ? () => _pick(_picked!) : _openSheet),
         trailing: GestureDetector(
           onTap: _reset,
@@ -1150,7 +1120,7 @@ class _AbfallConnectState extends ConsumerState<_AbfallConnect> {
           ),
         ),
       ),
-      if (_resolving) const _BusyRow('Wir fragen die Entsorger der Umgebung …'),
+      if (_resolving) _BusyRow(L.s.askingNearbyVendors),
     ];
   }
 }

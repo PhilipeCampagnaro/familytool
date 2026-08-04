@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+
+import '../theme/tokens.dart';
 
 /// One action revealed behind a [SwipeActionsRow].
 class SwipeAction {
@@ -131,6 +134,63 @@ class _SwipeActionsRowState extends State<SwipeActionsRow> with SingleTickerProv
           ),
         ],
       ),
+    );
+  }
+}
+
+/// The row gesture Listen and Boxen share: swipe left for Bearbeiten and
+/// Löschen, in that order, with Löschen always last and always red.
+///
+/// Both screens had their own copy of this — one for the container rows on the
+/// overview, one for the item rows inside — and the copies had already started
+/// to disagree about whether the edit action closes the row. Keeping the order
+/// and the colours in one place is the whole point: a row that deletes where
+/// its neighbour edits is the kind of inconsistency that costs somebody their
+/// data.
+///
+/// Leaving [onEdit] out gives the delete-only variant the item rows use. The
+/// opaque [ColoredBox] is applied here rather than by the caller: every one of
+/// these rows lives inside a [SectionCard] that owns the fill, and a
+/// transparent row lets the actions show straight through as it slides.
+class SwipeToEditDelete extends StatelessWidget {
+  /// What a tap on the row itself does. Null for a row that is only a target
+  /// for the gesture — the Listen article rows, where the text and the check
+  /// carry their own handlers.
+  final VoidCallback? onTap;
+
+  /// Omitted ⇒ delete is the only action.
+  final VoidCallback? onEdit;
+  final VoidCallback onDelete;
+  final Widget child;
+
+  const SwipeToEditDelete({
+    super.key,
+    required this.onDelete,
+    required this.child,
+    this.onTap,
+    this.onEdit,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SwipeActionsRow(
+      onTap: onTap,
+      actions: [
+        if (onEdit != null)
+          SwipeAction(
+            icon: LucideIcons.pencil,
+            color: Theme.of(context).colorScheme.primary,
+            onTap: onEdit!,
+          ),
+        SwipeAction(
+          icon: LucideIcons.trash2,
+          color: AppColors.danger,
+          // Nothing left to close once the row is gone.
+          closesRow: false,
+          onTap: onDelete,
+        ),
+      ],
+      child: ColoredBox(color: AppColors.surface, child: child),
     );
   }
 }

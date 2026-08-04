@@ -148,29 +148,53 @@ only, not a visual one.
 - Family management and Connections are UI-only for now (no mutations persist) until a backend
   lands.
 
-## Weather API
+## Weather API — **built**
 
-No feature exists yet in this app; this is pure groundwork.
+Per-event weather is live on the Kalender screen: the agenda row shows an icon + temperature
+beside the event, and the detail sheet shows a card with icon, temperature and condition. Nothing
+else in the app uses weather yet (the old app also had a "Your Day" header reading and an hourly
+strip — neither is ported, and the Start tab has no design).
 
-- **Provider: Open-Meteo** — free, no API key, CORS-enabled, callable directly from the Flutter
-  HTTP client with no backend proxy.
-- Current conditions:
-  `GET https://api.open-meteo.com/v1/forecast?latitude=..&longitude=..&current=temperature_2m,weather_code,is_day`
-  Hourly/16-day forecast: same endpoint with
-  `hourly=temperature_2m,weather_code,precipitation_probability,is_day&forecast_days=16&timezone=auto`
+| Piece | Where |
+|---|---|
+| Reading, WMO→condition→icon, hourly parsing, sample time + key | [lib/models/weather.dart](../lib/models/weather.dart) |
+| Open-Meteo HTTP, geocode + forecast, in-flight de-dup | [lib/data/repositories/weather_repository.dart](../lib/data/repositories/weather_repository.dart) |
+| Device cache (places forever, forecasts 1 h) | [lib/services/weather_cache.dart](../lib/services/weather_cache.dart) |
+| `weatherProvider`, resolve pass, forecast window | [lib/state/weather_state.dart](../lib/state/weather_state.dart) |
+
+- **Provider: Open-Meteo** — free, no API key, no personal data on the wire (a lat/lon, nothing
+  about who asked), so it is called **straight from the app**. It is the one external service with
+  no Edge Function in front of it, deliberately: a proxy would add a hop, a deploy and a place for
+  household addresses to be logged, in exchange for nothing.
+- Hourly/16-day forecast:
+  `GET https://api.open-meteo.com/v1/forecast?latitude=..&longitude=..&hourly=temperature_2m,weather_code,precipitation_probability,is_day&forecast_days=16&timezone=auto`
   Geocoding (place → lat/lon):
   `https://geocoding-api.open-meteo.com/v1/search?name=<query>&count=5&language=de&format=json`
-- **Location source**: the family's saved home address (the old app derived it from the
-  waste-calendar connection), not device GPS. Per-event weather geocoded the event's own location
-  text with a fallback to the home town.
-- **Icon mapping**: WMO `weather_code` → ~10 buckets (clear / partly-cloudy / cloudy / fog /
-  drizzle / rain / snow / storm, day+night variants) → icon. A simple threshold table, mapping
-  directly onto `lucide_icons_flutter`'s `sun` / `moon` / `cloudSun` / `cloudMoon` / `cloud` /
-  `cloudFog` / `cloudDrizzle` / `cloudRain` / `cloudSnow` / `cloudLightning` (confirmed present
-  in the version this app depends on).
-- **Cache aggressively** to stay polite to the free API: current conditions ~30min TTL, forecast
-  ~1hr TTL, geocoded places indefinitely (including failed lookups, so a bad address isn't
-  retried every render).
+  (`current=…` is unused — every reading the app shows is a future hour, which the hourly block
+  already covers.)
+- **`timezone=auto` is load-bearing.** Hours come back local to the forecast point and without a
+  zone suffix, which is exactly what an event's own local start is — so `DateTime.parse` gives
+  something that compares directly, with no conversion anywhere.
+- **Location, per event**: the event's own free-text `loc` — the same string that already opens
+  Maps — geocoded, falling back to the household's town when it is empty *or* unplaceable
+  ("Turnhalle" is far more often the family's own town than somewhere else). The home town is
+  parsed out of `families.address` from onboarding (`homeTownFrom`): the geocoder searches place
+  *names*, so the full line with a house number finds nothing. **Never device GPS.**
+- **When an event is sampled**: a timed event at its start; an all-day event at 13:00 **on the day
+  being rendered**, so each day of a week-long Ferien block carries its own forecast rather than
+  all seven sharing Monday's. `eventSampleTime` and `eventWeatherKey` are the contract between the
+  fetch and the render — if they ever disagree, every chip silently disappears.
+- **No chip is the normal answer**: past events (a 2 h grace for timed ones, a full day for
+  all-day), anything past the 16-day horizon, no address and no placeable location, or simply
+  offline. Weather is decoration and every failure resolves to a missing icon, never to an error.
+- **Icon mapping**: WMO `weather_code` → 8 buckets (clear / partly-cloudy / cloudy / fog / drizzle
+  / rain / snow / storm) → `lucide_icons_flutter`. Only clear and partly-cloudy have a night form
+  (`moon` / `cloudMoon`) — a rain cloud at 22:00 is still a rain cloud. Day vs night comes from
+  the provider's per-hour `is_day`, since German sunset moves by two hours across the year.
+- **Caching keeps it polite**: forecasts 1 h and keyed to 2 decimal places (≈1 km, the model's own
+  resolution), geocoded places forever **including the failures**, at most 8 distinct places
+  resolved per pass, and identical requests de-duplicated while in flight. An unchanged calendar
+  is not re-resolved at all for an hour.
 
 ## Calendar connections
 

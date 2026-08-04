@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'tokens.dart';
 
 /// Builds the Material theme for one [AppPalette].
@@ -8,6 +7,14 @@ import 'tokens.dart';
 /// [AppColors] getters: `MaterialApp` builds *both* the light and the dark
 /// `ThemeData` up front, so at the moment the dark one is built the installed
 /// palette is usually still the light one.
+///
+/// The typeface comes from `ThemeData.fontFamily` alone, resolving against the
+/// `Poppins` family declared in pubspec.yaml. There used to be a second source —
+/// `GoogleFonts.poppinsTextTheme(base.textTheme)` layered on top — and the two
+/// disagreed: `google_fonts` registers weights under `Poppins_regular` /
+/// `Poppins_600`, so unstyled text got real Poppins while everything carrying an
+/// [AppText] token asked for the then-unregistered `'Poppins'` and fell back to
+/// the system font. One bundled family, one name, no fallback.
 ThemeData buildAppTheme(AppPalette palette) {
   final base = ThemeData(
     useMaterial3: true,
@@ -22,10 +29,7 @@ ThemeData buildAppTheme(AppPalette palette) {
     fontFamily: 'Poppins',
   );
 
-  final poppinsTextTheme = GoogleFonts.poppinsTextTheme(base.textTheme);
-
   return base.copyWith(
-    textTheme: poppinsTextTheme,
     splashFactory: NoSplash.splashFactory,
     highlightColor: Colors.transparent,
     dividerColor: palette.divider,

@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart' show FunctionException;
 import '../models/who.dart';
 import '../services/supabase.dart';
 import 'auth_state.dart';
+import '../l10n/l10n.dart';
 
 /// The two avatar letters for a name, derived the same way `handle_new_user`
 /// derives them server-side so a profile written from either end matches.
@@ -39,9 +40,9 @@ extension FamilyRoleLabel on FamilyRole {
   String get wire => name;
 
   String get label => switch (this) {
-    FamilyRole.admin => 'Admin',
-    FamilyRole.member => 'Mitglied',
-    FamilyRole.kid => 'Kind',
+    FamilyRole.admin => L.s.roleAdmin,
+    FamilyRole.member => L.s.roleMember,
+    FamilyRole.kid => L.s.roleChild,
   };
 }
 
@@ -203,9 +204,9 @@ class HouseholdNotifier extends StateNotifier<FamilyState> {
         // Should be unreachable: handle_new_user gives every user a household
         // in the same transaction as the user row. If it ever happens, say so
         // rather than rendering a plausible-looking empty family.
-        state = const FamilyState(
+        state = FamilyState(
           loaded: true,
-          error: 'Zu deinem Konto wurde kein Haushalt gefunden.',
+          error: L.s.noHouseholdForAccount,
         );
         return;
       }
@@ -243,7 +244,7 @@ class HouseholdNotifier extends StateNotifier<FamilyState> {
             final p = profiles[id];
             return HouseholdMember(
               userId: id,
-              name: (p?['display_name'] as String?) ?? 'Unbekannt',
+              name: (p?['display_name'] as String?) ?? L.s.unknown,
               initials: (p?['initials'] as String?) ?? '?',
               tone: (p?['tone'] as num?)?.toInt() ?? 0,
               avatarUrl: p?['avatar_url'] as String?,
@@ -303,7 +304,7 @@ class HouseholdNotifier extends StateNotifier<FamilyState> {
       if (!mounted) return;
       state = state.copyWith(
         loaded: true,
-        error: 'Haushalt konnte nicht geladen werden.',
+        error: L.s.householdLoadFailed,
       );
     }
   }
@@ -336,7 +337,7 @@ class HouseholdNotifier extends StateNotifier<FamilyState> {
   }) async {
     final trimmed = email.trim();
     if (!trimmed.contains('@')) {
-      _fail('Bitte gib eine gültige E-Mail-Adresse an.');
+      _fail(L.s.enterValidEmail);
       return null;
     }
 
@@ -355,11 +356,11 @@ class HouseholdNotifier extends StateNotifier<FamilyState> {
       final details = e.details;
       _fail(
         (details is Map ? details['error'] as String? : null) ??
-            'Die Einladung konnte nicht gesendet werden.',
+            L.s.inviteSendFailed,
       );
       return null;
     } catch (_) {
-      _fail('Die Einladung konnte nicht gesendet werden.');
+      _fail(L.s.inviteSendFailed);
       return null;
     }
   }
@@ -398,7 +399,7 @@ class HouseholdNotifier extends StateNotifier<FamilyState> {
       if (updated.isEmpty) throw StateError('refused');
     } catch (_) {
       if (!mounted) return;
-      state = state.copyWith(members: previous, actionError: 'Die Rolle konnte nicht geändert werden.');
+      state = state.copyWith(members: previous, actionError: L.s.roleChangeFailed);
     }
   }
 
@@ -417,7 +418,7 @@ class HouseholdNotifier extends StateNotifier<FamilyState> {
           .select('user_id');
       if (deleted.isEmpty) throw StateError('refused');
     } catch (_) {
-      _fail('Das Mitglied konnte nicht entfernt werden.');
+      _fail(L.s.memberRemoveFailed);
     }
     await load();
   }
@@ -437,7 +438,7 @@ class HouseholdNotifier extends StateNotifier<FamilyState> {
       if (updated.isEmpty) throw StateError('refused');
     } catch (_) {
       if (!mounted) return;
-      state = state.copyWith(invites: previous, actionError: 'Die Einladung konnte nicht zurückgezogen werden.');
+      state = state.copyWith(invites: previous, actionError: L.s.inviteRevokeFailed);
     }
   }
 
