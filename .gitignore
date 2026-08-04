@@ -1,0 +1,64 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# The .vscode folder contains launch configuration and tasks you configure in
+# VS Code which you may wish to be included in version control, so this line
+# is commented out by default.
+#.vscode/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+/coverage/
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android Studio will place build artifacts here
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+# Secrets. Nothing in this repo needs an .env — the Supabase publishable key is
+# a compile-time default in lib/services/supabase.dart and every real secret
+# lives in Supabase Function secrets. This is here so that stops being true by
+# accident rather than silently.
+.env
+.env.*
+*.env
+!ios/Flutter/ephemeral/flutter_native_integration.env
+!macos/Flutter/ephemeral/flutter_native_integration.env
+
+# Supabase CLI scratch: linked-project ref, pooler URL, server versions. No
+# credentials today, but it is machine-local state either way.
+supabase/.temp/
+
+# The old React web app, cloned in for reference only. It carries its own git
+# repo, is not part of this Flutter project, and gets deleted once the rebuild
+# is done — see CLAUDE.md.
+Aporah-Family-Hub/

@@ -1,0 +1,16 @@
+project_id = "uzhzrwakrtwbpuuupccu"
+
+# Edge Functions default to verify_jwt = true, and every function in this
+# project wants that — they all call callerId() and act on behalf of a real
+# session.
+#
+# calendar-connect is the single exception, and it is not a preference: the
+# OAuth provider redirects the *browser* back to it with no Authorization
+# header, so the gateway would reject Google's callback before the function ever
+# ran. It is declared here rather than passed as a --no-verify-jwt flag so that
+# a routine `supabase functions deploy` cannot quietly re-secure it and break
+# calendar connections. The function verifies its own callers instead: the
+# `state` parameter is an AES-GCM envelope we minted, and anything else fails to
+# open.
+[functions.calendar-connect]
+verify_jwt = false
