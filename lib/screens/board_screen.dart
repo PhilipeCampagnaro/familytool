@@ -15,6 +15,7 @@ import '../widgets/avatar.dart';
 import '../widgets/bottom_nav.dart';
 import '../widgets/check_off.dart';
 import '../widgets/collapsing_header.dart';
+import '../widgets/floating_pill.dart';
 import '../widgets/glass.dart';
 import '../widgets/share_sheet.dart';
 import '../widgets/swipe_actions.dart';
@@ -62,149 +63,185 @@ class BoardScreen extends ConsumerWidget {
     final onDeckDone = [for (final t in onDeck) if (t.done) t].length;
     final progress = onDeck.isEmpty ? 0.0 : onDeckDone / onDeck.length;
 
+    // The task the undo pill is offering to put back: the one that just moved,
+    // and only while it is *done*. Undoing one moves it too, which flips this to
+    // null and takes the pill away.
+    final justChecked = _justCheckedOff(state, done);
+
     return Scaffold(
       backgroundColor: AppColors.surface,
-      body: SafeArea(
-        bottom: false,
-        child: CollapsingHeaderScreen(
-          titleRowBuilder: (context, t) => CollapsingScreenTitle(
-            title: L.s.boardTitle,
-            t: t,
-            trailingWidth: _avatarStackWidth(members.length) + 12 + 48,
-            // The avatar stack folds away as the header collapses (see
-            // _CollapsingAvatars), so the collapsed title only has to clear the
-            // add button — reserving the full expanded slot would squeeze it to
-            // a few characters.
-            collapsedSideInset: 86,
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _CollapsingAvatars(t: t, members: members),
-                SizedBox(width: 12 * (1 - t).clamp(0.0, 1.0)),
-                GlassIconButton(icon: LucideIcons.plus, onTap: () => _openNewTaskSheet(context, ref)),
-              ],
-            ),
-          ),
-          estimatedExtraHeight: _extraHeight,
-          // Today, and how much of it is behind you. This is what the week strip
-          // used to occupy, and it is deliberately *not* a picker any more:
-          // the date is a property of a task now, so there is no day to select.
-          extra: _TodayHeader(today: today, progress: progress, done: onDeckDone, total: onDeck.length, accent: accent),
-          body: ScreenBodyPanel(
-            child: ListView(
-              padding: EdgeInsets.fromLTRB(16, 20, 16, navContentInset(context)),
-              children: [
-                if (state.error != null && !state.loading && state.isEmpty) ...[
-                  ErrorNote(message: state.error!, onRetry: () => notifier.load()),
-                  const SizedBox(height: 16),
-                ],
-                if (groups.isEmpty && !state.loading)
-                  _EmptyBoard(onAdd: () => _openNewTaskSheet(context, ref))
-                else
-                  for (final group in groups) ...[
-                    _SectionHeading(section: group.section, count: group.tasks.length),
-                    SectionCard(
-                      // [dividedRows] rather than a border on the row itself:
-                      // the row used to sit under the day card's own header and
-                      // drew its own top rule, which at the top of a card of its
-                      // own would be a line against the card's edge.
-                      children: dividedRows([
-                        // The row plays the check-off animation first and only
-                        // then tells the notifier, so it strikes through in place
-                        // before moving to "Erledigt" — and an undone task slides
-                        // back in here from below.
-                        for (final task in group.tasks)
-                          CheckOffArrival(
-                            key: ValueKey(task.id),
-                            animate: task.id == state.justMoved,
-                            fromBelow: true,
-                            child: CheckOffRow(
-                              onCompleted: () => notifier.toggle(task),
-                              // Same gesture as a Listen or Boxen row: swipe
-                              // left for Bearbeiten and Löschen. The row's own
-                              // tap opens the sheet from here rather than from
-                              // a detector inside [_TaskRow] — an inner one
-                              // would swallow the tap that closes an open
-                              // swipe.
-                              builder: (context, strike, checkOff) => SwipeToEditDelete(
-                                onTap: () => _openTaskSheet(context, ref, task: task),
-                                onEdit: () => _openTaskSheet(context, ref, task: task),
-                                onDelete: () => _deleteTask(context, ref, task),
-                                child: _TaskRow(
-                                  task: task,
-                                  accent: accent,
-                                  strike: strike,
-                                  onCheckOff: checkOff,
-                                  // Only where the heading doesn't already say
-                                  // it. "Heute" above a row stamped "13. Aug"
-                                  // is the same fact printed twice.
-                                  showDate: _sectionSpansDays(group.section),
-                                  overdue: group.section == BoardSection.overdue,
+      body: Stack(
+        children: [
+          SafeArea(
+            bottom: false,
+            child: CollapsingHeaderScreen(
+              titleRowBuilder: (context, t) => CollapsingScreenTitle(
+                title: L.s.boardTitle,
+                t: t,
+                trailingWidth: _avatarStackWidth(members.length) + 12 + 48,
+                // The avatar stack folds away as the header collapses (see
+                // _CollapsingAvatars), so the collapsed title only has to clear the
+                // add button — reserving the full expanded slot would squeeze it to
+                // a few characters.
+                collapsedSideInset: 86,
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _CollapsingAvatars(t: t, members: members),
+                    SizedBox(width: 12 * (1 - t).clamp(0.0, 1.0)),
+                    GlassIconButton(icon: LucideIcons.plus, onTap: () => _openNewTaskSheet(context, ref)),
+                  ],
+                ),
+              ),
+              estimatedExtraHeight: _extraHeight,
+              // Today, and how much of it is behind you. This is what the week strip
+              // used to occupy, and it is deliberately *not* a picker any more:
+              // the date is a property of a task now, so there is no day to select.
+              extra: _TodayHeader(today: today, progress: progress, done: onDeckDone, total: onDeck.length, accent: accent),
+              body: ScreenBodyPanel(
+                child: ListView(
+                  padding: EdgeInsets.fromLTRB(16, 20, 16, navContentInset(context)),
+                  children: [
+                    if (state.error != null && !state.loading && state.isEmpty) ...[
+                      ErrorNote(message: state.error!, onRetry: () => notifier.load()),
+                      const SizedBox(height: 16),
+                    ],
+                    if (groups.isEmpty && !state.loading)
+                      _EmptyBoard(onAdd: () => _openNewTaskSheet(context, ref))
+                    else
+                      for (final group in groups) ...[
+                        _SectionHeading(section: group.section, count: group.tasks.length),
+                        SectionCard(
+                          // [dividedRows] rather than a border on the row itself:
+                          // the row used to sit under the day card's own header and
+                          // drew its own top rule, which at the top of a card of its
+                          // own would be a line against the card's edge.
+                          children: dividedRows([
+                            // The row plays the check-off animation first and only
+                            // then tells the notifier, so it strikes through in place
+                            // before moving to "Erledigt" — and an undone task slides
+                            // back in here from below.
+                            for (final task in group.tasks)
+                              CheckOffArrival(
+                                key: ValueKey(task.id),
+                                animate: task.id == state.justMoved,
+                                fromBelow: true,
+                                child: CheckOffRow(
+                                  onCompleted: () => notifier.toggle(task),
+                                  // Same gesture as a Listen or Boxen row: swipe
+                                  // left for Bearbeiten and Löschen. The row's own
+                                  // tap opens the sheet from here rather than from
+                                  // a detector inside [_TaskRow] — an inner one
+                                  // would swallow the tap that closes an open
+                                  // swipe.
+                                  builder: (context, strike, checkOff) => SwipeToEditDelete(
+                                    onTap: () => _openTaskSheet(context, ref, task: task),
+                                    onEdit: () => _openTaskSheet(context, ref, task: task),
+                                    onDelete: () => _deleteTask(context, ref, task),
+                                    child: _TaskRow(
+                                      task: task,
+                                      accent: accent,
+                                      strike: strike,
+                                      onCheckOff: checkOff,
+                                      // Only where the heading doesn't already say
+                                      // it. "Heute" above a row stamped "13. Aug"
+                                      // is the same fact printed twice.
+                                      showDate: _sectionSpansDays(group.section),
+                                      overdue: group.section == BoardSection.overdue,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ]),
+                        ),
+                        const SizedBox(height: 18),
+                      ],
+                    if (done.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      // The heading only pops into existence with the very first
+                      // done task — let it arrive with that row instead.
+                      CheckOffArrival(
+                        animate: done.length == 1 && done.first.id == state.justMoved,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                L.s.doneCountSeparator(done.length),
+                                style: AppText.caption,
+                              ),
+                              GestureDetector(
+                                onTap: notifier.clearDone,
+                                child: Text(
+                                  L.s.delete,
+                                  style: AppText.caption.copyWith(color: accent),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      SectionCard(
+                        children: dividedRows([
+                          for (final task in done)
+                            CheckOffArrival(
+                              key: ValueKey(task.id),
+                              animate: task.id == state.justMoved,
+                              // Undo runs the same animation backwards before the
+                              // task travels back up into the day card.
+                              child: CheckOffRow(
+                                undo: true,
+                                onCompleted: () => notifier.toggle(task),
+                                // Delete only, like a Listen article row: the whole
+                                // row already means "undo", and there is nothing
+                                // worth editing about a task that is finished. It
+                                // throws one away without clearing the lot.
+                                builder: (context, strike, undo) => SwipeToEditDelete(
+                                  onTap: undo,
+                                  onDelete: () => _deleteTask(context, ref, task),
+                                  child: _DoneRow(task: task, accent: accent, strike: strike, onUndo: undo),
                                 ),
                               ),
                             ),
-                          ),
-                      ]),
-                    ),
-                    const SizedBox(height: 18),
-                  ],
-                if (done.isNotEmpty) ...[
-                  const SizedBox(height: 2),
-                  // The heading only pops into existence with the very first
-                  // done task — let it arrive with that row instead.
-                  CheckOffArrival(
-                    animate: done.length == 1 && done.first.id == state.justMoved,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            L.s.doneCountSeparator(done.length),
-                            style: AppText.caption,
-                          ),
-                          GestureDetector(
-                            onTap: notifier.clearDone,
-                            child: Text(
-                              L.s.delete,
-                              style: AppText.caption.copyWith(color: accent),
-                            ),
-                          ),
-                        ],
+                        ]),
                       ),
-                    ),
-                  ),
-                  SectionCard(
-                    children: dividedRows([
-                      for (final task in done)
-                        CheckOffArrival(
-                          key: ValueKey(task.id),
-                          animate: task.id == state.justMoved,
-                          // Undo runs the same animation backwards before the
-                          // task travels back up into the day card.
-                          child: CheckOffRow(
-                            undo: true,
-                            onCompleted: () => notifier.toggle(task),
-                            // Delete only, like a Listen article row: the whole
-                            // row already means "undo", and there is nothing
-                            // worth editing about a task that is finished. It
-                            // throws one away without clearing the lot.
-                            builder: (context, strike, undo) => SwipeToEditDelete(
-                              onTap: undo,
-                              onDelete: () => _deleteTask(context, ref, task),
-                              child: _DoneRow(task: task, accent: accent, strike: strike, onUndo: undo),
-                            ),
-                          ),
-                        ),
-                    ]),
-                  ),
-                ],
-              ],
+                    ],
+                  ],
+                ),
+              ),
             ),
           ),
-        ),
+          // "Rückgängig" for the row that just struck itself through, parked
+          // where the calendar parks "Heute" — same pill, same clearance.
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: navContentInset(context, pill: 106, gap: 36),
+            child: Center(
+              child: UndoPill(
+                token: justChecked?.id ?? '',
+                accent: accent,
+                onUndo: () {
+                  if (justChecked != null) notifier.toggle(justChecked);
+                },
+              ),
+            ),
+          ),
+        ],
       ),
     );
+  }
+
+  /// The task behind the undo pill: whatever `justMoved` points at, but only
+  /// when it is sitting in "Erledigt". `justMoved` is also set by adding a task
+  /// and by undoing one, and neither of those is an offer to undo anything.
+  static BoardTask? _justCheckedOff(BoardState state, List<BoardTask> done) {
+    if (state.justMoved.isEmpty) return null;
+    for (final task in done) {
+      if (task.id == state.justMoved) return task;
+    }
+    return null;
   }
 
   /// First-frame estimate of the collapsing block (the tracker's caption and

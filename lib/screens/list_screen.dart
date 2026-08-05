@@ -3,10 +3,10 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import '../data/brand_colors.dart';
 import '../data/grocery_search.dart';
 import '../data/icon_suggestions.dart';
 import '../data/list_data.dart';
-import '../data/merchant_logos.dart';
 import '../models/attachment.dart';
 import '../models/shopping_list.dart';
 import '../services/external_links.dart';
@@ -23,6 +23,7 @@ import '../widgets/check_off.dart';
 import '../widgets/collapsing_header.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/error_note.dart';
+import '../widgets/floating_pill.dart';
 import '../widgets/glass.dart';
 import '../widgets/icon_picker.dart';
 import '../widgets/overview_screen.dart';
@@ -528,240 +529,308 @@ class _ListDetail extends ConsumerWidget {
     final openItems = items.where((i) => !i.done).toList();
     final doneItems = items.where((i) => i.done).toList();
 
-    return CollapsingHeaderScreen(
-      // "Alle Artikel" is every list at once and so belongs to no shop.
-      backdrop: _ListGlow(iconKey: summary ? null : open.iconKey),
-      // The pinned row keeps the generic "Liste" label at rest — the list's
-      // own name is the big row below it — and swaps to that name as the
-      // big one scrolls away, so the bar never stops saying which list
-      // you're in.
-      titleRowBuilder: (context, t) => CollapsingScreenTitle(
-        title: L.s.listLabel,
-        collapsedTitle: open.name,
-        collapsedIcon: IconTile(iconKey: open.iconKey, size: 24, imageSize: 17),
-        t: t,
-        expandedAlignment: Alignment.center,
-        expandedFontSize: 19,
-        fontWeight: FontWeight.w500,
-        leadingWidth: 48,
-        trailingWidth: 48,
-        leading: GlassIconButton(icon: LucideIcons.chevronLeft, onTap: () => ref.read(listProvider.notifier).back()),
-        // "Alle Artikel" is computed rather than stored, so there is nothing
-        // there to rename, re-symbol or delete.
-        trailing: summary
-            ? const SizedBox(width: 40)
-            : GlassMenuButton(
-                items: [
-                  AnchoredMenuItem(label: L.s.edit, icon: LucideIcons.pencil, onSelected: () => openListSheet(context, ref, list: open)),
-                  // Its own action, never part of "Für wen?" — see
-                  // [showShareSheet]. Absent for kids and for a guest looking
-                  // at somebody else's list, both of whom the database refuses.
-                  if (ref.watch(canShareExternallyProvider) && !state.guestListIds.contains(open.id))
-                    AnchoredMenuItem(
-                      label: L.s.share,
-                      icon: LucideIcons.userPlus,
-                      onSelected: () => showShareSheet(
-                        context,
-                        kind: ShareableKind.list,
-                        resourceId: open.id,
-                        resourceName: open.name,
-                      ),
-                    ),
-                  AnchoredMenuItem(
-                    label: L.s.delete,
-                    icon: LucideIcons.trash2,
-                    destructive: true,
-                    onSelected: () async {
-                      // Captured before the write: this row lives in the detail
-                      // view, which the delete itself unmounts.
-                      final confirm = confirmChipOf(context);
-                      final notifier = ref.read(listProvider.notifier);
-                      if (await notifier.deleteList(open.id) case final deleted?) {
-                        confirm(L.s.listDeleted, undo: () => notifier.restoreList(deleted));
-                      }
-                    },
-                  ),
-                ],
-              ),
-      ),
-      estimatedExtraHeight: _detailExtraHeight,
-      extra: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              IconTile(iconKey: open.iconKey, size: 44, imageSize: 30),
-              const SizedBox(width: 13),
-              Expanded(
-                child: Text(
-                  open.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppText.detailTitle,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-      body: ScreenBodyPanel(
-        child: ListView(
-          padding: EdgeInsets.fromLTRB(16, 18, 16, navContentInset(context, pill: 140)),
-          children: [
-            SectionCard(
-              children: [
-                _AddItemRow(grocery: summary || open.kind == ListKind.grocery),
-                if (!summary)
-                  for (var i = 0; i < openItems.length; i++)
-                    // Divider inside the collapsing block so it folds away with
-                    // the row instead of leaving a stray line behind.
-                    CheckOffArrival(
-                      key: ValueKey(openItems[i].id),
-                      animate: openItems[i].id == state.justMoved,
-                      fromBelow: true,
-                      child: CheckOffRow(
-                        onCompleted: () => ref.read(listProvider.notifier).toggle(openItems[i].id, false),
-                        builder: (context, strike, checkOff) => Column(
-                          children: [
-                            CardDivider(),
-                            _swipeToDelete(ref, openItems[i], _ItemRow(item: openItems[i], accent: accent, strike: strike, onCheckOff: checkOff)),
-                          ],
-                        ),
-                      ),
-                    ),
-              ],
-            ),
-            if (summary)
-              for (final l in state.lists)
-                Builder(
-                  builder: (context) {
-                    final its = openItems.where((i) => i.listId == l.id).toList();
-                    if (its.isEmpty) return const SizedBox.shrink();
-                    return Padding(
-                      padding: const EdgeInsets.only(top: 18),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(6, 0, 6, 9),
-                            child: Row(
-                              children: [
-                                IconTile(iconKey: l.iconKey, size: 26, imageSize: 17),
-                                const SizedBox(width: 9),
-                                Text(
-                                  l.name,
-                                  style: AppText.groupHeading,
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  L.s.itemCount(its.length),
-                                  style: AppText.label.copyWith(color: AppColors.mutedLight),
-                                ),
-                              ],
-                            ),
+    // The article the undo pill is offering to put back: the one that just
+    // moved, and only while it is *done*. Undoing it moves it again, which
+    // clears this and takes the pill away.
+    final justChecked = _justCheckedOff(doneItems);
+
+    return Stack(
+      children: [
+        CollapsingHeaderScreen(
+          // "Alle Artikel" is every list at once and so belongs to no shop.
+          backdrop: _ListGlow(iconKey: summary ? null : open.iconKey),
+          // The pinned row keeps the generic "Liste" label at rest — the list's
+          // own name is the big row below it — and swaps to that name as the
+          // big one scrolls away, so the bar never stops saying which list
+          // you're in.
+          titleRowBuilder: (context, t) => CollapsingScreenTitle(
+            title: L.s.listLabel,
+            collapsedTitle: open.name,
+            collapsedIcon: IconTile(iconKey: open.iconKey, size: 24, imageSize: 17),
+            t: t,
+            expandedAlignment: Alignment.center,
+            expandedFontSize: 19,
+            fontWeight: FontWeight.w500,
+            leadingWidth: 48,
+            trailingWidth: 48,
+            leading: GlassIconButton(icon: LucideIcons.chevronLeft, onTap: () => ref.read(listProvider.notifier).back()),
+            // "Alle Artikel" is computed rather than stored, so there is nothing
+            // there to rename, re-symbol or delete.
+            trailing: summary
+                ? const SizedBox(width: 40)
+                : GlassMenuButton(
+                    items: [
+                      AnchoredMenuItem(label: L.s.edit, icon: LucideIcons.pencil, onSelected: () => openListSheet(context, ref, list: open)),
+                      // Its own action, never part of "Für wen?" — see
+                      // [showShareSheet]. Absent for kids and for a guest looking
+                      // at somebody else's list, both of whom the database refuses.
+                      if (ref.watch(canShareExternallyProvider) && !state.guestListIds.contains(open.id))
+                        AnchoredMenuItem(
+                          label: L.s.share,
+                          icon: LucideIcons.userPlus,
+                          onSelected: () => showShareSheet(
+                            context,
+                            kind: ShareableKind.list,
+                            resourceId: open.id,
+                            resourceName: open.name,
                           ),
-                          SectionCard(
-                            children: [
-                              for (var i = 0; i < its.length; i++)
-                                CheckOffArrival(
-                                  key: ValueKey(its[i].id),
-                                  animate: its[i].id == state.justMoved,
-                                  fromBelow: true,
-                                  child: CheckOffRow(
-                                    onCompleted: () => ref.read(listProvider.notifier).toggle(its[i].id, false),
-                                    builder: (context, strike, checkOff) => Column(
-                                      children: [
-                                        if (i > 0) CardDivider(),
-                                        _swipeToDelete(ref, its[i], _ItemRow(item: its[i], accent: accent, strike: strike, onCheckOff: checkOff)),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-            if (doneItems.isNotEmpty) ...[
-              // The heading only pops into existence with the very first done
-              // item — let it arrive with that row instead.
-              CheckOffArrival(
-                animate: doneItems.length == 1 && doneItems.first.id == state.justMoved,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10).copyWith(top: 20),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        L.s.doneWithCount(doneItems.length),
-                        style: AppText.caption,
-                      ),
-                      GestureDetector(
-                        onTap: () => ref.read(listProvider.notifier).clearDone(doneItems),
-                        child: Text(
-                          L.s.deleteDone,
-                          style: AppText.caption.copyWith(color: accent),
                         ),
+                      AnchoredMenuItem(
+                        label: L.s.delete,
+                        icon: LucideIcons.trash2,
+                        destructive: true,
+                        onSelected: () async {
+                          // Captured before the write: this row lives in the detail
+                          // view, which the delete itself unmounts.
+                          final confirm = confirmChipOf(context);
+                          final notifier = ref.read(listProvider.notifier);
+                          if (await notifier.deleteList(open.id) case final deleted?) {
+                            confirm(L.s.listDeleted, undo: () => notifier.restoreList(deleted));
+                          }
+                        },
                       ),
                     ],
                   ),
-                ),
-              ),
-              SectionCard(
-                children: dividedRows([
-                  for (final item in doneItems)
-                    CheckOffArrival(
-                      key: ValueKey(item.id),
-                      animate: item.id == state.justMoved,
-                      // Undo runs the same animation backwards before the item
-                      // travels back up into the open list.
-                      child: CheckOffRow(
-                        undo: true,
-                        onCompleted: () => ref.read(listProvider.notifier).toggle(item.id, true),
-                        builder: (context, strike, undo) => _DoneItemRow(item: item, accent: accent, strike: strike, onUndo: undo),
-                      ),
+          ),
+          estimatedExtraHeight: _detailExtraHeight,
+          extra: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  IconTile(iconKey: open.iconKey, size: 44, imageSize: 30),
+                  const SizedBox(width: 13),
+                  Expanded(
+                    child: Text(
+                      open.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppText.detailTitle,
                     ),
-                ]),
+                  ),
+                ],
               ),
             ],
-            if (items.isEmpty)
-              EmptyState(
-                icon: LucideIcons.clipboardCheck,
-                iconColor: accent,
-                message: L.s.tapAboveToAddFirst,
-                verticalPadding: 56,
-                gap: 16,
-              ),
-          ],
+          ),
+          body: ScreenBodyPanel(
+            child: ListView(
+              padding: EdgeInsets.fromLTRB(16, 18, 16, navContentInset(context, pill: 140)),
+              children: [
+                SectionCard(
+                  children: [
+                    _AddItemRow(grocery: summary || open.kind == ListKind.grocery),
+                    if (!summary)
+                      for (var i = 0; i < openItems.length; i++)
+                        // Divider inside the collapsing block so it folds away with
+                        // the row instead of leaving a stray line behind.
+                        CheckOffArrival(
+                          key: ValueKey(openItems[i].id),
+                          animate: openItems[i].id == state.justMoved,
+                          fromBelow: true,
+                          child: CheckOffRow(
+                            onCompleted: () => ref.read(listProvider.notifier).toggle(openItems[i].id, false),
+                            builder: (context, strike, checkOff) => Column(
+                              children: [
+                                CardDivider(),
+                                _swipeToDelete(ref, openItems[i], _ItemRow(item: openItems[i], accent: accent, strike: strike, onCheckOff: checkOff)),
+                              ],
+                            ),
+                          ),
+                        ),
+                  ],
+                ),
+                if (summary)
+                  for (final l in state.lists)
+                    Builder(
+                      builder: (context) {
+                        final its = openItems.where((i) => i.listId == l.id).toList();
+                        if (its.isEmpty) return const SizedBox.shrink();
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 18),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(6, 0, 6, 9),
+                                child: Row(
+                                  children: [
+                                    IconTile(iconKey: l.iconKey, size: 26, imageSize: 17),
+                                    const SizedBox(width: 9),
+                                    Text(
+                                      l.name,
+                                      style: AppText.groupHeading,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      L.s.itemCount(its.length),
+                                      style: AppText.label.copyWith(color: AppColors.mutedLight),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              SectionCard(
+                                children: [
+                                  for (var i = 0; i < its.length; i++)
+                                    CheckOffArrival(
+                                      key: ValueKey(its[i].id),
+                                      animate: its[i].id == state.justMoved,
+                                      fromBelow: true,
+                                      child: CheckOffRow(
+                                        onCompleted: () => ref.read(listProvider.notifier).toggle(its[i].id, false),
+                                        builder: (context, strike, checkOff) => Column(
+                                          children: [
+                                            if (i > 0) CardDivider(),
+                                            _swipeToDelete(ref, its[i], _ItemRow(item: its[i], accent: accent, strike: strike, onCheckOff: checkOff)),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                if (doneItems.isNotEmpty) ...[
+                  // The heading only pops into existence with the very first done
+                  // item — let it arrive with that row instead.
+                  CheckOffArrival(
+                    animate: doneItems.length == 1 && doneItems.first.id == state.justMoved,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10).copyWith(top: 20),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            L.s.doneWithCount(doneItems.length),
+                            style: AppText.caption,
+                          ),
+                          GestureDetector(
+                            onTap: () => ref.read(listProvider.notifier).clearDone(doneItems),
+                            child: Text(
+                              L.s.deleteDone,
+                              style: AppText.caption.copyWith(color: accent),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  SectionCard(
+                    children: dividedRows([
+                      for (final item in doneItems)
+                        CheckOffArrival(
+                          key: ValueKey(item.id),
+                          animate: item.id == state.justMoved,
+                          // Undo runs the same animation backwards before the item
+                          // travels back up into the open list.
+                          child: CheckOffRow(
+                            undo: true,
+                            onCompleted: () => ref.read(listProvider.notifier).toggle(item.id, true),
+                            builder: (context, strike, undo) => _DoneItemRow(item: item, accent: accent, strike: strike, onUndo: undo),
+                          ),
+                        ),
+                    ]),
+                  ),
+                ],
+                if (items.isEmpty)
+                  EmptyState(
+                    icon: LucideIcons.clipboardCheck,
+                    iconColor: accent,
+                    message: L.s.tapAboveToAddFirst,
+                    verticalPadding: 56,
+                    gap: 16,
+                  ),
+              ],
+            ),
+          ),
         ),
-      ),
+        // "Rückgängig" for the article that just struck itself through, parked
+        // where the calendar parks "Heute" — same pill, same clearance.
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: navContentInset(context, pill: 106, gap: 36),
+          child: Center(
+            child: UndoPill(
+              token: justChecked?.id ?? '',
+              accent: accent,
+              onUndo: () {
+                if (justChecked != null) ref.read(listProvider.notifier).toggle(justChecked.id, true);
+              },
+            ),
+          ),
+        ),
+      ],
     );
   }
 
-  /// The header glow behind a list, taken from the shop logo it carries.
-  ///
-  /// Keyed on the icon, not the list id: ids are `lists.id` uuids now, so the
-  /// old switch over four seed ids ('week', 'drug', …) could never match again.
-  /// Only the four shops the palette actually has a colour for are named; every
-  /// other list glows in the app accent.
-  Color _brandGlow(String? iconKey) {
-    if (iconKey == null || !iconKey.startsWith(merchantAssetDir)) return AppColors.accent;
-    final file = iconKey.substring(merchantAssetDir.length);
-    switch (file) {
-      case 'rewe_de.png':
-        return AppColors.brandRewe;
-      case 'dm_de.png':
-        return AppColors.brandDm;
-      case 'toom_de.png':
-        return AppColors.brandToom;
-      case 'ikea_com.png':
-        return AppColors.brandIkea;
-      default:
-        return AppColors.accent;
+  /// The article behind the undo pill: whatever `justMoved` points at, but only
+  /// while it sits in "Erledigt". `justMoved` is also set by adding an article
+  /// and by undoing one, and neither of those is an offer to undo anything.
+  ShoppingListItem? _justCheckedOff(List<ShoppingListItem> doneItems) {
+    if (state.justMoved.isEmpty) return null;
+    for (final item in doneItems) {
+      if (item.id == state.justMoved) return item;
     }
+    return null;
+  }
+}
+
+/// The header wash behind a list, in the colour of the shop logo it carries
+/// (see [brandGlowFor]).
+///
+/// Stateful for one reason: a logo the app hasn't looked at yet has to be
+/// decoded before its colour is known. Until then — and for a list wearing a
+/// plain symbol — the wash is the app accent, and it crossfades into the brand
+/// colour when the decode lands. The same crossfade carries a *rename*: editing
+/// "REWE" into "Amazon" changes the icon, so the colour follows it over 320ms
+/// rather than snapping, matching the check-off colour transition.
+class _ListGlow extends StatefulWidget {
+  final String? iconKey;
+
+  const _ListGlow({required this.iconKey});
+
+  @override
+  State<_ListGlow> createState() => _ListGlowState();
+}
+
+class _ListGlowState extends State<_ListGlow> {
+  @override
+  void initState() {
+    super.initState();
+    _resolve();
+  }
+
+  @override
+  void didUpdateWidget(_ListGlow old) {
+    super.didUpdateWidget(old);
+    // The list itself never changes identity here — the detail view is one
+    // widget for whichever list is open — so a new icon arrives as an update,
+    // not as a fresh State.
+    if (old.iconKey != widget.iconKey) _resolve();
+  }
+
+  void _resolve() {
+    if (brandGlowKnown(widget.iconKey)) return;
+    final pending = widget.iconKey;
+    loadBrandGlow(pending).then((_) {
+      // Dropped if the list was renamed again while the logo was decoding: the
+      // colour on screen belongs to whatever icon it wears *now*.
+      if (mounted && widget.iconKey == pending) setState(() {});
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<Color?>(
+      tween: ColorTween(end: brandGlowFor(widget.iconKey)),
+      duration: const Duration(milliseconds: 320),
+      curve: Curves.easeOutCubic,
+      builder: (context, color, _) => HeaderBrandGlow(color: color ?? AppColors.accent),
+    );
   }
 }
 
