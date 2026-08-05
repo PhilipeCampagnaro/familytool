@@ -7,6 +7,7 @@ import '../../state/auth_state.dart';
 import '../../theme/tokens.dart';
 import '../../widgets/app_sheet.dart';
 import '../../widgets/avatar.dart';
+import '../../widgets/confirmation.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/error_note.dart';
 import '../../widgets/settings_chrome.dart';
@@ -37,9 +38,15 @@ class FamilyPage extends ConsumerWidget {
       title: L.s.familyMembers,
       description: isAdmin ? L.s.familyMembersDesc : L.s.familyMembersDescAdmin,
       children: [
+        // Members and the people who have been invited but haven't joined yet
+        // are one list, not two: an invitation *is* a place at the table that
+        // nobody has taken. Its own row already says so — the envelope instead
+        // of an avatar, and "Mitglied · ausstehend" underneath — so a second
+        // card under its own heading only said it a third time and pushed the
+        // invite button into the middle of the page.
         SectionCard(
           radius: AppRadii.card,
-          children: family.members.isEmpty
+          children: family.members.isEmpty && family.invites.isEmpty
               ? [
                   EmptyState(
                     icon: LucideIcons.users,
@@ -48,11 +55,40 @@ class FamilyPage extends ConsumerWidget {
                 ]
               : dividedRows(inset: true, [
                   for (final m in family.members) _MemberRow(member: m, isMe: m.userId == me, canManage: isAdmin),
+                  for (final invite in family.invites)
+                    SettingsRow(
+                      // Sized like the avatar beside it, so the merged list has
+                      // one column of round leadings rather than two.
+                      leading: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(color: AppColors.surfaceAlt, shape: BoxShape.circle),
+                        alignment: Alignment.center,
+                        child: Icon(LucideIcons.mail, size: 17, color: Theme.of(context).colorScheme.primary),
+                      ),
+                      title: invite.name.isNotEmpty ? invite.name : invite.email,
+                      subtitle: L.s.pendingWithRole(invite.role.label),
+                      // Withdrawing an invitation is an admin's business, same
+                      // as sending one; everybody else just sees who's coming.
+                      trailing: !isAdmin
+                          ? null
+                          : GestureDetector(
+                              onTap: () => ref.read(familyProvider.notifier).revokeInvite(invite.id),
+                              behavior: HitTestBehavior.opaque,
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                                child: Icon(LucideIcons.x, size: 17, color: AppColors.mutedLight),
+                              ),
+                            ),
+                    ),
                 ]),
         ),
         // The gate is courtesy, not security: `invite-member` checks the role
         // itself and RLS refuses the writes regardless. Showing a control that
         // is going to be refused is just a worse way of saying no.
+        //
+        // Last on the page on purpose: it acts on the list above it, so it
+        // stays under the whole list however long it grows.
         if (isAdmin) ...[
           const SizedBox(height: 14),
           AccentAction(
@@ -61,75 +97,162 @@ class FamilyPage extends ConsumerWidget {
             onTap: () => _openInviteSheet(context, ref),
           ),
         ],
-        if (family.invites.isNotEmpty) ...[
-          GroupLabel(L.s.pendingInvites),
-          SectionCard(
-            children: dividedRows([
-              for (final invite in family.invites)
-                SettingsRow(
-                  icon: LucideIcons.mail,
-                  title: invite.name.isNotEmpty ? invite.name : invite.email,
-                  subtitle: L.s.pendingWithRole(invite.role.label),
-                  trailing: GestureDetector(
-                    onTap: () => ref.read(familyProvider.notifier).revokeInvite(invite.id),
-                    behavior: HitTestBehavior.opaque,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-                      child: Icon(LucideIcons.x, size: 17, color: AppColors.mutedLight),
-                    ),
-                  ),
-                ),
-            ]),
-          ),
-        ],
       ],
     );
   }
 
+  /// The invite sheet, which is three states of one sheet rather than a form
+  /// that closes on the check: what you typed, the send in flight, and the
+  /// confirmation of the invitation that now exists. It used to pop on the
+  /// check and say nothing — an invitation is somebody else's mail arriving
+  /// somewhere we can't see, so "it went out" is exactly the part the sender
+  /// needs told. The confirmation also carries the link, which
+  /// `invite-member` hands back exactly once.
   void _openInviteSheet(BuildContext context, WidgetRef ref) {
-    final emailController = TextEditingController();
-    final nameController = TextEditingController();
-    final draft = _InviteDraft();
-    showAppSheet(
+    final flow = _InviteFlow(ref.read(familyProvider.notifier));
+    showAppSheet<void>(
       context: context,
-      title: L.s.inviteFamilyMember,
-      heightFactor: 0.6,
-      onSave: () => ref.read(familyProvider.notifier).inviteMember(
-            email: emailController.text,
-            name: nameController.text,
-            role: draft.role,
-          ),
-      child: _InviteSheetBody(
-        emailController: emailController,
-        nameController: nameController,
-        draft: draft,
+      // Tall enough that the fields stay above the keyboard — the sheet is
+      // anchored to the bottom, so a shorter one puts them where the keyboard
+      // comes up — and that the confirmation doesn't have to be scrolled.
+      heightFactor: 0.72,
+      header: _InviteHeader(flow: flow),
+      child: _InviteSheetBody(flow: flow),
+    ).whenComplete(() {
+      // Not disposed on the spot: the sheet's own widgets are still mounted —
+      // and still reading the controllers — while the route animates out.
+      Future<void>.delayed(const Duration(milliseconds: 400), flow.dispose);
+    });
+  }
+}
+
+enum _InvitePhase { editing, sending, sent }
+
+/// The state the invite sheet's header and its body share.
+///
+/// They are siblings inside [showAppSheet]'s own Column — the header can't be
+/// built by the body's `State` — so the two halves talk through this, the same
+/// way the connect-confirm sheet does.
+class _InviteFlow {
+  _InviteFlow(this._notifier);
+
+  final HouseholdNotifier _notifier;
+
+  final TextEditingController email = TextEditingController();
+  final TextEditingController name = TextEditingController();
+
+  /// The role is chosen when the invitation is sent, not afterwards: it is
+  /// written into the `family_invites` row and applied by `accept-invite`, so
+  /// inviting a child as an admin and demoting them later would have given
+  /// them full access in between.
+  FamilyRole role = FamilyRole.member;
+
+  final ValueNotifier<_InvitePhase> phase = ValueNotifier(_InvitePhase.editing);
+  final ValueNotifier<String?> error = ValueNotifier(null);
+
+  /// Set exactly once, when the invitation comes back. Read by both halves in
+  /// the [_InvitePhase.sent] phase, so it is non-null wherever it is read.
+  SentInvite? sent;
+
+  /// The sheet can be swiped away while the send is still in flight — the
+  /// invitation is still created, there is just nothing left to tell about it.
+  bool _disposed = false;
+
+  Future<void> submit(BuildContext context) async {
+    if (phase.value != _InvitePhase.editing) return;
+    FocusScope.of(context).unfocus();
+    error.value = null;
+    phase.value = _InvitePhase.sending;
+
+    final outcome = await _notifier.inviteMember(
+      email: email.text,
+      name: name.text,
+      role: role,
+    );
+    if (_disposed) return;
+
+    if (outcome.invite case final invite?) {
+      sent = invite;
+      phase.value = _InvitePhase.sent;
+    } else {
+      // Reported here rather than as a toast: the sheet is still open, and the
+      // message belongs next to the address it was typed into.
+      error.value = outcome.error;
+      phase.value = _InvitePhase.editing;
+    }
+  }
+
+  void dispose() {
+    _disposed = true;
+    email.dispose();
+    name.dispose();
+    phase.dispose();
+    error.dispose();
+  }
+}
+
+class _InviteHeader extends StatelessWidget {
+  final _InviteFlow flow;
+
+  const _InviteHeader({required this.flow});
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<_InvitePhase>(
+      valueListenable: flow.phase,
+      builder: (context, phase, _) => SheetActionHeader(
+        title: switch (phase) {
+          _InvitePhase.editing || _InvitePhase.sending => L.s.inviteFamilyMember,
+          // An invitation whose mail didn't go out is still an invitation; it
+          // says so instead of claiming a delivery that didn't happen.
+          _InvitePhase.sent => flow.sent!.mailSent ? L.s.inviteSentTitle : L.s.inviteCreatedTitle,
+        },
+        action: switch (phase) {
+          _InvitePhase.editing => SheetHeaderAction.confirm,
+          _InvitePhase.sending => SheetHeaderAction.busy,
+          _InvitePhase.sent => SheetHeaderAction.none,
+        },
+        onConfirm: () => flow.submit(context),
       ),
     );
   }
 }
 
-/// The invited role, held by reference — the sheet's save button is handed its
-/// callback before the body exists.
-class _InviteDraft {
-  FamilyRole role = FamilyRole.member;
-}
+class _InviteSheetBody extends StatelessWidget {
+  final _InviteFlow flow;
 
-class _InviteSheetBody extends StatefulWidget {
-  final TextEditingController emailController;
-  final TextEditingController nameController;
-  final _InviteDraft draft;
-
-  const _InviteSheetBody({
-    required this.emailController,
-    required this.nameController,
-    required this.draft,
-  });
+  const _InviteSheetBody({required this.flow});
 
   @override
-  State<_InviteSheetBody> createState() => _InviteSheetBodyState();
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<_InvitePhase>(
+      valueListenable: flow.phase,
+      builder: (context, phase, _) => AnimatedSwitcher(
+        duration: const Duration(milliseconds: 220),
+        switchInCurve: Curves.easeOutCubic,
+        child: phase == _InvitePhase.sent
+            ? _InviteSentBody(key: const ValueKey('sent'), invite: flow.sent!)
+            : _InviteFormBody(
+                key: const ValueKey('editing'),
+                flow: flow,
+                busy: phase == _InvitePhase.sending,
+              ),
+      ),
+    );
+  }
 }
 
-class _InviteSheetBodyState extends State<_InviteSheetBody> {
+class _InviteFormBody extends StatefulWidget {
+  final _InviteFlow flow;
+  final bool busy;
+
+  const _InviteFormBody({super.key, required this.flow, required this.busy});
+
+  @override
+  State<_InviteFormBody> createState() => _InviteFormBodyState();
+}
+
+class _InviteFormBodyState extends State<_InviteFormBody> {
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -140,7 +263,8 @@ class _InviteSheetBodyState extends State<_InviteSheetBody> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               child: TextField(
-                controller: widget.emailController,
+                controller: widget.flow.email,
+                enabled: !widget.busy,
                 keyboardType: TextInputType.emailAddress,
                 autocorrect: false,
                 style: AppText.searchInput,
@@ -151,29 +275,35 @@ class _InviteSheetBodyState extends State<_InviteSheetBody> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               child: TextField(
-                controller: widget.nameController,
+                controller: widget.flow.name,
+                enabled: !widget.busy,
                 style: AppText.searchInput,
                 decoration: InputDecoration(border: InputBorder.none, hintText: L.s.nameOptional, isDense: true),
               ),
             ),
             CardDivider(),
-            // The role is chosen when the invitation is sent, not afterwards:
-            // it is written into the `family_invites` row and applied by
-            // `accept-invite`, so inviting a child as an admin and demoting
-            // them later would have given them full access in between.
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               child: Row(
                 children: [
                   Expanded(child: Text(L.s.role, style: AppText.rowTitle)),
                   _RolePicker(
-                    role: widget.draft.role,
-                    onChanged: (r) => setState(() => widget.draft.role = r),
+                    role: widget.flow.role,
+                    onChanged: (r) => setState(() => widget.flow.role = r),
                   ),
                 ],
               ),
             ),
           ],
+        ),
+        ValueListenableBuilder<String?>(
+          valueListenable: widget.flow.error,
+          builder: (context, message, _) => message == null
+              ? const SizedBox.shrink()
+              : Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: ErrorNote(message: message),
+                ),
         ),
         const SizedBox(height: 10),
         Padding(
@@ -182,6 +312,61 @@ class _InviteSheetBodyState extends State<_InviteSheetBody> {
             L.s.inviteValidity,
             style: AppText.label.copyWith(fontSize: 12),
           ),
+        ),
+        if (widget.busy) ...[
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+              const SizedBox(width: 12),
+              Text(L.s.inviteSending, style: AppText.body.copyWith(color: AppColors.muted)),
+            ],
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// What the sheet becomes once the invitation exists — the app's one
+/// confirmation ([ConfirmationView]) with the invitation's own content: who
+/// was invited as what, and until when.
+///
+/// A beat, like the calendar connect: there is nothing here to act on. The
+/// invitation link is deliberately **not** offered — the mail carries it, and
+/// putting it on screen invites passing an invitation around by hand, which is
+/// exactly the thing whose one-shot token and 14-day expiry exist to prevent.
+/// It stays a celebration, though: somebody joining the household happens once.
+class _InviteSentBody extends StatelessWidget {
+  final SentInvite invite;
+
+  const _InviteSentBody({super.key, required this.invite});
+
+  @override
+  Widget build(BuildContext context) {
+    final expires = invite.expiresAt;
+
+    return ConfirmationView(
+      mark: ConfirmationMark.celebration,
+      headline: invite.mailSent ? L.s.inviteSentTitle : L.s.inviteCreatedTitle,
+      message: invite.mailSent ? L.s.inviteSentTo(invite.email) : L.s.inviteMailNotSent(invite.email),
+      // Long enough to read the address it went to and the role, and no longer:
+      // the pending-invites list on the page behind says all of it again.
+      dismissAfter: const Duration(milliseconds: 3200),
+      content: [
+        SectionCard(
+          children: dividedRows([
+            SettingsRow(
+              icon: LucideIcons.mail,
+              title: invite.name.isNotEmpty ? invite.name : invite.email,
+              subtitle: L.s.invitedAsRole(invite.role.label),
+            ),
+            if (expires != null)
+              SettingsRow(
+                icon: LucideIcons.clock,
+                title: L.s.inviteValidUntil(L.s.dayMonthShort(expires.day, expires.month)),
+              ),
+          ]),
         ),
       ],
     );

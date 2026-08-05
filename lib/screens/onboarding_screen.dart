@@ -4,6 +4,8 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../state/onboarding_state.dart';
 import '../theme/tokens.dart';
 import '../widgets/app_sheet.dart';
+import '../widgets/confirmation.dart';
+import '../widgets/primary_button.dart';
 import '../widgets/native_switch.dart';
 import '../l10n/l10n.dart';
 
@@ -92,28 +94,6 @@ class _Hero extends StatelessWidget {
   }
 }
 
-class _PrimaryButton extends StatelessWidget {
-  final String label;
-  final VoidCallback onTap;
-
-  const _PrimaryButton({required this.label, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final accent = Theme.of(context).colorScheme.primary;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        alignment: Alignment.center,
-        decoration: BoxDecoration(color: accent, borderRadius: BorderRadius.circular(AppRadii.pill)),
-        child: Text(label, style: AppText.buttonLarge.copyWith(color: Colors.white)),
-      ),
-    );
-  }
-}
-
 class _WelcomeStep extends ConsumerWidget {
   const _WelcomeStep();
 
@@ -138,7 +118,7 @@ class _WelcomeStep extends ConsumerWidget {
                   style: AppText.body,
                 ),
                 const SizedBox(height: 28),
-                _PrimaryButton(label: L.s.letsGo, onTap: () => ref.read(onboardingProvider.notifier).next()),
+                PrimaryButton(label: L.s.letsGo, onTap: () => ref.read(onboardingProvider.notifier).next()),
               ],
             ),
           ),
@@ -246,7 +226,7 @@ class _FamilyStepState extends ConsumerState<_FamilyStep> {
                   ),
                 ],
                 const SizedBox(height: 28),
-                _PrimaryButton(label: L.s.next, onTap: () => ref.read(onboardingProvider.notifier).next()),
+                PrimaryButton(label: L.s.next, onTap: () => ref.read(onboardingProvider.notifier).next()),
               ],
             ),
           ),
@@ -359,7 +339,7 @@ class _AddressStepState extends ConsumerState<_AddressStep> {
                   ],
                 ),
                 const SizedBox(height: 28),
-                _PrimaryButton(label: L.s.next, onTap: () => ref.read(onboardingProvider.notifier).next()),
+                PrimaryButton(label: L.s.next, onTap: () => ref.read(onboardingProvider.notifier).next()),
               ],
             ),
           ),
@@ -400,78 +380,59 @@ class _ToggleRow extends StatelessWidget {
   }
 }
 
-class _DoneStep extends ConsumerStatefulWidget {
+/// The last step, and the app's one confirmation ([ConfirmationView]) in its
+/// celebration shape — the household exists now, which happens exactly once
+/// per family. Its content is the recap of what the wizard did set up, and its
+/// way out is the same accent pill the earlier steps end with, so the flow
+/// doesn't change its button on the last screen.
+///
+/// This one is a **page**, not a sheet, so it is given the viewport's full
+/// height (`minHeight`) rather than hugging its content: the confetti falls
+/// over whatever box the confirmation occupies, and on a page that box has to
+/// be the page or the paper stops in mid-air above the fold.
+class _DoneStep extends ConsumerWidget {
   final bool replay;
 
   const _DoneStep({required this.replay});
 
   @override
-  ConsumerState<_DoneStep> createState() => _DoneStepState();
-}
-
-class _DoneStepState extends ConsumerState<_DoneStep> with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 500))..forward();
-  late final Animation<double> _scale = CurvedAnimation(parent: _controller, curve: Curves.elasticOut);
-  late final Animation<double> _fade = CurvedAnimation(parent: _controller, curve: const Interval(0, 0.4, curve: Curves.easeOut));
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(onboardingProvider);
-    final accent = Theme.of(context).colorScheme.primary;
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.screenPad, 40, AppSpacing.screenPad, 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Center(
-            child: FadeTransition(
-              opacity: _fade,
-              child: ScaleTransition(
-                scale: _scale,
-                child: Container(
-                  width: 88,
-                  height: 88,
-                  decoration: BoxDecoration(color: shade(accent, .14), shape: BoxShape.circle),
-                  alignment: Alignment.center,
-                  child: Icon(LucideIcons.check, size: 40, color: accent),
-                ),
+    return LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(AppSpacing.screenPad, 20, AppSpacing.screenPad, 24),
+        child: ConstrainedBox(
+          // Minus the padding this scroll view already adds, so a screen that
+          // exactly fits doesn't gain a scrollbar's worth of overflow.
+          constraints: BoxConstraints(minHeight: constraints.maxHeight - 44),
+          child: ConfirmationView(
+            mark: ConfirmationMark.celebration,
+            headline: L.s.onboardReady,
+            message: L.s.onboardReadyBody,
+            action: ConfirmationAction.primaryButton,
+            doneLabel: L.s.letsGo,
+            onDone: () {
+              ref.read(onboardingProvider.notifier).complete();
+              if (replay) Navigator.of(context).maybePop();
+            },
+            content: [
+              SectionCard(
+                children: [
+                  _RecapRow(
+                    icon: LucideIcons.userPlus,
+                    label: state.invites.isEmpty ? L.s.noInvitesSent : L.s.invitedCount(state.invites.length),
+                    done: state.invites.isNotEmpty,
+                  ),
+                  CardDivider(),
+                  _RecapRow(icon: LucideIcons.recycle, label: L.s.wasteCalendar, done: state.trashCalendar),
+                  CardDivider(),
+                  _RecapRow(icon: LucideIcons.graduationCap, label: L.s.holidayCalendar, done: state.ferienCalendar),
+                ],
               ),
-            ),
-          ),
-          const SizedBox(height: 24),
-          Text(L.s.onboardReady, textAlign: TextAlign.center, style: AppText.screenTitle),
-          const SizedBox(height: 8),
-          Text(L.s.onboardReadyBody, textAlign: TextAlign.center, style: AppText.body),
-          const SizedBox(height: 24),
-          SectionCard(
-            children: [
-              _RecapRow(
-                icon: LucideIcons.userPlus,
-                label: state.invites.isEmpty ? L.s.noInvitesSent : L.s.invitedCount(state.invites.length),
-                done: state.invites.isNotEmpty,
-              ),
-              CardDivider(),
-              _RecapRow(icon: LucideIcons.recycle, label: L.s.wasteCalendar, done: state.trashCalendar),
-              CardDivider(),
-              _RecapRow(icon: LucideIcons.graduationCap, label: L.s.holidayCalendar, done: state.ferienCalendar),
             ],
           ),
-          const SizedBox(height: 28),
-          _PrimaryButton(
-            label: L.s.letsGo,
-            onTap: () {
-              ref.read(onboardingProvider.notifier).complete();
-              if (widget.replay) Navigator.of(context).maybePop();
-            },
-          ),
-        ],
+        ),
       ),
     );
   }

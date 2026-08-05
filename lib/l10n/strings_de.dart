@@ -822,8 +822,6 @@ class StringsDe extends AppStrings {
   @override
   String get inviteMember => 'Mitglied einladen';
   @override
-  String get pendingInvites => 'Ausstehende Einladungen';
-  @override
   String pendingWithRole(String role) => '$role · ausstehend';
   @override
   String get inviteFamilyMember => 'Familienmitglied einladen';

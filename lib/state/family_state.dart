@@ -108,6 +108,46 @@ class PendingInvite {
   });
 }
 
+/// What `invite-member` handed back for an invitation that was just created.
+///
+/// **The link is deliberately not on here.** The function returns the raw token
+/// once, and the app drops it on the floor: the invitation travels by mail and
+/// only by mail, so an invite can't be forwarded out of a chat group by
+/// somebody who was only meant to receive it. [mailSent] is what the function's
+/// mailer reported — a false is not a failed invite, it is a live invitation
+/// nobody has been told about yet, and the way to fix that is to invite them
+/// again, not to hand the token over.
+class SentInvite {
+  final String email;
+  final String name;
+  final FamilyRole role;
+  final bool mailSent;
+  final DateTime? expiresAt;
+
+  const SentInvite({
+    required this.email,
+    required this.name,
+    required this.role,
+    required this.mailSent,
+    this.expiresAt,
+  });
+}
+
+/// The result of [HouseholdNotifier.inviteMember]: either the invitation or the
+/// reason there isn't one.
+///
+/// Handed back rather than pushed into `actionError` like the other membership
+/// writes, because this one is always made from a sheet that stays open: the
+/// message belongs under the field it was typed into, and the success half
+/// carries content (the link) that no toast could show.
+class InviteOutcome {
+  final SentInvite? invite;
+  final String? error;
+
+  const InviteOutcome.sent(SentInvite this.invite) : error = null;
+  const InviteOutcome.failed(String this.error) : invite = null;
+}
+
 class FamilyState {
   /// Null while loading, and null when signed out. `loaded` distinguishes the
   /// two — without it the app shell can't tell "still fetching" from "there is
@@ -327,41 +367,48 @@ class HouseholdNotifier extends StateNotifier<FamilyState> {
   // place they could be forgotten.
   // ---------------------------------------------------------------------------
 
-  /// Sends an invitation. Returns the raw link on success — handed back exactly
-  /// once, so the sheet can offer "Link kopieren" when mail isn't configured or
-  /// delivery failed — and null when the invite could not be created.
-  Future<String?> inviteMember({
+  /// Sends an invitation, and says what came of it.
+  ///
+  /// The function's `link` is read and discarded on purpose — see [SentInvite].
+  /// A failure comes back as a message rather than through `actionError`: see
+  /// [InviteOutcome].
+  Future<InviteOutcome> inviteMember({
     required String email,
     String name = '',
     FamilyRole role = FamilyRole.member,
   }) async {
     final trimmed = email.trim();
-    if (!trimmed.contains('@')) {
-      _fail(L.s.enterValidEmail);
-      return null;
-    }
+    final trimmedName = name.trim();
+    if (!trimmed.contains('@')) return InviteOutcome.failed(L.s.enterValidEmail);
 
     try {
       final res = await AporahSupabase.client.functions.invoke(
         'invite-member',
-        body: {'email': trimmed, 'name': name.trim(), 'role': role.wire},
+        body: {'email': trimmed, 'name': trimmedName, 'role': role.wire},
       );
       final data = res.data;
       await load();
-      return data is Map ? data['link'] as String? : null;
+      final map = data is Map ? data : const {};
+      return InviteOutcome.sent(SentInvite(
+        email: trimmed,
+        name: trimmedName,
+        role: role,
+        // Absent counts as "not sent": the honest reading of a mailer that
+        // didn't say.
+        mailSent: map['mail_sent'] as bool? ?? false,
+        expiresAt: DateTime.tryParse((map['expires_at'] as String?) ?? '')?.toLocal(),
+      ));
     } on FunctionException catch (e) {
       // The function's messages are written for the user and in German, so the
       // one it chose ("Nur Admins können Mitglieder einladen") beats anything
       // generic invented here.
       final details = e.details;
-      _fail(
+      return InviteOutcome.failed(
         (details is Map ? details['error'] as String? : null) ??
             L.s.inviteSendFailed,
       );
-      return null;
     } catch (_) {
-      _fail(L.s.inviteSendFailed);
-      return null;
+      return InviteOutcome.failed(L.s.inviteSendFailed);
     }
   }
 

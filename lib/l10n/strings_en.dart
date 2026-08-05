@@ -823,8 +823,6 @@ class StringsEn extends AppStrings {
   @override
   String get inviteMember => 'Invite member';
   @override
-  String get pendingInvites => 'Pending invitations';
-  @override
   String pendingWithRole(String role) => '$role · pending';
   @override
   String get inviteFamilyMember => 'Invite a family member';

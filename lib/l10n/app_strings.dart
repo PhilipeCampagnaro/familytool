@@ -481,7 +481,6 @@ abstract class AppStrings {
   String get familyMembersDescAdmin;
   String get nobodyInHouseholdYet;
   String get inviteMember;
-  String get pendingInvites;
   String pendingWithRole(String role);
   String get inviteFamilyMember;
   String get inviteValidity;
