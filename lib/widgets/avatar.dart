@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import '../models/visibility.dart';
 import '../models/who.dart';
 import '../theme/tokens.dart';
 
@@ -160,15 +161,85 @@ class WhoAvatars extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (who.stack.isEmpty) {
-      return Avatar(size: size, bg: who.bg, fg: who.fg, icon: who.icon, initials: who.initials, fontSize: fontSize);
+      return Avatar(
+        size: size,
+        bg: who.bg,
+        fg: who.fg,
+        icon: who.icon,
+        initials: who.initials,
+        fontSize: fontSize,
+        imageUrl: who.imageUrl,
+      );
     }
     return AvatarStack(
       avatarSize: size,
       overlap: size * 0.34,
       avatars: [
         for (final m in who.stack.take(maxFaces))
-          Avatar(size: size, bg: m.toneColors.bg, fg: m.toneColors.fg, initials: m.initials, fontSize: fontSize),
+          Avatar(
+            size: size,
+            bg: m.toneColors.bg,
+            fg: m.toneColors.fg,
+            initials: m.initials,
+            fontSize: fontSize,
+            imageUrl: m.imageUrl,
+          ),
       ],
+    );
+  }
+}
+
+/// Who may see this container — the padlock on a private one, the faces of the
+/// people a `custom` one is shared with — and **nothing at all** on a family one.
+///
+/// The badge a list, a box and a task all wear, so that the answer the "Für
+/// wen?" picker wrote is legible from the overview without opening the row. It
+/// draws only when there is something to say (see [visibilityBadge]), which is
+/// what lets it sit on every row of Listen and Boxen without turning into
+/// wallpaper.
+///
+/// On Board it sits *beside* the assignee's face rather than replacing it: those
+/// are the two independent axes, and a private task assigned to Lea has to be
+/// able to say both. Pass it the same [size] as the avatar next to it.
+class VisibilityBadge extends StatelessWidget {
+  final ItemVisibility visibility;
+
+  /// `householdMembersProvider` — needed to turn `*_shares` ids into faces.
+  final List<FamilyMember> members;
+
+  final List<String> sharedWith;
+  final double size;
+  final double fontSize;
+
+  /// The gap to its neighbours — and only when there *is* a badge. A `SizedBox`
+  /// beside it in the caller's `Row` would indent every family row by the space
+  /// belonging to a circle that isn't drawn.
+  final EdgeInsetsGeometry padding;
+
+  const VisibilityBadge({
+    super.key,
+    required this.visibility,
+    required this.members,
+    this.sharedWith = const [],
+    this.size = 22,
+    this.fontSize = 9.5,
+    this.padding = EdgeInsets.zero,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final who = visibilityBadge(visibility: visibility, members: members, sharedWith: sharedWith);
+    if (who == null) return const SizedBox.shrink();
+    // The label lives on in [Semantics] exactly as it does on the Board row: a
+    // padlock and three coloured circles are meaning-in-colour, which VoiceOver
+    // cannot see.
+    return Padding(
+      padding: padding,
+      child: Semantics(
+        label: who.label,
+        excludeSemantics: true,
+        child: WhoAvatars(who: who, size: size, fontSize: fontSize),
+      ),
     );
   }
 }

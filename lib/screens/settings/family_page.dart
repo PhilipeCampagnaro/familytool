@@ -10,6 +10,7 @@ import '../../widgets/avatar.dart';
 import '../../widgets/confirmation.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/error_note.dart';
+import '../../widgets/icon_tile.dart';
 import '../../widgets/settings_chrome.dart';
 import '../../l10n/l10n.dart';
 
@@ -59,13 +60,7 @@ class FamilyPage extends ConsumerWidget {
                     SettingsRow(
                       // Sized like the avatar beside it, so the merged list has
                       // one column of round leadings rather than two.
-                      leading: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(color: AppColors.surfaceAlt, shape: BoxShape.circle),
-                        alignment: Alignment.center,
-                        child: Icon(LucideIcons.mail, size: 17, color: Theme.of(context).colorScheme.primary),
-                      ),
+                      leading: GlassIconTile(icon: LucideIcons.mail, size: 40, iconSize: 18),
                       title: invite.name.isNotEmpty ? invite.name : invite.email,
                       subtitle: L.s.pendingWithRole(invite.role.label),
                       // Withdrawing an invitation is an admin's business, same

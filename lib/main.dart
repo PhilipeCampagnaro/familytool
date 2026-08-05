@@ -136,8 +136,8 @@ class _RootGate extends ConsumerWidget {
   }
 }
 
-/// Board is the primary designed tab; matches the handoff's default screen.
-const _initialTab = 3;
+/// Home is the landing tab — the app opens on the overview, not on Board.
+const _initialTab = 0;
 
 /// One entry per [navTabs] entry, in the same order.
 ///

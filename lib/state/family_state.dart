@@ -15,10 +15,38 @@ const _avatarBucket = 'avatars';
 
 /// How long a signed avatar URL stays good for.
 ///
-/// A week rather than an hour: the URL is re-signed on every [load], so the
-/// only thing a short expiry would buy is a broken face in an app that was left
-/// open over a weekend.
+/// A week rather than an hour: the URL is re-signed on every
+/// [HouseholdNotifier.load], so the only thing a short expiry would buy is a
+/// broken face in an app that was left open over a weekend.
 const _avatarUrlTtl = Duration(days: 7);
+
+/// Path → signed URL, for a whole roster of `profiles.avatar_url` paths at once.
+///
+/// One request for every face rather than one per face, and a total failure is
+/// not fatal: an empty map means everybody falls back to their initials, which
+/// is exactly what a member without a picture already shows.
+///
+/// Top-level rather than a method on the notifier because the guests on a
+/// shared list need the same treatment ([SharingNotifier.load]) and the storage
+/// read policy already admits them — `avatars_read_visible_profiles` keys on
+/// `can_see_profile`, the same predicate that let them read the profile row.
+Future<Map<String, String>> signAvatarUrls(List<String> paths) async {
+  if (paths.isEmpty) return const {};
+  try {
+    final signed = await AporahSupabase.client.storage
+        .from(_avatarBucket)
+        .createSignedUrlsResult(paths, _avatarUrlTtl.inSeconds);
+    return {
+      // A `SignedUrlFailure` is one member whose object has gone missing, not
+      // a reason to drop the other four faces — hence the per-path result
+      // type rather than the older list-of-urls call.
+      for (final s in signed)
+        if (s is SignedUrlSuccess) s.path: s.signedUrl,
+    };
+  } catch (_) {
+    return const {};
+  }
+}
 
 /// The two avatar letters for a name, derived the same way `handle_new_user`
 /// derives them server-side so a profile written from either end matches.
@@ -113,8 +141,11 @@ class HouseholdMember {
 
   /// Bridge to the existing `FamilyMember` the WhoPicker and avatar widgets
   /// already take, so those don't have to change to render a live roster.
+  ///
+  /// [avatarUrl] crosses over as `imageUrl`: this is the single point where the
+  /// household's faces reach every badge, picker and stack outside Settings.
   FamilyMember get asFamilyMember =>
-      FamilyMember(id: userId, name: name, initials: initials, tone: tone);
+      FamilyMember(id: userId, name: name, initials: initials, tone: tone, imageUrl: avatarUrl);
 }
 
 class Household {
@@ -321,7 +352,7 @@ class HouseholdNotifier extends StateNotifier<FamilyState> {
 
       final profiles = {for (final p in profileRows) p['id'] as String: p};
 
-      final signed = await _signAvatars([
+      final signed = await signAvatarUrls([
         for (final p in profileRows)
           if (p['avatar_url'] is String) p['avatar_url'] as String,
       ]);
@@ -404,29 +435,6 @@ class HouseholdNotifier extends StateNotifier<FamilyState> {
 
   void _fail(String message) {
     if (mounted) state = state.copyWith(actionError: message);
-  }
-
-  /// Path → signed URL, for every avatar in the household at once.
-  ///
-  /// One request for the whole roster rather than one per face, and a total
-  /// failure is not fatal: an empty map means everybody falls back to their
-  /// initials, which is exactly what a member without a picture already shows.
-  Future<Map<String, String>> _signAvatars(List<String> paths) async {
-    if (paths.isEmpty) return const {};
-    try {
-      final signed = await AporahSupabase.client.storage
-          .from(_avatarBucket)
-          .createSignedUrlsResult(paths, _avatarUrlTtl.inSeconds);
-      return {
-        // A `SignedUrlFailure` is one member whose object has gone missing, not
-        // a reason to drop the other four faces — hence the per-path result
-        // type rather than the older list-of-urls call.
-        for (final s in signed)
-          if (s is SignedUrlSuccess) s.path: s.signedUrl,
-      };
-    } catch (_) {
-      return const {};
-    }
   }
 
   // ---------------------------------------------------------------------------
@@ -699,6 +707,37 @@ class HouseholdNotifier extends StateNotifier<FamilyState> {
     'heif' => 'image/heif',
     _ => 'image/jpeg',
   };
+
+  /// The household's own address, as picked in onboarding.
+  ///
+  /// The one thing it is read for is [weatherProvider]'s fallback location —
+  /// the town to show an appointment's weather for when the appointment itself
+  /// names no place. It is *not* what the Abfall feed is keyed on: that lives on
+  /// the subscription, resolved to a vendor, and a household can move house
+  /// without either of them meaning the other.
+  ///
+  /// Optimistic like [markOnboardingDone], and for the same reason: nobody
+  /// should wait on the network to leave a step of the wizard.
+  Future<void> saveAddress(String address) async {
+    final household = state.household;
+    final value = address.trim();
+    if (household == null || value.isEmpty || household.address == value) return;
+
+    state = state.copyWith(
+      household: Household(
+        id: household.id,
+        name: household.name,
+        address: value,
+        onboardingDone: household.onboardingDone,
+      ),
+    );
+
+    try {
+      await AporahSupabase.client.from('families').update({'address': value}).eq('id', household.id);
+    } catch (_) {
+      // Best-effort: a missing address costs a weather icon, nothing more.
+    }
+  }
 
   /// Flips `families.onboarding_done`, which is what actually decides whether
   /// the wizard shows — the local `shared_preferences` flag can only speak for

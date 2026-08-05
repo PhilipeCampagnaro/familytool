@@ -448,7 +448,17 @@ class _CollapsingAvatars extends StatelessWidget {
         child: Opacity(
           opacity: visible,
           child: AvatarStack(
-            avatars: [for (final m in members) Avatar(size: 28, bg: m.toneColors.bg, fg: m.toneColors.fg, initials: m.initials, fontSize: 10)],
+            avatars: [
+              for (final m in members)
+                Avatar(
+                  size: 28,
+                  bg: m.toneColors.bg,
+                  fg: m.toneColors.fg,
+                  initials: m.initials,
+                  fontSize: 10,
+                  imageUrl: m.imageUrl,
+                ),
+            ],
           ),
         ),
       ),
@@ -716,6 +726,22 @@ class _TaskRow extends ConsumerWidget {
                         excludeSemantics: true,
                         child: WhoAvatars(who: w, size: 22, fontSize: 9.5),
                       ),
+                      // …and, next to it, who may *see* it. The face above is
+                      // the assignee, so on an assigned task — which is every
+                      // task, the sheet has no "Niemand" — the audience never
+                      // reached the row at all: a private task looked exactly
+                      // like a family one. The two are independent axes and the
+                      // row now has room for both. Only drawn where it says
+                      // something ([VisibilityBadge]), and skipped entirely with
+                      // nobody assigned, where [whoBadge] has already put the
+                      // padlock in the circle above.
+                      if (task.assigneeId != null)
+                        VisibilityBadge(
+                          visibility: task.visibility,
+                          sharedWith: task.sharedWith,
+                          members: ref.watch(householdMembersProvider),
+                          padding: const EdgeInsets.only(left: 6),
+                        ),
                       if (showDate && due != null) ...[
                         const SizedBox(width: 8),
                         Text(
@@ -789,10 +815,24 @@ class _DoneRow extends ConsumerWidget {
                 // because an avatar's colour is what identifies it.
                 Opacity(
                   opacity: 1 - 0.45 * strike,
-                  child: Semantics(
-                    label: w.label,
-                    excludeSemantics: true,
-                    child: WhoAvatars(who: w, size: 22, fontSize: 9.5),
+                  child: Row(
+                    children: [
+                      Semantics(
+                        label: w.label,
+                        excludeSemantics: true,
+                        child: WhoAvatars(who: w, size: 22, fontSize: 9.5),
+                      ),
+                      // A done task keeps saying who could see it, for the same
+                      // reason it keeps the face: ticking something off is not
+                      // the moment to change what a row tells you about it.
+                      if (task.assigneeId != null)
+                        VisibilityBadge(
+                          visibility: task.visibility,
+                          sharedWith: task.sharedWith,
+                          members: ref.watch(householdMembersProvider),
+                          padding: const EdgeInsets.only(left: 6),
+                        ),
+                    ],
                   ),
                 ),
               ],
@@ -898,6 +938,7 @@ class _AssigneeFieldState extends State<_AssigneeField> {
                           fg: assignee.toneColors.fg,
                           initials: assignee.initials,
                           fontSize: 10,
+                          imageUrl: assignee.imageUrl,
                         ),
                         const SizedBox(width: 7),
                       ],
@@ -986,6 +1027,7 @@ class _AssigneeOption extends StatelessWidget {
               fg: member.toneColors.fg,
               initials: member.initials,
               fontSize: 12,
+              imageUrl: member.imageUrl,
             ),
             const SizedBox(width: 11),
             Expanded(

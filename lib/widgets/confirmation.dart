@@ -4,10 +4,17 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../data/emoji_colors.dart';
 import '../theme/tokens.dart';
 import 'app_sheet.dart';
-import 'primary_button.dart';
+import 'glass.dart';
 import '../l10n/l10n.dart';
+
+/// The party popper a [ConfirmationMark.celebration] is drawn with — named
+/// because [CelebrationGlow] takes the wash behind it out of the same glyph,
+/// and the two picking different emoji would be a colour that belongs to
+/// nothing on screen.
+const celebrationEmoji = '🎉';
 
 /// The mark a confirmation opens with.
 enum ConfirmationMark {
@@ -21,8 +28,10 @@ enum ConfirmationMark {
   celebration,
 }
 
-/// How the way out is drawn — see [PrimaryButton] for which belongs where.
-enum ConfirmationAction { sheetAction, primaryButton }
+/// How the way out is drawn: the bordered [OutlinedSheetAction] a sheet ends
+/// with, or the accent glass pill a **full screen** ends with — a filled pill
+/// inside a sheet would compete with the accent check in its header.
+enum ConfirmationAction { sheetAction, accentPill }
 
 /// **The** confirmation in this app: one mark, a headline, a line of detail,
 /// and whatever content the thing that just happened left behind. Every "that
@@ -196,7 +205,7 @@ class _ConfirmationViewState extends State<ConfirmationView> with SingleTickerPr
                 ),
                 // The emoji itself, at the disc's size — the party popper is
                 // the illustration, so it doesn't need a plate under it.
-                ConfirmationMark.celebration => const Text('🎉', style: TextStyle(fontSize: 68)),
+                ConfirmationMark.celebration => const Text(celebrationEmoji, style: TextStyle(fontSize: 68)),
               },
             ),
           ],
@@ -249,9 +258,12 @@ class _ConfirmationViewState extends State<ConfirmationView> with SingleTickerPr
                     label: widget.doneLabel ?? L.s.doneAction,
                     onTap: _done,
                   ),
-                  ConfirmationAction.primaryButton => PrimaryButton(
+                  ConfirmationAction.accentPill => GlassAccentButton(
                     label: widget.doneLabel ?? L.s.doneAction,
                     onTap: _done,
+                    expand: true,
+                    fontSize: 16,
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                   ),
                 },
               ],
@@ -271,6 +283,96 @@ class _ConfirmationViewState extends State<ConfirmationView> with SingleTickerPr
         Positioned.fill(child: _Confetti()),
         body,
       ],
+    );
+  }
+}
+
+/// The light a [ConfirmationMark.celebration] spills in from the top edge, in
+/// the party popper's own colours — the same trick the Listen header plays with
+/// a shop's logo (`HeaderBrandGlow`), with three colours instead of one because
+/// that is how many 🎉 has.
+///
+/// **Behind a whole screen, not inside the confirmation.** Like the brand glow
+/// it is anchored to the very top of the display, status bar included: a wash
+/// that started under the safe area would leave a white band above it and give
+/// away that the colour is a rectangle rather than the surface itself. So it is
+/// laid in at the foot of the screen's stack, under the content, rather than
+/// being drawn by [ConfirmationView].
+///
+/// Nothing is painted until the glyph has been read (a frame or two after
+/// first launch, instantly ever after) and then it fades in. There is
+/// deliberately no accent-coloured stand-in: this is decoration that can afford
+/// to arrive late, and a wash that snaps from blue to gold under a headline the
+/// user is already reading looks like a bug.
+class CelebrationGlow extends StatefulWidget {
+  /// Taller than the content it sits behind, so the falloff is geometry on the
+  /// screen rather than an outline around the headline.
+  final double height;
+
+  const CelebrationGlow({super.key, this.height = 340});
+
+  @override
+  State<CelebrationGlow> createState() => _CelebrationGlowState();
+}
+
+class _CelebrationGlowState extends State<CelebrationGlow> {
+  /// Where each colour comes in from, strongest first: two upper corners and
+  /// one higher up the middle, all centred *above* the top edge so only the
+  /// lower arc of the falloff is on screen. Alpha drops down the ranking, so
+  /// the glyph's main colour leads and the streamers tint it.
+  static const _lamps = [
+    (center: Alignment(-0.65, -1.15), radius: 1.15, strength: .17),
+    (center: Alignment(0.7, -1.25), radius: 1.2, strength: .13),
+    (center: Alignment(0.0, -1.5), radius: 1.3, strength: .11),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    if (emojiGlowKnown(celebrationEmoji)) return;
+    loadEmojiGlow(celebrationEmoji).then((_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = emojiGlowFor(celebrationEmoji);
+
+    return AnimatedOpacity(
+      opacity: colors.isEmpty ? 0 : 1,
+      duration: const Duration(milliseconds: 520),
+      curve: Curves.easeOutCubic,
+      child: SizedBox(
+        height: widget.height,
+        child: Stack(
+          children: [
+            for (final (i, color) in colors.indexed)
+              if (i < _lamps.length)
+                Positioned.fill(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: RadialGradient(
+                        center: _lamps[i].center,
+                        radius: _lamps[i].radius,
+                        // Faded out to the hue at zero alpha rather than to
+                        // transparent white: Flutter lerps RGB and alpha
+                        // separately, so a white end stop drags a pale haze
+                        // through the falloff — and with three of them
+                        // overlapping, three hazes make a grey cloud.
+                        colors: [
+                          shade(color, _lamps[i].strength),
+                          shade(color, _lamps[i].strength * .32),
+                          shade(color, 0),
+                        ],
+                        stops: const [0, .45, .82],
+                      ),
+                    ),
+                  ),
+                ),
+          ],
+        ),
+      ),
     );
   }
 }

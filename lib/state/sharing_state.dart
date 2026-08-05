@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/who.dart';
 import '../services/supabase.dart';
 import '../l10n/l10n.dart';
+import 'family_state.dart' show signAvatarUrls;
 
 /// What can be shared outside the household — exactly `public.shareable_kind`.
 ///
@@ -58,16 +59,22 @@ class Guest {
   final int tone;
   final bool canEdit;
 
+  /// A signed URL for their picture, like a member's — a guest on a shared list
+  /// is a person the household is looking at, and there is no reason for them
+  /// to be the one anonymous circle in the app.
+  final String? avatarUrl;
+
   const Guest({
     required this.userId,
     required this.name,
     required this.initials,
     required this.tone,
     required this.canEdit,
+    this.avatarUrl,
   });
 
   FamilyMember get asFamilyMember =>
-      FamilyMember(id: userId, name: name, initials: initials, tone: tone);
+      FamilyMember(id: userId, name: name, initials: initials, tone: tone, imageUrl: avatarUrl);
 }
 
 class SharingState {
@@ -148,8 +155,16 @@ class SharingNotifier extends StateNotifier<SharingState> {
       // a resource they can read — no more of that stranger's household.
       final profileRows = ids.isEmpty
           ? const <Map<String, dynamic>>[]
-          : await _db.from('profiles').select('id, display_name, initials, tone').inFilter('id', ids);
+          : await _db
+                .from('profiles')
+                .select('id, display_name, initials, tone, avatar_url')
+                .inFilter('id', ids);
       final profiles = {for (final p in profileRows) p['id'] as String: p};
+
+      final signed = await signAvatarUrls([
+        for (final p in profileRows)
+          if (p['avatar_url'] is String) p['avatar_url'] as String,
+      ]);
 
       if (!mounted) return;
       state = state.copyWith(
@@ -170,12 +185,14 @@ class SharingNotifier extends StateNotifier<SharingState> {
             () {
               final id = r['user_id'] as String;
               final p = profiles[id];
+              final avatarPath = p?['avatar_url'] as String?;
               return Guest(
                 userId: id,
                 name: (p?['display_name'] as String?) ?? L.s.guest,
                 initials: (p?['initials'] as String?) ?? '?',
                 tone: (p?['tone'] as num?)?.toInt() ?? 0,
                 canEdit: r['can_edit'] as bool? ?? true,
+                avatarUrl: avatarPath == null ? null : signed[avatarPath],
               );
             }(),
         ],

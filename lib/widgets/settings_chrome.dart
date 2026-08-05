@@ -5,6 +5,7 @@ import '../theme/tokens.dart';
 import 'app_sheet.dart';
 import 'collapsing_header.dart';
 import 'glass.dart';
+import 'icon_tile.dart';
 import '../l10n/l10n.dart';
 
 /// The chrome every Settings sub-page is built from — the collapsing header and
@@ -97,33 +98,9 @@ class CloseSettingsButton extends StatelessWidget {
   }
 }
 
-/// The glass "Fertig" pill in the Settings header — a text-labelled sibling of
-/// [GlassIconButton], so both controls read as the same material.
-class GlassPillButton extends StatelessWidget {
-  final String label;
-  final VoidCallback onTap;
-
-  const GlassPillButton({super.key, required this.label, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: GlassSurface(
-        borderRadius: BorderRadius.circular(AppRadii.bar),
-        blurSigma: 16,
-        boxShadow: AppShadows.glassButton,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-          child: Text(label, style: AppText.rowTitle),
-        ),
-      ),
-    );
-  }
-}
-
-/// The masthead every Settings sub-page opens with: an accent glyph, the page's
-/// title and one sentence explaining what the page changes. It replaces the
+/// The masthead every Settings sub-page opens with: the page's glyph on a
+/// [GlassIconTile], its title, and one sentence explaining what the page
+/// changes. It replaces the
 /// nav-bar title on those pages, which is why the pinned row above it is empty
 /// until this scrolls away.
 ///
@@ -153,8 +130,10 @@ class HeroCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, size: 26, color: Theme.of(context).colorScheme.primary),
-            const SizedBox(height: 18),
+            // The same lens the rows below it wear, at masthead size — a bare
+            // glyph up here and a tiled one in every row read as two systems.
+            GlassIconTile(icon: icon, size: 52, iconSize: 25),
+            const SizedBox(height: 16),
             Text(title, style: AppText.screenTitle),
             const SizedBox(height: 8),
             Text(description, style: AppText.body.copyWith(color: AppColors.muted)),
@@ -200,7 +179,6 @@ class SettingsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = Theme.of(context).colorScheme.primary;
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
@@ -217,13 +195,7 @@ class SettingsRow extends StatelessWidget {
               // A circle, not a squircle: the rows that carry a *logo* (the
               // calendar providers, the family avatars) can only be round, and
               // a settings list that mixes both shapes reads as two lists.
-              Container(
-                width: 34,
-                height: 34,
-                decoration: BoxDecoration(color: AppColors.surfaceAlt, shape: BoxShape.circle),
-                alignment: Alignment.center,
-                child: Icon(icon, size: 17, color: accent),
-              ),
+              GlassIconTile(icon: icon!, size: 34, iconSize: 17),
             if (leading != null || icon != null) const SizedBox(width: 13),
             Expanded(
               child: Column(

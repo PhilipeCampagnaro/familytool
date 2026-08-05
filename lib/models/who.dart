@@ -16,11 +16,24 @@ class FamilyMember {
   /// palette happened to be installed when this const was canonicalised.
   final int tone;
 
+  /// A signed URL into the private `avatars` bucket, or null when this member
+  /// has no picture and their circle is initials on [tone].
+  ///
+  /// It rides along on the member rather than being looked up per avatar,
+  /// because the roster is what every badge, picker and stack in the app is
+  /// already handed — the alternative is each of them re-resolving a user id
+  /// against `familyProvider`, and the ones that forgot were exactly why a
+  /// profile picture used to appear only in Settings. Signed at
+  /// `HouseholdNotifier.load` time and re-signed on every load, so a stale URL
+  /// costs a fallback to initials rather than a broken image.
+  final String? imageUrl;
+
   const FamilyMember({
     required this.id,
     required this.name,
     required this.initials,
     required this.tone,
+    this.imageUrl,
   });
 
   /// The tone's colours in the palette that's installed *now*.
@@ -36,6 +49,11 @@ class WhoMeta {
   final IconData? icon;
   final String? initials;
 
+  /// The assignee's profile picture, drawn over the tone circle. Null on every
+  /// badge that stands for an audience rather than a person — "Alle" and "Nur
+  /// ich" are not somebody whose face could be shown.
+  final String? imageUrl;
+
   /// The members behind a `custom` item, drawn as an overlapping stack instead
   /// of the single [bg]/[fg]/[icon] circle. Empty for every other badge, which
   /// is what `WhoAvatars` switches on.
@@ -47,6 +65,7 @@ class WhoMeta {
     required this.fg,
     this.icon,
     this.initials,
+    this.imageUrl,
     this.stack = const [],
   });
 }
@@ -74,7 +93,13 @@ WhoMeta whoBadge({
   if (assigneeId != null) {
     for (final m in members) {
       if (m.id == assigneeId) {
-        return WhoMeta(label: m.name, bg: m.toneColors.bg, fg: m.toneColors.fg, initials: m.initials);
+        return WhoMeta(
+          label: m.name,
+          bg: m.toneColors.bg,
+          fg: m.toneColors.fg,
+          initials: m.initials,
+          imageUrl: m.imageUrl,
+        );
       }
     }
     // Assigned to somebody who has left the household. Shown neutrally rather
@@ -118,4 +143,24 @@ WhoMeta whoBadge({
     ItemVisibility.family =>
       WhoMeta(label: L.s.everyone, bg: AppColors.alleBg, fg: AppColors.alleFg, icon: LucideIcons.users),
   };
+}
+
+/// The audience half of [whoBadge] on its own, for a row that has something else
+/// to say about *who does it* — a list or a box (nobody does a box), or a task
+/// whose badge is already its assignee.
+///
+/// Null for [ItemVisibility.family], which is the reason this exists rather than
+/// callers just passing `assigneeId: null`: family is the default every second
+/// container carries, so drawing "Alle" on it would put the same anonymous circle
+/// on nearly every row of Listen and Boxen and make the two rows that *are*
+/// restricted harder to spot, not easier. A badge that appears only when the
+/// answer is unusual is the whole point — the lock means private, the faces mean
+/// these people, and no badge means the household.
+WhoMeta? visibilityBadge({
+  required ItemVisibility visibility,
+  required List<FamilyMember> members,
+  List<String> sharedWith = const [],
+}) {
+  if (visibility == ItemVisibility.family) return null;
+  return whoBadge(visibility: visibility, members: members, sharedWith: sharedWith);
 }

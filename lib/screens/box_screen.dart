@@ -10,6 +10,7 @@ import '../state/sharing_state.dart';
 import '../theme/tokens.dart';
 import '../widgets/anchored_menu.dart';
 import '../widgets/app_sheet.dart';
+import '../widgets/avatar.dart';
 import '../widgets/bottom_nav.dart';
 import '../widgets/collapsing_header.dart';
 import '../widgets/empty_state.dart';
@@ -842,7 +843,7 @@ class _AddItemRowState extends ConsumerState<_AddItemRow> {
 /// One box on the overview card. Carries no tap target of its own — the row is
 /// wrapped either by a [SwipeToEditDelete] or by a plain [GestureDetector], and
 /// a second detector inside would swallow the tap that closes an open swipe.
-class _BoxRow extends StatelessWidget {
+class _BoxRow extends ConsumerWidget {
   final StorageBox box;
   final int itemCount;
   final Color accent;
@@ -850,7 +851,7 @@ class _BoxRow extends StatelessWidget {
   const _BoxRow({required this.box, required this.itemCount, required this.accent});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 15),
       child: Row(
@@ -873,6 +874,15 @@ class _BoxRow extends StatelessWidget {
                 ),
               ],
             ),
+          ),
+          // Who may see this box, when that is not simply the household — the
+          // padlock the "Für wen?" picker put there, or the faces it was shared
+          // with. Draws nothing on a family box, which is most of them.
+          VisibilityBadge(
+            visibility: box.visibility,
+            sharedWith: box.sharedWith,
+            members: ref.watch(householdMembersProvider),
+            padding: const EdgeInsets.only(right: 10),
           ),
           Icon(LucideIcons.chevronRight, size: 16, color: AppColors.mutedLight),
         ],

@@ -16,6 +16,7 @@ import '../widgets/confirmation.dart';
 import '../widgets/rename_sheet.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/error_note.dart';
+import '../widgets/icon_tile.dart';
 import '../widgets/settings_chrome.dart';
 import '../widgets/step_dots.dart';
 import '../widgets/swipe_actions.dart';
@@ -1506,16 +1507,9 @@ class _StepHeadline extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = Theme.of(context).colorScheme.primary;
     return Row(
       children: [
-        Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(color: accent.withValues(alpha: 0.10), shape: BoxShape.circle),
-          alignment: Alignment.center,
-          child: Icon(provider.icon, size: 21, color: accent),
-        ),
+        GlassIconTile(icon: provider.icon, size: 44, iconSize: 21),
         const SizedBox(width: 14),
         Expanded(
           child: Text(name, maxLines: 2, overflow: TextOverflow.ellipsis, style: AppText.cardTitle),

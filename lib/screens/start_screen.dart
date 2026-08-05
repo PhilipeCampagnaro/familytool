@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import '../state/auth_state.dart';
+import '../state/family_state.dart';
 import '../theme/tokens.dart';
 import '../widgets/avatar.dart';
 import 'settings_screen.dart';
@@ -9,11 +12,13 @@ import '../l10n/l10n.dart';
 /// the header's profile avatar, which is this app's entry point into
 /// Settings (mirrors the old web app's "tap your avatar on the dashboard"
 /// pattern; see CLAUDE.md's "Ported feature knowledge" -> Settings).
-class StartScreen extends StatelessWidget {
+class StartScreen extends ConsumerWidget {
   const StartScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final me = ref.watch(familyProvider).me(ref.watch(currentUserIdProvider));
+    final tone = me == null ? null : AppTones.list[me.tone % AppTones.list.length];
     return Scaffold(
       backgroundColor: AppColors.surface,
       body: SafeArea(
@@ -27,13 +32,18 @@ class StartScreen extends StatelessWidget {
                   Expanded(child: Text(L.s.navHome, style: AppText.screenTitle)),
                   GestureDetector(
                     onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => SettingsScreen())),
-                    // Neutral until there is an account: no name, no initials,
-                    // no tone to borrow. Supabase auth fills this in.
+                    // The signed-in user's own face — their picture where they
+                    // have one, their initials on their tone otherwise. Neutral
+                    // only until the roster has loaded: no name, no initials, no
+                    // tone to borrow yet.
                     child: Avatar(
                       size: 40,
-                      bg: AppColors.surfaceAlt,
-                      fg: AppColors.muted,
-                      icon: LucideIcons.userRound,
+                      bg: tone?.bg ?? AppColors.surfaceAlt,
+                      fg: tone?.fg ?? AppColors.muted,
+                      initials: me?.initials,
+                      icon: me == null ? LucideIcons.userRound : null,
+                      fontSize: 14,
+                      imageUrl: me?.avatarUrl,
                     ),
                   ),
                 ],

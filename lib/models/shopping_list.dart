@@ -170,7 +170,15 @@ class ShoppingListItem {
   final String listId;
 
   final String text;
+
+  /// The count — "2" in *2 kg Kartoffeln*. Free text rather than a number: it
+  /// was free text before the unit was split out of it, and an older row may
+  /// still hold a word.
   final String? sub;
+
+  /// What [sub] counts, as a [GroceryUnit] key — see there. `null` is the
+  /// default (Stück), so most articles carry nothing at all.
+  final String? unit;
 
   /// Same key as [ShoppingList.iconKey], same `icon_asset` column.
   final String? iconKey;
@@ -197,6 +205,7 @@ class ShoppingListItem {
     required this.listId,
     required this.text,
     this.sub,
+    this.unit,
     this.iconKey,
     this.assigneeId,
     this.createdBy,
@@ -214,6 +223,7 @@ class ShoppingListItem {
       listId: map['list_id'] as String,
       text: map['text'] as String,
       sub: map['sub'] as String?,
+      unit: map['unit'] as String?,
       iconKey: map['icon_asset'] as String?,
       assigneeId: map['assignee_id'] as String?,
       createdBy: map['created_by'] as String?,
@@ -233,6 +243,7 @@ class ShoppingListItem {
       'list_id': listId,
       'text': text,
       'sub': sub,
+      'unit': unit,
       'icon_asset': iconKey,
       'assignee_id': assigneeId,
       'done': done,
@@ -249,6 +260,8 @@ class ShoppingListItem {
     String? text,
     String? sub,
     bool clearSub = false,
+    String? unit,
+    bool clearUnit = false,
     String? iconKey,
     bool clearIconKey = false,
     String? assigneeId,
@@ -267,6 +280,7 @@ class ShoppingListItem {
       listId: listId ?? this.listId,
       text: text ?? this.text,
       sub: clearSub ? null : (sub ?? this.sub),
+      unit: clearUnit ? null : (unit ?? this.unit),
       iconKey: clearIconKey ? null : (iconKey ?? this.iconKey),
       assigneeId: assigneeId ?? this.assigneeId,
       createdBy: createdBy ?? this.createdBy,

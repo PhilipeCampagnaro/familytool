@@ -113,6 +113,7 @@ class VisibilityPicker extends StatelessWidget {
                     bg: m.toneColors.bg,
                     fg: m.toneColors.fg,
                     initials: m.initials,
+                    imageUrl: m.imageUrl,
                     selected: visibility == ItemVisibility.custom && sharedWith.contains(m.id),
                     accent: accent,
                     avatarSize: avatarSize,
@@ -172,6 +173,10 @@ class PickerAvatarChip extends StatelessWidget {
   final Color fg;
   final IconData? icon;
   final String? initials;
+
+  /// The member's profile picture, where they have one.
+  final String? imageUrl;
+
   final bool selected;
   final Color accent;
   final double avatarSize;
@@ -188,6 +193,7 @@ class PickerAvatarChip extends StatelessWidget {
     required this.onTap,
     this.icon,
     this.initials,
+    this.imageUrl,
   });
 
   @override
@@ -209,13 +215,20 @@ class PickerAvatarChip extends StatelessWidget {
                   ),
                 ],
               ),
-              child: Avatar(
-                size: avatarSize,
-                bg: selected ? bg : AppColors.surface,
-                fg: selected ? fg : AppColors.muted,
-                icon: icon,
-                initials: initials,
-                fontSize: 15,
+              // A picture ignores the drained bg/fg an unselected chip uses to
+              // say "not this one", so it is faded instead — otherwise every
+              // member with a photo looks picked and only the ring disagrees.
+              child: Opacity(
+                opacity: selected || imageUrl == null ? 1 : 0.55,
+                child: Avatar(
+                  size: avatarSize,
+                  bg: selected ? bg : AppColors.surface,
+                  fg: selected ? fg : AppColors.muted,
+                  icon: icon,
+                  initials: initials,
+                  fontSize: 15,
+                  imageUrl: imageUrl,
+                ),
               ),
             ),
             const SizedBox(height: 7),

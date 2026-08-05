@@ -125,8 +125,33 @@ not copied).
 - **No "create vs. join a family" choice** in onboarding — every signup auto-creates its own
   family; joining an existing family happens later via an emailed invite + accept/decline sheet,
   entirely outside onboarding.
-- The address step's calendar toggles (trash pickup + Ferien) are the seed of the calendar
-  connections feature below — surfaced early in onboarding, not just buried in Settings.
+- **The address step asks one question and connects two calendars from the answer** — built, and
+  no longer the old app's pair of decorative toggles. The household picks its address in the same
+  picker the Abfall connect flow uses (`abfall-lookup`'s `search`, then `resolve` on the pick),
+  and the two calendars that follow from *where you live* fall out of that one answer: the waste
+  vendor serving the street, and — via `bundeslandCodeFor`, which maps the geocoder's state name
+  onto the sixteen `bundeslaender` codes — the Schulferien feed for that Bundesland. Both arrive
+  already ticked, both are `family_feeds` subscriptions created by `connectLocalCalendars`, and
+  either half can come back empty without costing the other one (the row greys out and says so).
+  Nobody is asked to pick their own Bundesland off a list of sixteen, which is the whole reason
+  the connect sheet's `_RegionStep` is *not* what onboarding reuses.
+  - The lookup lives in `OnboardingNotifier`, not in the step widget: the wizard swaps steps
+    through an `AnimatedSwitcher`, so a widget's own `State` dies on the way back to the
+    invitations, and a resolved address must not have to be found twice.
+  - The picked address is also written to `families.address` (`HouseholdNotifier.saveAddress`),
+    which is where the weather's fallback town comes from. Before this it was collected and
+    thrown away.
+  - A feed the household already subscribes to is skipped rather than created again — the tour is
+    replayable from Settings, and a second Schulferien row for the same state is not a second
+    calendar.
+- **The personal accounts are offered on the last step, never as a step of their own.** The
+  "Bereit!" screen carries one row into `CalendarConnectionsPage`; taking it finishes onboarding
+  *first* and then pushes the page. Google and Outlook consent leaves for Safari and returns
+  through a deep link (`_ProviderPageState`'s `WidgetsBindingObserver`), which is the most fragile
+  minute in the app — putting it inside a wizard that is itself gating the app shell, with a
+  connect sheet's own `StepDots` under the wizard's, is how a family ends up stranded halfway
+  through their first five minutes. Ferien and Abfall are different in kind: no login, no round
+  trip, and ours to give.
 - Old app had a "replay welcome tour" row in Settings to revisit onboarding without re-triggering
   its completion flag — worth keeping as a pattern once Settings exists.
 

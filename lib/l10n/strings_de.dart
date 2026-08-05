@@ -1,4 +1,5 @@
 import '../data/german_holidays.dart';
+import '../models/grocery_unit.dart';
 import 'app_strings.dart';
 
 /// German — the language Aporah was written in. Every string here is the exact
@@ -105,6 +106,23 @@ class StringsDe extends AppStrings {
   String get noPlacesFound => 'Keine Orte gefunden';
   @override
   String get quantity => 'Menge';
+  @override
+  String get unit => 'Einheit';
+  @override
+  // Die kurzen bleiben kurz: "kg" steht so auf jeder Packung, und eine Zeile
+  // unter dem Artikel ist kein Ort für "Kilogramm".
+  String unitName(GroceryUnit unit) => switch (unit) {
+    GroceryUnit.piece => 'Stück',
+    GroceryUnit.gram => 'g',
+    GroceryUnit.kilogram => 'kg',
+    GroceryUnit.milliliter => 'ml',
+    GroceryUnit.liter => 'l',
+    GroceryUnit.pack => 'Packung',
+    GroceryUnit.can => 'Dose',
+    GroceryUnit.bottle => 'Flasche',
+    GroceryUnit.bunch => 'Bund',
+    GroceryUnit.glass => 'Glas',
+  };
   @override
   String get size => 'Größe';
   @override
@@ -887,6 +905,10 @@ class StringsDe extends AppStrings {
   @override
   String inviteValidUntil(String date) => 'Gültig bis $date';
   @override
+  String invitedPerson(String who) => '$who eingeladen';
+  @override
+  String get tapSendToInvite => 'Tipp auf Senden, um die Einladung zu verschicken.';
+  @override
   String get youCaps => 'DU';
   @override
   String get removeMemberQuestion => 'Mitglied entfernen?';
@@ -962,6 +984,25 @@ class StringsDe extends AppStrings {
   String get wasteCalendar => 'Müllabfuhr-Kalender';
   @override
   String get holidayCalendar => 'Ferienkalender';
+  @override
+  String get onboardFindingCalendars => 'Wir suchen Kalender für eure Adresse …';
+  @override
+  String get onboardFoundForYou => 'Für eure Adresse gefunden';
+  @override
+  String get onboardNothingForAddress =>
+      'Für diese Adresse haben wir keinen Kalender gefunden. Ihr könnt später in den '
+      'Einstellungen weitere verbinden.';
+  @override
+  String get onboardNotFoundHere => 'Für diese Adresse nicht gefunden';
+  @override
+  String get onboardRenameLater =>
+      'Umbenennen könnt ihr die Kalender später unter Einstellungen → Kalender.';
+  @override
+  String get onboardConnectMoreHint => 'Google, Outlook, iCloud oder IServ dazunehmen';
+  @override
+  String get onboardConnectingCalendars => 'Kalender werden verbunden …';
+  @override
+  String get calendarsConnectFailed => 'Die Kalender ließen sich gerade nicht verbinden.';
   @override
   String get onboardReady => 'Bereit!';
   @override

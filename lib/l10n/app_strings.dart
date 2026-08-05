@@ -1,6 +1,7 @@
 library;
 
 import '../data/german_holidays.dart';
+import '../models/grocery_unit.dart';
 
 /// Every user-facing string in Aporah, declared once here and answered by
 /// [StringsDe] and [StringsEn].
@@ -94,6 +95,10 @@ abstract class AppStrings {
   String get searchPlace;
   String get noPlacesFound;
   String get quantity;
+
+  /// What the quantity counts, and the title of the picker that changes it.
+  String get unit;
+  String unitName(GroceryUnit unit);
   String get size;
   String get titleLabel;
   String get role;
@@ -526,6 +531,16 @@ abstract class AppStrings {
   String invitedAsRole(String role);
   String inviteValidUntil(String date);
 
+  /// The toast the onboarding step shows once an invitation has actually gone
+  /// out. Names the person rather than saying "Einladung gesendet", because the
+  /// step sends several in a row and the chip is the only thing that says
+  /// *which* one landed.
+  String invitedPerson(String who);
+
+  /// Shown under the onboarding invite card while an address sits unsent in the
+  /// field, next to the "Weiter" it is holding.
+  String get tapSendToInvite;
+
   String get youCaps;
   String get removeMemberQuestion;
   String removeMemberBody(String name);
@@ -562,6 +577,14 @@ abstract class AppStrings {
   String get address;
   String get wasteCalendar;
   String get holidayCalendar;
+  String get onboardFindingCalendars;
+  String get onboardFoundForYou;
+  String get onboardNothingForAddress;
+  String get onboardNotFoundHere;
+  String get onboardRenameLater;
+  String get onboardConnectMoreHint;
+  String get onboardConnectingCalendars;
+  String get calendarsConnectFailed;
   String get onboardReady;
   String get onboardReadyBody;
   String get noInvitesSent;

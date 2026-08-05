@@ -217,7 +217,14 @@ class _GuestRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
-          Avatar(size: 34, bg: tone.bg, fg: tone.fg, initials: guest.initials, fontSize: 12),
+          Avatar(
+            size: 34,
+            bg: tone.bg,
+            fg: tone.fg,
+            initials: guest.initials,
+            fontSize: 12,
+            imageUrl: guest.avatarUrl,
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(

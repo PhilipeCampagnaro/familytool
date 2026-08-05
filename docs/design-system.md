@@ -131,6 +131,83 @@ Flutter-drawn blur+tint approximation everywhere else.
   `CollapsingScreenTitle`) are therefore a `Stack` with the title as a `Positioned.fill` layer
   painted *first* and the buttons `Align`ed on top.
 
+## `GlassIconTile` (`icon_tile.dart`) — the round tile under a Lucide glyph
+
+The disc every settings row's icon sits on. It replaced the flat `surfaceAlt` circle that four
+places drew by hand, and it is **drawn, not a `GlassSurface`** — three reasons, all of which bite
+in a list:
+
+- **A platform view per row is the wrong shape of thing.** `GlassSurface` on iOS is a real
+  `UIGlassEffect`, which composites *above* everything Flutter paints — a tile scrolling toward a
+  collapsing header would slide over the frosted bar instead of under it, and one Settings page
+  would carry eight of them.
+- **There is nothing behind it to refract.** The row sits on a flat white `SectionCard`; real glass
+  sampling a solid colour returns that solid colour. Every cue has to be painted.
+- **No `BackdropFilter`, so no `saveLayer` per row** — it would cost a layer each to blur white
+  into white.
+
+Drawing it is also what makes it **identical on Android**: no platform view, no backdrop filter,
+nothing that resolves differently per OS.
+
+What actually sells it, in order of how much each contributes:
+
+- **The bevel *inside* the rim, not an outline on it.** Both earlier light versions drew an
+  outline — first accent, then grey — and glass has no outline. What it has is a bright band just
+  inside the edge, where the material is thickest and light bends through and concentrates. That is
+  the most recognisable thing about Apple's material, and it is the whole difference between
+  reading as a bordered circle and reading as a lens: an edge drawn *on* the boundary says "shape",
+  an edge drawn just *inside* it says "thickness". Light therefore takes **two rings** — a whisper
+  of dark contour on the boundary to seat it on a white card, and the bright white bevel inside it.
+  Dark needs only the one bright ring.
+- **The glyph's colour bleeds into the material around it** — a short-range radial in the tone,
+  centred on the icon. Glass over a coloured thing picks that colour up and spreads it, and it is
+  most of what makes the material look wet rather than frosted. On light it also does a structural
+  job: the tone arrives from the *content*, which is what lets the fill stay the near-clear
+  off-white the bevel needs to show up against. That order is the honest one anyway — a clear
+  material coloured by what's inside it, not a coloured material. It wants **less than it seems
+  to**, and light takes about a third of dark's (0.055 against 0.16, over a shorter range): on dark
+  it's a glow on a dark body and can carry, but on light it lands on an already-tinted body and the
+  two stack, so it pooled behind the glyph and muddied it.
+- **The body stays pale.** The obvious "deep tint + white highlight" version is a row of coloured
+  buttons at 34pt, and the accent glyph loses contrast against its own colour.
+- **The far edge goes *deeper*, not brighter** — glass is thicker seen at an angle. Without it the
+  tile reads as a flat coloured circle.
+- **The glyph is painted between the two passes** (`painter` under, `foregroundPainter` over), so
+  it sits *in* the lens rather than stamped on it — but **only the rim may go over it.** The
+  specular started out over the glyph too, on the same "the icon is under the glass" reasoning, and
+  it cost the icon its edges: even aimed at the upper-left rim it laid 42% white over the glyph's
+  upper-left and 21% over its centre, and a Lucide stroke is ~1.5pt at 34/17, so it went visibly
+  soft. The rim is the only pass that never overlaps the glyph — it sits at `r`, the glyph reaches
+  `size * 0.25` — so it's the only one that can safely go last. The specular now paints under the
+  icon, where it still lightens the fill and the lens still reads lit.
+
+**Dark shipped looking right and light shipped looking like a plastic ball**, and the three fixes
+are worth knowing before tuning any of it:
+
+- **The rims are lit from opposite corners.** On dark, white catches the upper-left edge under the
+  specular, so one light source explains both. On light, white at the boundary has nowhere to
+  show — a white rim on a near-white fill on a *white card* is invisible, which is what left the
+  first version with no crisp edge at all. Light's two rings split the job instead: the dark
+  contour is strongest at the **lower-right** (the far edge, where thickness darkens it) and the
+  bright bevel at the **upper-left** (under the specular). Both asymmetric, in opposite directions,
+  which is the lighting being consistent rather than an inconsistency.
+- **The contour is near-neutral, not the tone, and faint.** A rim in the accent is one more blue
+  thing around a blue fill under a blue glyph — the tile came out monochrome-blue. It leans 18%
+  toward the tone only so it doesn't go flatly grey against the fill it encloses. Its alphas are
+  about half what the accent rim used, and a fifth of the grey outline that briefly replaced it: it
+  is no longer drawing the circle, only settling it onto the card.
+- **The shadow must be neutral on light.** A tone-coloured shadow is really just black on dark, but
+  on white it put a blue halo around every tile — a soft coloured glow around a soft coloured fill
+  is exactly how a shaded sphere is drawn. It's `AppColors.ink` at ~5%, and tighter, since on white
+  the rim does the separating.
+- **Light's fill ramps about half as far** (0.90 → 0.83, against dark's 0.74 → 0.90). A fill that
+  travels from near-white to a solid mid-tone *is* a shaded sphere, and no amount of rim work reads
+  as glass on top of one.
+
+`tone` defaults to the accent — pass a colour to tint a tile to the thing it belongs to (a box's
+tone, a list's brand colour) as this rolls out past Settings. Reads tokens in `build`, so **never
+`const`-construct it**.
+
 ## `FrostedHeaderBackground` (`glass.dart`)
 
 Progressive blur + translucent white; the material behind a collapsing header so scrolled content
@@ -169,6 +246,8 @@ four shops the palette names (`brandRewe`, `brandDm`, `brandToom`, `brandIkea`) 
 everything else in `assets/merchants/` colors itself, so a logo dropped into the folder brings its
 color with it. Renaming a list re-derives its icon, so the wash follows the new shop (crossfaded,
 320ms) — that is the point, and a hardcoded four-shop switch is what made it silently not happen.
+The bucketing itself lives in [lib/data/dominant_hue.dart](../lib/data/dominant_hue.dart), shared
+with the celebration screen's `CelebrationGlow`, which reads three colours off 🎉 the same way.
 
 **Kalender keeps its own copy of this plumbing on purpose** — its header carries a freely-scrolling
 day strip whose geometry the week view owns, plus a collapsed-only filter dropdown. Don't merge
@@ -271,22 +350,40 @@ Non-obvious bits, each one a bug that shipped first:
     once per family: the household set up, somebody invited into it. **Confetti on every write is
     confetti nobody sees** — a new caller needs a reason to be a celebration.
   - `action` — `sheetAction` (the bordered `OutlinedSheetAction` a sheet ends with) or
-    `primaryButton` (`PrimaryButton`, the filled accent pill a full screen ends with).
+    `accentPill` (`GlassAccentButton`, the accent glass pill a full screen ends with).
 
   It is a sheet/screen *body*, not a sheet: a flow that already has one swaps its body for this
   (`AnimatedSwitcher`, 220ms) so the sheet that acted becomes the sheet that confirms, with no
   second modal stacked on the first. `showConfirmationSheet` is only for a result that came from
   somewhere other than a sheet. The confetti is 26 rounded rects on one controller in a
   `CustomPainter`, coloured from `AppTones` — one pass, no package, no loop.
-- `PrimaryButton` (`primary_button.dart`) — the filled accent pill a **full screen** ends with
-  (onboarding's four steps). A sheet ends with `OutlinedSheetAction` instead, where a filled pill
-  would compete with the accent check in the header.
+- **`CelebrationGlow` (`confirmation.dart`) — the party light behind a `celebration`.** Three
+  radial washes off the top edge in 🎉's *own* colours, read off the rendered glyph by
+  [lib/data/emoji_colors.dart](../lib/data/emoji_colors.dart) — same saturation-weighted hue
+  bucketing as a shop logo's brand wash, shared in
+  [lib/data/dominant_hue.dart](../lib/data/dominant_hue.dart), taking the top three instead of the
+  top one. Don't tabulate the hexes instead: Apple, Google and every desktop emoji font draw that
+  popper differently and redraw it between OS releases, so a hardcoded gold stops matching the
+  picture directly above it. Like `HeaderBrandGlow` it belongs at the **foot of the screen's
+  stack, outside the `SafeArea`** (onboarding's `_DoneStep` is the only caller) — inside the
+  confirmation it would start below the status bar and leave a white band over it. It paints
+  nothing until the glyph has been read and then fades in over 520ms; there is no accent-coloured
+  stand-in, because a wash snapping from blue to gold under a headline reads as a bug.
+- **There is no `PrimaryButton`.** A **full screen**'s primary action (onboarding's four steps) is
+  `GlassAccentButton(expand: true)` like every other accent action in the app — it was a flat
+  accent `Container`, the one filled rectangle left in an app whose every other button refracts
+  what's behind it. A sheet ends with `OutlinedSheetAction` instead, where a filled pill would
+  compete with the accent check in the header.
+- `GlassPillButton` (`glass.dart`) — the **neutral** labelled glass pill: a way *out* rather than
+  the action (Settings' "Fertig", the onboarding header's "Überspringen"). Same material as
+  `GlassIconButton` beside it, no tint; `GlassAccentButton` is the filled sibling.
 - `CopyLinkCard` (`copy_link_card.dart`) — a URL the app was handed **once** (currently only the
   share sheet's fresh link), with copy-as-the-whole-card and the "wir speichern ihn nicht"
   footnote. `onDismiss` adds the X, for the share sheet where the card outlives the moment.
   **Not used for invitations**: an invite travels by mail only (see `SentInvite`).
 - `StepDots` (`step_dots.dart`) — one dot per step with the current one drawn as an accent pill,
-  at the top of a sheet's gray body. A sheet is a single question by default here, so a stepped
+  at the top of a sheet's gray body, and centred in the onboarding wizard's own top bar. A
+  multi-step flow has to declare its length; a sheet is a single question by default here, so a stepped
   one has to declare itself: without the dots the first step reads as the whole thing and the
   accent button in the header looks like it will finish rather than continue. Steps already taken
   keep a faded accent, which is the "2 von 3" nobody has to read.
@@ -451,9 +548,17 @@ Non-obvious bits, each one a bug that shipped first:
   - `Avatar` draws a **picture** when given one (`imageUrl`, a signed URL from the `avatars`
     bucket, or `imageFile` for one still uploading) and the initials-on-a-tone-colour circle
     otherwise. Every failure — a URL that expired, a decode error, no picture at all — resolves to
-    the initials rather than to a hole or an error: pass both and let it choose. Members carry
-    theirs on `HouseholdMember.avatarUrl`; `FamilyMember` (the `whoBadge` roster) deliberately
-    does not, so item badges stay initials.
+    the initials rather than to a hole or an error: pass both and let it choose.
+  - **A face is on `FamilyMember.imageUrl`, and every circle in the app has to pass it on.** The
+    picture used to stop at Settings because only `HouseholdMember` carried it, so each badge,
+    stack and picker chip drawn from the `whoBadge` roster fell back to initials for a user who had
+    just uploaded a photo. `HouseholdMember.asFamilyMember` and `Guest.asFamilyMember` now hand it
+    across, `whoBadge` puts the assignee's on `WhoMeta.imageUrl`, and `WhoAvatars` draws it for both
+    the single circle and the stack — so a new `Avatar(...)` built from a member without
+    `imageUrl: m.imageUrl` is the bug, not the default. Signing is `signAvatarUrls` in
+    `family_state.dart`: one batched call per roster, an empty map meaning everybody falls back to
+    initials. The one avatar with no picture left is the Kalender event-owner chip, which resolves
+    a *name* denormalised onto the event rather than a member id.
 - `VisibilityPicker` (`visibility_picker.dart`) — the **visibility** axis, and what a sheet backed
   by Supabase wants instead: it writes `visibility` (`family` | `private` | `custom`) plus the
   member ids that become `*_shares` rows, rather than one conflated string. Alle and Nur ich are
@@ -461,8 +566,21 @@ Non-obvious bits, each one a bug that shipped first:
   `custom`; deselecting the last one falls back to Nur ich, because `custom` shared with nobody
   *is* private. The creator is always implicitly included and has no chip. Pass
   `allowMembers: false` for a guest — the composite FK on `*_shares` makes picking a non-member a
-  constraint error, not a polite refusal. Both pickers render the same chip
-  (`PickerAvatarChip`, in `who_picker.dart`).
+  constraint error, not a polite refusal. Its chips are `PickerAvatarChip` (same file), which fades
+  a member's *photo* to 0.55 while unselected — a picture ignores the drained bg/fg that says "not
+  this one", so without it every member with a photo reads as picked.
+- `VisibilityBadge` (`avatar.dart`) — what the picker wrote, read back on the row: the padlock on a
+  private list/box/task, the faces of the people a `custom` one is shared with, **and nothing at
+  all on a family one**. That last part is the rule (`visibilityBadge()` in `models/who.dart`
+  returns null for `family`, which is what separates it from `whoBadge`): family is the default
+  every second container carries, so drawing "Alle" on it would put the same anonymous circle on
+  nearly every row of Listen and Boxen and bury the two rows that *are* restricted. Give it the
+  gap to its neighbours as `padding` rather than a `SizedBox` beside it, or every family row's
+  chevron is indented by space belonging to a circle that isn't drawn.
+  - On Listen and Boxen it is the whole badge — nobody "does" a box. On a Board row it sits
+    *beside* the assignee's face, because those are two independent axes and a private task
+    assigned to Lea has to say both; there it is skipped when nothing is assigned, since `whoBadge`
+    has already put the padlock in the one circle the row has.
 - `ErrorNote` (`error_note.dart`) — a failed **read**: nothing on screen and no reason to expect
   the next frame to fix it, so an inline note with "Erneut laden" that stays put. Takes German copy
   written for the user — the notifier translates, never the widget.

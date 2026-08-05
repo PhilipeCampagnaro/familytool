@@ -471,3 +471,42 @@ const bundeslaender = <String, String>{
   'SH': 'Schleswig-Holstein',
   'TH': 'Thüringen',
 };
+
+/// The [bundeslaender] code behind whatever the geocoder called the state, or
+/// null when it named none of them — the step from a picked address to the
+/// Schulferien feed that fits it, so onboarding never has to make somebody pick
+/// their own Bundesland off a list of sixteen.
+///
+/// Deliberately forgiving about the spelling. Photon answers with the plain
+/// German name ("Niedersachsen"), but the same field carries official forms
+/// ("Freistaat Bayern", "Freie Hansestadt Bremen") depending on what OSM has
+/// for that address, so the comparison ignores case, spaces and punctuation and
+/// then falls back to containment.
+///
+/// The fallback matches the **longest** name it can, which is the whole reason
+/// it is written that way: "Sachsen-Anhalt" contains "Sachsen", and picking the
+/// first hit would subscribe half of Saxony-Anhalt to the wrong state's school
+/// holidays.
+String? bundeslandCodeFor(String? state) {
+  final raw = state?.trim() ?? '';
+  if (raw.isEmpty) return null;
+  if (bundeslaender.containsKey(raw.toUpperCase())) return raw.toUpperCase();
+
+  final needle = _foldBundesland(raw);
+  if (needle.isEmpty) return null;
+
+  String? best;
+  var bestLength = 0;
+  for (final entry in bundeslaender.entries) {
+    final name = _foldBundesland(entry.value);
+    if (name == needle) return entry.key;
+    if (needle.contains(name) && name.length > bestLength) {
+      best = entry.key;
+      bestLength = name.length;
+    }
+  }
+  return best;
+}
+
+String _foldBundesland(String value) =>
+    value.toLowerCase().replaceAll(RegExp(r'[^a-zäöüß]'), '');

@@ -4,11 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../data/brand_colors.dart';
+import '../data/grocery_catalog.dart';
 import '../data/grocery_search.dart';
 import '../data/icon_suggestions.dart';
 import '../data/list_data.dart';
 import '../models/attachment.dart';
+import '../models/grocery_unit.dart';
 import '../models/shopping_list.dart';
+import '../services/action_sheet.dart';
 import '../services/external_links.dart';
 import '../services/media_picker.dart';
 import '../state/auth_state.dart';
@@ -18,6 +21,7 @@ import '../state/sharing_state.dart';
 import '../theme/tokens.dart';
 import '../widgets/anchored_menu.dart';
 import '../widgets/app_sheet.dart';
+import '../widgets/avatar.dart';
 import '../widgets/bottom_nav.dart';
 import '../widgets/check_off.dart';
 import '../widgets/collapsing_header.dart';
@@ -38,11 +42,21 @@ import '../l10n/l10n.dart';
 /// text to it, so landing in "Erledigt" isn't a colour jump.
 Color get _itemDoneInk => AppColors.doneInk;
 
-/// The two lines of an article row. Shared with the fields that replace them
-/// while the row is being edited — same family, size and weight, so tapping a
-/// name doesn't make the text move.
+/// An article's name. Shared with the field that replaces it while the row is
+/// being edited — same family, size and weight, so tapping a name doesn't make
+/// the text move.
 TextStyle get _itemTextStyle => AppText.itemTitle;
-TextStyle get _itemSubStyle => AppText.label;
+
+/// The number in the quantity circle, and the field it turns into. A step
+/// firmer than [AppText.label] was as a subtitle: it is a single glyph or two
+/// inside a shape of its own, and grey-on-grey at w300 would disappear in it.
+TextStyle get _quantityStyle => AppText.caption.copyWith(color: AppColors.inkSecondary, fontWeight: FontWeight.w600);
+
+/// Whether an article's own list holds food — asked of the item rather than of
+/// the open list, because "Alle Artikel" pools every list's articles into one
+/// view and a Sonstige row in it is still a Sonstige row.
+bool _isGroceryList(WidgetRef ref, String listId) =>
+    ref.watch(listProvider).listById(listId)?.kind == ListKind.grocery;
 
 /// A text field that has to pass for the label it replaced: no border, no
 /// underline, and none of the vertical padding a [TextField] carries by
@@ -430,14 +444,14 @@ class _SegButton extends StatelessWidget {
 /// One list on the overview card. Carries no tap target of its own — the row is
 /// wrapped either by a [SwipeToEditDelete] or by a plain [GestureDetector], and
 /// a second detector inside would swallow the tap that closes an open swipe.
-class _ListRow extends StatelessWidget {
+class _ListRow extends ConsumerWidget {
   final ShoppingList list;
   final ListScreenState state;
 
   const _ListRow({required this.list, required this.state});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final its = state.itemsFor(list.id);
     final remaining = its.where((i) => !i.done).length;
     final meta = its.isEmpty ? L.s.empty : (remaining == 0 ? L.s.allDone : L.s.remaining(remaining));
@@ -466,6 +480,16 @@ class _ListRow extends StatelessWidget {
               ],
             ),
           ),
+          // Who may see this list, when that is not simply the household. "Alle
+          // Artikel" is computed across the real lists and has no audience of
+          // its own — it inherits [ListVisibility.family] and so draws nothing,
+          // which is the honest answer for a view rather than a row.
+          VisibilityBadge(
+            visibility: list.visibility,
+            sharedWith: list.sharedWith,
+            members: ref.watch(householdMembersProvider),
+            padding: const EdgeInsets.only(right: 10),
+          ),
           Icon(LucideIcons.chevronRight, size: 16, color: AppColors.mutedLight),
         ],
       ),
@@ -483,15 +507,21 @@ class _ListRow extends StatelessWidget {
 /// third-party logos get ([AppPalette.brandTile]), or the dark linework
 /// disappears into the card. A Lucide symbol has no such problem: it is drawn
 /// in the theme's own ink, so it gets the ordinary tile from [IconTile].
+///
+/// [grocery] is the article's own list saying it holds food. Nothing matched on
+/// such a list falls back to [generalGroceryAsset] rather than to the glyph, so
+/// an unrecognised article still looks like shopping — see there. A Sonstige
+/// list never shows a grocery photo at all and keeps the glyph.
 class _ItemIcon extends StatelessWidget {
   final String? iconKey;
   final Color accent;
+  final bool grocery;
 
-  const _ItemIcon({required this.iconKey, required this.accent});
+  const _ItemIcon({required this.iconKey, required this.accent, required this.grocery});
 
   @override
   Widget build(BuildContext context) {
-    final asset = resolveIcon(iconKey)?.asset;
+    final asset = resolveIcon(iconKey)?.asset ?? (grocery ? generalGroceryAsset : null);
     if (asset == null) {
       return IconTile(iconKey: iconKey, size: 42, imageSize: 20, glyphSize: 20, fallbackIcon: LucideIcons.clipboardCheck, glyphColor: accent);
     }
@@ -872,6 +902,12 @@ class _AddItemRowState extends ConsumerState<_AddItemRow> {
   final _controller = TextEditingController();
   String _draft = '';
 
+  /// The unit the next article gets, as a stored key — `null` is Stück. Back to
+  /// the default after every add: the chip only exists while something is being
+  /// typed, so a unit left standing from the last article would be a setting
+  /// nobody can see they are still in.
+  String? _unit;
+
   @override
   void dispose() {
     _controller.dispose();
@@ -879,9 +915,12 @@ class _AddItemRowState extends ConsumerState<_AddItemRow> {
   }
 
   void _add(String text, {String? iconKey}) {
-    ref.read(listProvider.notifier).addItem(text, iconKey: iconKey);
+    ref.read(listProvider.notifier).addItem(text, iconKey: iconKey, unit: _unit);
     _controller.clear();
-    setState(() => _draft = '');
+    setState(() {
+      _draft = '';
+      _unit = null;
+    });
   }
 
   @override
@@ -921,6 +960,15 @@ class _AddItemRowState extends ConsumerState<_AddItemRow> {
                   onSubmitted: (v) => _add(v),
                 ),
               ),
+              // Lebensmittel only, and only once there is something to be a
+              // unit *of*: an empty line offering "Stück" would be a control
+              // for an article nobody has named yet, and a Bohrmaschine is not
+              // sold by the Bund. Right where the article's own quantity circle
+              // will be, so the two read as the same corner of the row.
+              if (widget.grocery && _draft.trim().isNotEmpty) ...[
+                const SizedBox(width: 8),
+                _UnitButton(current: _unit, chip: true, onPicked: (u) => setState(() => _unit = u)),
+              ],
             ],
           ),
         ),
@@ -989,12 +1037,12 @@ class _SuggestionChip extends StatelessWidget {
 
 /// An open article, and the place it gets renamed.
 ///
-/// Tapping the name turns the two lines of text into the two fields they
-/// already look like — the article and the quantity under it — right where
-/// they sit, so a wrong article is corrected in the list instead of in a sheet
-/// on top of it. The row leaves edit mode the moment the fields lose focus,
-/// whether that's Return, a tap somewhere else on the screen or the keyboard
-/// being put away.
+/// Tapping the name turns the text into the field it already looks like, right
+/// where it sits, so a wrong article is corrected in the list instead of in a
+/// sheet on top of it. The quantity is the grey circle at the end of the row
+/// and edits in place the same way. The row leaves edit mode the moment the
+/// fields lose focus, whether that's Return, a tap somewhere else on the screen
+/// or the keyboard being put away.
 class _ItemRow extends ConsumerStatefulWidget {
   final ShoppingListItem item;
   final Color accent;
@@ -1057,6 +1105,15 @@ class _ItemRowState extends ConsumerState<_ItemRow> {
     });
   }
 
+  /// What a tap anywhere else has to do by hand. Flutter only drops focus on a
+  /// tap outside by itself on desktop; on a phone the field keeps it — and the
+  /// number pad the quantity puts up has no Return key to give it back with, so
+  /// without this the keyboard would sit there until the row was tapped again.
+  void _unfocusFields() {
+    _textFocus.unfocus();
+    _subFocus.unfocus();
+  }
+
   void _commit() {
     setState(() => _editing = false);
     ref.read(listProvider.notifier).editItem(widget.item, text: _textController.text, sub: _subController.text);
@@ -1087,64 +1144,68 @@ class _ItemRowState extends ConsumerState<_ItemRow> {
               child: Image.file(File(photo.path), width: 42, height: 42, fit: BoxFit.cover),
             )
           else
-            _ItemIcon(iconKey: item.iconKey, accent: accent),
+            _ItemIcon(iconKey: item.iconKey, accent: accent, grocery: _isGroceryList(ref, item.listId)),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (_editing) ...[
+                if (_editing)
                   TextField(
                     controller: _textController,
                     focusNode: _textFocus,
                     style: _itemTextStyle,
                     decoration: _inlineFieldDecoration(L.s.itemLabel, _itemTextStyle),
                     textInputAction: TextInputAction.next,
+                    onTapOutside: (_) => _unfocusFields(),
                     onSubmitted: (_) => _subFocus.requestFocus(),
-                  ),
-                  TextField(
-                    controller: _subController,
-                    focusNode: _subFocus,
-                    style: _itemSubStyle,
-                    decoration: _inlineFieldDecoration(L.s.quantity, _itemSubStyle),
-                    textInputAction: TextInputAction.done,
-                    onSubmitted: (_) => _commit(),
-                  ),
-                ] else ...[
-                  // The whole text block is the target and it edits the name —
-                  // the strip of empty row next to a short article is still
-                  // that article, and aiming at four glyphs isn't a tap. The
-                  // quantity carries a target of its own on top of it, so the
-                  // line you actually hit is the line that opens.
+                  )
+                else
+                  // The whole strip next to the article is the target and it
+                  // edits the name — the empty room after a short word is still
+                  // that word, and aiming at four glyphs isn't a tap. Aligned
+                  // rather than stretched inside it, so the strike-through
+                  // still stops at the last letter.
                   GestureDetector(
                     behavior: HitTestBehavior.opaque,
                     onTap: () => _startEditing(_textFocus),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        StrikeThrough(
-                          progress: strike,
-                          color: _itemDoneInk,
-                          child: Text(
-                            item.text,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: _itemTextStyle.copyWith(color: Color.lerp(AppColors.ink, _itemDoneInk, strike)),
-                          ),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: StrikeThrough(
+                        progress: strike,
+                        color: _itemDoneInk,
+                        child: Text(
+                          item.text,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: _itemTextStyle.copyWith(color: Color.lerp(AppColors.ink, _itemDoneInk, strike)),
                         ),
-                        if (item.sub != null)
-                          Opacity(
-                            opacity: 1 - 0.45 * strike,
-                            child: GestureDetector(
-                              behavior: HitTestBehavior.opaque,
-                              onTap: () => _startEditing(_subFocus),
-                              child: Text(item.sub!, style: _itemSubStyle),
-                            ),
-                          ),
-                      ],
+                      ),
                     ),
                   ),
-                ],
+                // What the count counts, under the name — a line to read while
+                // the row sits there, a chip to press while it is open. It is
+                // not a second circle: the unit is chosen once when the article
+                // goes on the list, while the number changes every week, so it
+                // earns less of the row than the count does.
+                if (_editing)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: _UnitButton(
+                      current: item.unit,
+                      chip: true,
+                      onPicked: (u) => ref.read(listProvider.notifier).setUnit(item, u),
+                    ),
+                  )
+                else if (item.unit != null)
+                  Opacity(
+                    opacity: 1 - 0.45 * strike,
+                    child: _UnitButton(
+                      current: item.unit,
+                      chip: false,
+                      onPicked: (u) => ref.read(listProvider.notifier).setUnit(item, u),
+                    ),
+                  ),
                 if (attachments.isNotEmpty)
                   Opacity(
                     opacity: 1 - 0.45 * strike,
@@ -1153,6 +1214,46 @@ class _ItemRowState extends ConsumerState<_ItemRow> {
               ],
             ),
           ),
+          // The quantity, on the row rather than under the name. It shows while
+          // there is one and while the row is being edited — an article without
+          // a quantity is one of it, and a circle saying so on every line would
+          // be noise on a shopping list.
+          if (_editing || (item.sub?.isNotEmpty ?? false))
+            Opacity(
+              opacity: 1 - 0.45 * strike,
+              child: _QuantityCircle(
+                onTap: _editing ? null : () => _startEditing(_subFocus),
+                child: _editing
+                    ? TextField(
+                        controller: _subController,
+                        focusNode: _subFocus,
+                        style: _quantityStyle,
+                        textAlign: TextAlign.center,
+                        // A count, not a sentence — which is the other half of
+                        // moving it out here: the number pad comes up instead
+                        // of the letter keyboard, so changing a 2 into a 3 is
+                        // one tap on one key.
+                        keyboardType: TextInputType.number,
+                        textInputAction: TextInputAction.done,
+                        decoration: InputDecoration.collapsed(
+                          // A numeral, not copy: "1" is what an article without
+                          // a quantity is in either language, so there is
+                          // nothing here for `L.s` to answer.
+                          hintText: '1',
+                          hintStyle: _quantityStyle.copyWith(color: AppColors.mutedLight),
+                        ),
+                        onTapOutside: (_) => _unfocusFields(),
+                        onSubmitted: (_) => _commit(),
+                      )
+                    // Scaled down rather than clipped: a count fits at full size,
+                    // and the free-text quantities older lists still carry ("2
+                    // Liter") shrink to fit instead of stretching the circle.
+                    : FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(item.sub!, maxLines: 1, style: _quantityStyle),
+                      ),
+              ),
+            ),
           // Where the owner's name used to sit. Whose item it is is already
           // said by the list it's in; the row menu is what you actually reach
           // for here. It greys out with the rest of the row as it's checked
@@ -1164,6 +1265,142 @@ class _ItemRowState extends ConsumerState<_ItemRow> {
         ],
       ),
     );
+  }
+}
+
+/// What the count counts, and the control that changes it.
+///
+/// Two shapes for one thing, the way the row's name is a label until you tap
+/// it: a filled chip while an article is being composed or edited, where it is
+/// something to press, and a plain line under the name the rest of the time,
+/// where it is something to read. [current] is the stored key — `null` is the
+/// default, so the chip still has a word to show.
+/// Stateful only to hold the [GlobalKey] the anchored fallback anchors to — a
+/// key made in a `build` would be a different key on every frame.
+class _UnitButton extends StatefulWidget {
+  final String? current;
+  final bool chip;
+  final ValueChanged<String?> onPicked;
+
+  const _UnitButton({required this.current, required this.chip, required this.onPicked});
+
+  @override
+  State<_UnitButton> createState() => _UnitButtonState();
+}
+
+class _UnitButtonState extends State<_UnitButton> {
+  final _anchorKey = GlobalKey();
+
+  /// The system's own sheet first — ten choices is more than the app's dropdown
+  /// wants to be, and UIKit's already knows how to scroll them. It answers null
+  /// off iOS, which is the cue to fall back to the anchored menu, and that is
+  /// what [_anchorKey] is for.
+  Future<void> _pick() async {
+    final units = GroceryUnit.values;
+    String? keyOf(GroceryUnit unit) => unit == GroceryUnit.piece ? null : unit.key;
+
+    final picked = await showNativeActionSheet(
+      options: [for (final unit in units) unit.label],
+      cancelLabel: L.s.cancel,
+      dark: AppColors.isDark,
+      title: L.s.unit,
+    );
+    if (picked != null) {
+      if (picked != actionSheetCancelled) widget.onPicked(keyOf(units[picked]));
+      return;
+    }
+    if (!mounted) return;
+    final active = widget.current ?? GroceryUnit.piece.key;
+    await showAnchoredMenu(
+      context: context,
+      anchorKey: _anchorKey,
+      items: [
+        for (final unit in units)
+          AnchoredMenuItem(
+            label: unit.label,
+            icon: unit.key == active ? LucideIcons.check : LucideIcons.circle,
+            onSelected: () => widget.onPicked(keyOf(unit)),
+          ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final label = widget.current == null ? GroceryUnit.piece.label : groceryUnitLabel(widget.current!);
+    return GestureDetector(
+      key: _anchorKey,
+      behavior: HitTestBehavior.opaque,
+      onTap: _pick,
+      child: widget.chip
+          ? Container(
+              padding: const EdgeInsets.fromLTRB(9, 4, 6, 4),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceAlt,
+                borderRadius: BorderRadius.circular(AppRadii.chip),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(label, style: AppText.microLabel.copyWith(color: AppColors.inkSecondary)),
+                  const SizedBox(width: 2),
+                  Icon(LucideIcons.chevronDown, size: 12, color: AppColors.mutedLight),
+                ],
+              ),
+            )
+          // The padding is the target: a unit is read far more often than it is
+          // changed, so it stays a subtitle rather than growing into a control,
+          // and the room around the word is what makes it tappable at all.
+          : Padding(
+              padding: const EdgeInsets.only(top: 1, bottom: 3),
+              child: Text(label, style: AppText.label),
+            ),
+    );
+  }
+}
+
+/// The grey circle at the end of an article row, holding its quantity — the
+/// number itself, or the field it becomes while the row is being edited.
+///
+/// The quantity used to be a second line of grey text under the article, which
+/// read fine and tapped badly: 12.5pt of type is about two millimetres of
+/// target, on the thing in a shopping list that changes most often. Out here it
+/// is a 30pt circle with the row's own padding counted into the target, and it
+/// is next to the thumb rather than under the name.
+///
+/// Always [_size] across, whatever is in it. A circle that sized itself to its
+/// contents would be a different shape on every row of the list — and it would
+/// move as the number went from 9 to 10 — so what's inside scales to the circle
+/// instead of the other way round.
+class _QuantityCircle extends StatelessWidget {
+  static const _size = 32.0;
+
+  final Widget child;
+
+  /// Null while the row is already being edited: the field inside takes its own
+  /// taps then, and an opaque detector over it would only get in the way.
+  final VoidCallback? onTap;
+
+  const _QuantityCircle({required this.child, this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final circle = Padding(
+      // The circle is what you see; this padding is the rest of the target, and
+      // it fits inside the row's own height so nothing moves to make room.
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 5),
+      child: Container(
+        width: _size,
+        height: _size,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(color: AppColors.surfaceAlt, shape: BoxShape.circle),
+        // The one width anything inside gets: it keeps the number off the rim,
+        // and it's what the contents are scaled to fit.
+        child: SizedBox(width: _size - 8, child: child),
+      ),
+    );
+    if (onTap == null) return circle;
+    return GestureDetector(behavior: HitTestBehavior.opaque, onTap: onTap, child: circle);
   }
 }
 
@@ -1270,7 +1507,7 @@ class _DoneItemRow extends ConsumerWidget {
             children: [
               CheckOffButton(progress: strike, accent: accent, onTap: onUndo, size: 24),
               const SizedBox(width: 12),
-              _ItemIcon(iconKey: item.iconKey, accent: accent),
+              _ItemIcon(iconKey: item.iconKey, accent: accent, grocery: _isGroceryList(ref, item.listId)),
               const SizedBox(width: 12),
               Expanded(
                 // Aligned, not stretched: the strike has to stop at the last

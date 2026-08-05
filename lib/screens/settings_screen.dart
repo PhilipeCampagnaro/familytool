@@ -162,7 +162,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               avatarSize: 30,
               avatars: [
                 for (final m in members.take(3))
-                  Avatar(size: 30, bg: m.toneColors.bg, fg: m.toneColors.fg, initials: m.initials, fontSize: 11),
+                  Avatar(
+                    size: 30,
+                    bg: m.toneColors.bg,
+                    fg: m.toneColors.fg,
+                    initials: m.initials,
+                    fontSize: 11,
+                    imageUrl: m.imageUrl,
+                  ),
               ],
             ),
             onTap: () => _push(context, FamilyPage()),

@@ -68,7 +68,7 @@ class ListRepository {
 
   static const _listColumns = 'id, family_id, name, icon_asset, kind, owner_id, visibility, position, created_at, updated_at';
   static const _itemColumns =
-      'id, list_id, text, sub, icon_asset, assignee_id, done, done_by, done_at, position, created_by, created_at, updated_at';
+      'id, list_id, text, sub, unit, icon_asset, assignee_id, done, done_by, done_at, position, created_by, created_at, updated_at';
 
   String get _uid {
     final id = AporahSupabase.userId;
@@ -257,6 +257,7 @@ class ListRepository {
     required String listId,
     required String text,
     String? sub,
+    String? unit,
     String? iconKey,
     String? assigneeId,
     required int position,
@@ -266,6 +267,7 @@ class ListRepository {
       listId: listId,
       text: text,
       sub: sub,
+      unit: unit,
       iconKey: iconKey,
       assigneeId: assigneeId,
       createdBy: _uid,
@@ -286,6 +288,19 @@ class ListRepository {
     final row = await _db
         .from('list_items')
         .update({'text': text, 'sub': sub, 'icon_asset': iconKey})
+        .eq('id', itemId)
+        .select(_itemColumns)
+        .single();
+    return ShoppingListItem.fromMap(row);
+  }
+
+  /// The unit on its own — the picker's one write. Deliberately not folded into
+  /// [editItem]: the unit is picked from a sheet while the name and the count
+  /// are typed into the row, and an edit of one must not restate the other.
+  Future<ShoppingListItem> setUnit(String itemId, String? unit) async {
+    final row = await _db
+        .from('list_items')
+        .update({'unit': unit})
         .eq('id', itemId)
         .select(_itemColumns)
         .single();

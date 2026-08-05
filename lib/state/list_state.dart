@@ -433,6 +433,7 @@ class ListNotifier extends StateNotifier<ListScreenState> {
       listId: listId,
       text: item.text,
       sub: item.sub,
+      unit: item.unit,
       iconKey: item.iconKey,
       assigneeId: item.assigneeId,
       position: item.position,
@@ -452,7 +453,7 @@ class ListNotifier extends StateNotifier<ListScreenState> {
   /// text is matched against the catalogs, so "Milch 2 Liter" arrives with the
   /// milk picture, "Bohrmaschine" on a Sonstige list with a drill, and anything
   /// unrecognised simply arrives without one.
-  Future<void> addItem(String text, {String? iconKey}) async {
+  Future<void> addItem(String text, {String? iconKey, String? unit}) async {
     final trimmed = text.trim();
     if (trimmed.isEmpty) return;
 
@@ -468,6 +469,7 @@ class ListNotifier extends StateNotifier<ListScreenState> {
       id: _tempId(),
       listId: targetId,
       text: trimmed,
+      unit: unit,
       iconKey: icon,
       createdBy: _userId,
       position: position,
@@ -475,7 +477,7 @@ class ListNotifier extends StateNotifier<ListScreenState> {
     _putItem(targetId, [optimistic, ...state.itemsByList[targetId] ?? const []]);
 
     try {
-      final saved = await _repo.addItem(listId: targetId, text: trimmed, iconKey: icon, position: position);
+      final saved = await _repo.addItem(listId: targetId, text: trimmed, unit: unit, iconKey: icon, position: position);
       if (!mounted) return;
       // Reconcile in place: the row keeps its slot and swaps its id for the
       // real uuid, so a tick landing right after the insert has something to
@@ -521,6 +523,29 @@ class ListNotifier extends StateNotifier<ListScreenState> {
 
     try {
       final saved = await _repo.editItem(item.id, text: name, sub: newSub, iconKey: icon);
+      if (!mounted) return;
+      _replaceItem(item.listId, item.id, saved);
+    } catch (_) {
+      if (!mounted) return;
+      _patchItem(item.listId, item.id, (_) => item);
+      _fail(L.s.changeSaveFailed);
+    }
+  }
+
+  /// Changes what an article's count counts — kg, ml, Packung. Its own method
+  /// rather than a parameter on [editItem]: the unit comes from a picker, the
+  /// name and the count from the row's own fields, and writing all three
+  /// together would let a half-finished edit overwrite a unit nobody touched.
+  ///
+  /// `null` is the default (Stück) and is what gets stored for it.
+  Future<void> setUnit(ShoppingListItem item, String? unit) async {
+    if (_isTemp(item.id)) return;
+    if (unit == item.unit) return;
+
+    _patchItem(item.listId, item.id, (i) => i.copyWith(unit: unit, clearUnit: unit == null));
+
+    try {
+      final saved = await _repo.setUnit(item.id, unit);
       if (!mounted) return;
       _replaceItem(item.listId, item.id, saved);
     } catch (_) {

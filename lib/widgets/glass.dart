@@ -362,6 +362,32 @@ class GlassIconButton extends StatelessWidget {
   }
 }
 
+/// The **neutral** labelled glass pill: a way *out* rather than the action —
+/// Settings' "Fertig", the onboarding header's "Überspringen". A text-labelled
+/// sibling of [GlassIconButton], so a header that mixes the two reads as one
+/// material. For the accent-filled one use [GlassAccentButton].
+///
+/// Ellipsises rather than overflowing: it sits in headers that share their row
+/// with other controls, and "Überspringen" is a long word on a small phone.
+class GlassPillButton extends StatelessWidget {
+  final String label;
+  final VoidCallback onTap;
+
+  const GlassPillButton({super.key, required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return _PressableGlass(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppRadii.bar),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+        child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.rowTitle),
+      ),
+    );
+  }
+}
+
 /// ## The accent-filled glass rule
 ///
 /// Both accent controls — [GlassConfirmButton] (the check in a sheet header)

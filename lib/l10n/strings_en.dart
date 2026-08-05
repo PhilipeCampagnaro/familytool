@@ -1,4 +1,5 @@
 import '../data/german_holidays.dart';
+import '../models/grocery_unit.dart';
 import 'app_strings.dart';
 
 /// English. Written for a family living in Germany who prefer an English
@@ -108,6 +109,23 @@ class StringsEn extends AppStrings {
   String get noPlacesFound => 'No places found';
   @override
   String get quantity => 'Quantity';
+  @override
+  String get unit => 'Unit';
+  @override
+  // Metric either way: this is a household shopping in Germany, so the packet
+  // says 500 g whichever language the app is in.
+  String unitName(GroceryUnit unit) => switch (unit) {
+    GroceryUnit.piece => 'Piece',
+    GroceryUnit.gram => 'g',
+    GroceryUnit.kilogram => 'kg',
+    GroceryUnit.milliliter => 'ml',
+    GroceryUnit.liter => 'l',
+    GroceryUnit.pack => 'Pack',
+    GroceryUnit.can => 'Can',
+    GroceryUnit.bottle => 'Bottle',
+    GroceryUnit.bunch => 'Bunch',
+    GroceryUnit.glass => 'Jar',
+  };
   @override
   String get size => 'Size';
   @override
@@ -889,6 +907,10 @@ class StringsEn extends AppStrings {
   @override
   String inviteValidUntil(String date) => 'Valid until $date';
   @override
+  String invitedPerson(String who) => '$who invited';
+  @override
+  String get tapSendToInvite => 'Tap send to deliver the invitation.';
+  @override
   String get youCaps => 'YOU';
   @override
   String get removeMemberQuestion => 'Remove member?';
@@ -965,6 +987,23 @@ class StringsEn extends AppStrings {
   String get wasteCalendar => 'Waste collection calendar';
   @override
   String get holidayCalendar => 'School holiday calendar';
+  @override
+  String get onboardFindingCalendars => 'Looking for calendars for your address …';
+  @override
+  String get onboardFoundForYou => 'Found for your address';
+  @override
+  String get onboardNothingForAddress =>
+      'We found no calendar for this address. You can connect more later in Settings.';
+  @override
+  String get onboardNotFoundHere => 'Not found for this address';
+  @override
+  String get onboardRenameLater => 'You can rename the calendars later under Settings → Calendar.';
+  @override
+  String get onboardConnectMoreHint => 'Add Google, Outlook, iCloud or IServ';
+  @override
+  String get onboardConnectingCalendars => 'Connecting calendars …';
+  @override
+  String get calendarsConnectFailed => 'The calendars couldn\'t be connected just now.';
   @override
   String get onboardReady => 'Ready!';
   @override

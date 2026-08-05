@@ -41,6 +41,17 @@ class GroceryIcon {
 
 const groceryAssetDir = 'assets/grocery/';
 
+/// The picture an article falls back to when the catalogs don't recognise what
+/// was typed — **only on a Lebensmittel list**, where every other row carries a
+/// photograph and a grey disc with a clipboard glyph in it is the one row that
+/// doesn't look like shopping. A Sonstige list keeps the glyph: it has no
+/// photos for the odd one out to be odd against.
+///
+/// Rendered rather than stored, so it holds however the article lost its icon —
+/// renaming *Milch* to something no catalog knows clears the key, and the row
+/// still has to look like a row.
+const generalGroceryAsset = '${groceryAssetDir}General_Shopping_cart.png';
+
 class GroceryCategory {
   /// German section name — also searchable, so "Gemüse" offers vegetables.
   final String de;
