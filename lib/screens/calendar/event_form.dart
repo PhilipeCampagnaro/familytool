@@ -215,14 +215,14 @@ class _EventFormBodyState extends ConsumerState<_EventFormBody> {
                 child: Row(
                   children: [
                     Expanded(child: Text(L.s.allDay, style: AppText.rowTitle)),
-                    // The real UISwitch, so Ganztägig looks like the
-                    // Dunkelmodus switch in Settings — iOS 26 draws a Liquid
-                    // Glass knob that `CupertinoSwitch` doesn't redraw.
-                    // This is a platform view inside a sheet body, the thing
-                    // [SheetSwitch] exists to avoid; if the card below this row
-                    // ever renders blank on device again, that's the failure
-                    // coming back and `SheetSwitch` is the one-line fallback.
-                    NativeSwitch(value: _draft.allDay, onChanged: _setAllDay),
+                    // Flutter's switch, not the real `UISwitch`: a platform
+                    // view here is a third one in a sheet that already embeds
+                    // two in its header, and iOS then drops the overlay layer
+                    // holding everything painted after it — Beginn, Ende, the
+                    // calendar card and the notes field all laid out and all
+                    // invisible. That regression shipped once already. See
+                    // [SheetSwitch]; it must stay a [SheetSwitch].
+                    SheetSwitch(value: _draft.allDay, onChanged: _setAllDay),
                   ],
                 ),
               ),
@@ -254,16 +254,25 @@ class _EventFormBodyState extends ConsumerState<_EventFormBody> {
         // behind a name until you opened it.
         SectionCard(
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 13, 16, 9),
-              child: Text(L.s.calendar, style: AppText.microLabel),
+            // The rows below fill the card, so these two have to be stretched
+            // to match — a bare Padding sizes to its text and SectionCard's
+            // Column would then centre it.
+            SizedBox(
+              width: double.infinity,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 13, 16, 9),
+                child: Text(L.s.calendar, style: AppText.microLabel),
+              ),
             ),
             if (options.isEmpty)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-                child: Text(
-                  L.s.noWritableCalendar,
-                  style: AppText.input.copyWith(color: AppColors.inkTertiary),
+              SizedBox(
+                width: double.infinity,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+                  child: Text(
+                    L.s.noWritableCalendar,
+                    style: AppText.input.copyWith(color: AppColors.inkTertiary),
+                  ),
                 ),
               )
             else
