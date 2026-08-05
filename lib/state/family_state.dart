@@ -10,7 +10,7 @@ import 'auth_state.dart';
 import '../l10n/l10n.dart';
 
 /// The private bucket the profile pictures live in — see
-/// `supabase/migrations/20260805170000_avatar_pictures.sql`.
+/// `supabase/migrations/20260805174643_avatar_pictures.sql`.
 const _avatarBucket = 'avatars';
 
 /// How long a signed avatar URL stays good for.
