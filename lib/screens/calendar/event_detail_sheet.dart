@@ -187,26 +187,7 @@ void _showEventDetailSheet(BuildContext context, WidgetRef ref) {
                   // to an empty box.
                   if (weather != null) ...[
                     const SizedBox(width: 10),
-                    Container(
-                      width: 126,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
-                      decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(20), boxShadow: AppShadows.card),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Icon(weather.icon, size: 28, color: accent),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const SizedBox(height: 8),
-                              Text(weather.temperatureLabel, style: AppText.statValue),
-                              Text(weather.label, style: AppText.label.copyWith(color: AppColors.inkTertiary)),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
+                    _WeatherCard(weather: weather),
                   ],
                 ],
               ),
@@ -276,6 +257,60 @@ void _showEventDetailSheet(BuildContext context, WidgetRef ref) {
       },
     ),
   );
+}
+
+/// The forecast at the appointment, beside the date it happens on.
+///
+/// **The one card in the app that is not white.** It wears the weather itself —
+/// amber for a sunny afternoon, slate for an overcast one, ink-blue for rain —
+/// which is the fastest way to answer "do we need coats?" from across the room,
+/// before any number has been read. The wash and the ink both come from
+/// [WeatherReading.skin]; see [WeatherSkin] for why it is a pale wash and not
+/// the dark sky a weather app would use.
+///
+/// The agenda row stays plain on purpose. Ten cards down a day, each in its own
+/// colour, would turn the calendar into a chart of the weather rather than a
+/// list of the family's day — so out there the icon carries it alone.
+class _WeatherCard extends StatelessWidget {
+  final WeatherReading weather;
+
+  const _WeatherCard({required this.weather});
+
+  @override
+  Widget build(BuildContext context) {
+    final skin = weather.skin;
+
+    return Container(
+      width: 126,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+      decoration: BoxDecoration(
+        gradient: skin.gradient,
+        borderRadius: BorderRadius.circular(AppRadii.cardSmall),
+        boxShadow: AppShadows.card,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // Drawn at its own colours — no `colorFilter`. A Meteocons file is a
+          // little illustration, and flattening it to one tint is exactly what
+          // this card moved away from.
+          SvgPicture.asset(weather.iconAsset, width: 46, height: 46),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 6),
+              Text(weather.temperatureLabel, style: AppText.statValue.copyWith(color: skin.ink)),
+              // The condition in words is what makes the colour readable as
+              // weather rather than as decoration, so it keeps full weight
+              // instead of the tertiary grey a caption would take.
+              Text(weather.label, style: AppText.label.copyWith(color: shade(skin.ink, .78))),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 /// The event's place: the address row, a real map of it, and the button that

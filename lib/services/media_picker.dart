@@ -27,10 +27,24 @@ enum AttachmentSource {
 /// native tab bar, switch and search field make.
 const _channel = MethodChannel('aporah/media');
 
-Future<ItemAttachment?> pickAttachment(AttachmentSource source) async {
+/// The longest edge a profile picture is stored at.
+///
+/// It is drawn at 64px at the very largest, so this is already generous — and
+/// the point is the other end: a straight-from-the-camera 12MP HEIC is several
+/// megabytes of upload for a circle the size of a thumbnail.
+const avatarMaxDimension = 512;
+
+/// [maxDimension] caps the longest edge of a picked *image*, in pixels; null
+/// keeps it as it was picked. The native side also re-encodes anything Flutter
+/// cannot decode — HEIC above all, which is what an iPhone camera produces by
+/// default — so what comes back here is always drawable.
+Future<ItemAttachment?> pickAttachment(AttachmentSource source, {int? maxDimension}) async {
   if (kIsWeb || defaultTargetPlatform != TargetPlatform.iOS) return null;
   try {
-    final picked = await _channel.invokeMapMethod<String, dynamic>(source.method);
+    final picked = await _channel.invokeMapMethod<String, dynamic>(
+      source.method,
+      {'maxDimension': maxDimension},
+    );
     if (picked == null) return null;
     return ItemAttachment(
       path: picked['path'] as String,

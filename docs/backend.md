@@ -372,6 +372,27 @@ See the migration list for what exists:
 | `…100700_external_sharing` | share_links, guest_access, echte Gast-Prädikate |
 | `…100800_rpc` | Transaktionale RPCs (nur `service_role`) |
 | `…101000_calendar_connections` | Kalender-Verbindungen + verschlüsselte Secrets |
+| `…20260805170000_avatar_pictures` | `avatars` Storage-Bucket + Policies |
 
-Still to build: storage buckets and their policies, Realtime, the Flutter client layer, the web
-landing page for share links, and the finance module.
+Still to build: Realtime, the web landing page for share links, and the finance module.
+
+## Storage: the `avatars` bucket
+
+The one bucket there is, and the shape any later one should copy.
+
+- **Private, and `profiles.avatar_url` holds an object path — not a URL.** A public bucket would
+  have been less code and would have put a photo of somebody's kid on an unauthenticated CDN URL
+  that outlives the account. The client signs a URL per member at load
+  ([`HouseholdNotifier._signAvatars`](../lib/state/family_state.dart)), one batched call for the
+  whole roster, valid a week and re-signed on every load.
+- **Layout is `<user_id>/<uuid>.<ext>`.** The owner is the first path segment, which is what all
+  four policies key on: read is `private.can_see_profile(<owner>)` — household members plus the
+  guest who may resolve a name on a list shared with them — and insert/update/delete are "your own
+  folder", narrower on purpose than the admin checks everywhere else. Nobody, not even an admin,
+  replaces another member's face.
+- **The bucket's `allowed_mime_types` and `file_size_limit` (5 MB) are the real validation**, which
+  is why the upload names its content type explicitly: the SDK's default
+  `application/octet-stream` is not on the list and would be rejected.
+- Each upload gets a fresh object name and the old one is deleted after the new one lands.
+  Overwriting a fixed name would leave every signed URL already handed out — and every image cache
+  holding one — serving the previous face until it expired.

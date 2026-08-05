@@ -49,7 +49,7 @@ class ProfilePageState extends ConsumerState<ProfilePage> {
 
   /// Puts the picked photo up straight away and saves it behind that.
   Future<void> _pickAvatar(AttachmentSource source) async {
-    final picked = await pickAttachment(source);
+    final picked = await pickAttachment(source, maxDimension: avatarMaxDimension);
     if (picked == null || !picked.isImage) return;
 
     final file = File(picked.path);

@@ -568,7 +568,6 @@ class _EventAgendaRow extends ConsumerWidget {
                   ],
                   child: _EventCard(
                     event: event,
-                    accent: accent,
                     compact: compact,
                     weather: _weatherFor(ref, event),
                   ),
@@ -592,15 +591,17 @@ class _EventAgendaRow extends ConsumerWidget {
 /// line, accent time), so the fill was saying it a second time and louder.
 class _EventCard extends StatelessWidget {
   final CalendarEvent event;
-  final Color accent;
   final bool compact;
 
   /// Resolved by the row, which has the `ref` — the card stays a pure render of
   /// what it is handed. Null when there is no forecast for this event, which is
   /// the common case for anything in the past.
+  ///
+  /// The card takes no accent any more: the forecast icon used to be tinted
+  /// with it, and it is the one thing here that draws itself.
   final WeatherReading? weather;
 
-  const _EventCard({required this.event, required this.accent, this.compact = false, this.weather});
+  const _EventCard({required this.event, this.compact = false, this.weather});
 
   @override
   Widget build(BuildContext context) {
@@ -633,8 +634,11 @@ class _EventCard extends StatelessWidget {
               // in the past, or further out than Open-Meteo reaches — shows no
               // placeholder at all rather than an empty slot.
               if (weather != null) ...[
-                Icon(weather!.icon, size: 18, color: accent),
-                const SizedBox(width: 6),
+                // Bigger than the 18 the Lucide glyph sat at: a Meteocons file
+                // carries its own padding inside a 128 viewBox, so the drawing
+                // fills about two thirds of whatever it is given.
+                SvgPicture.asset(weather!.iconAsset, width: 26, height: 26),
+                const SizedBox(width: 5),
                 Text(weather!.temperatureLabel, style: AppText.groupHeading.copyWith(letterSpacing: 0, color: AppColors.ink)),
                 const SizedBox(width: 8),
               ],

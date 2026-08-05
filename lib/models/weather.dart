@@ -1,7 +1,5 @@
-import 'package:flutter/widgets.dart' show IconData;
-import 'package:lucide_icons_flutter/lucide_icons.dart';
-
 import '../l10n/l10n.dart';
+import '../theme/tokens.dart';
 import 'calendar_event.dart';
 
 /// The forecast at one appointment, and the pure helpers that decide which
@@ -72,17 +70,42 @@ class WeatherReading {
     WeatherCondition.storm => L.s.weatherStorm,
   };
 
+  /// The Meteocons file to draw, full-colour, through `flutter_svg`.
+  ///
+  /// **Not a [IconData] like the rest of the app, and that is the point.** A
+  /// weather glyph in one flat colour is the one place Lucide could not carry
+  /// its weight: tinted with the row's accent, drizzle, rain and overcast are
+  /// three blue clouds a glance apart, and the icon stops being information.
+  /// These carry the colour themselves — an amber sun, a grey overcast, a blue
+  /// rain — so the condition is legible before the label under it is read.
+  ///
+  /// Ten of Meteocons' 535 are vendored, one per line below; anything else the
+  /// set offers needs no code, only the file and a line here.
+  ///
   /// Only the two clearest buckets have a night form: a rain cloud at 22:00 is
   /// still a rain cloud, but a sun is not.
-  IconData get icon => switch (condition) {
-    WeatherCondition.clear => isDay ? LucideIcons.sun : LucideIcons.moon,
-    WeatherCondition.partlyCloudy => isDay ? LucideIcons.cloudSun : LucideIcons.cloudMoon,
-    WeatherCondition.cloudy => LucideIcons.cloud,
-    WeatherCondition.fog => LucideIcons.cloudFog,
-    WeatherCondition.drizzle => LucideIcons.cloudDrizzle,
-    WeatherCondition.rain => LucideIcons.cloudRain,
-    WeatherCondition.snow => LucideIcons.cloudSnow,
-    WeatherCondition.storm => LucideIcons.cloudLightning,
+  String get iconAsset => 'assets/weather/${switch (condition) {
+    WeatherCondition.clear => isDay ? 'clear-day' : 'clear-night',
+    WeatherCondition.partlyCloudy => isDay ? 'partly-cloudy-day' : 'partly-cloudy-night',
+    WeatherCondition.cloudy => 'cloudy',
+    WeatherCondition.fog => 'fog',
+    WeatherCondition.drizzle => 'drizzle',
+    WeatherCondition.rain => 'rain',
+    WeatherCondition.snow => 'snow',
+    WeatherCondition.storm => 'thunderstorms-rain',
+  }}.svg';
+
+  /// The wash behind the forecast card in the event sheet, and the ink on it.
+  /// The agenda row deliberately has no skin — see [WeatherSkin].
+  WeatherSkin get skin => switch (condition) {
+    WeatherCondition.clear => isDay ? AppSkies.clearDay : AppSkies.clearNight,
+    WeatherCondition.partlyCloudy => isDay ? AppSkies.partlyCloudyDay : AppSkies.partlyCloudyNight,
+    WeatherCondition.cloudy => AppSkies.cloudy,
+    WeatherCondition.fog => AppSkies.fog,
+    WeatherCondition.drizzle => AppSkies.drizzle,
+    WeatherCondition.rain => AppSkies.rain,
+    WeatherCondition.snow => AppSkies.snow,
+    WeatherCondition.storm => AppSkies.storm,
   };
 }
 

@@ -157,7 +157,9 @@ strip — neither is ported, and the Start tab has no design).
 
 | Piece | Where |
 |---|---|
-| Reading, WMO→condition→icon, hourly parsing, sample time + key | [lib/models/weather.dart](../lib/models/weather.dart) |
+| Reading, WMO→condition→icon/skin, hourly parsing, sample time + key | [lib/models/weather.dart](../lib/models/weather.dart) |
+| The icons themselves (Meteocons, MIT) | [assets/weather/](../assets/weather/) |
+| `WeatherSkin` / `AppSkies` — the forecast card's wash and ink | [lib/theme/tokens.dart](../lib/theme/tokens.dart) |
 | Open-Meteo HTTP, geocode + forecast, in-flight de-dup | [lib/data/repositories/weather_repository.dart](../lib/data/repositories/weather_repository.dart) |
 | Device cache (places forever, forecasts 1 h) | [lib/services/weather_cache.dart](../lib/services/weather_cache.dart) |
 | `weatherProvider`, resolve pass, forecast window | [lib/state/weather_state.dart](../lib/state/weather_state.dart) |
@@ -181,14 +183,20 @@ strip — neither is ported, and the Start tab has no design).
   parsed out of `families.address` from onboarding (`homeTownFrom`): the geocoder searches place
   *names*, so the full line with a house number finds nothing. **Never device GPS.**
 - **An address is retried town-first**, because of that last point: `_placeQueries` asks for the
-  whole string, then the last comma-separated part without its postal code, then the part before it
-  without its house number ("Amtshof 3, 28857 Syke" → "Syke"), and drops country names rather than
-  trying them — "Deutschland" geocodes perfectly well to a point in Hesse and would put that
-  weather on the row. A town is the right granularity for a forecast anyway. Without this, an event
-  with a *real* address — the ones a family actually types — was the case that got no chip.
+  whole string, then narrows each comma-separated part two ways — stripped of its postal code /
+  house number, and everything *after its last number* (`placeAfterNumber`). Both spellings are
+  ordinary and only the second one handles the comma-less line German families actually type:
+  "Amtshof 3, 28857 Syke" and "Amtshof 3 28857 Syke" both reach "Syke", and `"28816 Stuhr"` is as
+  much of a miss at the geocoder as the whole line is. A location with no number in it ("Kita
+  Sonnenschein") is left alone rather than guessed at from its last word, and country names are
+  dropped rather than tried — "Deutschland" geocodes perfectly well to a point in Hesse and would
+  put that weather on the row. A town is the right granularity for a forecast anyway. Without all
+  this, an event with a *real* address — the ones a family actually types — was the case that got
+  no chip.
   **A remembered miss is forever, so widening the resolver means bumping `WeatherCache._version`**,
   which throws the device's file away once; otherwise every address that already failed keeps
-  failing on that phone.
+  failing on that phone. It has been bumped twice for exactly this (v2 commas, v3 one-line
+  addresses).
 - **When an event is sampled**: a timed event at its start; an all-day event at 13:00 **on the day
   being rendered**, so each day of a week-long Ferien block carries its own forecast rather than
   all seven sharing Monday's. `eventSampleTime` and `eventWeatherKey` are the contract between the
@@ -201,9 +209,28 @@ strip — neither is ported, and the Start tab has no design).
 - **No chip is the normal answer**: anything before today or past the 16-day horizon, no address
   and no placeable location, or simply offline. Weather is decoration and every failure resolves to a missing icon, never to an error.
 - **Icon mapping**: WMO `weather_code` → 8 buckets (clear / partly-cloudy / cloudy / fog / drizzle
-  / rain / snow / storm) → `lucide_icons_flutter`. Only clear and partly-cloudy have a night form
-  (`moon` / `cloudMoon`) — a rain cloud at 22:00 is still a rain cloud. Day vs night comes from
-  the provider's per-hour `is_day`, since German sunset moves by two hours across the year.
+  / rain / snow / storm) → a **Meteocons** SVG (`WeatherReading.iconAsset`). Only clear and
+  partly-cloudy have a night form — a rain cloud at 22:00 is still a rain cloud. Day vs night comes
+  from the provider's per-hour `is_day`, since German sunset moves by two hours across the year.
+- **The forecast icons are the one place in the app that is not Lucide**, and the reason is that a
+  weather glyph in a single flat colour carries no information: tinted with the row's accent,
+  drizzle, rain and overcast were three blue clouds a glance apart, and every event looked like the
+  same weather. [assets/weather/](../assets/weather/) vendors **10 of Meteocons' 535** (MIT,
+  `github.com/basmilius/meteocons`, `fill` style, licence shipped beside them), rendered full-colour
+  through `flutter_svg` with **no `colorFilter`** — an amber sun, a grey overcast, a blue rain.
+  Adding another bucket needs the file and one line in `iconAsset`, nothing else. They are drawn
+  inside a 128 viewBox with generous padding, so a Meteocons file needs roughly 1.4× the size the
+  Lucide glyph had (26 on the agenda row, 46 on the sheet card).
+- **The forecast card in the event sheet wears the weather; the agenda row does not.** `AppSkies`
+  in [tokens.dart](../lib/theme/tokens.dart) holds ten `WeatherSkin`s — a two-stop wash plus the
+  ink that reads on it, both palettes — and `WeatherReading.skin` picks one. Two decisions worth
+  keeping: the wash is **pale, not the dark sky a weather app would use**, because Meteocons'
+  clouds are near-white and a background dark enough for white text is one the icon disappears
+  into (the cloudy/fog/drizzle/rain/snow skins are deliberately deeper than they first look like
+  they want to be, for the same reason); and the **ink is the wash's own hue deepened** — amber on
+  the sunny card, navy on the rainy one — since `AppColors.ink` on all ten flattens back to one
+  grey card. Every skin clears 4.5:1 at its darker end. The agenda row stays plain on purpose: ten
+  coloured cards down a day would read as a chart of the weather rather than as the family's day.
 - **Caching keeps it polite**: forecasts 1 h and keyed to 2 decimal places (≈1 km, the model's own
   resolution), geocoded places forever **including the failures**, at most 8 distinct places
   resolved per pass, and identical requests de-duplicated while in flight. An unchanged calendar

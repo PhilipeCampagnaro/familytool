@@ -121,6 +121,9 @@ class AppPalette {
   /// Avatar tone pairs, in the order `AppTones.list` exposes them.
   final List<Tone> tones;
 
+  /// Forecast-card skies, in the order `AppSkies` names them.
+  final List<WeatherSkin> skies;
+
   /// Card / nav / sheet shadows. On dark these are near-invisible by design —
   /// separation comes from the surface lift above — but a little depth under
   /// floating controls still helps them read as floating.
@@ -180,6 +183,7 @@ class AppPalette {
     required this.dayNumber,
     required this.holidayNumber,
     required this.tones,
+    required this.skies,
     required this.shadowCard,
     required this.shadowNavBar,
     required this.shadowFloatingPill,
@@ -243,6 +247,23 @@ class AppPalette {
       Tone(Color(0xFFDBEAFE), Color(0xFF1E40AF)),
       Tone(Color(0xFFFEF9C3), Color(0xFF854D0E)),
       Tone(Color(0xFFFFE4E6), Color(0xFF9F1239)),
+    ],
+    // Pale on light, so the icon drawn on top keeps its own colours and the
+    // temperature keeps a text-weight contrast — see [WeatherSkin].
+    skies: [
+      WeatherSkin(Color(0xFFFFF1D2), Color(0xFFFFE0A5), Color(0xFF8A5A11)),
+      WeatherSkin(Color(0xFFE7EAFA), Color(0xFFCED3F0), Color(0xFF3B3F73)),
+      WeatherSkin(Color(0xFFFEF3DC), Color(0xFFDFEAFA), Color(0xFF5D5730)),
+      WeatherSkin(Color(0xFFE9EBF8), Color(0xFFD4D9EE), Color(0xFF3E4270)),
+      // Deeper than they first look like they want to be: these four carry the
+      // palest icons in the set (a white overcast cloud, a white snow cloud),
+      // and on a near-white wash the drawing simply vanishes.
+      WeatherSkin(Color(0xFFE7EDF5), Color(0xFFCFD9E6), Color(0xFF46536A)),
+      WeatherSkin(Color(0xFFEAEDF1), Color(0xFFD3D8DF), Color(0xFF4C535E)),
+      WeatherSkin(Color(0xFFE2EDF8), Color(0xFFC8DCF0), Color(0xFF2F5680)),
+      WeatherSkin(Color(0xFFDFEBF9), Color(0xFFC0D8F0), Color(0xFF1E4D80)),
+      WeatherSkin(Color(0xFFE6F2FC), Color(0xFFC9E1F5), Color(0xFF2C5A7A)),
+      WeatherSkin(Color(0xFFE8E7F5), Color(0xFFD0CEE9), Color(0xFF433F7A)),
     ],
     shadowCard: [BoxShadow(color: Color(0x0F112A2B), blurRadius: 10, offset: Offset(0, 2))],
     shadowNavBar: [BoxShadow(color: Color(0x4D0A0F1E), blurRadius: 30, offset: Offset(0, 14))],
@@ -316,6 +337,23 @@ class AppPalette {
       Tone(Color(0xFF1E2A44), Color(0xFF93C5FD)),
       Tone(Color(0xFF3A3520), Color(0xFFFDE68A)),
       Tone(Color(0xFF3D2830), Color(0xFFFDA4AF)),
+    ],
+    // Same hues at the surface lift the rest of the dark palette sits at, which
+    // is what keeps a sunny card from glowing out of a night-time sheet. The
+    // icons are pale by design and gain contrast here rather than losing it.
+    skies: [
+      WeatherSkin(Color(0xFF3A3019), Color(0xFF4A3B1F), Color(0xFFF2D49B)),
+      WeatherSkin(Color(0xFF1E2140), Color(0xFF272C52), Color(0xFFC3C8F0)),
+      // Warm at the sun end, cool at the cloud end — but barely, because a
+      // brown top-left corner on a dark sheet reads as dirt rather than as sun.
+      WeatherSkin(Color(0xFF2F2C24), Color(0xFF2E3440), Color(0xFFDFDBCD)),
+      WeatherSkin(Color(0xFF1F2338), Color(0xFF282D45), Color(0xFFC6CCE4)),
+      WeatherSkin(Color(0xFF262A32), Color(0xFF2F3540), Color(0xFFCBD3E0)),
+      WeatherSkin(Color(0xFF272A2F), Color(0xFF31353B), Color(0xFFCED3DA)),
+      WeatherSkin(Color(0xFF1F2A38), Color(0xFF273545), Color(0xFFB6CFE8)),
+      WeatherSkin(Color(0xFF1B2B3E), Color(0xFF23374E), Color(0xFFA9CBEC)),
+      WeatherSkin(Color(0xFF202D3A), Color(0xFF293A4A), Color(0xFFC2DCF2)),
+      WeatherSkin(Color(0xFF262340), Color(0xFF2E2B4D), Color(0xFFC6C1EE)),
     ],
     shadowCard: [BoxShadow(color: Color(0x33000000), blurRadius: 10, offset: Offset(0, 2))],
     shadowNavBar: [BoxShadow(color: Color(0x8C000000), blurRadius: 30, offset: Offset(0, 14))],
@@ -426,6 +464,50 @@ class AppTones {
   static Tone get rose => AppColors.palette.tones[4];
 
   static List<Tone> get list => AppColors.palette.tones;
+}
+
+/// The sky a forecast card wears: a two-stop wash plus the ink that reads on it.
+///
+/// **Deliberately pale on light, not a dark weather widget.** The obvious design
+/// is white text on a deep sky, and it fights the icons: Meteocons' clouds are
+/// near-white, so a background dark enough for white text is a background the
+/// cloud disappears into. Washing the card in the *lightest* end of the
+/// condition's own hue keeps the icon full-colour and legible, keeps the
+/// temperature at text contrast, and reads as one of this app's cards rather
+/// than as something borrowed from a weather app.
+///
+/// [ink] belongs to the skin rather than coming from [AppColors] because it is
+/// the same hue as the wash, deepened — amber on the sunny card, navy on the
+/// rainy one. That tie is the whole effect; `AppColors.ink` on all ten would
+/// wash out to the same grey card with a slightly different tint.
+class WeatherSkin {
+  final Color from;
+  final Color to;
+  final Color ink;
+
+  const WeatherSkin(this.from, this.to, this.ink);
+
+  /// Top-left to bottom-right, matching the light in the icons themselves.
+  LinearGradient get gradient =>
+      LinearGradient(colors: [from, to], begin: Alignment.topLeft, end: Alignment.bottomRight);
+}
+
+/// The ten skies, named — the same shape as [AppTones], and the same reason:
+/// the list is positional so it stays readable in the palette, and nothing
+/// outside this file should have to know which index is the rainy one.
+class AppSkies {
+  AppSkies._();
+
+  static WeatherSkin get clearDay => AppColors.palette.skies[0];
+  static WeatherSkin get clearNight => AppColors.palette.skies[1];
+  static WeatherSkin get partlyCloudyDay => AppColors.palette.skies[2];
+  static WeatherSkin get partlyCloudyNight => AppColors.palette.skies[3];
+  static WeatherSkin get cloudy => AppColors.palette.skies[4];
+  static WeatherSkin get fog => AppColors.palette.skies[5];
+  static WeatherSkin get drizzle => AppColors.palette.skies[6];
+  static WeatherSkin get rain => AppColors.palette.skies[7];
+  static WeatherSkin get snow => AppColors.palette.skies[8];
+  static WeatherSkin get storm => AppColors.palette.skies[9];
 }
 
 /// tint(hex, amt) -> lerp toward the lightest surface. shade(hex, amt) -> same

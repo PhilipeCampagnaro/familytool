@@ -448,6 +448,12 @@ Non-obvious bits, each one a bug that shipped first:
 - `Avatar`, `WhoPicker` — person avatar chip and the "Alle / Nur ich / <person>" picker on
   new-item sheets. `WhoPicker` is the **assignment** axis (a single `who` string) and is what
   Board/Box/Kalender still use.
+  - `Avatar` draws a **picture** when given one (`imageUrl`, a signed URL from the `avatars`
+    bucket, or `imageFile` for one still uploading) and the initials-on-a-tone-colour circle
+    otherwise. Every failure — a URL that expired, a decode error, no picture at all — resolves to
+    the initials rather than to a hole or an error: pass both and let it choose. Members carry
+    theirs on `HouseholdMember.avatarUrl`; `FamilyMember` (the `whoBadge` roster) deliberately
+    does not, so item badges stay initials.
 - `VisibilityPicker` (`visibility_picker.dart`) — the **visibility** axis, and what a sheet backed
   by Supabase wants instead: it writes `visibility` (`family` | `private` | `custom`) plus the
   member ids that become `*_shares` rows, rather than one conflated string. Alle and Nur ich are

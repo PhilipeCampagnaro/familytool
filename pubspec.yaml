@@ -77,6 +77,11 @@ flutter:
     - assets/merchants/
     - assets/onboarding/
     - assets/calendar_providers/
+    # Meteocons (github.com/basmilius/meteocons), MIT — the licence sits beside
+    # them in assets/weather/LICENSE and ships with them. Only the ten the eight
+    # WeatherConditions map onto are vendored, out of 535; see
+    # `WeatherReading.iconAsset`.
+    - assets/weather/
 
   # Poppins is **bundled, not fetched**. It used to come from `google_fonts` at
   # runtime, which registers each weight under a variant-suffixed family

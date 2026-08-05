@@ -19,7 +19,15 @@ final class MediaPicker: NSObject {
   /// second request finishes the first as a cancel rather than stranding it.
   private var pending: FlutterResult?
 
+  /// The longest edge the caller will accept, in pixels, or nil for "as
+  /// picked". Set per request — the profile picture asks for a small square,
+  /// a Listen attachment wants the photo it took.
+  private var pendingMaxDimension: CGFloat?
+
   func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+    let arguments = call.arguments as? [String: Any]
+    pendingMaxDimension = (arguments?["maxDimension"] as? NSNumber).map { CGFloat(truncating: $0) }
+
     switch call.method {
     case "photo":
       presentPhotoLibrary(result)
@@ -118,8 +126,60 @@ final class MediaPicker: NSObject {
   private func store(_ source: URL, name: String?) -> [String: Any]? {
     guard let data = try? Data(contentsOf: source) else { return nil }
     let filename = name ?? source.lastPathComponent
-    return write(data, name: filename, isImage: isImage(filename))
+    guard isImage(filename) else { return write(data, name: filename, isImage: false) }
+    let (normalised, normalisedName) = normalise(data, name: filename)
+    return write(normalised, name: normalisedName, isImage: true)
   }
+
+  /// Makes a picked image something Flutter can actually draw, and no larger
+  /// than the caller asked for.
+  ///
+  /// **HEIC is why this exists.** It is the iPhone's default camera format, and
+  /// Flutter's image codecs cannot decode it — a HEIC avatar or attachment
+  /// thumbnail silently renders as nothing at all. So an image that isn't
+  /// already a format Skia knows is re-encoded as JPEG, and while it is decoded
+  /// anyway, it is scaled down to [pendingMaxDimension] if one was given.
+  ///
+  /// Anything that fails to decode is handed back untouched rather than lost:
+  /// the file is still what the user picked, and the caller will show its
+  /// fallback.
+  private func normalise(_ data: Data, name: String) -> (Data, String) {
+    let ext = (name as NSString).pathExtension.lowercased()
+    let needsTranscode = !skiaReadableExtensions.contains(ext)
+    let limit = pendingMaxDimension
+
+    guard needsTranscode || limit != nil, let image = UIImage(data: data) else { return (data, name) }
+
+    let scaled = limit.map { resize(image, longestEdge: $0) } ?? image
+    // A no-op resize on an already-readable format isn't worth a re-encode.
+    guard needsTranscode || scaled !== image, let jpeg = scaled.jpegData(compressionQuality: 0.9) else {
+      return (data, name)
+    }
+    return (jpeg, ((name as NSString).deletingPathExtension as NSString).appendingPathExtension("jpg") ?? name)
+  }
+
+  /// Aspect-preserving downscale. Returns the original untouched when it is
+  /// already small enough, which is what lets [normalise] skip the re-encode.
+  private func resize(_ image: UIImage, longestEdge: CGFloat) -> UIImage {
+    let size = image.size
+    let longest = max(size.width, size.height)
+    guard longest > longestEdge, longest > 0 else { return image }
+
+    let scale = longestEdge / longest
+    let target = CGSize(width: (size.width * scale).rounded(), height: (size.height * scale).rounded())
+    // Scale 1 so `target` is in pixels rather than points — a 3x screen would
+    // otherwise triple everything this is here to shrink.
+    let format = UIGraphicsImageRendererFormat.default()
+    format.scale = 1
+    return UIGraphicsImageRenderer(size: target, format: format).image { _ in
+      image.draw(in: CGRect(origin: .zero, size: target))
+    }
+  }
+
+  /// The image formats Flutter can decode. Deliberately not the same set as
+  /// [isImage], which answers "does this row get a thumbnail" and happily
+  /// includes HEIC.
+  private let skiaReadableExtensions: Set<String> = ["jpg", "jpeg", "png", "gif", "webp", "bmp"]
 
   private func write(_ data: Data, name: String, isImage: Bool) -> [String: Any]? {
     let directory = URL(fileURLWithPath: NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true)[0])
@@ -167,9 +227,15 @@ extension MediaPicker: PHPickerViewControllerDelegate {
 extension MediaPicker: UIImagePickerControllerDelegate, UINavigationControllerDelegate {
   func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
     picker.dismiss(animated: true)
-    guard let image = (info[.editedImage] ?? info[.originalImage]) as? UIImage,
-          let data = image.jpegData(compressionQuality: 0.9)
-    else {
+    guard let picked = (info[.editedImage] ?? info[.originalImage]) as? UIImage else {
+      finish(nil)
+      return
+    }
+    // Already JPEG, so this only ever has the size limit left to apply — but it
+    // goes through the same path so "the avatar is at most 512px" is one rule,
+    // not one per picker.
+    let image = pendingMaxDimension.map { resize(picked, longestEdge: $0) } ?? picked
+    guard let data = image.jpegData(compressionQuality: 0.9) else {
       finish(nil)
       return
     }
