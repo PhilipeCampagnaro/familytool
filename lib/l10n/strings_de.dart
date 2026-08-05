@@ -1,3 +1,4 @@
+import '../data/german_holidays.dart';
 import 'app_strings.dart';
 
 /// German — the language Aporah was written in. Every string here is the exact
@@ -98,6 +99,10 @@ class StringsDe extends AppStrings {
   String get allDay => 'Ganztägig';
   @override
   String get place => 'Ort';
+  @override
+  String get searchPlace => 'Ort oder Geschäft suchen';
+  @override
+  String get noPlacesFound => 'Keine Orte gefunden';
   @override
   String get quantity => 'Menge';
   @override
@@ -378,7 +383,31 @@ class StringsDe extends AppStrings {
   @override
   String get eventsPerCalendar => 'Termine je Kalender';
   @override
-  String get holiday => 'Ferien';
+  String get publicHoliday => 'Feiertag';
+  @override
+  String get schoolHoliday => 'Ferien';
+  @override
+  String germanHolidayName(GermanHoliday holiday) => switch (holiday) {
+    GermanHoliday.neujahr => 'Neujahr',
+    GermanHoliday.heiligeDreiKoenige => 'Heilige Drei Könige',
+    GermanHoliday.frauentag => 'Internationaler Frauentag',
+    GermanHoliday.karfreitag => 'Karfreitag',
+    GermanHoliday.ostersonntag => 'Ostersonntag',
+    GermanHoliday.ostermontag => 'Ostermontag',
+    GermanHoliday.tagDerArbeit => 'Tag der Arbeit',
+    GermanHoliday.christiHimmelfahrt => 'Christi Himmelfahrt',
+    GermanHoliday.pfingstsonntag => 'Pfingstsonntag',
+    GermanHoliday.pfingstmontag => 'Pfingstmontag',
+    GermanHoliday.fronleichnam => 'Fronleichnam',
+    GermanHoliday.mariaeHimmelfahrt => 'Mariä Himmelfahrt',
+    GermanHoliday.weltkindertag => 'Weltkindertag',
+    GermanHoliday.deutscheEinheit => 'Tag der Deutschen Einheit',
+    GermanHoliday.reformationstag => 'Reformationstag',
+    GermanHoliday.allerheiligen => 'Allerheiligen',
+    GermanHoliday.bussUndBettag => 'Buß- und Bettag',
+    GermanHoliday.weihnachtstag1 => '1. Weihnachtstag',
+    GermanHoliday.weihnachtstag2 => '2. Weihnachtstag',
+  };
   @override
   String eventCount(int count) => count == 1 ? '1 Termin' : '$count Termine';
   @override
@@ -415,6 +444,9 @@ class StringsDe extends AppStrings {
   String get eventRestoreFailed => 'Der Termin konnte nicht wiederhergestellt werden.';
   @override
   String get calendarNoLongerAvailable => 'Dieser Kalender ist nicht mehr verfügbar.';
+  @override
+  String get noWritableCalendar =>
+      'Kein beschreibbarer Kalender. Verbinde zuerst einen Kalender in den Einstellungen.';
   @override
   String get noHouseholdFound => 'Kein Haushalt gefunden.';
   @override
@@ -463,10 +495,12 @@ class StringsDe extends AppStrings {
       'private Kalender an einem Ort.';
   @override
   String get connectCalendarsAdminNote =>
-      'Kalender verbindet ein Erwachsener im Haushalt. Die verbundenen '
-      'Termine siehst du danach ganz normal im Kalender.';
+      'Kalender verbindet ein Erwachsener im Haushalt.';
   @override
-  String get connectedCaps => 'VERBUNDEN';
+  String get noCalendarsConnected => 'Noch kein Kalender verbunden.';
+  @override
+  String noProviderCalendarYet(String provider) =>
+      'Noch kein $provider-Kalender.\nTippe auf „Verbinden“, um den ersten hinzuzufügen.';
   @override
   String get loadingEllipsis => 'Wird geladen …';
   @override
@@ -506,6 +540,9 @@ class StringsDe extends AppStrings {
   @override
   String get accessRevokedToo => 'Der Zugriff wird auch beim Anbieter widerrufen.';
   @override
+  String get accountStaysConnected =>
+      'Das Konto bleibt verbunden — die anderen Kalender darin auch.';
+  @override
   String get householdOnlyOthersKeep => 'Nur für euren Haushalt — andere behalten den Kalender.';
   @override
   String get credentialsDeleted => 'Eure Zugangsdaten werden gelöscht.';
@@ -520,39 +557,47 @@ class StringsDe extends AppStrings {
   @override
   String connectProvider(String provider) => '$provider verbinden';
   @override
-  String get oauthGrantedBody =>
-      'Aporah darf jetzt die Kalender dieses Kontos lesen. Gib dem Kalender '
-      'einen Namen, unter dem ihr ihn in Aporah wiedererkennt.';
-  @override
   String redirectNotice(String provider) =>
-      'Du wirst zu $provider weitergeleitet und meldest dich dort an. '
-      'Aporah sieht nur deine Kalender — nie dein Passwort.';
+      'Du meldest dich bei $provider an. Aporah sieht nur deine Kalender — '
+      'nie dein Passwort.';
   @override
   String get openingEllipsis => 'Wird geöffnet …';
   @override
   String signInWithProvider(String provider) => 'Mit $provider anmelden';
   @override
   String get comeBackWhenDone =>
-      'Sobald du im Browser fertig bist, komm zurück zu Aporah — die '
-      'Verbindung erscheint dann hier.';
+      'Komm zurück, sobald du im Browser fertig bist.';
   @override
   String get connectedDot => 'Verbunden.';
   @override
-  String get signInWorkedNameIt =>
-      'Die Anmeldung hat geklappt. Gib dem Kalender einen Namen, unter '
-      'dem ihr ihn in Aporah wiedererkennt.';
+  String calendarsFoundPickThem(int count) =>
+      '$count Kalender gefunden. Wähl aus, welche in Aporah erscheinen sollen.';
   @override
-  String calendarsFoundNameThem(int count) =>
-      '$count Kalender gefunden. Gib ihnen einen Namen, '
-      'unter dem ihr sie in Aporah wiedererkennt.';
+  String get nameYourCalendarBody =>
+      'So heißt der Kalender in Aporah. Du kannst ihn jetzt umbenennen.';
   @override
-  String get iservIntro =>
-      'Gib die Adresse deiner Schule an (z. B. schule.de) und melde dich '
-      'mit deinem IServ-Zugang an. Schulkalender werden nur gelesen.';
+  String get nameEachCalendarBody =>
+      'So heißen die Kalender in Aporah. Du kannst sie jetzt umbenennen.';
   @override
-  String get icloudIntro =>
-      'iCloud verlangt ein app-spezifisches Passwort. Dein normales '
-      'Apple-ID-Passwort funktioniert hier nicht.';
+  String get whichCalendars => 'Kalender';
+  @override
+  String get whichCalendarsHint =>
+      'Nur die ausgewählten erscheinen in Aporah. Das kannst du später ändern.';
+  @override
+  String get readOnlyCalendar => 'Nur lesen';
+  @override
+  String get pickAtLeastOneCalendar => 'Wähl mindestens einen Kalender aus.';
+  @override
+  String get selectAll => 'Alle auswählen';
+  @override
+  String get deselectAll => 'Alle abwählen';
+  @override
+  String calendarsSelected(int count) =>
+      count == 1 ? '1 Kalender ausgewählt' : '$count Kalender ausgewählt';
+  @override
+  String get loadingCalendarsEllipsis => 'Kalender werden geladen …';
+  @override
+  String get appPasswordHint => 'Nicht dein normales Apple-ID-Passwort.';
   @override
   String get createAppPassword => 'App-spezifisches Passwort erstellen';
   @override
@@ -572,21 +617,17 @@ class StringsDe extends AppStrings {
   @override
   String get connect => 'Verbinden';
   @override
-  String get chooseStateCaps => 'BUNDESLAND WÄHLEN';
+  String get bundesland => 'Bundesland';
   @override
-  String get holidaysIntro =>
-      'Die Schulferien kommen von OpenHolidays — kostenlos und ohne Konto. '
-      'Ihr könnt mehrere Bundesländer verbinden.';
+  String get holidaysIntro => 'Ihr könnt mehrere Bundesländer auswählen.';
   @override
-  String get connectHolidays => 'Ferien verbinden';
+  String get pickABundesland => 'Wähl ein Bundesland aus.';
   @override
   String schoolHolidaysOf(String state) => 'Schulferien $state';
   @override
   String holidaysSelectedBody(String state) =>
       'Du hast $state ausgewählt. Die Ferientermine erscheinen danach in eurem '
       'Kalender — für alle im Haushalt.';
-  @override
-  String get connectWaste => 'Abfall verbinden';
   @override
   String get wasteIntro =>
       'Restmüll, Bio, Papier und Gelbe Tonne kommen automatisch in euren '
@@ -620,15 +661,11 @@ class StringsDe extends AppStrings {
       'Unter diesem Link wurden keine Termine gefunden. Ist es der Link '
       'zum Kalender selbst?';
   @override
-  String get addressCaps => 'ADRESSE';
+  String get yourAddress => 'Adresse';
   @override
-  String get addressIntro =>
-      'Tipp eure Adresse ein und wähl sie aus — Aporah sucht den zuständigen '
-      'Entsorger und fragt dann nur noch, wie der Kalender heißen soll.';
+  String get yourAddressHint => 'Wir finden euren Entsorger.';
   @override
-  String get yourAddress => 'Eure Adresse';
-  @override
-  String get yourAddressHint => 'Straße und Hausnummer, dann den Ort.';
+  String get pickYourAddressFirst => 'Such deine Adresse und tipp sie an.';
   @override
   String get addressPlaceholder => 'Straße Hausnummer, Ort';
   @override
@@ -807,6 +844,12 @@ class StringsDe extends AppStrings {
   String get displayName => 'Anzeigename';
   @override
   String get avatarColour => 'Avatar-Farbe';
+  @override
+  String get removePhoto => 'Foto entfernen';
+  @override
+  String get avatarUploadFailed => 'Das Profilbild konnte nicht hochgeladen werden.';
+  @override
+  String get avatarRemoveFailed => 'Das Profilbild konnte nicht entfernt werden.';
   @override
   String get adminsManageFamily => 'Admins verwalten die Familie und alle Verbindungen.';
   @override

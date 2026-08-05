@@ -31,7 +31,9 @@ import '../l10n/l10n.dart';
 ///   frosted, collapsing header Board/Box/Listen use — so Settings doesn't
 ///   read as a different app.
 /// - The root list is *grouped by card*, not by caption: profile + family in
-///   one card, connections in the next, app preferences in the last.
+///   one card, everything the household configures (calendars, language, dark
+///   mode, the tour) in the next, and signing out alone in the last — it is the
+///   one destructive row, so it doesn't share a card with a preference.
 /// - Every sub-page's collapsing content introduces the page — a [HeroCard]
 ///   (icon → title → one sentence), or on the profile page the avatar itself —
 ///   and hands its title to the pinned bar once it scrolls away.
@@ -142,8 +144,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               size: 44,
               bg: tone.bg,
               fg: tone.fg,
-              initials: me?.initials ?? initialsFromName(state.name),
+              initials: me?.initials ?? initialsOf(state.name),
               fontSize: 15,
+              imageUrl: me?.avatarUrl,
             ),
             title: displayName,
             subtitle: ref.watch(myRoleProvider).label,
@@ -176,8 +179,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             onTap: () => _push(context, CalendarConnectionsPage()),
           ),
         ),
-      ],
-      [
         (
           terms: L.s.searchTermsLanguage,
           row: SettingsRow(
@@ -230,7 +231,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     if (query.isEmpty) {
       return [
         for (final (i, group) in groups.indexed) ...[
-          if (i > 0) const SizedBox(height: 14),
+          if (i > 0) const SizedBox(height: AppSpacing.blockGap),
           SectionCard(children: dividedRows([for (final entry in group) entry.row])),
         ],
       ];
@@ -272,12 +273,3 @@ String _connectionSummary(CalendarConnectionsState state) {
   return L.s.calendarCount(n);
 }
 
-/// Initials for the signed-in user's avatar. The family members in
-/// [Members.all] carry their own; only the editable profile name has to be
-/// reduced on the fly.
-String initialsFromName(String name) {
-  final parts = name.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
-  if (parts.isEmpty) return '?';
-  if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
-  return (parts.first.substring(0, 1) + parts.last.substring(0, 1)).toUpperCase();
-}

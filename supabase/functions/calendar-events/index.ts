@@ -112,7 +112,7 @@ Deno.serve(async (req) => {
   const { data: connections } = await db
     .from("calendar_connections")
     .select(
-      "id, family_id, provider, auth_type, external_account, display_name, config, selected_calendars, is_read_only, created_by",
+      "id, family_id, provider, auth_type, external_account, display_name, config, selected_calendars, calendar_names, is_read_only, created_by",
     )
     .eq("family_id", membership.familyId)
     .eq("status", "active");
@@ -230,6 +230,14 @@ async function upsertCalendar(
 ): Promise<WireCalendar> {
   const readOnly = connection.is_read_only || remote.readOnly;
 
+  // What the household called this calendar when it picked it, falling back to
+  // what the provider calls it. The two are not in competition: the name lives
+  // on the connection because it is chosen before any `calendars` row exists,
+  // and this is the one place it is carried across — so Kalender's chips and the
+  // Settings list say the same word without the app merging two sources.
+  const chosen = connection.calendar_names?.[remote.externalId]?.trim();
+  const name = chosen && chosen.length ? chosen : remote.name;
+
   const { data: existing } = await db
     .from("calendars")
     .select("id, name, color, is_read_only, position")
@@ -238,18 +246,19 @@ async function upsertCalendar(
     .maybeSingle();
 
   if (existing) {
-    // Name follows the provider; colour, position and visibility belong to the
-    // user. Overwriting those on every read is the kind of thing that makes a
-    // family stop trusting a calendar.
-    if (existing.name !== remote.name || existing.is_read_only !== readOnly) {
+    // Name follows the household's own choice, and the provider's only where
+    // there isn't one; colour, position and visibility belong to the user.
+    // Overwriting those on every read is the kind of thing that makes a family
+    // stop trusting a calendar.
+    if (existing.name !== name || existing.is_read_only !== readOnly) {
       await db
         .from("calendars")
-        .update({ name: remote.name, is_read_only: readOnly })
+        .update({ name, is_read_only: readOnly })
         .eq("id", existing.id);
     }
     return {
       id: existing.id,
-      name: remote.name,
+      name,
       color: existing.color as number,
       is_read_only: readOnly,
       position: (existing.position as number) ?? 0,
@@ -264,7 +273,7 @@ async function upsertCalendar(
     .from("calendars")
     .insert({
       family_id: connection.family_id,
-      name: remote.name,
+      name,
       provider: connection.provider,
       color,
       is_read_only: readOnly,
@@ -282,7 +291,7 @@ async function upsertCalendar(
   if (error || !created) throw new Error(`calendar insert failed: ${error?.message}`);
   return {
     id: created.id,
-    name: remote.name,
+    name,
     color,
     is_read_only: readOnly,
     position: (created.position as number) ?? 0,

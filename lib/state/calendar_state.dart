@@ -131,32 +131,31 @@ class CalendarScreenState {
     return null;
   }
 
-  /// The calendars an event can be written into — Aporah's own, plus every
-  /// connected one the account has write access to. Ferien, Abfall and
-  /// read-only subscriptions are not destinations.
+  /// The calendars an event can be written into — every real calendar the
+  /// household has write access to. Ferien, Abfall and read-only subscriptions
+  /// are not destinations.
   ///
-  /// Aporah's own calendar is created on first use, so a household that has only
-  /// ever connected Google has no row for it yet. Leaving it out of the picker
-  /// would mean a family with no connections at all could not create an event —
-  /// so it appears as a placeholder and is materialised on save.
-  List<CalendarSource> get writableCalendars {
-    final out = [for (final c in calendars) if (c.editable) c];
-    if (!out.any((c) => c.isOwn)) out.insert(0, CalendarSource.ownPlaceholder);
-    return out;
-  }
+  /// **Only calendars that exist.** There used to be a synthetic "Aporah" entry
+  /// standing in for an own calendar that had never been created; the form now
+  /// lists the household's actual calendars and nothing else, so a household
+  /// with no writable calendar is told to connect one rather than shown a
+  /// destination it has never heard of.
+  List<CalendarSource> get writableCalendars =>
+      [for (final c in calendars) if (c.editable) c];
 
-  /// Where a new event goes unless the user says otherwise.
+  /// Where a new event goes unless the user says otherwise, and null when the
+  /// household has nowhere to put one yet.
   ///
-  /// Aporah's own calendar, deliberately. The alternative — defaulting to the
-  /// first connected calendar — means an arbitrary one of a dozen Google
+  /// An own calendar first when there is one: the alternative — defaulting to
+  /// the first connected calendar — means an arbitrary one of a dozen Google
   /// calendars, and a family's first appointment quietly landing in somebody's
   /// work calendar is a worse surprise than having to pick.
-  CalendarSource get defaultTarget {
+  CalendarSource? get defaultTarget {
     final writable = writableCalendars;
     for (final c in writable) {
       if (c.isOwn) return c;
     }
-    return writable.first;
+    return writable.isEmpty ? null : writable.first;
   }
 
   List<CalendarEvent> eventsFor(int y, int m, int d) {
@@ -177,25 +176,40 @@ class CalendarScreenState {
         for (final e in eventsFor(y, m, d)) e.srcColor,
       ];
 
-  /// Day numbers in this month that fall inside a school holiday — the days the
-  /// month grid tints, with the "Feiertag" legend above it.
+  /// Whether the household subscribed to a Schulferien feed at all — which is
+  /// what decides whether the month grid's legend mentions Ferien. Nobody needs
+  /// a key to a wash that never appears.
+  bool get hasFerienFeed => calendars.any((c) => c.feedKind == 'ferien');
+
+  /// Whether this day falls inside a school holiday.
   ///
   /// It reads the **Ferien feed and nothing else**. "All-day event on a
   /// read-only calendar", which this used to be, is also true of every waste
   /// pickup and of any subscribed calendar a Google account can only read, so a
-  /// household with the bin calendar connected saw a third of the month tinted
-  /// as holiday. The tint has one meaning; only the feed that carries that
+  /// household with the bin calendar connected saw a third of the month washed
+  /// as holiday. The wash has one meaning; only the feed that carries that
   /// meaning may set it.
-  Set<int> holidaysIn(int y, int m) {
+  ///
+  /// Via [eventsFor], so it follows the calendar filter: narrowing the grid to
+  /// one calendar drops everything the other ones were saying, including this.
+  ///
+  /// The *striped* days are a different question and are not derived from here
+  /// at all — those are the Feiertage, computed from the household's Bundesland
+  /// by `lib/data/german_holidays.dart` behind `germanHolidaysProvider`.
+  bool isSchoolHoliday(int y, int m, int d) {
+    for (final e in eventsFor(y, m, d)) {
+      if (sourceById(e.calendarId)?.feedKind == 'ferien') return true;
+    }
+    return false;
+  }
+
+  /// Day numbers in this month that fall inside a school holiday — one pass for
+  /// a whole month block, rather than [isSchoolHoliday] per cell.
+  Set<int> schoolHolidaysIn(int y, int m) {
     final out = <int>{};
     final days = DateTime(y, m + 1, 0).day;
     for (var d = 1; d <= days; d++) {
-      for (final e in eventsFor(y, m, d)) {
-        if (sourceById(e.calendarId)?.feedKind == 'ferien') {
-          out.add(d);
-          break;
-        }
-      }
+      if (isSchoolHoliday(y, m, d)) out.add(d);
     }
     return out;
   }
@@ -209,7 +223,7 @@ class CalendarScreenState {
 /// events from anybody's Google or iCloud account, so that cache is the only
 /// thing standing between the user and a spinner on every cold start.
 class CalendarNotifier extends StateNotifier<CalendarScreenState> {
-  CalendarNotifier(this._repo, this._familyId, {required bool signedIn})
+  CalendarNotifier(this._repo, {required bool signedIn})
       : super(CalendarScreenState(now: DateTime.now())) {
     if (signedIn) load();
     // Ticks the real-time clock so the agenda's timeline phase (done/live/
@@ -220,7 +234,6 @@ class CalendarNotifier extends StateNotifier<CalendarScreenState> {
   }
 
   final CalendarRepository _repo;
-  final String? _familyId;
 
   Timer? _ticker;
 
@@ -323,7 +336,7 @@ class CalendarNotifier extends StateNotifier<CalendarScreenState> {
         : DateTime(sel.y, sel.m, sel.d, 10);
 
     return EventDraft(
-      calendarId: state.defaultTarget.id,
+      calendarId: state.defaultTarget?.id ?? '',
       title: '',
       location: '',
       notes: '',
@@ -339,9 +352,7 @@ class CalendarNotifier extends StateNotifier<CalendarScreenState> {
 
   /// True when this destination is Aporah's own calendar, which is written as an
   /// ordinary row rather than sent out to a provider.
-  bool _isOwn(String calendarId) =>
-      calendarId == CalendarSource.ownPlaceholderId ||
-      (state.sourceById(calendarId)?.isOwn ?? false);
+  bool _isOwn(String calendarId) => state.sourceById(calendarId)?.isOwn ?? false;
 
   /// Creates the event. Returns false and records a German message on failure,
   /// so the sheet can stay open with what the user typed still in it.
@@ -440,23 +451,13 @@ class CalendarNotifier extends StateNotifier<CalendarScreenState> {
   Future<void> _write(EventDraft draft) async {
     final target = state.sourceById(draft.calendarId);
 
-    // No row behind it: the placeholder, standing in for an own calendar that
-    // does not exist yet. Materialised here rather than at signup, so a family
-    // that only ever uses Google never accumulates an empty "Aporah".
-    //
-    // Every member has their own, which is why this cannot simply take the
-    // first `isOwn` calendar it finds — that could be somebody else's.
+    // Nothing behind the id. Either the household has no writable calendar at
+    // all (the form says so and does not let it get this far), or the one that
+    // was picked has since been disconnected under the open sheet.
     if (target == null) {
-      if (draft.calendarId != CalendarSource.ownPlaceholderId) {
-        throw CalendarWriteException(L.s.calendarNoLongerAvailable);
-      }
-      final familyId = _familyId;
-      if (familyId == null) {
-        throw CalendarWriteException(L.s.noHouseholdFound);
-      }
-      final calendar = await _repo.ownCalendar(familyId);
-      await _repo.createEvent(draft.toEvent(calendar: calendar));
-      return;
+      throw CalendarWriteException(
+        draft.calendarId.isEmpty ? L.s.noWritableCalendar : L.s.calendarNoLongerAvailable,
+      );
     }
 
     if (target.isOwn) {
@@ -500,9 +501,13 @@ final calendarRepositoryProvider = Provider<CalendarRepository>((ref) => Calenda
 /// rebuild in the app, triggered by the least related action.
 final calendarProvider = StateNotifierProvider<CalendarNotifier, CalendarScreenState>((ref) {
   final userId = ref.watch(currentUserIdProvider);
+  // Watched but not passed on: nothing in the notifier needs the household's id
+  // any more — no calendar is created from the client — but a household change
+  // still has to rebuild it, or the calendar of the family just left stays on
+  // screen.
+  ref.watch(familyProvider.select((s) => s.household?.id));
   return CalendarNotifier(
     ref.watch(calendarRepositoryProvider),
-    ref.watch(familyProvider.select((s) => s.household?.id)),
     signedIn: userId != null,
   );
 });

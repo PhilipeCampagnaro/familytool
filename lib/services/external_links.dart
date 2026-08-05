@@ -25,3 +25,55 @@ Future<bool> openExternalUrl(String url) async {
 /// Amazon's search URL for [query] — the German store, matching the app's
 /// German copy and the merchants the Listen screen already ships icons for.
 String amazonSearchUrl(String query) => 'https://www.amazon.de/s?k=${Uri.encodeQueryComponent(query)}';
+
+/// The navigation apps the event-detail sheet's "Route" button offers.
+///
+/// [label] is a brand, so it is *not* in `lib/l10n/` — same call as the shop
+/// names in `data/merchant_logos.dart`: a company is called what it is called
+/// in both languages.
+enum NavigationApp {
+  waze('Waze'),
+  googleMaps('Google Maps');
+
+  final String label;
+
+  const NavigationApp(this.label);
+}
+
+/// Starts navigation to a place in [app].
+///
+/// [latitude]/[longitude] come from the map we already rendered for this event
+/// ([MapView] in `map_snapshot.dart`); when there are none — the geocoder could
+/// not place it — the raw [query] goes over instead, and the app opens on its
+/// own search for it rather than not opening at all.
+///
+/// The app's own URL scheme is tried first and the website is the fallback, in
+/// that order, because `UIApplication.open` reports back whether anything
+/// claimed the scheme. That is what makes this work with no
+/// `LSApplicationQueriesSchemes` entry and no `canOpenURL`: a household without
+/// Waze installed simply lands on waze.com.
+Future<void> openNavigation(
+  NavigationApp app, {
+  required String query,
+  double? latitude,
+  double? longitude,
+}) async {
+  final point = latitude != null && longitude != null ? '$latitude,$longitude' : null;
+  final destination = point ?? Uri.encodeQueryComponent(query);
+
+  final (String scheme, String web) = switch (app) {
+    NavigationApp.waze => (
+      point != null ? 'waze://?ll=$point&navigate=yes' : 'waze://?q=$destination&navigate=yes',
+      point != null
+          ? 'https://waze.com/ul?ll=$point&navigate=yes'
+          : 'https://waze.com/ul?q=$destination&navigate=yes',
+    ),
+    NavigationApp.googleMaps => (
+      'comgooglemaps://?daddr=$destination&directionsmode=driving',
+      'https://www.google.com/maps/dir/?api=1&destination=$destination',
+    ),
+  };
+
+  if (await openExternalUrl(scheme)) return;
+  await openExternalUrl(web);
+}

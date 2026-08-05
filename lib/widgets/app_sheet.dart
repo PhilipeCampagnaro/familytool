@@ -76,8 +76,14 @@ class CollapsingSliverHeaderDelegate extends SliverPersistentHeaderDelegate {
 /// [CollapsingSliverHeaderDelegate]) instead of the fixed [header]/[title]
 /// row — the header shrinks toward [collapsedHeight] as the sheet's body is
 /// scrolled, letting the gray body grow up to cover it, matching the same
-/// behavior as the Kalender week view. Most sheets don't need this; the
-/// calendar event-detail sheet is the first (and so far only) user.
+/// behavior as the Kalender week view.
+///
+/// **Nothing uses this today.** The calendar event-detail sheet did, and gave it
+/// back: a sheet is not a screen, so a heading that grows to 23pt over the first
+/// card reads as a second screen title, and the frosted backdrop the pinned
+/// header needs sits badly under a native glass button inside a modal route.
+/// Kept because the mechanism is right for a sheet whose header is more than a
+/// title — but reach for [header] first.
 class SheetCollapsingHeader {
   final double expandedHeight;
   final double collapsedHeight;
@@ -378,12 +384,23 @@ class SheetActionHeader extends StatelessWidget {
   /// What the X does. Defaults to popping the sheet with no result.
   final VoidCallback? onClose;
 
+  /// The glyph on the left. A chevron rather than an X for a step that has a
+  /// step behind it — a multi-step sheet whose first control still says "close"
+  /// on page two is how a half-filled form gets thrown away by mistake.
+  final IconData closeIcon;
+
+  /// The glyph on the accent button. A right chevron for "weiter", where the
+  /// check would promise that this is the last thing to do.
+  final IconData confirmIcon;
+
   const SheetActionHeader({
     super.key,
     required this.title,
     required this.action,
     this.onConfirm,
     this.onClose,
+    this.closeIcon = LucideIcons.x,
+    this.confirmIcon = LucideIcons.check,
   });
 
   @override
@@ -412,14 +429,15 @@ class SheetActionHeader extends StatelessWidget {
               Align(
                 alignment: Alignment.centerLeft,
                 child: GlassIconButton(
-                  icon: LucideIcons.x,
+                  icon: closeIcon,
                   onTap: onClose ?? () => Navigator.of(context).pop(),
                 ),
               ),
             Align(
               alignment: Alignment.centerRight,
               child: switch (action) {
-                SheetHeaderAction.confirm => GlassConfirmButton(onTap: onConfirm ?? () {}),
+                SheetHeaderAction.confirm =>
+                  GlassConfirmButton(icon: confirmIcon, onTap: onConfirm ?? () {}),
                 SheetHeaderAction.busy => const SizedBox(
                   width: _headerButtonSize,
                   height: _headerButtonSize,

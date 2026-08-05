@@ -42,7 +42,7 @@ task:
     error copy. There is no `AppLocalizations.of(context)`.
   - Nothing that reads `L.s` may be `const`, and a `const` default parameter value can't hold one
     either — make the parameter nullable and resolve it with `?? L.s.x` in the body
-    (`showConnectConfirmSheet`, `SettingsDetailPage.parentTitle` are the precedents).
+    (`showRenameSheet`, `SettingsDetailPage.parentTitle` are the precedents).
   - Dates and the 12/24-hour clock follow the language too: month and weekday names come from
     `L.s` via [lib/data/calendar_data.dart](lib/data/calendar_data.dart), times through
     `formatTime`, and `main.dart` overrides `MediaQuery.alwaysUse24HourFormat` so the system
@@ -143,7 +143,9 @@ task:
   `ShoppingList`, `Who`).
 - [lib/data/](lib/data/) — reference data. The seed lists/boxes/tasks/events are all empty now
   that there is a backend; `calToday()` follows the real device clock (the old mock "today" pinned
-  to 2026-08-13 is gone). The real, non-mock data behind Listen lives here:
+  to 2026-08-13 is gone). `german_holidays.dart` **computes** the Feiertage — they are fixed in law,
+  so a Bundesland and a year are enough, and the striped day circles in Kalender come from it. Don't
+  turn them into a feed. The real, non-mock data behind Listen lives here:
   `grocery_catalog.dart` names every `assets/grocery/` icon in German and derives the English name
   from the file name (`englishGroceryLabel`; `_englishLabelOverrides` covers the files whose names
   lie), `grocery_search.dart` matches typed articles against **both languages at once, umlauts
@@ -165,8 +167,20 @@ task:
   the native tab bar/switch: a bit of UIKit instead of a plugin. `external_links.dart` opens a URL
   (`aporah/links`); `media_picker.dart` puts up the photo library, camera or Files picker
   (`aporah/media`, implemented in `ios/Runner/MediaPicker.swift`) and copies what was picked into
-  `Documents/attachments/`. **The iOS deployment target is 13.0** — new system API needs an
-  `if #available` guard and a fallback, not a raised target.
+  `Documents/attachments/`; `map_snapshot.dart` geocodes an event's location with CoreLocation and
+  renders a still map of it with MapKit (`aporah/map`, `ios/Runner/MapSnapshot.swift`) — **the map
+  in the event sheet is the device's own, not a tile service**, so no key and no household address
+  on the wire, and `openNavigation` in `external_links.dart` hands the route to Waze or Google
+  Maps by trying their URL scheme and falling back to their website; `action_sheet.dart` puts up a
+  system `UIAlertController` (`aporah/action_sheet`, `ios/Runner/ActionSheet.swift`). **The iOS
+  deployment target is 13.0** — new system API needs an `if #available` guard and a fallback, not a
+  raised target.
+- **A menu opened from inside a sheet that holds native glass buttons has to be a native one.**
+  `showAnchoredMenu` is still the app's menu everywhere else, but Flutter content composited after
+  a platform view can be dropped whole on device: inside the event-detail sheet the route menu
+  opened, swallowed the taps behind it and never painted. `showNativeActionSheet` is the way out
+  there — it returns `null` where there is no system sheet to put up (everything but iOS), which is
+  the caller's cue to fall back to the dropdown.
 
 ## Verifying changes
 

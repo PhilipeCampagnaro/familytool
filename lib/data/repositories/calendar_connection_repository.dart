@@ -36,7 +36,7 @@ class CalendarConnectionRepository {
 
   static const _columns =
       'id, provider, external_account, display_name, status, status_detail, '
-      'last_synced_at, created_by, position';
+      'last_synced_at, created_by, position, selected_calendars, calendar_names';
 
   // -------------------------------------------------------------------------
   // Read
@@ -87,6 +87,35 @@ class CalendarConnectionRepository {
     return url;
   }
 
+  /// The sub-calendars an *existing* connection offers, asked of the provider
+  /// right now.
+  ///
+  /// CalDAV hands its list back on the connect call itself, but OAuth cannot:
+  /// the account is created by the browser callback, which has nobody to answer
+  /// to. So the app comes back from the consent screen with a connection and no
+  /// idea what is in it, and this is the second round trip that fills the
+  /// picker.
+  ///
+  /// Returns the empty list rather than throwing when the listing fails — the
+  /// account is connected either way, and the setup flow simply skips the
+  /// picker step and reads every calendar (`selected_calendars` stays null),
+  /// which is exactly what it did before there was a picker at all.
+  Future<List<RemoteCalendar>> listCalendars(String connectionId) async {
+    try {
+      final body = await _invoke(
+        'calendar-connect',
+        {'connection_id': connectionId},
+        query: const {'action': 'calendars'},
+      );
+      return [
+        for (final c in (body['calendars'] as List<dynamic>? ?? const []))
+          ?RemoteCalendar.fromMap(Map<String, dynamic>.from(c as Map)),
+      ];
+    } catch (_) {
+      return const [];
+    }
+  }
+
   // -------------------------------------------------------------------------
   // Connect — CalDAV (iCloud, IServ)
   // -------------------------------------------------------------------------
@@ -94,7 +123,7 @@ class CalendarConnectionRepository {
   /// Validates the credentials by listing the account's calendars, and only
   /// stores them if that worked. Returns the calendar names so the UI can show
   /// what was found without a second round trip.
-  Future<({String? id, List<String> calendars})> connectCaldav({
+  Future<({String? id, List<RemoteCalendar> calendars})> connectCaldav({
     required CalendarProvider provider,
     required String username,
     required String password,
@@ -111,9 +140,59 @@ class CalendarConnectionRepository {
       id: body['connection_id'] as String?,
       calendars: [
         for (final c in (body['calendars'] as List<dynamic>? ?? const []))
-          (c as Map)['name'] as String? ?? '',
-      ]..removeWhere((n) => n.isEmpty),
+          ?RemoteCalendar.fromMap(Map<String, dynamic>.from(c as Map)),
+      ],
     );
+  }
+
+  /// Which of an account's sub-calendars actually sync, and what the household
+  /// calls each one.
+  ///
+  /// The two are written together because they are one decision, taken in one
+  /// sheet, before any `calendars` row exists to hold either — see
+  /// `calendar_connections.calendar_names`.
+  ///
+  /// Null and the empty list are **not** the same thing for [externalIds], and
+  /// the column is documented that way: null means "never asked", so
+  /// `calendar-events` reads everything; `[]` means the user ticked nothing off
+  /// and wants none of it. Passing an empty list here therefore has to survive
+  /// as an empty array rather than being helpfully turned back into null.
+  ///
+  /// Only ever a `calendar_connections` id — a feed has no sub-calendars to
+  /// choose between.
+  Future<void> setCalendarSelection({
+    required String id,
+    required List<String>? externalIds,
+    Map<String, String>? names,
+  }) async {
+    // The names are left out of the payload entirely when the caller has none
+    // to write, rather than sent as null: that is how a connection keeps the
+    // names it already had.
+    final patch = <String, dynamic>{'selected_calendars': externalIds};
+    if (names != null) patch['calendar_names'] = names;
+
+    await _db.from('calendar_connections').update(patch).eq('id', id);
+  }
+
+  /// Renames one calendar inside an account.
+  ///
+  /// A merge rather than a replace: the other calendars on this connection keep
+  /// their names, and the map is small enough that reading it from the model the
+  /// row was rendered from is honest — nobody else writes it.
+  Future<void> renameCalendar({
+    required CalendarConnection connection,
+    required String externalId,
+    required String name,
+  }) async {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) return;
+
+    await _db
+        .from('calendar_connections')
+        .update({
+          'calendar_names': {...connection.calendarNames, externalId: trimmed},
+        })
+        .eq('id', connection.id);
   }
 
   // -------------------------------------------------------------------------

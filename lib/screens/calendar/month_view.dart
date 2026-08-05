@@ -136,6 +136,11 @@ class _MonthViewState extends ConsumerState<_MonthView> {
     final state = widget.state;
     final accent = widget.accent;
     final monthLabel = L.s.monthYear(state.selected.m, state.selected.y);
+    // Each key appears only once the thing it explains can: Feiertage need a
+    // household we have reason to place in Germany, Ferien need the feed to be
+    // subscribed. A key to a wash that never shows up is worse than no key.
+    final marksHolidays = ref.watch(germanHolidaysProvider).enabled;
+    final marksFerien = state.hasFerienFeed;
 
     return Column(
       children: [
@@ -146,22 +151,36 @@ class _MonthViewState extends ConsumerState<_MonthView> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 8),
-              Row(
+              // A Wrap, not a Row: three keys fit on one line in German and
+              // don't in English ("Events per calendar / Public holiday /
+              // School holidays"), and a legend that overflows its line is a
+              // yellow-and-black striped bar across the calendar.
+              Wrap(
+                spacing: 18,
+                runSpacing: 6,
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
-                  SizedBox(
-                    width: 13,
-                    height: 8,
-                    child: Stack(children: [
-                      Container(width: 8, height: 8, decoration: BoxDecoration(color: AppColors.srcOutlook, shape: BoxShape.circle, border: Border.fromBorderSide(BorderSide(color: AppColors.surface, width: 1.5)))),
-                      Positioned(left: 5, child: Container(width: 8, height: 8, decoration: BoxDecoration(color: AppColors.srcIserv, shape: BoxShape.circle, border: Border.fromBorderSide(BorderSide(color: AppColors.surface, width: 1.5))))),
-                    ]),
+                  _LegendEntry(
+                    label: L.s.eventsPerCalendar,
+                    swatch: SizedBox(
+                      width: 13,
+                      height: 8,
+                      child: Stack(children: [
+                        Container(width: 8, height: 8, decoration: BoxDecoration(color: AppColors.srcOutlook, shape: BoxShape.circle, border: Border.fromBorderSide(BorderSide(color: AppColors.surface, width: 1.5)))),
+                        Positioned(left: 5, child: Container(width: 8, height: 8, decoration: BoxDecoration(color: AppColors.srcIserv, shape: BoxShape.circle, border: Border.fromBorderSide(BorderSide(color: AppColors.surface, width: 1.5))))),
+                      ]),
+                    ),
                   ),
-                  const SizedBox(width: 7),
-                  Text(L.s.eventsPerCalendar, style: AppText.label.copyWith(color: AppColors.inkTertiary)),
-                  const SizedBox(width: 18),
-                  Container(width: 13, height: 13, decoration: BoxDecoration(color: tint(accent, .86), shape: BoxShape.circle)),
-                  const SizedBox(width: 7),
-                  Text(L.s.holiday, style: AppText.label.copyWith(color: AppColors.inkTertiary)),
+                  if (marksHolidays)
+                    _LegendEntry(
+                      label: L.s.publicHoliday,
+                      swatch: _DayHighlightSwatch(highlight: DayHighlight.publicHoliday, accent: accent),
+                    ),
+                  if (marksFerien)
+                    _LegendEntry(
+                      label: L.s.schoolHoliday,
+                      swatch: _DayHighlightSwatch(highlight: DayHighlight.schoolHoliday, accent: accent),
+                    ),
                 ],
               ),
               const SizedBox(height: 16),
@@ -212,7 +231,7 @@ class _MonthViewState extends ConsumerState<_MonthView> {
 /// month and is expanded) the inline day-detail card — the same widgets
 /// [_MonthView] used to render for a single fixed month, now repeated per
 /// scrolled-to month so every month behaves identically to "current setup".
-class _MonthBlock extends StatelessWidget {
+class _MonthBlock extends ConsumerWidget {
   final int monthOffset;
   final CalendarScreenState state;
   final Color accent;
@@ -221,9 +240,10 @@ class _MonthBlock extends StatelessWidget {
   const _MonthBlock({required this.monthOffset, required this.state, required this.accent, this.todayCellKey});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final (year, month) = _monthAt(monthOffset);
-    final holidays = state.holidaysIn(year, month);
+    final holidays = ref.watch(germanHolidaysProvider).inMonth(year, month);
+    final ferien = state.schoolHolidaysIn(year, month);
     final firstOfMonth = DateTime(year, month, 1);
     final lead = (firstOfMonth.weekday + 6) % 7;
     final len = DateTime(year, month + 1, 0).day;
@@ -258,6 +278,7 @@ class _MonthBlock extends StatelessWidget {
                       state: state,
                       accent: accent,
                       holidays: holidays,
+                      ferien: ferien,
                     ),
                   ),
               ],
@@ -287,6 +308,11 @@ class _MonthBlock extends StatelessWidget {
                           Text(L.s.eventCount(dayEvents.length), style: AppText.label),
                         ],
                       ),
+                      if (isSelectedMonth && holidays[sel.d] != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: _HolidayChip(holiday: holidays[sel.d]!, accent: accent),
+                        ),
                       const SizedBox(height: 10),
                       if (dayEvents.isEmpty)
                         Padding(
@@ -330,9 +356,15 @@ class _MonthCell extends ConsumerWidget {
   final int month;
   final CalendarScreenState state;
   final Color accent;
-  final Set<int> holidays;
 
-  const _MonthCell({super.key, required this.index, required this.lead, required this.len, required this.year, required this.month, required this.state, required this.accent, required this.holidays});
+  /// This month's Feiertage, keyed by day of the month — see
+  /// [germanHolidaysProvider].
+  final Map<int, GermanHoliday> holidays;
+
+  /// This month's Schulferien days, from the subscribed Ferien feed.
+  final Set<int> ferien;
+
+  const _MonthCell({super.key, required this.index, required this.lead, required this.len, required this.year, required this.month, required this.state, required this.accent, required this.holidays, required this.ferien});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -340,7 +372,7 @@ class _MonthCell extends ConsumerWidget {
     final n = index - lead + 1;
     final isSel = _sameDay(state.selected, year, month, n);
     final isToday = _isToday(year, month, n);
-    final holiday = holidays.contains(n);
+    final highlight = _dayHighlight(publicHoliday: holidays.containsKey(n), schoolHoliday: ferien.contains(n));
     final colors = state.dayColors(year, month, n);
     final dots = colors.take(3).toList();
     final overflowCount = colors.length - 3;
@@ -356,14 +388,13 @@ class _MonthCell extends ConsumerWidget {
               day: n,
               selected: isSel,
               today: isToday,
-              holiday: holiday,
+              highlight: highlight,
               accent: accent,
               size: 38,
               fontSize: 15,
               unselectedFill: Colors.transparent,
               unselectedTextColor: AppColors.ink,
-              holidayFill: tint(accent, .86),
-                          ),
+            ),
             const SizedBox(height: 3),
             SizedBox(
               height: 8,
@@ -371,6 +402,101 @@ class _MonthCell extends ConsumerWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// The one place the two day-off marks are ranked, so the month grid and the
+/// week strip can't disagree. Karfreitag falls inside the Osterferien and the
+/// 25th inside the Weihnachtsferien: on those days the Feiertag is the more
+/// specific fact, so it takes the circle.
+DayHighlight _dayHighlight({required bool publicHoliday, required bool schoolHoliday}) => publicHoliday
+    ? DayHighlight.publicHoliday
+    : (schoolHoliday ? DayHighlight.schoolHoliday : DayHighlight.none);
+
+/// One "swatch — label" pair in the month grid's legend.
+class _LegendEntry extends StatelessWidget {
+  final Widget swatch;
+  final String label;
+
+  const _LegendEntry({required this.swatch, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        swatch,
+        const SizedBox(width: 7),
+        Text(label, style: AppText.label.copyWith(color: AppColors.inkTertiary)),
+      ],
+    );
+  }
+}
+
+/// A miniature of a day circle in one of its day-off states, painted by the
+/// same rules [DaySelectorCircle] uses — including the hatch, so the Feiertag
+/// key looks like a Feiertag rather than like the flatter Ferien wash next to
+/// it. The two differ by texture first and shade second; a flat swatch for both
+/// would have made the legend the one place they were indistinguishable.
+class _DayHighlightSwatch extends StatelessWidget {
+  final DayHighlight highlight;
+  final Color accent;
+
+  const _DayHighlightSwatch({required this.highlight, required this.accent});
+
+  @override
+  Widget build(BuildContext context) {
+    final fill = highlight == DayHighlight.publicHoliday ? tint(accent, .86) : tint(accent, .93);
+    return Container(
+      width: 13,
+      height: 13,
+      decoration: BoxDecoration(color: fill, shape: BoxShape.circle),
+      child: highlight == DayHighlight.publicHoliday
+          ? ClipOval(
+              child: CustomPaint(
+                painter: DiagonalStripePainter(color: AppColors.holidayNumber.withValues(alpha: 0.16)),
+                size: const Size.square(13),
+              ),
+            )
+          : null,
+    );
+  }
+}
+
+/// Names the Feiertag a striped day circle stands for — "Tag der Deutschen
+/// Einheit" rather than a tint the family has to guess at. Used by both the
+/// month view's day-detail card and the week view's agenda, so the answer is in
+/// the same place whichever way the day was reached.
+///
+/// A chip rather than an agenda row on purpose: a Feiertag is a property of the
+/// day, not an appointment in it, and putting it in the timeline would give it
+/// a time it doesn't have and a swipe-to-edit it can't honour.
+class _HolidayChip extends StatelessWidget {
+  final GermanHoliday holiday;
+  final Color accent;
+
+  const _HolidayChip({required this.holiday, required this.accent});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(10, 6, 12, 6),
+      decoration: BoxDecoration(color: tint(accent, .86), borderRadius: BorderRadius.circular(999)),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(LucideIcons.partyPopper, size: 14, color: AppColors.holidayNumber),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              L.s.germanHolidayName(holiday),
+              overflow: TextOverflow.ellipsis,
+              style: AppText.label.copyWith(color: AppColors.holidayNumber, fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
       ),
     );
   }

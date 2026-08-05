@@ -96,7 +96,7 @@ class CalendarConnectionsNotifier extends StateNotifier<CalendarConnectionsState
   ///
   /// Returns the new connection's id so the screen can offer to name it, which
   /// is the same last step every other provider ends with.
-  Future<({String? id, List<String> calendars})> connectCaldav({
+  Future<({String? id, List<RemoteCalendar> calendars})> connectCaldav({
     required CalendarProvider provider,
     required String username,
     required String password,
@@ -111,6 +111,12 @@ class CalendarConnectionsNotifier extends StateNotifier<CalendarConnectionsState
     await _afterConnect(result.id);
     return result;
   }
+
+  /// What an already-connected account offers, for the picker step of the setup
+  /// flow. Never throws and never touches the state: a listing that fails means
+  /// "no picker", not "the connect failed" — see the repository.
+  Future<List<RemoteCalendar>> listCalendars(String connectionId) =>
+      _repo.listCalendars(connectionId);
 
   /// [displayName] is the name the user typed in the confirm sheet. It is
   /// applied before the list is re-read, so the new row appears already
@@ -193,8 +199,77 @@ class CalendarConnectionsNotifier extends StateNotifier<CalendarConnectionsState
 
   Future<void> rename(CalendarConnection connection, String displayName) async {
     await _repo.rename(connection, displayName);
-    await load();
-    await _onCalendarChanged?.call();
+    await _settle();
+  }
+
+  /// Which of the account's sub-calendars sync, by the provider's own ids, and
+  /// what the household calls each of them.
+  ///
+  /// Written before the connection's own rename in the setup flow, because it
+  /// decides what the next `calendar-events` read will even fetch — and what it
+  /// will call each calendar it creates. Null means "all of them" and is what a
+  /// connection starts as; see the repository.
+  Future<void> selectCalendars(
+    String connectionId,
+    List<String>? externalIds, {
+    Map<String, String>? names,
+  }) async {
+    await _repo.setCalendarSelection(
+      id: connectionId,
+      externalIds: externalIds,
+      names: names,
+    );
+    await _settle();
+  }
+
+  /// Renames one calendar inside an account — the row the household sees in
+  /// "Verbunden", which is a calendar rather than the account it arrived on.
+  Future<void> renameCalendar(CalendarConnection connection, String externalId, String name) async {
+    await _repo.renameCalendar(
+      connection: connection,
+      externalId: externalId,
+      name: name,
+    );
+    await _settle();
+  }
+
+  /// Stops reading one calendar of an account, leaving the account connected.
+  ///
+  /// Its name goes with it: a calendar that comes back later — reselected, or
+  /// re-offered by the provider — should arrive under the provider's own name
+  /// rather than one the household gave a different decision. `calendar-events`
+  /// deletes the `calendars` row on the next read, which takes its events with
+  /// it.
+  Future<void> removeCalendar(CalendarConnection connection, String externalId) async {
+    final remaining = [
+      for (final id in connection.selectedCalendars ?? const <String>[])
+        if (id != externalId) id,
+    ];
+    await _repo.setCalendarSelection(
+      id: connection.id,
+      externalIds: remaining,
+      names: {...connection.calendarNames}..remove(externalId),
+    );
+    await _settle();
+  }
+
+  /// Re-read, and tell Kalender. Both are housekeeping *after* a write that has
+  /// already landed, so neither may throw back at the caller: the confirm sheet
+  /// turns anything thrown into "Das hat gerade nicht geklappt.", and reporting
+  /// a failure for a change the server accepted is worse than a stale list —
+  /// the user retries, and the retry looks broken too.
+  ///
+  /// `load()` and the calendar's own refresh already swallow their own errors;
+  /// what this adds is cover for *reaching* them at all, which is what fails
+  /// when this notifier has been disposed underneath an open sheet.
+  Future<void> _settle() async {
+    try {
+      await load();
+      await _onCalendarChanged?.call();
+    } catch (_) {
+      // Nothing to say: the write is done either way, and the next open reads
+      // the list fresh.
+    }
   }
 
   /// Called whenever what Kalender should show has changed. Set by the provider

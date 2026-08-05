@@ -1,10 +1,24 @@
+import 'dart:io';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' show FunctionException;
+import 'package:supabase_flutter/supabase_flutter.dart'
+    show FileOptions, FunctionException, SignedUrlSuccess;
 
 import '../models/who.dart';
 import '../services/supabase.dart';
 import 'auth_state.dart';
 import '../l10n/l10n.dart';
+
+/// The private bucket the profile pictures live in — see
+/// `supabase/migrations/20260805170000_avatar_pictures.sql`.
+const _avatarBucket = 'avatars';
+
+/// How long a signed avatar URL stays good for.
+///
+/// A week rather than an hour: the URL is re-signed on every [load], so the
+/// only thing a short expiry would buy is a broken face in an app that was left
+/// open over a weekend.
+const _avatarUrlTtl = Duration(days: 7);
 
 /// The two avatar letters for a name, derived the same way `handle_new_user`
 /// derives them server-side so a profile written from either end matches.
@@ -55,7 +69,16 @@ class HouseholdMember {
   /// Index into `AppTones.list`, the same convention `profiles.tone` stores.
   final int tone;
 
+  /// What `profiles.avatar_url` actually stores: an object path in the private
+  /// `avatars` bucket, `<user_id>/<uuid>.<ext>`. Null when this member has no
+  /// picture and their circle is initials on a tone colour.
+  final String? avatarPath;
+
+  /// A signed URL for [avatarPath], resolved at [HouseholdNotifier.load] time
+  /// and good for [_avatarUrlTtl]. Null both when there is no picture and when
+  /// signing failed — the avatar falls back to the initials either way.
   final String? avatarUrl;
+
   final FamilyRole role;
 
   const HouseholdMember({
@@ -64,8 +87,29 @@ class HouseholdMember {
     required this.initials,
     required this.tone,
     required this.role,
+    this.avatarPath,
     this.avatarUrl,
   });
+
+  HouseholdMember copyWith({
+    String? name,
+    String? initials,
+    int? tone,
+    FamilyRole? role,
+    String? avatarPath,
+    String? avatarUrl,
+    bool clearAvatar = false,
+  }) {
+    return HouseholdMember(
+      userId: userId,
+      name: name ?? this.name,
+      initials: initials ?? this.initials,
+      tone: tone ?? this.tone,
+      role: role ?? this.role,
+      avatarPath: clearAvatar ? null : (avatarPath ?? this.avatarPath),
+      avatarUrl: clearAvatar ? null : (avatarUrl ?? this.avatarUrl),
+    );
+  }
 
   /// Bridge to the existing `FamilyMember` the WhoPicker and avatar widgets
   /// already take, so those don't have to change to render a live roster.
@@ -277,17 +321,24 @@ class HouseholdNotifier extends StateNotifier<FamilyState> {
 
       final profiles = {for (final p in profileRows) p['id'] as String: p};
 
+      final signed = await _signAvatars([
+        for (final p in profileRows)
+          if (p['avatar_url'] is String) p['avatar_url'] as String,
+      ]);
+
       final members = <HouseholdMember>[
         for (final r in memberRows)
           () {
             final id = r['user_id'] as String;
             final p = profiles[id];
+            final avatarPath = p?['avatar_url'] as String?;
             return HouseholdMember(
               userId: id,
               name: (p?['display_name'] as String?) ?? L.s.unknown,
               initials: (p?['initials'] as String?) ?? '?',
               tone: (p?['tone'] as num?)?.toInt() ?? 0,
-              avatarUrl: p?['avatar_url'] as String?,
+              avatarPath: avatarPath,
+              avatarUrl: avatarPath == null ? null : signed[avatarPath],
               role: _roleFrom(r['role'] as String),
             );
           }(),
@@ -355,6 +406,29 @@ class HouseholdNotifier extends StateNotifier<FamilyState> {
     if (mounted) state = state.copyWith(actionError: message);
   }
 
+  /// Path → signed URL, for every avatar in the household at once.
+  ///
+  /// One request for the whole roster rather than one per face, and a total
+  /// failure is not fatal: an empty map means everybody falls back to their
+  /// initials, which is exactly what a member without a picture already shows.
+  Future<Map<String, String>> _signAvatars(List<String> paths) async {
+    if (paths.isEmpty) return const {};
+    try {
+      final signed = await AporahSupabase.client.storage
+          .from(_avatarBucket)
+          .createSignedUrlsResult(paths, _avatarUrlTtl.inSeconds);
+      return {
+        // A `SignedUrlFailure` is one member whose object has gone missing, not
+        // a reason to drop the other four faces — hence the per-path result
+        // type rather than the older list-of-urls call.
+        for (final s in signed)
+          if (s is SignedUrlSuccess) s.path: s.signedUrl,
+      };
+    } catch (_) {
+      return const {};
+    }
+  }
+
   // ---------------------------------------------------------------------------
   // Membership
   //
@@ -420,17 +494,7 @@ class HouseholdNotifier extends StateNotifier<FamilyState> {
     state = state.copyWith(
       members: [
         for (final m in state.members)
-          if (m.userId == userId)
-            HouseholdMember(
-              userId: m.userId,
-              name: m.name,
-              initials: m.initials,
-              tone: m.tone,
-              avatarUrl: m.avatarUrl,
-              role: role,
-            )
-          else
-            m,
+          if (m.userId == userId) m.copyWith(role: role) else m,
       ],
     );
 
@@ -522,13 +586,10 @@ class HouseholdNotifier extends StateNotifier<FamilyState> {
         members: [
           for (final m in state.members)
             if (m.userId == uid)
-              HouseholdMember(
-                userId: m.userId,
-                name: patch['display_name'] as String? ?? m.name,
-                initials: patch['initials'] as String? ?? m.initials,
-                tone: patch['tone'] as int? ?? m.tone,
-                avatarUrl: m.avatarUrl,
-                role: m.role,
+              m.copyWith(
+                name: patch['display_name'] as String?,
+                initials: patch['initials'] as String?,
+                tone: patch['tone'] as int?,
               )
             else
               m,
@@ -539,6 +600,105 @@ class HouseholdNotifier extends StateNotifier<FamilyState> {
       // someone with a network error, and the next load re-reads the truth.
     }
   }
+
+  // ---------------------------------------------------------------------------
+  // Profile picture
+  //
+  // Uploaded straight from the client rather than through an Edge Function: the
+  // storage policies already say "your own folder, nobody else's", and the
+  // bucket's own `allowed_mime_types` and `file_size_limit` are enforced by
+  // Storage before a byte is stored. A function in front would only be a second
+  // place for those rules to disagree.
+  // ---------------------------------------------------------------------------
+
+  /// Uploads [file] as the signed-in user's picture and points the profile at
+  /// it. Returns true if it landed.
+  ///
+  /// Each upload gets its own object name and the previous one is deleted
+  /// afterwards. Overwriting a fixed name would be simpler, but the signed URLs
+  /// already handed out (and every image cache holding one) would keep serving
+  /// the old face until they expired.
+  Future<bool> setMyAvatar(File file) async {
+    final uid = _userId;
+    if (uid == null) return false;
+
+    final extension = () {
+      final dot = file.path.lastIndexOf('.');
+      final ext = dot == -1 ? '' : file.path.substring(dot + 1).toLowerCase();
+      // The bucket accepts five types; anything else is named .jpg and will be
+      // rejected by Storage on content type if it really isn't an image.
+      return const {'jpg', 'jpeg', 'png', 'heic', 'heif', 'webp'}.contains(ext) ? ext : 'jpg';
+    }();
+    final path = '$uid/${DateTime.now().microsecondsSinceEpoch}.$extension';
+    final previous = state.me(uid)?.avatarPath;
+
+    try {
+      final storage = AporahSupabase.client.storage.from(_avatarBucket);
+      await storage.upload(path, file, fileOptions: FileOptions(contentType: _contentTypeFor(extension)));
+      await AporahSupabase.client.from('profiles').update({'avatar_url': path}).eq('id', uid);
+
+      final signed = await storage.createSignedUrl(path, _avatarUrlTtl.inSeconds);
+
+      if (mounted) {
+        state = state.copyWith(
+          members: [
+            for (final m in state.members)
+              if (m.userId == uid) m.copyWith(avatarPath: path, avatarUrl: signed) else m,
+          ],
+        );
+      }
+
+      // Best-effort: an orphaned object costs a few kilobytes, a failed upload
+      // that already deleted the old picture costs the user their avatar.
+      if (previous != null && previous != path) {
+        try {
+          await storage.remove([previous]);
+        } catch (_) {}
+      }
+      return true;
+    } catch (_) {
+      _fail(L.s.avatarUploadFailed);
+      return false;
+    }
+  }
+
+  /// Drops the picture, so the avatar goes back to initials on a tone colour.
+  Future<void> removeMyAvatar() async {
+    final uid = _userId;
+    if (uid == null) return;
+    final previous = state.me(uid)?.avatarPath;
+    if (previous == null) return;
+
+    try {
+      await AporahSupabase.client.from('profiles').update({'avatar_url': null}).eq('id', uid);
+      if (mounted) {
+        state = state.copyWith(
+          members: [
+            for (final m in state.members)
+              if (m.userId == uid) m.copyWith(clearAvatar: true) else m,
+          ],
+        );
+      }
+      try {
+        await AporahSupabase.client.storage.from(_avatarBucket).remove([previous]);
+      } catch (_) {
+        // The row no longer points at it; the object is just litter.
+      }
+    } catch (_) {
+      _fail(L.s.avatarRemoveFailed);
+    }
+  }
+
+  /// Storage matches the upload against the bucket's `allowed_mime_types`, and
+  /// the SDK's default (`application/octet-stream`) is not on that list — so
+  /// the type has to be named rather than guessed by the server.
+  String _contentTypeFor(String extension) => switch (extension) {
+    'png' => 'image/png',
+    'webp' => 'image/webp',
+    'heic' => 'image/heic',
+    'heif' => 'image/heif',
+    _ => 'image/jpeg',
+  };
 
   /// Flips `families.onboarding_done`, which is what actually decides whether
   /// the wizard shows — the local `shared_preferences` flag can only speak for

@@ -50,19 +50,6 @@ class CalendarSource {
   /// — its own, and any connected one the account has write access to.
   bool get editable => !readOnly;
 
-  /// Stands in for Aporah's own calendar in the destination picker before it
-  /// exists. `ownCalendar()` creates the real row the first time an event is
-  /// saved into it; until then there is nothing to list, and a household with no
-  /// connected calendars would have nowhere to put an event at all.
-  static const ownPlaceholderId = 'aporah-own-placeholder';
-
-  static const ownPlaceholder = CalendarSource(
-    id: ownPlaceholderId,
-    name: 'Aporah',
-    color: Color(0xff1668ff),
-    isOwn: true,
-  );
-
   /// `calendars.color` is a signed 32-bit ARGB int, editable by the household.
   ///
   /// `provider` is absent from the `calendar-events` response by design: every

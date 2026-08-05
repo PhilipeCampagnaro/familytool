@@ -9,32 +9,22 @@ import 'error_note.dart';
 import 'settings_chrome.dart';
 import '../l10n/l10n.dart';
 
-/// The last step of *every* "add a calendar" flow: what you picked, what it
-/// will be called, and one blue check to say yes.
+/// One thing has a name, you are changing it: the thing at the top, a field, a
+/// blue check, and the beat that says it saved.
 ///
-/// One sheet for all six providers on purpose. Picking a Bundesland, resolving
-/// a street, coming back from Google's consent screen and typing an iCloud
-/// password are four different ways of *choosing* a calendar, but they all end
-/// the same way — "this is the calendar, here's its name, connect it" — and
-/// before this each of them ended differently: some connected on the tap that
-/// picked, some on a separate "Verbinden" button, none of them ever said it
-/// had worked.
+/// This is a whole sheet rather than an `AlertDialog` with a `TextField` in it
+/// because renaming is a *save*, and every other save in the app is a check in
+/// a sheet header. It used to be the last step of all six "add a calendar"
+/// flows as well — hence the shape — but those now walk their own steps inside
+/// one sheet (`showCalendarConnectSheet`), and a name they were already asking
+/// for is a step there, not a second sheet over the first.
 ///
 /// [onConfirm] is what actually happens when the check is tapped; it gets the
 /// name from the field, already trimmed. The sheet stays open (and blocks the
 /// close button) while it runs, shows the success beat when it returns, and
 /// only then pops with `true`. If it throws, the sheet stays put with the
 /// message under the field so the name isn't lost.
-///
-/// [extraFields] are card rows shown *above* the name field, for the one
-/// question a particular provider still has to ask — which Abfuhrbezirk this
-/// street belongs to, or the ICS link for a town no vendor serves. The caller
-/// owns whatever state they hold (a `TextEditingController` it reads inside
-/// [onConfirm]); anything that has to redraw on tap belongs in a
-/// `StatefulBuilder`. They live in the sheet rather than on the page behind it
-/// so that a rejected link is reported next to the field it was typed into,
-/// which is the whole reason this sheet exists.
-Future<bool> showConnectConfirmSheet({
+Future<bool> showRenameSheet({
   required BuildContext context,
   required IconData icon,
   required String title,
@@ -49,14 +39,13 @@ Future<bool> showConnectConfirmSheet({
   String? busyLabel,
   String? successLabel,
   String Function(Object error)? errorText,
-  List<Widget> extraFields = const [],
 }) async {
   fieldLabel ??= L.s.name;
   fieldHint ??= L.s.calendarNameInAporah;
   busyLabel ??= L.s.connectingEllipsis;
   successLabel ??= L.s.calendarConnected;
 
-  final flow = _ConnectFlow(
+  final flow = _RenameFlow(
     initialName: initialName,
     onConfirm: onConfirm,
     errorText: errorText,
@@ -69,8 +58,8 @@ Future<bool> showConnectConfirmSheet({
     // anchored to the bottom of the screen, so a shorter one puts the field
     // exactly where the keyboard comes up.
     heightFactor: 0.72,
-    header: _ConfirmHeader(flow: flow, title: title),
-    child: _ConnectConfirmBody(
+    header: _RenameHeader(flow: flow, title: title),
+    child: _RenameBody(
       flow: flow,
       icon: icon,
       headline: headline,
@@ -78,7 +67,6 @@ Future<bool> showConnectConfirmSheet({
       fieldLabel: fieldLabel,
       fieldHint: fieldHint,
       successLabel: successLabel,
-      extraFields: extraFields,
     ),
   );
 
@@ -95,8 +83,8 @@ enum _Phase { editing, busy, success }
 /// They are siblings inside [showAppSheet]'s own Column — the header can't be
 /// built by the body's `State` — so the two halves talk through this rather
 /// than through a `setState` neither of them can reach.
-class _ConnectFlow {
-  _ConnectFlow({
+class _RenameFlow {
+  _RenameFlow({
     required String initialName,
     required this.onConfirm,
     required this.errorText,
@@ -144,11 +132,11 @@ class _ConnectFlow {
 /// While the connect runs the check becomes a spinner and the X goes away:
 /// there is a request in flight that closing would not cancel. That is
 /// [SheetActionHeader]'s job; this only maps the flow's phase onto it.
-class _ConfirmHeader extends StatelessWidget {
-  final _ConnectFlow flow;
+class _RenameHeader extends StatelessWidget {
+  final _RenameFlow flow;
   final String title;
 
-  const _ConfirmHeader({required this.flow, required this.title});
+  const _RenameHeader({required this.flow, required this.title});
 
   @override
   Widget build(BuildContext context) {
@@ -170,17 +158,16 @@ class _ConfirmHeader extends StatelessWidget {
   }
 }
 
-class _ConnectConfirmBody extends StatelessWidget {
-  final _ConnectFlow flow;
+class _RenameBody extends StatelessWidget {
+  final _RenameFlow flow;
   final IconData icon;
   final String headline;
   final String message;
   final String fieldLabel;
   final String fieldHint;
   final String successLabel;
-  final List<Widget> extraFields;
 
-  const _ConnectConfirmBody({
+  const _RenameBody({
     required this.flow,
     required this.icon,
     required this.headline,
@@ -188,7 +175,6 @@ class _ConnectConfirmBody extends StatelessWidget {
     required this.fieldLabel,
     required this.fieldHint,
     required this.successLabel,
-    required this.extraFields,
   });
 
   @override
@@ -217,7 +203,6 @@ class _ConnectConfirmBody extends StatelessWidget {
                 message: message,
                 fieldLabel: fieldLabel,
                 fieldHint: fieldHint,
-                extraFields: extraFields,
                 busy: phase == _Phase.busy,
               ),
       ),
@@ -226,13 +211,12 @@ class _ConnectConfirmBody extends StatelessWidget {
 }
 
 class _EditingBody extends StatelessWidget {
-  final _ConnectFlow flow;
+  final _RenameFlow flow;
   final IconData icon;
   final String headline;
   final String message;
   final String fieldLabel;
   final String fieldHint;
-  final List<Widget> extraFields;
   final bool busy;
 
   const _EditingBody({
@@ -243,7 +227,6 @@ class _EditingBody extends StatelessWidget {
     required this.message,
     required this.fieldLabel,
     required this.fieldHint,
-    required this.extraFields,
     required this.busy,
   });
 
@@ -266,7 +249,19 @@ class _EditingBody extends StatelessWidget {
               child: Icon(icon, size: 21, color: accent),
             ),
             const SizedBox(width: 14),
-            Expanded(child: Text(headline, style: AppText.cardTitle)),
+            // Capped and clipped: a headline is an account, and an account is
+            // "iCloud (vorname.nachname@example.com)" often enough that letting
+            // it wrap pushed the field it introduces off the bottom of the
+            // sheet. Two lines is a long address on two lines; anything past
+            // that is an address nobody reads to the end anyway.
+            Expanded(
+              child: Text(
+                headline,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: AppText.cardTitle,
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 14),
@@ -275,7 +270,6 @@ class _EditingBody extends StatelessWidget {
         SectionCard(
           radius: AppRadii.card,
           children: dividedRows(inset: true, [
-            ...extraFields,
             FieldGroup(
               label: fieldLabel,
               hint: fieldHint,

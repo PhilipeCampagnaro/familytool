@@ -90,7 +90,7 @@ class FamilyPage extends ConsumerWidget {
         // Last on the page on purpose: it acts on the list above it, so it
         // stays under the whole list however long it grows.
         if (isAdmin) ...[
-          const SizedBox(height: 14),
+          const SizedBox(height: AppSpacing.blockGap),
           AccentAction(
             icon: LucideIcons.userPlus,
             label: L.s.inviteMember,
@@ -259,9 +259,8 @@ class _InviteFormBodyState extends State<_InviteFormBody> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SectionCard(
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          children: dividedRows([
+            _InviteRow(
               child: TextField(
                 controller: widget.flow.email,
                 enabled: !widget.busy,
@@ -271,9 +270,7 @@ class _InviteFormBodyState extends State<_InviteFormBody> {
                 decoration: InputDecoration(border: InputBorder.none, hintText: L.s.emailAddress, isDense: true),
               ),
             ),
-            CardDivider(),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            _InviteRow(
               child: TextField(
                 controller: widget.flow.name,
                 enabled: !widget.busy,
@@ -281,9 +278,7 @@ class _InviteFormBodyState extends State<_InviteFormBody> {
                 decoration: InputDecoration(border: InputBorder.none, hintText: L.s.nameOptional, isDense: true),
               ),
             ),
-            CardDivider(),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            _InviteRow(
               child: Row(
                 children: [
                   Expanded(child: Text(L.s.role, style: AppText.rowTitle)),
@@ -294,7 +289,7 @@ class _InviteFormBodyState extends State<_InviteFormBody> {
                 ],
               ),
             ),
-          ],
+          ]),
         ),
         ValueListenableBuilder<String?>(
           valueListenable: widget.flow.error,
@@ -324,6 +319,30 @@ class _InviteFormBodyState extends State<_InviteFormBody> {
           ),
         ],
       ],
+    );
+  }
+}
+
+/// One row of the invite card, at a fixed height.
+///
+/// A bare `TextField` and a bordered picker measure to different heights on
+/// their own — which is why the card used to look assembled from three
+/// different lists — and no amount of tuning each one's padding keeps them
+/// agreeing when the text scale changes. The row owns the height; its content
+/// sits centred in it.
+class _InviteRow extends StatelessWidget {
+  final Widget child;
+
+  const _InviteRow({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 56,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Center(child: child),
+      ),
     );
   }
 }
@@ -391,7 +410,7 @@ class _MemberRow extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Row(
         children: [
-          Avatar(size: 40, bg: tone.bg, fg: tone.fg, initials: member.initials, fontSize: 13),
+          Avatar(size: 40, bg: tone.bg, fg: tone.fg, initials: member.initials, fontSize: 13, imageUrl: member.avatarUrl),
           const SizedBox(width: 13),
           Expanded(
             child: Row(

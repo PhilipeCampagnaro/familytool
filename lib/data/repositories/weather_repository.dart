@@ -57,7 +57,11 @@ class WeatherRepository {
 
     return _pendingPlaces[key] ??= () async {
       try {
-        final point = await _fetchPlace(query);
+        GeoPoint? point;
+        for (final candidate in _placeQueries(query)) {
+          point = await _fetchPlace(candidate);
+          if (point != null) break;
+        }
         await _cache.putPlace(key, point?.toMap());
         return point;
       } catch (_) {
@@ -68,6 +72,52 @@ class WeatherRepository {
         _pendingPlaces.remove(key);
       }
     }();
+  }
+
+  /// What to ask the geocoder for [query], most specific first.
+  ///
+  /// Open-Meteo's geocoder knows **places, not addresses**: "Syke" is a hit and
+  /// "Amtshof 3, 28857 Syke" is nothing at all, which is why a household that
+  /// typed a real street into an event saw no forecast on it. So an address is
+  /// also tried town-first, two ways, because both spellings are ordinary:
+  ///
+  /// * **"Amtshof 3, 28857 Syke"** — the last comma-separated part, minus its
+  ///   postal code, then the earlier parts minus their house numbers.
+  /// * **"Amtshof 3 28857 Syke"** — no comma to split on, so the anchor is the
+  ///   last number instead ([placeAfterNumber]). Without this the *only*
+  ///   candidate was the whole line, and a one-line address never resolved.
+  ///
+  /// A town is the right granularity for weather anyway: nobody needs a
+  /// forecast per street.
+  ///
+  /// Country names are dropped rather than tried, since "Deutschland" would
+  /// otherwise geocode happily to a point in Hesse and put that weather on the
+  /// row — a wrong answer being worse here than no answer, which falls back to
+  /// the household's own town.
+  static List<String> _placeQueries(String query) {
+    final full = query.trim();
+    if (full.isEmpty) return const [];
+
+    final out = <String>[full];
+    for (final part in full.split(',').reversed) {
+      final stripped = part
+          .trim()
+          // A German postal code in front of the town, and a house number
+          // (with its optional "a") behind a street.
+          .replaceFirst(RegExp(r'^\d{4,6}\s+'), '')
+          .replaceFirst(RegExp(r'\s+\d+\s*[a-zA-Z]?$'), '')
+          .trim();
+      for (final place in [stripped, placeAfterNumber(part)]) {
+        if (place.length < 3) continue;
+        if (countryWords.contains(place.toLowerCase())) continue;
+        if (out.contains(place)) continue;
+        out.add(place);
+      }
+      // Two extra lookups is the whole budget: past the town, the parts are
+      // building names the geocoder was never going to place.
+      if (out.length >= 3) break;
+    }
+    return out.length <= 3 ? out : out.sublist(0, 3);
   }
 
   Future<GeoPoint?> _fetchPlace(String query) async {
@@ -126,6 +176,12 @@ class WeatherRepository {
           'longitude': point.longitude.toStringAsFixed(4),
           'hourly': 'temperature_2m,weather_code,precipitation_probability,is_day',
           'forecast_days': '${forecastHorizon.inDays}',
+          // Belt and braces for the hours *earlier today*: an 11:00 appointment
+          // still shows its weather at 17:00 (`WeatherNotifier._floor`). The
+          // series already starts at today 00:00, so this changes nothing today
+          // — it only means the feature doesn't hang on that one detail of
+          // somebody else's API staying as it is.
+          'past_days': '1',
           // Hours come back local to the point, which is what an appointment's
           // start is too — see HourlyForecast.fromMap.
           'timezone': 'auto',

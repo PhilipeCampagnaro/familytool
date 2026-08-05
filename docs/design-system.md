@@ -254,8 +254,11 @@ Non-obvious bits, each one a bug that shipped first:
   request wouldn't be cancelled by closing) → `.none` (the sheet has become a confirmation; the X
   is the only way out). `showAppSheet`'s built-in header pops on the check, which such a sheet
   must not do, so pass this as `header` wrapped in a `ValueListenableBuilder` on the phase. Used
-  by `showConnectConfirmSheet` and by Settings' invite sheet (`settings/family_page.dart`) — a
-  third sheet with a request in flight belongs here rather than in its own copy.
+  by `showRenameSheet`, `showCalendarConnectSheet` and Settings' invite sheet
+  (`settings/family_page.dart`) — a fourth sheet with a request in flight belongs here rather than
+  in its own copy. `closeIcon`/`confirmIcon` are for a **stepped** sheet: a back chevron instead
+  of the X once there is a step behind you, a right chevron instead of the check while there is
+  one ahead.
 - **`ConfirmationView` (`confirmation.dart`) — the app's *one* "that worked" surface.** A mark, a
   headline, a muted `message`, and `content` cards for whatever the action left behind. All three
   confirmations in the app are this widget with different content (calendar connected, member
@@ -282,23 +285,64 @@ Non-obvious bits, each one a bug that shipped first:
   share sheet's fresh link), with copy-as-the-whole-card and the "wir speichern ihn nicht"
   footnote. `onDismiss` adds the X, for the share sheet where the card outlives the moment.
   **Not used for invitations**: an invite travels by mail only (see `SentInvite`).
-- `showConnectConfirmSheet` (`connect_confirm_sheet.dart`) — the last step of **every** "add a
-  calendar" flow, and the only place a connect is actually performed: what you picked, the name
-  it will carry, X on the left and the accent check on the right. `onConfirm(name)` runs while
-  the sheet stays open (the X goes away — the request wouldn't be cancelled by closing), then a
-  short `ConfirmationView` beat (~1.1s) before it pops `true`. It also
-  serves the rename action on a connected row. `extraFields` adds card rows **above** the name
-  field for the one question a provider still has to ask — Abfall's Abfuhrbezirk chips, or the
-  ICS link for a town no vendor serves; the caller owns their controllers and reads them inside
-  `onConfirm` (anything that redraws on tap goes in a `StatefulBuilder`, since this screen's
-  `setState` only rebuilds the page behind the sheet). Throwing a
-  `CalendarConnectionException` from `onConfirm` keeps the sheet open with the message under the
-  fields, which is how the ICS link is rejected. The one check that stays *outside*: a CalDAV
-  password, which is typed on the page and verified before the sheet opens at all
-  (`calendar_connect_screen.dart`).
+- `StepDots` (`step_dots.dart`) — one dot per step with the current one drawn as an accent pill,
+  at the top of a sheet's gray body. A sheet is a single question by default here, so a stepped
+  one has to declare itself: without the dots the first step reads as the whole thing and the
+  accent button in the header looks like it will finish rather than continue. Steps already taken
+  keep a faded accent, which is the "2 von 3" nobody has to read.
+- **`showCalendarConnectSheet` (`calendar_connect_screen.dart`) — one sheet per connect, never a
+  sheet over a sheet.** All six providers walk the same spine inside it, marked by `StepDots`:
+  their own first question (a CalDAV login, a Bundesland, an address — Google and Outlook have
+  answered theirs in Safari before the sheet opens), then whatever that answer opened up (the
+  account's calendar list; Abfall's Abfuhrbezirk chips, or the ICS link for a town no vendor
+  serves), then the name, then the `ConfirmationView` beat. `_ConnectFlow` is the whole
+  conversation — steps are views of it, and its `steps` getter is **recomputed**, so the dot row
+  grows at the moment an answer says there is another question. The header's accent button is a
+  **chevron** while there is a step after this one and the check on the last; the X becomes a back
+  chevron as soon as there is a step behind you. It is never hidden or greyed: an unanswered step
+  says what is missing in its own error line when the chevron is tapped, which a disabled button
+  cannot. Every network check happens on the step that asked — the password, the ICS link — so a
+  rejection lands under the field it belongs to. What this replaced: each provider used to finish
+  by opening a *second* sheet over its own, stacking two grab handles, two headers and two X's.
+- `showRenameSheet` (`rename_sheet.dart`) — one thing, one name, one check, and the beat that says
+  it saved. A whole sheet rather than an `AlertDialog` with a `TextField` because renaming is a
+  *save*, and every save in this app is a check in a sheet header. `onConfirm(name)` runs while the
+  sheet stays open (the X goes away — the request wouldn't be cancelled by closing), then a short
+  `ConfirmationView` beat (~1.1s) before it pops `true`; throwing keeps it open with the message
+  under the field so the typing isn't lost. It used to be the shared last step of all six connect
+  flows, which is why it looks like one — those now have that step inside their own sheet.
 - `SettingsRow`'s built-in icon tile is a **circle**, not a squircle (`settings_chrome.dart`) —
   the rows that carry a logo (calendar providers) or a face (family members) can only be round,
   and a settings list mixing both shapes reads as two lists.
+- **A Settings page is cards, and everything on it writes at x=18** — the inset a card's own text
+  sits at, so a page reads as one column instead of two (`settings_chrome.dart`). Three widgets,
+  and which one you want depends on what the text is naming:
+  - `FieldGroup` — a caption, one optional line of explanation, and the control under it, all
+    **inside** the card. This is the label of a *field*: "Adresse" and the box you type it in are
+    one thing, so they can't be separated by the card's edge.
+  - `GroupLabel` — the small 13pt muted caption **above** a card, naming the rows in it
+    ("Verbunden" over the connected calendars). A list of rows that already say what they are needs
+    a quiet name over the group, not a 16pt ink heading inside it. It is *not* the old
+    floating caption: that one sat at x=6 and never lined up with anything.
+  - `SettingsNote` — a muted line **under** an action, an iOS footer (the privacy line beneath
+    "Mit Google anmelden"). Pass `inset: 0` inside a sheet, whose gray body already carries the 18.
+  - Explanation goes in the `hint` of the block it is about, never in a paragraph at the top: the
+    page's hero already says what the page is for, and the pages that repeated it read as two
+    intros and a form.
+  - Blocks are spaced by `AppSpacing.blockGap` (card→card, card→button). Don't hand-pick a gap.
+- **A Settings detail page shows what you have and offers one button, and that button *starts* the
+  thing — it never opens something that offers to start it.** Settings → Kalender is the pattern
+  (`calendar_connect_screen.dart`): the root lists the six providers with a status badge each, and
+  every provider page under it is the same three parts — hero, a "Verbunden" card of that
+  provider's connections (an `EmptyState` card holding its place when there are none), and a glass
+  `AccentAction`. What the button does is the provider's own first step: for Google and Outlook it
+  says "Mit Google anmelden" and goes straight to the consent screen (with the privacy line as a
+  `SettingsNote` footer under it), and the sheet opens only on the way back, on the first thing
+  left to ask; for the other four it opens `showCalendarConnectSheet` on their first question. A
+  sheet whose only content is one button is a popup asking permission to ask. Keeping the forms on
+  the pages made each provider look like a different screen with nowhere obvious to press; keeping
+  the *list* of providers in a sheet made the household guess what Aporah could read before
+  opening anything.
 - `HeaderSearchBar` / `SearchTriggerField` / `HeaderSearchButton` (`search.dart`) — Listen's and
   Boxen's search, which happens **in place, never in a sheet**. Both entry points only flip a bool
   on the screen: the flat pill in the resting header (`SearchTriggerField`) and the glass magnifier
@@ -351,7 +395,11 @@ Non-obvious bits, each one a bug that shipped first:
 - `showAnchoredMenu` / `RowMenuButton` (`anchored_menu.dart`) — the UIKit-style dropdown a row's
   trailing "..." opens (Listen and Boxen item rows). Deliberately **not** a `GlassSurface`: UIKit
   menus are a near-opaque vibrant material, and glass lets the content underneath read through the
-  rows. Rows are a **fixed** `AnchoredMenuSurface.rowHeight`, which is what lets the route compute
+  rows. The panel is **opaque and carries no `BackdropFilter`** — it had one, and inside a sheet it
+  read back the wrong backdrop on device: the card and the native glass buttons behind the menu
+  painted over its own rows, so a two-item menu showed one item and a blue pill. Sampling the
+  backdrop for the last 3% of translucency is not worth a panel that breaks wherever the app's own
+  platform views are. Rows are a **fixed** `AnchoredMenuSurface.rowHeight`, which is what lets the route compute
   the panel's height up front and decide before layout whether it still fits below its anchor (it
   flips above it otherwise) and which corner to grow out of. The bottom bound is
   `navContentInset`, not the screen edge — on iOS the native tab bar composites over anything
@@ -390,7 +438,9 @@ Non-obvious bits, each one a bug that shipped first:
   `ColoredBox` where a `SectionCard` was providing the fill), and `closesRow: false` belongs on
   anything that removes the row outright. `borderRadius` is the card's for a free-standing card,
   zero inside a `SectionCard` (which clips its own corners).
-- `DaySelectorCircle` (`day_circle.dart`) — day-number circle (selected/today/holiday), shared by
+- `DaySelectorCircle` (`day_circle.dart`) — day-number circle (selected / today / `DayHighlight`,
+  the last one the Feiertag hatch or the flatter Ferien wash — see the day-off washes section of
+  [kalender.md](kalender.md)), shared by
   Kalender's week strip and month grid. Board used to have a week strip of its own and no longer
   does: a task's date is a property of the task, so the Board is a grouped list with nothing to
   select.

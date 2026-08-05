@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -151,8 +150,15 @@ class _AnchoredMenuRoute extends PopupRoute<AnchoredMenuItem> {
 /// Deliberately *not* a [GlassSurface]: UIKit's own menus aren't liquid glass,
 /// they're a near-opaque vibrant material — a glass panel lets the content
 /// underneath read straight through the rows. This matches the native menu
-/// instead: a blurred backdrop under an almost-solid fill, tight 14pt corners
-/// and hairline separators.
+/// instead: an almost-solid fill, tight 14pt corners and hairline separators.
+///
+/// **And deliberately not a `BackdropFilter` any more.** It was one, sampling
+/// what it opened over. Inside a sheet — where the app's native glass buttons
+/// live — that read back the wrong backdrop on device and painted the card and
+/// the buttons *over* the menu's own rows, so a two-item route menu showed one
+/// item and a blue pill. The material was only 3% translucent to begin with, so
+/// it is composited over the plain surface instead of sampled, and the panel is
+/// now opaque wherever it opens.
 class AnchoredMenuSurface extends StatelessWidget {
   static const defaultWidth = 236.0;
 
@@ -182,29 +188,24 @@ class AnchoredMenuSurface extends StatelessWidget {
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(14),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
-            child: Container(
-              width: width,
-              // Only the last 3% of translucency, so the material still picks
-              // up a hint of what's behind it without anything reading through.
-              color: AppColors.menuSurface,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  for (final (i, item) in items.indexed) ...[
-                    if (i > 0)
-                      // Hairline inset past the glyph column, so it starts
-                      // where the labels do — the way a UIKit menu insets its
-                      // separators past a row's leading symbol.
-                      Padding(
-                        padding: EdgeInsets.only(left: separatorInset),
-                        child: Divider(height: _separator, thickness: _separator, color: AppColors.menuSeparator),
-                      ),
-                    _AnchoredMenuRow(item: item),
-                  ],
+          child: Container(
+            width: width,
+            color: Color.alphaBlend(AppColors.menuSurface, AppColors.surface),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (final (i, item) in items.indexed) ...[
+                  if (i > 0)
+                    // Hairline inset past the glyph column, so it starts where
+                    // the labels do — the way a UIKit menu insets its
+                    // separators past a row's leading symbol.
+                    Padding(
+                      padding: EdgeInsets.only(left: separatorInset),
+                      child: Divider(height: _separator, thickness: _separator, color: AppColors.menuSeparator),
+                    ),
+                  _AnchoredMenuRow(item: item),
                 ],
-              ),
+              ],
             ),
           ),
         ),

@@ -6,6 +6,7 @@
 ///
 ///   POST ?action=start       { provider }        -> { url }
 ///   GET  <redirect from provider, ?code&?state>  -> 302 back into the app
+///   POST ?action=calendars   { connection_id }   -> { calendars: [...] }
 ///   POST ?action=disconnect  { connection_id }   -> { ok: true }
 ///
 /// **This function must be deployed with `verify_jwt = false`** — the provider's
@@ -41,6 +42,7 @@ import {
   type Provider,
   storeTokens,
 } from "../_shared/calendar.ts";
+import { type Connection, listRemoteCalendars } from "../_shared/providers.ts";
 
 const OAUTH_PROVIDERS: Provider[] = ["google", "outlook"];
 const STATE_TTL_MS = 10 * 60 * 1000;
@@ -67,6 +69,7 @@ Deno.serve(async (req) => {
   if (!uid) return fail("Nicht angemeldet.", 401);
 
   if (action === "start") return await handleStart(req, uid);
+  if (action === "calendars") return await handleCalendars(req, uid);
   if (action === "disconnect") return await handleDisconnect(req, uid);
 
   return fail("Unbekannte Aktion.");
@@ -107,12 +110,24 @@ async function handleStart(req: Request, uid: string): Promise<Response> {
     exp: Date.now() + STATE_TTL_MS,
   };
 
+  // A misconfigured CALENDAR_SECRET_KEY makes seal() throw, and an uncaught
+  // throw here reaches the app as a bare 500 with no JSON body — which the
+  // repository can only render as "Das hat gerade nicht geklappt.". Say what
+  // actually happened instead.
+  let sealedState: string;
+  try {
+    sealedState = await seal(JSON.stringify(state));
+  } catch (e) {
+    console.error("oauth state seal failed", (e as Error).message);
+    return fail("Die Verbindung konnte nicht gestartet werden.", 500);
+  }
+
   const authUrl = new URL(cfg.authUrl);
   authUrl.searchParams.set("client_id", cfg.clientId);
   authUrl.searchParams.set("redirect_uri", redirectUri);
   authUrl.searchParams.set("response_type", "code");
   authUrl.searchParams.set("scope", cfg.scope);
-  authUrl.searchParams.set("state", await seal(JSON.stringify(state)));
+  authUrl.searchParams.set("state", sealedState);
 
   if (provider === "google") {
     // Without both of these Google returns an access token and no refresh
@@ -243,6 +258,64 @@ function backToApp(status: "ok" | "error", provider?: string): Response {
       `<p>${message}</p><script>try{window.close()}catch(e){}</script></body>`,
     { headers: { "Content-Type": "text/html; charset=utf-8" } },
   );
+}
+
+// ---------------------------------------------------------------------------
+// Calendars
+// ---------------------------------------------------------------------------
+
+/// What an already-connected account offers, asked of the provider right now.
+///
+/// CalDAV answers this on the connect call itself, because the app is the one
+/// holding the password. OAuth cannot: the account is created by the browser
+/// callback, which has no session to hand anything back through — so the app
+/// comes back from the consent screen with a connection and no idea what is in
+/// it. This is the round trip that fills the setup sheet's picker.
+///
+/// Read-only, and it stores nothing: the choice the user then makes is written
+/// to `selected_calendars` over PostgREST like any other setting.
+async function handleCalendars(req: Request, uid: string): Promise<Response> {
+  let body: { connection_id?: string };
+  try {
+    body = await req.json();
+  } catch {
+    return fail("Ungültige Anfrage.");
+  }
+
+  const connectionId = body.connection_id;
+  if (!connectionId) return fail("Keine Verbindung angegeben.");
+
+  const db = serviceClient();
+  const membership = await membershipOf(db, uid);
+  if (!membership) return fail("Kein Haushalt gefunden.", 403);
+
+  // Service_role bypasses RLS, so this pair of filters is the entire tenant
+  // boundary: a connection id from another household resolves to nothing.
+  const { data: connection } = await db
+    .from("calendar_connections")
+    .select(
+      "id, family_id, provider, auth_type, external_account, display_name, config, selected_calendars, is_read_only, created_by",
+    )
+    .eq("id", connectionId)
+    .eq("family_id", membership.familyId)
+    .maybeSingle();
+
+  if (!connection) return fail("Verbindung nicht gefunden.", 404);
+
+  try {
+    const calendars = await listRemoteCalendars(db, connection as unknown as Connection);
+    return json({
+      calendars: calendars.map((c) => ({
+        external_id: c.externalId,
+        name: c.name,
+        read_only: c.readOnly,
+      })),
+    });
+  } catch (e) {
+    // Never the provider's raw error, which can echo a token back.
+    console.error(`listing calendars failed for ${connectionId}: ${(e as Error).message}`);
+    return fail("Die Kalender konnten nicht geladen werden.", 502);
+  }
 }
 
 // ---------------------------------------------------------------------------

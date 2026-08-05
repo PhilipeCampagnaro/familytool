@@ -1,5 +1,7 @@
 library;
 
+import '../data/german_holidays.dart';
+
 /// Every user-facing string in Aporah, declared once here and answered by
 /// [StringsDe] and [StringsEn].
 ///
@@ -89,6 +91,8 @@ abstract class AppStrings {
   String get today;
   String get allDay;
   String get place;
+  String get searchPlace;
+  String get noPlacesFound;
   String get quantity;
   String get size;
   String get titleLabel;
@@ -257,10 +261,18 @@ abstract class AppStrings {
   String get addEvent;
   String get eventsPerCalendar;
 
-  /// The month grid's tint legend. It marks the days covered by the Ferien
-  /// feed — school holidays, not public holidays — which is what
-  /// `holidaysIn` now derives it from.
-  String get holiday;
+  /// The two day-off keys in the month grid's legend, and the two washes they
+  /// explain. **Striped** is a [publicHoliday] — one of the Feiertage
+  /// [lib/data/german_holidays.dart] works out from the household's Bundesland;
+  /// **flat** is a [schoolHoliday], a day inside the subscribed Ferien feed.
+  /// Each key only appears once its wash can.
+  String get publicHoliday;
+  String get schoolHoliday;
+
+  /// The name of one Feiertag, as the day detail prints it. German first,
+  /// because that is the name it has; the English side is the customary
+  /// translation rather than an official one.
+  String germanHolidayName(GermanHoliday holiday);
   String eventCount(int count);
   String get eventLabel;
   String get route;
@@ -279,6 +291,7 @@ abstract class AppStrings {
   String get eventDeleted;
   String get eventRestoreFailed;
   String get calendarNoLongerAvailable;
+  String get noWritableCalendar;
   String get noHouseholdFound;
   String get eventSaveFailedRemote;
 
@@ -313,7 +326,11 @@ abstract class AppStrings {
   String get connectCalendars;
   String get connectCalendarsIntro;
   String get connectCalendarsAdminNote;
-  String get connectedCaps;
+  String get noCalendarsConnected;
+
+  /// The empty state on a provider's own page, where the button under it is the
+  /// only thing to do — so it names that button rather than describing the void.
+  String noProviderCalendarYet(String provider);
   String get loadingEllipsis;
   String get notSyncedYet;
   String get syncedJustNow;
@@ -332,6 +349,10 @@ abstract class AppStrings {
   String get disconnectQuestion;
   String removeCalendarBody(String name);
   String get accessRevokedToo;
+
+  /// Removing *one* calendar out of a connected account — the account, and the
+  /// other calendars on it, are untouched.
+  String get accountStaysConnected;
   String get householdOnlyOthersKeep;
   String get credentialsDeleted;
   String get connectionNeedsAttention;
@@ -339,16 +360,26 @@ abstract class AppStrings {
   String providerNotSetUp(String provider);
   String get browserCouldNotOpen;
   String connectProvider(String provider);
-  String get oauthGrantedBody;
   String redirectNotice(String provider);
   String get openingEllipsis;
   String signInWithProvider(String provider);
   String get comeBackWhenDone;
   String get connectedDot;
-  String get signInWorkedNameIt;
-  String calendarsFoundNameThem(int count);
-  String get iservIntro;
-  String get icloudIntro;
+  String calendarsFoundPickThem(int count);
+  String get nameYourCalendarBody;
+
+  /// The same line for an account whose calendars were picked one by one, so
+  /// the naming step is naming several of them.
+  String get nameEachCalendarBody;
+  String get whichCalendars;
+  String get whichCalendarsHint;
+  String get readOnlyCalendar;
+  String get pickAtLeastOneCalendar;
+  String get selectAll;
+  String get deselectAll;
+  String calendarsSelected(int count);
+  String get loadingCalendarsEllipsis;
+  String get appPasswordHint;
   String get createAppPassword;
   String get school;
   String get schoolAddressHint;
@@ -358,12 +389,11 @@ abstract class AppStrings {
   String get iservPassword;
   String get checkingEllipsis;
   String get connect;
-  String get chooseStateCaps;
+  String get bundesland;
   String get holidaysIntro;
-  String get connectHolidays;
+  String get pickABundesland;
   String schoolHolidaysOf(String state);
   String holidaysSelectedBody(String state);
-  String get connectWaste;
   String get wasteIntro;
   String get houseNumber;
   String get multipleDistrictsHint;
@@ -375,10 +405,9 @@ abstract class AppStrings {
   String get calendarLinkHint;
   String get pasteLinkHere;
   String get noEventsAtThatLink;
-  String get addressCaps;
-  String get addressIntro;
   String get yourAddress;
   String get yourAddressHint;
+  String get pickYourAddressFirst;
   String get addressPlaceholder;
   String get searchingAddresses;
   String get noAddressFound;
@@ -476,6 +505,9 @@ abstract class AppStrings {
   String get notConnected;
   String get displayName;
   String get avatarColour;
+  String get removePhoto;
+  String get avatarUploadFailed;
+  String get avatarRemoveFailed;
   String get adminsManageFamily;
   String get familyMembersDesc;
   String get familyMembersDescAdmin;

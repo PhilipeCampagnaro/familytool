@@ -180,13 +180,26 @@ strip — neither is ported, and the Start tab has no design).
   ("Turnhalle" is far more often the family's own town than somewhere else). The home town is
   parsed out of `families.address` from onboarding (`homeTownFrom`): the geocoder searches place
   *names*, so the full line with a house number finds nothing. **Never device GPS.**
+- **An address is retried town-first**, because of that last point: `_placeQueries` asks for the
+  whole string, then the last comma-separated part without its postal code, then the part before it
+  without its house number ("Amtshof 3, 28857 Syke" → "Syke"), and drops country names rather than
+  trying them — "Deutschland" geocodes perfectly well to a point in Hesse and would put that
+  weather on the row. A town is the right granularity for a forecast anyway. Without this, an event
+  with a *real* address — the ones a family actually types — was the case that got no chip.
+  **A remembered miss is forever, so widening the resolver means bumping `WeatherCache._version`**,
+  which throws the device's file away once; otherwise every address that already failed keeps
+  failing on that phone.
 - **When an event is sampled**: a timed event at its start; an all-day event at 13:00 **on the day
   being rendered**, so each day of a week-long Ferien block carries its own forecast rather than
   all seven sharing Monday's. `eventSampleTime` and `eventWeatherKey` are the contract between the
   fetch and the render — if they ever disagree, every chip silently disappears.
-- **No chip is the normal answer**: past events (a 2 h grace for timed ones, a full day for
-  all-day), anything past the 16-day horizon, no address and no placeable location, or simply
-  offline. Weather is decoration and every failure resolves to a missing icon, never to an error.
+- **Today is forecast whole**, from midnight (`WeatherNotifier._floor`), for timed events as much
+  as all-day ones — an 11:00 appointment still shows its weather at 17:00. It was a 2 h grace for
+  timed events, which meant the reading quietly left the row halfway through the afternoon while
+  the appointment was still on screen. `past_days=1` on the forecast request makes sure the early
+  hours are in the series.
+- **No chip is the normal answer**: anything before today or past the 16-day horizon, no address
+  and no placeable location, or simply offline. Weather is decoration and every failure resolves to a missing icon, never to an error.
 - **Icon mapping**: WMO `weather_code` → 8 buckets (clear / partly-cloudy / cloudy / fog / drizzle
   / rain / snow / storm) → `lucide_icons_flutter`. Only clear and partly-cloudy have a night form
   (`moon` / `cloudMoon`) — a rain cloud at 22:00 is still a rain cloud. Day vs night comes from
@@ -213,6 +226,17 @@ Provider icons already copied to `assets/calendar_providers/` (`google_calendar.
   sync, a "Reconnect" state for expired tokens) → provider-specific connect form (OAuth =
   external browser/popup handoff; CalDAV = server/username/password form; Ferien = a state
   picker; Abfall = address search with ICS-paste fallback).
+- **What the connect form became**: **one sheet with steps**, `showCalendarConnectSheet`
+  (`calendar_connect_screen.dart`, `StepDots` at the top), the same for all six — the provider's
+  own question, then what that answer opened up, then the name, then the confirmation. An
+  account's calendars and its name are two of those steps and not one form: they shared a sheet at
+  first, and an Apple ID with six calendars pushed the name field two screens down, so the sheet
+  asked two questions at once and showed neither. Every provider used to *end* by opening a second
+  sheet over its own, which is what the single flow got rid of.
+  OAuth needs a second round trip for the list (`calendar-connect?action=calendars`), because the
+  account is created by the browser callback and has no way to hand anything back to the app; when
+  it comes back empty the picker step is simply dropped and `selected_calendars` stays null,
+  which `calendar-events` reads as "all of them".
 - **Entry points**: a "Connections" item in the new Settings screen, plus an empty-state CTA on
   the Kalender screen when there are zero connections — add that as a **new, separate
   widget/banner only; do not touch the existing week/month view, agenda, or event CRUD code**.
@@ -232,7 +256,7 @@ Provider icons already copied to `assets/calendar_providers/` (`google_calendar.
 | `calendar_connection_secrets` (nur `service_role`, nur Chiffrat) | dieselbe Migration |
 | `calendars.connection_id` / `.sync_token`, `events.external_href` / `.external_etag` | dieselbe Migration |
 | `public_feeds` / `family_feeds` (Ferien + Abfall, global geteilt) | `…20260804090000_public_feeds.sql` |
-| OAuth-Start / Callback / Trennen | `supabase/functions/calendar-connect/` |
+| OAuth-Start / Callback / Kalenderliste (`?action=calendars`) / Trennen | `supabase/functions/calendar-connect/` |
 | CalDAV verbinden (iCloud, IServ) | `supabase/functions/calendar-caldav/` |
 | Lesen aller Anbieter + Feeds (speichert nichts) | `supabase/functions/calendar-events/` |
 | Öffentlichen Feed anlegen / abonnieren | `supabase/functions/calendar-feed/` |

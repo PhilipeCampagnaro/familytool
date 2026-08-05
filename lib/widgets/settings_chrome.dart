@@ -28,7 +28,7 @@ class SettingsDetailPage extends StatelessWidget {
   /// chevron beside it says where it goes, this says where. Defaults to the
   /// Settings root, which is where all but the provider pages are pushed from.
   /// Null means "Einstellungen" / "Settings" — resolved at build rather than
-  /// defaulted, because a default parameter value has to be constant.
+  /// defaulted, because a default parameter value can't hold an `L.s` string.
   final String? parentTitle;
 
   /// First-frame guess at the hero's height; re-measured immediately.
@@ -254,17 +254,25 @@ class SettingsRow extends StatelessWidget {
 /// A labelled block inside a card — caption, optional hint, then the control.
 /// Used by the profile form, where each setting needs a name that a plain
 /// [SettingsRow] has nowhere to put.
+///
+/// With no [child] it is the card's own **heading**: the same caption and the
+/// one line explaining what the card is for, as the first block above the rows.
+/// That is why the Settings pages carry no headings *outside* their cards any
+/// more — a caption floating above a card and a caption inside it are two
+/// systems, and the floating one never lined up with the card's own text.
 class FieldGroup extends StatelessWidget {
   final String label;
   final String? hint;
-  final Widget child;
+  final Widget? child;
 
-  const FieldGroup({super.key, required this.label, this.hint, required this.child});
+  const FieldGroup({super.key, required this.label, this.hint, this.child});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 20),
+      // A heading has nothing under it to breathe away from, so it keeps the
+      // symmetric inset instead of a field's roomier bottom.
+      padding: EdgeInsets.fromLTRB(18, 18, 18, child == null ? 18 : 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -273,8 +281,10 @@ class FieldGroup extends StatelessWidget {
             const SizedBox(height: 4),
             Text(hint!, style: AppText.body.copyWith(color: AppColors.muted)),
           ],
-          const SizedBox(height: 12),
-          child,
+          if (child case final field?) ...[
+            const SizedBox(height: 12),
+            field,
+          ],
         ],
       ),
     );
@@ -325,6 +335,36 @@ class AccentAction extends StatelessWidget {
   }
 }
 
+/// A muted line of explanation on a Settings page, *outside* any card — the
+/// footer under an action, in the iOS sense. Inset to the same 18 as a card's
+/// own text so the page reads as one column rather than two.
+///
+/// Pass `inset: 0` inside a sheet: the sheet's gray body already carries that
+/// 18, and a note that adds its own lands a step to the right of everything
+/// around it.
+class SettingsNote extends StatelessWidget {
+  final String text;
+  final double inset;
+
+  const SettingsNote(this.text, {super.key, this.inset = 18});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: inset),
+      child: Text(text, style: AppText.body.copyWith(color: AppColors.muted)),
+    );
+  }
+}
+
+/// The small caption naming the card under it — "Verbunden" over the list of
+/// connected calendars.
+///
+/// Not a [FieldGroup] heading inside the card: a *field* needs its label in the
+/// card because the label and the control are one thing, but a list of rows that
+/// already say what they are needs only a quiet name over the group, and
+/// `sectionHeading` at 16pt ink shouts it. Same 18 inset as a card's own text,
+/// which is what the old caption at 6 never lined up with.
 class GroupLabel extends StatelessWidget {
   final String label;
 
@@ -333,7 +373,7 @@ class GroupLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(6, 18, 6, 9),
+      padding: const EdgeInsets.fromLTRB(18, 0, 18, 8),
       child: Text(label, style: AppText.groupHeading),
     );
   }

@@ -1,20 +1,11 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import '../models/who.dart';
 import '../theme/tokens.dart';
 
-/// Initials for a name typed into a form.
-///
-/// Household members carry their own `initials` from the database; this is for
-/// the profile draft, which is being edited and so has no stored copy yet. One
-/// letter from a single name, first and last from anything longer.
-String initialsFromName(String name) {
-  final parts = name.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
-  if (parts.isEmpty) return '?';
-  if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
-  return (parts.first.substring(0, 1) + parts.last.substring(0, 1)).toUpperCase();
-}
-
-/// Circular avatar showing a member's initials (or a glyph) in tone colours.
+/// Circular avatar showing a member's picture, or their initials (or a glyph)
+/// in tone colours when there is no picture.
 class Avatar extends StatelessWidget {
   final double size;
   final Color bg;
@@ -23,6 +14,16 @@ class Avatar extends StatelessWidget {
   final IconData? icon;
   final double fontSize;
   final Border? border;
+
+  /// A signed URL into the private `avatars` bucket — see
+  /// [HouseholdMember.avatarUrl]. Drawn over the tone circle, so a slow or
+  /// failed load leaves the initials rather than a hole.
+  final String? imageUrl;
+
+  /// A picture that has just been picked and is still uploading. Takes
+  /// precedence over [imageUrl] so the new face appears on the tap rather than
+  /// a round trip later.
+  final File? imageFile;
 
   const Avatar({
     super.key,
@@ -33,6 +34,8 @@ class Avatar extends StatelessWidget {
     this.icon,
     this.fontSize = 12,
     this.border,
+    this.imageUrl,
+    this.imageFile,
   });
 
   @override
@@ -42,13 +45,60 @@ class Avatar extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(color: bg, shape: BoxShape.circle, border: border),
       alignment: Alignment.center,
+      clipBehavior: Clip.antiAlias,
+      child: _picture() ??
+          (icon != null
+              ? Icon(icon, size: size * 0.44, color: fg)
+              : Text(
+                  initials ?? '',
+                  // Sized by the caller — an avatar's initials scale with the
+                  // circle, so this is one of the few sanctioned `fontSize`
+                  // overrides. Weight and family still come from the scale.
+                  style: AppText.itemTitle.copyWith(fontSize: fontSize, letterSpacing: 0.2, color: fg),
+                )),
+    );
+  }
+
+  /// The picture, or null when there isn't one to draw.
+  ///
+  /// Every failure path — no file, a signed URL that has expired, a decode
+  /// error — resolves to null or to the `errorBuilder`, which is the same
+  /// bargain the weather icons make: an avatar is never allowed to become an
+  /// error message.
+  Widget? _picture() {
+    final file = imageFile;
+    if (file != null) {
+      return Image.file(
+        file,
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => _fallback(),
+      );
+    }
+    final url = imageUrl;
+    if (url == null || url.isEmpty) return null;
+    return Image.network(
+      url,
+      width: size,
+      height: size,
+      fit: BoxFit.cover,
+      // No frame fade-in: these are 30–64px circles that decode instantly from
+      // cache, and a fade makes every rebuild of a scrolling row blink.
+      errorBuilder: (_, _, _) => _fallback(),
+    );
+  }
+
+  Widget _fallback() {
+    return Container(
+      width: size,
+      height: size,
+      color: bg,
+      alignment: Alignment.center,
       child: icon != null
           ? Icon(icon, size: size * 0.44, color: fg)
           : Text(
               initials ?? '',
-              // Sized by the caller — an avatar's initials scale with the
-              // circle, so this is one of the few sanctioned `fontSize`
-              // overrides. Weight and family still come from the scale.
               style: AppText.itemTitle.copyWith(fontSize: fontSize, letterSpacing: 0.2, color: fg),
             ),
     );

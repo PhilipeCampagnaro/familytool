@@ -233,47 +233,11 @@ class CalendarRepository {
   // -------------------------------------------------------------------------
   // Write — Aporah's own calendar only
   // -------------------------------------------------------------------------
-
-  /// The household's own calendar — where a typed event goes.
-  ///
-  /// Created on first use rather than at signup, so a family that only ever
-  /// connects Google never accumulates an empty "Aporah" calendar beside it.
-  /// Uses a client-generated id and a separate read because **`insert …
-  /// returning` is rejected on `calendars`**, exactly as it is on `lists` — see
-  /// the "Writing containers from the client" section of docs/backend.md.
-  Future<CalendarSource> ownCalendar(String familyId) async {
-    final existing = await _db
-        .from('calendars')
-        .select(_calendarColumns)
-        .eq('provider', 'aporah')
-        .eq('owner_id', _uid)
-        .limit(1)
-        .maybeSingle();
-
-    if (existing != null) {
-      return CalendarSource.fromMap(Map<String, dynamic>.from(existing));
-    }
-
-    final id = newUuidV4();
-    await _db.from('calendars').insert({
-      'id': id,
-      'family_id': familyId,
-      'name': 'Aporah',
-      'provider': 'aporah',
-      'color': 0xff1668ff.toSigned(32),
-      'owner_id': _uid,
-      // Never private. A calendar belongs to the whole household — see the
-      // calendar rule in CLAUDE.md.
-      'visibility': 'family',
-    });
-
-    final created = await _db
-        .from('calendars')
-        .select(_calendarColumns)
-        .eq('id', id)
-        .single();
-    return CalendarSource.fromMap(Map<String, dynamic>.from(created));
-  }
+  //
+  // There is no `ownCalendar()` creating a `provider: 'aporah'` row any more.
+  // The event form lists the household's real calendars and nothing else, so
+  // nothing asks for one to be conjured on save; a row that already exists is
+  // read by `_own()` and written to like any other.
 
   Future<void> createEvent(CalendarEvent event) async {
     await _db.from('events').insert({

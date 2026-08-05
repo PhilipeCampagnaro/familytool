@@ -31,6 +31,16 @@ class WeatherCache {
   /// file forever. The least recently written points fall out first.
   static const _maxPoints = 12;
 
+  /// **Bump this whenever the resolver behind a remembered *miss* changes.**
+  ///
+  /// A null is kept forever on purpose (see above), which also means a place the
+  /// old code could not resolve stays unresolvable on that device long after the
+  /// new code could resolve it — a street address was exactly that case, twice:
+  /// v2 taught the resolver commas, v3 the one-line addresses that have none. A
+  /// version that no longer matches throws the whole file away, which costs one
+  /// round of requests once.
+  static const _version = 3;
+
   File? _file;
   Map<String, dynamic>? _memory;
 
@@ -53,12 +63,12 @@ class WeatherCache {
       final file = await _resolve();
       if (file != null && await file.exists()) {
         final decoded = jsonDecode(await file.readAsString());
-        if (decoded is Map<String, dynamic>) return _memory = decoded;
+        if (decoded is Map<String, dynamic> && decoded['v'] == _version) return _memory = decoded;
       }
     } catch (_) {
       // Unreadable or from an older shape — start over rather than guess.
     }
-    return _memory = {'places': <String, dynamic>{}, 'points': <String, dynamic>{}};
+    return _memory = {'v': _version, 'places': <String, dynamic>{}, 'points': <String, dynamic>{}};
   }
 
   Future<void> _flush() async {

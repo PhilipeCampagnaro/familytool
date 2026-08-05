@@ -466,6 +466,11 @@ class AppSpacing {
   static const cardPad = 16.0;
   static const rowPadV = 14.0;
   static const rowPadH = 16.0;
+
+  /// The gap between two blocks stacked on a Settings page — card to card, or
+  /// card to the action under it. One number, so no page invents its own and
+  /// two pages of the same shape stop drifting apart.
+  static const blockGap = 14.0;
 }
 
 class AppShadows {

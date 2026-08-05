@@ -7,7 +7,11 @@ import UIKit
   /// answering.
   private var linksChannel: FlutterMethodChannel?
   private var mediaChannel: FlutterMethodChannel?
+  private var mapChannel: FlutterMethodChannel?
+  private var actionSheetChannel: FlutterMethodChannel?
   private let mediaPicker = MediaPicker()
+  private let mapSnapshot = MapSnapshot()
+  private let actionSheet = ActionSheet()
 
   override func application(
     _ application: UIApplication,
@@ -68,6 +72,24 @@ import UIKit
         mediaPicker.handle(call, result: result)
       }
       mediaChannel = channel
+    }
+    // CoreLocation + MapKit behind the event-detail sheet's location card —
+    // see MapSnapshot.swift and lib/services/map_snapshot.dart.
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "AporahMap") {
+      let channel = FlutterMethodChannel(name: "aporah/map", binaryMessenger: registrar.messenger())
+      channel.setMethodCallHandler { [mapSnapshot] call, result in
+        mapSnapshot.handle(call, result: result)
+      }
+      mapChannel = channel
+    }
+    // The system action sheet the event sheet's "Route" choice is put up with —
+    // see ActionSheet.swift and lib/services/action_sheet.dart.
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "AporahActionSheet") {
+      let channel = FlutterMethodChannel(name: "aporah/action_sheet", binaryMessenger: registrar.messenger())
+      channel.setMethodCallHandler { [actionSheet] call, result in
+        actionSheet.handle(call, result: result)
+      }
+      actionSheetChannel = channel
     }
   }
 }

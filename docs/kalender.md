@@ -50,36 +50,38 @@ read straight through the rows.
 
 ## Collapsing headers
 
-**Centered title.** In `_TitleRow` (both views) and the event-detail sheet header, the title is a
+**Centered title.** In `_TitleRow` (both views) and in `_buildEventDetailHeader`, the title is a
 full-width `Positioned.fill` layer in a `Stack` with the flanking buttons positioned over it —
 *not* an `Expanded` sibling of them. As a Row child its centered state lands off-center by half
-the button's width. Clearance from the buttons comes from horizontal padding that is **symmetric
-at t == 1**; an asymmetric inset silently reintroduces the same offset.
+the button's width. Clearance from the buttons comes from horizontal padding that is **symmetric**;
+an asymmetric inset silently reintroduces the same offset. The title is also painted **before**
+any button: `GlassIconButton` is a native platform view on iOS, and Flutter content painted after
+one lands in a composited overlay layer that can be dropped — invisible on device, fine in a
+widget test, which is why no test catches it.
 
-**They need a frosted background of their own.** `NestedScrollView` does *not* clip its body to
-below a pinned header: the gray body keeps sliding up until its top reaches the top of the
-screen, so a bare header has the agenda rendering sharply behind the title and glass buttons.
-Both `_WeekViewState._buildHeader` and `_buildEventDetailHeader` lay a `FrostedHeaderBackground`
-(`lib/widgets/glass.dart`) in as a `Positioned.fill` first layer of a `Stack`. A solid fill was
-tried first and the user asked for see-through instead: content should still read as *there*,
-blurred, passing underneath. See [design-system.md](design-system.md) for the two load-bearing
-details of that widget (progressive blur, low tint alpha).
+**A collapsing header needs a frosted background of its own.** `NestedScrollView` does *not* clip
+its body to below a pinned header: the gray body keeps sliding up until its top reaches the top of
+the screen, so a bare header has the agenda rendering sharply behind the title and glass buttons.
+`_WeekViewState._buildHeader` lays a `FrostedHeaderBackground` (`lib/widgets/glass.dart`) in as a
+`Positioned.fill` first layer of a `Stack`. A solid fill was tried first and the user asked for
+see-through instead: content should still read as *there*, blurred, passing underneath. See
+[design-system.md](design-system.md) for the two load-bearing details of that widget (progressive
+blur, low tint alpha).
 
 How far below the buttons the sharp gray starts is the header's collapsed height: a small gap
-(`_WeekViewState._collapsedGap`, `_eventDetailCollapsedGap`) survives at t == 1 as a band of pure
-material. The month view's header does *not* get this — it's a plain `Column` sibling above the
-grid, so nothing scrolls under it.
+(`_WeekViewState._collapsedGap`) survives at t == 1 as a band of pure material. The month view's
+header does *not* get this — it's a plain `Column` sibling above the grid, so nothing scrolls
+under it.
 
-**Event-detail sheet header order**: title + close button on the first row, source/owner chips on
-a second row *below* them — the chips are the part that collapses, so putting them first pushed
-the title down a line and stranded the close button beside the chips. The whole header is
-absolutely positioned against its expanded geometry (`_eventDetailTopPad` /
-`_eventDetailTitleRowHeight` / `_eventDetailChipsRowHeight` / `_eventDetailCollapsedGap`, which
-also derive the sliver's two heights) and the `Stack`'s default `Clip.hardEdge` is what removes
-the chips as it shrinks — the rows never re-lay-out, so the title can't shift as the chips go.
-The close button is the Stack's *last* child on purpose: `GlassIconButton` is a native platform
-view on iOS, which composites above anything Flutter paints after it. The chips vanished on
-device (but not in widget tests) while they were painted after it.
+**The event-detail sheet's header is deliberately not one of these.** It is a plain
+`showAppSheet(header:)` row — the event's title small (`AppText.sheetTitle`) and centered, the
+close button beside it — and the source/owner chips live in the body, over the first card. It was
+a collapsing header with a 23pt title that shrank as the body scrolled, and that was wrong twice
+over: a heading that size belongs to a screen, so over the first card of a sheet it read as a
+second screen title; and its `FrostedHeaderBackground`, i.e. a `BackdropFilter`, under a native
+glass button *inside a modal route* left the title and the chips not painting at all on device.
+Don't reinstate it. `SheetCollapsingHeader` still exists for a sheet whose header is genuinely
+more than a title, and its doc comment says the same.
 
 ## All-day events are dates, not instants
 
@@ -100,12 +102,61 @@ an empty one. Both cells (`_DayStripCell`, `_MonthCell`) `take(3)` and hand the 
 `EventDots.overflowCount`, which turns the fourth slot into a gray "+" badge — so the row can't
 grow past four dots' width however busy the day is.
 
-## The month grid's holiday tint
+## The two day-off washes — Feiertag and Ferien
 
-`holidaysIn` reads the **Ferien feed only** (`feedKind == 'ferien'`), and the legend says
-"Ferien" / "School holidays" to match. It used to mean "all-day event on a read-only calendar",
-which is equally true of every bin pickup and every subscribed Google calendar — a household with
-Abfall connected saw a third of the month tinted. Keep the tint to one meaning.
+`DayHighlight` (in [day_circle.dart](../lib/widgets/day_circle.dart)) is the one enum behind both,
+and `DaySelectorCircle` works the two shades out from the accent itself so the week strip and the
+month grid can't drift apart:
+
+| | fill | texture | source |
+|---|---|---|---|
+| **Feiertag** | `tint(accent, .86)` | diagonal hatch | computed, see below |
+| **Ferien** | `tint(accent, .93)` | none | the subscribed Ferien feed |
+
+Both mean "nobody has to be anywhere", but they are not the same size of fact — one day and rare
+against six weeks in a row — so they don't get the same weight. Getting this wrong in *either*
+direction has already happened once each: Ferien alone striped half of August and said nothing,
+and dropping Ferien entirely lost the thing families actually plan around. Keep the texture on the
+rare one. Where both are true (Karfreitag inside the Osterferien, the 25th inside the
+Weihnachtsferien) the Feiertag wins — `_dayHighlight` in `month_view.dart` is the only place that
+is decided, and `_DayStripCell` calls it too.
+
+The Ferien side reads the **Ferien feed only** (`CalendarScreenState.isSchoolHoliday`,
+`feedKind == 'ferien'`), via `eventsFor` so it follows the filter chips. It used to mean "all-day
+event on a read-only calendar", which is equally true of every bin pickup and every subscribed
+Google calendar — a household with Abfall connected saw a third of the month washed.
+
+Each legend key appears only once its wash can: Feiertage need `germanHolidaysProvider.enabled`,
+Ferien need `state.hasFerienFeed`. The legend is a `Wrap`, not a `Row` — three keys fit on one
+line in German and don't in English. The Feiertag swatch is painted with the same
+`DiagonalStripePainter` as the day circles, so it doesn't become the one place the two are
+indistinguishable.
+
+### Where the Feiertage come from
+
+Not a feed. [lib/data/german_holidays.dart](../lib/data/german_holidays.dart)
+computes them from the year and the Bundesland — nine nationwide plus the state-specific ones,
+each either a fixed date or an offset from Easter Sunday (anonymous Gregorian algorithm). No feed,
+no `public_feeds` row, no network, right offline. Only holidays statutory in a *whole* Bundesland
+are in: Mariä Himmelfahrt in Bayern and Fronleichnam in parts of Sachsen/Thüringen are decided per
+municipality, and Aporah only ever learns the state.
+
+`germanHolidaysProvider` ([lib/state/holidays_state.dart](../lib/state/holidays_state.dart))
+decides which set:
+
+1. The **Ferien subscription's Bundesland** if there is one — `CalendarConnection.ferienBundesland`
+   parses it out of the feed key (`ferien:NI`), and it is the only place the app has ever asked a
+   household where it lives. Full state list.
+2. Otherwise **German interface language** → the nine nationwide ones. Incomplete but never wrong.
+3. Otherwise **nothing at all**, legend included. A Feiertag is a German fact; tinting the 3rd of
+   October for a family in Dublin is noise. Device GPS and `families.address` are deliberately not
+   consulted.
+
+Nothing is behind a Feiertag on the wire, so the day-detail card (month) and the agenda (week)
+print its name in a `_HolidayChip` above the events — otherwise a striped day is a texture the
+family has to guess at. It sits *above* the timeline rather than in it: a Feiertag is a property
+of the day, and an agenda row would give it a time it doesn't have and a swipe-to-edit it can't
+honour. Ferien need no such chip — the feed's own all-day event is already in the list.
 
 ## Agenda cards
 
@@ -127,6 +178,73 @@ Abfall connected saw a third of the month tinted. Keep the tint to one meaning.
   event spanning a week is forecast per day. `_EventCard` itself stays a `StatelessWidget` and is
   handed the reading by `_EventAgendaRow`, which has the `ref`. The service behind it is described
   in the weather section of [ported-features.md](ported-features.md).
+
+## The event sheet's location card
+
+`_EventLocationCard` (`../lib/screens/calendar/event_detail_sheet.dart`) draws the place, a **real
+map of it**, and the "Route" button. Three things about it are load-bearing:
+
+- **The map is a MapKit still, rendered on the device** by `../lib/services/map_snapshot.dart` over
+  the `aporah/map` channel — CoreLocation geocodes the event's free text, MapKit renders the image,
+  and it is cached per (place, width, theme). No key, no tile server, and no family's address
+  leaving the phone. It follows the app's own light/dark setting, not the system's.
+- **The request needs the card's width, so it is started from a `LayoutBuilder`, not `initState`** —
+  legal only because nothing is set synchronously: the `await` in `_load` puts its `setState` after
+  the frame. Don't "tidy" that into a synchronous call.
+- **A place that can't be found gets no map at all**, and an event with no location gets no card
+  at all. The row stays tappable either way, and the navigation app is handed the words instead of
+  a point — Waze and Google Maps both search on it.
+
+"Route" (and a tap on the row) opens the standard `showAnchoredMenu` with two items, **Waze and
+Google Maps** — both anchored to the **address row**, never to the "Route" pill. From the pill the
+menu drops straight into the sheet's action row, and "Bearbeiten" and the trash button are native
+glass platform views that composite over anything Flutter paints; from the row it opens over the
+map, which is ours. `openNavigation` (`../lib/services/external_links.dart`) tries the app's URL scheme
+first and falls back to its website, which is why this needs no `LSApplicationQueriesSchemes` entry:
+`UIApplication.open` reports whether anything claimed the scheme. The two labels are brand names and
+are deliberately **not** in `lib/l10n/`.
+
+## The detail sheet shows what the event has, and nothing else
+
+The body is a `CrossAxisAlignment.stretch` column — under `start` each card is only as wide as its
+own content, which is invisible while the cards hold full-width rows and then ships the notes card
+as a stub beside them.
+
+**No location, no location card** — an address row over a map of nowhere is worse than nothing.
+**Notes are the opposite and show empty on purpose**, with the form's own "Notizen hinzufügen" as
+the placeholder line: every event has that card, so the sheet keeps one shape and "nothing written
+here" is readable off it. The two rules differ because the cards do — one is a thing the event
+either has or hasn't, the other is a field you fill in.
+
+The **Erinnerung card is gone entirely**, on the user's call. `CalendarEvent.reminder` is
+real — it comes from `reminder_minutes` on the row — but nothing in the app writes that column yet
+(the editor is title-only), so in practice every event showed a bell over a blank line. Bring the
+card back when something sets a reminder, and give it the same empty rule as the rest.
+
+## The event form's "Ort" field searches, and its calendar is a card
+
+Two things in `lib/screens/calendar/event_form.dart` that used to be neither:
+
+**`_LocationField` completes what is typed, using the device.** `searchPlaces` in
+`lib/services/map_snapshot.dart` rides the existing `aporah/map` channel — `MKLocalSearchCompleter`
+on the Swift side, so it answers with **points of interest as well as addresses**. That is the
+point: an appointment is at Rossmann or at the Zahnarzt far more often than it is at a street the
+family types out, and the geocoder behind the detail sheet's map can't find either from a shop
+name alone. Results are biased to the household's town (`families.address`, **never device GPS** —
+the same rule the weather follows), debounced 250 ms, and only asked for from three characters.
+Picking one writes `"Name, Straße, PLZ Ort"` into the field, which is what the map snapshot and the
+route menu will later be handed. **Free text still wins**: nothing forces a choice, so "Turnhalle"
+is typed and saved exactly as before, and off iOS (no handler) the field is the plain field it
+always was.
+
+**The destination is a card of every writable calendar, not a row that opens a second sheet.** And
+there is no synthetic "Aporah" entry any more: `writableCalendars` returns the household's real
+calendars and nothing else, `defaultTarget` is nullable, and `CalendarRepository.ownCalendar()` —
+which used to conjure a `provider: 'aporah'` row on first save — is gone. A household with no
+writable calendar sees `L.s.noWritableCalendar` in the card instead of a destination it has never
+heard of. **A `provider: 'aporah'` calendar that already exists still works everywhere** — `_own()`
+reads it, `isOwn` still routes its events to `public.events` — nothing creates a new one. If you
+want first-run own events back, that repository method is what to restore.
 
 ## Empty day
 

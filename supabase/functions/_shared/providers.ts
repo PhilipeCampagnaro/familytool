@@ -37,6 +37,15 @@ export interface Connection {
   display_name: string;
   config: Record<string, unknown>;
   selected_calendars: string[] | null;
+
+  /// external_id -> the name this household gave that calendar in the setup
+  /// sheet. Absent, or absent for one id, means the provider's own name stands.
+  ///
+  /// Optional rather than nullable: only `calendar-events` selects it, because
+  /// it is the only function that writes a `calendars` row. Reading and writing
+  /// events never needs to know what the household calls the thing.
+  calendar_names?: Record<string, string> | null;
+
   is_read_only: boolean;
   created_by: string | null;
 }

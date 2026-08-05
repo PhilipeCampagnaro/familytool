@@ -82,6 +82,43 @@ ConnectionStatus _statusFrom(String? value) => switch (value) {
   _ => ConnectionStatus.active,
 };
 
+/// One sub-calendar an account offers, as the connect functions report it.
+///
+/// Not a row in anything: this is what the provider said it has, on the one
+/// round trip that proved the credentials work. Only the ones the user ticks
+/// become `calendars` rows, and `calendar_connections.selected_calendars` is
+/// where that choice is kept — by [externalId], because the row ids do not
+/// exist yet at the moment the choice is made.
+class RemoteCalendar {
+  /// The provider's own identifier — a CalDAV collection URL, a Google calendar
+  /// id. Exactly what goes into `selected_calendars`.
+  final String externalId;
+
+  final String name;
+
+  /// Somebody else's system of record — a shared calendar we may read and must
+  /// not write. Shown, and still selectable: a family wants to *see* the
+  /// Kita's calendar far more often than it wants to write to it.
+  final bool readOnly;
+
+  const RemoteCalendar({
+    required this.externalId,
+    required this.name,
+    this.readOnly = false,
+  });
+
+  static RemoteCalendar? fromMap(Map<String, dynamic> map) {
+    final id = map['external_id'] as String?;
+    if (id == null || id.isEmpty) return null;
+    final name = (map['name'] as String?)?.trim();
+    return RemoteCalendar(
+      externalId: id,
+      name: name == null || name.isEmpty ? id : name,
+      readOnly: map['read_only'] == true,
+    );
+  }
+}
+
 /// One connected account, as the household sees it.
 ///
 /// Deliberately carries no credential of any kind: tokens and CalDAV passwords
@@ -117,6 +154,23 @@ class CalendarConnection {
   /// the feed the rest of the town is reading.
   final bool isFeed;
 
+  /// The provider ids of the sub-calendars this household picked, in the order
+  /// it picked them.
+  ///
+  /// Null is **not** the empty list: null means nobody has been asked yet, and
+  /// `calendar-events` reads every calendar the account offers. That is what a
+  /// connection made before there was a picker still looks like, and what an
+  /// account with nothing to choose between stays as.
+  final List<String>? selectedCalendars;
+
+  /// Provider id -> what this household calls that calendar.
+  ///
+  /// Written by the setup sheet at the same moment as [selectedCalendars],
+  /// because a calendar has to be named *before* the first sync creates a row
+  /// for it. `calendar-events` copies each name onto `calendars.name`, so this
+  /// is what Kalender ends up showing too.
+  final Map<String, String> calendarNames;
+
   const CalendarConnection({
     required this.id,
     required this.provider,
@@ -127,9 +181,64 @@ class CalendarConnection {
     this.lastSyncedAt,
     this.createdBy,
     this.isFeed = false,
+    this.selectedCalendars,
+    this.calendarNames = const {},
   });
 
   bool get needsAttention => status != ConnectionStatus.active;
+
+  /// The Bundesland behind a Ferien subscription, or null for anything else.
+  ///
+  /// A feed's [account] is its `feed_key` — `ferien:NI` — because the key is
+  /// what makes one Schulferien feed shared by every household in that state.
+  /// This is the only place in the app that knows a household's Bundesland, so
+  /// the Feiertage read it from here; see `germanHolidaysProvider`.
+  String? get ferienBundesland {
+    if (provider != CalendarProvider.ferien) return null;
+    final code = account.split(':').last.trim().toUpperCase();
+    return bundeslaender.containsKey(code) ? code : null;
+  }
+
+  /// What this connection puts in the "Verbunden" list.
+  ///
+  /// One row per picked calendar where the household picked any — because two
+  /// iCloud calendars are two calendars to the family, not one account — and a
+  /// single row standing for the whole connection otherwise. Feeds, IServ
+  /// accounts with one collection, and every connection made before the picker
+  /// existed take that second path.
+  List<ConnectedCalendar> get entries {
+    final ids = selectedCalendars;
+    if (ids == null || ids.isEmpty) {
+      return [ConnectedCalendar(connection: this, name: displayName)];
+    }
+    return [
+      for (final id in ids)
+        ConnectedCalendar(
+          connection: this,
+          externalId: id,
+          // A picked calendar is always named by the sheet that picked it. The
+          // fallback is for a row written by an older build, where showing the
+          // account's name beats showing a CalDAV URL.
+          name: calendarNames[id]?.trim().isNotEmpty == true
+              ? calendarNames[id]!.trim()
+              : displayName,
+        ),
+    ];
+  }
+
+  static List<String>? _selectedFrom(Object? raw) {
+    if (raw is! List) return null;
+    return [for (final id in raw) if (id is String && id.isNotEmpty) id];
+  }
+
+  static Map<String, String> _namesFrom(Object? raw) {
+    if (raw is! Map) return const {};
+    return {
+      for (final entry in raw.entries)
+        if (entry.key is String && entry.value is String)
+          entry.key as String: entry.value as String,
+    };
+  }
 
   static CalendarConnection? fromMap(Map<String, dynamic> map) {
     final provider = providerFromWire(map['provider'] as String? ?? '');
@@ -148,6 +257,8 @@ class CalendarConnection {
       statusDetail: map['status_detail'] as String?,
       lastSyncedAt: synced == null ? null : DateTime.tryParse(synced)?.toLocal(),
       createdBy: map['created_by'] as String?,
+      selectedCalendars: _selectedFrom(map['selected_calendars']),
+      calendarNames: _namesFrom(map['calendar_names']),
     );
   }
 
@@ -178,6 +289,38 @@ class CalendarConnection {
       isFeed: true,
     );
   }
+}
+
+/// One row of the "Verbunden" list: a calendar the household reads, and the
+/// connection it came in on.
+///
+/// A household connects an *account*, but it thinks in calendars — "Familie"
+/// and "Arbeit", not "iCloud (name@example.com)". So this is what the settings
+/// list is built from, and [externalId] says which of the two kinds it is:
+/// non-null for one calendar inside an account, null for a connection that
+/// stands for itself (a feed, or an account nobody was asked to choose from).
+class ConnectedCalendar {
+  final CalendarConnection connection;
+
+  /// The provider's own id, or null when this row *is* the connection.
+  final String? externalId;
+
+  final String name;
+
+  const ConnectedCalendar({
+    required this.connection,
+    required this.name,
+    this.externalId,
+  });
+
+  /// Unique across the list — a connection id alone repeats once an account
+  /// contributes more than one row.
+  String get key => externalId == null ? connection.id : '${connection.id}#$externalId';
+
+  /// True when removing this row means disconnecting the whole account: either
+  /// it stands for the connection, or it is the last calendar left on it.
+  bool get isWholeConnection =>
+      externalId == null || (connection.selectedCalendars?.length ?? 0) <= 1;
 }
 
 // ---------------------------------------------------------------------------

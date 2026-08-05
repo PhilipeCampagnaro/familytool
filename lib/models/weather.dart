@@ -228,19 +228,55 @@ String eventWeatherKey(CalendarEvent event, DateTime day) =>
     '${event.loc.trim().toLowerCase()}@'
     '${eventSampleTime(event, day).millisecondsSinceEpoch}';
 
+/// What follows the last number in an address line — which in German is the
+/// town. `"Weyher Str 100 28816 Stuhr"` -> `"Stuhr"`.
+///
+/// Open-Meteo's geocoder searches place *names*: the whole line is a miss, and
+/// so is `"28816 Stuhr"`, because a postal code is not a name either. Commas
+/// are the obvious way to find the town in a line like that, but people write
+/// an address on one line at least as often as with them, and then there is
+/// nothing to split on — so the anchor is the last number instead, which covers
+/// the house number and the postal code in one rule.
+///
+/// A location with no number in it — "Kita Sonnenschein", "Zuhause" — comes back
+/// empty rather than guessed at from its last word: a wrong town's weather on a
+/// row is worse than no icon on it.
+String placeAfterNumber(String line) {
+  final text = line.trim();
+  // Greedy, so it runs to the *last* number; the optional letter is the "a" in
+  // "12a", and the trailing space is what separates it from the town.
+  final match = RegExp(r'.*\d+\s*[a-zA-ZäöüÄÖÜ]?\s+').firstMatch(text);
+  return match == null ? '' : text.substring(match.end).trim();
+}
+
+/// The countries a German-language family app plausibly writes into an address,
+/// in both spellings. Never a useful answer: "Deutschland" geocodes happily to
+/// a point in Hesse, and that weather on a row is worse than no weather.
+const countryWords = {
+  'deutschland', 'germany', 'österreich', 'oesterreich', 'austria', //
+  'schweiz', 'switzerland', 'suisse',
+};
+
 /// The town out of a free-text German address, for the geocoder.
 ///
-/// `"Weyher Straße 100, 28816 Stuhr"` -> `"Stuhr"`. Open-Meteo's geocoder
-/// searches place *names*, not house numbers, so handing it the whole line
-/// finds nothing — the last comma-separated part, minus its postcode, is the
-/// piece it can actually answer. Returns null when there is nothing usable,
-/// and the household then simply has no home forecast.
+/// `"Weyher Straße 100, 28816 Stuhr"` and `"Weyher Str 100 28816 Stuhr"` both
+/// give `"Stuhr"` — see [placeAfterNumber] for why the house number rather than
+/// the comma is the anchor. Returns null when there is nothing usable, and the
+/// household then simply has no home forecast.
 String? homeTownFrom(String? address) {
   final line = address?.trim() ?? '';
   if (line.isEmpty) return null;
 
-  final tail = line.split(',').last.trim();
-  // "28816 Stuhr" -> "Stuhr"; a bare "Stuhr" is left alone.
-  final town = tail.replaceFirst(RegExp(r'^\d{4,5}\s+'), '').trim();
-  return town.isEmpty ? null : town;
+  // From the end, because that is where the town is — but past a trailing
+  // country, which is a part like any other and never the answer.
+  for (final part in line.split(',').reversed) {
+    final tail = part.trim();
+    if (tail.isEmpty) continue;
+    if (countryWords.contains(tail.toLowerCase())) continue;
+
+    // A bare "Stuhr" has no number to anchor on and is left alone.
+    final afterNumber = placeAfterNumber(tail);
+    return afterNumber.isEmpty ? tail : afterNumber;
+  }
+  return null;
 }

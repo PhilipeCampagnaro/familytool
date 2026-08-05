@@ -84,6 +84,19 @@ Deno.serve(async (req) => {
 
   const label = LABELS[provider] ?? provider;
 
+  // Sealed *before* the connection row is written, not after. seal() throws when
+  // CALENDAR_SECRET_KEY is missing or malformed, and doing it in the second
+  // statement left behind exactly the state this whole flow exists to prevent: a
+  // row the settings screen calls "verbunden" that holds no credential and can
+  // never sync.
+  let sealedPassword: string;
+  try {
+    sealedPassword = await seal(password);
+  } catch (e) {
+    console.error("caldav seal failed", (e as Error).message);
+    return fail("Die Verbindung konnte nicht gespeichert werden.", 500);
+  }
+
   const { data: connection, error } = await db
     .from("calendar_connections")
     .upsert({
@@ -116,7 +129,7 @@ Deno.serve(async (req) => {
     .from("calendar_connection_secrets")
     .upsert({
       connection_id: connection.id,
-      caldav_password: await seal(password),
+      caldav_password: sealedPassword,
       updated_at: new Date().toISOString(),
     }, { onConflict: "connection_id" });
 

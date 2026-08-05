@@ -181,33 +181,10 @@ class _EventFormBodyState extends ConsumerState<_EventFormBody> {
     }
   }
 
-  /// Which calendar the event is written to — and with it, *how*: Aporah's own
-  /// is a row of ours, everything else travels back out to the account that
-  /// owns it.
-  Future<void> _pickCalendar(List<CalendarSource> options) async {
-    final picked = await showAppSheet<CalendarSource>(
-      context: context,
-      header: SheetPickerHeader(title: L.s.calendar),
-      heightFactor: 0.6,
-      child: SectionCard(
-        children: dividedRows([
-          for (final option in options)
-            _CalendarOptionRow(source: option, selected: option.id == _draft.calendarId),
-        ]),
-      ),
-    );
-    if (picked == null || !mounted) return;
-    _draft = _draft.copyWith(calendarId: picked.id);
-  }
-
   @override
   Widget build(BuildContext context) {
     final accent = Theme.of(context).colorScheme.primary;
     final options = ref.watch(calendarProvider).writableCalendars;
-    final target = options.firstWhere(
-      (c) => c.id == _draft.calendarId,
-      orElse: () => CalendarSource.ownPlaceholder,
-    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -224,29 +201,7 @@ class _EventFormBodyState extends ConsumerState<_EventFormBody> {
               ),
             ),
             CardDivider(),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
-              child: Row(
-                children: [
-                  Container(
-                    width: 30,
-                    height: 30,
-                    decoration: BoxDecoration(color: AppColors.surfaceAlt, shape: BoxShape.circle),
-                    alignment: Alignment.center,
-                    child: Icon(LucideIcons.mapPin, size: 16, color: accent),
-                  ),
-                  const SizedBox(width: 11),
-                  Expanded(
-                    child: TextField(
-                      controller: widget.form.location,
-                      textCapitalization: TextCapitalization.sentences,
-                      style: AppText.input,
-                      decoration: InputDecoration(border: InputBorder.none, hintText: L.s.place, isDense: true),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            _LocationField(controller: widget.form.location, accent: accent),
           ],
         ),
         const SizedBox(height: 14),
@@ -260,9 +215,14 @@ class _EventFormBodyState extends ConsumerState<_EventFormBody> {
                 child: Row(
                   children: [
                     Expanded(child: Text(L.s.allDay, style: AppText.rowTitle)),
-                    // SheetSwitch, not NativeSwitch — a platform view here makes
-                    // iOS drop everything painted below it. See [SheetSwitch].
-                    SheetSwitch(value: _draft.allDay, onChanged: _setAllDay),
+                    // The real UISwitch, so Ganztägig looks like the
+                    // Dunkelmodus switch in Settings — iOS 26 draws a Liquid
+                    // Glass knob that `CupertinoSwitch` doesn't redraw.
+                    // This is a platform view inside a sheet body, the thing
+                    // [SheetSwitch] exists to avoid; if the card below this row
+                    // ever renders blank on device again, that's the failure
+                    // coming back and `SheetSwitch` is the one-line fallback.
+                    NativeSwitch(value: _draft.allDay, onChanged: _setAllDay),
                   ],
                 ),
               ),
@@ -288,40 +248,33 @@ class _EventFormBodyState extends ConsumerState<_EventFormBody> {
           ],
         ),
         const SizedBox(height: 14),
+        // Every writable calendar, listed. It used to be a row that opened a
+        // second sheet on top of this one — two taps and a screen change to
+        // answer a question that fits in the form, and the answer was hidden
+        // behind a name until you opened it.
         SectionCard(
           children: [
-            GestureDetector(
-              onTap: () => _pickCalendar(options),
-              behavior: HitTestBehavior.opaque,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
-                child: Row(
-                  children: [
-                    Text(L.s.calendar, style: AppText.rowTitle),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          Container(width: 9, height: 9, decoration: BoxDecoration(color: target.color, shape: BoxShape.circle)),
-                          const SizedBox(width: 7),
-                          Flexible(
-                            child: Text(
-                              target.name,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: AppText.input.copyWith(color: AppColors.inkTertiary),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Icon(LucideIcons.chevronRight, size: 16, color: AppColors.mutedLight),
-                  ],
-                ),
-              ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 13, 16, 9),
+              child: Text(L.s.calendar, style: AppText.microLabel),
             ),
+            if (options.isEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+                child: Text(
+                  L.s.noWritableCalendar,
+                  style: AppText.input.copyWith(color: AppColors.inkTertiary),
+                ),
+              )
+            else
+              ...dividedRows([
+                for (final option in options)
+                  _CalendarOptionRow(
+                    source: option,
+                    selected: option.id == _draft.calendarId,
+                    onTap: () => _draft = _draft.copyWith(calendarId: option.id),
+                  ),
+              ]),
           ],
         ),
         const SizedBox(height: 14),
@@ -351,19 +304,223 @@ class _EventFormBodyState extends ConsumerState<_EventFormBody> {
   }
 }
 
-/// One destination in the calendar picker. Pops the sheet with its own source —
-/// picking *is* the save here, which is why the sheet has no check button.
+/// The "Ort" row, with the device's own place search under it.
+///
+/// The field stayed free text for a long time and typing into it did nothing,
+/// which is the wrong shape for what people actually put there: an appointment
+/// is at Rossmann, at the Zahnarzt, at a street address somebody read off a
+/// letter. [searchPlaces] answers with **businesses as well as addresses**,
+/// biased towards the household's own town, and picking one writes the whole
+/// thing — name *and* address — into the field, so the detail sheet's map and
+/// the route menu can find it afterwards.
+///
+/// Free text still wins: nothing here forces a choice. A place MapKit has never
+/// heard of ("Turnhalle") is typed and saved exactly as before.
+class _LocationField extends ConsumerStatefulWidget {
+  final TextEditingController controller;
+  final Color accent;
+
+  const _LocationField({required this.controller, required this.accent});
+
+  @override
+  ConsumerState<_LocationField> createState() => _LocationFieldState();
+}
+
+class _LocationFieldState extends ConsumerState<_LocationField> {
+  /// Below this a query is mostly noise — "Al" matches half of Germany, and
+  /// every keystroke costs a MapKit request.
+  static const _minQuery = 3;
+
+  final FocusNode _focus = FocusNode();
+  Timer? _debounce;
+
+  /// Which request the answer on screen belongs to. Typing is faster than the
+  /// network, so a slow "Ros" landing after a quick "Rossmann" would otherwise
+  /// replace the right list with a stale one.
+  int _request = 0;
+
+  /// The query [_results] answers. Also what stops a re-search when the text
+  /// comes back to something already asked — a backspace, or the field being
+  /// focused again after a pick.
+  String _asked = '';
+  List<PlaceSuggestion> _results = const [];
+  bool _answered = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // The list belongs to the field being edited: losing focus puts the form
+    // back the way it looks when it is opened.
+    _focus.addListener(() => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    _focus.dispose();
+    super.dispose();
+  }
+
+  void _onChanged(String value) {
+    _debounce?.cancel();
+    final text = value.trim();
+    if (text.length < _minQuery) {
+      setState(() {
+        _asked = text;
+        _results = const [];
+        _answered = false;
+      });
+      return;
+    }
+    if (text == _asked) return;
+    _debounce = Timer(const Duration(milliseconds: 250), () => _search(text));
+  }
+
+  Future<void> _search(String text) async {
+    final token = ++_request;
+    final found = await searchPlaces(
+      query: text,
+      // The town from onboarding, never device GPS — same rule the weather
+      // follows. It only biases the ranking; a search for a place in another
+      // city still finds it.
+      near: ref.read(familyProvider).household?.address,
+    );
+    if (!mounted || token != _request) return;
+    setState(() {
+      _asked = text;
+      _results = found;
+      _answered = true;
+    });
+  }
+
+  void _pick(PlaceSuggestion place) {
+    final value = place.value;
+    widget.controller.text = value;
+    widget.controller.selection = TextSelection.collapsed(offset: value.length);
+    _debounce?.cancel();
+    _request++; // whatever is still in flight answers a question already settled
+    setState(() {
+      _asked = value;
+      _results = const [];
+      _answered = false;
+    });
+    _focus.unfocus();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final searching = _focus.hasFocus && _asked.length >= _minQuery;
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+          child: Row(
+            children: [
+              Container(
+                width: 30,
+                height: 30,
+                decoration: BoxDecoration(color: AppColors.surfaceAlt, shape: BoxShape.circle),
+                alignment: Alignment.center,
+                child: Icon(LucideIcons.mapPin, size: 16, color: widget.accent),
+              ),
+              const SizedBox(width: 11),
+              Expanded(
+                child: TextField(
+                  controller: widget.controller,
+                  focusNode: _focus,
+                  textCapitalization: TextCapitalization.sentences,
+                  textInputAction: TextInputAction.search,
+                  style: AppText.input,
+                  onChanged: _onChanged,
+                  decoration: InputDecoration(
+                    border: InputBorder.none,
+                    hintText: L.s.searchPlace,
+                    isDense: true,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (searching)
+          for (final place in _results) ...[
+            InsetDivider(),
+            _PlaceRow(place: place, onTap: () => _pick(place)),
+          ],
+        if (searching && _results.isEmpty && _answered) ...[
+          InsetDivider(),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(57, 12, 16, 13),
+            child: Text(L.s.noPlacesFound, style: AppText.label),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// One suggestion: the name on top, where it is underneath.
+class _PlaceRow extends StatelessWidget {
+  final PlaceSuggestion place;
+  final VoidCallback onTap;
+
+  const _PlaceRow({required this.place, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 11, 16, 11),
+        child: Row(
+          children: [
+            Icon(LucideIcons.mapPin, size: 15, color: AppColors.mutedLight),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    place.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppText.rowTitle,
+                  ),
+                  if (place.address.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      place.address,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppText.label,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// One destination in the calendar card — the colour dot, the name, and a check
+/// on the one this event is going to.
 class _CalendarOptionRow extends StatelessWidget {
   final CalendarSource source;
   final bool selected;
+  final VoidCallback onTap;
 
-  const _CalendarOptionRow({required this.source, required this.selected});
+  const _CalendarOptionRow({required this.source, required this.selected, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     final accent = Theme.of(context).colorScheme.primary;
     return GestureDetector(
-      onTap: () => Navigator.of(context).pop(source),
+      onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),

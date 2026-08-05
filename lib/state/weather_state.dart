@@ -58,10 +58,14 @@ class WeatherNotifier extends StateNotifier<WeatherState> {
   /// on a free API is how a client gets blocked.
   static const _maxPlaces = 8;
 
-  /// A timed appointment keeps its chip for two hours after it started, so the
-  /// row you are looking at at 18:30 for an 18:00 pickup still shows the
-  /// weather it is happening in.
-  static const _pastGrace = Duration(hours: 2);
+  /// **Today is forecast whole**, from midnight — a timed appointment keeps its
+  /// reading all day, not for a grace period after it started. The day you are
+  /// looking at is the day you are living: at 17:00 the 11:00 appointment is
+  /// still on the screen, and a row that shows the weather until 13:00 and then
+  /// stops reads as broken rather than as tidy. It costs nothing — the hour is
+  /// in the same series the rest of the day comes from (`past_days=1` in
+  /// [WeatherRepository.hourly]).
+  static DateTime _floor(DateTime now) => DateTime(now.year, now.month, now.day);
 
   /// [eventsByDay] is `CalendarScreenState.eventsByDay` — already expanded to
   /// one entry per day an event covers, which is exactly the granularity the
@@ -146,11 +150,7 @@ class WeatherNotifier extends StateNotifier<WeatherState> {
   /// near term instead of every event the household has ever had.
   List<_Sample> _forecastable(Map<String, List<CalendarEvent>> eventsByDay, DateTime now) {
     final horizon = now.add(WeatherRepository.forecastHorizon);
-    // An all-day event is sampled at mid-day, so it would otherwise fall out of
-    // the list at 14:00 on the day it is happening. A full day of grace keeps
-    // today's Ferien and today's bin pickup showing their weather all day.
-    final allDayFloor = DateTime(now.year, now.month, now.day);
-    final timedFloor = now.subtract(_pastGrace);
+    final floor = _floor(now);
 
     final seen = <String>{};
     final out = <_Sample>[];
@@ -162,7 +162,7 @@ class WeatherNotifier extends StateNotifier<WeatherState> {
       for (final event in entry.value) {
         final at = eventSampleTime(event, day);
         if (at.isAfter(horizon)) continue;
-        if (at.isBefore(event.allDay ? allDayFloor : timedFloor)) continue;
+        if (at.isBefore(floor)) continue;
 
         final key = eventWeatherKey(event, day);
         // Two appointments at the same hour in the same place share one

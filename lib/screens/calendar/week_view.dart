@@ -250,6 +250,7 @@ class _WeekViewState extends ConsumerState<_WeekView> {
     // The header names whatever month the strip is actually showing, not the
     // selected day's — see _stripAnchor.
     final monthLabel = L.s.monthYear(_stripAnchor.month, _stripAnchor.year);
+    final holiday = ref.watch(germanHolidaysProvider).on(sel.y, sel.m, sel.d);
 
     // A selection made outside the strip (the "Heute" button) has to be
     // scrolled to; one made by tapping a cell is already on screen, and
@@ -289,32 +290,48 @@ class _WeekViewState extends ConsumerState<_WeekView> {
               ),
               child: KeyedSubtree(
                 key: ValueKey('${sel.y}-${sel.m}-${sel.d}-${state.calendarFilter}'),
-                child: events.isEmpty
-                    ? Padding(
-                        padding: EdgeInsets.only(bottom: navContentInset(context)),
-                        child: Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(L.s.noEventsThisDay, style: AppText.body.copyWith(color: AppColors.inkTertiary)),
-                              const SizedBox(height: 18),
-                              const _EmptyDayActions(),
-                            ],
-                          ),
-                        ),
-                      )
-                    : ListView(
-                        padding: EdgeInsets.only(bottom: navContentInset(context)),
-                        children: [
-                          for (var i = 0; i < events.length; i++)
-                            _EventAgendaRow(
-                              event: events[i],
-                              isFirst: i == 0,
-                              headingText: headingText,
-                              accent: accent,
-                            ),
-                        ],
+                // The Feiertag sits above the agenda rather than in it — it is
+                // something about the day, not an appointment on it. A day off
+                // with nothing planned is still worth saying, so it shows over
+                // the empty state too.
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (holiday != null)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 14),
+                        child: _HolidayChip(holiday: holiday, accent: accent),
                       ),
+                    Expanded(
+                      child: events.isEmpty
+                          ? Padding(
+                              padding: EdgeInsets.only(bottom: navContentInset(context)),
+                              child: Center(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(L.s.noEventsThisDay, style: AppText.body.copyWith(color: AppColors.inkTertiary)),
+                                    const SizedBox(height: 18),
+                                    const _EmptyDayActions(),
+                                  ],
+                                ),
+                              ),
+                            )
+                          : ListView(
+                              padding: EdgeInsets.only(bottom: navContentInset(context)),
+                              children: [
+                                for (var i = 0; i < events.length; i++)
+                                  _EventAgendaRow(
+                                    event: events[i],
+                                    isFirst: i == 0,
+                                    headingText: headingText,
+                                    accent: accent,
+                                  ),
+                              ],
+                            ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -406,6 +423,12 @@ class _DayStripCell extends ConsumerWidget {
     final sel = state.selected;
     final isSel = _sameDay(sel, date.year, date.month, date.day);
     final today = _isToday(date.year, date.month, date.day);
+    // Same two washes as the month grid: a Feiertag and a Ferien day have to
+    // read the same way in both views, or the texture stops meaning anything.
+    final highlight = _dayHighlight(
+      publicHoliday: ref.watch(germanHolidaysProvider).on(date.year, date.month, date.day) != null,
+      schoolHoliday: state.isSchoolHoliday(date.year, date.month, date.day),
+    );
     final colors = state.dayColors(date.year, date.month, date.day);
     final dots = colors.take(3).toList();
     final overflowCount = colors.length - 3;
@@ -426,7 +449,7 @@ class _DayStripCell extends ConsumerWidget {
                   child: Center(child: EventDots(colors: dots, overflowCount: overflowCount)),
                 ),
                 const SizedBox(height: 14),
-                DaySelectorCircle(day: date.day, selected: isSel, today: today, accent: accent),
+                DaySelectorCircle(day: date.day, selected: isSel, today: today, highlight: highlight, accent: accent),
               ],
             ),
           ),

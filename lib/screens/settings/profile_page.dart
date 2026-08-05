@@ -1,11 +1,15 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../services/media_picker.dart';
 import '../../state/auth_state.dart';
 import '../../state/family_state.dart';
 import '../../state/settings_state.dart';
 import '../../theme/tokens.dart';
+import '../../widgets/anchored_menu.dart';
 import '../../widgets/app_sheet.dart';
 import '../../widgets/avatar.dart';
 import '../../widgets/collapsing_header.dart';
@@ -13,8 +17,8 @@ import '../../widgets/glass.dart';
 import '../../widgets/settings_chrome.dart';
 import '../../l10n/l10n.dart';
 
-/// The signed-in user's own profile — display name, avatar colour, and the
-/// role they hold, which is shown but never editable here: nobody promotes
+/// The signed-in user's own profile — display name, picture, avatar colour, and
+/// the role they hold, which is shown but never editable here: nobody promotes
 /// themselves.
 class ProfilePage extends ConsumerStatefulWidget {
   const ProfilePage({super.key});
@@ -26,6 +30,12 @@ class ProfilePage extends ConsumerStatefulWidget {
 class ProfilePageState extends ConsumerState<ProfilePage> {
   late final TextEditingController _nameController;
 
+  final GlobalKey _avatarKey = GlobalKey();
+
+  /// The picture that was just picked, drawn immediately while it uploads —
+  /// see [Avatar.imageFile]. Cleared once the roster carries the real one.
+  File? _uploading;
+
   static const _extraHeight = 84.0;
 
   @override
@@ -35,6 +45,52 @@ class ProfilePageState extends ConsumerState<ProfilePage> {
     // else sees, falling back to the local draft before the roster has loaded.
     final me = ref.read(familyProvider).me(ref.read(currentUserIdProvider));
     _nameController = TextEditingController(text: me?.name ?? ref.read(settingsProvider).name);
+  }
+
+  /// Puts the picked photo up straight away and saves it behind that.
+  Future<void> _pickAvatar(AttachmentSource source) async {
+    final picked = await pickAttachment(source);
+    if (picked == null || !picked.isImage) return;
+
+    final file = File(picked.path);
+    setState(() => _uploading = file);
+    final ok = await ref.read(familyProvider.notifier).setMyAvatar(file);
+    if (!mounted) return;
+    // Held for as long as this page is open, rather than handed back to the
+    // signed URL the moment the upload lands: the file on disk *is* the
+    // picture, and swapping to a URL that still has to be fetched would blink
+    // the face back to initials for no gain. Dropped only when the upload
+    // failed, so what's on screen is what's actually stored.
+    if (!ok) setState(() => _uploading = null);
+  }
+
+  void _avatarMenu(HouseholdMember? me) {
+    showAnchoredMenu(
+      context: context,
+      anchorKey: _avatarKey,
+      items: [
+        AnchoredMenuItem(
+          label: L.s.photo,
+          icon: LucideIcons.image,
+          onSelected: () => _pickAvatar(AttachmentSource.photos),
+        ),
+        AnchoredMenuItem(
+          label: L.s.camera,
+          icon: LucideIcons.camera,
+          onSelected: () => _pickAvatar(AttachmentSource.camera),
+        ),
+        if (me?.avatarPath != null || _uploading != null)
+          AnchoredMenuItem(
+            label: L.s.removePhoto,
+            icon: LucideIcons.trash2,
+            destructive: true,
+            onSelected: () {
+              setState(() => _uploading = null);
+              ref.read(familyProvider.notifier).removeMyAvatar();
+            },
+          ),
+      ],
+    );
   }
 
   @override
@@ -54,7 +110,18 @@ class ProfilePageState extends ConsumerState<ProfilePage> {
   Widget build(BuildContext context) {
     final state = ref.watch(settingsProvider);
     final me = ref.watch(familyProvider).me(ref.watch(currentUserIdProvider));
-    final displayName = me?.name ?? state.displayName;
+
+    // The field is the truth while this page is open — it is what will be
+    // written on the way out. Reading the saved copy instead would leave the
+    // hero, the bar title and the initials all describing the previous name
+    // until the page was closed and reopened.
+    final draft = _nameController.text.trim();
+    final displayName = draft.isNotEmpty ? draft : (me?.name ?? state.displayName);
+
+    // Derived with the same function the notifier saves and `handle_new_user`
+    // mirrors, so the letters shown while typing are the letters stored.
+    final initials = draft.isNotEmpty ? initialsOf(draft) : (me?.initials ?? '?');
+
     final tone = AppTones.list[me?.tone ?? state.avatarTone];
     final role = ref.watch(myRoleProvider);
 
@@ -86,7 +153,42 @@ class ProfilePageState extends ConsumerState<ProfilePage> {
               const SizedBox(height: 8),
               Row(
                 children: [
-                  Avatar(size: 64, bg: tone.bg, fg: tone.fg, initials: me?.initials ?? initialsFromName(state.name), fontSize: 21),
+                  // The avatar is the control, not a picture with a button next
+                  // to it — it is already the biggest thing on the page and the
+                  // one everybody reaches for. The badge is what says so.
+                  GestureDetector(
+                    key: _avatarKey,
+                    onTap: () => _avatarMenu(me),
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Avatar(
+                          size: 64,
+                          bg: tone.bg,
+                          fg: tone.fg,
+                          initials: initials,
+                          fontSize: 21,
+                          imageUrl: me?.avatarUrl,
+                          imageFile: _uploading,
+                        ),
+                        Positioned(
+                          right: -2,
+                          bottom: -2,
+                          child: Container(
+                            width: 24,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              color: AppColors.surface,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: AppColors.hairline2),
+                            ),
+                            alignment: Alignment.center,
+                            child: Icon(LucideIcons.camera, size: 12, color: AppColors.muted),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                   const SizedBox(width: 16),
                   Expanded(
                     child: Column(
@@ -124,7 +226,13 @@ class ProfilePageState extends ConsumerState<ProfilePage> {
                               isDense: true,
                               contentPadding: EdgeInsets.zero,
                             ),
-                            onChanged: (v) => ref.read(settingsProvider.notifier).setName(v),
+                            onChanged: (v) {
+                              ref.read(settingsProvider.notifier).setName(v);
+                              // The hero avatar, its initials and the collapsed
+                              // bar title all read the field, so every
+                              // keystroke has to redraw them.
+                              setState(() {});
+                            },
                           ),
                         ),
                       ),
