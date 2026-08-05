@@ -423,7 +423,7 @@ class _BoxDetail extends ConsumerWidget {
             SectionCard(
               children: [
                 ...dividedRows([
-                  const _AddItemRow(),
+                  _AddItemRow(),
                   for (final item in items) _ItemRow(item: item, accent: accent),
                 ]),
                 if (items.isEmpty)

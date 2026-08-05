@@ -363,7 +363,7 @@ class _EmptyDayActions extends ConsumerWidget {
         label: L.s.connectCalendars,
         icon: LucideIcons.calendarPlus,
         onTap: () => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const CalendarConnectionsPage()),
+          MaterialPageRoute(builder: (_) => CalendarConnectionsPage()),
         ),
       );
     }
@@ -659,7 +659,10 @@ class _Chip extends StatelessWidget {
 /// today's date has scrolled out of view (week view: today isn't in the
 /// displayed week; month view: today's day cell isn't in the viewport).
 /// Tapping it re-selects today and (in month view) scrolls back to it.
-class _JumpToTodayButton extends StatefulWidget {
+///
+/// Nothing but a labelled [FloatingGlassPill] — the shape and its come-and-go
+/// are shared with Board's and Listen's "Rückgängig".
+class _JumpToTodayButton extends StatelessWidget {
   final bool visible;
   final Color accent;
   final VoidCallback onTap;
@@ -667,61 +670,13 @@ class _JumpToTodayButton extends StatefulWidget {
   const _JumpToTodayButton({required this.visible, required this.accent, required this.onTap});
 
   @override
-  State<_JumpToTodayButton> createState() => _JumpToTodayButtonState();
-}
-
-class _JumpToTodayButtonState extends State<_JumpToTodayButton> {
-  bool _pressed = false;
-
-  void _setPressed(bool value) {
-    if (_pressed != value) setState(() => _pressed = value);
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return IgnorePointer(
-      ignoring: !widget.visible,
-      child: AnimatedSlide(
-        duration: const Duration(milliseconds: 220),
-        curve: Curves.easeOutCubic,
-        offset: widget.visible ? Offset.zero : const Offset(0, 0.7),
-        child: AnimatedOpacity(
-          duration: const Duration(milliseconds: 220),
-          curve: Curves.easeOutCubic,
-          opacity: widget.visible ? 1 : 0,
-          child: GestureDetector(
-            onTap: widget.onTap,
-            onTapDown: (_) => _setPressed(true),
-            onTapUp: (_) => _setPressed(false),
-            onTapCancel: () => _setPressed(false),
-            child: AnimatedScale(
-              scale: _pressed ? 0.92 : 1.0,
-              duration: const Duration(milliseconds: 120),
-              curve: Curves.easeOut,
-              child: GlassSurface(
-                borderRadius: BorderRadius.circular(22),
-                // Same reasoning as _CalendarFilterButton: let the real
-                // UIGlassEffect adapt on iOS, tint only the fallback so the
-                // dark "Heute" label stays legible off-iOS.
-                fallbackTint: AppColors.navPillTint,
-                blurSigma: 20,
-                boxShadow: AppShadows.floatingPill,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(LucideIcons.calendarCheck, size: 15, color: widget.accent),
-                      const SizedBox(width: 7),
-                      Text(L.s.today, style: AppText.buttonSmall.copyWith(fontWeight: FontWeight.w600)),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
+    return FloatingGlassPill(
+      visible: visible,
+      icon: LucideIcons.calendarCheck,
+      label: L.s.today,
+      accent: accent,
+      onTap: onTap,
     );
   }
 }

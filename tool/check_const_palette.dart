@@ -124,7 +124,15 @@ void main() {
   final readsToken = <String>{};
 
   for (final f in files) {
-    final src = f.readAsStringSync();
+    // Blanked here too, not just in the offender scan below. Reading class
+    // bodies raw let a *comment* mentioning `AppColors` — or any capitalised
+    // word inside a UI string — mark that class palette-dependent, and the
+    // transitive closure then spread it to every caller. That is what put the
+    // `StringsDe`/`StringsEn` pair and the settings pages in this report
+    // permanently: nine standing offenders nobody could clear, which is how a
+    // real one (a `const FrostedHeaderBackground()`) went unnoticed in the
+    // noise. A checker with a non-empty baseline is a checker nobody runs.
+    final src = _blankNonCode(f.readAsStringSync());
     final decls = _classDecl.allMatches(src).toList();
     for (var i = 0; i < decls.length; i++) {
       final name = decls[i].group(1)!;

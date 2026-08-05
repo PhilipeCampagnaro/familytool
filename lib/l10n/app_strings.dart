@@ -485,6 +485,16 @@ abstract class AppStrings {
   String pendingWithRole(String role);
   String get inviteFamilyMember;
   String get inviteValidity;
+
+  /// The confirmation the invite sheet turns into once the invitation exists.
+  String get inviteSending;
+  String get inviteSentTitle;
+  String get inviteCreatedTitle;
+  String inviteSentTo(String email);
+  String inviteMailNotSent(String email);
+  String invitedAsRole(String role);
+  String inviteValidUntil(String date);
+
   String get youCaps;
   String get removeMemberQuestion;
   String removeMemberBody(String name);

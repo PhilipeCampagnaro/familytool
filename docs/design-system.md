@@ -32,7 +32,15 @@ that have none.
     isn't constant); it's tokens read *inside* `build` that slip through. `dart tool/check_const_palette.dart`
     walks the transitive "reads a token" closure and fails on any `const` *expression* that
     constructs one (the whole balanced expression, not just the head constructor) — run it after
-    adding widgets.
+    adding widgets, and keep it at `OK`. It reported nine standing offenders for a while, all of
+    them false (it scanned class bodies without blanking comments and strings first, so one
+    capitalised word in a UI string was enough to mark a class); a real
+    `const FrostedHeaderBackground()` sat in that list unnoticed and shipped a dark header over
+    the light app. A checker with a permanent baseline is a checker nobody reads.
+  - **`FrostedHeaderBackground`'s constructor is deliberately not `const`**, which makes that one
+    — the most-repeated and most-visible instance of this bug, since every screen has a bar — a
+    compile error rather than something the eye has to catch. Worth copying for any other widget
+    that reads a token in `build` *and* gets instantiated from many call sites.
 - **Never store a resolved `Color` in a model or in const seed data.** It freezes at whatever the
   palette was. Store the *identity* and derive the colour: `CalendarEvent.src` is an
   `EventSource` with a `color` getter, `FamilyMember.tone` / `StorageBox.tone` /
@@ -154,6 +162,14 @@ fades away. `CollapsingScreenTitle` morphs the heading from large-left to small-
 `ScreenBodyPanel` is the rounded gray panel the body scrolls on; `HeaderBrandGlow` is the colored
 wash the detail screens put behind theirs.
 
+A Listen detail header takes that wash from the shop logo the list carries, and
+[lib/data/brand_colors.dart](../lib/data/brand_colors.dart) **reads it off the logo** — one decode
+per asset, cached, dominant hue by saturation-weighted hue bucket — rather than from a table. The
+four shops the palette names (`brandRewe`, `brandDm`, `brandToom`, `brandIkea`) stay as overrides;
+everything else in `assets/merchants/` colors itself, so a logo dropped into the folder brings its
+color with it. Renaming a list re-derives its icon, so the wash follows the new shop (crossfaded,
+320ms) — that is the point, and a hardcoded four-shop switch is what made it silently not happen.
+
 **Kalender keeps its own copy of this plumbing on purpose** — its header carries a freely-scrolling
 day strip whose geometry the week view owns, plus a collapsed-only filter dropdown. Don't merge
 them, but a change to how the collapse *feels* belongs in both.
@@ -212,14 +228,65 @@ Non-obvious bits, each one a bug that shipped first:
     a larger `gap:` for those: scrolling content may sit close and slide under the glass, while a
     control *parked* above the bar needs air or the two glass surfaces touch and it reads as
     hiding behind the bar.
+- `FloatingGlassPill` / `UndoPill` (`floating_pill.dart`) — the glass pill that parks above the
+  bottom nav and comes and goes with the state behind it: the calendar's "Heute", Board's and
+  Listen's "Rückgängig". The widget only draws itself; every caller positions it the same way,
+  `Positioned(left: 0, right: 0, bottom: navContentInset(context, pill: 106, gap: 36))` around a
+  `Center`, and taps beside it fall through to the screen underneath.
+  - `UndoPill` is the check-off half: it takes a **token** (the id of the row that just moved into
+    "Erledigt", `''` for nothing) and shows itself for five seconds each time that token *changes*.
+    The screens derive the token from `state.justMoved` plus the row's `done` flag rather than
+    calling anything imperatively — which is also why undoing, from the pill or from the "Erledigt"
+    row, takes the pill away by itself. A token already up when it mounts shows nothing, so opening
+    a list doesn't offer to undo something ticked off ten minutes ago.
 - `showAppSheet` / `SectionCard` / `CardDivider` (`app_sheet.dart`) — shared bottom-sheet chrome
   (grab handle, X/title/check header or a custom `header`, scrolling body). **Every** modal sheet
   should go through this rather than a bespoke `showModalBottomSheet`.
+  - **The grab handle doubles as the countdown on a sheet that dismisses itself.** Anything
+    inside the sheet can set `SheetCountdown.of(context)?.value = duration` (from a post-frame
+    callback — setting it during build rebuilds a sibling mid-pass) and the pill's fill drains
+    left to right over exactly that span, on a faint track it leaves behind. Same 44×4 handle,
+    same place, still draggable; a sheet that never counts down looks exactly as it always did.
+    `ConfirmationView` sets it from its own `dismissAfter`, so no caller has to keep the two in
+    sync.
+- `SheetActionHeader` (`app_sheet.dart`) — the same X/title/check row for a sheet that **submits
+  while it stays open**: `SheetHeaderAction.confirm` → `.busy` (spinner, and the X withdrawn — the
+  request wouldn't be cancelled by closing) → `.none` (the sheet has become a confirmation; the X
+  is the only way out). `showAppSheet`'s built-in header pops on the check, which such a sheet
+  must not do, so pass this as `header` wrapped in a `ValueListenableBuilder` on the phase. Used
+  by `showConnectConfirmSheet` and by Settings' invite sheet (`settings/family_page.dart`) — a
+  third sheet with a request in flight belongs here rather than in its own copy.
+- **`ConfirmationView` (`confirmation.dart`) — the app's *one* "that worked" surface.** A mark, a
+  headline, a muted `message`, and `content` cards for whatever the action left behind. All three
+  confirmations in the app are this widget with different content (calendar connected, member
+  invited, onboarding finished); **do not hand-build a fourth**. Three axes:
+  - `dismissAfter` — a duration makes it a **beat** that plays and leaves via `onDone` (the
+    connect, the invite); null makes it a **screen** that waits with an action at its foot
+    (onboarding).
+  - `mark` — `check` is the accent disc and its expanding ring, the everyday result.
+    `celebration` is 🎉, falling confetti and the full `screenTitle`, for the moments that happen
+    once per family: the household set up, somebody invited into it. **Confetti on every write is
+    confetti nobody sees** — a new caller needs a reason to be a celebration.
+  - `action` — `sheetAction` (the bordered `OutlinedSheetAction` a sheet ends with) or
+    `primaryButton` (`PrimaryButton`, the filled accent pill a full screen ends with).
+
+  It is a sheet/screen *body*, not a sheet: a flow that already has one swaps its body for this
+  (`AnimatedSwitcher`, 220ms) so the sheet that acted becomes the sheet that confirms, with no
+  second modal stacked on the first. `showConfirmationSheet` is only for a result that came from
+  somewhere other than a sheet. The confetti is 26 rounded rects on one controller in a
+  `CustomPainter`, coloured from `AppTones` — one pass, no package, no loop.
+- `PrimaryButton` (`primary_button.dart`) — the filled accent pill a **full screen** ends with
+  (onboarding's four steps). A sheet ends with `OutlinedSheetAction` instead, where a filled pill
+  would compete with the accent check in the header.
+- `CopyLinkCard` (`copy_link_card.dart`) — a URL the app was handed **once** (currently only the
+  share sheet's fresh link), with copy-as-the-whole-card and the "wir speichern ihn nicht"
+  footnote. `onDismiss` adds the X, for the share sheet where the card outlives the moment.
+  **Not used for invitations**: an invite travels by mail only (see `SentInvite`).
 - `showConnectConfirmSheet` (`connect_confirm_sheet.dart`) — the last step of **every** "add a
   calendar" flow, and the only place a connect is actually performed: what you picked, the name
   it will carry, X on the left and the accent check on the right. `onConfirm(name)` runs while
   the sheet stays open (the X goes away — the request wouldn't be cancelled by closing), then a
-  short success beat (accent check + an expanding ring, ~1.1s) before it pops `true`. It also
+  short `ConfirmationView` beat (~1.1s) before it pops `true`. It also
   serves the rename action on a connected row. `extraFields` adds card rows **above** the name
   field for the one question a provider still has to ask — Abfall's Abfuhrbezirk chips, or the
   ICS link for a town no vendor serves; the caller owns their controllers and reads them inside

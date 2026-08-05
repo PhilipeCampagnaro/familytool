@@ -1,12 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../theme/tokens.dart';
 import 'app_sheet.dart';
+import 'confirmation.dart';
 import 'error_note.dart';
-import 'glass.dart';
 import 'settings_chrome.dart';
 import '../l10n/l10n.dart';
 
@@ -143,7 +142,8 @@ class _ConnectFlow {
 /// Close on the left, the accent check on the right — the same two controls as
 /// every other sheet header, so this reads as a sheet and not as a dialog.
 /// While the connect runs the check becomes a spinner and the X goes away:
-/// there is a request in flight that closing would not cancel.
+/// there is a request in flight that closing would not cancel. That is
+/// [SheetActionHeader]'s job; this only maps the flow's phase onto it.
 class _ConfirmHeader extends StatelessWidget {
   final _ConnectFlow flow;
   final String title;
@@ -154,53 +154,17 @@ class _ConfirmHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return ValueListenableBuilder<_Phase>(
       valueListenable: flow.phase,
-      builder: (context, phase, _) => Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-        child: SizedBox(
-          height: 40,
-          child: Stack(
-            children: [
-              // Painted before either button — see [showAppSheet] for why a
-              // title between two glass platform views disappears on device.
-              Positioned.fill(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 54),
-                  child: Center(
-                    child: Text(
-                      title,
-                      textAlign: TextAlign.center,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppText.sheetTitle,
-                    ),
-                  ),
-                ),
-              ),
-              if (phase == _Phase.editing)
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: GlassIconButton(
-                    icon: LucideIcons.x,
-                    onTap: () => Navigator.of(context).pop(false),
-                  ),
-                ),
-              Align(
-                alignment: Alignment.centerRight,
-                child: switch (phase) {
-                  _Phase.editing => GlassConfirmButton(onTap: () => flow.submit(context)),
-                  _Phase.busy => const SizedBox(
-                    width: 40,
-                    height: 40,
-                    child: Center(
-                      child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
-                    ),
-                  ),
-                  _Phase.success => const SizedBox(width: 40, height: 40),
-                },
-              ),
-            ],
-          ),
-        ),
+      builder: (context, phase, _) => SheetActionHeader(
+        title: title,
+        action: switch (phase) {
+          _Phase.editing => SheetHeaderAction.confirm,
+          _Phase.busy => SheetHeaderAction.busy,
+          _Phase.success => SheetHeaderAction.none,
+        },
+        onConfirm: () => flow.submit(context),
+        // Closing by hand is a "no", so the caller gets `false` — the success
+        // beat is the only thing that pops `true`.
+        onClose: () => Navigator.of(context).pop(false),
       ),
     );
   }
@@ -235,10 +199,14 @@ class _ConnectConfirmBody extends StatelessWidget {
         duration: const Duration(milliseconds: 220),
         switchInCurve: Curves.easeOutCubic,
         child: phase == _Phase.success
-            ? _SuccessBeat(
+            // The app's one confirmation (`confirmation.dart`), in its beat
+            // shape: there is nothing to read here beyond the word, so it
+            // plays and takes the sheet with it.
+            ? ConfirmationView(
                 key: const ValueKey('success'),
-                label: successLabel,
-                name: flow.name.text.trim(),
+                headline: successLabel,
+                message: flow.name.text.trim().isEmpty ? null : flow.name.text.trim(),
+                dismissAfter: const Duration(milliseconds: 1100),
                 onDone: () => Navigator.of(context).pop(true),
               )
             : _EditingBody(
@@ -345,128 +313,6 @@ class _EditingBody extends StatelessWidget {
           ),
         ],
       ],
-    );
-  }
-}
-
-/// The beat between "connected" and the sheet closing.
-///
-/// Short on purpose — long enough to read the word, not long enough to be a
-/// step of its own. The ring pops out from under the check rather than the
-/// check bouncing, which keeps the motion in the same ease-out language as the
-/// rest of the app.
-class _SuccessBeat extends StatefulWidget {
-  final String label;
-  final String name;
-  final VoidCallback onDone;
-
-  const _SuccessBeat({super.key, required this.label, required this.name, required this.onDone});
-
-  @override
-  State<_SuccessBeat> createState() => _SuccessBeatState();
-}
-
-class _SuccessBeatState extends State<_SuccessBeat> with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 1100),
-  )..forward();
-
-  late final CurvedAnimation _pop = CurvedAnimation(
-    parent: _controller,
-    curve: const Interval(0, 0.3, curve: Curves.easeOutBack),
-  );
-  late final CurvedAnimation _ring = CurvedAnimation(
-    parent: _controller,
-    curve: const Interval(0.1, 0.55, curve: Curves.easeOutCubic),
-  );
-  late final CurvedAnimation _text = CurvedAnimation(
-    parent: _controller,
-    curve: const Interval(0.25, 0.6, curve: Curves.easeOutCubic),
-  );
-
-  @override
-  void initState() {
-    super.initState();
-    _controller.addStatusListener((status) {
-      if (status == AnimationStatus.completed) widget.onDone();
-    });
-  }
-
-  @override
-  void dispose() {
-    _pop.dispose();
-    _ring.dispose();
-    _text.dispose();
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final accent = Theme.of(context).colorScheme.primary;
-    return SizedBox(
-      width: double.infinity,
-      child: Column(
-        children: [
-          const SizedBox(height: 30),
-          SizedBox(
-            width: 130,
-            height: 130,
-            child: AnimatedBuilder(
-              animation: _controller,
-              builder: (context, _) => Stack(
-                alignment: Alignment.center,
-                children: [
-                  Opacity(
-                    opacity: (1 - _ring.value).clamp(0.0, 1.0) * 0.35,
-                    child: Container(
-                      width: 78 + 52 * _ring.value,
-                      height: 78 + 52 * _ring.value,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: accent, width: 2),
-                      ),
-                    ),
-                  ),
-                  Transform.scale(
-                    scale: _pop.value,
-                    child: Container(
-                      width: 78,
-                      height: 78,
-                      decoration: BoxDecoration(
-                        color: accent,
-                        shape: BoxShape.circle,
-                        boxShadow: AppShadows.accentGlass(accent),
-                      ),
-                      alignment: Alignment.center,
-                      child: const Icon(LucideIcons.check, size: 38, color: Colors.white),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 22),
-          FadeTransition(
-            opacity: _text,
-            child: Column(
-              children: [
-                Text(widget.label, style: AppText.cardTitle),
-                if (widget.name.isNotEmpty) ...[
-                  const SizedBox(height: 6),
-                  Text(
-                    widget.name,
-                    textAlign: TextAlign.center,
-                    style: AppText.body.copyWith(color: AppColors.muted),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          const SizedBox(height: 30),
-        ],
-      ),
     );
   }
 }

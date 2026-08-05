@@ -832,6 +832,21 @@ class StringsEn extends AppStrings {
   String get inviteValidity =>
       'The invitation is valid for 14 days. Whoever accepts it leaves their previous household.';
   @override
+  String get inviteSending => 'Sending the invitation…';
+  @override
+  String get inviteSentTitle => 'Invitation sent';
+  @override
+  String get inviteCreatedTitle => 'Invitation created';
+  @override
+  String inviteSentTo(String email) => 'We\'ve emailed $email.';
+  @override
+  String inviteMailNotSent(String email) =>
+      'The email to $email couldn\'t be delivered. Share the link below instead.';
+  @override
+  String invitedAsRole(String role) => 'Invited as $role';
+  @override
+  String inviteValidUntil(String date) => 'Valid until $date';
+  @override
   String get youCaps => 'YOU';
   @override
   String get removeMemberQuestion => 'Remove member?';

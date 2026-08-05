@@ -160,7 +160,21 @@ class FrostedHeaderBackground extends StatelessWidget {
   /// carries enough white to keep the dark title legible over it.
   final double tintOpacity;
 
-  const FrostedHeaderBackground({super.key, this.tintOpacity = 0.62});
+  /// **Deliberately not `const`, and the lint below is suppressed on purpose.**
+  ///
+  /// This widget reads [AppColors.frost] inside its own `build`, which makes it
+  /// exactly the case the rule on [AppColors] warns about: a canonicalised
+  /// `const` instance is skipped when its parent rebuilds, so the bar keeps the
+  /// palette it was first built with and stays dark in a light app (or light in
+  /// a dark one) until a hot reload rebuilds the world. That regressed once from
+  /// a `const` slipping back into the header, which is a bug no reviewer spots
+  /// and no test catches — every screen in the app has one of these bars, and
+  /// the wrong one only shows up after a live theme flip.
+  ///
+  /// A non-const constructor turns that into a compile error at the call site,
+  /// the same trade `AppStrings` makes for a missing translation.
+  // ignore: prefer_const_constructors_in_immutables
+  FrostedHeaderBackground({super.key, this.tintOpacity = 0.62});
 
   /// Stacked top-anchored blur bands, each covering a *fraction* of the bar's
   /// height. Each one filters what the previous ones have already blurred, so

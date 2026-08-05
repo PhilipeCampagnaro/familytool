@@ -15,6 +15,7 @@ import '../widgets/bottom_nav.dart';
 import '../widgets/day_circle.dart';
 import '../widgets/error_note.dart';
 import '../widgets/event_dots.dart';
+import '../widgets/floating_pill.dart';
 import '../widgets/glass.dart';
 import '../widgets/native_switch.dart';
 import '../widgets/swipe_actions.dart';

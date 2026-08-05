@@ -123,7 +123,7 @@ class _RootGate extends ConsumerWidget {
         return Scaffold(backgroundColor: AppColors.surface);
       case AuthStatus.signedOut:
       case AuthStatus.awaitingConfirmation:
-        return const AuthScreen();
+        return AuthScreen();
       case AuthStatus.signedIn:
         break;
     }

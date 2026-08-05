@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
@@ -8,6 +7,7 @@ import '../state/sharing_state.dart';
 import '../theme/tokens.dart';
 import 'app_sheet.dart';
 import 'avatar.dart';
+import 'copy_link_card.dart';
 import 'empty_state.dart';
 import 'error_note.dart';
 import 'native_switch.dart';
@@ -106,7 +106,7 @@ class _ShareSheetBodyState extends ConsumerState<_ShareSheetBody> {
         // is the single moment the URL exists in the app. A link whose address
         // was never copied can be revoked, not recovered.
         if (state.freshUrl case final url?) ...[
-          _FreshLinkCard(url: url, accent: accent, onDone: notifier.clearFreshUrl),
+          CopyLinkCard(url: url, label: L.s.newLink, onDismiss: notifier.clearFreshUrl),
           const SizedBox(height: 14),
         ],
 
@@ -199,82 +199,6 @@ class _ShareSheetBodyState extends ConsumerState<_ShareSheetBody> {
             message: L.s.notSharedYet,
           ),
         ],
-      ],
-    );
-  }
-}
-
-/// The URL, once. Copy is the only action that matters here, so it is the whole
-/// card rather than a small button beside it.
-class _FreshLinkCard extends StatefulWidget {
-  final String url;
-  final Color accent;
-  final VoidCallback onDone;
-
-  const _FreshLinkCard({required this.url, required this.accent, required this.onDone});
-
-  @override
-  State<_FreshLinkCard> createState() => _FreshLinkCardState();
-}
-
-class _FreshLinkCardState extends State<_FreshLinkCard> {
-  bool _copied = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return SectionCard(
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(LucideIcons.link, size: 15, color: widget.accent),
-                  const SizedBox(width: 8),
-                  Text(L.s.newLink, style: AppText.rowTitle),
-                  const Spacer(),
-                  GestureDetector(
-                    onTap: widget.onDone,
-                    behavior: HitTestBehavior.opaque,
-                    child: Icon(LucideIcons.x, size: 16, color: AppColors.mutedLight),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                widget.url,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: AppText.caption.copyWith(fontWeight: FontWeight.w400, color: AppColors.inkSecondary),
-              ),
-              const SizedBox(height: 10),
-              GestureDetector(
-                onTap: () async {
-                  await Clipboard.setData(ClipboardData(text: widget.url));
-                  if (mounted) setState(() => _copied = true);
-                },
-                behavior: HitTestBehavior.opaque,
-                child: Row(
-                  children: [
-                    Icon(_copied ? LucideIcons.check : LucideIcons.copy, size: 15, color: widget.accent),
-                    const SizedBox(width: 7),
-                    Text(
-                      _copied ? L.s.copied : L.s.copyLink,
-                      style: AppText.buttonSmall.copyWith(color: widget.accent),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                L.s.linkShownOnce,
-                style: AppText.label.copyWith(fontSize: 11.5),
-              ),
-            ],
-          ),
-        ),
       ],
     );
   }

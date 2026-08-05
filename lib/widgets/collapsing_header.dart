@@ -267,13 +267,18 @@ class _HeaderMaterial extends StatelessWidget {
     final animation = ModalRoute.of(context)?.animation;
     // Screens that aren't inside a route of their own (the five tabs, mounted
     // in main.dart's IndexedStack) never transition — nothing to guard.
-    if (animation == null) return const FrostedHeaderBackground();
+    // Not `const`, in either branch: [FrostedHeaderBackground] reads
+    // [AppColors.frost] inside its own build, and a canonicalised const widget
+    // is skipped when its parent rebuilds — so the bar would keep the palette it
+    // was first built with and stay dark in a light app until a hot reload. See
+    // the rule on [AppColors].
+    if (animation == null) return FrostedHeaderBackground();
     return AnimatedBuilder(
       animation: animation,
       builder: (context, child) => animation.status == AnimationStatus.forward
           ? ColoredBox(color: AppColors.surface)
           : child!,
-      child: const FrostedHeaderBackground(),
+      child: FrostedHeaderBackground(),
     );
   }
 }

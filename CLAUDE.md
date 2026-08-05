@@ -173,6 +173,12 @@ task:
 The user tests every change **in the running UI themselves** — that's the source of truth.
 
 - Run `flutter analyze` and make it clean before considering a change done.
+- **Touched anything in `lib/widgets/` or `lib/screens/`? Also run
+  `dart tool/check_const_palette.dart`, and leave it saying `OK`.** It catches the one failure
+  mode the compiler can't see: a `const`-constructed widget that reads a design token inside its
+  `build` keeps painting the palette it was born with, so it stays dark in a light app until a
+  hot reload. It is fast, it has no baseline to triage, and its whole value is that an empty
+  report stays empty — never wave a new offender through.
 - **Don't run `flutter test` or regenerate screenshots by default, and don't add new tests
   unless asked.** `test/` has some widget + golden-style screenshot tests; treat them as
   optional and only touch them on request.

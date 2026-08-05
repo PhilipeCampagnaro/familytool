@@ -90,7 +90,7 @@ class SheetCollapsingHeader {
 /// and the room its title has to keep clear on either side.
 const double _headerButtonSize = 40;
 
-class _AppSheetBody extends StatelessWidget {
+class _AppSheetBody extends StatefulWidget {
   final String? title;
   final Widget? header;
   final VoidCallback? onSave;
@@ -99,6 +99,21 @@ class _AppSheetBody extends StatelessWidget {
   final SheetCollapsingHeader? collapsingHeader;
 
   const _AppSheetBody({required this.title, required this.header, required this.onSave, required this.child, required this.heightFactor, this.collapsingHeader});
+
+  @override
+  State<_AppSheetBody> createState() => _AppSheetBodyState();
+}
+
+class _AppSheetBodyState extends State<_AppSheetBody> {
+  /// Set by whatever is inside the sheet when it knows the sheet is about to
+  /// dismiss itself — see [SheetCountdown].
+  final ValueNotifier<Duration?> _countdown = ValueNotifier(null);
+
+  @override
+  void dispose() {
+    _countdown.dispose();
+    super.dispose();
+  }
 
   /// Close / [title] / save row.
   ///
@@ -125,7 +140,7 @@ class _AppSheetBody extends StatelessWidget {
                 // though only one side carries the accent button.
                 padding: const EdgeInsets.symmetric(horizontal: _headerButtonSize + 14),
                 child: Center(
-                  child: Text(title!, textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.sheetTitle),
+                  child: Text(widget.title!, textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.sheetTitle),
                 ),
               ),
             ),
@@ -140,7 +155,7 @@ class _AppSheetBody extends StatelessWidget {
               alignment: Alignment.centerRight,
               child: GlassConfirmButton(
                 onTap: () {
-                  onSave?.call();
+                  widget.onSave?.call();
                   Navigator.of(context).pop();
                 },
               ),
@@ -167,49 +182,254 @@ class _AppSheetBody extends StatelessWidget {
         borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
       ),
       child: SingleChildScrollView(
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [child]),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [widget.child]),
       ),
     );
 
-    return FractionallySizedBox(
-      heightFactor: heightFactor,
-      alignment: Alignment.bottomCenter,
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-          boxShadow: AppShadows.sheet,
+    return SheetCountdown(
+      remaining: _countdown,
+      child: FractionallySizedBox(
+        heightFactor: widget.heightFactor,
+        alignment: Alignment.bottomCenter,
+        child: Container(
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+            boxShadow: AppShadows.sheet,
+          ),
+          child: Column(
+            children: [
+              _GrabHandle(countdown: _countdown),
+              if (widget.collapsingHeader case final collapsing?)
+                Expanded(
+                  child: NestedScrollView(
+                    headerSliverBuilder: (context, _) => [
+                      SliverPersistentHeader(
+                        pinned: true,
+                        delegate: CollapsingSliverHeaderDelegate(
+                          expandedHeight: collapsing.expandedHeight,
+                          collapsedHeight: collapsing.collapsedHeight,
+                          builder: collapsing.builder,
+                        ),
+                      ),
+                    ],
+                    body: Container(margin: const EdgeInsets.only(top: 14), child: grayBody),
+                  ),
+                )
+              else ...[
+                widget.header ?? _defaultHeader(context),
+                Expanded(child: Container(margin: const EdgeInsets.only(top: 14), child: grayBody)),
+              ],
+            ],
+          ),
         ),
-        child: Column(
+      ),
+    );
+  }
+}
+
+/// Lets whatever is *inside* a sheet tell the sheet's grab handle that the
+/// sheet is about to dismiss itself, and how long it has: the handle then
+/// drains over exactly that duration, so "this is going away in a moment" is
+/// visible without a countdown number or a second control.
+///
+/// An inherited notifier rather than a `showAppSheet` argument because the
+/// sheet does not know at open time — an auto-dismissing confirmation only
+/// exists once the request it confirms has come back. Set from a post-frame
+/// callback (see [ConfirmationView]); reading it where there is no sheet — the
+/// same confirmation used as a page — yields null and nothing happens.
+class SheetCountdown extends InheritedWidget {
+  final ValueNotifier<Duration?> remaining;
+
+  const SheetCountdown({super.key, required this.remaining, required super.child});
+
+  static ValueNotifier<Duration?>? of(BuildContext context) =>
+      context.getInheritedWidgetOfExactType<SheetCountdown>()?.remaining;
+
+  @override
+  bool updateShouldNotify(SheetCountdown old) => old.remaining != remaining;
+}
+
+/// The 44x4 pill every sheet is grabbed by — unchanged, until somebody sets a
+/// [SheetCountdown]. Then the pill's fill drains left to right over that
+/// duration on the track it leaves behind, and the handle is still a handle
+/// the whole time: same size, same place, nothing added around it.
+class _GrabHandle extends StatefulWidget {
+  final ValueNotifier<Duration?> countdown;
+
+  const _GrabHandle({required this.countdown});
+
+  @override
+  State<_GrabHandle> createState() => _GrabHandleState();
+}
+
+/// The pill's width, and the span the countdown drains across.
+const double _handleWidth = 44;
+
+class _GrabHandleState extends State<_GrabHandle> with SingleTickerProviderStateMixin {
+  late final AnimationController _drain = AnimationController(vsync: this, duration: Duration.zero);
+
+  @override
+  void initState() {
+    super.initState();
+    widget.countdown.addListener(_onCountdown);
+  }
+
+  void _onCountdown() {
+    final remaining = widget.countdown.value;
+    if (remaining == null || remaining <= Duration.zero) {
+      _drain.stop();
+      _drain.value = 0;
+      return;
+    }
+    _drain.duration = remaining;
+    _drain.forward(from: 0);
+  }
+
+  @override
+  void dispose() {
+    widget.countdown.removeListener(_onCountdown);
+    _drain.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(0, 10, 0, 2),
+      child: SizedBox(
+        width: _handleWidth,
+        height: 4,
+        child: AnimatedBuilder(
+          animation: _drain,
+          builder: (context, _) => Stack(
+            children: [
+              // The track only shows once something has drained off it, so a
+              // sheet that never counts down looks exactly as it always did.
+              Positioned.fill(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: shade(AppColors.grabHandle, 0.22),
+                    borderRadius: const BorderRadius.all(Radius.circular(2)),
+                  ),
+                ),
+              ),
+              // `Positioned` with an explicit width and both edges, not an
+              // `Align` + `FractionallySizedBox`: a Stack lays non-positioned
+              // children out *loosely*, so the fill's `DecoratedBox` — which
+              // has no size of its own — collapsed to zero height and the
+              // handle only ever showed its track. This way both axes are
+              // tight.
+              Positioned(
+                left: 0,
+                top: 0,
+                bottom: 0,
+                width: _handleWidth * (1 - _drain.value),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: AppColors.grabHandle,
+                    borderRadius: const BorderRadius.all(Radius.circular(2)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// What the right-hand side of a [SheetActionHeader] is currently offering.
+enum SheetHeaderAction {
+  /// The accent check: the sheet is a form and can be submitted.
+  confirm,
+
+  /// A spinner, and no close button — there is a request in flight that closing
+  /// would not cancel.
+  busy,
+
+  /// Nothing at all, close button included: the sheet has become a confirmation
+  /// that dismisses itself, and a X on it would race the dismissal for what the
+  /// sheet pops with.
+  none,
+}
+
+/// The standard X / [title] / check header, for a sheet that submits **while it
+/// stays open** and then shows what came back: `showAppSheet`'s built-in header
+/// pops on the check, which is exactly what a sheet with a busy and a result
+/// state must not do. The X is offered in [SheetHeaderAction.confirm] only —
+/// once the sheet has acted there is nothing left to cancel, and the way out is
+/// whatever the result state decides (a beat that dismisses itself, the action
+/// under a [ConfirmationView]).
+///
+/// Pass it as [showAppSheet]'s `header`, rebuilt (a `ValueListenableBuilder`
+/// around it) as the phase changes. Shared by the calendar's connect-confirm
+/// sheet and Settings' invite sheet, which is why it lives here rather than in
+/// either.
+///
+/// Same Stack-before-buttons construction as the standard header; see
+/// [showAppSheet] for why the title has to be painted first.
+class SheetActionHeader extends StatelessWidget {
+  final String title;
+  final SheetHeaderAction action;
+  final VoidCallback? onConfirm;
+
+  /// What the X does. Defaults to popping the sheet with no result.
+  final VoidCallback? onClose;
+
+  const SheetActionHeader({
+    super.key,
+    required this.title,
+    required this.action,
+    this.onConfirm,
+    this.onClose,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      child: SizedBox(
+        height: _headerButtonSize,
+        child: Stack(
           children: [
-            Padding(
-              padding: EdgeInsets.fromLTRB(0, 10, 0, 2),
-              child: SizedBox(
-                width: 44,
-                height: 4,
-                child: DecoratedBox(decoration: BoxDecoration(color: AppColors.grabHandle, borderRadius: BorderRadius.all(Radius.circular(2)))),
+            Positioned.fill(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: _headerButtonSize + 14),
+                child: Center(
+                  child: Text(
+                    title,
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppText.sheetTitle,
+                  ),
+                ),
               ),
             ),
-            if (collapsingHeader case final collapsing?)
-              Expanded(
-                child: NestedScrollView(
-                  headerSliverBuilder: (context, _) => [
-                    SliverPersistentHeader(
-                      pinned: true,
-                      delegate: CollapsingSliverHeaderDelegate(
-                        expandedHeight: collapsing.expandedHeight,
-                        collapsedHeight: collapsing.collapsedHeight,
-                        builder: collapsing.builder,
-                      ),
-                    ),
-                  ],
-                  body: Container(margin: const EdgeInsets.only(top: 14), child: grayBody),
+            if (action == SheetHeaderAction.confirm)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: GlassIconButton(
+                  icon: LucideIcons.x,
+                  onTap: onClose ?? () => Navigator.of(context).pop(),
                 ),
-              )
-            else ...[
-              header ?? _defaultHeader(context),
-              Expanded(child: Container(margin: const EdgeInsets.only(top: 14), child: grayBody)),
-            ],
+              ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: switch (action) {
+                SheetHeaderAction.confirm => GlassConfirmButton(onTap: onConfirm ?? () {}),
+                SheetHeaderAction.busy => const SizedBox(
+                  width: _headerButtonSize,
+                  height: _headerButtonSize,
+                  child: Center(
+                    child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+                  ),
+                ),
+                SheetHeaderAction.none => const SizedBox(width: _headerButtonSize, height: _headerButtonSize),
+              },
+            ),
           ],
         ),
       ),

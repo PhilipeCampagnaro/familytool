@@ -831,6 +831,21 @@ class StringsDe extends AppStrings {
   String get inviteValidity =>
       'Die Einladung ist 14 Tage gültig. Wer sie annimmt, verlässt damit seinen bisherigen Haushalt.';
   @override
+  String get inviteSending => 'Einladung wird gesendet …';
+  @override
+  String get inviteSentTitle => 'Einladung gesendet';
+  @override
+  String get inviteCreatedTitle => 'Einladung erstellt';
+  @override
+  String inviteSentTo(String email) => 'Wir haben eine E-Mail an $email geschickt.';
+  @override
+  String inviteMailNotSent(String email) =>
+      'Die E-Mail an $email ließ sich nicht zustellen. Teile den Link unten direkt.';
+  @override
+  String invitedAsRole(String role) => 'Eingeladen als $role';
+  @override
+  String inviteValidUntil(String date) => 'Gültig bis $date';
+  @override
   String get youCaps => 'DU';
   @override
   String get removeMemberQuestion => 'Mitglied entfernen?';
