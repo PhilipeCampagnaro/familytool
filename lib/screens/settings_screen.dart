@@ -202,7 +202,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         (
           terms: L.s.searchTermsTour,
           row: SettingsRow(
-            icon: LucideIcons.sparkles,
+            icon: LucideIcons.partyPopper,
             title: L.s.welcomeTour,
             value: L.s.repeat,
             onTap: () {

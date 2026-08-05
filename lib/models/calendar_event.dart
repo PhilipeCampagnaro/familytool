@@ -23,13 +23,10 @@ class CalendarSource {
   /// UI uses it to hide edit affordances; the provider refuses regardless.
   final bool readOnly;
 
-  /// Aporah's own calendar, as opposed to anything connected or subscribed.
-  ///
-  /// This decides **how** a write happens, not whether it may. Own events are
-  /// `public.events` rows the client writes over PostgREST; everything else is
-  /// proxied — there is no row of ours behind it, so an edit has to travel back
-  /// out to Google, Outlook or the CalDAV server through `calendar-write`.
-  final bool isOwn;
+  // No `isOwn`. There is no such thing as Aporah's own calendar any more: every
+  // calendar here comes from a connected account or a shared feed, so every
+  // write is proxied back out through `calendar-write` and there is no second
+  // route left for the flag to select between.
 
   /// `'ferien'` or `'abfall'` for a public feed, empty for everything else.
   ///
@@ -42,25 +39,22 @@ class CalendarSource {
     required this.name,
     required this.color,
     this.readOnly = false,
-    this.isOwn = false,
     this.feedKind = '',
   });
 
   /// Whether the household can add to, change or delete events in this calendar
-  /// — its own, and any connected one the account has write access to.
+  /// — any connected one the account has write access to.
   bool get editable => !readOnly;
 
   /// `calendars.color` is a signed 32-bit ARGB int, editable by the household.
   ///
-  /// `provider` is absent from the `calendar-events` response by design: every
-  /// calendar in it is external, so a missing provider reads as "not ours",
-  /// which is exactly right.
+  /// Every row reaching this comes out of the `calendar-events` response, so
+  /// there is nothing to check `provider` for: they are all external.
   factory CalendarSource.fromMap(Map<String, dynamic> map) => CalendarSource(
     id: map['id'] as String,
     name: map['name'] as String? ?? L.s.calendar,
     color: Color((map['color'] as num?)?.toInt().toUnsigned(32) ?? 0xff1668ff),
     readOnly: map['is_read_only'] == true,
-    isOwn: map['provider'] == 'aporah',
     feedKind: map['feed_kind'] as String? ?? '',
   );
 }
@@ -127,20 +121,6 @@ class EventDraft {
     'location': location,
     'notes': notes,
   };
-
-  /// The same draft as a row for Aporah's own calendar.
-  CalendarEvent toEvent({required CalendarSource calendar, String id = ''}) => CalendarEvent(
-    id: id,
-    calendarId: calendar.id,
-    title: title,
-    startsAt: start,
-    endsAt: end,
-    allDay: allDay,
-    loc: location,
-    body: notes,
-    source: calendar.name,
-    srcColor: calendar.color,
-  );
 
   static String _date(DateTime d) =>
       '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
@@ -261,11 +241,9 @@ class CalendarEvent {
     return DateTime(utc.year, utc.month, utc.day);
   }
 
-  /// The inverse of [_readAt] — an all-day event of ours has to go back as the
-  /// same midnight-UTC date, or it would read back a day early west of UTC.
-  static String _writeAt(DateTime at, bool allDay) => allDay
-      ? DateTime.utc(at.year, at.month, at.day).toIso8601String()
-      : at.toUtc().toIso8601String();
+  // [_readAt] has no inverse any more, and shouldn't: writing a timestamp was
+  // only ever for a `public.events` row of ours. Events now go out as a date and
+  // a wall-clock time ([EventDraft.toWire]), which is what a provider wants.
 
   /// Done / live / upcoming against the wall clock.
   ///
@@ -401,20 +379,10 @@ class CalendarEvent {
     );
   }
 
-  /// Only the columns a client may write. `external_uid`, `external_href` and
-  /// `external_etag` are the sync function's, and are deliberately absent: an
-  /// event typed by hand must never look like a pulled one, or the next
-  /// reconcile would delete it.
-  Map<String, dynamic> toMap() => {
-    'calendar_id': calendarId,
-    'title': title,
-    'starts_at': _writeAt(startsAt, allDay),
-    'ends_at': _writeAt(endsAt, allDay),
-    'all_day': allDay,
-    'notes': body.isEmpty ? null : body,
-    'location': loc.isEmpty ? null : loc,
-    'location_sub': locSub.isEmpty ? null : locSub,
-    'online': online,
-    'url': url.isEmpty ? null : url,
-  };
+  // No `toMap()`. It served exactly one caller — the insert/update of a
+  // `public.events` row on Aporah's own calendar — and there is no such calendar
+  // and no such write any more. An event leaves this app as
+  // [EventDraft.toWire], addressed to the account that owns the calendar. If you
+  // find yourself needing a column map again, that is the sign something is
+  // about to start storing other people's appointments in our database.
 }

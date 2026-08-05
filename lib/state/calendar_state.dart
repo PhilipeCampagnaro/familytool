@@ -131,32 +131,27 @@ class CalendarScreenState {
     return null;
   }
 
-  /// The calendars an event can be written into — every real calendar the
+  /// The calendars an event can be written into — every connected calendar the
   /// household has write access to. Ferien, Abfall and read-only subscriptions
   /// are not destinations.
   ///
-  /// **Only calendars that exist.** There used to be a synthetic "Aporah" entry
-  /// standing in for an own calendar that had never been created; the form now
-  /// lists the household's actual calendars and nothing else, so a household
-  /// with no writable calendar is told to connect one rather than shown a
-  /// destination it has never heard of.
+  /// **Only calendars that exist, and none of them ours.** There used to be an
+  /// "Aporah" entry here — first a synthetic one, then a real `provider:
+  /// 'aporah'` row — and it is gone both times over. The app has no calendar of
+  /// its own, so a household with nothing connected is told to connect one
+  /// rather than offered a destination that lives nowhere but here.
   List<CalendarSource> get writableCalendars =>
       [for (final c in calendars) if (c.editable) c];
 
   /// Where a new event goes unless the user says otherwise, and null when the
   /// household has nowhere to put one yet.
   ///
-  /// An own calendar first when there is one: the alternative — defaulting to
-  /// the first connected calendar — means an arbitrary one of a dozen Google
-  /// calendars, and a family's first appointment quietly landing in somebody's
-  /// work calendar is a worse surprise than having to pick.
-  CalendarSource? get defaultTarget {
-    final writable = writableCalendars;
-    for (final c in writable) {
-      if (c.isOwn) return c;
-    }
-    return writable.isEmpty ? null : writable.first;
-  }
+  /// The first writable calendar, which is an arbitrary one of however many the
+  /// connected accounts contribute — so the form shows the whole list with this
+  /// one ticked rather than filing anything silently. A first appointment landing
+  /// unseen in somebody's work calendar is the surprise worth avoiding here.
+  CalendarSource? get defaultTarget =>
+      writableCalendars.isEmpty ? null : writableCalendars.first;
 
   List<CalendarEvent> eventsFor(int y, int m, int d) {
     final all = eventsByDay[key(y, m, d)] ?? const <CalendarEvent>[];
@@ -350,10 +345,6 @@ class CalendarNotifier extends StateNotifier<CalendarScreenState> {
   /// calendar the connected account only has read access to.
   bool canEdit(CalendarEvent event) => state.sourceById(event.calendarId)?.editable ?? false;
 
-  /// True when this destination is Aporah's own calendar, which is written as an
-  /// ordinary row rather than sent out to a provider.
-  bool _isOwn(String calendarId) => state.sourceById(calendarId)?.isOwn ?? false;
-
   /// Creates the event. Returns false and records a German message on failure,
   /// so the sheet can stay open with what the user typed still in it.
   Future<bool> createEvent(EventDraft draft) async {
@@ -382,25 +373,12 @@ class CalendarNotifier extends StateNotifier<CalendarScreenState> {
 
     try {
       if (clean.calendarId == event.calendarId) {
-        if (_isOwn(event.calendarId)) {
-          // Built from the event rather than the draft, so the id, the calendar
-          // and the fields the form does not show survive the edit untouched.
-          await _repo.updateEvent(event.copyWith(
-            title: clean.title,
-            startsAt: clean.start,
-            endsAt: clean.end,
-            allDay: clean.allDay,
-            loc: clean.location,
-            body: clean.notes,
-          ));
-        } else {
-          await _repo.writeExternal(
-            action: 'update',
-            calendarId: event.calendarId,
-            uid: event.uid,
-            draft: clean,
-          );
-        }
+        await _repo.writeExternal(
+          action: 'update',
+          calendarId: event.calendarId,
+          uid: event.uid,
+          draft: clean,
+        );
       } else {
         await _write(clean);
         await _remove(event);
@@ -430,12 +408,10 @@ class CalendarNotifier extends StateNotifier<CalendarScreenState> {
   /// Writes a deleted appointment back where it came from — the chip's
   /// "Rückgängig".
   ///
-  /// The cheapest restore of the four: [_write] already routes by calendar, so
-  /// an own event becomes a `public.events` row again and a Google or CalDAV one
-  /// goes back out through `calendar-write`, exactly as it was created. What it
-  /// cannot bring back is the provider's own id — the appointment returns as a
-  /// new one — which matters only to a guest who had been invited to it in
-  /// Google.
+  /// The cheapest restore of the four: [_write] sends it back out through
+  /// `calendar-write` exactly as it was created. What it cannot bring back is the
+  /// provider's own id — the appointment returns as a new one — which matters
+  /// only to a guest who had been invited to it in Google.
   Future<bool> restoreEvent(CalendarEvent event) async {
     try {
       await _write(EventDraft.of(event));
@@ -446,8 +422,8 @@ class CalendarNotifier extends StateNotifier<CalendarScreenState> {
     }
   }
 
-  /// The one place that decides where an event is written: an ordinary row on
-  /// Aporah's own calendar, or straight back out to the provider that owns it.
+  /// The one place an event is written, and there is only one route out: back to
+  /// the connected account that owns the calendar it was filed under.
   Future<void> _write(EventDraft draft) async {
     final target = state.sourceById(draft.calendarId);
 
@@ -460,23 +436,15 @@ class CalendarNotifier extends StateNotifier<CalendarScreenState> {
       );
     }
 
-    if (target.isOwn) {
-      await _repo.createEvent(draft.toEvent(calendar: target));
-    } else {
-      await _repo.writeExternal(action: 'create', calendarId: target.id, draft: draft);
-    }
+    await _repo.writeExternal(action: 'create', calendarId: target.id, draft: draft);
   }
 
   Future<void> _remove(CalendarEvent event) async {
-    if (_isOwn(event.calendarId)) {
-      await _repo.deleteEvent(event.id);
-    } else {
-      await _repo.writeExternal(
-        action: 'delete',
-        calendarId: event.calendarId,
-        uid: event.uid,
-      );
-    }
+    await _repo.writeExternal(
+      action: 'delete',
+      calendarId: event.calendarId,
+      uid: event.uid,
+    );
   }
 
   /// Keeps the provider's own German explanation when there is one — an expired

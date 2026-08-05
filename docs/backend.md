@@ -184,19 +184,25 @@ client cannot see, which is the same reason `invite-member` exists. See the Cale
 section of [docs/ported-features.md](ported-features.md) for the provider details and the
 credentials to obtain.
 
-**No calendar event from a connected account is ever stored.** `calendar-events` proxies Google,
-Outlook, iCloud and IServ on every refresh and returns them; the offline copy lives in
-[lib/services/calendar_cache.dart](../lib/services/calendar_cache.dart) on the device. `public.events`
-therefore holds only what somebody typed into Aporah itself, and the `external_uid` /
-`external_href` / `external_etag` columns are gone — there is no column left in which to record
-which provider a stored event came from, which is what keeps this true rather than merely
-intended.
+**No calendar event is ever stored — from a connected account or from anywhere else.**
+`calendar-events` proxies Google, Outlook, iCloud and IServ on every refresh and returns them; the
+offline copy lives in [lib/services/calendar_cache.dart](../lib/services/calendar_cache.dart) on the
+device. The `external_uid` / `external_href` / `external_etag` columns are gone — there is no column
+left in which to record which provider a stored event came from, which is what keeps this true
+rather than merely intended.
 
-**Writing back does not change that.** `calendar-write` takes one `calendars` row, resolves it to
-its connection, and issues the create/update/delete against the provider — Google's
-`calendars/{id}/events`, Graph's `/me/events`, or a CalDAV `PUT`/`DELETE` on the resource href.
-Nothing is written to `public.events` on the way through; the change appears in Aporah on the next
-`calendar-events` read, from the account, like any other event of theirs.
+`public.events` used to hold what somebody typed into Aporah itself, on a `provider = 'aporah'`
+calendar. **That calendar no longer exists and cannot be created**: the leftover row is deleted, the
+`provider` default is dropped and the check constraint now accepts only
+`('google','icloud','outlook','iserv')` — see migration `20260805182949_drop_own_calendar.sql`. The
+table is left standing but is empty and unreachable; the client never reads or writes it. Dropping
+it is a separate decision nobody has made yet.
+
+**Every write therefore goes out.** `calendar-write` takes one `calendars` row, resolves it to its
+connection, and issues the create/update/delete against the provider — Google's
+`calendars/{id}/events`, Graph's `/me/events`, or a CalDAV `PUT`/`DELETE` on the resource href. The
+change appears in Aporah on the next `calendar-events` read, from the account, like any other event
+of theirs.
 
 Three details worth knowing before touching it:
 
@@ -372,7 +378,7 @@ See the migration list for what exists:
 | `…100700_external_sharing` | share_links, guest_access, echte Gast-Prädikate |
 | `…100800_rpc` | Transaktionale RPCs (nur `service_role`) |
 | `…101000_calendar_connections` | Kalender-Verbindungen + verschlüsselte Secrets |
-| `…20260805170000_avatar_pictures` | `avatars` Storage-Bucket + Policies |
+| `…20260805174643_avatar_pictures` | `avatars` Storage-Bucket + Policies |
 
 Still to build: Realtime, the web landing page for share links, and the finance module.
 

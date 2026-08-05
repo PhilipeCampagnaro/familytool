@@ -371,9 +371,9 @@ class _EmptyDayActions extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(calendarProvider);
-    // Aporah's own calendar isn't a connection — a family that has only ever
-    // typed events in here still has nothing synced.
-    final connected = state.calendars.any((c) => !c.isOwn);
+    // Every calendar there is comes from a connection or a feed, so having any
+    // at all is the same question as being connected.
+    final connected = state.calendars.isNotEmpty;
 
     if (state.loaded && !connected) {
       return GlassAccentButton(

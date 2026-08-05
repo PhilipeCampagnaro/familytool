@@ -3,7 +3,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../models/calendar_event.dart';
 import '../../services/calendar_cache.dart';
 import '../../services/supabase.dart';
-import 'list_repository.dart' show newUuidV4;
 import '../../l10n/l10n.dart';
 
 /// One round trip's worth of Kalender: the household's calendars, and every
@@ -29,23 +28,24 @@ class CalendarSnapshot {
   static const empty = CalendarSnapshot(calendars: [], eventsByDay: {});
 }
 
-/// The only file that knows where Kalender's data comes from — and it comes from
-/// two places, on purpose.
+/// The only file that knows where Kalender's data comes from — and **none of it
+/// is ours.**
 ///
-/// **Aporah's own calendar** is stored: events somebody typed into this app have
-/// nowhere else to live, so they are ordinary `public.events` rows read straight
-/// off PostgREST under RLS.
+/// Aporah has no calendar of its own. Every calendar the household sees belongs
+/// to a connected account (Google, Outlook, iCloud, IServ), read through the
+/// `calendar-events` function on every refresh and never written to our
+/// database, or to a shared Ferien/Abfall feed out of `public.public_feeds`,
+/// which is municipal data shared by every household rather than anything
+/// belonging to this one. What lands on the device is the [CalendarCache], which
+/// is also what makes the calendar work offline.
 ///
-/// **Everything else is not stored at all.** Google, Outlook, iCloud and IServ
-/// are read through the `calendar-events` function on every refresh and never
-/// written to our database; Ferien and Abfall come back from the same call out
-/// of `public.public_feeds`, which is municipal data shared by every household
-/// rather than anything belonging to this one. What lands on the device is the
-/// [CalendarCache], which is also what makes the calendar work offline.
-///
-/// The rule that follows from this, and the one to keep: **`toMap()` may only
-/// ever be sent for an event on an `aporah` calendar.** Everything else is
-/// read-only here because it is somebody else's system of record.
+/// There used to be a second half: a `provider: 'aporah'` calendar with
+/// `public.events` rows behind it, for appointments typed into the app itself.
+/// It is gone. An event typed here is written **out to the account that will
+/// still have it if Aporah disappears** — which is the whole point of connecting
+/// one — so there is no read of `public.events` and no `toMap()` write left in
+/// this file. Don't reintroduce either; a calendar in our database that the
+/// family's own phone calendar never learns about is a trap, not a feature.
 class CalendarRepository {
   CalendarRepository({SupabaseClient? client, CalendarCache? cache})
     : _db = client ?? AporahSupabase.client,
@@ -54,21 +54,10 @@ class CalendarRepository {
   final SupabaseClient _db;
   final CalendarCache _cache;
 
-  static const _calendarColumns = 'id, name, color, is_read_only, position, provider';
-  static const _eventColumns =
-      'id, calendar_id, title, starts_at, ends_at, all_day, location, location_sub, '
-      'notes, online, url, reminder_minutes, created_by';
-
   /// How old a cached calendar may be and still be worth showing while the
   /// network answers. Generous: a stale calendar with a refresh on the way beats
   /// an empty one, and the refresh usually wins the race anyway.
   static const _cacheMaxAge = Duration(days: 30);
-
-  String get _uid {
-    final id = AporahSupabase.userId;
-    if (id == null) throw StateError(L.s.notSignedIn);
-    return id;
-  }
 
   // -------------------------------------------------------------------------
   // Read
@@ -93,57 +82,33 @@ class CalendarRepository {
 
   /// Everything, live. Writes the result to the device cache on the way out.
   ///
-  /// The two sources are gathered in parallel because neither depends on the
-  /// other, and the external one is the slow half — it is talking to Google.
+  /// The two reads are gathered in parallel because neither depends on the
+  /// other, and the calendar half is the slow one — it is talking to Google.
   Future<CalendarSnapshot> fetch() async {
     final results = await Future.wait([
-      _own(),
       _external(),
       _profiles(),
     ]);
 
-    final own = results[0] as ({List<Map<String, dynamic>> calendars, List<Map<String, dynamic>> events});
-    final external = results[1] as ({List<Map<String, dynamic>> calendars, List<Map<String, dynamic>> events});
-    final profiles = results[2] as List<Map<String, dynamic>>;
+    final external = results[0] as ({List<Map<String, dynamic>> calendars, List<Map<String, dynamic>> events});
+    final profiles = results[1] as List<Map<String, dynamic>>;
 
-    final calendars = [...own.calendars, ...external.calendars];
-    final events = [...own.events, ...external.events];
-
-    await _cache.write({'calendars': calendars, 'events': events, 'profiles': profiles});
-    return _assemble(calendars, events, _names(profiles));
+    await _cache.write({
+      'calendars': external.calendars,
+      'events': external.events,
+      'profiles': profiles,
+    });
+    return _assemble(external.calendars, external.events, _names(profiles));
   }
 
-  /// Aporah's own calendar and the events typed into it. Plain PostgREST: RLS
-  /// already decides what this household may see, and no `family_id` filter
-  /// belongs here.
-  Future<({List<Map<String, dynamic>> calendars, List<Map<String, dynamic>> events})> _own() async {
-    final calendarRows = await _db
-        .from('calendars')
-        .select(_calendarColumns)
-        .eq('provider', 'aporah')
-        .order('position');
-
-    final calendars = [for (final row in calendarRows) Map<String, dynamic>.from(row)];
-    if (calendars.isEmpty) return (calendars: calendars, events: <Map<String, dynamic>>[]);
-
-    final eventRows = await _db
-        .from('events')
-        .select(_eventColumns)
-        .inFilter('calendar_id', [for (final c in calendars) c['id'] as String])
-        .order('starts_at');
-
-    return (
-      calendars: calendars,
-      events: [for (final row in eventRows) Map<String, dynamic>.from(row)],
-    );
-  }
-
-  /// Connected accounts and public feeds, proxied. Nothing in this response was
-  /// read from our database except the shared Ferien/Abfall feeds.
+  /// Connected accounts and public feeds, proxied — **every calendar there is.**
+  /// Nothing in this response was read from our database except the shared
+  /// Ferien/Abfall feeds.
   ///
-  /// A failure here is not fatal: the household's own events still render, and
-  /// the connections screen is where a broken account gets reported. Blanking
-  /// the whole calendar because Google timed out would be the wrong trade.
+  /// A failure here is no longer survivable the way it once was: with no own
+  /// calendar behind it there is nothing else to render, so the cache is what
+  /// stands between a timeout and an empty screen. The connections page is still
+  /// where a broken account gets reported.
   Future<({List<Map<String, dynamic>> calendars, List<Map<String, dynamic>> events})> _external() async {
     try {
       final res = await _db.functions.invoke('calendar-events', body: const {});
@@ -231,33 +196,14 @@ class CalendarRepository {
   }
 
   // -------------------------------------------------------------------------
-  // Write — Aporah's own calendar only
+  // Write — connected calendars, which is all of them
   // -------------------------------------------------------------------------
   //
-  // There is no `ownCalendar()` creating a `provider: 'aporah'` row any more.
-  // The event form lists the household's real calendars and nothing else, so
-  // nothing asks for one to be conjured on save; a row that already exists is
-  // read by `_own()` and written to like any other.
-
-  Future<void> createEvent(CalendarEvent event) async {
-    await _db.from('events').insert({
-      ...event.toMap(),
-      'id': newUuidV4(),
-      'created_by': _uid,
-    });
-  }
-
-  Future<void> updateEvent(CalendarEvent event) async {
-    await _db.from('events').update(event.toMap()).eq('id', event.id);
-  }
-
-  Future<void> deleteEvent(String eventId) async {
-    await _db.from('events').delete().eq('id', eventId);
-  }
-
-  // -------------------------------------------------------------------------
-  // Write — connected calendars
-  // -------------------------------------------------------------------------
+  // There is deliberately no `createEvent`/`updateEvent`/`deleteEvent` pair to
+  // this one. Those wrote `public.events` rows on a `provider: 'aporah'`
+  // calendar, and that calendar no longer exists: every destination the form
+  // offers belongs to a connected account, so every write goes out through
+  // [writeExternal].
 
   /// Sends one change out to Google, Outlook or a CalDAV server through
   /// `calendar-write`, and returns the provider's id for the event.

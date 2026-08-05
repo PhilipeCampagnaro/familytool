@@ -238,21 +238,26 @@ is typed and saved exactly as before, and off iOS (no handler) the field is the 
 always was.
 
 **The destination is a card of every writable calendar, not a row that opens a second sheet.** And
-there is no synthetic "Aporah" entry any more: `writableCalendars` returns the household's real
-calendars and nothing else, `defaultTarget` is nullable, and `CalendarRepository.ownCalendar()` —
-which used to conjure a `provider: 'aporah'` row on first save — is gone. A household with no
-writable calendar sees `L.s.noWritableCalendar` in the card instead of a destination it has never
-heard of. **A `provider: 'aporah'` calendar that already exists still works everywhere** — `_own()`
-reads it, `isOwn` still routes its events to `public.events` — nothing creates a new one. If you
-want first-run own events back, that repository method is what to restore.
+**"Aporah" is not one of them** — the app has no calendar of its own at any level. `writableCalendars`
+returns the household's connected calendars and nothing else, `defaultTarget` is nullable and simply
+takes the first of them, and the whole own-calendar path is gone: no `_own()` read, no
+`ownCalendar()`, no `isOwn`, no `createEvent`/`updateEvent`/`deleteEvent` on the repository, and
+`provider = 'aporah'` is rejected by a check constraint (migration
+`20260805182949_drop_own_calendar.sql`). A household with no writable calendar sees
+`L.s.noWritableCalendar` in the card and is pointed at the connections page.
+
+Don't restore it. A destination that only Aporah can see sits in the picker looking exactly like
+iCloud and Google and then fails to do the one thing the family connected an account for — put the
+appointment on their own phones.
 
 ## Empty day
 
 `_EmptyDayActions` (shared by both views) offers **"Kalender verbinden"** instead of "Termin
-hinzufügen" when the household has no connected calendar (`calendars.any((c) => !c.isOwn)` is
-false), pushing `CalendarConnectionsPage` directly. Somebody who skipped onboarding lands on
-Kalender first, and an own-calendar event wouldn't give them their school or bin dates. Guarded on
-`state.loaded` so the button doesn't flip a moment after paint.
+hinzufügen" when the household has no calendars at all (`state.calendars.isNotEmpty` is false —
+every calendar comes from a connection or a feed, so that is the same question as being connected),
+pushing `CalendarConnectionsPage` directly. Somebody who skipped onboarding lands on Kalender first
+and otherwise has nowhere to put an event. Guarded on `state.loaded` so the button doesn't flip a
+moment after paint.
 
 ## Events + persistence
 

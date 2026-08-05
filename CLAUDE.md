@@ -63,19 +63,25 @@ task:
   the session, and [lib/state/family_state.dart](lib/state/family_state.dart) the household,
   its members and `myRoleProvider`. `main.dart`'s `_RootGate` gates on auth → household →
   `families.onboarding_done`.
-- **We do not store anybody's calendar.** Google, Outlook, iCloud and IServ events are proxied by
-  `calendar-events` on every refresh and returned to the app; the offline copy lives on the device
-  in [lib/services/calendar_cache.dart](lib/services/calendar_cache.dart). `public.events` holds
-  **only** what somebody typed into Aporah itself, and the `external_uid`/`external_href`/
-  `external_etag` columns are gone so no code path can quietly start materialising a provider
-  again. Don't add one — for a German family app, holding no doctor's appointments is a feature.
-- **Writing back is the other half, and it is also storage-free.** `calendar-write` creates,
-  updates and deletes events straight in Google, Outlook or the CalDAV server; the change comes
-  back on the next `calendar-events` read like any other event of theirs. `CalendarSource.editable`
-  is `!readOnly` (so Ferien, Abfall and read-only provider calendars are out), and
-  `CalendarSource.isOwn` decides the *route*: own events are `public.events` rows written over
-  PostgREST, everything else goes through the function using `CalendarEvent.uid`, the provider's
-  own id carried on the wire. Never write a proxied event to `public.events` to "cache" it.
+- **We do not store anybody's calendar, and we do not have one of our own.** Google, Outlook,
+  iCloud and IServ events are proxied by `calendar-events` on every refresh and returned to the
+  app; the offline copy lives on the device in
+  [lib/services/calendar_cache.dart](lib/services/calendar_cache.dart). Nothing is read out of
+  `public.events` at all — that table is empty and unreachable, `provider = 'aporah'` is no longer
+  an accepted value on `calendars`, and `calendars.provider` has no default so an insert can't
+  produce an own calendar by omission. The `external_uid`/`external_href`/`external_etag` columns
+  are gone too, so no code path can quietly start materialising a provider. Don't add one — for a
+  German family app, holding no doctor's appointments is a feature.
+- **There is exactly one write route, and it leaves the building.** `calendar-write` creates,
+  updates and deletes events straight in Google, Outlook or the CalDAV server, addressed by
+  `CalendarEvent.uid` (the provider's own id, carried on the wire); the change comes back on the
+  next `calendar-events` read like any other event of theirs. `CalendarSource.editable` is
+  `!readOnly`, which is the only question left — Ferien, Abfall and read-only provider calendars
+  are out, everything else is a destination. There is no `isOwn`, no `CalendarEvent.toMap()` and no
+  PostgREST branch beside it. **Don't reintroduce an in-app calendar.** It looked identical to the
+  real ones in the picker and behaved nothing like them: an appointment filed there never reached
+  the phone's calendar app, the other parent's watch or the reminder on the way to the dentist,
+  which is the entire reason a family connects an account.
 - **Ferien and Abfall are one shared feed per Bundesland/address, not a per-household connection.**
   `public_feeds` (global, keyed by a hash of the resolved config) + `family_feeds` (subscriptions).
   A hundred families on one street read one row and cause one daily fetch. They are *not* valid
