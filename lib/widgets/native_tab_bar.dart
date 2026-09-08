@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import '../l10n/l10n.dart';
 import '../theme/tokens.dart';
 import 'bottom_nav.dart';
+import 'native_occlusion.dart';
 
 /// The iPhone's own tab bar: a real `UITabBar` embedded as a platform view
 /// (see ios/Runner/TabBarPlatformView.swift, registered under
@@ -97,6 +98,15 @@ class _NativeTabBarState extends State<NativeTabBar> {
   @override
   Widget build(BuildContext context) {
     final size = _intrinsicSize;
+    // A bar left behind an open sheet paints straight through it — see
+    // [occludedByRoute]. It gives up the space rather than falling back to the
+    // Flutter nav: every sheet is anchored to the bottom and covers the bar
+    // anyway, so there is nothing there to draw, and swapping in a different
+    // control would only be visible if the swap went wrong. The box it leaves
+    // keeps the layout still.
+    if (occludedByRoute(context)) {
+      return SizedBox(width: size?.width, height: size?.height ?? kNativeTabBarHeight);
+    }
     return SizedBox(
       width: size?.width,
       height: size?.height ?? kNativeTabBarHeight,

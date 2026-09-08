@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../theme/tokens.dart';
 import 'native_glass_view.dart';
+import 'native_occlusion.dart';
 
 /// Apple's "Liquid Glass" material. On iOS this embeds the real native
 /// `UIGlassEffect` (iOS 26) via a platform view — genuine refraction/blur of
@@ -61,6 +62,10 @@ class GlassSurface extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // A glass control on the screen *behind* an open sheet would paint over it
+    // — see [occludedByRoute]. The approximation is already the non-iOS look,
+    // so a covered control simply wears it until the sheet closes.
+    final useNativeGlass = _useNativeGlass && !occludedByRoute(context);
     return DecoratedBox(
       decoration: BoxDecoration(borderRadius: borderRadius, boxShadow: boxShadow),
       child: ClipRRect(
@@ -68,7 +73,7 @@ class GlassSurface extends StatelessWidget {
         child: Stack(
           children: [
             Positioned.fill(
-              child: _useNativeGlass
+              child: useNativeGlass
                   ? NativeGlassView(tint: tint, interactive: interactive)
                   : _FlutterGlassApproximation(tint: tint ?? fallbackTint ?? AppColors.glassFallbackTint, blurSigma: blurSigma),
             ),

@@ -4,6 +4,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../theme/tokens.dart';
+import 'native_occlusion.dart';
 
 /// Size used before UIKit reports its own — `UISwitch`'s long-standing
 /// intrinsic size, and the box the non-iOS fallback is centered in so the two
@@ -138,7 +139,11 @@ class _NativeSwitchState extends State<NativeSwitch> {
 
   @override
   Widget build(BuildContext context) {
-    if (!NativeSwitch._isNative) {
+    // The same fallback also covers a switch left behind an open sheet, which
+    // would otherwise paint straight through it — see [occludedByRoute]. That
+    // is [SheetSwitch]'s rule one level up: a sheet must not be *over* a
+    // platform view any more than it may contain one.
+    if (!NativeSwitch._isNative || occludedByRoute(context)) {
       return Switch.adaptive(value: widget.value, onChanged: widget.onChanged);
     }
     final size = _intrinsicSize ?? kNativeSwitchSize;

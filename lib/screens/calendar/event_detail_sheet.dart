@@ -220,6 +220,43 @@ void _showEventDetailSheet(BuildContext context, WidgetRef ref) {
                 ],
               ),
             ),
+            // Hang something off this appointment.
+            //
+            // Deliberately *outside* the `editable` guard below: a packing list
+            // for the Schulferien block or a task against an Abfall day are
+            // both perfectly ordinary, and both of those calendars are
+            // read-only. What this creates is a row of ours in `lists` or
+            // `tasks` — the provider's write permission has nothing to say
+            // about it, and hiding the card there would withhold the feature
+            // from exactly the events people plan around.
+            //
+            // Rows rather than a labelled block with a button in it: the sheet
+            // is already a column of single-purpose cards (Datum, Ort,
+            // Notizen), and an explanatory paragraph that never goes away is
+            // the tallest thing in a sheet you open dozens of times.
+            const SizedBox(height: 12),
+            SectionCard(
+              children: dividedRows([
+                // The two tab icons, so the row says where it lands as well as
+                // what it does.
+                SettingsRow(
+                  icon: LucideIcons.clipboardCheck,
+                  title: L.s.createListFromEvent,
+                  // The event's own name, as a name for the container — which
+                  // is what makes this worth a tap: "Wochenende Hamburg" is a
+                  // good list. Untouched-but-prefilled counts as typed, so
+                  // `suggestIcon` picks the list's icon off it for free.
+                  onTap: () => openListSheet(context, ref, initialName: e.title.trim()),
+                ),
+                SettingsRow(
+                  icon: LucideIcons.layoutPanelLeft,
+                  title: L.s.createTaskFromEvent,
+                  // The date, not the title — see [openTaskSheet]. A task named
+                  // after the appointment only repeats the appointment.
+                  onTap: () => openTaskSheet(context, ref, initialDue: e.startsAt),
+                ),
+              ]),
+            ),
             // Wider than the 12pt rhythm between the detail cards above: these
             // are the sheet's actions, not another card, so they need to read as
             // a separate group rather than crowding the last one.

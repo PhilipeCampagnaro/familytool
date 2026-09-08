@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../theme/tokens.dart';
+import 'native_occlusion.dart';
 
 /// Height used before UIKit reports its own — and the fixed height of the
 /// non-iOS fallback, so the two lay out the same.
@@ -121,7 +122,9 @@ class _NativeSearchFieldState extends State<NativeSearchField> {
 
   @override
   Widget build(BuildContext context) {
-    if (!NativeSearchField._isNative) {
+    // The same fallback also covers a field left behind an open sheet, which
+    // would otherwise paint straight through it — see [occludedByRoute].
+    if (!NativeSearchField._isNative || occludedByRoute(context)) {
       return _FallbackSearchField(
         placeholder: widget.placeholder,
         onChanged: widget.onChanged,

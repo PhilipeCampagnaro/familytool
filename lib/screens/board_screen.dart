@@ -26,6 +26,18 @@ import 'board/due_date_sheet.dart';
 import 'board/tracker_strip.dart';
 import '../l10n/l10n.dart';
 
+/// Opens Board's create-task sheet from outside Board.
+///
+/// The sheet itself is [BoardScreen._openTaskSheet] and stays private — this is
+/// the one door into it, for the event detail sheet's "Aufgabe zum Termin".
+/// Only [initialDue] is offered: a task hung off an appointment wants the
+/// appointment's *date*, not its title. Prefilling the text with "Wochenende
+/// Hamburg" would produce a task that says what the event beside it already
+/// says; what the user is about to type is "Reisepass einpacken", and the
+/// deadline is the part they'd otherwise have to set by hand.
+void openTaskSheet(BuildContext context, WidgetRef ref, {DateTime? initialDue}) =>
+    BoardScreen._openTaskSheet(context, ref, initialDue: initialDue);
+
 /// Label colour of a checked-off task — the strike-through fades the open row's
 /// text to it, so landing in "Erledigt" isn't a colour jump.
 Color get _doneInk => AppColors.doneInk;

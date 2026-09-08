@@ -244,8 +244,14 @@ class _ListOverview extends ConsumerWidget {
 
 /// The create/edit sheet for a list. Same sheet either way — [list] set means
 /// editing — so the symbol behaves identically in both.
-void openListSheet(BuildContext context, WidgetRef ref, {ShoppingList? list}) {
-  final nameController = TextEditingController(text: list?.name ?? '');
+///
+/// [initialName] opens a *create* sheet with the name already typed — what the
+/// event detail sheet hands over when a list is started from an appointment.
+/// It only seeds the field: the name stays editable, and because it differs
+/// from the empty `list?.name`, `suggestIcon` treats it as a typed name and
+/// picks the icon off it like any other.
+void openListSheet(BuildContext context, WidgetRef ref, {ShoppingList? list, String? initialName}) {
+  final nameController = TextEditingController(text: list?.name ?? initialName ?? '');
   final notifier = ref.read(listProvider.notifier);
   // Set once, up front: the segmented control lives on the provider (it is what
   // `newType` is for), and an edit sheet has to open on the list's own kind.
