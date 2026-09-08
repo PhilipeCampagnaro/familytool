@@ -13,7 +13,7 @@ import { fetchWithTimeout } from "./net.ts";
 /// Only the four **personal** accounts. Ferien and Abfall used to be listed here
 /// as connections too; they are public feeds shared by every household now and
 /// live in `feeds.ts`, keyed by Bundesland or address rather than by family.
-export type Provider = "google" | "outlook" | "icloud" | "iserv";
+export type Provider = "google" | "outlook" | "icloud" | "iserv" | "webuntis";
 
 export interface OAuthConfig {
   label: string;

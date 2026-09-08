@@ -34,12 +34,27 @@ class CalendarSource {
   /// [binColorFor]. A feed is otherwise an ordinary read-only calendar.
   final String feedKind;
 
+  /// The connected account this calendar came in on, and what the household
+  /// calls it — `calendar-events` sends both.
+  ///
+  /// Kalender's filter chips group on this: an account offering several
+  /// calendars is one chip that opens into them, not one chip each. A child
+  /// with an IServ Aufgaben, Klausurplan and Klassenkalender reads as
+  /// "Alice · IServ", which is also how the family talks about it.
+  ///
+  /// Empty for a public feed (Ferien, Abfall), which belongs to no account and
+  /// stands alone in the row.
+  final String groupId;
+  final String groupName;
+
   const CalendarSource({
     required this.id,
     required this.name,
     required this.color,
     this.readOnly = false,
     this.feedKind = '',
+    this.groupId = '',
+    this.groupName = '',
   });
 
   /// Whether the household can add to, change or delete events in this calendar
@@ -56,7 +71,51 @@ class CalendarSource {
     color: Color((map['color'] as num?)?.toInt().toUnsigned(32) ?? 0xff1668ff),
     readOnly: map['is_read_only'] == true,
     feedKind: map['feed_kind'] as String? ?? '',
+    groupId: map['group_id'] as String? ?? '',
+    groupName: map['group_name'] as String? ?? '',
   );
+}
+
+/// One chip in Kalender's filter row: a connected account and the calendars it
+/// contributes, or a single calendar standing for itself.
+///
+/// Derived per rebuild from `CalendarScreenState.activeSources` rather than
+/// stored — the grouping is a view of the calendars, and a second copy of it
+/// would be a second thing to keep in step with a refresh.
+class CalendarGroup {
+  /// The connection id for an account, or the calendar's own id when this
+  /// stands alone. Unique across the row either way, which is what the chip
+  /// list keys on.
+  final String id;
+
+  final String name;
+
+  /// At least one, in the order `calendar-events` returned them.
+  final List<CalendarSource> calendars;
+
+  const CalendarGroup({required this.id, required this.name, required this.calendars});
+
+  /// True where the chip opens into a list — an account with more than one
+  /// calendar in the loaded window. The chevron and the popup hang off this.
+  bool get hasChoices => calendars.length > 1;
+
+  /// The chip's dot. The first calendar's colour, which for a connected account
+  /// is the provider's base hue — `calendar-events` shades the rest of the
+  /// account from it, so the group reads as one family of colours.
+  Color get color => calendars.first.color;
+
+  Set<String> get ids => {for (final c in calendars) c.id};
+
+  CalendarGroup withCalendar(CalendarSource source) => CalendarGroup(
+    id: id,
+    name: name,
+    calendars: [...calendars, source],
+  );
+
+  /// The same group renamed after its only calendar — "Aufgaben" rather than
+  /// "IServ · Alice" when Alice has nothing else with an event in view.
+  CalendarGroup asSingle() =>
+      CalendarGroup(id: id, name: calendars.first.name, calendars: calendars);
 }
 
 /// What the event form produces: one event as the user typed it, before

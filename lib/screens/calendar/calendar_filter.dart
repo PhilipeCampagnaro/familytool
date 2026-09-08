@@ -17,8 +17,14 @@ class _CalendarFilterButton extends ConsumerWidget {
 
   Color get _dotColor {
     final filter = state.calendarFilter;
-    if (filter == null) return AppColors.muted;
-    return state.sourceById(filter)?.color ?? AppColors.muted;
+    if (filter == null || filter.isEmpty) return AppColors.muted;
+    // The first *listed* calendar in the filter rather than the first in the
+    // set: a Set has no order, so reading one out of it would repaint the dot a
+    // different colour on an unrelated rebuild.
+    for (final src in state.calendars) {
+      if (filter.contains(src.id)) return src.color;
+    }
+    return AppColors.muted;
   }
 
   Future<void> _openMenu(BuildContext context, WidgetRef ref) async {
@@ -82,7 +88,7 @@ class _CalendarFilterButton extends ConsumerWidget {
 /// overlapping the grid rather than a menu. This instead lays the finished
 /// panel out under the button and scales + fades it out of its anchor corner,
 /// the way a UIKit menu opens.
-class _FilterMenuRoute extends PopupRoute<String> {
+class _FilterMenuRoute extends PopupRoute<Set<String>> {
   /// The filter button's rect in global coordinates.
   final Rect anchor;
   final CalendarScreenState state;
@@ -173,15 +179,38 @@ class _FilterMenuSurface extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _FilterMenuRow(label: L.s.all, color: AppColors.muted, active: state.calendarFilter == null, value: ''),
-                  for (final src in state.activeSources) ...[
+                  _FilterMenuRow(
+                    label: L.s.all,
+                    color: AppColors.muted,
+                    active: state.calendarFilter == null,
+                    value: const {},
+                  ),
+                  // The collapsed stand-in lists the same accounts the chip row
+                  // does, and indents an account's calendars underneath it —
+                  // so the one place a calendar can be picked individually
+                  // survives the header scrolling away.
+                  for (final group in state.activeGroups) ...[
                     // Hairline, inset past the dot the way a UIKit menu insets
                     // separators past the row's leading icon.
                     Padding(
                       padding: EdgeInsets.only(left: 16),
                       child: Divider(height: 0.5, thickness: 0.5, color: AppColors.menuSeparator),
                     ),
-                    _FilterMenuRow(label: src.name, color: src.color, active: state.calendarFilter == src.id, value: src.id),
+                    _FilterMenuRow(
+                      label: group.name,
+                      color: group.color,
+                      active: _isWholeFilter(state, group.ids),
+                      value: group.ids,
+                    ),
+                    if (group.hasChoices)
+                      for (final src in group.calendars)
+                        _FilterMenuRow(
+                          label: src.name,
+                          color: src.color,
+                          active: _isWholeFilter(state, {src.id}),
+                          value: {src.id},
+                          indent: true,
+                        ),
                   ],
                 ],
               ),
@@ -193,31 +222,229 @@ class _FilterMenuSurface extends StatelessWidget {
   }
 }
 
+/// Whether [ids] is exactly what the calendar is filtered to — the check that
+/// puts the tick beside a row. Not "contains": an account row is ticked when
+/// the whole account is showing and nothing else, which is what tapping it does.
+bool _isWholeFilter(CalendarScreenState state, Set<String> ids) {
+  final filter = state.calendarFilter;
+  return filter != null && filter.length == ids.length && filter.containsAll(ids);
+}
+
 class _FilterMenuRow extends StatelessWidget {
   final String label;
   final Color color;
   final bool active;
-  final String value;
+  final Set<String> value;
 
-  const _FilterMenuRow({required this.label, required this.color, required this.active, required this.value});
+  /// A calendar listed under its account, rather than a row in its own right.
+  final bool indent;
+
+  const _FilterMenuRow({
+    required this.label,
+    required this.color,
+    required this.active,
+    required this.value,
+    this.indent = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () => Navigator.of(context).pop(value),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+        padding: EdgeInsets.only(left: indent ? 32 : 16, right: 16, top: indent ? 10 : 13, bottom: indent ? 10 : 13),
         child: Row(
           children: [
-            Container(width: 9, height: 9, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
-            const SizedBox(width: 10),
+            Container(
+              width: indent ? 7 : 9,
+              height: indent ? 7 : 9,
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            ),
+            SizedBox(width: indent ? 12 : 10),
             Expanded(
               child: Text(
                 label,
-                style: active ? AppText.itemTitle : AppText.input,
+                style: active
+                    ? AppText.itemTitle
+                    : (indent ? AppText.caption : AppText.input),
               ),
             ),
             if (active) Icon(LucideIcons.check, size: 16, color: AppColors.ink),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// The chip's own calendar list
+// ---------------------------------------------------------------------------
+
+/// The popup that hangs off an account chip: its calendars, each tickable.
+///
+/// Distinct from [_FilterMenuRoute] in what it is for. That one stands in for
+/// the whole chip row once the header has collapsed, and picking from it
+/// *replaces* the filter. This one belongs to one chip and refines what is
+/// already showing inside that account, so it stays open while rows are ticked
+/// — narrowing three calendars to two is one gesture, not two round trips
+/// through a menu.
+///
+/// It borrows [_FilterMenuSurface]'s material rather than a [GlassSurface], for
+/// the reason recorded there: UIKit's own menus are a near-opaque vibrant
+/// material, and real glass over the month grid let the day numbers read
+/// straight through the rows.
+class _CalendarPickerRoute extends PopupRoute<void> {
+  /// The chip's rect in global coordinates.
+  final Rect anchor;
+  final CalendarGroup group;
+  final void Function(String calendarId) onToggle;
+
+  _CalendarPickerRoute({
+    required this.anchor,
+    required this.group,
+    required this.onToggle,
+  });
+
+  @override
+  Color? get barrierColor => null;
+
+  @override
+  bool get barrierDismissible => true;
+
+  @override
+  String get barrierLabel => L.s.close;
+
+  @override
+  Duration get transitionDuration => const Duration(milliseconds: 200);
+
+  @override
+  Duration get reverseTransitionDuration => const Duration(milliseconds: 140);
+
+  @override
+  Widget buildPage(BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation) {
+    final size = MediaQuery.sizeOf(context);
+    final maxLeft =
+        (size.width - _FilterMenuSurface.width - AppSpacing.screenPad)
+            .clamp(AppSpacing.screenPad, double.infinity);
+    return Stack(
+      children: [
+        Positioned(
+          left: anchor.left.clamp(AppSpacing.screenPad, maxLeft),
+          top: anchor.bottom + 6,
+          child: _CalendarPickerSurface(group: group, onToggle: onToggle),
+        ),
+      ],
+    );
+  }
+
+  @override
+  Widget buildTransitions(BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation, Widget child) {
+    final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic, reverseCurve: Curves.easeIn);
+    return FadeTransition(
+      opacity: curved,
+      child: ScaleTransition(
+        scale: Tween<double>(begin: 0.92, end: 1).animate(curved),
+        alignment: Alignment.topLeft,
+        child: child,
+      ),
+    );
+  }
+}
+
+/// The picker's panel. A [ConsumerWidget] rather than a plain one because the
+/// route stays up while rows are ticked: it has to redraw its own checkmarks
+/// from the filter it is changing.
+class _CalendarPickerSurface extends ConsumerWidget {
+  final CalendarGroup group;
+  final void Function(String calendarId) onToggle;
+
+  const _CalendarPickerSurface({required this.group, required this.onToggle});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final filter = ref.watch(calendarProvider).calendarFilter;
+    // No filter at all means every calendar is showing, including all of these.
+    final shown = filter == null ? group.ids : filter.intersection(group.ids);
+
+    return Material(
+      color: Colors.transparent,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: [...AppShadows.menu],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(14),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+            child: Container(
+              width: _FilterMenuSurface.width,
+              color: AppColors.menuSurface,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // The account's name as a caption over its calendars, so the
+                  // panel says whose three these are once it has covered the
+                  // chip it came out of.
+                  Padding(
+                    padding: const EdgeInsets.only(left: 16, right: 16, top: 12, bottom: 6),
+                    child: Text(group.name, style: AppText.microLabel),
+                  ),
+                  for (final src in group.calendars)
+                    _CalendarPickerRow(
+                      source: src,
+                      checked: shown.contains(src.id),
+                      onTap: () => onToggle(src.id),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CalendarPickerRow extends StatelessWidget {
+  final CalendarSource source;
+  final bool checked;
+  final VoidCallback onTap;
+
+  const _CalendarPickerRow({required this.source, required this.checked, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+        child: Row(
+          children: [
+            Container(
+              width: 9,
+              height: 9,
+              decoration: BoxDecoration(color: source.color, shape: BoxShape.circle),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                source.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: checked ? AppText.itemTitle : AppText.input,
+              ),
+            ),
+            // The box is drawn either way rather than only when ticked: an
+            // unticked row with nothing on the right reads as a label, and the
+            // whole point of this panel is that every row is a switch.
+            Icon(
+              checked ? LucideIcons.squareCheck : LucideIcons.square,
+              size: 17,
+              color: checked ? source.color : AppColors.inkTertiary,
+            ),
           ],
         ),
       ),

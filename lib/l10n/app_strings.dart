@@ -280,6 +280,13 @@ abstract class AppStrings {
   String germanHolidayName(GermanHoliday holiday);
   String eventCount(int count);
   String get eventLabel;
+
+  /// The two rows of the event sheet's "hang something off this appointment"
+  /// card. They name the *destination* tab ("Liste", "Aufgabe"), not the verb,
+  /// because the row already reads as an action and the question the user has
+  /// is which of the two screens it lands on.
+  String get createListFromEvent;
+  String get createTaskFromEvent;
   String get route;
   String get reminder;
   String get deleteEventQuestion;
@@ -406,6 +413,36 @@ abstract class AppStrings {
   String wasteForTown(String town);
   String noVendorForTown(String town);
   String get checkingLinkEllipsis;
+
+  // -- school calendars connected by a pasted link (IServ, WebUntis)
+  //
+  // The link is created in the school platform and copied over by hand: neither
+  // IServ nor WebUntis offers a way to list or mint one from outside, so these
+  // strings walk the user through where to click. They name real menu items in
+  // a German school platform, so the English side translates the sentence and
+  // keeps the menu path recognisable.
+  List<String> get iservLinkSteps;
+  List<String> get webuntisLinkSteps;
+  String get pasteCalendarLink;
+  String get pasteCalendarLinkHint;
+  String get whoseCalendar;
+  String get whoseCalendarHint;
+  String get whoseCalendarPlaceholder;
+  String get linkedCalendarName;
+  String get linkedCalendarNameHint;
+  String get nameThisCalendarFirst;
+  String get whoseCalendarFirst;
+  String get addAnotherCalendar;
+  String get addAnotherCalendarBody;
+  String get schoolCalendars;
+  String get removeCalendar;
+  String get linkStaysAtSchool;
+  String get connectWithLogin;
+  String get connectWithLoginBody;
+  String get linkedCalendarsNote;
+  String eventsFoundAtLink(int count);
+  String get noEventsAtLinkYet;
+
   String get calendarLinkIcs;
   String get calendarLinkHint;
   String get pasteLinkHere;
@@ -435,6 +472,7 @@ abstract class AppStrings {
   String get providerOutlookDesc;
   String get providerIcloudDesc;
   String get providerIservDesc;
+  String get providerWebuntisDesc;
   String get providerHolidaysDesc;
   String get providerWasteDesc;
 

@@ -28,10 +28,13 @@ import '../widgets/event_dots.dart';
 import '../widgets/floating_pill.dart';
 import '../widgets/glass.dart';
 import '../widgets/native_switch.dart';
+import '../widgets/settings_chrome.dart';
 import '../widgets/swipe_actions.dart';
 import '../widgets/toast_chip.dart';
 import '../l10n/l10n.dart';
+import 'board_screen.dart';
 import 'calendar_connect_screen.dart';
+import 'list_screen.dart';
 
 part 'calendar/event_form.dart';
 part 'calendar/calendar_filter.dart';
@@ -232,15 +235,10 @@ class _ToggleAndChipsRow extends ConsumerWidget {
                   onTap: () => ref.read(calendarProvider.notifier).clearCalendarFilter(),
                 ),
               ),
-              for (final src in state.activeSources)
+              for (final group in state.activeGroups)
                 Padding(
                   padding: const EdgeInsets.only(right: 8),
-                  child: _CalendarChip(
-                    label: src.name,
-                    color: src.color,
-                    active: state.calendarFilter == src.id,
-                    onTap: () => ref.read(calendarProvider.notifier).setCalendarFilter(src.id),
-                  ),
+                  child: _CalendarGroupChip(state: state, group: group),
                 ),
             ],
           ),
@@ -334,7 +332,24 @@ class _CalendarChip extends StatelessWidget {
   final bool active;
   final VoidCallback onTap;
 
-  const _CalendarChip({required this.label, required this.color, required this.active, required this.onTap});
+  /// Opens the chip's calendar list. Null on a chip that has nothing to open —
+  /// "Alle", a public feed, an account with one calendar — and the chevron is
+  /// then not drawn at all, so a chip never promises a list it does not have.
+  final VoidCallback? onExpand;
+
+  /// True while some but not all of this account's calendars are showing. The
+  /// dot goes hollow, which is the one piece of state the row can carry without
+  /// a second line of text: a filled dot means the whole account.
+  final bool partial;
+
+  const _CalendarChip({
+    required this.label,
+    required this.color,
+    required this.active,
+    required this.onTap,
+    this.onExpand,
+    this.partial = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -347,18 +362,120 @@ class _CalendarChip extends StatelessWidget {
           border: Border.all(color: active ? color : Colors.transparent, width: 1.5),
         ),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          padding: EdgeInsets.only(left: 14, right: onExpand == null ? 14 : 8, top: 8, bottom: 8),
           decoration: BoxDecoration(color: active ? tint(color, .82) : AppColors.surfaceAlt, borderRadius: BorderRadius.circular(24)),
           alignment: Alignment.center,
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: partial ? Colors.transparent : color,
+                  shape: BoxShape.circle,
+                  border: partial ? Border.all(color: color, width: 1.5) : null,
+                ),
+              ),
               const SizedBox(width: 7),
               Text(label, style: AppText.caption.copyWith(fontWeight: active ? FontWeight.w600 : FontWeight.w400, color: active ? AppColors.ink : AppColors.muted)),
+              if (onExpand != null) ...[
+                const SizedBox(width: 3),
+                // Its own gesture target, so the chevron opens the list while
+                // the rest of the chip still selects the whole account in one
+                // tap. `behavior: opaque` because the icon does not fill the
+                // 28pt box that makes it tappable.
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: onExpand,
+                  child: SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: Icon(
+                      LucideIcons.chevronDown,
+                      size: 14,
+                      color: active ? AppColors.ink : AppColors.muted,
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// One account's chip: tap to show all of it, tap again — or hit the chevron —
+/// to open the list and tick individual calendars.
+///
+/// Stateful only to hold the [GlobalKey] the popup anchors to. Everything it
+/// renders comes from the state it is handed.
+class _CalendarGroupChip extends ConsumerStatefulWidget {
+  final CalendarScreenState state;
+  final CalendarGroup group;
+
+  const _CalendarGroupChip({required this.state, required this.group});
+
+  @override
+  ConsumerState<_CalendarGroupChip> createState() => _CalendarGroupChipState();
+}
+
+class _CalendarGroupChipState extends ConsumerState<_CalendarGroupChip> {
+  final _anchorKey = GlobalKey();
+
+  /// Which of this account's calendars are showing: all of them when there is
+  /// no filter, and the intersection otherwise.
+  Set<String> get _shown {
+    final filter = widget.state.calendarFilter;
+    return filter == null ? widget.group.ids : filter.intersection(widget.group.ids);
+  }
+
+  void _open() {
+    final box = _anchorKey.currentContext?.findRenderObject() as RenderBox?;
+    if (box == null) return;
+    Navigator.of(context).push(
+      _CalendarPickerRoute(
+        anchor: box.localToGlobal(Offset.zero) & box.size,
+        group: widget.group,
+        // The route stays open while the rows are ticked — a popup that closed
+        // on the first tap would make "show two of these three" two trips.
+        onToggle: (id) => ref
+            .read(calendarProvider.notifier)
+            .toggleCalendarInGroup(widget.group, id),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final group = widget.group;
+    final shown = _shown;
+    final filtered = widget.state.calendarFilter != null;
+    // "Selected" means the filter is pointing at this account and nothing else.
+    final active = filtered && shown.isNotEmpty &&
+        shown.length == widget.state.calendarFilter!.length;
+
+    return KeyedSubtree(
+      key: _anchorKey,
+      child: _CalendarChip(
+        label: group.name,
+        color: group.color,
+        active: active,
+        partial: active && shown.length < group.calendars.length,
+        onExpand: group.hasChoices ? _open : null,
+        // The second tap on an already-selected account opens the list rather
+        // than clearing the filter — which is what the chevron beside it has
+        // just promised. Clearing is what the "Alle" chip is for, and it is
+        // always the first thing in the row.
+        onTap: () {
+          if (active && group.hasChoices) {
+            _open();
+          } else {
+            ref.read(calendarProvider.notifier).setCalendarFilter(group.ids);
+          }
+        },
       ),
     );
   }

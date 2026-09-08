@@ -233,7 +233,18 @@ function write(
       return writeOutlook(db, connection, externalId, action, uid, draft);
     case "icloud":
     case "iserv":
+      // A link-connected school calendar is a one-way ICS feed with no
+      // addressable resource to PUT to. Unreachable in practice — every one is
+      // written `is_read_only`, and the guard above turns that away with a
+      // message the user can act on — but the switch has to stay exhaustive,
+      // and an accidental route into a CalDAV PUT with no credentials is worth
+      // naming rather than letting the type checker infer it away.
+      if (connection.auth_type === "public") {
+        throw new Error("link feed is not writable");
+      }
       return writeCalDav(db, connection, externalId, action, uid, draft);
+    case "webuntis":
+      throw new Error("webuntis is not writable");
   }
 }
 

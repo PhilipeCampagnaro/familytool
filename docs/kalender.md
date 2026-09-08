@@ -33,13 +33,39 @@ expand/collapse detail card (`state.monthDetailExpanded`) showing that day's age
 
 ## Calendar filter chips
 
-A horizontal row of per-source filter chips (`_CalendarChip`). The first chip is **"Alle"** —
-clears `calendarFilter` (`null`), the default showing every calendar. Don't remove this default;
-a user who wants "everything" shouldn't have to pick every source individually.
+A horizontal row of filter chips. The first chip is **"Alle"** — clears `calendarFilter` (`null`),
+the default showing every calendar. Don't remove this default; a user who wants "everything"
+shouldn't have to pick every source individually.
+
+**A chip is an *account*, not a calendar** (`CalendarGroup`, built by `state.activeGroups` from
+`CalendarSource.groupId`/`groupName`, which `calendar-events` sends as the connection's id and
+display name). One IServ account holding a child's Aufgaben, Klausurplan and Klassenkalender is a
+single "IServ · Alice" chip, not three chips saying the same two words; the same grouping stops a
+Google account with a work and a private calendar filling the row on its own. A public feed
+(Ferien, Abfall) has no account and stands alone, and so does a group that turns out to hold one
+calendar — `asSingle()` renames it after the calendar rather than the account.
+
+A chip with more than one calendar behind it draws a **chevron** and opens
+`_CalendarPickerRoute`: tap the chip to show the whole account, tap it again or hit the chevron
+for a list with a checkbox per calendar. The popup **stays open** while rows are ticked —
+narrowing three calendars to two should be one gesture — so `_CalendarPickerSurface` is a
+`ConsumerWidget` that re-reads the filter it is changing. Its dot goes hollow while only some of
+the account is showing.
+
+`calendarFilter` is therefore a `Set<String>?`, and null is still "Alle": the empty set never
+occurs, because unticking the last calendar returns to "Alle" rather than to a blank month. Use
+`state.calendarFilterKey` in a `ValueKey` — a `Set` is identity-compared, so the key would never
+notice a filter change.
+
+`_CalendarPickerRoute` borrows `_FilterMenuSurface`'s material rather than a `GlassSurface`, for
+the reason recorded below: UIKit's own menus are a near-opaque vibrant material, and real glass
+over the month grid let the day numbers read straight through the rows.
 
 **Both** views show the chip row at rest and collapse it into the same compact glass dropdown
 (`_CalendarFilterButton`, opening `_FilterMenuRoute`) as the header scrolls away — the dropdown
-is *only* a collapsed-state stand-in, never shown alongside the chips. It's overlaid in
+is *only* a collapsed-state stand-in, never shown alongside the chips. It lists the same accounts
+and indents each one's calendars underneath, so the one place a single calendar can be picked
+survives the header scrolling away. It's overlaid in
 `_TitleRow` via a `Stack` (not a `Row` child) so it can't push the expanded left-aligned title
 sideways, and fades in over the last 40% of the collapse (`_TitleRow._leadingOpacity`). Keep the
 two views' behaviour identical here.

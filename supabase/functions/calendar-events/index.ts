@@ -54,6 +54,19 @@ interface WireCalendar {
   /// The app uses it to colour each Abfuhrtermin by its bin rather than paint a
   /// month of identical brown dots.
   feed_kind?: string;
+
+  /// The connection this calendar came in on, and what the household calls it.
+  ///
+  /// Kalender groups its filter chips by this, so an account contributing five
+  /// calendars is one chip that opens into five rather than five chips: a child
+  /// with an IServ Aufgaben, Klausurplan and Klassenkalender is "Alice · IServ"
+  /// in the chip row, and a Google account with a work and a private calendar
+  /// stops filling the row on its own.
+  ///
+  /// Absent for a public feed, which is nobody's account — Ferien and Abfall
+  /// each stand alone, which is also how a family thinks of them.
+  group_id?: string;
+  group_name?: string;
 }
 
 interface WireEvent {
@@ -161,13 +174,35 @@ async function readConnection(
   const calendars: WireCalendar[] = [];
   const events: WireEvent[] = [];
 
-  for (const cal of wanted) {
-    const row = await upsertCalendar(db, connection, cal);
-    calendars.push(row);
-    for (const e of await readRemoteEvents(db, connection, cal, window)) {
-      events.push(toWire(row.id, e));
+  // One calendar failing must not take the rest of the account with it. That
+  // used to be academic — an OAuth token is good for every calendar it lists,
+  // so they failed together or not at all — but a link connection holds several
+  // independently revocable URLs, and a family that regenerates one IServ link
+  // should not lose the other two while they are at it.
+  //
+  // A failed calendar is left out of the response rather than returned empty:
+  // it reappears the moment it answers again, and an empty calendar that is
+  // actually broken is the more misleading of the two. If *every* one failed,
+  // the throw stands and the connection goes to `error` — see the caller.
+  let failed = 0;
+  let firstError: unknown;
+
+  for (const [index, cal] of wanted.entries()) {
+    try {
+      const read = await readRemoteEvents(db, connection, cal, window);
+      // After the read, so a calendar that cannot be reached does not get a row
+      // written for it on the way past.
+      const row = await upsertCalendar(db, connection, cal, index);
+      calendars.push(row);
+      for (const e of read) events.push(toWire(row.id, e));
+    } catch (e) {
+      failed++;
+      firstError ??= e;
+      console.error(`calendar ${cal.externalId.slice(0, 60)} failed: ${(e as Error).message}`);
     }
   }
+
+  if (failed && failed === wanted.length) throw firstError;
 
   // A calendar the user has since deselected, or that the provider no longer
   // offers, stops being ours to keep the settings for.
@@ -221,12 +256,40 @@ const PROVIDER_COLOR: Record<Provider, number> = {
   outlook: 0xff0078d4,
   icloud: 0xff8e8e93,
   iserv: 0xff2e7d32,
+  webuntis: 0xffe8590c,
 };
+
+/// A calendar's default colour: the provider's, shifted a little per position
+/// inside its account.
+///
+/// One hue per account is what makes the grouped chips legible — every dot on
+/// Alice's three IServ calendars reads as "school", and the shade says which of
+/// the three. Painting a whole account in one flat colour instead would make a
+/// month of Aufgaben and Klausuren indistinguishable, which is exactly the
+/// question a Klausurplan exists to answer.
+///
+/// Only ever the *default*: recolouring a calendar in the app must survive the
+/// next read, so the update path below never touches `color`.
+function defaultColor(provider: Provider, index: number): number {
+  const base = PROVIDER_COLOR[provider];
+  if (index <= 0) return base | 0;
+
+  // Lighten each successive calendar towards white by a fixed step, capped so
+  // the fifth one is still a colour rather than a pale wash.
+  const t = Math.min(index, 4) * 0.14;
+  const mix = (channel: number) => Math.round(channel + (255 - channel) * t);
+
+  const r = mix((base >> 16) & 0xff);
+  const g = mix((base >> 8) & 0xff);
+  const b = mix(base & 0xff);
+  return ((0xff << 24) | (r << 16) | (g << 8) | b) | 0;
+}
 
 async function upsertCalendar(
   db: SupabaseClient,
   connection: Connection,
   remote: RemoteCalendar,
+  index: number,
 ): Promise<WireCalendar> {
   const readOnly = connection.is_read_only || remote.readOnly;
 
@@ -262,12 +325,14 @@ async function upsertCalendar(
       color: existing.color as number,
       is_read_only: readOnly,
       position: (existing.position as number) ?? 0,
+      group_id: connection.id,
+      group_name: connection.display_name,
     };
   }
 
   // `| 0` wraps the ARGB value into a signed 32-bit integer, which is what the
   // column is. Without it every colour with alpha 0xff overflows.
-  const color = PROVIDER_COLOR[connection.provider] | 0;
+  const color = defaultColor(connection.provider, index);
 
   const { data: created, error } = await db
     .from("calendars")
@@ -295,6 +360,8 @@ async function upsertCalendar(
     color,
     is_read_only: readOnly,
     position: (created.position as number) ?? 0,
+    group_id: connection.id,
+    group_name: connection.display_name,
   };
 }
 

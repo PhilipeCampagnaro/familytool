@@ -35,7 +35,7 @@ class CalendarConnectionRepository {
   final SupabaseClient _db;
 
   static const _columns =
-      'id, provider, external_account, display_name, status, status_detail, '
+      'id, provider, auth_type, external_account, display_name, status, status_detail, '
       'last_synced_at, created_by, position, selected_calendars, calendar_names';
 
   // -------------------------------------------------------------------------
@@ -193,6 +193,78 @@ class CalendarConnectionRepository {
           'calendar_names': {...connection.calendarNames, externalId: trimmed},
         })
         .eq('id', connection.id);
+  }
+
+  // -------------------------------------------------------------------------
+  // Connect — a pasted calendar link (IServ, WebUntis)
+  // -------------------------------------------------------------------------
+
+  /// Checks a pasted link without storing anything, so a typo is reported under
+  /// the field it was typed into rather than on the step after it.
+  ///
+  /// Returns what the feed calls itself, where it says — WebUntis sets
+  /// `X-WR-CALNAME`, IServ's plugin feeds do not — and how many events are in
+  /// it, which is the one number that tells the user they pasted the right one
+  /// of their four IServ links.
+  Future<({String? name, int events})> checkCalendarLink({
+    required CalendarProvider provider,
+    required String url,
+  }) async {
+    final body = await _invoke('calendar-link', {
+      'action': 'check',
+      'provider': provider.wire,
+      'url': url.trim(),
+    });
+    return (
+      name: body['name'] as String?,
+      events: (body['events'] as num?)?.toInt() ?? 0,
+    );
+  }
+
+  /// Adds one calendar link — to a new account when [connectionId] is null, and
+  /// to an existing one otherwise.
+  ///
+  /// [account] names the person the account belongs to ("Alice") and is only
+  /// read when a new one is created; it is what makes two children at the same
+  /// school two connections rather than one, and what the chip in Kalender ends
+  /// up saying.
+  Future<({String? connectionId, String? externalId})> addCalendarLink({
+    required CalendarProvider provider,
+    required String url,
+    required String name,
+    String? account,
+    String? connectionId,
+  }) async {
+    final body = await _invoke('calendar-link', {
+      'action': 'add',
+      'provider': provider.wire,
+      'url': url.trim(),
+      'name': name.trim(),
+      if (account != null && account.trim().isNotEmpty) 'account': account.trim(),
+      'connection_id': ?connectionId,
+    });
+    return (
+      connectionId: body['connection_id'] as String?,
+      externalId: body['external_id'] as String?,
+    );
+  }
+
+  /// Drops one link from an account, and the account with it when it was the
+  /// last one.
+  ///
+  /// Not `setCalendarSelection`: the URL lives in `config`, which
+  /// `authenticated` cannot write, so removing it is the function's job too.
+  /// Deselecting alone would leave the link stored and the calendar back on the
+  /// next tick of the picker.
+  Future<void> removeCalendarLink({
+    required String connectionId,
+    required String externalId,
+  }) async {
+    await _invoke('calendar-link', {
+      'action': 'remove',
+      'connection_id': connectionId,
+      'external_id': externalId,
+    });
   }
 
   // -------------------------------------------------------------------------

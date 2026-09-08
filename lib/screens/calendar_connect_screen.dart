@@ -46,6 +46,7 @@ class CalendarConnectionsPage extends ConsumerWidget {
     CalendarProvider.outlook,
     CalendarProvider.icloud,
     CalendarProvider.iserv,
+    CalendarProvider.webuntis,
   ];
 
   @override
@@ -192,14 +193,30 @@ class _ProviderPageState extends ConsumerState<_ProviderPage> with WidgetsBindin
     }
   }
 
-  void _openSheet({CalendarConnection? connection, List<RemoteCalendar> calendars = const []}) {
+  void _openSheet({
+    CalendarConnection? connection,
+    List<RemoteCalendar> calendars = const [],
+    String? addToConnectionId,
+  }) {
     showCalendarConnectSheet(
       context,
       ref,
       _provider,
       connection: connection,
       calendars: calendars,
+      addToConnectionId: addToConnectionId,
     );
+  }
+
+  /// The CalDAV login, for the one provider that still has one.
+  ///
+  /// Reached only from the note under the link flow, never as the first thing
+  /// on the page: a school that has enabled CalDAV publishes its class and
+  /// group collections there, but never the plugin calendars — Aufgaben,
+  /// Klausuren, Geburtstage are module views with no collection behind them —
+  /// so a login alone is exactly the empty calendar this whole flow replaced.
+  void _openLoginSheet() {
+    showCalendarConnectSheet(context, ref, _provider, useCaldavLogin: true);
   }
 
   Future<void> _start() async {
@@ -301,6 +318,29 @@ class _ProviderPageState extends ConsumerState<_ProviderPage> with WidgetsBindin
               ),
             ],
           )
+        else if (_provider.isLinkProvider)
+          // One card per *account*, because that is what a link provider is:
+          // Alice's IServ holds her Aufgaben, her Klausurplan and her
+          // Klassenkalender, and each of them was pasted separately. A flat
+          // list would say "IServ" six times for two children and give the
+          // "+ Kalender hinzufügen" row nothing to belong to.
+          for (final connection in connections) ...[
+            GroupLabel(connection.displayName),
+            SectionCard(
+              radius: AppRadii.card,
+              children: dividedRows(inset: true, [
+                for (final entry in connection.entries)
+                  _ConnectedRow(key: ValueKey(entry.key), entry: entry),
+                SettingsRow(
+                  icon: LucideIcons.plus,
+                  title: L.s.addAnotherCalendar,
+                  subtitle: L.s.addAnotherCalendarBody,
+                  onTap: () => _openSheet(addToConnectionId: connection.id),
+                ),
+              ]),
+            ),
+            const SizedBox(height: AppSpacing.blockGap),
+          ]
         else ...[
           GroupLabel(L.s.connected),
           SectionCard(
@@ -343,6 +383,19 @@ class _ProviderPageState extends ConsumerState<_ProviderPage> with WidgetsBindin
                 : L.s.redirectNotice(
                     _provider == CalendarProvider.google ? 'Google' : 'Microsoft',
                   ),
+          ),
+        ] else if (_provider.hasCaldavFallback) ...[
+          const SizedBox(height: AppSpacing.blockGap),
+          SectionCard(
+            radius: AppRadii.card,
+            children: dividedRows(inset: true, [
+              SettingsRow(
+                icon: LucideIcons.keyRound,
+                title: L.s.connectWithLogin,
+                subtitle: L.s.connectWithLoginBody,
+                onTap: _openLoginSheet,
+              ),
+            ]),
           ),
         ],
       ],
@@ -493,6 +546,8 @@ Future<void> showCalendarConnectSheet(
   CalendarProvider provider, {
   CalendarConnection? connection,
   List<RemoteCalendar> calendars = const [],
+  String? addToConnectionId,
+  bool useCaldavLogin = false,
 }) async {
   final flow = _ConnectFlow(
     provider: provider,
@@ -503,6 +558,8 @@ Future<void> showCalendarConnectSheet(
     findConnection: (id) => _byId(ref.read(calendarConnectionsProvider).connections, id),
     connection: connection,
     calendars: calendars,
+    addToConnectionId: addToConnectionId,
+    useCaldavLogin: useCaldavLogin,
   );
 
   await showAppSheet<void>(
@@ -597,6 +654,10 @@ class _ConnectedRowState extends ConsumerState<_ConnectedRow> {
                       // nothing but this household's subscription.
                       ConnectKind.feed => L.s.householdOnlyOthersKeep,
                       ConnectKind.password => L.s.credentialsDeleted,
+                      // Nothing to revoke and no credential to delete: the link
+                      // was only ever a URL we held, and it keeps working in
+                      // the school platform for anyone who still has it.
+                      ConnectKind.link => L.s.linkStaysAtSchool,
                     }),
         ),
         actions: [
@@ -683,8 +744,12 @@ class _ConnectedRowState extends ConsumerState<_ConnectedRow> {
 /// No provider asks all of them; [_ConnectFlow.steps] is the list a given flow
 /// actually walks, and the dots count that rather than this enum.
 enum _Step {
-  /// iCloud and IServ: the login, checked before the flow moves on.
+  /// iCloud: the login, checked before the flow moves on.
   login,
+
+  /// IServ and WebUntis: the calendar link, pasted from the school platform and
+  /// fetched before the flow moves on.
+  link,
 
   /// Ferien: one of the sixteen Bundesländer.
   region,
@@ -730,6 +795,8 @@ class _ConnectFlow extends ChangeNotifier {
     required this.findConnection,
     this.connection,
     this.calendars = const [],
+    this.addToConnectionId,
+    this.useCaldavLogin = false,
   }) {
     // Everything the account offers, all ticked. Starting from "all" rather
     // than "none" matches what the connection already means the moment it
@@ -751,10 +818,36 @@ class _ConnectFlow extends ChangeNotifier {
   CalendarConnection? connection;
   List<RemoteCalendar> calendars;
 
-  // -- login (iCloud, IServ)
+  // -- login (iCloud)
   final user = TextEditingController();
   final password = TextEditingController();
   final server = TextEditingController();
+
+  // -- link (IServ, WebUntis)
+  final linkUrl = TextEditingController();
+
+  /// Who the account belongs to — "Alice". Only asked when a new account is
+  /// being made; adding a second calendar to one already knows.
+  final account = TextEditingController();
+
+  /// Set when the sheet was opened from "+ Kalender hinzufügen" on an account
+  /// that already exists, which is what turns the flow from two questions into
+  /// one.
+  final String? addToConnectionId;
+
+  /// IServ's second route: the CalDAV login, reached from the note at the
+  /// bottom of its page rather than from the button. The flow is otherwise
+  /// unchanged — it is the same login step iCloud uses, and it ends on the same
+  /// picker, because a school that publishes collections has a list to choose
+  /// from.
+  final bool useCaldavLogin;
+
+  /// What the fetched feed said about itself: the name it carries, if any, and
+  /// how many events are in it. Shown on the naming step, because "37 Termine
+  /// gefunden" is what tells somebody they pasted the right one of their four
+  /// IServ links.
+  String? probedName;
+  int probedEvents = 0;
 
   // -- region (Ferien)
   String? region;
@@ -798,6 +891,11 @@ class _ConnectFlow extends ChangeNotifier {
 
   bool get isFerien => provider == CalendarProvider.ferien;
   bool get isAbfall => provider == CalendarProvider.abfall;
+  bool get isLink => provider.kind == ConnectKind.link && !useCaldavLogin;
+
+  /// True while this flow is making a *new* account rather than adding a
+  /// calendar to one — the only case that has to ask whose it is.
+  bool get needsAccountName => isLink && addToConnectionId == null;
 
   /// The steps this flow walks, in order.
   ///
@@ -812,6 +910,7 @@ class _ConnectFlow extends ChangeNotifier {
       // Google and Outlook did their asking in Safari, before the sheet.
       ConnectKind.oauth => const <_Step>[],
       ConnectKind.password => const [_Step.login],
+      ConnectKind.link => useCaldavLogin ? const [_Step.login] : const [_Step.link],
       ConnectKind.feed => isFerien ? const [_Step.region] : const [_Step.address],
     },
     if (_needsDetails) _Step.details,
@@ -843,11 +942,17 @@ class _ConnectFlow extends ChangeNotifier {
       if (!found.supported) return found.town.isNotEmpty ? found.town : (at?.town ?? provider.label);
       return found.street == null ? found.town : '${found.street}, ${found.town}';
     }
+    if (isLink) {
+      final typed = account.text.trim();
+      if (typed.isNotEmpty) return '${provider.label} · $typed';
+      return findConnection(addToConnectionId ?? '')?.displayName ?? provider.label;
+    }
     return connection?.displayName ?? provider.label;
   }
 
   /// The line under it: what connecting this will actually do.
   String get intro {
+    if (isLink) return L.s.linkedCalendarsNote;
     if (isFerien) {
       final code = region;
       return code == null ? '' : L.s.holidaysSelectedBody(bundeslaender[code]!);
@@ -886,6 +991,12 @@ class _ConnectFlow extends ChangeNotifier {
     if (!_disposed) notifyListeners();
   }
 
+  /// Redraw for a field the *header* reads. The account name is typed on the
+  /// naming step and shown in the headline above it, and the two are siblings
+  /// under [showAppSheet]'s own Column — neither can setState the other, so the
+  /// flow is what carries the change across.
+  void refreshHeadline() => _notify();
+
   void _fail(String message) {
     error = message;
     _notify();
@@ -902,6 +1013,8 @@ class _ConnectFlow extends ChangeNotifier {
     switch (step) {
       case _Step.login:
         await _login(context);
+      case _Step.link:
+        await _checkLink(context);
       case _Step.region:
         if (region == null) {
           _fail(L.s.pickABundesland);
@@ -974,6 +1087,11 @@ class _ConnectFlow extends ChangeNotifier {
   }
 
   String _nameSuggestion() {
+    // What the feed calls itself, where it says. WebUntis sets X-WR-CALNAME;
+    // IServ's plugin feeds do not, so this is usually empty and the user names
+    // the calendar — which is the honest outcome, since only they know whether
+    // this link is the Klausurplan or the Aufgaben.
+    if (isLink) return probedName?.trim() ?? '';
     // "Schulferien Niedersachsen" is both the heading and the name.
     if (isFerien) return headline;
     if (isAbfall) {
@@ -1140,6 +1258,41 @@ class _ConnectFlow extends ChangeNotifier {
     _notify();
   }
 
+  // -- link -------------------------------------------------------------------
+
+  /// The pasted link is fetched *here*, on the step that asked for it — the
+  /// same rule the password follows. A revoked link, a browser URL pasted
+  /// instead of the ICS one, a typo: all of them belong under the field.
+  ///
+  /// This is also the whole "connect" for these two providers. There is no
+  /// credential to check, so proving the link answers with a calendar is the
+  /// only thing "verbunden" can honestly mean.
+  Future<void> _checkLink(BuildContext context) async {
+    FocusScope.of(context).unfocus();
+    final url = linkUrl.text.trim();
+    if (url.isEmpty) {
+      _fail(L.s.pasteLinkHere);
+      return;
+    }
+
+    busy = true;
+    error = null;
+    _notify();
+
+    try {
+      final probe = await notifier.checkCalendarLink(provider: provider, url: url);
+      if (_disposed) return;
+      busy = false;
+      probedName = probe.name;
+      probedEvents = probe.events;
+      _advance();
+    } catch (e) {
+      if (_disposed) return;
+      busy = false;
+      _fail(connectErrorText(e));
+    }
+  }
+
   /// The link is checked on the way *off* the details step, so a dead one is
   /// reported under the field it was typed into rather than on the step after.
   Future<void> _checkIcs() async {
@@ -1207,6 +1360,24 @@ class _ConnectFlow extends ChangeNotifier {
     _notify();
 
     final label = name.text.trim();
+
+    // Both names are checked here rather than server-side, because both are
+    // things the user is looking at: a calendar with no name becomes a nameless
+    // chip in Kalender, and an account with none becomes "IServ (kgs-sb.de)",
+    // which is exactly the row nobody can tell from their other child's.
+    if (isLink) {
+      if (label.isEmpty) {
+        busy = false;
+        _fail(L.s.nameThisCalendarFirst);
+        return;
+      }
+      if (needsAccountName && account.text.trim().isEmpty) {
+        busy = false;
+        _fail(L.s.whoseCalendarFirst);
+        return;
+      }
+    }
+
     try {
       if (isFerien) {
         await notifier.connectFerien(region!, displayName: label);
@@ -1222,6 +1393,17 @@ class _ConnectFlow extends ChangeNotifier {
           url: icsUrl.text.trim(),
           label: address!.label,
           displayName: label,
+        );
+      } else if (isLink) {
+        // One call does the lot: the function stores the link, ticks it and
+        // names it, because all three are the same decision and none of the
+        // three is a column a client may write.
+        await notifier.addCalendarLink(
+          provider: provider,
+          url: linkUrl.text.trim(),
+          name: label,
+          account: account.text.trim(),
+          connectionId: addToConnectionId,
         );
       } else if (hasPicker) {
         // The picked calendars and what to call each of them: one write,
@@ -1260,6 +1442,8 @@ class _ConnectFlow extends ChangeNotifier {
     server.dispose();
     query.dispose();
     icsUrl.dispose();
+    linkUrl.dispose();
+    account.dispose();
     for (final controller in calendarNames.values) {
       controller.dispose();
     }
@@ -1330,6 +1514,7 @@ class _ConnectBody extends StatelessWidget {
             switchInCurve: Curves.easeOutCubic,
             child: switch (flow.step) {
               _Step.login => _LoginStep(key: const ValueKey('login'), flow: flow),
+              _Step.link => _LinkStep(key: const ValueKey('link'), flow: flow),
               _Step.region => _RegionStep(key: const ValueKey('region'), flow: flow),
               _Step.address => _AddressStep(key: const ValueKey('address'), flow: flow),
               _Step.details => _DetailsStep(key: const ValueKey('details'), flow: flow),
@@ -1404,6 +1589,121 @@ class _StepError extends StatelessWidget {
 ///
 /// No "Verbinden" button of its own: the chevron in the header is what checks
 /// the credentials, the same control that moves every other step on.
+/// The paste step for IServ and WebUntis: where to find the link, and the field
+/// to put it in.
+///
+/// The instructions are half the screen on purpose. Neither platform can be
+/// asked for this link — IServ's plugin calendars are module views rather than
+/// CalDAV collections, and WebUntis publishes a per-student iCal URL only once
+/// the student has pressed the button — so the user has to go and make one, and
+/// a field with a hint under it would leave them guessing which of the several
+/// URLs in a school platform is the right one.
+class _LinkStep extends StatelessWidget {
+  final _ConnectFlow flow;
+
+  const _LinkStep({super.key, required this.flow});
+
+  @override
+  Widget build(BuildContext context) {
+    final steps = flow.provider.linkSteps;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SectionCard(
+          radius: AppRadii.card,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  for (final (index, line) in steps.indexed) ...[
+                    if (index > 0) const SizedBox(height: 10),
+                    _LinkHowToRow(number: index + 1, text: line),
+                  ],
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(left: 16),
+              child: Divider(height: 0.5, thickness: 0.5, color: AppColors.hairline),
+            ),
+            FieldGroup(
+              label: L.s.pasteCalendarLink,
+              hint: L.s.pasteCalendarLinkHint,
+              child: FieldBox(
+                child: TextField(
+                  controller: flow.linkUrl,
+                  enabled: !flow.busy,
+                  keyboardType: TextInputType.url,
+                  autocorrect: false,
+                  enableSuggestions: false,
+                  // A tokenised feed URL is long and nobody types one; two
+                  // lines is what makes it possible to see that what landed in
+                  // the field is the whole thing.
+                  maxLines: 2,
+                  minLines: 1,
+                  textInputAction: TextInputAction.done,
+                  style: AppText.searchInput,
+                  decoration: const InputDecoration(
+                    border: InputBorder.none,
+                    hintText: 'https://…',
+                    isDense: true,
+                  ),
+                  onSubmitted: (_) => flow.next(context),
+                ),
+              ),
+            ),
+          ],
+        ),
+        _StepError(flow.error),
+        if (flow.busy) _StepBusyRow(L.s.checkingLinkEllipsis),
+      ],
+    );
+  }
+}
+
+/// One numbered instruction: the circle, then the sentence.
+class _LinkHowToRow extends StatelessWidget {
+  final int number;
+  final String text;
+
+  const _LinkHowToRow({required this.number, required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 20,
+          height: 20,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
+            shape: BoxShape.circle,
+          ),
+          child: Text(
+            '$number',
+            style: AppText.microLabel.copyWith(
+              color: Theme.of(context).colorScheme.primary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 1),
+            child: Text(text, style: AppText.body.copyWith(color: AppColors.muted)),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _LoginStep extends StatelessWidget {
   final _ConnectFlow flow;
 
@@ -1633,6 +1933,10 @@ class _NameStep extends StatelessWidget {
         const SizedBox(height: 14),
         Text(flow.intro, style: AppText.body.copyWith(color: AppColors.muted)),
         const SizedBox(height: 18),
+        if (flow.isLink) ...[
+          _LinkFoundNote(flow: flow),
+          const SizedBox(height: 14),
+        ],
         SectionCard(
           radius: AppRadii.card,
           children: dividedRows(
@@ -1651,9 +1955,39 @@ class _NameStep extends StatelessWidget {
                       ),
                   ]
                 : [
+                    // A new school account is named twice over, and the two
+                    // names do different jobs: the account's is the chip in
+                    // Kalender ("IServ · Alice"), the calendar's is the row
+                    // inside it ("Klausuren"). Adding a second calendar to an
+                    // account already has the first, so it only asks the second.
+                    if (flow.needsAccountName)
+                      FieldGroup(
+                        label: L.s.whoseCalendar,
+                        hint: L.s.whoseCalendarHint,
+                        child: FieldBox(
+                          child: TextField(
+                            controller: flow.account,
+                            enabled: !flow.busy,
+                            textCapitalization: TextCapitalization.words,
+                            textInputAction: TextInputAction.next,
+                            style: AppText.searchInput,
+                            decoration: InputDecoration(
+                              border: InputBorder.none,
+                              hintText: L.s.whoseCalendarPlaceholder,
+                              isDense: true,
+                            ),
+                            // The headline above reads "IServ · Alice" as it is
+                            // typed, so the name is shown where it will be used
+                            // rather than described.
+                            onChanged: (_) => flow.refreshHeadline(),
+                          ),
+                        ),
+                      ),
                     FieldGroup(
-                      label: L.s.name,
-                      hint: L.s.calendarNameInAporah,
+                      label: flow.isLink ? L.s.linkedCalendarName : L.s.name,
+                      hint: flow.isLink
+                          ? L.s.linkedCalendarNameHint
+                          : L.s.calendarNameInAporah,
                       child: FieldBox(
                         child: TextField(
                           controller: flow.name,
@@ -1674,6 +2008,41 @@ class _NameStep extends StatelessWidget {
         ),
         _StepError(flow.error),
         if (flow.busy) _StepBusyRow(L.s.connectingEllipsis),
+      ],
+    );
+  }
+}
+
+/// What the fetched link turned out to contain, over the naming step.
+///
+/// The event count is the point of it: a family has three or four IServ links
+/// and no way to tell them apart by their URLs, so "37 Termine gefunden" is
+/// what confirms this is the Klausurplan and not the empty Geburtstage feed
+/// they copied last week. An empty feed is reported as working rather than as a
+/// problem — a Klausurplan is legitimately empty over the summer, and refusing
+/// it then would send the user back to IServ to fix a link that is already
+/// right.
+class _LinkFoundNote extends StatelessWidget {
+  final _ConnectFlow flow;
+
+  const _LinkFoundNote({required this.flow});
+
+  @override
+  Widget build(BuildContext context) {
+    final none = flow.probedEvents == 0;
+    final color = none ? AppColors.muted : Theme.of(context).colorScheme.primary;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(none ? LucideIcons.info : LucideIcons.circleCheck, size: 16, color: color),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            none ? L.s.noEventsAtLinkYet : L.s.eventsFoundAtLink(flow.probedEvents),
+            style: AppText.caption.copyWith(color: color),
+          ),
+        ),
       ],
     );
   }

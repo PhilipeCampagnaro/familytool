@@ -432,6 +432,10 @@ class StringsEn extends AppStrings {
   @override
   String get eventLabel => 'Event';
   @override
+  String get createListFromEvent => 'Create a list for this event';
+  @override
+  String get createTaskFromEvent => 'Create a task for this event';
+  @override
   String get route => 'Route';
   @override
   String get reminder => 'Reminder';
@@ -669,6 +673,67 @@ class StringsEn extends AppStrings {
   @override
   String get checkingLinkEllipsis => 'Checking the link …';
   @override
+  List<String> get iservLinkSteps => const [
+    'Sign in to IServ and open the calendar.',
+    'Bottom left, choose "Einstellungen", then "Plugins".',
+    'Next to the calendar you want — exams or homework, say — choose "Link erstellen".',
+    'Copy the link it creates and paste it here.',
+  ];
+  @override
+  List<String> get webuntisLinkSteps => const [
+    'Sign in to WebUntis and tap your own name at the top.',
+    'Under "Freigaben", choose "Kalender publizieren".',
+    'Copy the iCal link it creates and paste it here.',
+  ];
+  @override
+  String get pasteCalendarLink => 'Calendar link';
+  @override
+  String get pasteCalendarLinkHint =>
+      'We fetch it right away, so you know at once whether it works.';
+  @override
+  String get whoseCalendar => 'Whose account is this?';
+  @override
+  String get whoseCalendarHint =>
+      'Shown on the calendar filter later, e.g. "IServ · Alice".';
+  @override
+  String get whoseCalendarPlaceholder => "Child's name";
+  @override
+  String get linkedCalendarName => 'Calendar name';
+  @override
+  String get linkedCalendarNameHint => 'Exams, homework or the class calendar, for instance.';
+  @override
+  String get nameThisCalendarFirst => 'Give the calendar a name.';
+  @override
+  String get whoseCalendarFirst => 'Say whose account this is.';
+  @override
+  String get addAnotherCalendar => 'Add calendar';
+  @override
+  String get addAnotherCalendarBody =>
+      'The school platform makes a separate link for each calendar. Every link '
+      'on this account ends up under one filter in Kalender.';
+  @override
+  String get schoolCalendars => 'Calendars';
+  @override
+  String get removeCalendar => 'Remove calendar';
+  @override
+  String get linkStaysAtSchool =>
+      ' The link stays in the school platform — we simply stop remembering it.';
+  @override
+  String get connectWithLogin => 'Sign in with credentials instead';
+  @override
+  String get connectWithLoginBody =>
+      'Only worth it if your school has enabled CalDAV. Homework and exams are '
+      'not there — those need the links above.';
+  @override
+  String get linkedCalendarsNote =>
+      'Aporah only reads these calendars. Keep changing events in the school platform.';
+  @override
+  String eventsFoundAtLink(int count) =>
+      count == 1 ? '1 event found' : '$count events found';
+  @override
+  String get noEventsAtLinkYet =>
+      'The link works but has no events right now. That is normal over the holidays.';
+  @override
   String get calendarLinkIcs => 'Calendar link (ICS)';
   @override
   String get calendarLinkHint =>
@@ -725,7 +790,9 @@ class StringsEn extends AppStrings {
   @override
   String get providerIcloudDesc => 'Connect iCloud with an app-specific password.';
   @override
-  String get providerIservDesc => 'Connect the school calendar from IServ.';
+  String get providerIservDesc => 'Homework, exams and class calendars from IServ.';
+  @override
+  String get providerWebuntisDesc => 'Show the timetable from WebUntis.';
   @override
   String get providerHolidaysDesc => 'Show school holidays for your Bundesland.';
   @override

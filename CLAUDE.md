@@ -96,8 +96,19 @@ task:
   over `calendar_connection_repository.dart`. **`authenticated` holds no INSERT grant on
   `calendar_connections`, `public_feeds` or `family_feeds`** — every one is created by an Edge
   Function that first proved the thing works (an OAuth code exchanged, a CalDAV password that
-  answered, an address that returned real pickup dates), so "verbunden" always means "we reached
-  it just now". Abfall's six German waste-vendor families live in
+  answered, a pasted link that returned a calendar, an address that returned real pickup dates),
+  so "verbunden" always means "we reached it just now".
+- **School calendars are connected by a pasted link, not a login.** IServ's plugin calendars —
+  Aufgaben, Klausuren, Geburtstage — are module-generated views, *not* CalDAV collections, so
+  PROPFIND enumeration cannot see them at any depth: it finds the pupil's empty home and the
+  school-wide `+public` feed of several hundred events about every class but theirs. The user
+  creates a tokenised ICS link in the school platform and pastes one per calendar (there is no API
+  to mint or list them), and one account holds a list of them — `auth_type = 'public'`,
+  `is_read_only`, URLs in `config.feeds`, added and removed only by `calendar-link`. WebUntis works
+  identically and shares the mechanism. **Don't reinstate CalDAV as IServ's main route** — it is
+  still reachable from a row at the bottom of the page, and it still finds nothing a family wants.
+  Read the school-calendar section of [docs/ported-features.md](docs/ported-features.md) before
+  touching any of it, in particular the `TZID="+02:00"` trap. Abfall's six German waste-vendor families live in
   `supabase/functions/_shared/abfall.ts`; see the Abfall section of
   [docs/ported-features.md](docs/ported-features.md) before touching them, and re-run the live
   end-to-end probe described there afterwards.

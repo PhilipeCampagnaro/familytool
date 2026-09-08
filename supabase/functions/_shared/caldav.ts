@@ -609,6 +609,55 @@ function registerEmbedded(component: any): void {
   } catch { /* no VTIMEZONE at all */ }
 }
 
+/// A TZID that is not a zone name but a bare UTC offset: `TZID="+02:00"`.
+const OFFSET_TZID = /^["']?([+-])(\d{2}):?(\d{2})["']?$/;
+
+/// IServ's plugin feeds write `DTSTART;TZID="+02:00":20260908T113000` and ship
+/// no VTIMEZONE at all. ical.js finds no zone by that name, falls back to
+/// *floating*, and resolves the wall clock in the runtime zone — UTC on Edge
+/// Functions. An 11:30 Klassenarbeit then lands at 11:30Z, i.e. 13:30 in
+/// Germany: every event two hours late in summer, one in winter.
+///
+/// So the offset in the name is taken at face value and registered as a
+/// fixed-offset zone. That is sound here rather than merely expedient: IServ
+/// emits the offset that actually applied on the day of the event (+02:00 in
+/// September, +01:00 in November), so there is no DST rule left to get wrong.
+///
+/// Every zone is registered before any VEVENT is read, because ical.js resolves
+/// a TZID at property-access time and a zone registered halfway through the
+/// loop would fix the second half of a feed and not the first.
+// deno-lint-ignore no-explicit-any
+function registerOffsetZones(component: any): void {
+  try {
+    for (const vevent of component.getAllSubcomponents("vevent")) {
+      for (const name of ["dtstart", "dtend"]) {
+        try {
+          const tzid = vevent.getFirstProperty(name)?.getParameter("tzid");
+          if (typeof tzid !== "string" || ICAL.TimezoneService.has(tzid)) continue;
+
+          const match = OFFSET_TZID.exec(tzid);
+          if (!match) continue;
+
+          const offset = `${match[1]}${match[2]}${match[3]}`;
+          const vtz = new ICAL.Component(ICAL.parse([
+            "BEGIN:VTIMEZONE",
+            `TZID:${tzid}`,
+            "BEGIN:STANDARD",
+            "DTSTART:19700101T000000",
+            `TZOFFSETFROM:${offset}`,
+            `TZOFFSETTO:${offset}`,
+            `TZNAME:${tzid}`,
+            "END:STANDARD",
+            "END:VTIMEZONE",
+          ].join("\r\n")));
+          // deno-lint-ignore no-explicit-any
+          (ICAL.TimezoneService.register as any)(tzid, new ICAL.Timezone(vtz));
+        } catch { /* one odd TZID must not sink the blob */ }
+      }
+    }
+  } catch { /* no VEVENTs to look at */ }
+}
+
 /// Parses one iCalendar blob into occurrences inside the window. Recurring
 /// series are expanded here rather than stored as a rule, because the Kalender
 /// screen reads plain rows out of public.events and knows nothing about RRULE.
@@ -619,6 +668,7 @@ export function parseIcs(ics: string, from: Date, to: Date): Omit<ParsedEvent, "
     const component = new ICAL.Component(ICAL.parse(ics));
     registerBerlin();
     registerEmbedded(component);
+    registerOffsetZones(component);
 
     for (const vevent of component.getAllSubcomponents("vevent")) {
       try {

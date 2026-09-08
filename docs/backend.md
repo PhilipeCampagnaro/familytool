@@ -175,17 +175,19 @@ supabase-js cannot open a transaction; those functions take a user id and so are
 `remove-member`, `set-role`, revoking a link and kicking a guest need no function — plain RLS
 writes, protected by triggers.
 
-Five more cover the calendar layer: `calendar-connect` (OAuth start/callback/disconnect — the only
-function that must run with `verify_jwt = false`), `calendar-caldav` (iCloud and IServ),
-`calendar-events` (reads every connected account and subscribed feed), `calendar-write` (creates,
-updates and deletes an event in a connected account) and `calendar-feed` (creates or joins a public
-feed). They exist because a provider credential must be captured, stored and used somewhere the
+Six more cover the calendar layer: `calendar-connect` (OAuth start/callback/disconnect — the only
+function that must run with `verify_jwt = false`), `calendar-caldav` (iCloud, and IServ's secondary
+login), `calendar-link` (school calendars connected by a pasted link — IServ plugin feeds and
+WebUntis), `calendar-events` (reads every connected account and subscribed feed), `calendar-write`
+(creates, updates and deletes an event in a connected account) and `calendar-feed` (creates or joins
+a public feed). They exist because a provider credential must be captured, stored and used somewhere the
 client cannot see, which is the same reason `invite-member` exists. See the Calendar-connections
 section of [docs/ported-features.md](ported-features.md) for the provider details and the
 credentials to obtain.
 
 **No calendar event is ever stored — from a connected account or from anywhere else.**
-`calendar-events` proxies Google, Outlook, iCloud and IServ on every refresh and returns them; the
+`calendar-events` proxies Google, Outlook, iCloud, IServ and WebUntis on every refresh and returns
+them; the
 offline copy lives in [lib/services/calendar_cache.dart](../lib/services/calendar_cache.dart) on the
 device. The `external_uid` / `external_href` / `external_etag` columns are gone — there is no column
 left in which to record which provider a stored event came from, which is what keeps this true
@@ -194,7 +196,8 @@ rather than merely intended.
 `public.events` used to hold what somebody typed into Aporah itself, on a `provider = 'aporah'`
 calendar. **That calendar no longer exists and cannot be created**: the leftover row is deleted, the
 `provider` default is dropped and the check constraint now accepts only
-`('google','icloud','outlook','iserv')` — see migration `20260805182949_drop_own_calendar.sql`. The
+`('google','icloud','outlook','iserv','webuntis')` — see migrations
+`20260805182949_drop_own_calendar.sql` and `20260908130000_calendar_link_feeds.sql`. The
 table is left standing but is empty and unreachable; the client never reads or writes it. Dropping
 it is a separate decision nobody has made yet.
 
@@ -232,6 +235,16 @@ household that subscribes to it. `public_feeds` is readable only where a `family
 enumerable table would enumerate where Aporah's households live. Neither table grants `insert` to
 `authenticated`: a subscription is only ever created by `calendar-feed`, which first proved the
 feed answers with real dates.
+
+**A school calendar's link is a credential we deliberately keep in the open.** IServ plugin feeds
+and WebUntis subscriptions have no username or password — the tokenised URL *is* the whole
+capability — and it lives in `calendar_connections.config.feeds`, which the household can read.
+The reasoning, since it runs against the rule two paragraphs down: the people who can read that
+column are exactly the household members already looking at the events it returns, `authenticated`
+holds no `UPDATE` grant on `config`, so a member can read a link and never introduce one, and the
+worst case is a class's exam dates rather than a standing capability on somebody's Google account.
+Adding one is a `service_role` act in `calendar-link`, which fetches the URL first — an unchecked
+URL written straight to `config` would be an outbound request this server then makes on a schedule.
 
 **Provider credentials are stored twice-protected.** `calendar_connection_secrets` has no policy at
 all and every privilege revoked from `authenticated`, *and* every value in it is an AES-256-GCM

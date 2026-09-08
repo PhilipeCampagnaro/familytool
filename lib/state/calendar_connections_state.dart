@@ -145,6 +145,38 @@ class CalendarConnectionsNotifier extends StateNotifier<CalendarConnectionsState
     isFeed: true,
   );
 
+  /// Checks a pasted school-calendar link. Touches no state: this is the
+  /// setup sheet asking whether the link works before it offers to keep it.
+  Future<({String? name, int events})> checkCalendarLink({
+    required CalendarProvider provider,
+    required String url,
+  }) => _repo.checkCalendarLink(provider: provider, url: url);
+
+  /// Adds one pasted calendar — to a new account, or to one that exists.
+  ///
+  /// Returns the connection it landed on, which for the "+ Kalender
+  /// hinzufügen" case is the one it was handed and for a new account is the one
+  /// the function just made.
+  Future<String?> addCalendarLink({
+    required CalendarProvider provider,
+    required String url,
+    required String name,
+    String? account,
+    String? connectionId,
+  }) async {
+    final result = await _repo.addCalendarLink(
+      provider: provider,
+      url: url,
+      name: name,
+      account: account,
+      connectionId: connectionId,
+    );
+    // No `displayName` to apply: the account was named on the way in, and the
+    // calendar's own name went with the link. So this only re-reads and kicks
+    // off the first fetch.
+    return _afterConnect(result.connectionId);
+  }
+
   /// Connecting a calendar and then having to ask for its events separately is
   /// not two steps a user should know about — the first read runs here.
   ///
@@ -241,6 +273,18 @@ class CalendarConnectionsNotifier extends StateNotifier<CalendarConnectionsState
   /// deletes the `calendars` row on the next read, which takes its events with
   /// it.
   Future<void> removeCalendar(CalendarConnection connection, String externalId) async {
+    // A link account keeps its URLs in `config`, which no client may write, so
+    // dropping one is the function's job. Deselecting it here instead would
+    // leave the link stored and the calendar waiting in the picker.
+    if (connection.isLinked) {
+      await _repo.removeCalendarLink(
+        connectionId: connection.id,
+        externalId: externalId,
+      );
+      await _settle();
+      return;
+    }
+
     final remaining = [
       for (final id in connection.selectedCalendars ?? const <String>[])
         if (id != externalId) id,

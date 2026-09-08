@@ -22,6 +22,7 @@ import {
   type SyncedEvent,
 } from "./calendar.ts";
 import { collections, readEvents } from "./caldav.ts";
+import { feedsOf, readFeedEvents } from "./ics_feed.ts";
 import { fetchWithTimeout } from "./net.ts";
 
 /// Signals "the user has to do something" as opposed to "this failed, try
@@ -67,8 +68,17 @@ export async function listRemoteCalendars(
       const token = await accessToken(db, connection);
       return await listOutlook(token);
     }
+    case "webuntis":
+      // WebUntis exists only as pasted links — there is no account to enumerate.
+      return linkedFeeds(connection);
     case "icloud":
     case "iserv": {
+      // An IServ connection is one of two quite different things, and
+      // `auth_type` is what tells them apart: 'public' is the pasted-link kind,
+      // which has no credential and nothing to discover, and 'caldav' is the
+      // older login kind that still enumerates collections.
+      if (connection.auth_type === "public") return linkedFeeds(connection);
+
       const { user, password, home } = await caldavCredentials(db, connection);
       const found = await collections(home, user, password, connection.provider === "iserv");
       return found.map((c) => ({
@@ -78,6 +88,20 @@ export async function listRemoteCalendars(
       }));
     }
   }
+}
+
+/// The pasted feeds on a link connection, as sub-calendars.
+///
+/// The URL is the `externalId`, so a feed the user removes in Settings stops
+/// being listed here, `calendar-events` finds it missing from the wanted set,
+/// and its `calendars` row is deleted by the stale sweep that already runs —
+/// no extra removal path.
+function linkedFeeds(connection: Connection): RemoteCalendar[] {
+  return feedsOf(connection.config).map((f) => ({
+    externalId: f.url,
+    name: f.name,
+    readOnly: true,
+  }));
 }
 
 export async function accessToken(db: SupabaseClient, connection: Connection): Promise<string> {
@@ -183,8 +207,16 @@ export async function readRemoteEvents(
       return await readGoogle(await accessToken(db, connection), calendar.externalId, window);
     case "outlook":
       return await readOutlook(await accessToken(db, connection), calendar.externalId, window);
+    case "webuntis":
+      return await readFeedEvents(calendar.externalId, window);
     case "icloud":
     case "iserv": {
+      // Same fork as the listing above: a link connection's externalId *is* the
+      // feed URL, so reading it is one GET and no credential.
+      if (connection.auth_type === "public") {
+        return await readFeedEvents(calendar.externalId, window);
+      }
+
       const { user, password } = await caldavCredentials(db, connection);
       const parsed = await readEvents(calendar.externalId, user, password, window.from, window.to);
       return parsed.map((p) => ({

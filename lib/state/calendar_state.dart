@@ -29,8 +29,15 @@ class CalendarScreenState {
   final CalSelectedDay selected;
   final bool monthDetailExpanded;
 
-  /// The calendar being filtered to, by id. Null is "Alle".
-  final String? calendarFilter;
+  /// The calendars being filtered to, by id. Null — not the empty set — is
+  /// "Alle", and the empty set never occurs: unticking the last calendar in the
+  /// filter menu returns to "Alle" rather than to a blank month.
+  ///
+  /// A set rather than one id because a chip is now an *account*: one connected
+  /// Google or IServ account contributes several calendars, and "Alice · IServ"
+  /// means all three of hers. Refining that down to one of the three is what
+  /// the chip's own popup does, and it stays inside the set.
+  final Set<String>? calendarFilter;
 
   /// The household's calendars, and its events keyed 'y-m-d'. These replace the
   /// old `added`/`edits`/`deletedKeys` overlay maps: with a real backend the
@@ -76,7 +83,7 @@ class CalendarScreenState {
     bool? isWeek,
     CalSelectedDay? selected,
     bool? monthDetailExpanded,
-    String? calendarFilter,
+    Set<String>? calendarFilter,
     bool clearCalendarFilter = false,
     List<CalendarSource>? calendars,
     Map<String, List<CalendarEvent>>? eventsByDay,
@@ -155,8 +162,66 @@ class CalendarScreenState {
 
   List<CalendarEvent> eventsFor(int y, int m, int d) {
     final all = eventsByDay[key(y, m, d)] ?? const <CalendarEvent>[];
-    if (calendarFilter == null) return all;
-    return [for (final e in all) if (e.calendarId == calendarFilter) e];
+    final filter = calendarFilter;
+    if (filter == null) return all;
+    return [for (final e in all) if (filter.contains(e.calendarId)) e];
+  }
+
+  /// A value that changes whenever the filter does, for the widget keys that
+  /// rebuild on it. A `Set` is identity-compared inside a [ValueKey], so the
+  /// key would never notice a filter change; the ids are sorted so that two
+  /// equal filters built in a different order still compare equal.
+  String get calendarFilterKey {
+    final filter = calendarFilter;
+    if (filter == null) return '';
+    return (filter.toList()..sort()).join(',');
+  }
+
+  /// The chip row: one entry per connected account, plus one for every calendar
+  /// that belongs to no account.
+  ///
+  /// This is the whole reason `group_id` travels on the wire. A child's IServ
+  /// account holds an Aufgaben, a Klausurplan and a Klassenkalender, and three
+  /// chips reading "Alice IServ Aufgaben", "Alice IServ Klausurplan", "Alice
+  /// IServ Klassenkalender" push everything else off the row while saying the
+  /// same two words three times. One "Alice · IServ" chip that opens into the
+  /// three says it once. A Google account with a work and a private calendar
+  /// gets the same treatment for the same reason.
+  ///
+  /// Built from [activeSources], so a group only appears once something in it
+  /// has an event in the loaded window, and it names only the calendars that
+  /// do.
+  List<CalendarGroup> get activeGroups {
+    final out = <CalendarGroup>[];
+    final byId = <String, int>{};
+
+    for (final src in activeSources) {
+      // A feed has no account, and a calendar whose connection contributes only
+      // this one has no group worth drawing: both stand alone under their own
+      // name, exactly as they did before there were groups.
+      if (src.groupId.isEmpty) {
+        out.add(CalendarGroup(id: src.id, name: src.name, calendars: [src]));
+        continue;
+      }
+      final at = byId[src.groupId];
+      if (at == null) {
+        byId[src.groupId] = out.length;
+        out.add(CalendarGroup(
+          id: src.groupId,
+          name: src.groupName.isEmpty ? src.name : src.groupName,
+          calendars: [src],
+        ));
+      } else {
+        out[at] = out[at].withCalendar(src);
+      }
+    }
+
+    // A group of one is not a group: it says the account's name where the
+    // calendar's own is more useful, and it would offer a popup with a single
+    // row in it.
+    return [
+      for (final g in out) g.calendars.length == 1 ? g.asSingle() : g,
+    ];
   }
 
   /// The dots under a day cell — **one per event**, in the order the day is
@@ -301,12 +366,41 @@ class CalendarNotifier extends StateNotifier<CalendarScreenState> {
     );
   }
 
-  void setCalendarFilter(String calendarId) {
-    final same = state.calendarFilter == calendarId;
-    state = state.copyWith(calendarFilter: same ? null : calendarId, clearCalendarFilter: same);
+  /// Tapping a chip: show exactly this account's calendars, or go back to
+  /// "Alle" when they are already the whole filter.
+  void setCalendarFilter(Set<String> calendarIds) {
+    final current = state.calendarFilter;
+    final same = current != null &&
+        current.length == calendarIds.length &&
+        current.containsAll(calendarIds);
+    state = state.copyWith(
+      calendarFilter: same ? null : calendarIds,
+      clearCalendarFilter: same || calendarIds.isEmpty,
+    );
+  }
+
+  /// Ticking one calendar inside a chip's popup.
+  ///
+  /// The popup refines *within* its own account, which is what the chip it
+  /// hangs off already means — so a filter pointing somewhere else is replaced
+  /// by this account's calendars rather than added to. Starting from the whole
+  /// group is what makes the first tap read as "everything here except that
+  /// one", which is the thing people actually want from a Klausurplan they are
+  /// not revising for.
+  ///
+  /// Unticking the last one goes back to "Alle": an empty filter is a blank
+  /// calendar with no visible way out of it.
+  void toggleCalendarInGroup(CalendarGroup group, String calendarId) {
+    final current = state.calendarFilter;
+    final within = current == null ? <String>{} : current.intersection(group.ids);
+    final base = within.isEmpty ? {...group.ids} : within;
+
+    if (!base.remove(calendarId)) base.add(calendarId);
+    setCalendarFilter(base);
   }
 
   /// "Alle" — clears any active calendar filter so every source shows again.
+  ///
   void clearCalendarFilter() => state = state.copyWith(clearCalendarFilter: true);
 
   void openEvent(CalendarEvent e, String dateLine) =>

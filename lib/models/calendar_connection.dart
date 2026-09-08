@@ -2,12 +2,12 @@ import 'package:flutter/widgets.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../l10n/l10n.dart';
 
-/// The six calendar sources, spelled exactly as `calendar_connections.provider`
+/// The seven calendar sources, spelled exactly as `calendar_connections.provider`
 /// and `calendars.provider` store them.
 ///
 /// `outlook` — not `microsoft`. The old web app carried both spellings and
 /// needed an `isMicrosoft()` helper in five files to keep them agreeing.
-enum CalendarProvider { google, outlook, icloud, iserv, ferien, abfall }
+enum CalendarProvider { google, outlook, icloud, iserv, webuntis, ferien, abfall }
 
 CalendarProvider? providerFromWire(String value) {
   for (final p in CalendarProvider.values) {
@@ -21,8 +21,23 @@ enum ConnectKind {
   /// Google and Outlook: a consent screen in the system browser.
   oauth,
 
-  /// iCloud and IServ: a username and password typed into the app.
+  /// iCloud: an app-specific password typed into the app.
   password,
+
+  /// IServ and WebUntis: a calendar link the user creates in the school
+  /// platform and pastes here. No credential at all.
+  ///
+  /// This is how school calendars actually work, as opposed to how they look
+  /// like they should. IServ's plugin calendars — Aufgaben, Klausuren,
+  /// Geburtstage — are module-generated views rather than CalDAV collections,
+  /// so a login enumerates the pupil's own empty calendar and the school-wide
+  /// `+public` feed and nothing else worth reading. The link the user creates
+  /// under Kalender → Einstellungen → Plugins returns exactly the right events.
+  ///
+  /// There is no API to mint or list those links, so one is pasted per
+  /// calendar — which is why a link connection holds several and why the setup
+  /// sheet can be re-entered to add another.
+  link,
 
   /// Ferien and Abfall: public feeds, nothing to authenticate with.
   feed,
@@ -36,6 +51,7 @@ extension CalendarProviderMeta on CalendarProvider {
     CalendarProvider.outlook => 'Outlook',
     CalendarProvider.icloud => 'iCloud',
     CalendarProvider.iserv => 'IServ',
+    CalendarProvider.webuntis => 'WebUntis',
     CalendarProvider.ferien => L.s.providerHolidaysLabel,
     CalendarProvider.abfall => L.s.providerWasteLabel,
   };
@@ -45,14 +61,34 @@ extension CalendarProviderMeta on CalendarProvider {
     CalendarProvider.outlook => L.s.providerOutlookDesc,
     CalendarProvider.icloud => L.s.providerIcloudDesc,
     CalendarProvider.iserv => L.s.providerIservDesc,
+    CalendarProvider.webuntis => L.s.providerWebuntisDesc,
     CalendarProvider.ferien => L.s.providerHolidaysDesc,
     CalendarProvider.abfall => L.s.providerWasteDesc,
   };
 
   ConnectKind get kind => switch (this) {
     CalendarProvider.google || CalendarProvider.outlook => ConnectKind.oauth,
-    CalendarProvider.icloud || CalendarProvider.iserv => ConnectKind.password,
+    CalendarProvider.icloud => ConnectKind.password,
+    CalendarProvider.iserv || CalendarProvider.webuntis => ConnectKind.link,
     CalendarProvider.ferien || CalendarProvider.abfall => ConnectKind.feed,
+  };
+
+  /// True where the household connects by pasting a link, which is also where
+  /// one account can hold several calendars added one at a time.
+  bool get isLinkProvider => kind == ConnectKind.link;
+
+  /// IServ still answers CalDAV, and a school that publishes real collections
+  /// there is better served by a login than by pasting a link per calendar. So
+  /// the login stays reachable — as the second option on the IServ page, never
+  /// as the first. WebUntis has no CalDAV at all.
+  bool get hasCaldavFallback => this == CalendarProvider.iserv;
+
+  /// Where the user goes to create the link, in their own words. Rendered as
+  /// the numbered steps on the paste screen.
+  List<String> get linkSteps => switch (this) {
+    CalendarProvider.iserv => L.s.iservLinkSteps,
+    CalendarProvider.webuntis => L.s.webuntisLinkSteps,
+    _ => const [],
   };
 
   /// The logo shipped in `assets/calendar_providers/`, or null for the two
@@ -62,12 +98,19 @@ extension CalendarProviderMeta on CalendarProvider {
     CalendarProvider.outlook => 'assets/calendar_providers/outlook.png',
     CalendarProvider.icloud => 'assets/calendar_providers/icloud_calendar.png',
     CalendarProvider.iserv => 'assets/calendar_providers/iserv.jpg',
-    CalendarProvider.ferien || CalendarProvider.abfall => null,
+    // No WebUntis logo is shipped: it is a trademark we have no licence to
+    // bundle, and the two feed providers already establish that an icon tile is
+    // a perfectly good row leading. Drop a PNG in and add it here if that ever
+    // changes.
+    CalendarProvider.webuntis ||
+    CalendarProvider.ferien ||
+    CalendarProvider.abfall => null,
   };
 
   IconData get icon => switch (this) {
     CalendarProvider.ferien => LucideIcons.graduationCap,
     CalendarProvider.abfall => LucideIcons.recycle,
+    CalendarProvider.webuntis => LucideIcons.clock,
     _ => LucideIcons.calendarDays,
   };
 }
@@ -154,6 +197,15 @@ class CalendarConnection {
   /// the feed the rest of the town is reading.
   final bool isFeed;
 
+  /// True where this account is a set of pasted calendar links rather than a
+  /// login — `calendar_connections.auth_type = 'public'`.
+  ///
+  /// It is what tells the two kinds of IServ connection apart: the older CalDAV
+  /// one enumerates the school's collections and cannot be added to, while this
+  /// one holds a list the user grows a link at a time. Only the second gets the
+  /// "+ Kalender hinzufügen" row.
+  final bool isLinked;
+
   /// The provider ids of the sub-calendars this household picked, in the order
   /// it picked them.
   ///
@@ -181,6 +233,7 @@ class CalendarConnection {
     this.lastSyncedAt,
     this.createdBy,
     this.isFeed = false,
+    this.isLinked = false,
     this.selectedCalendars,
     this.calendarNames = const {},
   });
@@ -257,6 +310,7 @@ class CalendarConnection {
       statusDetail: map['status_detail'] as String?,
       lastSyncedAt: synced == null ? null : DateTime.tryParse(synced)?.toLocal(),
       createdBy: map['created_by'] as String?,
+      isLinked: map['auth_type'] == 'public',
       selectedCalendars: _selectedFrom(map['selected_calendars']),
       calendarNames: _namesFrom(map['calendar_names']),
     );

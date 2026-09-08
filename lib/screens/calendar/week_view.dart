@@ -289,7 +289,7 @@ class _WeekViewState extends ConsumerState<_WeekView> {
                 ),
               ),
               child: KeyedSubtree(
-                key: ValueKey('${sel.y}-${sel.m}-${sel.d}-${state.calendarFilter}'),
+                key: ValueKey('${sel.y}-${sel.m}-${sel.d}-${state.calendarFilterKey}'),
                 // The Feiertag sits above the agenda rather than in it — it is
                 // something about the day, not an appointment on it. A day off
                 // with nothing planned is still worth saying, so it shows over
