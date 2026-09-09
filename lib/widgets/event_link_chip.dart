@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../l10n/l10n.dart';
 import '../models/event_link.dart';
 import '../state/calendar_state.dart';
 import '../state/nav_state.dart';
 import '../theme/tokens.dart';
+import '../theme/app_icons.dart';
 
 /// "This came from an appointment" — on a task's row on Board, and on a list's
 /// row in Listen. Tapping it leaves for Kalender and lands on that day.
@@ -88,7 +88,7 @@ class EventLinkChip extends ConsumerWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(LucideIcons.calendarDays, size: 12, color: accent),
+              AppIcon(AppIcons.calendarDots, size: 12, color: accent),
               if (label != null) ...[
                 const SizedBox(width: 5),
                 // Flexible, not Expanded: the chip is as wide as the name it

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../data/board_data.dart';
 import '../../theme/tokens.dart';
 import '../../widgets/app_sheet.dart';
 import '../../l10n/l10n.dart';
+import '../../theme/app_icons.dart';
 
 /// What the due-date sheet came back with.
 ///
@@ -156,7 +156,7 @@ class _DueDateOptionsState extends State<_DueDateOptions> {
         SectionCard(
           children: dividedRows([
             _DueActionRow(
-              icon: LucideIcons.calendar,
+              icon: AppIcons.calendar,
               label: L.s.duePickDate,
               // Carries the answer once it is one the four shortcuts cannot
               // give, so a date picked out of the calendar is visible on the
@@ -169,7 +169,7 @@ class _DueDateOptionsState extends State<_DueDateOptions> {
             // reads as the answer it already has, with a check beside it, which
             // is how every other picker in the app shows its current state.
             _DueActionRow(
-              icon: LucideIcons.calendarOff,
+              icon: AppIcons.calendarSlash,
               label: L.s.sectionUndated,
               selected: chosen == null,
               onTap: () => _select(null),
@@ -216,7 +216,7 @@ class _DueOptionRow extends StatelessWidget {
             const SizedBox(width: 10),
             SizedBox(
               width: 18,
-              child: selected ? Icon(LucideIcons.check, size: 18, color: accent) : null,
+              child: selected ? AppIcon(AppIcons.check, size: 18, color: accent) : null,
             ),
           ],
         ),
@@ -250,7 +250,7 @@ class _DueActionRow extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
           children: [
-            Icon(icon, size: 18, color: AppColors.muted),
+            AppIcon(icon, size: 18, color: AppColors.muted),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
@@ -269,7 +269,7 @@ class _DueActionRow extends StatelessWidget {
             ],
             SizedBox(
               width: 18,
-              child: selected ? Icon(LucideIcons.check, size: 18, color: accent) : null,
+              child: selected ? AppIcon(AppIcons.check, size: 18, color: accent) : null,
             ),
           ],
         ),

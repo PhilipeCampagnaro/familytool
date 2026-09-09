@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'bottom_nav.dart';
 import 'collapsing_header.dart';
 import 'glass.dart';
 import 'search.dart';
+import '../theme/app_icons.dart';
 
 /// The overview half of Listen and Boxen: a collapsing header that turns into a
 /// search field, and a body that shows either the screen's own content or the
@@ -107,7 +107,7 @@ class _SearchableOverviewScreenState extends State<SearchableOverviewScreen> {
           t: t,
           trailingWidth: 48,
           leading: HeaderSearchButton(t: t, onTap: _openSearch),
-          trailing: GlassIconButton(icon: LucideIcons.plus, onTap: widget.onAdd),
+          trailing: GlassIconButton(icon: AppIcons.plus, onTap: widget.onAdd),
         ),
       ),
       // While searching the header is only the field: the trigger pill would be

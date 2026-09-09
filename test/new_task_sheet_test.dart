@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:aporah/theme/app_icons.dart';
 import 'package:aporah/screens/board_screen.dart';
 
 void main() {
@@ -13,7 +13,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(LucideIcons.plus));
+    await tester.tap(find.byIcon(AppIcons.plus));
     await tester.pumpAndSettle();
 
     expect(find.text('Für wen?'), findsOneWidget);

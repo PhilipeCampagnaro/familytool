@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../state/auth_state.dart';
 import '../state/family_state.dart';
 import '../theme/tokens.dart';
 import '../widgets/avatar.dart';
 import 'settings_screen.dart';
 import '../l10n/l10n.dart';
+import '../theme/app_icons.dart';
 
 /// The "Home" tab has no design yet in the handoff — placeholder except for
 /// the header's profile avatar, which is this app's entry point into
@@ -41,7 +41,7 @@ class StartScreen extends ConsumerWidget {
                       bg: tone?.bg ?? AppColors.surfaceAlt,
                       fg: tone?.fg ?? AppColors.muted,
                       initials: me?.initials,
-                      icon: me == null ? LucideIcons.userRound : null,
+                      icon: me == null ? AppIcons.user : null,
                       fontSize: 14,
                       imageUrl: me?.avatarUrl,
                     ),
@@ -58,7 +58,7 @@ class StartScreen extends ConsumerWidget {
                         height: 64,
                         decoration: BoxDecoration(color: AppColors.surfaceAlt, shape: BoxShape.circle),
                         alignment: Alignment.center,
-                        child: Icon(LucideIcons.home, size: 28, color: AppColors.muted),
+                        child: AppIcon(AppIcons.house, size: 28, color: AppColors.muted),
                       ),
                       const SizedBox(height: 16),
                       Text(L.s.startNotDesigned, style: AppText.body.copyWith(color: AppColors.inkTertiary)),

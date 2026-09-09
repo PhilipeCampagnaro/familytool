@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../models/calendar_connection.dart';
 import '../state/family_state.dart';
 import '../state/onboarding_state.dart';
@@ -16,6 +15,7 @@ import '../widgets/step_dots.dart';
 import '../widgets/toast_chip.dart';
 import 'calendar_connect_screen.dart';
 import '../l10n/l10n.dart';
+import '../theme/app_icons.dart';
 
 /// First-run wizard: welcome -> family (invite) -> address (calendar
 /// toggles) -> done. Mirrors the old web app's admin path (see CLAUDE.md's
@@ -135,7 +135,7 @@ class _TopBar extends StatelessWidget {
                 top: 0,
                 bottom: 0,
                 child: Center(
-                  child: GlassIconButton(icon: LucideIcons.chevronLeft, onTap: back),
+                  child: GlassIconButton(icon: AppIcons.caretLeft, onTap: back),
                 ),
               ),
             if (onSkip case final skip?)
@@ -463,7 +463,7 @@ class _FamilyStepState extends ConsumerState<_FamilyStep> {
                                   child: Center(child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))),
                                 )
                               else
-                                GlassConfirmButton(icon: LucideIcons.send, size: 36, onTap: _sendInvite),
+                                GlassConfirmButton(icon: AppIcons.paperPlaneTilt, size: 36, onTap: _sendInvite),
                             ],
                           ),
                         ),
@@ -478,7 +478,7 @@ class _FamilyStepState extends ConsumerState<_FamilyStep> {
                     const SizedBox(height: 10),
                     Row(
                       children: [
-                        Icon(LucideIcons.arrowUp, size: 14, color: accent),
+                        AppIcon(AppIcons.arrowUp, size: 14, color: accent),
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(L.s.tapSendToInvite, style: AppText.caption.copyWith(color: accent)),
@@ -674,14 +674,14 @@ class _AddressStepState extends ConsumerState<_AddressStep> {
           ),
         ),
         if (state.searchingAddress) _BusyRow(L.s.searchingAddresses) else if (state.addressResults.isEmpty && state.address.trim().length >= 3) _MutedRow(L.s.noAddressFound),
-        for (final found in state.addressResults) SettingsRow(icon: found.prefix ? LucideIcons.mapPin : LucideIcons.house, title: found.label, onTap: () => _pick(found)),
+        for (final found in state.addressResults) SettingsRow(icon: found.prefix ? AppIcons.mapPin : AppIcons.house, title: found.label, onTap: () => _pick(found)),
       ];
     }
 
     return [
       FieldGroup(label: L.s.yourAddress),
       SettingsRow(
-        icon: LucideIcons.house,
+        icon: AppIcons.house,
         title: picked.label,
         trailing: GestureDetector(
           onTap: () {
@@ -691,7 +691,7 @@ class _AddressStepState extends ConsumerState<_AddressStep> {
           behavior: HitTestBehavior.opaque,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-            child: Icon(LucideIcons.x, size: 17, color: AppColors.muted),
+            child: AppIcon(AppIcons.x, size: 17, color: AppColors.muted),
           ),
         ),
       ),
@@ -727,14 +727,14 @@ class _FoundCalendars extends ConsumerWidget {
           radius: AppRadii.card,
           children: dividedRows([
             _CalendarRow(
-              icon: LucideIcons.recycle,
+              icon: AppIcons.recycle,
               title: L.s.wasteCalendar,
               subtitle: found.hasAbfall ? where : L.s.onboardNotFoundHere,
               value: found.hasAbfall ? state.trashCalendar : null,
               onChanged: notifier.setTrashCalendar,
             ),
             _CalendarRow(
-              icon: LucideIcons.graduationCap,
+              icon: AppIcons.graduationCap,
               title: L.s.holidayCalendar,
               subtitle: found.hasFerien ? bundeslaender[found.ferienState] : L.s.onboardNotFoundHere,
               value: found.hasFerien ? state.ferienCalendar : null,
@@ -776,7 +776,7 @@ class _CalendarRow extends StatelessWidget {
             height: 34,
             decoration: BoxDecoration(color: AppColors.surfaceAlt, borderRadius: BorderRadius.circular(AppRadii.iconTile)),
             alignment: Alignment.center,
-            child: Icon(icon, size: 17, color: missing ? AppColors.mutedLight : accent),
+            child: AppIcon(icon, size: 17, color: missing ? AppColors.mutedLight : accent),
           ),
           const SizedBox(width: 13),
           Expanded(
@@ -788,7 +788,7 @@ class _CalendarRow extends StatelessWidget {
               ],
             ),
           ),
-          if (value case final on?) NativeSwitch(value: on, onChanged: onChanged) else Icon(LucideIcons.x, size: 16, color: AppColors.mutedLight),
+          if (value case final on?) NativeSwitch(value: on, onChanged: onChanged) else AppIcon(AppIcons.x, size: 16, color: AppColors.mutedLight),
         ],
       ),
     );
@@ -900,11 +900,11 @@ class _DoneStep extends ConsumerWidget {
               content: [
                 SectionCard(
                   children: [
-                    _RecapRow(icon: LucideIcons.userPlus, label: state.invites.isEmpty ? L.s.noInvitesSent : L.s.invitedCount(state.invites.length), done: state.invites.isNotEmpty),
+                    _RecapRow(icon: AppIcons.userPlus, label: state.invites.isEmpty ? L.s.noInvitesSent : L.s.invitedCount(state.invites.length), done: state.invites.isNotEmpty),
                     CardDivider(),
-                    _RecapRow(icon: LucideIcons.recycle, label: L.s.wasteCalendar, done: state.trashCalendar),
+                    _RecapRow(icon: AppIcons.recycle, label: L.s.wasteCalendar, done: state.trashCalendar),
                     CardDivider(),
-                    _RecapRow(icon: LucideIcons.graduationCap, label: L.s.holidayCalendar, done: state.ferienCalendar),
+                    _RecapRow(icon: AppIcons.graduationCap, label: L.s.holidayCalendar, done: state.ferienCalendar),
                   ],
                 ),
                 // The personal accounts, offered exactly once and never as a
@@ -916,7 +916,7 @@ class _DoneStep extends ConsumerWidget {
                 SectionCard(
                   children: [
                     SettingsRow(
-                      icon: LucideIcons.calendarPlus,
+                      icon: AppIcons.calendarPlus,
                       title: L.s.connectCalendars,
                       subtitle: L.s.onboardConnectMoreHint,
                       onTap: () => _leaveTour(context, ref, replay, then: CalendarConnectionsPage()),
@@ -945,10 +945,10 @@ class _RecapRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: AppColors.muted),
+          AppIcon(icon, size: 18, color: AppColors.muted),
           const SizedBox(width: 12),
           Expanded(child: Text(label, style: AppText.rowTitle)),
-          Icon(done ? LucideIcons.check : LucideIcons.x, size: 16, color: done ? AppColors.success : AppColors.mutedLight),
+          AppIcon(done ? AppIcons.check : AppIcons.x, size: 16, color: done ? AppColors.success : AppColors.mutedLight),
         ],
       ),
     );

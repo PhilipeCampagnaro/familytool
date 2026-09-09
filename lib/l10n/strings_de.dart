@@ -275,6 +275,26 @@ class StringsDe extends AppStrings {
   @override
   String get trackerGridEmpty => 'Noch nichts, woran du dranbleibst';
   @override
+  String moreTrackers(int count) => count == 1 ? '1 weiterer Tracker' : '$count weitere Tracker';
+  @override
+  String get trackerHistory => 'Verlauf';
+  @override
+  String trackerWeeksDone(int done, int total) => '$done von $total Wochen geschafft';
+  @override
+  String weekDoneOfTarget(int done, int target) => '$done von $target';
+  @override
+  String get trackerLegendKept => 'geschafft';
+  @override
+  String get trackerLegendMissed => 'verpasst';
+  @override
+  String get trackerLegendNotDue => 'nicht geplant';
+  @override
+  String get trackerBackfillHint => 'Tippe einen Tag an, um ihn nachzutragen.';
+  @override
+  String get trackerNotDueToday => 'Heute nicht dran';
+  @override
+  String get trackerStartedOn => 'Gestartet am';
+  @override
   String get trackersLoadFailed => 'Tracker konnten nicht geladen werden.';
   @override
   String get trackerSaveFailed => 'Der Tracker konnte nicht gespeichert werden.';

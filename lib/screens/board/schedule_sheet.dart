@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../data/calendar_data.dart';
 import '../../models/tracker.dart';
 import '../../theme/tokens.dart';
 import '../../widgets/app_sheet.dart';
 import '../../l10n/l10n.dart';
+import '../../theme/app_icons.dart';
 
 /// What the sheet is building, held outside its body.
 ///
@@ -239,7 +239,7 @@ class _KindRow extends StatelessWidget {
             const SizedBox(width: 10),
             SizedBox(
               width: 18,
-              child: selected ? Icon(LucideIcons.check, size: 18, color: accent) : null,
+              child: selected ? AppIcon(AppIcons.check, size: 18, color: accent) : null,
             ),
           ],
         ),
@@ -306,9 +306,9 @@ class _TargetStepper extends StatelessWidget {
               style: AppText.rowTitle,
             ),
           ),
-          _StepButton(icon: LucideIcons.minus, enabled: value > 1, onTap: () => onChanged(value - 1)),
+          _StepButton(icon: AppIcons.minus, enabled: value > 1, onTap: () => onChanged(value - 1)),
           const SizedBox(width: 8),
-          _StepButton(icon: LucideIcons.plus, enabled: value < 7, onTap: () => onChanged(value + 1)),
+          _StepButton(icon: AppIcons.plus, enabled: value < 7, onTap: () => onChanged(value + 1)),
         ],
       ),
     );
@@ -337,7 +337,7 @@ class _StepButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(10),
           border: Border.all(color: AppColors.hairline),
         ),
-        child: Icon(icon, size: 17, color: enabled ? accent : AppColors.mutedLight),
+        child: AppIcon(icon, size: 17, color: enabled ? accent : AppColors.mutedLight),
       ),
     );
   }

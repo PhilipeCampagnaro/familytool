@@ -39,7 +39,6 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   flutter_riverpod: ^2.6.1
-  lucide_icons_flutter: ^3.1.15
   shared_preferences: ^2.3.3
   flutter_svg: ^2.3.0
   supabase_flutter: ^2.16.0
@@ -105,6 +104,36 @@ flutter:
           weight: 600
         - asset: assets/fonts/Poppins-ExtraBold.ttf
           weight: 800
+
+    # Phosphor Duotone (phosphoricons.com), MIT — the licence sits beside it in
+    # assets/icons/LICENSE. Unlike the Meteocons above, that directory is *not*
+    # in `assets:`: a font declared here is already bundled, and listing the
+    # folder as well would ship a second, un-tree-shaken 567 KB copy of it. The
+    # licence therefore lives in the repo beside the font rather than inside the
+    # app.
+    #
+    # **Vendored rather than depended on.** `phosphor_flutter` is the obvious
+    # way to get this, and it does not compile: its `PhosphorIconData extends
+    # IconData`, and Flutter has since made `IconData` a final class. The
+    # package has not shipped since May 2024, so there is no fixed version to
+    # wait for. `flutter analyze` does not catch it — only the compiler does —
+    # so a green analyze on this dependency meant nothing.
+    #
+    # The one font is all the package was really worth here: a duotone glyph is
+    # two codepoints in this file, drawn on top of each other, which
+    # `lib/theme/app_icons.dart` does in a dozen lines. Only the Duotone weight
+    # is vendored, out of the six.
+    - family: PhosphorDuotone
+      fonts:
+        - asset: assets/icons/Phosphor-Duotone.ttf
+    # The same set's Regular weight, for every icon drawn flat — a control's
+    # glyph, and the fourteen bare marks. Not the duotone with its under-layer
+    # switched off: Phosphor draws several icons differently in the two weights,
+    # and `caret-right` is a hollow triangle in one and a thin chevron in the
+    # other. See `_regular` in lib/theme/app_icons.dart.
+    - family: PhosphorRegular
+      fonts:
+        - asset: assets/icons/Phosphor-Regular.ttf
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

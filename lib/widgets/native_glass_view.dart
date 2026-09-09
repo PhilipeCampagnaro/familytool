@@ -37,16 +37,42 @@ class _NativeGlassViewState extends State<NativeGlassView> {
   /// rebuilt from its `creationParams`.
   bool _nativeDark = AppColors.isDark;
 
+  /// Set when the tint changed before there was a channel to push it over, so
+  /// the change can be flushed once the view exists.
+  bool _tintPending = false;
+
   void _syncBrightness() {
     if (_nativeDark == AppColors.isDark) return;
     _nativeDark = AppColors.isDark;
     _channel?.invokeMethod('setBrightness', {'dark': _nativeDark});
   }
 
+  /// Mirrors [NativeGlassView.tint] into the embedded view — the same contract
+  /// as [_syncBrightness], and the one that bites hardest.
+  ///
+  /// A create sheet's save button is grey while its name field is empty and
+  /// accent once it isn't, and a `UiKitView` is built from `creationParams`
+  /// exactly once: left alone the button keeps the grey it was born with, so
+  /// typing a title changed nothing and the sheet looked like it refused to
+  /// save. It appeared to work after opening a sub-sheet only because a
+  /// covering route stands the platform view down (see `occludedByRoute`) and
+  /// the one built on the way back is a *new* view, created with the tint of
+  /// the moment.
+  void _syncTint() {
+    final channel = _channel;
+    if (channel == null) {
+      _tintPending = true;
+      return;
+    }
+    _tintPending = false;
+    channel.invokeMethod('setTint', {'tint': widget.tint?.toARGB32()});
+  }
+
   @override
   void didUpdateWidget(NativeGlassView oldWidget) {
     super.didUpdateWidget(oldWidget);
     _syncBrightness();
+    if (widget.tint != oldWidget.tint) _syncTint();
   }
 
   @override
@@ -60,6 +86,7 @@ class _NativeGlassViewState extends State<NativeGlassView> {
     // The view was created with the brightness `_nativeDark` held at build
     // time; catch it up if the palette moved on while it was being set up.
     _syncBrightness();
+    if (_tintPending) _syncTint();
   }
 
   @override

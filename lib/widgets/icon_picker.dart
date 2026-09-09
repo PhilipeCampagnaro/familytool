@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../data/icon_suggestions.dart';
 import '../services/action_sheet.dart';
@@ -10,6 +9,7 @@ import '../theme/tokens.dart';
 import 'anchored_menu.dart';
 import 'app_sheet.dart';
 import '../l10n/l10n.dart';
+import '../theme/app_icons.dart';
 
 /// The one place an icon is *drawn* and the one place an icon is *chosen*.
 ///
@@ -104,7 +104,7 @@ class IconTile extends StatelessWidget {
     this.photoUrl,
     this.photoFile,
     this.glyphSize,
-    this.fallbackIcon = LucideIcons.clipboardCheck,
+    this.fallbackIcon = AppIcons.listChecks,
     this.glyphColor,
     this.background,
     this.border = true,
@@ -129,7 +129,7 @@ class IconTile extends StatelessWidget {
           ? PhotoThumbnail(url: photoUrl, filePath: photoFile, size: size)
           : asset != null
               ? ClipOval(child: IconImage(asset: asset, size: imageSize))
-              : Icon(
+              : AppIcon(
                   choice?.glyph ?? fallbackIcon,
                   size: glyphSize ?? imageSize * 0.78,
                   color: glyphColor ?? AppColors.inkSecondary,
@@ -203,7 +203,7 @@ class PhotoThumbnail extends StatelessWidget {
   /// device — all ordinary here, and all of them resolve to this rather than to
   /// Flutter's grey exception box. The row around it still says what the thing
   /// is called.
-  Widget _broken(double size) => Icon(LucideIcons.image, size: size * 0.45, color: AppColors.mutedLight);
+  Widget _broken(double size) => AppIcon(AppIcons.image, size: size * 0.45, color: AppColors.mutedLight);
 }
 
 /// An icon asset at a bounded decode size. The shop logos are full-size
@@ -225,7 +225,7 @@ class IconImage extends StatelessWidget {
       fit: BoxFit.contain,
       cacheWidth: (size * scale).round(),
       // A logo that was deleted from `assets/` shouldn't take the row with it.
-      errorBuilder: (context, _, _) => Icon(LucideIcons.image, size: size * 0.8, color: AppColors.mutedLight),
+      errorBuilder: (context, _, _) => AppIcon(AppIcons.image, size: size * 0.8, color: AppColors.mutedLight),
     );
   }
 }
@@ -271,7 +271,7 @@ class IconFieldRow extends StatelessWidget {
     required this.iconKey,
     required this.onTap,
     this.suggested = false,
-    this.fallbackIcon = LucideIcons.clipboardCheck,
+    this.fallbackIcon = AppIcons.listChecks,
     this.photoUrl,
     this.photoFile,
     this.anchorKey,
@@ -330,7 +330,7 @@ class IconFieldRow extends StatelessWidget {
                   ),
                   if (suggested && !hasPhoto && label != null) ...[
                     const SizedBox(width: 6),
-                    Icon(LucideIcons.sparkles, size: 13, color: accent),
+                    AppIcon(AppIcons.sparkle, size: 13, color: accent),
                   ],
                 ],
               ),
@@ -341,7 +341,7 @@ class IconFieldRow extends StatelessWidget {
               style: AppText.buttonSmall.copyWith(color: AppColors.muted),
             ),
             const SizedBox(width: 4),
-            Icon(LucideIcons.chevronRight, size: 16, color: AppColors.mutedLight),
+            AppIcon(AppIcons.caretRight, size: 16, color: AppColors.mutedLight),
           ],
         ),
       ),
@@ -412,7 +412,7 @@ class _IconPickerBodyState extends State<_IconPickerBody> {
               padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 4),
               child: Row(
                 children: [
-                  Icon(LucideIcons.search, size: 17, color: AppColors.muted),
+                  AppIcon(AppIcons.magnifyingGlass, size: 17, color: AppColors.muted),
                   const SizedBox(width: 10),
                   Expanded(
                     child: TextField(
@@ -595,7 +595,7 @@ class _MoreRow extends StatelessWidget {
               style: AppText.buttonSmall.copyWith(color: accent),
             ),
             const SizedBox(width: 6),
-            Icon(expanded ? LucideIcons.chevronUp : LucideIcons.chevronDown, size: 16, color: accent),
+            AppIcon(expanded ? AppIcons.caretUp : AppIcons.caretDown, size: 16, color: accent),
           ],
         ),
       ),
@@ -637,7 +637,7 @@ class _IconRow extends StatelessWidget {
                 ),
               ),
             ),
-            if (selected) Icon(LucideIcons.check, size: 18, color: accent),
+            if (selected) AppIcon(AppIcons.check, size: 18, color: accent),
           ],
         ),
       ),
@@ -675,16 +675,19 @@ enum PictureChoice {
 /// cue to use the dropdown.
 ///
 /// [hasPhoto] adds the destructive "Foto entfernen" — there is nothing to
-/// remove until there is.
+/// remove until there is. [includeSymbol] is false for a subject that has no
+/// symbol to fall back to: the household's own picture is a photograph or its
+/// initials, and there is no icon set behind it to pick from.
 Future<PictureChoice?> showPictureMenu(
   BuildContext context, {
   required GlobalKey anchorKey,
   required bool hasPhoto,
+  bool includeSymbol = true,
 }) async {
   final choices = [
     PictureChoice.photo,
     PictureChoice.camera,
-    PictureChoice.symbol,
+    if (includeSymbol) PictureChoice.symbol,
     if (hasPhoto) PictureChoice.remove,
   ];
   String label(PictureChoice c) => switch (c) {
@@ -716,10 +719,10 @@ Future<PictureChoice?> showPictureMenu(
         AnchoredMenuItem(
           label: label(c),
           icon: switch (c) {
-            PictureChoice.photo => LucideIcons.image,
-            PictureChoice.camera => LucideIcons.camera,
-            PictureChoice.symbol => LucideIcons.shapes,
-            PictureChoice.remove => LucideIcons.trash2,
+            PictureChoice.photo => AppIcons.image,
+            PictureChoice.camera => AppIcons.camera,
+            PictureChoice.symbol => AppIcons.shapes,
+            PictureChoice.remove => AppIcons.trash,
           },
           destructive: c == PictureChoice.remove,
           onSelected: () => completer.complete(c),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:aporah/theme/app_icons.dart';
 import 'package:aporah/screens/calendar_screen.dart';
 import 'package:aporah/widgets/glass.dart';
 
@@ -21,7 +21,7 @@ void main() {
 
   // The collapsed dropdown is the only chevron on this screen, and it's built
   // conditionally, so its presence is the assertion.
-  final dropdown = find.byIcon(LucideIcons.chevronDown);
+  final dropdown = find.byIcon(AppIcons.caretDown);
 
   // The chip row stays mounted while collapsing (it's faded, not removed), so
   // "visible" means reading the opacity the collapsing header drives rather
@@ -48,7 +48,7 @@ void main() {
 
   testWidgets('Month view: chips at rest, dropdown once collapsed', (tester) async {
     await pumpCalendar(tester);
-    await tester.tap(find.byIcon(LucideIcons.layoutPanelLeft));
+    await tester.tap(find.byIcon(AppIcons.layout));
     await tester.pumpAndSettle();
 
     expect(chipRowOpacity(tester), 1.0);
@@ -72,14 +72,14 @@ void main() {
     // The menu checkmarks the active filter — "Alle" by default — and is the
     // only thing on this screen drawing that icon, so it doubles as the
     // "menu is open" assertion.
-    expect(find.byIcon(LucideIcons.check), findsOneWidget);
+    expect(find.byIcon(AppIcons.check), findsOneWidget);
 
     // `.last` because the faded-out chip row behind the menu carries the same
     // labels.
     await tester.tap(find.text('Outlook · Arbeit').last);
     await tester.pumpAndSettle();
 
-    expect(find.byIcon(LucideIcons.check), findsNothing);
+    expect(find.byIcon(AppIcons.check), findsNothing);
     expect(dropdown, findsOneWidget);
 
     // Filter applied: that source's chip is now the active (semibold) one.
@@ -111,7 +111,7 @@ void main() {
     expect(frostRect.width, tester.getSize(find.byType(CalendarScreen)).width);
     // ...and it has to extend past the glass buttons, or the sharp gray would
     // butt straight against their bottom edge.
-    expect(frostRect.bottom, greaterThan(tester.getRect(find.byIcon(LucideIcons.plus).first).bottom + 8));
+    expect(frostRect.bottom, greaterThan(tester.getRect(find.byIcon(AppIcons.plus).first).bottom + 8));
   });
 
   testWidgets('The event sheet puts the title and close button on one row, chips below', (tester) async {
@@ -121,7 +121,7 @@ void main() {
 
     // `.last` — the agenda row behind the sheet carries the same title.
     final title = tester.getRect(find.text('Team Standup').last);
-    final close = tester.getRect(find.byIcon(LucideIcons.x).first);
+    final close = tester.getRect(find.byIcon(AppIcons.x).first);
     final chip = tester.getRect(find.text('Outlook · Arbeit').last);
 
     // Same row: the chips used to sit above the title, which pushed the title

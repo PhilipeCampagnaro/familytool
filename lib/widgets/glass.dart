@@ -1,10 +1,10 @@
 import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../theme/tokens.dart';
 import 'native_glass_view.dart';
 import 'native_occlusion.dart';
+import '../theme/app_icons.dart';
 
 /// Apple's "Liquid Glass" material. On iOS this embeds the real native
 /// `UIGlassEffect` (iOS 26) via a platform view — genuine refraction/blur of
@@ -361,7 +361,9 @@ class GlassIconButton extends StatelessWidget {
       child: SizedBox(
         width: size,
         height: size,
-        child: Icon(icon, size: iconSize, color: iconColor ?? AppColors.ink),
+        // Flat: the glyph on a glass button is the control, not a label for
+        // one. See [AppIcon.flat].
+        child: AppIcon(icon, size: iconSize, color: iconColor ?? AppColors.ink, flat: true),
       ),
     );
   }
@@ -467,7 +469,7 @@ class _GlassIconGroupState extends State<GlassIconGroup> {
                       scale: _pressed == i ? 0.82 : 1.0,
                       duration: const Duration(milliseconds: 120),
                       curve: Curves.easeOut,
-                      child: Icon(widget.actions[i].icon, size: widget.iconSize, color: AppColors.ink),
+                      child: AppIcon(widget.actions[i].icon, size: widget.iconSize, color: AppColors.ink, flat: true),
                     ),
                   ),
                 ),
@@ -542,7 +544,7 @@ class GlassConfirmButton extends StatelessWidget {
   const GlassConfirmButton({
     super.key,
     required this.onTap,
-    this.icon = LucideIcons.check,
+    this.icon = AppIcons.check,
     this.size = 40,
     this.enabled = true,
   });
@@ -618,7 +620,7 @@ class GlassAccentButton extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               if (icon case final glyph?) ...[
-                Icon(glyph, size: fontSize + 3, color: Colors.white),
+                AppIcon(glyph, size: fontSize + 3, color: Colors.white, flat: true),
                 const SizedBox(width: 9),
               ],
               Flexible(

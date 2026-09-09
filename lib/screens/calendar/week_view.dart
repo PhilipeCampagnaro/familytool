@@ -364,7 +364,7 @@ class _EmptyDayActions extends ConsumerWidget {
     if (state.loaded && !connected) {
       return GlassAccentButton(
         label: L.s.connectCalendars,
-        icon: LucideIcons.calendarPlus,
+        icon: AppIcons.calendarPlus,
         onTap: () => Navigator.of(context).push(
           MaterialPageRoute(builder: (_) => CalendarConnectionsPage()),
         ),
@@ -536,14 +536,14 @@ class _EventAgendaRow extends ConsumerWidget {
                   actions: [
                     if (editable) ...[
                       SwipeAction(
-                        icon: LucideIcons.pencil,
+                        icon: AppIcons.pencilSimple,
                         color: accent,
                         // No need to open the event first: the edit sheet is
                         // seeded from the row it was swiped on.
                         onTap: () => _openEditEventSheet(context, ref, event),
                       ),
                       SwipeAction(
-                        icon: LucideIcons.trash,
+                        icon: AppIcons.trash,
                         color: AppColors.danger,
                         // The confirm dialog and the removal own what happens
                         // next; snapping the row shut under it just fights that.
@@ -671,7 +671,7 @@ class _EventCard extends StatelessWidget {
                         _Chip(
                           bg: tint(AppColors.accent, .86),
                           child: Row(children: [
-                            Icon(LucideIcons.bookOpenCheck, size: 12, color: AppColors.accent),
+                            AppIcon(AppIcons.bookOpenText, size: 12, color: AppColors.accent),
                             const SizedBox(width: 5),
                             Text(
                               L.s.homeworkCount(homework.length),
@@ -697,7 +697,7 @@ class _EventCard extends StatelessWidget {
                         _Chip(
                           bg: AppColors.surfaceAlt,
                           child: Row(children: [
-                            Icon(LucideIcons.clipboardCheck, size: 12, color: AppColors.inkSecondary),
+                            AppIcon(AppIcons.listChecks, size: 12, color: AppColors.inkSecondary),
                             const SizedBox(width: 5),
                             Text(
                               L.s.linkedListCount(linkedLists),
@@ -711,7 +711,7 @@ class _EventCard extends StatelessWidget {
                         _Chip(
                           bg: AppColors.surfaceAlt,
                           child: Row(children: [
-                            Icon(LucideIcons.layoutPanelLeft, size: 12, color: AppColors.inkSecondary),
+                            AppIcon(AppIcons.layout, size: 12, color: AppColors.inkSecondary),
                             const SizedBox(width: 5),
                             Text(
                               L.s.linkedTaskCount(linkedTasks),

@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../state/auth_state.dart';
 import '../theme/tokens.dart';
 import '../widgets/action_bar.dart';
 import '../widgets/app_sheet.dart';
 import '../l10n/l10n.dart';
+import '../theme/app_icons.dart';
 
 /// Registration and sign-in — the app's front door.
 ///
@@ -124,8 +124,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                         behavior: HitTestBehavior.opaque,
                         child: Padding(
                           padding: const EdgeInsets.only(left: 8),
-                          child: Icon(
-                            _obscure ? LucideIcons.eye : LucideIcons.eyeOff,
+                          child: AppIcon(
+                            _obscure ? AppIcons.eye : AppIcons.eyeSlash,
                             size: 18,
                             color: AppColors.mutedLight,
                           ),
@@ -231,7 +231,7 @@ class _ConfirmationPending extends ConsumerWidget {
                     height: 64,
                     decoration: BoxDecoration(color: shade(accent, .14), shape: BoxShape.circle),
                     alignment: Alignment.center,
-                    child: Icon(LucideIcons.mailCheck, size: 28, color: accent),
+                    child: AppIcon(AppIcons.envelopeOpen, size: 28, color: accent),
                   ),
                 ),
                 const SizedBox(height: 22),
@@ -321,7 +321,7 @@ class _ErrorNote extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(LucideIcons.info, size: 17, color: AppColors.danger),
+          AppIcon(AppIcons.info, size: 17, color: AppColors.danger),
           const SizedBox(width: 10),
           Expanded(
             child: Text(

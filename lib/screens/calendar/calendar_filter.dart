@@ -70,7 +70,7 @@ class _CalendarFilterButton extends ConsumerWidget {
                   else
                     Container(width: 9, height: 9, decoration: BoxDecoration(color: _dotColor, shape: BoxShape.circle)),
                   const SizedBox(width: 7),
-                  Icon(LucideIcons.chevronDown, size: 15, color: AppColors.inkTertiary),
+                  AppIcon(AppIcons.caretDown, size: 15, color: AppColors.inkTertiary),
                 ],
               ),
             ),
@@ -269,7 +269,7 @@ class _FilterMenuRow extends StatelessWidget {
                     : (indent ? AppText.caption : AppText.input),
               ),
             ),
-            if (active) Icon(LucideIcons.check, size: 16, color: AppColors.ink),
+            if (active) AppIcon(AppIcons.check, size: 16, color: AppColors.ink),
           ],
         ),
       ),
@@ -458,7 +458,7 @@ class _CalendarPickerRow extends StatelessWidget {
                     : Border.all(color: AppColors.inkTertiary, width: 1.5),
               ),
               child: checked
-                  ? const Icon(LucideIcons.check, size: 13, color: Colors.white)
+                  ? const AppIcon(AppIcons.check, size: 13, color: Colors.white)
                   : null,
             ),
           ],

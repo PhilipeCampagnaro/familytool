@@ -67,7 +67,7 @@ Widget _buildEventDetailHeader(BuildContext context, WidgetRef ref) {
           Align(
             alignment: Alignment.centerLeft,
             child: GlassIconButton(
-              icon: LucideIcons.x,
+              icon: AppIcons.x,
               onTap: () {
                 ref.read(calendarProvider.notifier).closeEvent();
                 Navigator.of(context).pop();
@@ -87,7 +87,7 @@ Widget _buildEventDetailHeader(BuildContext context, WidgetRef ref) {
               // the way out beside a title that is only a label. The pencil,
               // not a check, keeps it from reading as a save.
               child: GlassConfirmButton(
-                icon: LucideIcons.pencil,
+                icon: AppIcons.pencilSimple,
                 onTap: () async {
                   final deleted = await _openEditEventSheet(context, ref, event);
                   // Deleting from inside the edit sheet leaves this one showing
@@ -207,7 +207,7 @@ void _showEventDetailSheet(BuildContext context, WidgetRef ref) {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(children: [
-                            Icon(LucideIcons.calendar, size: 15, color: AppColors.muted),
+                            AppIcon(AppIcons.calendar, size: 15, color: AppColors.muted),
                             SizedBox(width: 9),
                             Text(L.s.eventLabel, style: AppText.microLabel.copyWith(letterSpacing: 0.3)),
                           ]),
@@ -223,7 +223,7 @@ void _showEventDetailSheet(BuildContext context, WidgetRef ref) {
                           if (e.repeats) ...[
                             const SizedBox(height: 5),
                             Row(children: [
-                              Icon(LucideIcons.repeat, size: 12, color: AppColors.muted),
+                              AppIcon(AppIcons.repeat, size: 12, color: AppColors.muted),
                               const SizedBox(width: 6),
                               Text(L.s.repeats, style: AppText.microLabel),
                             ]),
@@ -316,7 +316,7 @@ void _showEventDetailSheet(BuildContext context, WidgetRef ref) {
                 SettingsRow(
                   leading: _LinkTile(
                     iconKey: null,
-                    fallbackIcon: LucideIcons.clipboardCheck,
+                    fallbackIcon: AppIcons.listChecks,
                     action: true,
                   ),
                   title: L.s.createListFromEvent,
@@ -334,7 +334,7 @@ void _showEventDetailSheet(BuildContext context, WidgetRef ref) {
                 SettingsRow(
                   leading: _LinkTile(
                     iconKey: null,
-                    fallbackIcon: LucideIcons.layoutPanelLeft,
+                    fallbackIcon: AppIcons.layout,
                     action: true,
                   ),
                   title: L.s.createTaskFromEvent,
@@ -527,8 +527,8 @@ class _EventLocationCardState extends State<_EventLocationCard> {
           AnchoredMenuItem(
             label: app.label,
             icon: switch (app) {
-              NavigationApp.waze => LucideIcons.navigation,
-              NavigationApp.googleMaps => LucideIcons.map,
+              NavigationApp.waze => AppIcons.navigationArrow,
+              NavigationApp.googleMaps => AppIcons.mapTrifold,
             },
             onSelected: () => openNavigation(
               app,
@@ -560,7 +560,7 @@ class _EventLocationCardState extends State<_EventLocationCard> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
               child: Row(
                 children: [
-                  Container(width: 38, height: 38, decoration: BoxDecoration(color: AppColors.surfaceAlt, shape: BoxShape.circle), alignment: Alignment.center, child: Icon(LucideIcons.mapPin, size: 18, color: accent)),
+                  Container(width: 38, height: 38, decoration: BoxDecoration(color: AppColors.surfaceAlt, shape: BoxShape.circle), alignment: Alignment.center, child: AppIcon(AppIcons.mapPin, size: 18, color: accent)),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -807,7 +807,7 @@ class _HomeworkCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(children: [
-            Icon(LucideIcons.bookOpenCheck, size: 15, color: AppColors.muted),
+            AppIcon(AppIcons.bookOpenText, size: 15, color: AppColors.muted),
             const SizedBox(width: 9),
             Text(
               L.s.homeworkCount(homework.length),
@@ -867,13 +867,14 @@ class _HomeworkEntry extends StatelessWidget {
 
 /// The disc in front of every row of the sheet's two link cards.
 ///
-/// **Not [SettingsRow]'s own [GlassIconTile].** That is an accent-tinted glass
-/// lens, and the sheet it sits in is a column of white cards over a photograph
-/// of the day — five accent lenses down two adjacent cards read as the loudest
-/// thing on the sheet, and they made a list called "Rewe" (which draws the
-/// shop's actual logo) sit in a row of blue circles it obviously did not belong
-/// to. This is the plain circle Listen and Boxen already draw their containers
-/// with, so a list looks the same wherever the household meets it.
+/// **Not [SettingsRow]'s own [GlyphTile].** That reserves a bare square and
+/// centres a glyph in it; the sheet this sits in is a column of white cards
+/// over a photograph of the day, where a row of loose glyphs has nothing to
+/// separate it from the picture behind. This is the plain circle Listen and
+/// Boxen already draw their containers with, so a list looks the same wherever
+/// the household meets it. (It used to say the same thing about the accent
+/// glass lens the settings rows wore — that lens is gone, but the reason this
+/// row is a filled disc rather than a bare icon has not changed.)
 ///
 /// [action] is the one distinction the fill carries: **grey for a thing that
 /// exists, white for a row that makes one**. The two cards are otherwise the
@@ -953,8 +954,8 @@ class _LinkedCard extends ConsumerWidget {
                 leading: _LinkTile(
                   iconKey: list.iconKey,
                   fallbackIcon: list.kind == ListKind.grocery
-                      ? LucideIcons.shoppingCart
-                      : LucideIcons.clipboardCheck,
+                      ? AppIcons.shoppingCart
+                      : AppIcons.listChecks,
                 ),
                 title: list.name,
                 onTap: () => _leaveFor(context, ref, () => nav.toList(list.id)),
@@ -965,7 +966,7 @@ class _LinkedCard extends ConsumerWidget {
                 // accent glass lens: a card of five rows in two tile styles
                 // reads as two cards, and the thing that separates a list from a
                 // task here is the glyph, not the material behind it.
-                leading: _LinkTile(iconKey: null, fallbackIcon: LucideIcons.layoutPanelLeft),
+                leading: _LinkTile(iconKey: null, fallbackIcon: AppIcons.layout),
                 title: task.text,
                 // The note, where there is one: a task called "Packen" with
                 // "Reisepass, Ladegerät" under it is the row that saves the trip

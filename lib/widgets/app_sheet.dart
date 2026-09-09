@@ -1,9 +1,9 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../theme/tokens.dart';
 import 'glass.dart';
+import '../theme/app_icons.dart';
 
 /// Shared bottom-sheet chrome: grab handle, header, then a scrolling body on
 /// the F7F8FA sheet background. Matches every sheet/popup across Board,
@@ -122,7 +122,7 @@ class _SaveButton extends StatelessWidget {
   final VoidCallback onSave;
   final IconData icon;
 
-  const _SaveButton({required this.requiredField, required this.onSave, this.icon = LucideIcons.check});
+  const _SaveButton({required this.requiredField, required this.onSave, this.icon = AppIcons.check});
 
   @override
   Widget build(BuildContext context) {
@@ -205,7 +205,7 @@ class _AppSheetBodyState extends State<_AppSheetBody> {
             Align(
               alignment: Alignment.centerLeft,
               child: GlassIconButton(
-                icon: LucideIcons.x,
+                icon: AppIcons.x,
                 onTap: () => Navigator.of(context).pop(),
               ),
             ),
@@ -499,8 +499,8 @@ class SheetActionHeader extends StatelessWidget {
     this.onConfirm,
     this.requiredField,
     this.onClose,
-    this.closeIcon = LucideIcons.x,
-    this.confirmIcon = LucideIcons.check,
+    this.closeIcon = AppIcons.x,
+    this.confirmIcon = AppIcons.check,
   });
 
   @override
@@ -587,7 +587,7 @@ class SheetPickerHeader extends StatelessWidget {
             ),
             Align(
               alignment: Alignment.centerLeft,
-              child: GlassIconButton(icon: LucideIcons.x, onTap: () => Navigator.of(context).pop()),
+              child: GlassIconButton(icon: AppIcons.x, onTap: () => Navigator.of(context).pop()),
             ),
           ],
         ),
@@ -653,7 +653,7 @@ class OutlinedSheetAction extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 17, color: color),
+            AppIcon(icon, size: 17, color: color, flat: true),
             const SizedBox(width: 9),
             Text(
               label,

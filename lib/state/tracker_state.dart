@@ -29,6 +29,19 @@ class TrackerState {
   /// The create/edit sheet's rhythm.
   final TrackerSchedule newSchedule;
 
+  /// Whether the Board's card is showing the trackers today asks nothing about,
+  /// under the ones it does. Off by default and not persisted: the card's job is
+  /// today, and a household that opened the list once should not find it opened
+  /// again a week later.
+  final bool showAll;
+
+  /// The tracker whose own screen is open, or null for the Board itself.
+  ///
+  /// A mode on this state rather than a pushed route, the way Listen and Box
+  /// open a list or a box: the tab bar stays where it is, back is the header's
+  /// own chevron, and nothing covers the native views. See [openTracker].
+  final String? openId;
+
   final bool loading;
 
   /// German, and safe to render verbatim.
@@ -38,6 +51,8 @@ class TrackerState {
     this.trackers = const [],
     this.checks = const {},
     this.newSchedule = TrackerSchedule.daily,
+    this.showAll = false,
+    this.openId,
     this.loading = true,
     this.error,
   });
@@ -46,6 +61,9 @@ class TrackerState {
     List<Tracker>? trackers,
     Map<String, Set<DateTime>>? checks,
     TrackerSchedule? newSchedule,
+    bool? showAll,
+    String? openId,
+    bool clearOpen = false,
     bool? loading,
     String? error,
     bool clearError = false,
@@ -53,11 +71,25 @@ class TrackerState {
     trackers: trackers ?? this.trackers,
     checks: checks ?? this.checks,
     newSchedule: newSchedule ?? this.newSchedule,
+    showAll: showAll ?? this.showAll,
+    openId: clearOpen ? null : (openId ?? this.openId),
     loading: loading ?? this.loading,
     error: clearError ? null : (error ?? this.error),
   );
 
   bool get isEmpty => trackers.isEmpty;
+
+  /// The open tracker itself, or null — including when [openId] names one that
+  /// has since gone. A tracker can be deleted from another phone while its
+  /// screen is on this one, and the Board is the honest place to land.
+  Tracker? get openTracker {
+    if (openId case final id?) {
+      for (final t in trackers) {
+        if (t.id == id) return t;
+      }
+    }
+    return null;
+  }
 
   Set<DateTime> checksFor(String trackerId) => checks[trackerId] ?? const <DateTime>{};
 
@@ -72,9 +104,13 @@ class TrackerState {
     return [for (final t in trackers) if (t.assigneeId == memberId) t];
   }
 
-  /// What the Board's tracker card shows today.
+  /// What the Board's tracker card owes today — the rows that carry a circle.
   List<Tracker> dueOn(DateTime today, {String? personFilter}) =>
       trackersOn(visibleTrackers(personFilter), today);
+
+  /// The rest of them, under the fold. See [trackersOffToday].
+  List<Tracker> offToday(DateTime today, {String? personFilter}) =>
+      trackersOffToday(visibleTrackers(personFilter), today);
 
   /// What the header grid draws. Day-based trackers only — see
   /// [trackerDayTallies].
@@ -136,6 +172,14 @@ class TrackerNotifier extends StateNotifier<TrackerState> {
   // ---------------------------------------------------------------------------
 
   void setSchedule(TrackerSchedule schedule) => state = state.copyWith(newSchedule: schedule);
+
+  /// Folds the trackers today asks nothing about in and out of the Board's card.
+  void toggleShowAll() => state = state.copyWith(showAll: !state.showAll);
+
+  /// Opens one tracker's own screen, and leaves it again.
+  void open(String id) => state = state.copyWith(openId: id);
+
+  void back() => state = state.copyWith(clearOpen: true);
 
   /// Opens the sheet on a tracker's own rhythm, or on the default for a new one.
   ///
@@ -361,6 +405,9 @@ class TrackerNotifier extends StateNotifier<TrackerState> {
     state = state.copyWith(
       trackers: [for (final t in state.trackers) if (t.id != id) t],
       checks: {...state.checks}..remove(id),
+      // Deleting the tracker you are looking at drops you back on the Board.
+      // Left set, the screen would keep its header and lose its subject.
+      clearOpen: state.openId == id,
     );
   }
 

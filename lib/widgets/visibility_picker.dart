@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../models/visibility.dart';
 import '../models/who.dart';
 import '../theme/tokens.dart';
 import 'avatar.dart';
 import '../l10n/l10n.dart';
+import '../theme/app_icons.dart';
 
 /// The "Für wen?" section of a create/edit sheet, writing the two things the
 /// database actually has: `visibility` and the rows in `*_shares`.
@@ -88,7 +88,7 @@ class VisibilityPicker extends StatelessWidget {
                 label: L.s.everyone,
                 bg: AppColors.alleBg,
                 fg: AppColors.alleFg,
-                icon: LucideIcons.users,
+                icon: AppIcons.users,
                 selected: visibility == ItemVisibility.family,
                 accent: accent,
                 avatarSize: avatarSize,
@@ -99,7 +99,7 @@ class VisibilityPicker extends StatelessWidget {
                 label: L.s.onlyMe,
                 bg: AppColors.nurIchBg,
                 fg: AppColors.nurIchFg,
-                icon: LucideIcons.lock,
+                icon: AppIcons.lock,
                 selected: visibility == ItemVisibility.private,
                 accent: accent,
                 avatarSize: avatarSize,

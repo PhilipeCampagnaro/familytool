@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../l10n/l10n.dart';
 import '../theme/tokens.dart';
 import 'visibility.dart';
+import '../theme/app_icons.dart';
 
 /// The "Für wen?" assignment: the whole family, private, or one member.
 class FamilyMember {
@@ -106,7 +106,7 @@ WhoMeta whoBadge({
     // than dropped, so the item doesn't silently lose its badge — and rather
     // than falling through to the visibility, which would read as a promise
     // ("Alle") that the row is not making.
-    return WhoMeta(label: L.s.unknown, bg: AppColors.alleBg, fg: AppColors.muted, icon: LucideIcons.userRound);
+    return WhoMeta(label: L.s.unknown, bg: AppColors.alleBg, fg: AppColors.muted, icon: AppIcons.user);
   }
 
   if (visibility == ItemVisibility.custom) {
@@ -126,7 +126,7 @@ WhoMeta whoBadge({
             : L.s.peopleCount(shared.length),
         bg: AppColors.alleBg,
         fg: AppColors.alleFg,
-        icon: LucideIcons.userRoundCheck,
+        icon: AppIcons.userCheck,
         stack: shared,
       );
     }
@@ -137,11 +137,11 @@ WhoMeta whoBadge({
 
   return switch (visibility) {
     ItemVisibility.private =>
-      WhoMeta(label: L.s.onlyMe, bg: AppColors.nurIchBg, fg: AppColors.nurIchFg, icon: LucideIcons.lock),
+      WhoMeta(label: L.s.onlyMe, bg: AppColors.nurIchBg, fg: AppColors.nurIchFg, icon: AppIcons.lock),
     ItemVisibility.custom =>
-      WhoMeta(label: L.s.selected, bg: AppColors.alleBg, fg: AppColors.alleFg, icon: LucideIcons.userRoundCheck),
+      WhoMeta(label: L.s.selected, bg: AppColors.alleBg, fg: AppColors.alleFg, icon: AppIcons.userCheck),
     ItemVisibility.family =>
-      WhoMeta(label: L.s.everyone, bg: AppColors.alleBg, fg: AppColors.alleFg, icon: LucideIcons.users),
+      WhoMeta(label: L.s.everyone, bg: AppColors.alleBg, fg: AppColors.alleFg, icon: AppIcons.users),
   };
 }
 

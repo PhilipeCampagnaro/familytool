@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../theme/tokens.dart';
 import '../l10n/l10n.dart';
 import 'toast_chip.dart';
+import '../theme/app_icons.dart';
 
 /// The app's error surface, in the two shapes anything backed by the network
 /// needs. Listen is the first user; Board, Box and Kalender get the same two
@@ -41,7 +41,7 @@ class ErrorNote extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(LucideIcons.info, size: 17, color: AppColors.danger),
+          AppIcon(AppIcons.info, size: 17, color: AppColors.danger),
           const SizedBox(width: 10),
           Expanded(
             child: Text(

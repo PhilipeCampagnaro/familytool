@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../l10n/l10n.dart';
 import '../theme/tokens.dart';
 import 'bottom_nav.dart';
 import 'glass.dart';
+import '../theme/app_icons.dart';
 
 /// The app's transient feedback pill, in the **one** shape both halves of it
 /// share: a liquid-glass capsule floating clear of the nav bar, a coloured disc
@@ -147,8 +147,8 @@ class _ToastChip extends StatelessWidget {
                 color: kind == ToastKind.confirm ? AppColors.success : AppColors.danger,
                 shape: BoxShape.circle,
               ),
-              child: Icon(
-                kind == ToastKind.confirm ? LucideIcons.check : LucideIcons.x,
+              child: AppIcon(
+                kind == ToastKind.confirm ? AppIcons.check : AppIcons.x,
                 size: 13,
                 color: Colors.white,
               ),

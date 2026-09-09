@@ -43,7 +43,15 @@ task:
   reason `german_holidays.dart` computes the Feiertage. **The header's day grid counts trackers
   only** — counting whatever tasks happened to fall on a day is exactly what made a to-do read as a
   habit. Don't put a tracker in a dated section, don't give one an `is_done` column, and don't make
-  one externally shareable: `shareable_kind` names no value for it on purpose.
+  one externally shareable: `shareable_kind` names no value for it on purpose. **The card lists what
+  today's rhythms ask for; everything else folds in behind one counted row** (`trackersOffToday`) and
+  those rows carry **no check circle** — being listed is not being due. Tapping a row opens
+  **that tracker's own screen** ([lib/screens/board/tracker_detail.dart](lib/screens/board/tracker_detail.dart)),
+  a mode of Board keyed on `TrackerState.openId` the way Listen opens a list — not a route. Its chart
+  is weekday rows × week columns and its squares are **tappable, to back-fill a day somebody forgot
+  to tick**; a weekly count gets bars per week instead, because it owes no particular day. Keep the
+  three states apart there: a day the rhythm never asked for is neutral, never a pale "missed", or a
+  Mo/Do tracker reports five failures a week of a perfect record.
 - **Localization: German + English, and every user-facing string goes through
   [lib/l10n/](lib/l10n/).** `AppStrings` declares them, `StringsDe`/`StringsEn` answer them, and
   `L.s.someString` reads the live one. Because `AppStrings` is abstract, a string you add to one
@@ -209,14 +217,32 @@ task:
   lie), `grocery_search.dart` matches typed articles against **both languages at once, umlauts
   optional** — the interface language decides only what is *shown*, never what can be found — and
   `merchant_logos.dart` names the shop logos (brands, so untranslated). `icon_suggestions.dart`
-  sits over all three plus a curated Lucide set, whose symbols carry both labels by hand:
+  sits over all three plus a curated symbol set, whose entries carry both labels by hand:
   `suggestIcon(name)` is the pure function behind every list, box and item picking its own icon as
   the name is typed, and `lib/widgets/icon_picker.dart` is the manual override. Adding a grocery
   PNG still means **one** German line — the English side comes off the file name — while a new
-  Lucide symbol needs both. See the grocery section of
+  symbol needs both. **A stored icon key still reads `lucide:<name>`** and always will: those
+  strings are on rows families wrote before the icon set changed, so `symbolIconPrefix` is a wire
+  format rather than a name (see the swap note below). See the grocery section of
   [docs/ported-features.md](docs/ported-features.md).
-- [lib/theme/](lib/theme/) — `tokens.dart` + `app_theme.dart`. Always use tokens; never hardcode
-  a new hex/size.
+- [lib/theme/](lib/theme/) — `tokens.dart` + `app_theme.dart` + `app_icons.dart`. Always use
+  tokens; never hardcode a new hex/size.
+- **The icons are Phosphor Duotone, and you draw one with `AppIcon`, never `Icon`.** A duotone
+  glyph is *two* codepoints — an under-layer and an over-layer stacked with the lower one faded —
+  so a bare `Icon` renders half of it, which looks thin and hollow rather than broken. Both
+  codepoints are named in [lib/theme/app_icons.dart](lib/theme/app_icons.dart) and both must be
+  `const`, or `--tree-shake-icons` fails the release build. **A glyph that names a thing is
+  duotone; a glyph that *is* a control is flat, and flat means the set's Regular weight from a
+  second vendored font** — not the duotone minus its under-layer, which for a caret is a hollow
+  triangle rather than a chevron. Pass `flat: true`, which the glass buttons,
+  the segmented control, the check-off, the swipe actions and the nav pill already do for their
+  callers. Fourteen bare marks (`check`, `x`, `plus`, `minus`, the three-dot menu, the arrows and
+  the carets) are flat everywhere regardless, because Phosphor gives them a placeholder box or a
+  hollow outline instead of a real second layer. Lucide is **gone**: it is one monoline
+  stroke weight by design and has no duotone, and `phosphor_flutter` could not be used either
+  because its `PhosphorIconData extends IconData` and Flutter has made `IconData` final — so the
+  font is vendored in `assets/icons/`. Note that `flutter analyze` passes on that package and only
+  the compiler catches it: **a green analyze is not a build.**
 - [lib/widgets/](lib/widgets/) — shared building blocks. **Check here before writing a new
   one-off widget**; see [docs/design-system.md](docs/design-system.md) for what exists and the
   non-obvious rules (especially: leave `GlassSurface.tint` null, use `fallbackTint`).

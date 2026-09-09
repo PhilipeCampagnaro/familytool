@@ -1,7 +1,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../data/brand_colors.dart';
 import '../data/grocery_catalog.dart';
 import '../data/grocery_search.dart';
@@ -40,6 +39,7 @@ import '../widgets/swipe_actions.dart';
 import '../widgets/toast_chip.dart';
 import '../widgets/visibility_picker.dart';
 import '../l10n/l10n.dart';
+import '../theme/app_icons.dart';
 
 /// Label colour of a checked-off item — the strike-through fades the open row's
 /// text to it, so landing in "Erledigt" isn't a colour jump.
@@ -140,7 +140,7 @@ class _ListOverview extends ConsumerWidget {
         // must not be told it has none.
         if (state.lists.isEmpty && !state.loading && state.error == null)
           EmptyState(
-            icon: LucideIcons.listPlus,
+            icon: AppIcons.listPlus,
             iconColor: Theme.of(context).colorScheme.primary,
             message: L.s.noListsYet,
           ),
@@ -379,8 +379,8 @@ class _ListSheetBodyState extends ConsumerState<_ListSheetBody> {
           value: isGrocery ? 'grocery' : 'other',
           onChanged: ref.read(listProvider.notifier).setNewType,
           options: [
-            SegmentedOption(value: 'grocery', label: L.s.groceries, icon: LucideIcons.clipboardList),
-            SegmentedOption(value: 'other', label: L.s.otherKind, icon: LucideIcons.clipboardCheck),
+            SegmentedOption(value: 'grocery', label: L.s.groceries, icon: AppIcons.clipboardText),
+            SegmentedOption(value: 'other', label: L.s.otherKind, icon: AppIcons.listChecks),
           ],
         ),
         const SizedBox(height: 14),
@@ -404,7 +404,7 @@ class _ListSheetBodyState extends ConsumerState<_ListSheetBody> {
               // The sparkle means "the name chose this" — not true of the icon
               // an edit sheet opens on.
               suggested: widget.draft.picked == null && stored == null,
-              fallbackIcon: isGrocery ? LucideIcons.shoppingCart : LucideIcons.clipboardCheck,
+              fallbackIcon: isGrocery ? AppIcons.shoppingCart : AppIcons.listChecks,
               onTap: () async {
                 final picked = await showIconPicker(context, selected: iconKey, name: name, subject: IconSubject.list);
                 if (picked != null && mounted) setState(() => widget.draft.picked = picked);
@@ -502,7 +502,7 @@ class _ListRow extends ConsumerWidget {
             members: ref.watch(householdMembersProvider),
             padding: const EdgeInsets.only(right: 10),
           ),
-          Icon(LucideIcons.chevronRight, size: 16, color: AppColors.mutedLight),
+          AppIcon(AppIcons.caretRight, size: 16, color: AppColors.mutedLight),
         ],
       ),
     );
@@ -590,21 +590,21 @@ class _ListDetail extends ConsumerWidget {
             fontWeight: FontWeight.w500,
             leadingWidth: 48,
             trailingWidth: 48,
-            leading: GlassIconButton(icon: LucideIcons.chevronLeft, onTap: () => ref.read(listProvider.notifier).back()),
+            leading: GlassIconButton(icon: AppIcons.caretLeft, onTap: () => ref.read(listProvider.notifier).back()),
             // "Alle Artikel" is computed rather than stored, so there is nothing
             // there to rename, re-symbol or delete.
             trailing: summary
                 ? const SizedBox(width: 40)
                 : GlassMenuButton(
                     items: [
-                      AnchoredMenuItem(label: L.s.edit, icon: LucideIcons.pencil, onSelected: () => openListSheet(context, ref, list: open)),
+                      AnchoredMenuItem(label: L.s.edit, icon: AppIcons.pencilSimple, onSelected: () => openListSheet(context, ref, list: open)),
                       // Its own action, never part of "Für wen?" — see
                       // [showShareSheet]. Absent for kids and for a guest looking
                       // at somebody else's list, both of whom the database refuses.
                       if (ref.watch(canShareExternallyProvider) && !state.guestListIds.contains(open.id))
                         AnchoredMenuItem(
                           label: L.s.share,
-                          icon: LucideIcons.userPlus,
+                          icon: AppIcons.userPlus,
                           onSelected: () => showShareSheet(
                             context,
                             kind: ShareableKind.list,
@@ -614,7 +614,7 @@ class _ListDetail extends ConsumerWidget {
                         ),
                       AnchoredMenuItem(
                         label: L.s.delete,
-                        icon: LucideIcons.trash2,
+                        icon: AppIcons.trash,
                         destructive: true,
                         onSelected: () async {
                           // Captured before the write: this row lives in the detail
@@ -774,7 +774,7 @@ class _ListDetail extends ConsumerWidget {
                 ],
                 if (items.isEmpty)
                   EmptyState(
-                    icon: LucideIcons.clipboardCheck,
+                    icon: AppIcons.listChecks,
                     iconColor: accent,
                     message: L.s.tapAboveToAddFirst,
                     verticalPadding: 56,
@@ -953,7 +953,7 @@ class _AddItemRowState extends ConsumerState<_AddItemRow> {
                 child: AnimatedSwitcher(
                   duration: const Duration(milliseconds: 160),
                   child: preview == null
-                      ? Icon(LucideIcons.circle, key: ValueKey('empty'), size: 24, color: AppColors.idleRing)
+                      ? AppIcon(AppIcons.circle, key: ValueKey('empty'), size: 24, color: AppColors.idleRing)
                       : IconTile(key: ValueKey(preview.key), iconKey: preview.key, size: 24, imageSize: 24),
                 ),
               ),
@@ -1344,7 +1344,7 @@ class _UnitButtonState extends State<_UnitButton> {
         for (final unit in units)
           AnchoredMenuItem(
             label: unit.label,
-            icon: unit.key == active ? LucideIcons.check : LucideIcons.circle,
+            icon: unit.key == active ? AppIcons.check : AppIcons.circle,
             onSelected: () => widget.onPicked(keyOf(unit)),
           ),
       ],
@@ -1370,7 +1370,7 @@ class _UnitButtonState extends State<_UnitButton> {
                 children: [
                   Text(label, style: AppText.microLabel.copyWith(color: AppColors.inkSecondary)),
                   const SizedBox(width: 2),
-                  Icon(LucideIcons.chevronDown, size: 12, color: AppColors.mutedLight),
+                  AppIcon(AppIcons.caretDown, size: 12, color: AppColors.mutedLight),
                 ],
               ),
             )
@@ -1448,7 +1448,7 @@ class _AttachmentsLine extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(LucideIcons.paperclip, size: 11, color: accent),
+          AppIcon(AppIcons.paperclip, size: 11, color: accent),
           const SizedBox(width: 4),
           Flexible(
             child: Text(
@@ -1499,9 +1499,9 @@ List<AnchoredMenuItem> _itemMenu(WidgetRef ref, ShoppingListItem item) {
     ),
     // The three system pickers, straight through to UIKit — see
     // lib/services/media_picker.dart.
-    AnchoredMenuItem(label: L.s.photo, icon: LucideIcons.image, onSelected: () => _attach(ref, item, AttachmentSource.photos)),
-    AnchoredMenuItem(label: L.s.camera, icon: LucideIcons.camera, onSelected: () => _attach(ref, item, AttachmentSource.camera)),
-    AnchoredMenuItem(label: L.s.files, icon: LucideIcons.folder, onSelected: () => _attach(ref, item, AttachmentSource.files)),
+    AnchoredMenuItem(label: L.s.photo, icon: AppIcons.image, onSelected: () => _attach(ref, item, AttachmentSource.photos)),
+    AnchoredMenuItem(label: L.s.camera, icon: AppIcons.camera, onSelected: () => _attach(ref, item, AttachmentSource.camera)),
+    AnchoredMenuItem(label: L.s.files, icon: AppIcons.folder, onSelected: () => _attach(ref, item, AttachmentSource.files)),
     // One row per attached file, because they are stored now and a file you
     // cannot take off again is a file you think twice about putting on. Named
     // by the file only when there are several — with one there is nothing to
@@ -1509,13 +1509,13 @@ List<AnchoredMenuItem> _itemMenu(WidgetRef ref, ShoppingListItem item) {
     for (final attached in attachments)
       AnchoredMenuItem(
         label: attachments.length == 1 ? L.s.removePhoto : attached.name,
-        icon: LucideIcons.x,
+        icon: AppIcons.x,
         destructive: true,
         onSelected: () => ref.read(listProvider.notifier).removeAttachment(item, attached),
       ),
     AnchoredMenuItem(
       label: L.s.delete,
-      icon: LucideIcons.trash2,
+      icon: AppIcons.trash,
       destructive: true,
       onSelected: () => ref.read(listProvider.notifier).removeItem(item),
     ),

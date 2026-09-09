@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../theme/tokens.dart';
+import '../theme/app_icons.dart';
 
 /// The idle ring colour Board and Listen already used for their unchecked
 /// rows — kept here so both screens draw the same circle.
@@ -178,7 +178,8 @@ class CheckOffButton extends StatelessWidget {
             if (ring > 0)
               Opacity(
                 opacity: ring,
-                child: Icon(LucideIcons.circle, size: size, color: AppColors.idleRing),
+                // Flat, both layers of this control: see [AppIcon.flat].
+                child: AppIcon(AppIcons.circle, size: size, color: AppColors.idleRing, flat: true),
               ),
             if (filled && p > 0)
               Transform.scale(
@@ -194,10 +195,11 @@ class CheckOffButton extends StatelessWidget {
                 opacity: check,
                 child: Transform.scale(
                   scale: 0.5 + 0.5 * pop,
-                  child: Icon(
-                    LucideIcons.check,
+                  child: AppIcon(
+                    AppIcons.check,
                     size: filled ? size * 0.54 : size,
                     color: filled ? Colors.white : accent,
+                    flat: true,
                   ),
                 ),
               ),

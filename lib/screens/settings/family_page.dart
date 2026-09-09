@@ -1,24 +1,21 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../state/calendar_state.dart';
 import '../../state/family_state.dart';
 import '../../state/auth_state.dart';
-import '../../services/media_picker.dart';
 import '../../theme/tokens.dart';
-import '../../widgets/anchored_menu.dart';
 import '../../widgets/app_sheet.dart';
 import '../../widgets/avatar.dart';
 import '../../widgets/confirmation.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/error_note.dart';
-import '../../widgets/icon_tile.dart';
+import '../../widgets/family_avatar_button.dart';
+import '../../widgets/glyph_tile.dart';
 import '../../widgets/rename_sheet.dart';
 import '../../widgets/settings_chrome.dart';
 import '../../l10n/l10n.dart';
+import '../../theme/app_icons.dart';
 
 /// Who is in the household, and — for an admin — the controls to change that.
 /// Every control here is courtesy: `invite-member` checks the role itself and
@@ -41,13 +38,9 @@ class FamilyPage extends ConsumerWidget {
     });
 
     return SettingsDetailPage(
-      icon: LucideIcons.users,
+      icon: AppIcons.users,
       title: L.s.familyMembers,
       description: isAdmin ? L.s.familyMembersDesc : L.s.familyMembersDescAdmin,
-      // The household's own face where the page's glyph would be. Admins only —
-      // `avatars_write_family_picture` enforces that, this just doesn't offer
-      // the tap to anybody else.
-      leading: _FamilyAvatarHero(canEdit: isAdmin),
       // The gate is courtesy, not security: `invite-member` checks the role
       // itself and RLS refuses the writes regardless. Showing a control that
       // is going to be refused is just a worse way of saying no. A non-admin
@@ -56,7 +49,7 @@ class FamilyPage extends ConsumerWidget {
       bottomAction: !isAdmin
           ? null
           : AccentAction(
-              icon: LucideIcons.userPlus,
+              icon: AppIcons.userPlus,
               label: L.s.inviteMember,
               onTap: () => _openInviteSheet(context, ref),
             ),
@@ -70,7 +63,11 @@ class FamilyPage extends ConsumerWidget {
             radius: AppRadii.card,
             children: [
               SettingsRow(
-                icon: LucideIcons.house,
+                // The household's picture sits where the row's icon would, so
+                // the name and the face it goes with are one thing to change
+                // rather than two places to find. Tapping the circle opens the
+                // picture menu; tapping the rest of the row renames.
+                leading: FamilyAvatarButton(canEdit: isAdmin),
                 title: household.name,
                 subtitle: L.s.familyName,
                 // Admins only, and the chevron goes with the tap: a row that
@@ -92,7 +89,7 @@ class FamilyPage extends ConsumerWidget {
           children: family.members.isEmpty && family.invites.isEmpty
               ? [
                   EmptyState(
-                    icon: LucideIcons.users,
+                    icon: AppIcons.users,
                     message: L.s.nobodyInHouseholdYet,
                   ),
                 ]
@@ -115,7 +112,7 @@ class FamilyPage extends ConsumerWidget {
                     SettingsRow(
                       // Sized like the avatar beside it, so the merged list has
                       // one column of round leadings rather than two.
-                      leading: GlassIconTile(icon: LucideIcons.mail, size: 40, iconSize: 18),
+                      leading: GlyphTile(icon: AppIcons.envelope, size: 40),
                       title: invite.name.isNotEmpty ? invite.name : invite.email,
                       subtitle: L.s.pendingWithRole(invite.role.label),
                       // Withdrawing an invitation is an admin's business, same
@@ -127,7 +124,7 @@ class FamilyPage extends ConsumerWidget {
                               behavior: HitTestBehavior.opaque,
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-                                child: Icon(LucideIcons.x, size: 17, color: AppColors.mutedLight),
+                                child: AppIcon(AppIcons.x, size: 17, color: AppColors.mutedLight),
                               ),
                             ),
                     ),
@@ -145,7 +142,16 @@ class FamilyPage extends ConsumerWidget {
   void _renameFamily(BuildContext context, WidgetRef ref, Household household) {
     showRenameSheet(
       context: context,
-      icon: LucideIcons.house,
+      // The household's own picture rather than a house glyph: a family is
+      // people, and the face it already has belongs at the head of the sheet
+      // that names it. Tappable here too — this sheet is only reachable by an
+      // admin, and the name and the picture are one errand.
+      leading: FamilyAvatarButton(
+        canEdit: true,
+        size: 44,
+        // Ringed against the sheet's gray body, not against a card.
+        ringColor: AppColors.screenBg,
+      ),
       title: L.s.renameFamily,
       headline: household.name,
       message: L.s.renameFamilyBody,
@@ -439,13 +445,13 @@ class _InviteSentBody extends StatelessWidget {
         SectionCard(
           children: dividedRows([
             SettingsRow(
-              icon: LucideIcons.mail,
+              icon: AppIcons.envelope,
               title: invite.name.isNotEmpty ? invite.name : invite.email,
               subtitle: L.s.invitedAsRole(invite.role.label),
             ),
             if (expires != null)
               SettingsRow(
-                icon: LucideIcons.clock,
+                icon: AppIcons.clock,
                 title: L.s.inviteValidUntil(L.s.dayMonthShort(expires.day, expires.month)),
               ),
           ]),
@@ -509,7 +515,7 @@ class _MemberRow extends ConsumerWidget {
             GestureDetector(
               onTap: () => _confirmRemove(context, ref),
               behavior: HitTestBehavior.opaque,
-              child: Icon(LucideIcons.trash2, size: 18, color: AppColors.mutedLight),
+              child: AppIcon(AppIcons.trash, size: 18, color: AppColors.mutedLight),
             ),
           ],
         ],
@@ -572,7 +578,7 @@ class _RolePicker extends StatelessWidget {
                 Text(r.label, style: AppText.rowTitle),
                 if (r == role) ...[
                   const SizedBox(width: 10),
-                  Icon(LucideIcons.check, size: 15, color: Theme.of(context).colorScheme.primary),
+                  AppIcon(AppIcons.check, size: 15, color: Theme.of(context).colorScheme.primary),
                 ],
               ],
             ),
@@ -589,7 +595,7 @@ class _RolePicker extends StatelessWidget {
           children: [
             Text(role.label, style: AppText.rowTitle),
             const SizedBox(width: 8),
-            Icon(LucideIcons.chevronsUpDown, size: 14, color: AppColors.mutedLight),
+            AppIcon(AppIcons.caretUpDown, size: 14, color: AppColors.mutedLight),
           ],
         ),
       ),
@@ -659,135 +665,6 @@ class _PersonRow extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(L.s.noAccountYet, style: AppText.label),
               ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// The household's picture, in the masthead's glyph slot.
-///
-/// It replaces the page's `users` icon rather than sitting in a card of its
-/// own. A card whose whole content was "here is the family, tap to change the
-/// picture" was saying what the masthead directly above it was already saying,
-/// and pushed the actual subject of the page — the members — a screenful down.
-/// The masthead is where a page's identity lives; an editable identity only has
-/// to look editable, which is what the pencil badge is for.
-///
-/// The same three-item menu a profile picture gets — Foto, Kamera, Entfernen —
-/// and the same optimistic swap, because it is the same operation on a
-/// different row. What differs is who may: an admin, checked here so the tap
-/// simply isn't offered, and checked again by `avatars_write_family_picture` in
-/// Storage, which is what actually decides.
-///
-/// Without a picture the circle is the household's initials on a tone derived
-/// from its id — a complete answer that every family starts with, and what the
-/// "Familie" chip in Kalender and Board falls back to as well.
-class _FamilyAvatarHero extends ConsumerStatefulWidget {
-  final bool canEdit;
-
-  const _FamilyAvatarHero({required this.canEdit});
-
-  @override
-  ConsumerState<_FamilyAvatarHero> createState() => _FamilyAvatarHeroState();
-}
-
-class _FamilyAvatarHeroState extends ConsumerState<_FamilyAvatarHero> {
-  final _avatarKey = GlobalKey();
-
-  /// The freshly picked file, held while it uploads and for as long as this
-  /// page is open. Handing straight back to the signed URL would blink the
-  /// picture back to initials while that URL is fetched.
-  File? _uploading;
-
-  Future<void> _pick(AttachmentSource source) async {
-    final picked = await pickAttachment(source, maxDimension: avatarMaxDimension);
-    if (picked == null || !picked.isImage) return;
-
-    final file = File(picked.path);
-    setState(() => _uploading = file);
-    final ok = await ref.read(familyProvider.notifier).setFamilyAvatar(file);
-    if (!mounted) return;
-    if (!ok) setState(() => _uploading = null);
-  }
-
-  void _menu(Household household) {
-    showAnchoredMenu(
-      context: context,
-      anchorKey: _avatarKey,
-      items: [
-        AnchoredMenuItem(
-          label: L.s.photo,
-          icon: LucideIcons.image,
-          onSelected: () => _pick(AttachmentSource.photos),
-        ),
-        AnchoredMenuItem(
-          label: L.s.camera,
-          icon: LucideIcons.camera,
-          onSelected: () => _pick(AttachmentSource.camera),
-        ),
-        if (household.avatarPath != null || _uploading != null)
-          AnchoredMenuItem(
-            label: L.s.removePhoto,
-            icon: LucideIcons.trash2,
-            destructive: true,
-            onSelected: () {
-              setState(() => _uploading = null);
-              ref.read(familyProvider.notifier).removeFamilyAvatar();
-            },
-          ),
-      ],
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final household = ref.watch(familyProvider).household;
-    // The page's own glyph until the household is known, so the masthead never
-    // measures a different height on the first frame than on the second.
-    if (household == null) return GlassIconTile(icon: LucideIcons.users, size: 52, iconSize: 25);
-
-    final tone = AppTones.list[household.tone % AppTones.list.length];
-    final avatar = Avatar(
-      size: 52,
-      bg: tone.bg,
-      fg: tone.fg,
-      initials: household.initials,
-      fontSize: 19,
-      imageUrl: household.avatarUrl,
-      imageFile: _uploading,
-    );
-
-    if (!widget.canEdit) return avatar;
-
-    return GestureDetector(
-      key: _avatarKey,
-      onTap: () => _menu(household),
-      // The badge overhangs the circle, so the tap has to be caught outside the
-      // avatar's own bounds as well.
-      behavior: HitTestBehavior.opaque,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          avatar,
-          // Bottom-right, the corner every camera-roll and profile editor puts
-          // it in. A ring in the page's own background colour separates it from
-          // whatever the picture happens to be behind it.
-          Positioned(
-            right: -2,
-            bottom: -2,
-            child: Container(
-              width: 22,
-              height: 22,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary,
-                shape: BoxShape.circle,
-                border: Border.all(color: AppColors.surface, width: 2),
-              ),
-              child: Icon(LucideIcons.pencil, size: 10, color: Colors.white),
             ),
           ),
         ],

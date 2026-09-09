@@ -474,7 +474,7 @@ class _EventFormBodyState extends ConsumerState<_EventFormBody> {
         if (widget.event case final event?) ...[
           const SizedBox(height: 14),
           OutlinedSheetAction(
-            icon: LucideIcons.trash2,
+            icon: AppIcons.trash,
             label: L.s.deleteEvent,
             destructive: true,
             // Pops this sheet with `true` rather than just closing it: the
@@ -610,7 +610,7 @@ class _LocationFieldState extends ConsumerState<_LocationField> {
                 height: 30,
                 decoration: BoxDecoration(color: AppColors.surfaceAlt, shape: BoxShape.circle),
                 alignment: Alignment.center,
-                child: Icon(LucideIcons.mapPin, size: 16, color: widget.accent),
+                child: AppIcon(AppIcons.mapPin, size: 16, color: widget.accent),
               ),
               const SizedBox(width: 11),
               Expanded(
@@ -664,7 +664,7 @@ class _PlaceRow extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(16, 11, 16, 11),
         child: Row(
           children: [
-            Icon(LucideIcons.mapPin, size: 15, color: AppColors.mutedLight),
+            AppIcon(AppIcons.mapPin, size: 15, color: AppColors.mutedLight),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -779,7 +779,7 @@ class _ValueRow extends StatelessWidget {
               GestureDetector(
                 onTap: clear,
                 behavior: HitTestBehavior.opaque,
-                child: Icon(LucideIcons.x, size: 16, color: AppColors.mutedLight),
+                child: AppIcon(AppIcons.x, size: 16, color: AppColors.mutedLight),
               ),
             ],
           ],
@@ -822,7 +822,7 @@ class _ChoiceRow extends StatelessWidget {
                 style: AppText.rowTitle,
               ),
             ),
-            if (selected) Icon(LucideIcons.check, size: 18, color: accent),
+            if (selected) AppIcon(AppIcons.check, size: 18, color: accent),
           ],
         ),
       ),
@@ -859,7 +859,7 @@ class _CalendarOptionRow extends StatelessWidget {
                 style: AppText.rowTitle,
               ),
             ),
-            if (selected) Icon(LucideIcons.check, size: 18, color: accent),
+            if (selected) AppIcon(AppIcons.check, size: 18, color: accent),
           ],
         ),
       ),

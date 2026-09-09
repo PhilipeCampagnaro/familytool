@@ -44,7 +44,9 @@ and `IconTile` is the one place any of it is *drawn*.
 
 **One stored string, three kinds of icon.** `iconKey` on `ShoppingList` / `ShoppingListItem` /
 `StorageBox` / `BoxItem` is either an `assets/...` path (a shop logo or a grocery picture) or
-`lucide:<name>`. `resolveIcon(key)` turns it back into a drawable choice; an unknown key resolves
+`lucide:<name>` — a key format frozen by the rows already written, kept verbatim when the app's
+icon set changed from Lucide to Phosphor Duotone. `resolveIcon(key)` turns it back into a drawable
+choice; an unknown key resolves
 to `null` and falls back rather than throwing, so an icon can be dropped from a catalog without
 taking a list with it.
 
@@ -59,7 +61,7 @@ English, umlauts optional, punctuation ignored, quantities stripped:
    (that is what makes "dm" and "Q1" work without every third keystroke flashing a logo).
    Deliberately **no** compound matching here: shop names are short and turn up inside ordinary
    German words (*Akku-schrauber* → Uber, *Geburtstags-party* → Spar).
-3. **Lucide symbols** — the curated `symbolGroups` list, ~105 icons in 14 German-named sections,
+3. **Curated symbols** — the `symbolGroups` list, ~105 icons in 14 German-named sections,
    each with German synonyms plus its English name. These *do* get the compound rule: a term of 4+
    letters sitting inside the query counts as the weakest hit, which is what makes *Wocheneinkauf*
    → Einkauf, *Winterkleidung* → Kleidung, *Umzugskartons* → Umzug. Ties there go to the **longer**
@@ -97,7 +99,9 @@ moment it changes.
   because matching runs per keystroke and Flutter can only enumerate an asset folder
   asynchronously. Add an entry to `_names` only if the derived name is wrong. Skip `.svg` — the
   picker draws with `Image.asset`.
-- A **symbol** → one `SymbolIcon('lucideName', 'Deutsch', LucideIcons.lucideName, [aliases])` line
+- A **symbol** → one `SymbolIcon('storedName', 'Deutsch', 'English', AppIcons.phosphorName,
+  [aliases])` line. The first string is the **stored key's tail** and is still spelled the Lucide
+  way on every existing entry — leave those alone; only new ones are free to be named afresh
   in the right `symbolGroups` section. Keep each glyph in exactly one section; the sections *are*
   the picker's layout. Aliases are the tuning knob — a compound that doesn't match usually just
   needs its bare stem listed.
@@ -247,7 +251,8 @@ strip — neither is ported, and the Start tab has no design).
   / rain / snow / storm) → a **Meteocons** SVG (`WeatherReading.iconAsset`). Only clear and
   partly-cloudy have a night form — a rain cloud at 22:00 is still a rain cloud. Day vs night comes
   from the provider's per-hour `is_day`, since German sunset moves by two hours across the year.
-- **The forecast icons are the one place in the app that is not Lucide**, and the reason is that a
+- **The forecast icons are the one place in the app that is not the icon font**, and the reason is
+  that a
   weather glyph in a single flat colour carries no information: tinted with the row's accent,
   drizzle, rain and overcast were three blue clouds a glance apart, and every event looked like the
   same weather. [assets/weather/](../assets/weather/) vendors **10 of Meteocons' 535** (MIT,
@@ -255,7 +260,7 @@ strip — neither is ported, and the Start tab has no design).
   through `flutter_svg` with **no `colorFilter`** — an amber sun, a grey overcast, a blue rain.
   Adding another bucket needs the file and one line in `iconAsset`, nothing else. They are drawn
   inside a 128 viewBox with generous padding, so a Meteocons file needs roughly 1.4× the size the
-  Lucide glyph had (26 on the agenda row, 46 on the sheet card).
+  font glyph had (26 on the agenda row, 46 on the sheet card).
 - **The forecast card in the event sheet wears the weather; the agenda row does not.** `AppSkies`
   in [tokens.dart](../lib/theme/tokens.dart) holds ten `WeatherSkin`s — a two-stop wash plus the
   ink that reads on it, both palettes — and `WeatherReading.skin` picks one. Two decisions worth
@@ -276,7 +281,7 @@ strip — neither is ported, and the Start tab has no design).
 New UI to build. **Must NOT change the existing Kalender screen's week/month view code.**
 Provider icons already copied to `assets/calendar_providers/` (`google_calendar.png`,
 `icloud_calendar.png`, `outlook.png`, `iserv.jpg`; Ferien and Abfall use plain icons —
-`LucideIcons.graduationCap` / `LucideIcons.recycle`).
+`AppIcons.graduationCap` / `AppIcons.recycle`).
 
 - **Providers**: Google (OAuth), Outlook/Microsoft (OAuth, same shape), iCloud (CalDAV,
   app-specific password), IServ/school (CalDAV, read-only), Ferien school holidays (no auth, pick

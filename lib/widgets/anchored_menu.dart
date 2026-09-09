@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../theme/tokens.dart';
 import 'bottom_nav.dart';
 import 'glass.dart';
 import '../l10n/l10n.dart';
+import '../theme/app_icons.dart';
 
 /// One row of a [showAnchoredMenu] dropdown.
 class AnchoredMenuItem {
@@ -245,7 +245,7 @@ class _AnchoredMenuRow extends StatelessWidget {
                 height: _glyphSize,
                 child: switch (item.svgAsset) {
                   final asset? => SvgPicture.asset(asset, fit: BoxFit.contain, colorFilter: ColorFilter.mode(color, BlendMode.srcIn)),
-                  _ => Icon(item.icon, size: _glyphSize, color: color),
+                  _ => AppIcon(item.icon, size: _glyphSize, color: color),
                 },
               ),
               const SizedBox(width: _glyphGap),
@@ -276,7 +276,7 @@ class GlassMenuButton extends StatefulWidget {
   final List<AnchoredMenuItem> items;
   final IconData icon;
 
-  const GlassMenuButton({super.key, required this.items, this.icon = LucideIcons.moreVertical});
+  const GlassMenuButton({super.key, required this.items, this.icon = AppIcons.dotsThreeVertical});
 
   @override
   State<GlassMenuButton> createState() => _GlassMenuButtonState();
@@ -323,7 +323,7 @@ class _RowMenuButtonState extends State<RowMenuButton> {
       child: SizedBox(
         width: 32,
         height: 36,
-        child: Icon(LucideIcons.moreVertical, size: 15, color: AppColors.mutedLight),
+        child: AppIcon(AppIcons.dotsThreeVertical, size: 15, color: AppColors.mutedLight),
       ),
     );
   }

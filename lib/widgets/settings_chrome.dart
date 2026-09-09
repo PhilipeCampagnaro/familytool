@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../theme/tokens.dart';
 import 'action_bar.dart';
 import 'app_sheet.dart';
 import 'collapsing_header.dart';
 import 'glass.dart';
-import 'icon_tile.dart';
+import 'glyph_tile.dart';
 import '../l10n/l10n.dart';
+import '../theme/app_icons.dart';
 
 /// The chrome every Settings sub-page is built from — the collapsing header and
 /// hero card, the row, the field box, the divider rules.
@@ -89,7 +89,7 @@ class _SettingsDetailPageState extends State<SettingsDetailPage> {
               t: t,
               expandedAlignment: Alignment.center,
               expandedFontSize: 17,
-              leading: GlassIconButton(icon: LucideIcons.chevronLeft, onTap: () => Navigator.of(context).pop()),
+              leading: GlassIconButton(icon: AppIcons.caretLeft, onTap: () => Navigator.of(context).pop()),
               leadingWidth: 48,
               trailing: CloseSettingsButton(),
               trailingWidth: 48,
@@ -125,14 +125,14 @@ class CloseSettingsButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GlassIconButton(
-      icon: LucideIcons.x,
+      icon: AppIcons.x,
       onTap: () => Navigator.of(context).popUntil((r) => r.isFirst),
     );
   }
 }
 
 /// The masthead every Settings sub-page opens with: the page's glyph on a
-/// [GlassIconTile], its title, and one sentence explaining what the page
+/// [GlyphTile], its title, and one sentence explaining what the page
 /// changes. It replaces the
 /// nav-bar title on those pages, which is why the pinned row above it is empty
 /// until this scrolls away.
@@ -181,7 +181,7 @@ class HeroCard extends StatelessWidget {
           children: [
             // The same lens the rows below it wear, at masthead size — a bare
             // glyph up here and a tiled one in every row read as two systems.
-            leading ?? GlassIconTile(icon: icon, size: 52, iconSize: 25),
+            leading ?? GlyphTile(icon: icon, size: 52),
             const SizedBox(height: 16),
             Text(title, style: AppText.screenTitle),
             const SizedBox(height: 8),
@@ -244,7 +244,7 @@ class SettingsRow extends StatelessWidget {
               // A circle, not a squircle: the rows that carry a *logo* (the
               // calendar providers, the family avatars) can only be round, and
               // a settings list that mixes both shapes reads as two lists.
-              GlassIconTile(icon: icon!, size: 34, iconSize: 17),
+              GlyphTile(icon: icon!),
             if (leading != null || icon != null) const SizedBox(width: 13),
             Expanded(
               child: Column(
@@ -262,7 +262,7 @@ class SettingsRow extends StatelessWidget {
               if (value != null) Text(value!, style: AppText.label),
               if (onTap != null) ...[
                 const SizedBox(width: 8),
-                Icon(LucideIcons.chevronRight, size: 16, color: AppColors.mutedLight),
+                AppIcon(AppIcons.caretRight, size: 16, color: AppColors.mutedLight),
               ],
             ],
           ],

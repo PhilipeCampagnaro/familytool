@@ -1,12 +1,12 @@
 import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../theme/tokens.dart';
 import 'app_sheet.dart';
 import 'glass.dart';
 import 'native_search_field.dart';
 import '../l10n/l10n.dart';
+import '../theme/app_icons.dart';
 
 /// The search surface Listen and Boxen share.
 ///
@@ -42,7 +42,7 @@ class SearchTriggerField extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
           child: Row(
             children: [
-              Icon(LucideIcons.search, size: 17, color: AppColors.muted),
+              AppIcon(AppIcons.magnifyingGlass, size: 17, color: AppColors.muted),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(hint, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.searchInput.copyWith(color: AppColors.muted)),
@@ -77,7 +77,7 @@ class HeaderSearchButton extends StatelessWidget {
       ignoring: visible < 0.5,
       child: Opacity(
         opacity: visible,
-        child: GlassIconButton(icon: LucideIcons.search, onTap: onTap),
+        child: GlassIconButton(icon: AppIcons.magnifyingGlass, onTap: onTap),
       ),
     );
   }
@@ -181,7 +181,7 @@ class _HeaderSearchBarState extends State<HeaderSearchBar> with SingleTickerProv
                     child: Center(
                       child: Opacity(
                         opacity: a,
-                        child: GlassIconButton(icon: LucideIcons.x, onTap: widget.onClose),
+                        child: GlassIconButton(icon: AppIcons.x, onTap: widget.onClose),
                       ),
                     ),
                   ),
@@ -227,7 +227,7 @@ class SearchResultsPlaceholder extends StatelessWidget {
             height: 56,
             decoration: BoxDecoration(color: AppColors.surfaceAlt, shape: BoxShape.circle),
             alignment: Alignment.center,
-            child: Icon(LucideIcons.search, size: 26, color: AppColors.mutedLight),
+            child: AppIcon(AppIcons.magnifyingGlass, size: 26, color: AppColors.mutedLight),
           ),
           const SizedBox(height: 14),
           Text(
@@ -356,7 +356,7 @@ class SearchResultRow extends StatelessWidget {
                 ],
               ),
             ),
-            Icon(LucideIcons.chevronRight, size: 16, color: AppColors.mutedLight),
+            AppIcon(AppIcons.caretRight, size: 16, color: AppColors.mutedLight),
           ],
         ),
       ),

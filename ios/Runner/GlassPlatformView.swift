@@ -37,6 +37,13 @@ class GlassPlatformViewFactory: NSObject, FlutterPlatformViewFactory {
 class GlassPlatformView: NSObject, FlutterPlatformView {
   private let container: UIView
   private let channel: FlutterMethodChannel
+  private let effectView: UIVisualEffectView
+
+  /// Held so a later "setTint" can build the same material again with a new
+  /// colour — `UIGlassEffect` is applied as a whole effect object, so there is
+  /// no tint property on the view to poke.
+  private let styleName: String
+  private let interactive: Bool
 
   init(frame: CGRect, viewId: Int64, arguments args: [String: Any]?, messenger: FlutterBinaryMessenger) {
     channel = FlutterMethodChannel(name: "aporah/glass_view_\(viewId)", binaryMessenger: messenger)
@@ -61,6 +68,9 @@ class GlassPlatformView: NSObject, FlutterPlatformView {
       effect = UIBlurEffect(style: .systemUltraThinMaterial)
     }
 
+    self.styleName = styleName
+    self.interactive = interactive
+
     let effectView = UIVisualEffectView(effect: effect)
     effectView.frame = CGRect(origin: .zero, size: frame.size)
     effectView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
@@ -74,6 +84,8 @@ class GlassPlatformView: NSObject, FlutterPlatformView {
     if #available(iOS 26.0, *) {
       effectView.cornerConfiguration = .capsule()
     }
+
+    self.effectView = effectView
 
     container = UIView(frame: frame)
     container.backgroundColor = .clear
@@ -91,18 +103,46 @@ class GlassPlatformView: NSObject, FlutterPlatformView {
     container.overrideUserInterfaceStyle = (args?["dark"] as? Bool == true) ? .dark : .light
 
     channel.setMethodCallHandler { [weak self] call, result in
-      guard let self = self, call.method == "setBrightness" else {
+      guard let self = self else {
         result(FlutterMethodNotImplemented)
         return
       }
-      let dark = (call.arguments as? [String: Any])?["dark"] as? Bool ?? false
-      self.container.overrideUserInterfaceStyle = dark ? .dark : .light
-      result(nil)
+      let args = call.arguments as? [String: Any]
+      switch call.method {
+      case "setBrightness":
+        let dark = args?["dark"] as? Bool ?? false
+        self.container.overrideUserInterfaceStyle = dark ? .dark : .light
+        result(nil)
+      case "setTint":
+        // A `UiKitView` never re-reads its creationParams, so a control whose
+        // tint depends on state — the accent that a sheet's save button gains
+        // the moment its name field is filled in — has to be told here or it
+        // keeps the colour it was created with.
+        self.applyTint(argb: (args?["tint"] as? NSNumber)?.int64Value)
+        result(nil)
+      default:
+        result(FlutterMethodNotImplemented)
+      }
     }
   }
 
   func view() -> UIView {
     return container
+  }
+
+  /// Swaps in a fresh effect carrying `argb` (or none, for the material's own
+  /// adaptive appearance). Animated, because the accent arriving on a save
+  /// button the instant a character is typed reads as a flicker otherwise.
+  private func applyTint(argb: Int64?) {
+    guard #available(iOS 26.0, *) else { return }
+    let glass = UIGlassEffect(style: styleName == "clear" ? .clear : .regular)
+    glass.isInteractive = interactive
+    if let argb = argb {
+      glass.tintColor = GlassPlatformView.color(fromARGB: argb)
+    }
+    UIView.animate(withDuration: 0.2) {
+      self.effectView.effect = glass
+    }
   }
 
   private static func color(fromARGB value: Int64) -> UIColor {

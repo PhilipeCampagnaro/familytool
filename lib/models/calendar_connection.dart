@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../l10n/l10n.dart';
+import '../theme/app_icons.dart';
 
 /// The seven calendar sources, spelled exactly as `calendar_connections.provider`
 /// and `calendars.provider` store them.
@@ -137,10 +137,10 @@ extension CalendarProviderMeta on CalendarProvider {
   };
 
   IconData get icon => switch (this) {
-    CalendarProvider.ferien => LucideIcons.graduationCap,
-    CalendarProvider.abfall => LucideIcons.recycle,
-    CalendarProvider.webuntis => LucideIcons.clock,
-    _ => LucideIcons.calendarDays,
+    CalendarProvider.ferien => AppIcons.graduationCap,
+    CalendarProvider.abfall => AppIcons.recycle,
+    CalendarProvider.webuntis => AppIcons.clock,
+    _ => AppIcons.calendarDots,
   };
 }
 

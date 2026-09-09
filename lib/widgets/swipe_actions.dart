@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../theme/tokens.dart';
+import '../theme/app_icons.dart';
 
 /// One action revealed behind a [SwipeActionsRow].
 class SwipeAction {
@@ -178,12 +178,12 @@ class SwipeToEditDelete extends StatelessWidget {
       actions: [
         if (onEdit != null)
           SwipeAction(
-            icon: LucideIcons.pencil,
+            icon: AppIcons.pencilSimple,
             color: Theme.of(context).colorScheme.primary,
             onTap: onEdit!,
           ),
         SwipeAction(
-          icon: LucideIcons.trash2,
+          icon: AppIcons.trash,
           color: AppColors.danger,
           // Nothing left to close once the row is gone.
           closesRow: false,
@@ -210,7 +210,7 @@ class _SwipeActionButton extends StatelessWidget {
         width: width,
         alignment: Alignment.center,
         color: action.color,
-        child: Icon(action.icon, size: 18, color: Colors.white),
+        child: AppIcon(action.icon, size: 18, color: Colors.white, flat: true),
       ),
     );
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/tokens.dart';
+import '../theme/app_icons.dart';
 
 /// The "there's nothing here yet" block: a tinted circle around an icon, with a
 /// line of guidance under it.
@@ -40,7 +41,7 @@ class EmptyState extends StatelessWidget {
             height: 56,
             decoration: BoxDecoration(color: AppColors.surfaceAlt, shape: BoxShape.circle),
             alignment: Alignment.center,
-            child: Icon(icon, size: 26, color: iconColor ?? AppColors.mutedLight),
+            child: AppIcon(icon, size: 26, color: iconColor ?? AppColors.mutedLight),
           ),
           SizedBox(height: gap),
           Text(

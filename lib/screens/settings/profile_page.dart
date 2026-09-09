@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../services/media_picker.dart';
 import '../../state/auth_state.dart';
@@ -16,6 +15,7 @@ import '../../widgets/collapsing_header.dart';
 import '../../widgets/glass.dart';
 import '../../widgets/settings_chrome.dart';
 import '../../l10n/l10n.dart';
+import '../../theme/app_icons.dart';
 
 /// The signed-in user's own profile — display name, picture, avatar colour, and
 /// the role they hold, which is shown but never editable here: nobody promotes
@@ -71,18 +71,18 @@ class ProfilePageState extends ConsumerState<ProfilePage> {
       items: [
         AnchoredMenuItem(
           label: L.s.photo,
-          icon: LucideIcons.image,
+          icon: AppIcons.image,
           onSelected: () => _pickAvatar(AttachmentSource.photos),
         ),
         AnchoredMenuItem(
           label: L.s.camera,
-          icon: LucideIcons.camera,
+          icon: AppIcons.camera,
           onSelected: () => _pickAvatar(AttachmentSource.camera),
         ),
         if (me?.avatarPath != null || _uploading != null)
           AnchoredMenuItem(
             label: L.s.removePhoto,
-            icon: LucideIcons.trash2,
+            icon: AppIcons.trash,
             destructive: true,
             onSelected: () {
               setState(() => _uploading = null);
@@ -141,7 +141,7 @@ class ProfilePageState extends ConsumerState<ProfilePage> {
             t: t,
             expandedAlignment: Alignment.center,
             expandedFontSize: 17,
-            leading: GlassIconButton(icon: LucideIcons.chevronLeft, onTap: () => Navigator.of(context).pop()),
+            leading: GlassIconButton(icon: AppIcons.caretLeft, onTap: () => Navigator.of(context).pop()),
             leadingWidth: 48,
             trailing: CloseSettingsButton(),
             trailingWidth: 48,
@@ -183,7 +183,7 @@ class ProfilePageState extends ConsumerState<ProfilePage> {
                               border: Border.all(color: AppColors.hairline2),
                             ),
                             alignment: Alignment.center,
-                            child: Icon(LucideIcons.camera, size: 12, color: AppColors.muted),
+                            child: AppIcon(AppIcons.camera, size: 12, color: AppColors.muted),
                           ),
                         ),
                       ],
@@ -261,7 +261,7 @@ class ProfilePageState extends ConsumerState<ProfilePage> {
                         child: FieldBox(
                           child: Row(
                             children: [
-                              Icon(LucideIcons.shieldCheck, size: 17, color: AppColors.muted),
+                              AppIcon(AppIcons.shieldCheck, size: 17, color: AppColors.muted),
                               const SizedBox(width: 10),
                               Text(role.label, style: AppText.searchInput),
                             ],

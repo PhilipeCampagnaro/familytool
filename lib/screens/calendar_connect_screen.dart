@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../data/repositories/calendar_connection_repository.dart';
 import '../models/calendar_connection.dart';
@@ -19,12 +18,13 @@ import '../widgets/confirmation.dart';
 import '../widgets/rename_sheet.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/error_note.dart';
-import '../widgets/icon_tile.dart';
+import '../widgets/glyph_tile.dart';
 import '../widgets/settings_chrome.dart';
 import '../widgets/step_dots.dart';
 import '../widgets/swipe_actions.dart';
 import '../widgets/toast_chip.dart';
 import '../l10n/l10n.dart';
+import '../theme/app_icons.dart';
 
 /// Settings → Kalender. The six providers, each saying whether this household
 /// has connected it.
@@ -59,7 +59,7 @@ class CalendarConnectionsPage extends ConsumerWidget {
     final isKid = ref.watch(myRoleProvider) == FamilyRole.kid;
 
     return SettingsDetailPage(
-      icon: LucideIcons.calendarDays,
+      icon: AppIcons.calendarDots,
       title: L.s.connectCalendars,
       description: L.s.connectCalendarsIntro,
       children: [
@@ -82,7 +82,7 @@ class CalendarConnectionsPage extends ConsumerWidget {
                 : state.connections.isEmpty
                 ? [
                     EmptyState(
-                      icon: LucideIcons.calendarPlus,
+                      icon: AppIcons.calendarPlus,
                       message: L.s.noCalendarsConnected,
                       verticalPadding: 34,
                     ),
@@ -336,8 +336,8 @@ class _ProviderPageState extends ConsumerState<_ProviderPage> with WidgetsBindin
           ],
           AccentAction(
             icon: _isOAuth
-                ? (working ? LucideIcons.loaderCircle : LucideIcons.externalLink)
-                : LucideIcons.plus,
+                ? (working ? AppIcons.spinnerGap : AppIcons.arrowSquareOut)
+                : AppIcons.plus,
             label: _isOAuth
                 ? (_opening
                       ? L.s.openingEllipsis
@@ -360,7 +360,7 @@ class _ProviderPageState extends ConsumerState<_ProviderPage> with WidgetsBindin
             radius: AppRadii.card,
             children: [
               EmptyState(
-                icon: LucideIcons.calendarPlus,
+                icon: AppIcons.calendarPlus,
                 iconColor: Theme.of(context).colorScheme.primary,
                 message: L.s.noProviderCalendarYet(_provider.label),
                 verticalPadding: 40,
@@ -388,7 +388,7 @@ class _ProviderPageState extends ConsumerState<_ProviderPage> with WidgetsBindin
                   _ConnectedRow(key: ValueKey(entry.key), entry: entry),
                 if (connection.isLinked)
                   SettingsRow(
-                    icon: LucideIcons.plus,
+                    icon: AppIcons.plus,
                     title: L.s.addAnotherCalendar,
                     subtitle: L.s.addAnotherCalendarBody,
                     onTap: () => _openSheet(addToConnectionId: connection.id),
@@ -421,7 +421,7 @@ class _ProviderPageState extends ConsumerState<_ProviderPage> with WidgetsBindin
             radius: AppRadii.card,
             children: dividedRows(inset: true, [
               SettingsRow(
-                icon: LucideIcons.keyRound,
+                icon: AppIcons.key,
                 title: L.s.connectWithLogin,
                 subtitle: L.s.connectWithLoginBody,
                 onTap: _openLoginSheet,
@@ -434,7 +434,7 @@ class _ProviderPageState extends ConsumerState<_ProviderPage> with WidgetsBindin
             radius: AppRadii.card,
             children: dividedRows(inset: true, [
               SettingsRow(
-                icon: LucideIcons.link,
+                icon: AppIcons.link,
                 title: L.s.connectWithLink,
                 subtitle: L.s.connectWithLinkBody,
                 onTap: _openLinkSheet,
@@ -509,7 +509,7 @@ class _ProviderTile extends StatelessWidget {
       alignment: Alignment.center,
       child: provider.asset != null
           ? ClipOval(child: Image.asset(provider.asset!, width: 24, height: 24, fit: BoxFit.cover))
-          : Icon(provider.icon, size: 17, color: AppColors.inkSecondary),
+          : AppIcon(provider.icon, size: 17, color: AppColors.inkSecondary),
     );
   }
 }
@@ -548,7 +548,7 @@ class _ProviderStatus extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(attention ? LucideIcons.triangleAlert : LucideIcons.check, size: 12, color: color),
+          AppIcon(attention ? AppIcons.warning : AppIcons.check, size: 12, color: color),
           const SizedBox(width: 5),
           Text(
             label,
@@ -571,7 +571,7 @@ class _CheckBadge extends StatelessWidget {
       height: 22,
       decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary, shape: BoxShape.circle),
       alignment: Alignment.center,
-      child: const Icon(LucideIcons.check, size: 13, color: Colors.white),
+      child: const AppIcon(AppIcons.check, size: 13, color: Colors.white),
     );
   }
 }
@@ -762,12 +762,12 @@ class _ConnectedRowState extends ConsumerState<_ConnectedRow> {
   );
 
   List<AnchoredMenuItem> get _menuItems => [
-    AnchoredMenuItem(label: L.s.rename, icon: LucideIcons.pencil, onSelected: _rename),
+    AnchoredMenuItem(label: L.s.rename, icon: AppIcons.pencilSimple, onSelected: _rename),
     if (!_connection.isFeed)
-      AnchoredMenuItem(label: L.s.assignCalendar, icon: LucideIcons.userRound, onSelected: _assign),
+      AnchoredMenuItem(label: L.s.assignCalendar, icon: AppIcons.user, onSelected: _assign),
     AnchoredMenuItem(
       label: _connection.isFeed || !_entry.isWholeConnection ? L.s.remove : L.s.disconnect,
-      icon: LucideIcons.unlink,
+      icon: AppIcons.linkBreak,
       destructive: true,
       onSelected: _confirmRemove,
     ),
@@ -781,11 +781,11 @@ class _ConnectedRowState extends ConsumerState<_ConnectedRow> {
     return SwipeActionsRow(
       actions: [
         SwipeAction(
-          icon: LucideIcons.pencil,
+          icon: AppIcons.pencilSimple,
           color: Theme.of(context).colorScheme.primary,
           onTap: _rename,
         ),
-        SwipeAction(icon: LucideIcons.trash2, color: AppColors.danger, onTap: _confirmRemove),
+        SwipeAction(icon: AppIcons.trash, color: AppColors.danger, onTap: _confirmRemove),
       ],
       // Opaque: the row slides over the actions, and the card behind it is what
       // would otherwise show them through.
@@ -803,7 +803,7 @@ class _ConnectedRowState extends ConsumerState<_ConnectedRow> {
             mainAxisSize: MainAxisSize.min,
             children: [
               if (attention)
-                Icon(LucideIcons.triangleAlert, size: 18, color: AppColors.danger)
+                AppIcon(AppIcons.warning, size: 18, color: AppColors.danger)
               else
                 const _CheckBadge(),
               const SizedBox(width: 4),
@@ -1034,8 +1034,8 @@ class _OwnerSheetBodyState extends ConsumerState<_OwnerSheetBody> {
                         onTap: ready ? () => _pick('person:$name') : null,
                         child: Padding(
                           padding: const EdgeInsets.all(10),
-                          child: Icon(
-                            LucideIcons.arrowRight,
+                          child: AppIcon(
+                            AppIcons.arrowRight,
                             size: 20,
                             color: ready
                                 ? Theme.of(context).colorScheme.primary
@@ -1157,7 +1157,7 @@ class _OwnerRow extends StatelessWidget {
               child: busy
                   ? const CircularProgressIndicator(strokeWidth: 2)
                   : selected
-                  ? Icon(LucideIcons.check, size: 19, color: Theme.of(context).colorScheme.primary)
+                  ? AppIcon(AppIcons.check, size: 19, color: Theme.of(context).colorScheme.primary)
                   : null,
             ),
           ],
@@ -2121,8 +2121,8 @@ class _ConnectHeader extends StatelessWidget {
         return SheetActionHeader(
           title: title,
           action: SheetHeaderAction.confirm,
-          closeIcon: back ? LucideIcons.chevronLeft : LucideIcons.x,
-          confirmIcon: flow.step == _Step.name ? LucideIcons.check : LucideIcons.chevronRight,
+          closeIcon: back ? AppIcons.caretLeft : AppIcons.x,
+          confirmIcon: flow.step == _Step.name ? AppIcons.check : AppIcons.caretRight,
           onConfirm: () => flow.next(context),
           onClose: back ? flow.back : () => Navigator.of(context).pop(),
         );
@@ -2388,7 +2388,7 @@ class _UntisStep extends StatelessWidget {
               // which is what somebody who held up the wrong child's code
               // wants and the only thing they could want here.
               SettingsRow(
-                icon: LucideIcons.circleCheckBig,
+                icon: AppIcons.checkCircle,
                 title: L.s.codeScanned,
                 subtitle: _scannedSchool(flow.scannedQr!) ?? L.s.scanAgain,
                 onTap: flow.busy ? () {} : flow.scan,
@@ -2405,7 +2405,7 @@ class _UntisStep extends StatelessWidget {
                     ),
                     const SizedBox(height: 14),
                     AccentAction(
-                      icon: LucideIcons.qrCode,
+                      icon: AppIcons.qrCode,
                       label: L.s.scanUntisCode,
                       onTap: flow.busy ? () {} : flow.scan,
                     ),
@@ -2457,7 +2457,7 @@ class _UntisStep extends StatelessWidget {
               radius: AppRadii.card,
               children: dividedRows(inset: true, [
                 SettingsRow(
-                  icon: LucideIcons.keyboard,
+                  icon: AppIcons.keyboard,
                   title: L.s.enterManually,
                   subtitle: L.s.untisFieldsHint,
                   onTap: () {
@@ -2609,7 +2609,7 @@ class _LoginStep extends StatelessWidget {
             ),
             if (!isIserv)
               SettingsRow(
-                icon: LucideIcons.externalLink,
+                icon: AppIcons.arrowSquareOut,
                 title: L.s.createAppPassword,
                 onTap: () => openExternalUrl('https://appleid.apple.com/account/manage'),
               ),
@@ -2641,7 +2641,7 @@ class _StepHeadline extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        GlassIconTile(icon: provider.icon, size: 44, iconSize: 21),
+        GlyphTile(icon: provider.icon, size: 44),
         const SizedBox(width: 14),
         Expanded(
           child: Text(name, maxLines: 2, overflow: TextOverflow.ellipsis, style: AppText.cardTitle),
@@ -2882,7 +2882,7 @@ class _LinkFoundNote extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(none ? LucideIcons.info : LucideIcons.circleCheck, size: 16, color: color),
+        AppIcon(none ? AppIcons.info : AppIcons.checkCircle, size: 16, color: color),
         const SizedBox(width: 8),
         Expanded(
           child: Text(
@@ -2916,7 +2916,7 @@ class _UntisFoundNote extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(none ? LucideIcons.info : LucideIcons.circleCheck, size: 16, color: color),
+        AppIcon(none ? AppIcons.info : AppIcons.checkCircle, size: 16, color: color),
         const SizedBox(width: 8),
         Expanded(
           child: Text(
@@ -2970,7 +2970,7 @@ class _CalendarNameRow extends StatelessWidget {
             height: 34,
             decoration: BoxDecoration(color: AppColors.surfaceAlt, shape: BoxShape.circle),
             alignment: Alignment.center,
-            child: Icon(LucideIcons.calendar, size: 17, color: accent),
+            child: AppIcon(AppIcons.calendar, size: 17, color: accent),
           ),
           const SizedBox(width: 13),
           Expanded(
@@ -3021,7 +3021,7 @@ class _CalendarNameRow extends StatelessWidget {
           // The one thing the row's shape doesn't say by itself: that it can be
           // typed in. Muted, because it is a hint and not a button — the field
           // beside it is already the target.
-          Icon(LucideIcons.pencil, size: 15, color: AppColors.mutedLight),
+          AppIcon(AppIcons.pencilSimple, size: 15, color: AppColors.mutedLight),
         ],
       ),
     );
@@ -3082,7 +3082,7 @@ class _RegionStep extends ConsumerWidget {
                 SettingsRow(
                   title: entry.value,
                   subtitle: L.s.connected,
-                  trailing: Icon(LucideIcons.check, size: 18, color: AppColors.muted),
+                  trailing: AppIcon(AppIcons.check, size: 18, color: AppColors.muted),
                 )
               else
                 SettingsRow(
@@ -3158,7 +3158,7 @@ class _AddressStep extends StatelessWidget {
           _MessageRow(L.s.noAddressFound),
         for (final found in flow.results)
           SettingsRow(
-            icon: found.prefix ? LucideIcons.mapPin : LucideIcons.house,
+            icon: found.prefix ? AppIcons.mapPin : AppIcons.house,
             title: found.label,
             onTap: () => flow.pickAddress(context, found),
           ),
@@ -3174,7 +3174,7 @@ class _AddressStep extends StatelessWidget {
     return [
       FieldGroup(label: L.s.yourAddress),
       SettingsRow(
-        icon: LucideIcons.house,
+        icon: AppIcons.house,
         title: address.label,
         subtitle: flow.resolving
             ? L.s.searchingVendor
@@ -3195,7 +3195,7 @@ class _AddressStep extends StatelessWidget {
           behavior: HitTestBehavior.opaque,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-            child: Icon(LucideIcons.x, size: 17, color: AppColors.muted),
+            child: AppIcon(AppIcons.x, size: 17, color: AppColors.muted),
           ),
         ),
       ),

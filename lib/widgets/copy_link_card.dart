@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../theme/tokens.dart';
 import 'app_sheet.dart';
 import '../l10n/l10n.dart';
+import '../theme/app_icons.dart';
 
 /// A URL the app was handed **once**, with copying as the whole card rather
 /// than a small button beside it — a share link just minted, the invitation
@@ -49,7 +49,7 @@ class _CopyLinkCardState extends State<CopyLinkCard> {
             children: [
               Row(
                 children: [
-                  Icon(LucideIcons.link, size: 15, color: accent),
+                  AppIcon(AppIcons.link, size: 15, color: accent),
                   const SizedBox(width: 8),
                   Text(widget.label, style: AppText.rowTitle),
                   if (widget.onDismiss case final onDismiss?) ...[
@@ -57,7 +57,7 @@ class _CopyLinkCardState extends State<CopyLinkCard> {
                     GestureDetector(
                       onTap: onDismiss,
                       behavior: HitTestBehavior.opaque,
-                      child: Icon(LucideIcons.x, size: 16, color: AppColors.mutedLight),
+                      child: AppIcon(AppIcons.x, size: 16, color: AppColors.mutedLight),
                     ),
                   ],
                 ],
@@ -78,7 +78,7 @@ class _CopyLinkCardState extends State<CopyLinkCard> {
                 behavior: HitTestBehavior.opaque,
                 child: Row(
                   children: [
-                    Icon(_copied ? LucideIcons.check : LucideIcons.copy, size: 15, color: accent),
+                    AppIcon(_copied ? AppIcons.check : AppIcons.copy, size: 15, color: accent),
                     const SizedBox(width: 7),
                     Text(
                       _copied ? L.s.copied : L.s.copyLink,

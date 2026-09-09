@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../state/auth_state.dart';
 import '../state/calendar_connections_state.dart';
 import '../state/family_state.dart';
@@ -20,6 +19,7 @@ import 'settings/family_page.dart';
 import 'settings/language_page.dart';
 import 'settings/profile_page.dart';
 import '../l10n/l10n.dart';
+import '../theme/app_icons.dart';
 
 /// Full-page settings hub, reached from the Start tab's avatar. No Figma
 /// handoff exists for this screen (see docs/ported-features.md's "Settings"
@@ -83,7 +83,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 t: t,
                 expandedAlignment: Alignment.center,
                 expandedFontSize: 17,
-                leading: GlassIconButton(icon: LucideIcons.chevronLeft, onTap: () => Navigator.of(context).pop()),
+                leading: GlassIconButton(icon: AppIcons.caretLeft, onTap: () => Navigator.of(context).pop()),
                 leadingWidth: 48,
                 trailing: GlassPillButton(label: L.s.doneAction, onTap: () => Navigator.of(context).pop()),
                 trailingWidth: 84,
@@ -156,7 +156,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         (
           terms: L.s.searchTermsFamily,
           row: SettingsRow(
-            icon: LucideIcons.users,
+            icon: AppIcons.users,
             title: L.s.familyMembers,
             accessory: AvatarStack(
               avatarSize: 30,
@@ -180,7 +180,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         (
           terms: L.s.searchTermsCalendar,
           row: SettingsRow(
-            icon: LucideIcons.calendarDays,
+            icon: AppIcons.calendarDots,
             title: L.s.calendar,
             value: _connectionSummary(ref.watch(calendarConnectionsProvider)),
             onTap: () => _push(context, CalendarConnectionsPage()),
@@ -189,7 +189,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         (
           terms: L.s.searchTermsLanguage,
           row: SettingsRow(
-            icon: LucideIcons.languages,
+            icon: AppIcons.translate,
             title: L.s.language,
             value: state.language.label,
             onTap: () => _push(context, LanguagePage()),
@@ -198,7 +198,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         (
           terms: L.s.searchTermsDarkMode,
           row: SettingsRow(
-            icon: state.darkMode ? LucideIcons.moon : LucideIcons.sun,
+            icon: state.darkMode ? AppIcons.moon : AppIcons.sun,
             title: L.s.darkMode,
             trailing: NativeSwitch(
               value: state.darkMode,
@@ -209,7 +209,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         (
           terms: L.s.searchTermsTour,
           row: SettingsRow(
-            icon: LucideIcons.partyPopper,
+            icon: AppIcons.confetti,
             title: L.s.welcomeTour,
             value: L.s.repeat,
             onTap: () {
@@ -223,7 +223,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         (
           terms: L.s.searchTermsSignOut,
           row: SettingsRow(
-            icon: LucideIcons.logOut,
+            icon: AppIcons.signOut,
             title: L.s.signOut,
             // Which account, spelled out — the whole point of signing out is
             // usually to get into a different one.

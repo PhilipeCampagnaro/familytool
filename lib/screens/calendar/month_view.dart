@@ -314,7 +314,7 @@ class _MonthBlock extends ConsumerWidget {
                             behavior: HitTestBehavior.opaque,
                             child: Padding(
                               padding: const EdgeInsets.fromLTRB(12, 4, 2, 8),
-                              child: Icon(LucideIcons.x, size: 17, color: AppColors.muted),
+                              child: AppIcon(AppIcons.x, size: 17, color: AppColors.muted),
                             ),
                           ),
                         ],
@@ -498,7 +498,7 @@ class _HolidayChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(LucideIcons.partyPopper, size: 14, color: AppColors.holidayNumber),
+          AppIcon(AppIcons.confetti, size: 14, color: AppColors.holidayNumber),
           const SizedBox(width: 6),
           Flexible(
             child: Text(

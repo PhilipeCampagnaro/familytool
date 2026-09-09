@@ -3,10 +3,10 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../l10n/l10n.dart';
 import '../theme/tokens.dart';
 import 'glass.dart';
+import '../theme/app_icons.dart';
 
 class NavTab {
   final String label;
@@ -51,11 +51,11 @@ IconData navRowIcon({required IconData lucide, required IconData cupertino}) =>
 /// native iOS bar re-sends these to UIKit when it rebuilds, so the system tab
 /// bar changes language with the rest of the app.
 List<NavTab> get navTabs => [
-  NavTab(L.s.navHome, LucideIcons.home, cupertinoIcon: CupertinoIcons.house, sfSymbol: 'house', sfSymbolSelected: 'house.fill'),
-  NavTab(L.s.navCalendar, LucideIcons.calendar, cupertinoIcon: CupertinoIcons.calendar, sfSymbol: 'calendar'),
-  NavTab(L.s.navLists, LucideIcons.clipboardCheck, cupertinoIcon: CupertinoIcons.checkmark_square, sfSymbol: 'checklist'),
-  NavTab(L.s.navBoard, LucideIcons.layoutPanelLeft, cupertinoIcon: CupertinoIcons.square_grid_2x2, sfSymbol: 'square.grid.2x2', sfSymbolSelected: 'square.grid.2x2.fill'),
-  NavTab(L.s.navBox, LucideIcons.box, cupertinoIcon: CupertinoIcons.cube_box, sfSymbol: 'shippingbox', sfSymbolSelected: 'shippingbox.fill'),
+  NavTab(L.s.navHome, AppIcons.house, cupertinoIcon: CupertinoIcons.house, sfSymbol: 'house', sfSymbolSelected: 'house.fill'),
+  NavTab(L.s.navCalendar, AppIcons.calendar, cupertinoIcon: CupertinoIcons.calendar, sfSymbol: 'calendar'),
+  NavTab(L.s.navLists, AppIcons.listChecks, cupertinoIcon: CupertinoIcons.checkmark_square, sfSymbol: 'checklist'),
+  NavTab(L.s.navBoard, AppIcons.layout, cupertinoIcon: CupertinoIcons.square_grid_2x2, sfSymbol: 'square.grid.2x2', sfSymbolSelected: 'square.grid.2x2.fill'),
+  NavTab(L.s.navBox, AppIcons.package, cupertinoIcon: CupertinoIcons.cube_box, sfSymbol: 'shippingbox', sfSymbolSelected: 'shippingbox.fill'),
 ];
 
 /// iPhone/iPad gets the real system tab bar — an actual `UITabBar` embedded as
@@ -164,7 +164,7 @@ class _CompactNavButtonState extends State<CompactNavButton> {
             child: SizedBox(
               width: kCompactNavSize,
               height: kCompactNavSize,
-              child: Icon(widget.icon, size: 22, color: AppColors.accent),
+              child: AppIcon(widget.icon, size: 22, color: AppColors.accent, flat: true),
             ),
           ),
         ),
@@ -242,10 +242,11 @@ class _NavItem extends StatelessWidget {
                 color: active ? AppColors.accent : Colors.transparent,
                 shape: BoxShape.circle,
               ),
-              child: Icon(
+              child: AppIcon(
                 tab.icon,
                 size: 20,
                 color: active ? Colors.white : AppColors.muted,
+                flat: true,
               ),
             ),
             if (active) ...[

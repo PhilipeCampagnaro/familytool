@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../data/board_data.dart';
 import '../models/event_link.dart';
 import '../models/task.dart';
@@ -28,11 +27,13 @@ import '../widgets/visibility_picker.dart';
 import '../widgets/toast_chip.dart';
 import 'board/due_date_sheet.dart';
 import 'board/schedule_sheet.dart';
+import 'board/tracker_detail.dart';
 import 'board/tracker_strip.dart';
 import '../models/homework.dart';
 import '../state/calendar_state.dart';
 import '../state/tracker_state.dart';
 import '../l10n/l10n.dart';
+import '../theme/app_icons.dart';
 
 /// Opens Board's create-task sheet from outside Board.
 ///
@@ -101,6 +102,20 @@ class BoardScreen extends ConsumerWidget {
       ref.read(trackerProvider.notifier).clearError();
     });
 
+    // One tracker's own screen, opened from its row on the card below. A mode
+    // of this screen rather than a pushed route, the way Listen opens a list —
+    // see [TrackerDetailView].
+    if (ref.watch(trackerProvider.select((s) => s.openTracker)) case final open?) {
+      return Scaffold(
+        backgroundColor: AppColors.surface,
+        body: TrackerDetailView(
+          tracker: open,
+          accent: accent,
+          onEdit: () => _openTaskSheet(context, ref, tracker: open),
+        ),
+      );
+    }
+
     // The device clock, read on every build so the sections are still right
     // after the app has sat open past midnight.
     final today = boardDay(DateTime.now());
@@ -150,7 +165,7 @@ class BoardScreen extends ConsumerWidget {
                 title: L.s.boardTitle,
                 t: t,
                 trailingWidth: 48,
-                trailing: GlassIconButton(icon: LucideIcons.plus, onTap: () => _openNewTaskSheet(context, ref)),
+                trailing: GlassIconButton(icon: AppIcons.plus, onTap: () => _openNewTaskSheet(context, ref)),
               ),
               estimatedExtraHeight: _extraHeight,
               // Today, and how much of it is behind you. This is what the week strip
@@ -467,8 +482,8 @@ class BoardScreen extends ConsumerWidget {
                   value: state.newKind,
                   onChanged: notifier.setKind,
                   options: [
-                    SegmentedOption(value: BoardItemKind.task, label: L.s.kindTask, icon: LucideIcons.circleCheck),
-                    SegmentedOption(value: BoardItemKind.tracker, label: L.s.kindTracker, icon: LucideIcons.repeat),
+                    SegmentedOption(value: BoardItemKind.task, label: L.s.kindTask, icon: AppIcons.checkCircle),
+                    SegmentedOption(value: BoardItemKind.tracker, label: L.s.kindTracker, icon: AppIcons.repeat),
                   ],
                 ),
                 const SizedBox(height: 14),
@@ -563,7 +578,7 @@ class BoardScreen extends ConsumerWidget {
               if (task != null && ref.watch(canShareExternallyProvider)) ...[
                 const SizedBox(height: 14),
                 OutlinedSheetAction(
-                  icon: LucideIcons.userPlus,
+                  icon: AppIcons.userPlus,
                   label: L.s.share,
                   onTap: () =>
                       showShareSheet(context, kind: ShareableKind.task, resourceId: task.id, resourceName: task.text),
@@ -572,7 +587,7 @@ class BoardScreen extends ConsumerWidget {
               if (task != null) ...[
                 const SizedBox(height: 10),
                 OutlinedSheetAction(
-                  icon: LucideIcons.trash2,
+                  icon: AppIcons.trash,
                   label: L.s.deleteTask,
                   destructive: true,
                   onTap: () async {
@@ -587,7 +602,7 @@ class BoardScreen extends ConsumerWidget {
               if (tracker != null) ...[
                 const SizedBox(height: 14),
                 OutlinedSheetAction(
-                  icon: LucideIcons.trash2,
+                  icon: AppIcons.trash,
                   label: L.s.deleteTracker,
                   destructive: true,
                   onTap: () async {
@@ -793,20 +808,47 @@ class _TrackerCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(trackerProvider);
     final due = state.dueOn(today, personFilter: personFilter);
-    if (due.isEmpty) return const SizedBox.shrink();
+    final rest = state.offToday(today, personFilter: personFilter);
+    if (due.isEmpty && rest.isEmpty) return const SizedBox.shrink();
+
+    // Nothing hides behind a chevron when there is nothing in front of it: on a
+    // day none of the rhythms ask about, the rest of them *are* the card.
+    final expanded = state.showAll || due.isEmpty;
+
+    Widget row(Tracker tracker, {required bool dueToday}) => SwipeToEditDelete(
+      // The row opens the tracker's own screen; editing stays on the swipe,
+      // where the Board's other rows keep it. Tapping used to open the edit
+      // sheet, which answered a question nobody had — the thing you want after
+      // ticking something off for a fortnight is to see the fortnight.
+      onTap: () => ref.read(trackerProvider.notifier).open(tracker.id),
+      onEdit: () => BoardScreen._openTaskSheet(context, ref, tracker: tracker),
+      onDelete: () => _delete(context, ref, tracker),
+      child: _TrackerRow(
+        tracker: tracker,
+        state: state,
+        today: today,
+        accent: accent,
+        dueToday: dueToday,
+      ),
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _SectionHeading(title: L.s.trackersTitle, count: due.length),
+        // Every tracker the household keeps, not just today's. The rows add up
+        // to it either way — collapsed, the fold row says how many are missing.
+        _SectionHeading(title: L.s.trackersTitle, count: due.length + rest.length),
         SectionCard(
           children: dividedRows([
-            for (final tracker in due)
-              SwipeToEditDelete(
-                onTap: () => BoardScreen._openTaskSheet(context, ref, tracker: tracker),
-                onEdit: () => BoardScreen._openTaskSheet(context, ref, tracker: tracker),
-                onDelete: () => _delete(context, ref, tracker),
-                child: _TrackerRow(tracker: tracker, state: state, today: today, accent: accent),
+            for (final tracker in due) row(tracker, dueToday: true),
+            if (expanded)
+              for (final tracker in rest) row(tracker, dueToday: false),
+            if (rest.isNotEmpty && due.isNotEmpty)
+              _MoreTrackersRow(
+                count: rest.length,
+                expanded: expanded,
+                accent: accent,
+                onTap: () => ref.read(trackerProvider.notifier).toggleShowAll(),
               ),
           ]),
         ),
@@ -837,7 +879,20 @@ class _TrackerRow extends ConsumerWidget {
   final DateTime today;
   final Color accent;
 
-  const _TrackerRow({required this.tracker, required this.state, required this.today, required this.accent});
+  /// Whether today's rhythm asks for this one. False rows are the ones folded
+  /// in under the card and carry **no check circle** — a Montag tracker cannot
+  /// be kept on a Mittwoch, and a circle offering it would write a check that
+  /// counts towards no streak and appears on no plan. They are here to be read
+  /// and opened, not ticked.
+  final bool dueToday;
+
+  const _TrackerRow({
+    required this.tracker,
+    required this.state,
+    required this.today,
+    required this.accent,
+    this.dueToday = true,
+  });
 
   String _subtitle() {
     final streak = state.streakOf(tracker, today);
@@ -851,7 +906,7 @@ class _TrackerRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final checked = state.isCheckedOn(tracker.id, today);
+    final checked = dueToday && state.isCheckedOn(tracker.id, today);
     final w = whoBadge(
       assigneeId: tracker.assigneeId,
       visibility: tracker.visibility,
@@ -897,17 +952,65 @@ class _TrackerRow extends ConsumerWidget {
               ],
             ),
           ),
-          CheckOffButton(
-            progress: checked ? 1 : 0,
-            accent: accent,
-            // Ticking and un-ticking are the same tap, unlike a task's, because
-            // the row does not go anywhere — a mis-tap at breakfast is undone by
-            // tapping it again rather than by hunting for it in "Erledigt".
-            onTap: () => ref.read(trackerProvider.notifier).toggleCheck(tracker, today),
-            size: 26,
-            filled: true,
-          ),
+          if (dueToday)
+            CheckOffButton(
+              progress: checked ? 1 : 0,
+              accent: accent,
+              // Ticking and un-ticking are the same tap, unlike a task's,
+              // because the row does not go anywhere — a mis-tap at breakfast is
+              // undone by tapping it again rather than by hunting for it in
+              // "Erledigt".
+              onTap: () => ref.read(trackerProvider.notifier).toggleCheck(tracker, today),
+              size: 26,
+              filled: true,
+            ),
         ],
+      ),
+    );
+  }
+}
+
+/// The fold at the bottom of the tracker card: everything today asks nothing
+/// about, one tap away.
+///
+/// It counts them in its own label rather than saying "Alle anzeigen", so the
+/// card admits there is something there before anybody taps it. A tracker has a
+/// screen of its own now, and one that disappeared on its off days would be
+/// unreachable five days a week — but putting all of them on the card by default
+/// would push the day's actual tasks down the screen to make room for rhythms
+/// nobody owes today.
+class _MoreTrackersRow extends StatelessWidget {
+  final int count;
+  final bool expanded;
+  final Color accent;
+  final VoidCallback onTap;
+
+  const _MoreTrackersRow({
+    required this.count,
+    required this.expanded,
+    required this.accent,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 16),
+        child: Row(
+          children: [
+            Text(L.s.moreTrackers(count), style: AppText.label.copyWith(color: accent)),
+            const Spacer(),
+            AnimatedRotation(
+              turns: expanded ? 0.5 : 0,
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOut,
+              child: AppIcon(AppIcons.caretDown, size: 16, color: accent),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1255,7 +1358,7 @@ class _AssigneeFieldState extends State<_AssigneeField> {
                         turns: _open ? -0.25 : 0.25,
                         duration: const Duration(milliseconds: 200),
                         curve: Curves.easeOutCubic,
-                        child: Icon(LucideIcons.chevronRight, size: 16, color: AppColors.mutedLight),
+                        child: AppIcon(AppIcons.caretRight, size: 16, color: AppColors.mutedLight),
                       ),
                     ],
                   ),
@@ -1335,7 +1438,7 @@ class _AssigneeOption extends StatelessWidget {
                 ),
               ),
             ),
-            if (selected) Icon(LucideIcons.check, size: 17, color: accent),
+            if (selected) AppIcon(AppIcons.check, size: 17, color: accent),
           ],
         ),
       ),
@@ -1396,7 +1499,7 @@ class _RhythmField extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 4),
-            Icon(LucideIcons.chevronRight, size: 16, color: AppColors.mutedLight),
+            AppIcon(AppIcons.caretRight, size: 16, color: AppColors.mutedLight),
           ],
         ),
       ),
@@ -1444,7 +1547,7 @@ class _DueDateField extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 4),
-            Icon(LucideIcons.chevronRight, size: 16, color: AppColors.mutedLight),
+            AppIcon(AppIcons.caretRight, size: 16, color: AppColors.mutedLight),
           ],
         ),
       ),

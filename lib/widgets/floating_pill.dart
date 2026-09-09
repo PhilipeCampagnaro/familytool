@@ -2,12 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../l10n/l10n.dart';
 import '../theme/tokens.dart';
 import 'bottom_nav.dart';
 import 'glass.dart';
+import '../theme/app_icons.dart';
 
 /// A liquid-glass pill parked above the bottom nav that comes and goes with the
 /// state behind it — the calendar's "Heute" button, Board's and Listen's
@@ -65,7 +65,7 @@ class _FloatingGlassPillState extends State<FloatingGlassPill> {
       mainAxisSize: MainAxisSize.min,
       children: [
         if (icon != null) ...[
-          Icon(icon, size: rowShape ? 18 : 15, color: widget.accent),
+          AppIcon(icon, size: rowShape ? 18 : 15, color: widget.accent, flat: true),
           const SizedBox(width: 7),
         ],
         Text(
@@ -205,7 +205,7 @@ class _UndoPillState extends State<UndoPill> {
   Widget build(BuildContext context) {
     return FloatingGlassPill(
       visible: _visible,
-      icon: LucideIcons.undo2,
+      icon: AppIcons.arrowUUpLeft,
       label: L.s.undo,
       accent: widget.accent,
       onTap: _undo,

@@ -2,13 +2,13 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../data/emoji_colors.dart';
 import '../theme/tokens.dart';
 import 'app_sheet.dart';
 import 'glass.dart';
 import '../l10n/l10n.dart';
+import '../theme/app_icons.dart';
 
 /// The party popper a [ConfirmationMark.celebration] is drawn with — named
 /// because [CelebrationGlow] takes the wash behind it out of the same glyph,
@@ -90,7 +90,7 @@ class ConfirmationView extends StatefulWidget {
     this.message,
     this.content = const [],
     this.mark = ConfirmationMark.check,
-    this.icon = LucideIcons.check,
+    this.icon = AppIcons.check,
     this.dismissAfter,
     this.onDone,
     this.action = ConfirmationAction.sheetAction,
@@ -205,7 +205,7 @@ class _ConfirmationViewState extends State<ConfirmationView> with SingleTickerPr
                     boxShadow: AppShadows.accentGlass(accent),
                   ),
                   alignment: Alignment.center,
-                  child: Icon(widget.icon, size: 38, color: Colors.white),
+                  child: AppIcon(widget.icon, size: 38, color: Colors.white),
                 ),
                 // The emoji itself, at the disc's size — the party popper is
                 // the illustration, so it doesn't need a plate under it.
@@ -259,7 +259,7 @@ class _ConfirmationViewState extends State<ConfirmationView> with SingleTickerPr
                 switch (widget.action) {
                   ConfirmationAction.none => const SizedBox.shrink(),
                   ConfirmationAction.sheetAction => OutlinedSheetAction(
-                    icon: LucideIcons.check,
+                    icon: AppIcons.check,
                     label: widget.doneLabel ?? L.s.doneAction,
                     onTap: _done,
                   ),
@@ -391,7 +391,7 @@ Future<void> showConfirmationSheet({
   String? message,
   List<Widget> content = const [],
   ConfirmationMark mark = ConfirmationMark.check,
-  IconData icon = LucideIcons.check,
+  IconData icon = AppIcons.check,
   Duration? dismissAfter,
   String? doneLabel,
 }) {

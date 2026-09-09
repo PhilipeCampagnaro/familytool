@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:aporah/theme/app_icons.dart';
 import 'package:aporah/data/box_data.dart';
 import 'package:aporah/screens/board_screen.dart';
 import 'package:aporah/screens/box_screen.dart';
@@ -40,7 +40,7 @@ void main() {
   }
 
   Future<void> openFirstBox(WidgetTester tester) async {
-    await tester.tap(find.byIcon(LucideIcons.chevronRight).first);
+    await tester.tap(find.byIcon(AppIcons.caretRight).first);
     await tester.pumpAndSettle();
   }
 
@@ -126,7 +126,7 @@ void main() {
     final rect = tester.getRect(frost);
     expect(rect.top, 0);
     expect(rect.width, tester.getSize(find.byType(CollapsingHeaderScreen)).width);
-    expect(rect.bottom, greaterThan(tester.getRect(find.byIcon(LucideIcons.plus).first).bottom));
+    expect(rect.bottom, greaterThan(tester.getRect(find.byIcon(AppIcons.plus).first).bottom));
   });
 
   testWidgets('Box detail: the pinned row carries the box icon once collapsed', (tester) async {
@@ -134,7 +134,7 @@ void main() {
     await openFirstBox(tester);
 
     Finder inTitleRow(Finder f) => find.descendant(of: find.byType(CollapsingScreenTitle), matching: f);
-    final badge = inTitleRow(find.byIcon(LucideIcons.box));
+    final badge = inTitleRow(find.byIcon(AppIcons.package));
     // Mounted from the start — it's the other half of a crossfade — but drawn
     // at nothing until the big name row it stands in for has scrolled away.
     expect(tester.widget<Opacity>(find.ancestor(of: badge, matching: find.byType(Opacity)).first).opacity, moreOrLessEquals(0.0));
@@ -159,7 +159,7 @@ void main() {
     // They used to be flat gray circles, the only non-glass round buttons in
     // the app.
     expect(find.descendant(of: find.byType(CollapsingScreenTitle), matching: find.byType(GlassIconButton)), findsNWidgets(2));
-    expect(find.byIcon(LucideIcons.chevronLeft), findsOneWidget);
+    expect(find.byIcon(AppIcons.caretLeft), findsOneWidget);
   });
 
   testWidgets('Box detail: the brand glow runs under the status bar', (tester) async {

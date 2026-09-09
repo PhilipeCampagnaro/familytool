@@ -248,6 +248,55 @@ abstract class AppStrings {
   /// tracker.
   String get trackerGridEmpty;
 
+  /// The row that folds the rest of the household's trackers into the Board's
+  /// card — "3 weitere Tracker". Counting them in the label rather than saying
+  /// "Alle anzeigen" is the point: it tells you there is something there before
+  /// you tap, which "Alle" does not.
+  String moreTrackers(int count);
+
+  // ------------------------------------------------- one tracker's screen --
+  //
+  // Opened by tapping a tracker on the Board. Everything here reports on that
+  // one rhythm, which is what separates it from the header grid: there
+  // "geschafft" is an average over the household's trackers, here it is a fact
+  // about this one.
+
+  /// Heads the chart card. Not "Statistik": the card is a record of what
+  /// happened, and a family app that starts grading a household on its habits
+  /// stops being pleasant very quickly.
+  String get trackerHistory;
+
+  /// "8 von 12 Wochen geschafft" — the weekly-count answer to
+  /// [trackerDaysDone], counted in the period that rhythm actually promises.
+  String trackerWeeksDone(int done, int total);
+
+  /// "3 von 4" beside one week's bar. Bare on purpose: the row it sits on
+  /// already says which week, where [weekProgressLabel] has to say "diese
+  /// Woche" because nothing around it does.
+  String weekDoneOfTarget(int done, int target);
+
+  /// The three readings of a square, spelled out under the chart. Colour alone
+  /// cannot distinguish "nicht geplant" from "verpasst" for everybody who has
+  /// to read it, and those two are the pair that matters.
+  String get trackerLegendKept;
+  String get trackerLegendMissed;
+  String get trackerLegendNotDue;
+
+  /// Says the squares can be tapped. Back-filling is the reason the chart is
+  /// interactive at all, and an affordance nobody finds is one that isn't
+  /// there.
+  String get trackerBackfillHint;
+
+  /// The check-off row's label when today is not one of the rhythm's days —
+  /// where a due day offers the circle. A Montag tracker on a Mittwoch is not
+  /// behind on anything, and an empty circle would say it was.
+  String get trackerNotDueToday;
+
+  /// When the tracker started. It is the left edge of every chart on the
+  /// screen, so it is worth stating rather than leaving as the point the
+  /// squares happen to begin.
+  String get trackerStartedOn;
+
   String get trackersLoadFailed;
   String get trackerSaveFailed;
   String get trackerDeleteFailed;
@@ -733,6 +782,7 @@ abstract class AppStrings {
   String get familyMembers;
   String get language;
   String get darkMode;
+
   String get welcomeTour;
   String get repeat;
   String get signOut;

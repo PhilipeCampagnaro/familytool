@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../state/family_state.dart';
 import '../state/sharing_state.dart';
@@ -12,6 +11,7 @@ import 'empty_state.dart';
 import 'error_note.dart';
 import 'native_switch.dart';
 import '../l10n/l10n.dart';
+import '../theme/app_icons.dart';
 
 /// "Teilen" — the third visibility axis, and the only one that leaves the
 /// household.
@@ -156,7 +156,7 @@ class _ShareSheetBodyState extends ConsumerState<_ShareSheetBody> {
         ),
         const SizedBox(height: 12),
         _PrimaryAction(
-          icon: LucideIcons.link,
+          icon: AppIcons.link,
           label: _email.text.trim().isEmpty ? L.s.createLink : L.s.sendInvite,
           accent: accent,
           busy: _busy,
@@ -196,7 +196,7 @@ class _ShareSheetBodyState extends ConsumerState<_ShareSheetBody> {
         if (!state.loading && state.guests.isEmpty && state.links.isEmpty && state.freshUrl == null) ...[
           const SizedBox(height: 18),
           EmptyState(
-            icon: LucideIcons.userPlus,
+            icon: AppIcons.userPlus,
             message: L.s.notSharedYet,
           ),
         ],
@@ -244,7 +244,7 @@ class _GuestRow extends StatelessWidget {
             behavior: HitTestBehavior.opaque,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-              child: Icon(LucideIcons.userMinus, size: 17, color: AppColors.mutedLight),
+              child: AppIcon(AppIcons.userMinus, size: 17, color: AppColors.mutedLight),
             ),
           ),
         ],
@@ -274,7 +274,7 @@ class _LinkRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
-          Icon(LucideIcons.link, size: 16, color: link.live ? AppColors.inkSecondary : AppColors.mutedLight),
+          AppIcon(AppIcons.link, size: 16, color: link.live ? AppColors.inkSecondary : AppColors.mutedLight),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -340,7 +340,7 @@ class _PrimaryAction extends StatelessWidget {
                 child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
               )
             else
-              Icon(icon, size: 17, color: Colors.white),
+              AppIcon(icon, size: 17, color: Colors.white),
             const SizedBox(width: 10),
             Text(
               label,

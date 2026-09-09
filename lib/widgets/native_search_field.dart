@@ -2,9 +2,9 @@ import 'package:flutter/foundation.dart' show Factory, kIsWeb, defaultTargetPlat
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../theme/tokens.dart';
 import 'native_occlusion.dart';
+import '../theme/app_icons.dart';
 
 /// Height used before UIKit reports its own — and the fixed height of the
 /// non-iOS fallback, so the two lay out the same.
@@ -192,7 +192,7 @@ class _FallbackSearchFieldState extends State<_FallbackSearchField> {
         padding: const EdgeInsets.symmetric(horizontal: 15),
         child: Row(
           children: [
-            Icon(LucideIcons.search, size: 17, color: AppColors.muted),
+            AppIcon(AppIcons.magnifyingGlass, size: 17, color: AppColors.muted),
             const SizedBox(width: 10),
             Expanded(
               child: TextField(
@@ -224,7 +224,7 @@ class _FallbackSearchFieldState extends State<_FallbackSearchField> {
                           _controller.clear();
                           widget.onChanged('');
                         },
-                        child: Icon(LucideIcons.circleX, size: 17, color: AppColors.muted),
+                        child: AppIcon(AppIcons.xCircle, size: 17, color: AppColors.muted),
                       ),
               ),
           ],

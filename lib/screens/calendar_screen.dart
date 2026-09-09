@@ -5,7 +5,6 @@ import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../data/calendar_data.dart';
 import '../data/german_holidays.dart';
 import '../models/calendar_event.dart';
@@ -43,6 +42,7 @@ import '../l10n/l10n.dart';
 import 'board_screen.dart';
 import 'calendar_connect_screen.dart';
 import 'list_screen.dart';
+import '../theme/app_icons.dart';
 
 part 'calendar/event_form.dart';
 part 'calendar/calendar_filter.dart';
@@ -393,13 +393,13 @@ class _TitleRow extends StatelessWidget {
                     // Not the empty state's `calendarPlus`: beside a bare plus,
                     // two plus-bearing glyphs read as two ways to add the same
                     // thing. A link is what "verbinden" means anyway.
-                    icon: LucideIcons.link,
+                    icon: AppIcons.link,
                     label: L.s.connectCalendars,
                     onTap: () => Navigator.of(context).push(
                       MaterialPageRoute(builder: (_) => CalendarConnectionsPage()),
                     ),
                   ),
-                  GlassIconAction(icon: LucideIcons.plus, label: L.s.addEvent, onTap: onAdd),
+                  GlassIconAction(icon: AppIcons.plus, label: L.s.addEvent, onTap: onAdd),
                 ],
               ),
             ),
@@ -516,8 +516,8 @@ class _MonthYearToggleRow extends StatelessWidget {
               decoration: BoxDecoration(color: AppColors.surfaceAlt, borderRadius: BorderRadius.circular(20)),
               child: Row(
                 children: [
-                  _ViewToggleButton(icon: LucideIcons.list, active: state.isWeek, accent: accent, onTap: () => ref.read(calendarProvider.notifier).setWeekView()),
-                  _ViewToggleButton(icon: LucideIcons.layoutPanelLeft, active: !state.isWeek, accent: accent, onTap: () => ref.read(calendarProvider.notifier).setMonthView()),
+                  _ViewToggleButton(icon: AppIcons.list, active: state.isWeek, accent: accent, onTap: () => ref.read(calendarProvider.notifier).setWeekView()),
+                  _ViewToggleButton(icon: AppIcons.layout, active: !state.isWeek, accent: accent, onTap: () => ref.read(calendarProvider.notifier).setMonthView()),
                 ],
               ),
             ),
@@ -549,7 +549,7 @@ class _ViewToggleButton extends StatelessWidget {
           boxShadow: active ? AppShadows.thumb : null,
         ),
         alignment: Alignment.center,
-        child: Icon(icon, size: 17, color: active ? accent : AppColors.muted),
+        child: AppIcon(icon, size: 17, color: active ? accent : AppColors.muted),
       ),
     );
   }
@@ -648,8 +648,8 @@ class _CalendarChip extends StatelessWidget {
                   child: SizedBox(
                     width: 22,
                     height: 22,
-                    child: Icon(
-                      LucideIcons.chevronDown,
+                    child: AppIcon(
+                      AppIcons.caretDown,
                       size: 14,
                       color: active ? AppColors.ink : AppColors.muted,
                     ),

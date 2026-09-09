@@ -8,6 +8,7 @@ import 'confirmation.dart';
 import 'error_note.dart';
 import 'settings_chrome.dart';
 import '../l10n/l10n.dart';
+import '../theme/app_icons.dart';
 
 /// One thing has a name, you are changing it: the thing at the top, a field, a
 /// blue check, and the beat that says it saved.
@@ -26,7 +27,8 @@ import '../l10n/l10n.dart';
 /// message under the field so the name isn't lost.
 Future<bool> showRenameSheet({
   required BuildContext context,
-  required IconData icon,
+  IconData? icon,
+  Widget? leading,
   required String title,
   required String headline,
   required String message,
@@ -40,6 +42,10 @@ Future<bool> showRenameSheet({
   String? successLabel,
   String Function(Object error)? errorText,
 }) async {
+  // A glyph in a tinted circle by default; [leading] replaces the whole circle
+  // for a subject that has a face of its own — the household's picture, which
+  // is also editable from right there.
+  assert(icon != null || leading != null, 'the sheet needs something at its head');
   fieldLabel ??= L.s.name;
   fieldHint ??= L.s.calendarNameInAporah;
   busyLabel ??= L.s.connectingEllipsis;
@@ -62,6 +68,7 @@ Future<bool> showRenameSheet({
     child: _RenameBody(
       flow: flow,
       icon: icon,
+      leading: leading,
       headline: headline,
       message: message,
       fieldLabel: fieldLabel,
@@ -162,7 +169,8 @@ class _RenameHeader extends StatelessWidget {
 
 class _RenameBody extends StatelessWidget {
   final _RenameFlow flow;
-  final IconData icon;
+  final IconData? icon;
+  final Widget? leading;
   final String headline;
   final String message;
   final String fieldLabel;
@@ -172,6 +180,7 @@ class _RenameBody extends StatelessWidget {
   const _RenameBody({
     required this.flow,
     required this.icon,
+    required this.leading,
     required this.headline,
     required this.message,
     required this.fieldLabel,
@@ -201,6 +210,7 @@ class _RenameBody extends StatelessWidget {
                 key: const ValueKey('editing'),
                 flow: flow,
                 icon: icon,
+                leading: leading,
                 headline: headline,
                 message: message,
                 fieldLabel: fieldLabel,
@@ -214,7 +224,8 @@ class _RenameBody extends StatelessWidget {
 
 class _EditingBody extends StatelessWidget {
   final _RenameFlow flow;
-  final IconData icon;
+  final IconData? icon;
+  final Widget? leading;
   final String headline;
   final String message;
   final String fieldLabel;
@@ -225,6 +236,7 @@ class _EditingBody extends StatelessWidget {
     super.key,
     required this.flow,
     required this.icon,
+    required this.leading,
     required this.headline,
     required this.message,
     required this.fieldLabel,
@@ -240,16 +252,17 @@ class _EditingBody extends StatelessWidget {
       children: [
         Row(
           children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: accent.withValues(alpha: 0.10),
-                shape: BoxShape.circle,
-              ),
-              alignment: Alignment.center,
-              child: Icon(icon, size: 21, color: accent),
-            ),
+            leading ??
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: accent.withValues(alpha: 0.10),
+                    shape: BoxShape.circle,
+                  ),
+                  alignment: Alignment.center,
+                  child: AppIcon(icon, size: 21, color: accent),
+                ),
             const SizedBox(width: 14),
             // Capped and clipped: a headline is an account, and an account is
             // "iCloud (vorname.nachname@example.com)" often enough that letting

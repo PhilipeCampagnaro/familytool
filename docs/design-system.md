@@ -137,94 +137,84 @@ Flutter-drawn blur+tint approximation everywhere else.
   `CollapsingScreenTitle`) are therefore a `Stack` with the title as a `Positioned.fill` layer
   painted *first* and the buttons `Align`ed on top.
 
-## `GlassIconTile` (`icon_tile.dart`) — the round tile under a Lucide glyph
+## Icons: duotone for labels, flat for controls (`app_icons.dart`)
 
-The disc every settings row's icon sits on. It replaced the flat `surfaceAlt` circle that four
-places drew by hand, and it is **drawn, not a `GlassSurface`** — three reasons, all of which bite
-in a list:
+The set is Phosphor Duotone and you draw one with `AppIcon`, never `Icon` — a duotone glyph is two
+codepoints stacked with the lower one faded, so a bare `Icon` renders half of it. Two rules decide
+whether the second layer is drawn at all.
 
-- **A platform view per row is the wrong shape of thing.** `GlassSurface` on iOS is a real
-  `UIGlassEffect`, which composites *above* everything Flutter paints — a tile scrolling toward a
-  collapsing header would slide over the frosted bar instead of under it, and one Settings page
-  would carry eight of them.
-- **There is nothing behind it to refract.** The row sits on a flat white `SectionCard`; real glass
-  sampling a solid colour returns that solid colour. Every cue has to be painted.
-- **No `BackdropFilter`, so no `saveLayer` per row** — it would cost a layer each to blur white
-  into white.
+**By role.** An icon that *names* a thing keeps its duotone: a settings row, a menu row, a list, a
+box, an empty state, a masthead. An icon that *is* the control you press is flat: the glyph on a
+glass button, a segment of a segmented control, the check-off, a swipe action, the nav pill, a
+disclosure caret. A control is small and often sits on a filled or frosted ground where a
+26%-opacity under-layer has nothing to read against — but the deciding reason is that a duotone
+glyph is a little picture and a button is not one. The button's own material already supplies the
+mass; the glyph only has to say which button it is.
 
-Drawing it is also what makes it **identical on Android**: no platform view, no backdrop filter,
-nothing that resolves differently per OS.
+That is `AppIcon.flat`, and it is set **inside the control widgets**, not by their callers, so a
+button is flat wherever it is used and nobody has to remember.
 
-What actually sells it, in order of how much each contributes:
+**Flat means Phosphor's Regular weight**, from a second vendored font, not the duotone with its
+under-layer switched off. Those are not the same drawing. The duotone `caret-right` is a hollow
+*triangle*; the regular one is the thin *chevron* a disclosure row wants. `arrow-right` differs the
+same way, and the duotone `check` is shrunk to fit inside its placeholder box, so used alone it
+comes out visibly small. Most glyphs *are* identical across the two weights, but "most" is not
+something a button should depend on, so `_regular` maps every glyph to its regular twin.
 
-- **The bevel *inside* the rim, not an outline on it.** Both earlier light versions drew an
-  outline — first accent, then grey — and glass has no outline. What it has is a bright band just
-  inside the edge, where the material is thickest and light bends through and concentrates. That is
-  the most recognisable thing about Apple's material, and it is the whole difference between
-  reading as a bordered circle and reading as a lens: an edge drawn *on* the boundary says "shape",
-  an edge drawn just *inside* it says "thickness". Light therefore takes **two rings** — a whisper
-  of dark contour on the boundary to seat it on a white card, and the bright white bevel inside it.
-  Dark needs only the one bright ring.
-- **The glyph's colour bleeds into the material around it** — a short-range radial in the tone,
-  centred on the icon. Glass over a coloured thing picks that colour up and spreads it, and it is
-  most of what makes the material look wet rather than frosted. On light it also does a structural
-  job: the tone arrives from the *content*, which is what lets the fill stay the near-clear
-  off-white the bevel needs to show up against. That order is the honest one anyway — a clear
-  material coloured by what's inside it, not a coloured material. It wants **less than it seems
-  to**, and light takes about a third of dark's (0.055 against 0.16, over a shorter range): on dark
-  it's a glow on a dark body and can carry, but on light it lands on an already-tinted body and the
-  two stack, so it pooled behind the glyph and muddied it.
-- **The body stays pale.** The obvious "deep tint + white highlight" version is a row of coloured
-  buttons at 34pt, and the accent glyph loses contrast against its own colour.
-- **The far edge goes *deeper*, not brighter** — glass is thicker seen at an angle. Without it the
-  tile reads as a flat coloured circle.
-- **The glyph is painted between the two passes** (`painter` under, `foregroundPainter` over), so
-  it sits *in* the lens rather than stamped on it — but **only the rim may go over it.** The
-  specular started out over the glyph too, on the same "the icon is under the glass" reasoning, and
-  it cost the icon its edges: even aimed at the upper-left rim it laid 42% white over the glyph's
-  upper-left and 21% over its centre, and a Lucide stroke is ~1.5pt at 34/17, so it went visibly
-  soft. The rim is the only pass that never overlaps the glyph — it sits at `r`, the glyph reaches
-  `size * 0.25` — so it's the only one that can safely go last. The specular now paints under the
-  icon, where it still lightens the fill and the lens still reads lit.
+**By glyph.** Fourteen bare marks are flat everywhere regardless — `check`, `x`, `plus`, `minus`,
+`dotsThreeVertical`, four arrows and five carets — because Phosphor has no honest duotone for
+them. A mark has only itself, so the set gives it either a placeholder rounded rectangle around
+its bounding box (which read as a check *inside a box* on the sheet's confirm button) or a solid
+copy of itself with only the outline on top (which turned every disclosure chevron into a hollow
+triangle). They have no entry in `_underLayers`, and the absence *is* the mechanism — it routes
+them down the same path as a control, so they come out of the Regular font. Do not add one. Note this is a judgement and not a rule a script can apply: `laptop`, `monitor`, `signOut`,
+`batteryCharging`, `gasPump`, `headphones`, `iceCream` and `recycle` all have rounded-rect
+under-layers too, and in each of those the rectangle is a screen, a door, a battery body.
 
-**Dark shipped looking right and light shipped looking like a plastic ball**, and the three fixes
-are worth knowing before tuning any of it:
+## `GlyphTile` (`glyph_tile.dart`) — the square a settings glyph sits in
 
-- **The rims are lit from opposite corners.** On dark, white catches the upper-left edge under the
-  specular, so one light source explains both. On light, white at the boundary has nowhere to
-  show — a white rim on a near-white fill on a *white card* is invisible, which is what left the
-  first version with no crisp edge at all. Light's two rings split the job instead: the dark
-  contour is strongest at the **lower-right** (the far edge, where thickness darkens it) and the
-  bright bevel at the **upper-left** (under the specular). Both asymmetric, in opposite directions,
-  which is the lighting being consistent rather than an inconsistency.
-- **The contour is near-neutral, not the tone, and faint.** A rim in the accent is one more blue
-  thing around a blue fill under a blue glyph — the tile came out monochrome-blue. It leans 18%
-  toward the tone only so it doesn't go flatly grey against the fill it encloses. Its alphas are
-  about half what the accent rim used, and a fifth of the grey outline that briefly replaced it: it
-  is no longer drawing the circle, only settling it onto the card.
-- **The shadow must be neutral on light.** A tone-coloured shadow is really just black on dark, but
-  on white it put a blue halo around every tile — a soft coloured glow around a soft coloured fill
-  is exactly how a shaded sphere is drawn. It's `AppColors.ink` at ~5%, and tighter, since on white
-  the rim does the separating.
-- **Light's fill ramps about half as far** (0.90 → 0.83, against dark's 0.74 → 0.90). A fill that
-  travels from near-white to a solid mid-tone *is* a shaded sphere, and no amount of rim work reads
-  as glass on top of one.
+Reserves the footprint and centres an `AppIcon` in it. Nothing else: no fill, no rim, no shadow.
+The glyph defaults to `size * 0.66` and to `AppColors.ink`; `tone` tints it to the thing it
+belongs to. Reads a token in `build`, so **never `const`-construct it**.
 
-`tone` defaults to the accent — pass a colour to tint a tile to the thing it belongs to (a box's
-tone, a list's brand colour) as this rolls out past Settings. Reads tokens in `build`, so **never
-`const`-construct it**.
+**Not `IconTile` (`icon_picker.dart`)**, which is the other half of a confusing pair of names:
+that one is handed an `iconKey` string and works out whether it names a merchant logo, a grocery
+photograph or a symbol, and it draws the disc behind it. `GlyphTile` is handed the glyph already.
+
+### This was a glass lens, and the duotone icons took its job
+
+It used to be `GlassIconTile`: a painted glass disc — a near-clear tinted body, the glyph's own
+colour bleeding into it, thickness shading at the far edge, a specular, and a bright bevel just
+inside the rim, with the glyph painted *between* the passes so it read as sitting inside the
+material. It was carefully built and it is gone, because everything it was doing was giving a flat
+stroke icon some depth and some weight on a white card, and a Phosphor duotone glyph brings its
+own. The under-layer is already a mass behind the strokes. Inside a lit disc the two cues argued
+over 34 points — the lens saying "lit object", the glyph saying "flat shape with a shadow in it" —
+and neither won.
+
+Two things from building it are worth keeping, because they generalise past the widget:
+
+- **An edge drawn *on* a boundary says "shape"; an edge drawn just *inside* it says "thickness".**
+  That is the whole difference between a bordered circle and a lens, and it is the most
+  recognisable thing about Apple's material. Both earlier attempts drew an outline — first accent,
+  then grey — and both read as a bordered circle.
+- **A treatment that overlaps a glyph costs the glyph its edges.** The specular was painted over
+  the icon on "the icon is under the glass" reasoning; even aimed at the upper-left rim it laid 42%
+  white over the glyph's upper-left and 21% over its centre, and at 34/17 a stroke is about 1.5pt,
+  so it went visibly soft. Anything drawn over an icon has to be checked against the icon, not
+  against the tile.
 
 ### When a row uses `IconTile` instead
 
-`SettingsRow`'s `icon:` parameter draws a `GlassIconTile`, and that is the default for a settings
-list. The event sheet's two link cards pass `leading:` with a plain `IconTile` instead
-(`_LinkTile` in `event_detail_sheet.dart`), for two reasons that generalise:
+`SettingsRow`'s `icon:` parameter draws a `GlyphTile`, and that is the default for a settings list.
+The event sheet's two link cards pass `leading:` with an `IconTile` instead (`_LinkTile` in
+`event_detail_sheet.dart`), for two reasons that generalise:
 
 - **The rows carry containers the user already knows by their own symbol.** A list draws a shop
-  logo or a grocery picture in Listen; giving it an accent lens here would make the same list look
-  like two different things in two places.
-- **Five accent lenses over two adjacent cards is the loudest thing on the sheet**, which is a
-  column of white cards over the day.
+  logo or a grocery picture in Listen; giving it a bare settings glyph here would make the same
+  list look like two different things in two places.
+- **The sheet is a column of white cards over a photograph of the day**, and a row of loose glyphs
+  has nothing separating it from the picture behind.
 
 Inside those cards the fill carries one distinction — grey `surfaceAlt` for something that exists,
 white `surface` for a row that creates one — via `IconTile.background`. That override exists for
@@ -396,7 +386,7 @@ Non-obvious bits, each one a bug that shipped first:
     measured bar height, because Kalender's "Heute" button hangs off the same centre line from a
     different subtree.
   - Flutter-drawn controls on that row take their icons through `navRowIcon` — Cupertino glyphs
-    on iOS, the handoff's Lucide ones elsewhere. The iOS bar draws real SF Symbols, so a Lucide
+    on iOS, the handoff's own ones elsewhere. The iOS bar draws real SF Symbols, so an app-set
     calendar in the button that replaces it reads as a second, subtly different calendar.
   - Scrolling screens must pad their last row clear of whichever bar is up: use
     `navContentInset(context)`, with the `pill:` argument for the non-iOS clearance. Same helper
@@ -560,7 +550,18 @@ Non-obvious bits, each one a bug that shipped first:
   sheet stays open (the X goes away — the request wouldn't be cancelled by closing), then a short
   `ConfirmationView` beat (~1.1s) before it pops `true`; throwing keeps it open with the message
   under the field so the typing isn't lost. It used to be the shared last step of all six connect
-  flows, which is why it looks like one — those now have that step inside their own sheet.
+  flows, which is why it looks like one — those now have that step inside their own sheet. It
+  takes an `icon` **or** a `leading` widget: a subject that has a face of its own puts that face at
+  the head of the sheet instead of a glyph in a tinted circle.
+- `FamilyAvatarButton` (`family_avatar_button.dart`) — the household's picture, or its initials on
+  the tone derived from its id, plus the camera badge an admin taps to change it. Drawn in two
+  places that both edit it: the leading slot of the family-name row, and the rename sheet that row
+  opens (which used to show a house glyph — a family is people, and the face it already had was one
+  tap away without being drawn). Its menu goes through `showPictureMenu(includeSymbol: false)`, so
+  it is the system's own action sheet first and the dropdown only as a fallback — which is what
+  makes it safe to open from inside a sheet whose header carries native glass buttons. `ringColor`
+  is what the badge is ringed against: the card's surface on the page, `AppColors.screenBg` in the
+  sheet.
 - `SettingsRow`'s built-in icon tile is a **circle**, not a squircle (`settings_chrome.dart`) —
   the rows that carry a logo (calendar providers) or a face (family members) can only be round,
   and a settings list mixing both shapes reads as two lists.
@@ -655,7 +656,7 @@ Non-obvious bits, each one a bug that shipped first:
   `navContentInset`, not the screen edge — on iOS the native tab bar composites over anything
   Flutter paints, so a menu reaching under it is simply cut off. `AnchoredMenuItem.onSelected`
   runs *after* the menu has closed, so an action that opens a sheet isn't animating in behind it.
-  A row carries either a Lucide `icon` or an `svgAsset` (a brand mark from `assets/`, via
+  A row carries either an `icon` or an `svgAsset` (a brand mark from `assets/`, via
   `flutter_svg`) — **the SVG is tinted to the row's own colour** with a `srcIn` `ColorFilter`, not
   left full-colour: a menu row is a label, and a lone colour logo is then the one thing shouting
   on a monochrome list. Labels are bare nouns ("Foto", not "Foto hinzufügen") — every row is
@@ -666,10 +667,12 @@ Non-obvious bits, each one a bug that shipped first:
   `RowMenuButton` is a bare 15px glyph sized for a list row.
 - `IconTile` / `IconFieldRow` / `showIconPicker` / `IconDraft` (`icon_picker.dart`) — the one place
   a list/box/item icon is **drawn** and the one place it is **chosen**. Both sides speak the same
-  `iconKey` string from `data/icon_suggestions.dart`: an `assets/` path or `lucide:<name>`.
+  `iconKey` string from `data/icon_suggestions.dart`: an `assets/` path or `lucide:<name>` — a
+  key format frozen by the rows already in the database, not a statement about which icon set the
+  app draws (that is Phosphor Duotone; see `lib/theme/app_icons.dart`).
   - `IconTile` splits on *what kind of art it is*, not on taste: a shop logo or grocery picture is
     full-colour art drawn for a light background, so it gets the white `brandTile` disc in both
-    palettes; a Lucide glyph is line art in the theme's own ink, so it sits on `surfaceAlt`. Its
+    palettes; a symbol glyph is line art in the theme's own ink, so it sits on `surfaceAlt`. Its
     `IconImage` bounds the decode with `cacheWidth` — the picker puts 160 full-size logo PNGs on
     screen at once.
   - `showIconPicker` is a `showAppSheet` with a **custom header**: X + title, no save check, since

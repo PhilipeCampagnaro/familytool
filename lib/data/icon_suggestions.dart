@@ -23,17 +23,24 @@
 library;
 
 import 'package:flutter/widgets.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../l10n/l10n.dart';
 import 'grocery_catalog.dart';
 import 'grocery_search.dart';
 import 'merchant_logos.dart';
+import '../theme/app_icons.dart';
 
 /// Prefix that marks a stored icon as a Lucide glyph rather than an asset path.
 /// Both live in the same `iconKey` field: a key either starts with this or is a
 /// path under `assets/`, and nothing else is valid.
-const lucideIconPrefix = 'lucide:';
+/// The prefix on a stored symbol key.
+///
+/// **The value stays `'lucide:'` even though the drawings are Phosphor now.**
+/// It is on rows in `lists`, `boxes` and `tasks` that families wrote before the
+/// swap, so it is a wire format, not a name — changing it would orphan every
+/// icon anybody has ever chosen. Only the *drawing* behind a key changed; the
+/// key itself, `lucide:pencil`, still resolves and always will.
+const symbolIconPrefix = 'lucide:';
 
 /// What is being named, and therefore which of the three catalogs its icon may
 /// come from. One value per *thing the user is looking at*, rather than a set of
@@ -107,8 +114,11 @@ class IconChoice {
 
 /// A Lucide glyph with the German name it answers to.
 class SymbolIcon {
-  /// The Lucide icon's own name — the tail of the stored key, so a key survives
-  /// being written to a database and read back.
+  /// The symbol's stable name — the tail of the stored key, so a key survives
+  /// being written to a database and read back. These are the *Lucide* names
+  /// the app was first built on, and they stay that way for the reason
+  /// [symbolIconPrefix] does: they are already in the database. The [glyph]
+  /// beside each one is Phosphor.
   final String name;
 
   /// German label.
@@ -127,7 +137,7 @@ class SymbolIcon {
 
   const SymbolIcon(this.name, this.de, this.en, this.glyph, [this.alias = const []]);
 
-  String get key => '$lucideIconPrefix$name';
+  String get key => '$symbolIconPrefix$name';
 
   /// What the picker shows and what the "Symbol" row reads.
   String get label => L.s.localeCode == 'en' ? en : de;
@@ -156,137 +166,137 @@ class SymbolGroup {
 /// in two of them would be two hits for one thing.
 const symbolGroups = <SymbolGroup>[
   SymbolGroup('Einkauf', 'Shopping', [
-    SymbolIcon('shoppingCart', 'Einkauf', 'Shopping', LucideIcons.shoppingCart, ['einkaufen', 'einkaufswagen', 'supermarkt', 'lebensmittel', 'shopping', 'groceries']),
-    SymbolIcon('shoppingBasket', 'Einkaufskorb', 'Shopping basket', LucideIcons.shoppingBasket, ['korb', 'basket']),
-    SymbolIcon('shoppingBag', 'Einkaufstasche', 'Shopping bag', LucideIcons.shoppingBag, ['tasche', 'tuete', 'bag']),
-    SymbolIcon('store', 'Laden', 'Shop', LucideIcons.store, ['geschaeft', 'shop', 'markt', 'store', 'kiosk']),
-    SymbolIcon('package', 'Paket', 'Parcel', LucideIcons.package, ['pakete', 'lieferung', 'bestellung', 'versand', 'delivery']),
-    SymbolIcon('tag', 'Angebot', 'Offer', LucideIcons.tag, ['preis', 'preisschild', 'rabatt', 'sale']),
-    SymbolIcon('creditCard', 'Karte', 'Card', LucideIcons.creditCard, ['bezahlen', 'kreditkarte', 'zahlung', 'card']),
-    SymbolIcon('wallet', 'Geldbeutel', 'Wallet', LucideIcons.wallet, ['portemonnaie', 'geldboerse', 'wallet']),
-    SymbolIcon('receipt', 'Kassenbon', 'Receipt', LucideIcons.receipt, ['quittung', 'beleg', 'rechnung', 'receipt']),
-    SymbolIcon('banknote', 'Geld', 'Money', LucideIcons.banknote, ['budget', 'bargeld', 'kasse', 'money', 'cash']),
-    SymbolIcon('barcode', 'Barcode', 'Barcode', LucideIcons.barcode, ['strichcode', 'scannen']),
+    SymbolIcon('shoppingCart', 'Einkauf', 'Shopping', AppIcons.shoppingCart, ['einkaufen', 'einkaufswagen', 'supermarkt', 'lebensmittel', 'shopping', 'groceries']),
+    SymbolIcon('shoppingBasket', 'Einkaufskorb', 'Shopping basket', AppIcons.basket, ['korb', 'basket']),
+    SymbolIcon('shoppingBag', 'Einkaufstasche', 'Shopping bag', AppIcons.shoppingBag, ['tasche', 'tuete', 'bag']),
+    SymbolIcon('store', 'Laden', 'Shop', AppIcons.storefront, ['geschaeft', 'shop', 'markt', 'store', 'kiosk']),
+    SymbolIcon('package', 'Paket', 'Parcel', AppIcons.package, ['pakete', 'lieferung', 'bestellung', 'versand', 'delivery']),
+    SymbolIcon('tag', 'Angebot', 'Offer', AppIcons.tag, ['preis', 'preisschild', 'rabatt', 'sale']),
+    SymbolIcon('creditCard', 'Karte', 'Card', AppIcons.creditCard, ['bezahlen', 'kreditkarte', 'zahlung', 'card']),
+    SymbolIcon('wallet', 'Geldbeutel', 'Wallet', AppIcons.wallet, ['portemonnaie', 'geldboerse', 'wallet']),
+    SymbolIcon('receipt', 'Kassenbon', 'Receipt', AppIcons.receipt, ['quittung', 'beleg', 'rechnung', 'receipt']),
+    SymbolIcon('banknote', 'Geld', 'Money', AppIcons.money, ['budget', 'bargeld', 'kasse', 'money', 'cash']),
+    SymbolIcon('barcode', 'Barcode', 'Barcode', AppIcons.barcode, ['strichcode', 'scannen']),
   ]),
   SymbolGroup('Haushalt', 'Household', [
-    SymbolIcon('house', 'Haus', 'House', LucideIcons.house, ['zuhause', 'wohnung', 'haushalt', 'home', 'heim']),
-    SymbolIcon('sofa', 'Wohnzimmer', 'Living room', LucideIcons.sofa, ['sofa', 'couch', 'moebel', 'einrichtung', 'furniture']),
-    SymbolIcon('bedDouble', 'Schlafzimmer', 'Bedroom', LucideIcons.bedDouble, ['bett', 'betten', 'bed']),
-    SymbolIcon('bath', 'Bad', 'Bathroom', LucideIcons.bath, ['badezimmer', 'baden', 'dusche', 'bathroom']),
-    SymbolIcon('lamp', 'Lampe', 'Lamp', LucideIcons.lamp, ['licht', 'leuchte', 'beleuchtung', 'light']),
-    SymbolIcon('doorOpen', 'Tür', 'Door', LucideIcons.doorOpen, ['tueren', 'eingang', 'door']),
-    SymbolIcon('keyRound', 'Schlüssel', 'Key', LucideIcons.keyRound, ['schluessel', 'key']),
-    SymbolIcon('washingMachine', 'Wäsche', 'Laundry', LucideIcons.washingMachine, ['waschen', 'waschmaschine', 'waschkueche', 'laundry']),
-    SymbolIcon('sprayCan', 'Drogerie', 'Toiletries', LucideIcons.sprayCan, ['putzen', 'putzmittel', 'reinigung', 'haushaltswaren', 'cleaning']),
-    SymbolIcon('trash2', 'Müll', 'Rubbish', LucideIcons.trash2, ['abfall', 'entsorgen', 'trash']),
-    SymbolIcon('plug', 'Strom', 'Electricity', LucideIcons.plug, ['steckdose', 'stecker', 'energie']),
-    SymbolIcon('droplets', 'Wasser', 'Water', LucideIcons.droplets, ['water']),
+    SymbolIcon('house', 'Haus', 'House', AppIcons.house, ['zuhause', 'wohnung', 'haushalt', 'home', 'heim']),
+    SymbolIcon('sofa', 'Wohnzimmer', 'Living room', AppIcons.couch, ['sofa', 'couch', 'moebel', 'einrichtung', 'furniture']),
+    SymbolIcon('bedDouble', 'Schlafzimmer', 'Bedroom', AppIcons.bed, ['bett', 'betten', 'bed']),
+    SymbolIcon('bath', 'Bad', 'Bathroom', AppIcons.bathtub, ['badezimmer', 'baden', 'dusche', 'bathroom']),
+    SymbolIcon('lamp', 'Lampe', 'Lamp', AppIcons.lamp, ['licht', 'leuchte', 'beleuchtung', 'light']),
+    SymbolIcon('doorOpen', 'Tür', 'Door', AppIcons.doorOpen, ['tueren', 'eingang', 'door']),
+    SymbolIcon('keyRound', 'Schlüssel', 'Key', AppIcons.key, ['schluessel', 'key']),
+    SymbolIcon('washingMachine', 'Wäsche', 'Laundry', AppIcons.washingMachine, ['waschen', 'waschmaschine', 'waschkueche', 'laundry']),
+    SymbolIcon('sprayCan', 'Drogerie', 'Toiletries', AppIcons.sprayBottle, ['putzen', 'putzmittel', 'reinigung', 'haushaltswaren', 'cleaning']),
+    SymbolIcon('trash2', 'Müll', 'Rubbish', AppIcons.trash, ['abfall', 'entsorgen', 'trash']),
+    SymbolIcon('plug', 'Strom', 'Electricity', AppIcons.plug, ['steckdose', 'stecker', 'energie']),
+    SymbolIcon('droplets', 'Wasser', 'Water', AppIcons.drop, ['water']),
   ]),
   SymbolGroup('Werkzeug & Bau', 'Tools & DIY', [
-    SymbolIcon('hammer', 'Werkzeug', 'Tools', LucideIcons.hammer, ['hammer', 'reparatur', 'reparieren', 'basteln', 'tools']),
-    SymbolIcon('wrench', 'Schrauben', 'Spanner', LucideIcons.wrench, ['schraubenschluessel', 'montage', 'wrench']),
-    SymbolIcon('drill', 'Bohrmaschine', 'Drill', LucideIcons.drill, ['bohren', 'bohrer', 'akkuschrauber', 'drill']),
-    SymbolIcon('hardHat', 'Baumarkt', 'DIY store', LucideIcons.hardHat, ['baustelle', 'bau', 'handwerk', 'renovierung', 'renovieren', 'umbau']),
-    SymbolIcon('paintRoller', 'Streichen', 'Decorating', LucideIcons.paintRoller, ['farbe', 'malern', 'anstrich', 'tapete', 'paint']),
-    SymbolIcon('ruler', 'Messen', 'Measuring', LucideIcons.ruler, ['massband', 'zollstock', 'lineal', 'ruler']),
+    SymbolIcon('hammer', 'Werkzeug', 'Tools', AppIcons.hammer, ['hammer', 'reparatur', 'reparieren', 'basteln', 'tools']),
+    SymbolIcon('wrench', 'Schrauben', 'Spanner', AppIcons.wrench, ['schraubenschluessel', 'montage', 'wrench']),
+    SymbolIcon('drill', 'Bohrmaschine', 'Drill', AppIcons.screwdriver, ['bohren', 'bohrer', 'akkuschrauber', 'drill']),
+    SymbolIcon('hardHat', 'Baumarkt', 'DIY store', AppIcons.hardHat, ['baustelle', 'bau', 'handwerk', 'renovierung', 'renovieren', 'umbau']),
+    SymbolIcon('paintRoller', 'Streichen', 'Decorating', AppIcons.paintRoller, ['farbe', 'malern', 'anstrich', 'tapete', 'paint']),
+    SymbolIcon('ruler', 'Messen', 'Measuring', AppIcons.ruler, ['massband', 'zollstock', 'lineal', 'ruler']),
   ]),
   SymbolGroup('Garten', 'Garden', [
-    SymbolIcon('sprout', 'Garten', 'Garden', LucideIcons.sprout, ['gaertnern', 'gartenarbeit', 'pflanzen', 'saat', 'beet', 'garden']),
-    SymbolIcon('flower2', 'Blumen', 'Flowers', LucideIcons.flower2, ['blume', 'strauss', 'flower']),
-    SymbolIcon('treeDeciduous', 'Baum', 'Tree', LucideIcons.treeDeciduous, ['baeume', 'hecke', 'tree']),
-    SymbolIcon('leaf', 'Pflanze', 'Plant', LucideIcons.leaf, ['blatt', 'gruen', 'plant']),
-    SymbolIcon('shovel', 'Schaufel', 'Spade', LucideIcons.shovel, ['graben', 'spaten', 'shovel']),
+    SymbolIcon('sprout', 'Garten', 'Garden', AppIcons.plant, ['gaertnern', 'gartenarbeit', 'pflanzen', 'saat', 'beet', 'garden']),
+    SymbolIcon('flower2', 'Blumen', 'Flowers', AppIcons.flower, ['blume', 'strauss', 'flower']),
+    SymbolIcon('treeDeciduous', 'Baum', 'Tree', AppIcons.tree, ['baeume', 'hecke', 'tree']),
+    SymbolIcon('leaf', 'Pflanze', 'Plant', AppIcons.leaf, ['blatt', 'gruen', 'plant']),
+    SymbolIcon('shovel', 'Schaufel', 'Spade', AppIcons.shovel, ['graben', 'spaten', 'shovel']),
   ]),
   SymbolGroup('Feiern & Feste', 'Celebrations', [
-    SymbolIcon('cake', 'Geburtstag', 'Birthday', LucideIcons.cake, ['kuchen', 'torte', 'birthday', 'feier']),
-    SymbolIcon('partyPopper', 'Party', 'Party', LucideIcons.partyPopper, ['fest', 'feiern', 'silvester', 'jubilaeum', 'party']),
-    SymbolIcon('gift', 'Geschenk', 'Gift', LucideIcons.gift, ['geschenke', 'praesent', 'gift', 'wunschliste']),
-    SymbolIcon('treePine', 'Weihnachten', 'Christmas', LucideIcons.treePine, ['weihnacht', 'advent', 'tannenbaum', 'christmas', 'xmas', 'nikolaus']),
-    SymbolIcon('egg', 'Ostern', 'Easter', LucideIcons.egg, ['osterfest', 'easter']),
-    SymbolIcon('sparkles', 'Deko', 'Decorations', LucideIcons.sparkles, ['dekoration', 'schmuck', 'glitzer']),
-    SymbolIcon('music', 'Musik', 'Music', LucideIcons.music, ['lieder', 'konzert', 'music']),
+    SymbolIcon('cake', 'Geburtstag', 'Birthday', AppIcons.cake, ['kuchen', 'torte', 'birthday', 'feier']),
+    SymbolIcon('partyPopper', 'Party', 'Party', AppIcons.confetti, ['fest', 'feiern', 'silvester', 'jubilaeum', 'party']),
+    SymbolIcon('gift', 'Geschenk', 'Gift', AppIcons.gift, ['geschenke', 'praesent', 'gift', 'wunschliste']),
+    SymbolIcon('treePine', 'Weihnachten', 'Christmas', AppIcons.treeEvergreen, ['weihnacht', 'advent', 'tannenbaum', 'christmas', 'xmas', 'nikolaus']),
+    SymbolIcon('egg', 'Ostern', 'Easter', AppIcons.egg, ['osterfest', 'easter']),
+    SymbolIcon('sparkles', 'Deko', 'Decorations', AppIcons.sparkle, ['dekoration', 'schmuck', 'glitzer']),
+    SymbolIcon('music', 'Musik', 'Music', AppIcons.musicNotes, ['lieder', 'konzert', 'music']),
   ]),
   SymbolGroup('Essen & Trinken', 'Food & drink', [
-    SymbolIcon('utensils', 'Essen', 'Meals', LucideIcons.utensils, ['restaurant', 'mittag', 'abendessen', 'speiseplan', 'menue', 'food']),
-    SymbolIcon('cookingPot', 'Kochen', 'Cooking', LucideIcons.cookingPot, ['topf', 'rezept', 'rezepte', 'kueche', 'cooking']),
-    SymbolIcon('coffee', 'Kaffee', 'Coffee', LucideIcons.coffee, ['cafe', 'tee', 'coffee']),
-    SymbolIcon('wine', 'Wein', 'Wine', LucideIcons.wine, ['wine']),
-    SymbolIcon('beer', 'Bier', 'Beer', LucideIcons.beer, ['beer']),
-    SymbolIcon('pizza', 'Pizza', 'Pizza', LucideIcons.pizza, ['italienisch']),
-    SymbolIcon('iceCreamCone', 'Eis', 'Ice cream', LucideIcons.iceCreamCone, ['eiscreme', 'icecream']),
-    SymbolIcon('flame', 'Grillen', 'Barbecue', LucideIcons.flame, ['grill', 'feuer', 'kamin', 'bbq']),
+    SymbolIcon('utensils', 'Essen', 'Meals', AppIcons.forkKnife, ['restaurant', 'mittag', 'abendessen', 'speiseplan', 'menue', 'food']),
+    SymbolIcon('cookingPot', 'Kochen', 'Cooking', AppIcons.cookingPot, ['topf', 'rezept', 'rezepte', 'kueche', 'cooking']),
+    SymbolIcon('coffee', 'Kaffee', 'Coffee', AppIcons.coffee, ['cafe', 'tee', 'coffee']),
+    SymbolIcon('wine', 'Wein', 'Wine', AppIcons.wine, ['wine']),
+    SymbolIcon('beer', 'Bier', 'Beer', AppIcons.beerStein, ['beer']),
+    SymbolIcon('pizza', 'Pizza', 'Pizza', AppIcons.pizza, ['italienisch']),
+    SymbolIcon('iceCreamCone', 'Eis', 'Ice cream', AppIcons.iceCream, ['eiscreme', 'icecream']),
+    SymbolIcon('flame', 'Grillen', 'Barbecue', AppIcons.flame, ['grill', 'feuer', 'kamin', 'bbq']),
   ]),
   SymbolGroup('Familie', 'Family', [
-    SymbolIcon('users', 'Familie', 'Family', LucideIcons.users, ['alle', 'gruppe', 'family', 'eltern']),
-    SymbolIcon('user', 'Person', 'Person', LucideIcons.user, ['ich', 'profil', 'person']),
-    SymbolIcon('baby', 'Baby', 'Baby', LucideIcons.baby, ['kind', 'kinder', 'saeugling', 'wickeln']),
-    SymbolIcon('graduationCap', 'Schule', 'School', LucideIcons.graduationCap, ['schulsachen', 'lernen', 'uni', 'kita', 'hausaufgaben', 'school']),
-    SymbolIcon('pawPrint', 'Haustier', 'Pet', LucideIcons.pawPrint, ['tier', 'hund', 'katze', 'tierbedarf', 'pet']),
-    SymbolIcon('heart', 'Liebe', 'Love', LucideIcons.heart, ['lieblings', 'favoriten', 'heart']),
-    SymbolIcon('briefcase', 'Arbeit', 'Work', LucideIcons.briefcase, ['buero', 'job', 'beruf', 'work']),
+    SymbolIcon('users', 'Familie', 'Family', AppIcons.users, ['alle', 'gruppe', 'family', 'eltern']),
+    SymbolIcon('user', 'Person', 'Person', AppIcons.user, ['ich', 'profil', 'person']),
+    SymbolIcon('baby', 'Baby', 'Baby', AppIcons.baby, ['kind', 'kinder', 'saeugling', 'wickeln']),
+    SymbolIcon('graduationCap', 'Schule', 'School', AppIcons.graduationCap, ['schulsachen', 'lernen', 'uni', 'kita', 'hausaufgaben', 'school']),
+    SymbolIcon('pawPrint', 'Haustier', 'Pet', AppIcons.pawPrint, ['tier', 'hund', 'katze', 'tierbedarf', 'pet']),
+    SymbolIcon('heart', 'Liebe', 'Love', AppIcons.heart, ['lieblings', 'favoriten', 'heart']),
+    SymbolIcon('briefcase', 'Arbeit', 'Work', AppIcons.briefcase, ['buero', 'job', 'beruf', 'work']),
   ]),
   SymbolGroup('Gesundheit & Sport', 'Health & sport', [
-    SymbolIcon('pill', 'Apotheke', 'Pharmacy', LucideIcons.pill, ['medikamente', 'medikament', 'tabletten', 'medizin', 'pille']),
-    SymbolIcon('stethoscope', 'Arzt', 'Doctor', LucideIcons.stethoscope, ['doktor', 'praxis', 'termin', 'doctor']),
-    SymbolIcon('heartPulse', 'Gesundheit', 'Health', LucideIcons.heartPulse, ['vorsorge', 'health']),
-    SymbolIcon('syringe', 'Impfung', 'Vaccination', LucideIcons.syringe, ['spritze', 'impfen']),
-    SymbolIcon('bandage', 'Erste Hilfe', 'First aid', LucideIcons.bandage, ['pflaster', 'verband', 'verbandskasten']),
-    SymbolIcon('dumbbell', 'Sport', 'Sport', LucideIcons.dumbbell, ['fitness', 'training', 'sportsachen', 'gym']),
+    SymbolIcon('pill', 'Apotheke', 'Pharmacy', AppIcons.pill, ['medikamente', 'medikament', 'tabletten', 'medizin', 'pille']),
+    SymbolIcon('stethoscope', 'Arzt', 'Doctor', AppIcons.stethoscope, ['doktor', 'praxis', 'termin', 'doctor']),
+    SymbolIcon('heartPulse', 'Gesundheit', 'Health', AppIcons.heartbeat, ['vorsorge', 'health']),
+    SymbolIcon('syringe', 'Impfung', 'Vaccination', AppIcons.syringe, ['spritze', 'impfen']),
+    SymbolIcon('bandage', 'Erste Hilfe', 'First aid', AppIcons.bandaids, ['pflaster', 'verband', 'verbandskasten']),
+    SymbolIcon('dumbbell', 'Sport', 'Sport', AppIcons.barbell, ['fitness', 'training', 'sportsachen', 'gym']),
   ]),
   SymbolGroup('Reise & Auto', 'Travel & car', [
-    SymbolIcon('car', 'Auto', 'Car', LucideIcons.car, ['wagen', 'werkstatt', 'pkw', 'car']),
-    SymbolIcon('plane', 'Reise', 'Travel', LucideIcons.plane, ['urlaub', 'flug', 'flugzeug', 'ferien', 'travel']),
-    SymbolIcon('luggage', 'Koffer', 'Suitcase', LucideIcons.luggage, ['gepaeck', 'packliste', 'packen', 'reisetasche']),
-    SymbolIcon('trainFront', 'Zug', 'Train', LucideIcons.trainFront, ['bahn', 'train']),
-    SymbolIcon('bus', 'Bus', 'Bus', LucideIcons.bus, ['bus']),
-    SymbolIcon('bike', 'Fahrrad', 'Bicycle', LucideIcons.bike, ['rad', 'bike']),
-    SymbolIcon('fuel', 'Tanken', 'Fuel', LucideIcons.fuel, ['tankstelle', 'benzin', 'diesel', 'sprit']),
-    SymbolIcon('tent', 'Camping', 'Camping', LucideIcons.tent, ['zelt', 'campen', 'camping']),
-    SymbolIcon('ship', 'Schiff', 'Ship', LucideIcons.ship, ['faehre', 'boot', 'ship']),
-    SymbolIcon('mapPin', 'Ort', 'Place', LucideIcons.mapPin, ['adresse', 'karte', 'route', 'map']),
+    SymbolIcon('car', 'Auto', 'Car', AppIcons.car, ['wagen', 'werkstatt', 'pkw', 'car']),
+    SymbolIcon('plane', 'Reise', 'Travel', AppIcons.airplane, ['urlaub', 'flug', 'flugzeug', 'ferien', 'travel']),
+    SymbolIcon('luggage', 'Koffer', 'Suitcase', AppIcons.suitcaseRolling, ['gepaeck', 'packliste', 'packen', 'reisetasche']),
+    SymbolIcon('trainFront', 'Zug', 'Train', AppIcons.train, ['bahn', 'train']),
+    SymbolIcon('bus', 'Bus', 'Bus', AppIcons.bus, ['bus']),
+    SymbolIcon('bike', 'Fahrrad', 'Bicycle', AppIcons.bicycle, ['rad', 'bike']),
+    SymbolIcon('fuel', 'Tanken', 'Fuel', AppIcons.gasPump, ['tankstelle', 'benzin', 'diesel', 'sprit']),
+    SymbolIcon('tent', 'Camping', 'Camping', AppIcons.tent, ['zelt', 'campen', 'camping']),
+    SymbolIcon('ship', 'Schiff', 'Ship', AppIcons.boat, ['faehre', 'boot', 'ship']),
+    SymbolIcon('mapPin', 'Ort', 'Place', AppIcons.mapPin, ['adresse', 'karte', 'route', 'map']),
   ]),
   SymbolGroup('Kleidung', 'Clothing', [
-    SymbolIcon('shirt', 'Kleidung', 'Clothing', LucideIcons.shirt, ['klamotten', 'hemd', 'shirt', 'anziehsachen', 'clothes']),
-    SymbolIcon('footprints', 'Schuhe', 'Shoes', LucideIcons.footprints, ['schuh', 'stiefel', 'shoes']),
-    SymbolIcon('glasses', 'Brille', 'Glasses', LucideIcons.glasses, ['sehhilfe', 'glasses']),
-    SymbolIcon('watch', 'Uhr', 'Watch', LucideIcons.watch, ['armbanduhr', 'watch']),
-    SymbolIcon('umbrella', 'Regenschirm', 'Umbrella', LucideIcons.umbrella, ['schirm', 'regen', 'umbrella']),
+    SymbolIcon('shirt', 'Kleidung', 'Clothing', AppIcons.tShirt, ['klamotten', 'hemd', 'shirt', 'anziehsachen', 'clothes']),
+    SymbolIcon('footprints', 'Schuhe', 'Shoes', AppIcons.footprints, ['schuh', 'stiefel', 'shoes']),
+    SymbolIcon('glasses', 'Brille', 'Glasses', AppIcons.eyeglasses, ['sehhilfe', 'glasses']),
+    SymbolIcon('watch', 'Uhr', 'Watch', AppIcons.watch, ['armbanduhr', 'watch']),
+    SymbolIcon('umbrella', 'Regenschirm', 'Umbrella', AppIcons.umbrella, ['schirm', 'regen', 'umbrella']),
   ]),
   SymbolGroup('Technik', 'Tech', [
-    SymbolIcon('smartphone', 'Handy', 'Phone', LucideIcons.smartphone, ['telefon', 'mobil', 'phone']),
-    SymbolIcon('laptop', 'Laptop', 'Laptop', LucideIcons.laptop, ['notebook', 'computer', 'rechner']),
-    SymbolIcon('monitor', 'Bildschirm', 'Monitor', LucideIcons.monitor, ['pc', 'monitor']),
-    SymbolIcon('tv', 'Fernseher', 'TV', LucideIcons.tv, ['tv', 'fernsehen']),
-    SymbolIcon('headphones', 'Kopfhörer', 'Headphones', LucideIcons.headphones, ['kopfhoerer', 'headset']),
-    SymbolIcon('camera', 'Kamera', 'Camera', LucideIcons.camera, ['foto', 'fotos', 'bilder', 'camera']),
-    SymbolIcon('cable', 'Kabel', 'Cable', LucideIcons.cable, ['ladekabel', 'stecker', 'cable']),
-    SymbolIcon('batteryCharging', 'Batterien', 'Batteries', LucideIcons.batteryCharging, ['akku', 'batterie', 'laden', 'battery']),
-    SymbolIcon('gamepad2', 'Spiele', 'Games', LucideIcons.gamepad2, ['gaming', 'konsole', 'spielzeug', 'games']),
-    SymbolIcon('printer', 'Drucker', 'Printer', LucideIcons.printer, ['drucken', 'printer']),
+    SymbolIcon('smartphone', 'Handy', 'Phone', AppIcons.deviceMobile, ['telefon', 'mobil', 'phone']),
+    SymbolIcon('laptop', 'Laptop', 'Laptop', AppIcons.laptop, ['notebook', 'computer', 'rechner']),
+    SymbolIcon('monitor', 'Bildschirm', 'Monitor', AppIcons.monitor, ['pc', 'monitor']),
+    SymbolIcon('tv', 'Fernseher', 'TV', AppIcons.television, ['tv', 'fernsehen']),
+    SymbolIcon('headphones', 'Kopfhörer', 'Headphones', AppIcons.headphones, ['kopfhoerer', 'headset']),
+    SymbolIcon('camera', 'Kamera', 'Camera', AppIcons.camera, ['foto', 'fotos', 'bilder', 'camera']),
+    SymbolIcon('cable', 'Kabel', 'Cable', AppIcons.plugsConnected, ['ladekabel', 'stecker', 'cable']),
+    SymbolIcon('batteryCharging', 'Batterien', 'Batteries', AppIcons.batteryCharging, ['akku', 'batterie', 'laden', 'battery']),
+    SymbolIcon('gamepad2', 'Spiele', 'Games', AppIcons.gameController, ['gaming', 'konsole', 'spielzeug', 'games']),
+    SymbolIcon('printer', 'Drucker', 'Printer', AppIcons.printer, ['drucken', 'printer']),
   ]),
   SymbolGroup('Büro & Dokumente', 'Office & documents', [
-    SymbolIcon('fileText', 'Dokumente', 'Documents', LucideIcons.fileText, ['dokument', 'unterlagen', 'papiere', 'vertrag', 'zeugnis', 'documents']),
-    SymbolIcon('folder', 'Ordner', 'Folder', LucideIcons.folder, ['akten', 'mappe', 'folder']),
-    SymbolIcon('book', 'Bücher', 'Books', LucideIcons.book, ['buch', 'lesen', 'book']),
-    SymbolIcon('calendar', 'Termine', 'Events', LucideIcons.calendar, ['kalender', 'termin', 'calendar']),
-    SymbolIcon('mail', 'Post', 'Post', LucideIcons.mail, ['briefe', 'brief', 'mail']),
-    SymbolIcon('scissors', 'Schere', 'Scissors', LucideIcons.scissors, ['schneiden', 'scissors']),
-    SymbolIcon('palette', 'Malen', 'Art', LucideIcons.palette, ['kunst', 'hobby', 'farben', 'art']),
-    SymbolIcon('bell', 'Erinnerung', 'Reminder', LucideIcons.bell, ['erinnern', 'notiz', 'reminder']),
+    SymbolIcon('fileText', 'Dokumente', 'Documents', AppIcons.fileText, ['dokument', 'unterlagen', 'papiere', 'vertrag', 'zeugnis', 'documents']),
+    SymbolIcon('folder', 'Ordner', 'Folder', AppIcons.folder, ['akten', 'mappe', 'folder']),
+    SymbolIcon('book', 'Bücher', 'Books', AppIcons.book, ['buch', 'lesen', 'book']),
+    SymbolIcon('calendar', 'Termine', 'Events', AppIcons.calendar, ['kalender', 'termin', 'calendar']),
+    SymbolIcon('mail', 'Post', 'Post', AppIcons.envelope, ['briefe', 'brief', 'mail']),
+    SymbolIcon('scissors', 'Schere', 'Scissors', AppIcons.scissors, ['schneiden', 'scissors']),
+    SymbolIcon('palette', 'Malen', 'Art', AppIcons.palette, ['kunst', 'hobby', 'farben', 'art']),
+    SymbolIcon('bell', 'Erinnerung', 'Reminder', AppIcons.bell, ['erinnern', 'notiz', 'reminder']),
   ]),
   SymbolGroup('Aufbewahrung', 'Storage', [
-    SymbolIcon('box', 'Box', 'Box', LucideIcons.box, ['kiste', 'karton', 'behaelter']),
-    SymbolIcon('boxes', 'Umzug', 'Moving', LucideIcons.boxes, ['umziehen', 'kartons', 'kisten', 'moving']),
-    SymbolIcon('warehouse', 'Lager', 'Storage', LucideIcons.warehouse, ['keller', 'dachboden', 'garage', 'abstellraum', 'speicher', 'schuppen', 'lagerraum']),
-    SymbolIcon('archive', 'Archiv', 'Archive', LucideIcons.archive, ['aufbewahrung', 'aufbewahren', 'archiv']),
-    SymbolIcon('layers', 'Stapel', 'Stack', LucideIcons.layers, ['sortiert', 'schichten']),
+    SymbolIcon('box', 'Box', 'Box', AppIcons.package, ['kiste', 'karton', 'behaelter']),
+    SymbolIcon('boxes', 'Umzug', 'Moving', AppIcons.stack, ['umziehen', 'kartons', 'kisten', 'moving']),
+    SymbolIcon('warehouse', 'Lager', 'Storage', AppIcons.warehouse, ['keller', 'dachboden', 'garage', 'abstellraum', 'speicher', 'schuppen', 'lagerraum']),
+    SymbolIcon('archive', 'Archiv', 'Archive', AppIcons.archive, ['aufbewahrung', 'aufbewahren', 'archiv']),
+    SymbolIcon('layers', 'Stapel', 'Stack', AppIcons.stackSimple, ['sortiert', 'schichten']),
   ]),
   SymbolGroup('Jahreszeiten', 'Seasons', [
-    SymbolIcon('sun', 'Sommer', 'Summer', LucideIcons.sun, ['sonne', 'sonnig', 'summer']),
-    SymbolIcon('snowflake', 'Winter', 'Winter', LucideIcons.snowflake, ['schnee', 'kalt', 'winter']),
-    SymbolIcon('leafyGreen', 'Frühling', 'Spring', LucideIcons.leafyGreen, ['fruehling', 'spring']),
-    SymbolIcon('wind', 'Herbst', 'Autumn', LucideIcons.wind, ['wind', 'sturm', 'autumn']),
-    SymbolIcon('star', 'Favorit', 'Favourite', LucideIcons.star, ['stern', 'wichtig', 'star']),
+    SymbolIcon('sun', 'Sommer', 'Summer', AppIcons.sun, ['sonne', 'sonnig', 'summer']),
+    SymbolIcon('snowflake', 'Winter', 'Winter', AppIcons.snowflake, ['schnee', 'kalt', 'winter']),
+    SymbolIcon('leafyGreen', 'Frühling', 'Spring', AppIcons.flowerTulip, ['fruehling', 'spring']),
+    SymbolIcon('wind', 'Herbst', 'Autumn', AppIcons.wind, ['wind', 'sturm', 'autumn']),
+    SymbolIcon('star', 'Favorit', 'Favourite', AppIcons.star, ['stern', 'wichtig', 'star']),
   ]),
 ];
 
@@ -468,7 +478,7 @@ IconChoice? _groceryChoice(String text, {required bool strict}) {
 /// an icon can be removed from the catalogs while a list still points at it.
 IconChoice? resolveIcon(String? key) {
   if (key == null || key.isEmpty) return null;
-  if (key.startsWith(lucideIconPrefix)) return _symbolsByKey[key];
+  if (key.startsWith(symbolIconPrefix)) return _symbolsByKey[key];
   final merchant = merchantNameFor(key);
   if (merchant != null) return IconChoice(kind: IconKind.merchant, key: key, label: merchant);
   final grocery = groceryIconByAsset[key];
@@ -511,7 +521,7 @@ List<IconChoice> searchIcons(String query, {int limit = 60, IconSubject subject 
 
 /// What a list, a box and an item wear when nothing matched. Named rather than
 /// spelled out at each call site so "no icon" looks the same everywhere.
-const defaultListIcon = IconChoice(kind: IconKind.symbol, key: '${lucideIconPrefix}clipboardCheck', label: 'Liste', glyph: LucideIcons.clipboardCheck);
-const defaultGroceryListIcon = IconChoice(kind: IconKind.symbol, key: '${lucideIconPrefix}shoppingCart', label: 'Einkauf', glyph: LucideIcons.shoppingCart);
-const defaultBoxIcon = IconChoice(kind: IconKind.symbol, key: '${lucideIconPrefix}box', label: 'Box', glyph: LucideIcons.box);
-const defaultItemIcon = IconChoice(kind: IconKind.symbol, key: '${lucideIconPrefix}clipboardList', label: 'Artikel', glyph: LucideIcons.clipboardList);
+const defaultListIcon = IconChoice(kind: IconKind.symbol, key: '${symbolIconPrefix}clipboardCheck', label: 'Liste', glyph: AppIcons.listChecks);
+const defaultGroceryListIcon = IconChoice(kind: IconKind.symbol, key: '${symbolIconPrefix}shoppingCart', label: 'Einkauf', glyph: AppIcons.shoppingCart);
+const defaultBoxIcon = IconChoice(kind: IconKind.symbol, key: '${symbolIconPrefix}box', label: 'Box', glyph: AppIcons.package);
+const defaultItemIcon = IconChoice(kind: IconKind.symbol, key: '${symbolIconPrefix}clipboardList', label: 'Artikel', glyph: AppIcons.clipboardText);

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../models/visibility.dart';
 import '../models/who.dart';
 import '../theme/tokens.dart';
+import '../theme/app_icons.dart';
 
 /// Circular avatar showing a member's picture, or their initials (or a glyph)
 /// in tone colours when there is no picture.
@@ -49,7 +50,7 @@ class Avatar extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: _picture() ??
           (icon != null
-              ? Icon(icon, size: size * 0.44, color: fg)
+              ? AppIcon(icon, size: size * 0.44, color: fg)
               : Text(
                   initials ?? '',
                   // Sized by the caller — an avatar's initials scale with the
@@ -97,7 +98,7 @@ class Avatar extends StatelessWidget {
       color: bg,
       alignment: Alignment.center,
       child: icon != null
-          ? Icon(icon, size: size * 0.44, color: fg)
+          ? AppIcon(icon, size: size * 0.44, color: fg)
           : Text(
               initials ?? '',
               style: AppText.itemTitle.copyWith(fontSize: fontSize, letterSpacing: 0.2, color: fg),

@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../data/icon_suggestions.dart';
 import '../models/box_item.dart';
 import '../state/auth_state.dart';
@@ -27,6 +26,7 @@ import '../widgets/swipe_actions.dart';
 import '../widgets/toast_chip.dart';
 import '../widgets/visibility_picker.dart';
 import '../l10n/l10n.dart';
+import '../theme/app_icons.dart';
 
 class BoxScreen extends ConsumerWidget {
   const BoxScreen({super.key});
@@ -79,11 +79,11 @@ class _BoxOverview extends ConsumerWidget {
       headerExtra: Row(
         children: [
           Expanded(
-            child: _StatTile(value: '${state.boxes.length}', icon: LucideIcons.box, label: L.s.boxes, accent: accent),
+            child: _StatTile(value: '${state.boxes.length}', icon: AppIcons.package, label: L.s.boxes, accent: accent),
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: _StatTile(value: '${state.totalItems}', icon: LucideIcons.clipboardList, label: L.s.items, accent: accent),
+            child: _StatTile(value: '${state.totalItems}', icon: AppIcons.clipboardText, label: L.s.items, accent: accent),
           ),
         ],
       ),
@@ -116,7 +116,7 @@ class _BoxOverview extends ConsumerWidget {
                   // twelve boxes must not be told it has none.
                   if (state.boxes.isEmpty && !state.loading)
                     EmptyState(
-                      icon: LucideIcons.box,
+                      icon: AppIcons.package,
                       iconColor: accent,
                       message: L.s.noBoxesYet,
                     ),
@@ -189,7 +189,7 @@ class _BoxOverview extends ConsumerWidget {
                     size: 38,
                     imageSize: 24,
                     glyphSize: 18,
-                    fallbackIcon: LucideIcons.clipboardList,
+                    fallbackIcon: AppIcons.clipboardText,
                     glyphColor: accent,
                   ),
                   title: hit.name,
@@ -356,7 +356,7 @@ class _BoxSheetBodyState extends ConsumerState<_BoxSheetBody> {
               suggested: widget.draft.picked == null && stored == null,
               photoUrl: s.photoUrl(s.boxById(widget.box?.id ?? '')?.photoPath),
               photoFile: widget.draft.photoFile,
-              fallbackIcon: LucideIcons.box,
+              fallbackIcon: AppIcons.package,
               anchorKey: _pictureAnchor,
               uploading: _uploading,
               onTap: () => _pictureMenu(iconKey, name),
@@ -439,14 +439,14 @@ class _BoxDetail extends ConsumerWidget {
         fontWeight: FontWeight.w500,
         leadingWidth: 48,
         trailingWidth: 48,
-        leading: GlassIconButton(icon: LucideIcons.chevronLeft, onTap: () => ref.read(boxProvider.notifier).back()),
+        leading: GlassIconButton(icon: AppIcons.caretLeft, onTap: () => ref.read(boxProvider.notifier).back()),
         trailing: GlassMenuButton(
           items: [
-            AnchoredMenuItem(label: L.s.edit, icon: LucideIcons.pencil, onSelected: () => openBoxSheet(context, ref, box: box)),
+            AnchoredMenuItem(label: L.s.edit, icon: AppIcons.pencilSimple, onSelected: () => openBoxSheet(context, ref, box: box)),
             if (ref.watch(canShareExternallyProvider) && !state.guestBoxIds.contains(box.id))
               AnchoredMenuItem(
                 label: L.s.share,
-                icon: LucideIcons.userPlus,
+                icon: AppIcons.userPlus,
                 onSelected: () => showShareSheet(
                   context,
                   kind: ShareableKind.box,
@@ -456,7 +456,7 @@ class _BoxDetail extends ConsumerWidget {
               ),
             AnchoredMenuItem(
               label: L.s.delete,
-              icon: LucideIcons.trash2,
+              icon: AppIcons.trash,
               destructive: true,
               onSelected: () async {
                 // Captured before the write: this menu lives in the detail
@@ -504,7 +504,7 @@ class _BoxDetail extends ConsumerWidget {
                 ]),
                 if (items.isEmpty)
                   EmptyState(
-                    icon: LucideIcons.clipboardList,
+                    icon: AppIcons.clipboardText,
                     message: L.s.tapAboveToAddFirst,
                   ),
               ],
@@ -538,7 +538,7 @@ class _BoxBadge extends ConsumerWidget {
       size: size,
       imageSize: iconSize * 1.5,
       glyphSize: iconSize,
-      fallbackIcon: LucideIcons.box,
+      fallbackIcon: AppIcons.package,
       glyphColor: accent,
     );
   }
@@ -569,7 +569,7 @@ class _ItemRow extends ConsumerWidget {
               size: 44,
               imageSize: 28,
               glyphSize: 20,
-              fallbackIcon: LucideIcons.clipboardList,
+              fallbackIcon: AppIcons.clipboardText,
               glyphColor: accent,
             ),
             const SizedBox(width: 12),
@@ -597,12 +597,12 @@ class _ItemRow extends ConsumerWidget {
               items: [
                 AnchoredMenuItem(
                   label: L.s.edit,
-                  icon: LucideIcons.pencil,
+                  icon: AppIcons.pencilSimple,
                   onSelected: () => _openItemSheet(context, ref, item),
                 ),
                 AnchoredMenuItem(
                   label: L.s.delete,
-                  icon: LucideIcons.trash2,
+                  icon: AppIcons.trash,
                   destructive: true,
                   onSelected: () => ref.read(boxProvider.notifier).removeItem(item),
                 ),
@@ -757,7 +757,7 @@ class _ItemSheetBodyState extends ConsumerState<_ItemSheetBody> {
                     height: 32,
                     decoration: BoxDecoration(color: AppColors.surfaceAlt, shape: BoxShape.circle),
                     alignment: Alignment.center,
-                    child: Icon(LucideIcons.scanLine, size: 16, color: AppColors.inkSecondary),
+                    child: AppIcon(AppIcons.scan, size: 16, color: AppColors.inkSecondary),
                   ),
                 ],
               ),
@@ -767,7 +767,7 @@ class _ItemSheetBodyState extends ConsumerState<_ItemSheetBody> {
               iconKey: iconKey,
               suggested: widget.form.draft.picked == null,
               photoUrl: photoUrl,
-              fallbackIcon: LucideIcons.clipboardList,
+              fallbackIcon: AppIcons.clipboardText,
               anchorKey: _pictureAnchor,
               uploading: _uploading,
               onTap: () => _pictureMenu(iconKey, name),
@@ -869,7 +869,7 @@ class _QtyStepper extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _QtyButton(icon: LucideIcons.minus, accent: accent, enabled: value > 1, onTap: () => onChanged(value - 1)),
+        _QtyButton(icon: AppIcons.minus, accent: accent, enabled: value > 1, onTap: () => onChanged(value - 1)),
         SizedBox(
           width: 38,
           child: Text(
@@ -878,7 +878,7 @@ class _QtyStepper extends StatelessWidget {
             style: AppText.itemTitle,
           ),
         ),
-        _QtyButton(icon: LucideIcons.plus, accent: accent, enabled: true, onTap: () => onChanged(value + 1)),
+        _QtyButton(icon: AppIcons.plus, accent: accent, enabled: true, onTap: () => onChanged(value + 1)),
       ],
     );
   }
@@ -902,7 +902,7 @@ class _QtyButton extends StatelessWidget {
         height: 30,
         decoration: BoxDecoration(color: AppColors.surfaceAlt, shape: BoxShape.circle),
         alignment: Alignment.center,
-        child: Icon(icon, size: 15, color: enabled ? accent : AppColors.mutedLight),
+        child: AppIcon(icon, size: 15, color: enabled ? accent : AppColors.mutedLight),
       ),
     );
   }
@@ -948,7 +948,7 @@ class _AddItemRowState extends ConsumerState<_AddItemRow> {
             child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 160),
               child: preview == null
-                  ? Icon(LucideIcons.circle, key: ValueKey('empty'), size: 24, color: AppColors.idleRing)
+                  ? AppIcon(AppIcons.circle, key: ValueKey('empty'), size: 24, color: AppColors.idleRing)
                   : IconTile(key: ValueKey(preview.key), iconKey: preview.key, size: 24, imageSize: 24, glyphSize: 15),
             ),
           ),
@@ -968,7 +968,7 @@ class _AddItemRowState extends ConsumerState<_AddItemRow> {
             height: 30,
             decoration: BoxDecoration(color: AppColors.surfaceAlt, shape: BoxShape.circle),
             alignment: Alignment.center,
-            child: Icon(LucideIcons.scanLine, size: 16, color: AppColors.inkSecondary),
+            child: AppIcon(AppIcons.scan, size: 16, color: AppColors.inkSecondary),
           ),
         ],
       ),
@@ -1020,7 +1020,7 @@ class _BoxRow extends ConsumerWidget {
             members: ref.watch(householdMembersProvider),
             padding: const EdgeInsets.only(right: 10),
           ),
-          Icon(LucideIcons.chevronRight, size: 16, color: AppColors.mutedLight),
+          AppIcon(AppIcons.caretRight, size: 16, color: AppColors.mutedLight),
         ],
       ),
     );
@@ -1050,7 +1050,7 @@ class _StatTile extends StatelessWidget {
           const SizedBox(height: 3),
           Row(
             children: [
-              Icon(icon, size: 13, color: accent),
+              AppIcon(icon, size: 13, color: accent),
               const SizedBox(width: 5),
               Text(
                 label,

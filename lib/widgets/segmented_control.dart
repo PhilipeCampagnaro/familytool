@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/tokens.dart';
+import '../theme/app_icons.dart';
 
 /// One option in a [SegmentedControl].
 class SegmentedOption<T> {
@@ -92,7 +93,8 @@ class _SegButton extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 15, color: active ? accent : AppColors.muted),
+            // Flat: a segment is a control. See [AppIcon.flat].
+            AppIcon(icon, size: 15, color: active ? accent : AppColors.muted, flat: true),
             const SizedBox(width: 7),
             Flexible(
               child: Text(
