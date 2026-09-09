@@ -252,6 +252,21 @@ envelope under `CALENDAR_SECRET_KEY`, a function secret that never reaches the d
 stricter treatment compared to `token_hash` is deliberate: a share token hash is useless if it
 leaks, an OAuth refresh token is a standing capability on someone's real Google account.
 
+**Rotating `CALENDAR_SECRET_KEY` is a deploy, not a migration.** `seal` always uses the active key;
+`open` tries it and then each key in `CALENDAR_SECRET_KEY_RETIRED` (comma-separated). So a
+compromised key is replaced by moving it to the retired list and putting a fresh one in
+`CALENDAR_SECRET_KEY` — every stored credential keeps opening, and new writes seal under the new
+key. Trial decryption is sound because AES-GCM authenticates: a wrong key fails the tag check
+rather than returning garbage. Drop a retired key once every connection sealed under it has been
+written again; anything still on it degrades to `reconnect_required`, which `open` returning null
+already produces.
+
+**`calendar_connections.config` is not readable by the client.** For a link-connected school
+calendar it holds the tokenised ICS URL — a bearer capability — so `authenticated` gets a column
+list that omits it, exactly as `calendars` and `events` were revoked wholesale. The Flutter side
+never wanted it: the repository selects a fixed list, and the `config` field on the Dart model is
+filled from the Abfall coverage function's response, not from PostgREST.
+
 **The `service_role` key never ships in the app.** Only the publishable (anon) key, via
 `--dart-define`.
 

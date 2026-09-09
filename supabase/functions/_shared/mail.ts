@@ -18,7 +18,7 @@ export async function sendMail(
   const from = Deno.env.get("APORAH_MAIL_FROM");
 
   if (!apiKey || !from) {
-    console.log(`[mail] not configured, skipping send to ${to}: ${subject}`);
+    console.log(`[mail] not configured, skipping send to ${redactAddress(to)}: ${subject}`);
     return { sent: false, reason: "mail_not_configured" };
   }
 
@@ -45,4 +45,19 @@ export function escapeHtml(value: string): string {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
+}
+
+/// An address a log can carry: the domain, and just enough of the local part to
+/// tell two recipients apart.
+///
+/// The unconfigured branch above is not a dev-only path — it is what a
+/// production deploy missing RESEND_API_KEY does on every single invite, so the
+/// full address of every person ever invited would sit in function logs whose
+/// retention we do not set and cannot purge on an Art. 17 request. One
+/// character plus the domain is enough to answer "did the invite go to the
+/// right place", which is the only question this line exists for.
+function redactAddress(address: string): string {
+  const at = address.lastIndexOf("@");
+  if (at < 1) return "<ungültige Adresse>";
+  return `${address[0]}…@${address.slice(at + 1)}`;
 }
