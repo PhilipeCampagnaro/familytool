@@ -159,6 +159,8 @@ class StringsDe extends AppStrings {
   String get navBoard => 'Board';
   @override
   String get navBox => 'Box';
+  @override
+  String get navExpand => 'Navigation einblenden';
 
   @override
   String get startNotDesigned => 'Noch nicht gestaltet';
@@ -216,6 +218,80 @@ class StringsDe extends AppStrings {
   String get trackerTitle => 'Tracker';
   @override
   String trackerDaysDone(int done, int total) => '$done von $total Tagen geschafft';
+
+  // ------------------------------------------------------------- Tracker --
+  @override
+  String get whatToCreate => 'Was möchtest du anlegen?';
+  @override
+  String get newEntry => 'Neu';
+  @override
+  String get kindTask => 'Aufgabe';
+  // Das englische Wort, wie schon bei [trackerTitle]: im Deutschen genauso
+  // gebräuchlich, und "Gewohnheit" klingt nach Ratgeber statt nach Haushalt.
+  @override
+  String get kindTracker => 'Tracker';
+  @override
+  String get newTracker => 'Neuer Tracker';
+  @override
+  String get editTracker => 'Tracker bearbeiten';
+  @override
+  String get trackerPlaceholder => 'Woran willst du dranbleiben?';
+  @override
+  String get theTracker => 'den Tracker';
+  @override
+  String get deleteTracker => 'Tracker löschen';
+  @override
+  String get trackerRhythm => 'Rhythmus';
+  @override
+  String get rhythmDaily => 'Jeden Tag';
+  @override
+  String get rhythmDailyHint => 'Sieben Tage die Woche';
+  @override
+  String get rhythmWeekdays => 'An bestimmten Tagen';
+  @override
+  String get rhythmWeekdaysHint => 'Zum Beispiel montags und donnerstags';
+  @override
+  String get rhythmTimesPerWeek => 'So oft pro Woche';
+  @override
+  String get rhythmTimesPerWeekHint => 'Egal an welchen Tagen';
+  @override
+  String get whichDays => 'Welche Tage?';
+  @override
+  String get howOften => 'Wie oft?';
+  @override
+  String timesPerWeekValue(int times) =>
+      times == 1 ? 'Einmal pro Woche' : '$times-mal pro Woche';
+  @override
+  String get timesPerWeekExplainer =>
+      'Es zählt die Woche, nicht der Tag. Nichts ist an einem bestimmten Tag fällig — gezählt wird, wenn die Woche am Sonntag zu Ende ist.';
+  @override
+  String get trackersTitle => 'Tracker';
+  @override
+  String weekProgressLabel(int done, int target) => '$done von $target diese Woche';
+  @override
+  String streakDays(int days) => days == 1 ? '1 Tag in Folge' : '$days Tage in Folge';
+  @override
+  String streakWeeks(int weeks) => weeks == 1 ? '1 Woche in Folge' : '$weeks Wochen in Folge';
+  @override
+  String get trackerGridEmpty => 'Noch nichts, woran du dranbleibst';
+  @override
+  String get trackersLoadFailed => 'Tracker konnten nicht geladen werden.';
+  @override
+  String get trackerSaveFailed => 'Der Tracker konnte nicht gespeichert werden.';
+  @override
+  String get trackerDeleteFailed => 'Der Tracker konnte nicht gelöscht werden.';
+  @override
+  String get trackerCheckFailed => 'Der Haken konnte nicht gespeichert werden.';
+  @override
+  String get trackerRestoreFailed => 'Der Tracker konnte nicht wiederhergestellt werden.';
+  @override
+  String get pickAtLeastOneDay => 'Wähle mindestens einen Tag aus.';
+  @override
+  String get trackerCreated => 'Tracker angelegt';
+  @override
+  String get trackerUpdated => 'Tracker aktualisiert';
+  @override
+  String get trackerDeleted => 'Tracker gelöscht';
   @override
   String get noOpenTasks => 'Keine offenen Aufgaben';
   @override
@@ -395,6 +471,42 @@ class StringsDe extends AppStrings {
   @override
   String get endsAt => 'Ende';
   @override
+  String get eventRepeat => 'Wiederholen';
+  @override
+  String get repeatNever => 'Nie';
+  @override
+  String get repeatDaily => 'Täglich';
+  @override
+  String repeatWeekly(String weekday) => 'Jeden $weekday';
+  @override
+  String repeatBiweekly(String weekday) => 'Jeden 2. $weekday';
+  @override
+  String get repeatMonthly => 'Monatlich';
+  @override
+  String get repeatYearly => 'Jährlich';
+  @override
+  String get repeatEnds => 'Endet';
+  @override
+  String get repeats => 'Wiederholt sich';
+  @override
+  String get repeatNotEditable =>
+      'Die Wiederholung lässt sich hier nicht ändern — nur im Kalender selbst.';
+  @override
+  String get repeatingEvent => 'Terminserie';
+  @override
+  String get changeRepeatingEventBody =>
+      'Soll die Änderung nur für diesen Termin gelten oder für die ganze Serie?';
+  @override
+  String get deleteRepeatingEventBody =>
+      'Soll nur dieser Termin gelöscht werden oder die ganze Serie?';
+  @override
+  String get thisEventOnly => 'Nur dieser Termin';
+  @override
+  String get seriesCannotMoveCalendar =>
+      'Eine ganze Serie lässt sich nicht in einen anderen Kalender verschieben. Wähle „Nur dieser Termin".';
+  @override
+  String get wholeSeries => 'Ganze Serie';
+  @override
   String get noEventsThisDay => 'Keine Termine an diesem Tag';
   @override
   String get addEvent => 'Termin hinzufügen';
@@ -435,9 +547,23 @@ class StringsDe extends AppStrings {
   @override
   String get createTaskFromEvent => 'Aufgabe zum Termin erstellen';
   @override
+  String get linkedToEvent => 'Zum Termin angelegt';
+  @override
+  String get linkedEventLabel => 'Termin';
+  @override
+  String get doneLabel => 'Erledigt';
+  @override
+  String get openInCalendar => 'Im Kalender zeigen';
+  @override
+  String linkedListCount(int count) => count == 1 ? '1 Liste' : '$count Listen';
+  @override
+  String linkedTaskCount(int count) => count == 1 ? '1 Aufgabe' : '$count Aufgaben';
+  @override
   String get route => 'Route';
   @override
   String get reminder => 'Erinnerung';
+  @override
+  String get deleteEvent => 'Termin löschen';
   @override
   String get deleteEventQuestion => 'Termin löschen?';
   @override
@@ -734,6 +860,73 @@ class StringsDe extends AppStrings {
   String get noEventsAtLinkYet =>
       'Der Link funktioniert, enthält aber gerade keine Termine. Das ist in den Ferien normal.';
   @override
+  List<String> get webuntisSecretSteps => const [
+    'Dein Kind meldet sich in WebUntis an und tippt oben auf seinen Namen.',
+    'Unter „Freigaben" bei „Zugriff über Untis Mobile" auf „Anzeigen".',
+    'Den QR-Code hier scannen – oder die vier Zeilen darunter abtippen.',
+  ];
+  @override
+  String get scanUntisCode => 'QR-Code scannen';
+  @override
+  String get scanUntisCodeBody =>
+      'Wir holen damit den Stundenplan direkt aus WebUntis – mit Vertretung und '
+      'Entfall. Das Passwort deines Kindes braucht es dafür nicht.';
+  @override
+  String get scanAgain => 'Neu scannen';
+  @override
+  String get codeScanned => 'QR-Code gescannt';
+  @override
+  String get enterManually => 'Stattdessen abtippen';
+  @override
+  String get untisServerField => 'Url';
+  @override
+  String get untisSchoolField => 'Schule';
+  @override
+  String get untisUserField => 'Benutzer';
+  @override
+  String get untisKeyField => 'Schlüssel';
+  @override
+  String get untisFieldsHint => 'Genau so, wie es unter dem QR-Code steht.';
+  @override
+  String get untisFieldsMissing => 'Bitte Url, Schule, Benutzer und Schlüssel eintragen.';
+  @override
+  String get checkingAccessEllipsis => 'Zugang wird geprüft …';
+  @override
+  String get cameraNotAvailable =>
+      'Auf diesem Gerät lässt sich nichts scannen. Tipp die vier Zeilen unter dem QR-Code ab.';
+  @override
+  String get cameraDenied =>
+      'Aporah darf nicht auf die Kamera. Das lässt sich in den Einstellungen ändern – '
+      'oder tipp die vier Zeilen unter dem QR-Code ab.';
+  @override
+  String get notAnUntisCode => 'Das ist kein WebUntis-Code. Ist es der aus „Zugriff über Untis Mobile"?';
+  @override
+  String get untisCalendarName => 'Name des Stundenplans';
+  @override
+  String untisCalendarNameSuggestion(String pupil) => 'Stundenplan $pupil';
+  @override
+  String get untisCalendarNameHint => 'Steht später auf dem Filter im Kalender.';
+  @override
+  String get untisConnectedNote =>
+      'Aporah liest den Stundenplan nur – und immer frisch, samt Vertretung und Entfall. '
+      'Geändert wird er weiterhin in der Schule.';
+  @override
+  String lessonsFound(int count) =>
+      count == 1 ? '1 Stunde in den nächsten zwei Wochen' : '$count Stunden in den nächsten zwei Wochen';
+  @override
+  String get noLessonsYet =>
+      'Der Zugang funktioniert, es steht aber gerade kein Unterricht an. In den Ferien ist das normal.';
+  @override
+  String get connectWithLink => 'Stattdessen einen Kalender-Link einsetzen';
+  @override
+  String get connectWithLinkBody =>
+      'Nötig, wenn eure Schule den Zugriff über Untis Mobile abgeschaltet hat. '
+      'Der Link zeigt den Stundenplan, aber keine Vertretung.';
+  @override
+  String get untisKeyStaysValid =>
+      ' Der Zugangsschlüssel wird bei uns gelöscht. In WebUntis bleibt er gültig — '
+      'dort lässt er sich unter „Freigaben" neu vergeben.';
+  @override
   String get calendarLinkIcs => 'Kalender-Link (ICS)';
   @override
   String get calendarLinkHint => 'Endet meist auf .ics — der Link hinter "Kalender abonnieren".';
@@ -883,6 +1076,10 @@ class StringsDe extends AppStrings {
   String get symbol => 'Symbol';
   @override
   String get change => 'Ändern';
+  @override
+  String get photoUploadFailed => 'Foto konnte nicht hochgeladen werden.';
+  @override
+  String get photoRemoveFailed => 'Foto konnte nicht entfernt werden.';
   @override
   String get chooseSymbol => 'Symbol wählen';
   @override
@@ -1152,4 +1349,53 @@ class StringsDe extends AppStrings {
   String get memberRemoveFailed => 'Das Mitglied konnte nicht entfernt werden.';
   @override
   String get inviteRevokeFailed => 'Die Einladung konnte nicht zurückgezogen werden.';
+
+  // --------------------------------------------------------------- homework --
+  @override
+  String get homework => 'Hausaufgabe';
+  @override
+  String homeworkCount(int count) => count == 1 ? 'Hausaufgabe' : '$count Hausaufgaben';
+  @override
+  String get homeworkDue => 'Fällig';
+  @override
+  String get homeworkDone => 'Erledigt';
+  @override
+  String get homeworkSetBy => 'Aufgegeben von';
+
+  @override
+  String get untisPupilName => 'Wessen Stundenplan ist das?';
+  @override
+  String get untisPupilNameHint => 'Der Name erscheint als Filter in Kalender und Board.';
+  @override
+  String get untisPupilMissing => 'Zu wem gehört dieser Stundenplan?';
+
+  @override
+  String get assignCalendar => 'Zuordnen';
+  @override
+  String assignCalendarBody(String calendar) => 'Zu wem gehört „$calendar“? Der Kalender erscheint dann unter dieser Person in Kalender und Board.';
+  @override
+  String get assignCalendarFamilyHint => 'Gehört allen im Haushalt';
+  @override
+  String get assignCalendarNewPerson => 'Andere Person';
+  @override
+  String get assignCalendarNewPersonHint => 'Name, z. B. Mia';
+  @override
+  String get assignCalendarNotVisibility => 'Das ändert nichts daran, wer den Kalender sieht — alle im Haushalt sehen ihn weiterhin.';
+  @override
+  String get assignCalendarFailed => 'Die Zuordnung hat gerade nicht geklappt.';
+  @override
+  String get family => 'Familie';
+  @override
+  String get noAccountYet => 'Kein Konto';
+
+  @override
+  String get familyName => 'Familienname';
+  @override
+  String get familyNameHint => 'Wie eure Familie in Aporah heißt.';
+  @override
+  String get renameFamily => 'Familie umbenennen';
+  @override
+  String get renameFamilyBody => 'Der Name steht auf dem Familien-Chip in Kalender und Board.';
+  @override
+  String get familyRenameFailed => 'Der Name konnte nicht geändert werden.';
 }

@@ -39,6 +39,21 @@ enum ConnectKind {
   /// sheet can be re-entered to add another.
   link,
 
+  /// WebUntis: the app secret out of the pupil's own profile, scanned off a QR
+  /// code or typed from the four lines printed under it.
+  ///
+  /// Not a password, and that is the whole point. Freigaben → "Zugriff über
+  /// Untis Mobile" → Zugangsdaten anzeigen mints a base32 key that Untis Mobile
+  /// itself authenticates with — a TOTP is computed from it per request — so
+  /// nothing we store can be replayed, the key is revoked from the page that
+  /// made it without touching the account, and it keeps working on accounts
+  /// with 2FA, where a password login is refused outright.
+  ///
+  /// It also brings back more than the link can: the timetable arrives as
+  /// lessons with subject, teacher, room and a status, so Entfall and
+  /// Vertretung are visible rather than looking like ordinary lessons.
+  secret,
+
   /// Ferien and Abfall: public feeds, nothing to authenticate with.
   feed,
 }
@@ -69,7 +84,8 @@ extension CalendarProviderMeta on CalendarProvider {
   ConnectKind get kind => switch (this) {
     CalendarProvider.google || CalendarProvider.outlook => ConnectKind.oauth,
     CalendarProvider.icloud => ConnectKind.password,
-    CalendarProvider.iserv || CalendarProvider.webuntis => ConnectKind.link,
+    CalendarProvider.iserv => ConnectKind.link,
+    CalendarProvider.webuntis => ConnectKind.secret,
     CalendarProvider.ferien || CalendarProvider.abfall => ConnectKind.feed,
   };
 
@@ -83,6 +99,13 @@ extension CalendarProviderMeta on CalendarProvider {
   /// as the first. WebUntis has no CalDAV at all.
   bool get hasCaldavFallback => this == CalendarProvider.iserv;
 
+  /// WebUntis's second route: "Kalender publizieren" mints a tokenised ICS link
+  /// the same way IServ's plugins do, and it stays reachable from the bottom of
+  /// the page for a school that has turned mobile access off — the one case
+  /// where there is no QR code to show. It brings back a flat feed rather than
+  /// lessons, which is why it is the fallback and not the button.
+  bool get hasLinkFallback => this == CalendarProvider.webuntis;
+
   /// Where the user goes to create the link, in their own words. Rendered as
   /// the numbered steps on the paste screen.
   List<String> get linkSteps => switch (this) {
@@ -90,6 +113,12 @@ extension CalendarProviderMeta on CalendarProvider {
     CalendarProvider.webuntis => L.s.webuntisLinkSteps,
     _ => const [],
   };
+
+  /// Where the pupil finds the QR code, in their own words. The same dialog
+  /// prints the four fields as text, which is what the manual form asks for —
+  /// so one set of steps serves both halves of the screen.
+  List<String> get secretSteps =>
+      this == CalendarProvider.webuntis ? L.s.webuntisSecretSteps : const [];
 
   /// The logo shipped in `assets/calendar_providers/`, or null for the two
   /// providers that are a public feed rather than a company.
@@ -223,6 +252,31 @@ class CalendarConnection {
   /// is what Kalender ends up showing too.
   final Map<String, String> calendarNames;
 
+  /// Provider id -> whose calendar that is: `'family'`, `'member:<user id>'` or
+  /// `'person:<Name>'`, with `'*'` standing for every calendar on the account.
+  ///
+  /// The same grammar the chip row is keyed on, so the value written here is the
+  /// chip the calendar lands under. Only the people **without** an account keep
+  /// their capitalisation in it — `person:Mia` becomes the `person:mia` group —
+  /// because the same child typed twice with different capitals has to end up on
+  /// one chip.
+  ///
+  /// Empty means nobody has decided, and the account's own owner stands: a
+  /// WebUntis key scanned for Alice makes her timetable hers with nothing here.
+  /// `calendar-events` is what copies the decision onto `calendars.owner_*`; see
+  /// the migration for why it does not live on that table directly.
+  final Map<String, String> calendarOwners;
+
+  /// The account's own owner — the default every calendar it produces starts
+  /// with, and what [ownerOf] falls back to.
+  ///
+  /// Set by the connect flow where the flow knows the answer: a WebUntis key is
+  /// scanned for one pupil, so [ownerLabel] is that child's given name and every
+  /// calendar the key returns is theirs before anybody visits this page. Both
+  /// null means the household.
+  final String? ownerMemberId;
+  final String? ownerLabel;
+
   const CalendarConnection({
     required this.id,
     required this.provider,
@@ -236,6 +290,9 @@ class CalendarConnection {
     this.isLinked = false,
     this.selectedCalendars,
     this.calendarNames = const {},
+    this.calendarOwners = const {},
+    this.ownerMemberId,
+    this.ownerLabel,
   });
 
   bool get needsAttention => status != ConnectionStatus.active;
@@ -279,6 +336,27 @@ class CalendarConnection {
     ];
   }
 
+  /// Whose calendar one of this account's calendars is, in the same grammar the
+  /// chip row uses: `'family'`, `'member:<user id>'` or `'person:<Name>'`.
+  ///
+  /// Three places to look, in the order a decision overrides a default: what the
+  /// household chose for this calendar, what they chose for the whole account,
+  /// and failing both the account's own owner. Never null — a calendar nobody
+  /// has assigned belongs to the household, which is the honest answer and the
+  /// one the chip row already shows.
+  ///
+  /// [externalId] is null for a row that stands for the whole connection.
+  String ownerOf(String? externalId) {
+    final chosen = calendarOwners[externalId ?? '*'] ?? calendarOwners['*'];
+    if (chosen != null && chosen.isNotEmpty) return chosen;
+
+    final member = ownerMemberId;
+    if (member != null && member.isNotEmpty) return 'member:$member';
+
+    final label = ownerLabel?.trim();
+    return label == null || label.isEmpty ? 'family' : 'person:$label';
+  }
+
   static List<String>? _selectedFrom(Object? raw) {
     if (raw is! List) return null;
     return [for (final id in raw) if (id is String && id.isNotEmpty) id];
@@ -313,6 +391,9 @@ class CalendarConnection {
       isLinked: map['auth_type'] == 'public',
       selectedCalendars: _selectedFrom(map['selected_calendars']),
       calendarNames: _namesFrom(map['calendar_names']),
+      calendarOwners: _namesFrom(map['calendar_owners']),
+      ownerMemberId: map['owner_member_id'] as String?,
+      ownerLabel: map['owner_label'] as String?,
     );
   }
 

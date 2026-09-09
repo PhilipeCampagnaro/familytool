@@ -9,13 +9,20 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../data/calendar_data.dart';
 import '../data/german_holidays.dart';
 import '../models/calendar_event.dart';
+import '../models/event_link.dart';
+import '../models/homework.dart';
+import '../models/shopping_list.dart';
+import '../models/task.dart';
 import '../models/weather.dart';
 import '../services/action_sheet.dart';
 import '../services/external_links.dart';
 import '../services/map_snapshot.dart';
+import '../state/board_state.dart';
 import '../state/calendar_state.dart';
 import '../state/family_state.dart';
 import '../state/holidays_state.dart';
+import '../state/list_state.dart';
+import '../state/nav_state.dart';
 import '../state/weather_state.dart';
 import '../theme/tokens.dart';
 import '../widgets/anchored_menu.dart';
@@ -27,6 +34,7 @@ import '../widgets/error_note.dart';
 import '../widgets/event_dots.dart';
 import '../widgets/floating_pill.dart';
 import '../widgets/glass.dart';
+import '../widgets/icon_picker.dart';
 import '../widgets/native_switch.dart';
 import '../widgets/settings_chrome.dart';
 import '../widgets/swipe_actions.dart';
@@ -52,6 +60,109 @@ part 'calendar/event_detail_sheet.dart';
 WeatherReading? _weatherFor(WidgetRef ref, CalendarEvent event) {
   final sel = ref.watch(calendarProvider.select((s) => s.selected));
   return ref.watch(weatherProvider).forEvent(event, DateTime(sel.y, sel.m, sel.d));
+}
+
+/// The homework due in this lesson, for the badge on its card and the card in
+/// its sheet.
+///
+/// Keyed on the event's provider `uid` rather than on its id: the id carries the
+/// start time, and a lesson Untis moves keeps its uid while its id changes. The
+/// map holds only lessons that actually carry homework, so this misses for
+/// almost every event in the app and costs nothing when it does.
+List<Homework> _homeworkFor(WidgetRef ref, CalendarEvent event) {
+  if (event.uid.isEmpty) return const [];
+  return ref.watch(calendarProvider.select((s) => s.homeworkByEvent))[event.uid] ?? const [];
+}
+
+/// The reference a list or a task keeps when it is made from this appointment.
+///
+/// Null for an event with no provider `uid` — nothing in the app has one today,
+/// since every event is proxied, but a link with no event on the other end is
+/// worse than no link, so the "Liste zum Termin erstellen" row simply creates a
+/// plain list in that case.
+///
+/// The start is copied and **the title is not**: the day is what makes the tap
+/// back work months later, when the appointment is far outside the window
+/// Kalender has loaded, and the name is content out of somebody's calendar that
+/// this app does not keep. See [EventLink].
+EventLink? _linkTo(CalendarEvent event) {
+  if (event.uid.isEmpty) return null;
+  return EventLink(calendarId: event.calendarId, uid: event.uid, startsAt: event.startsAt);
+}
+
+/// The household's lists and tasks that were made from this appointment.
+///
+/// Watched, so a list created from the sheet appears in it without a reload —
+/// the notifier has already put the saved row into `listProvider`'s state by the
+/// time the create sheet closes.
+///
+/// **Narrowed to the containers themselves**, not the whole screen state: every
+/// agenda row calls both of these, and watching `listProvider` whole would
+/// rebuild the entire day each time somebody ticks an article off a shopping
+/// list. `copyWith` hands back the same `lists`/`tasks` reference when only the
+/// items changed, so the identity comparison behind `select` does the rest.
+///
+/// Over the tasks rather than `visibleTasks`, deliberately: Board's person chip
+/// is about Board, and it must not make a task somebody hung off this
+/// appointment vanish from the appointment.
+List<ShoppingList> _linkedListsFor(WidgetRef ref, CalendarEvent event) {
+  if (event.uid.isEmpty) return const [];
+  final lists = ref.watch(listProvider.select((s) => s.lists));
+  return [
+    for (final l in lists)
+      if (l.eventLink?.namesEvent(calendarId: event.calendarId, uid: event.uid) ?? false) l,
+  ];
+}
+
+List<BoardTask> _linkedTasksFor(WidgetRef ref, CalendarEvent event) {
+  if (event.uid.isEmpty) return const [];
+  final tasks = ref.watch(boardProvider.select((s) => s.tasks));
+  return [
+    for (final t in tasks)
+      if (t.eventLink?.namesEvent(calendarId: event.calendarId, uid: event.uid) ?? false) t,
+  ];
+}
+
+/// "Heute · 14. Sep" / "Montag · 14. Sep" — the line over a day's agenda, and
+/// the one the detail sheet prints under the event's name.
+///
+/// One function because three callers were computing the same two-branch
+/// expression: the week agenda, the month view's details box, and the jump that
+/// arrives from a linked task, which has to produce exactly what the row it
+/// bypassed would have produced.
+String _dayHeading(DateTime day) => _isToday(day.year, day.month, day.day)
+    ? L.s.todayWithDate(day.day, day.month)
+    : L.s.weekdayWithDate(day.weekday % 7, day.day, day.month);
+
+/// Lands a jump from Board or Listen on the appointment the link names.
+///
+/// Three steps, and the middle one is the non-obvious part: the day is selected
+/// so that closing the sheet leaves the user looking at the right day, the
+/// **calendar filter is widened** if it would have hidden the event — landing
+/// on an empty-looking day is worse than a chip row that briefly says "Alle" —
+/// and only then is the sheet opened.
+///
+/// An event outside the loaded window selects the day and stops there. That is
+/// the honest answer: we do not hold the household's calendar, so an
+/// appointment eight months out simply is not here to open, and the day it is
+/// on is everything the link knows.
+void _openLinkedEvent(BuildContext context, WidgetRef ref, TabJump jump) {
+  final notifier = ref.read(calendarProvider.notifier);
+  final day = jump.day;
+  if (day != null) notifier.selectDay(day.year, day.month, day.day);
+
+  final calendarId = jump.eventCalendarId;
+  final uid = jump.eventUid;
+  if (calendarId == null || uid == null) return;
+
+  final event = ref.read(calendarProvider).eventForLink(calendarId: calendarId, uid: uid, day: day);
+  if (event == null) return;
+
+  final filter = ref.read(calendarProvider).calendarFilter;
+  if (filter != null && !filter.contains(event.calendarId)) notifier.clearCalendarFilter();
+
+  notifier.openEvent(event, _dayHeading(event.startsAt));
+  _showEventDetailSheet(context, ref);
 }
 
 bool _sameDay(CalSelectedDay s, int y, int m, int d) => s.y == y && s.m == m && s.d == d;
@@ -99,6 +210,14 @@ class CalendarScreen extends ConsumerWidget {
       ref.read(calendarProvider.notifier).clearError();
     });
 
+    // Arriving from the calendar chip on a task or a list. The shell has already
+    // switched to this tab; what is left is the part only Kalender can do.
+    ref.listen<TabJump?>(tabJumpProvider, (_, jump) {
+      if (jump == null || jump.eventUid == null) return;
+      ref.read(tabJumpProvider.notifier).done();
+      _openLinkedEvent(context, ref, jump);
+    });
+
     return Scaffold(
       backgroundColor: AppColors.surface,
       body: SafeArea(
@@ -106,8 +225,91 @@ class CalendarScreen extends ConsumerWidget {
         // Both views build their own header (title + month/toggle row) inside
         // a scroll-collapsing sliver-or-listener, so it can shrink as their
         // content scrolls — see _WeekView / _MonthView.
-        child: state.isWeek ? _WeekView(state: state, accent: accent) : _MonthView(state: state, accent: accent),
+        child: _CompactNavOnScroll(
+          child: state.isWeek ? _WeekView(state: state, accent: accent) : _MonthView(state: state, accent: accent),
+        ),
       ),
+    );
+  }
+}
+
+/// Compacts the bottom nav to a single button as the agenda is scrolled down,
+/// and brings the whole bar back at the top of the list.
+///
+/// Kalender only. It is the one screen where the rows are wide, dense and read
+/// for a while, so the bar has the most to gain by getting out of the way —
+/// and the least to lose, since nothing here is a step in a flow that needs
+/// another tab. The bar itself lives in `AppShell`, which is why this goes
+/// through [navBarProvider] rather than a callback: the two are half the
+/// widget tree apart.
+///
+/// Both views scroll vertically over the same listener, so the week and month
+/// view behave identically; the day strip and the chip row are horizontal and
+/// are filtered out by axis, or a sideways flick through the week would put
+/// the bar away.
+class _CompactNavOnScroll extends ConsumerWidget {
+  final Widget child;
+
+  const _CompactNavOnScroll({required this.child});
+
+  /// How far down the list counts as "reading" rather than as an overscroll
+  /// wobble or the first pixels of a bounce.
+  static const _threshold = 24.0;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return NotificationListener<ScrollUpdateNotification>(
+      onNotification: (n) {
+        if (n.metrics.axis != Axis.vertical) return false;
+        final nav = ref.read(navBarProvider.notifier);
+        final delta = n.scrollDelta ?? 0;
+        // Both tests are on the *movement*, never on the resting position.
+        // The week view is a `NestedScrollView`, so two positions report here
+        // — and the inner list sits at pixels 0 for the whole time the header
+        // is collapsing. Read as a position, that reads as "at the top" and
+        // the bar would fight the finger all the way down.
+        //
+        // Scrolling back to the top is the one automatic way out: everywhere
+        // else the user taps the button, so the bar can't reappear over a row
+        // because a finger drifted the wrong way mid-read.
+        if (delta < 0 && n.metrics.pixels <= 0) {
+          nav.expand();
+        } else if (delta > 0 && n.metrics.pixels > _threshold) {
+          nav.compact();
+        }
+        return false;
+      },
+      child: child,
+    );
+  }
+}
+
+/// Positions Kalender's "Heute" button, which shares the nav bar's row: it
+/// hangs off the bar's own centre line at the right edge once the bar has
+/// collapsed to the button on the left, and rises to park above the bar while
+/// the bar is still expanded and would otherwise be under it.
+///
+/// One `right:` for both states, so the button only ever travels vertically —
+/// and on the same clock as the bar, so the two read as one movement rather
+/// than as two controls that happen to move at once.
+class _JumpToTodaySlot extends ConsumerWidget {
+  final bool visible;
+  final Color accent;
+  final VoidCallback onTap;
+
+  const _JumpToTodaySlot({required this.visible, required this.accent, required this.onTap});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final nav = ref.watch(navBarProvider);
+    return AnimatedPositioned(
+      duration: kNavSwapDuration,
+      curve: Curves.easeInOutCubic,
+      right: AppSpacing.screenPad,
+      bottom: nav.compact
+          ? navRowBottom(context, barHeight: nav.barHeight)
+          : navContentInset(context, pill: 106, gap: 36),
+      child: _JumpToTodayButton(visible: visible, accent: accent, onTap: onTap),
     );
   }
 }
@@ -135,15 +337,17 @@ class _TitleRow extends StatelessWidget {
   /// collapse rather than cross-fading against the control it replaces.
   double get _leadingOpacity => ((t - 0.6) / 0.4).clamp(0.0, 1.0);
 
-  /// Horizontal breathing room reserved on both sides of the collapsed title —
-  /// wide enough for the filter pill, which is the wider of the two flanking
-  /// controls. Both sides get the *same* inset at t == 1 even though the add
-  /// button needs less, because an asymmetric inset is exactly what knocks a
-  /// centered title off-center.
-  static const _collapsedSideInset = 86.0;
+  /// Horizontal breathing room reserved on both sides of the collapsed title.
+  /// Both sides get the *same* inset at t == 1 even though the two flanking
+  /// controls aren't the same width, because an asymmetric inset is exactly
+  /// what knocks a centered title off-center — so this is the wider of them
+  /// (the actions group) plus a gap.
+  static const _collapsedSideInset = 108.0;
 
-  /// What the title must clear on the right at rest: the add button plus a gap.
-  static const _addButtonSlot = 48.0;
+  /// What the title must clear on the right at rest: the actions group plus a
+  /// gap. Kept in step with [GlassIconGroup.width] for the two actions below —
+  /// 2 × 44 plus the capsule's end padding.
+  static const _actionsSlot = 100.0;
 
   @override
   Widget build(BuildContext context) {
@@ -161,7 +365,7 @@ class _TitleRow extends StatelessWidget {
             child: Padding(
               padding: EdgeInsets.only(
                 left: _collapsedSideInset * t,
-                right: _addButtonSlot + (_collapsedSideInset - _addButtonSlot) * t,
+                right: _actionsSlot + (_collapsedSideInset - _actionsSlot) * t,
               ),
               child: Align(
                 alignment: Alignment.lerp(Alignment.centerLeft, Alignment.center, t)!,
@@ -173,7 +377,33 @@ class _TitleRow extends StatelessWidget {
               ),
             ),
           ),
-          Positioned(right: 0, top: 0, bottom: 0, child: Center(child: GlassIconButton(icon: LucideIcons.plus, onTap: onAdd))),
+          // Both header actions in one glass capsule, iOS 26-style: connecting
+          // a calendar is Kalender's own job, and burying it in Einstellungen
+          // made a household walk through three screens to add the school's
+          // link. It is a setup action, though, so it rides *beside* the daily
+          // one rather than taking a button's worth of header for itself.
+          Positioned(
+            right: 0,
+            top: 0,
+            bottom: 0,
+            child: Center(
+              child: GlassIconGroup(
+                actions: [
+                  GlassIconAction(
+                    // Not the empty state's `calendarPlus`: beside a bare plus,
+                    // two plus-bearing glyphs read as two ways to add the same
+                    // thing. A link is what "verbinden" means anyway.
+                    icon: LucideIcons.link,
+                    label: L.s.connectCalendars,
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => CalendarConnectionsPage()),
+                    ),
+                  ),
+                  GlassIconAction(icon: LucideIcons.plus, label: L.s.addEvent, onTap: onAdd),
+                ],
+              ),
+            ),
+          ),
           // Overlaid rather than laid out inline for the same reason as the
           // title: reserving width for it would drag the expanded, left-aligned
           // title sideways even at t == 0, where this isn't visible at all.
@@ -221,7 +451,10 @@ class _ToggleAndChipsRow extends ConsumerWidget {
         _MonthYearToggleRow(state: state, accent: accent, monthLabel: monthLabel),
         const SizedBox(height: 14),
         SizedBox(
-          height: 40,
+          // Tall enough for a 26pt face plus the chip's own padding and its
+          // selected ring. The row is measured by the collapsing header rather
+          // than assumed, so this is the only place the number lives.
+          height: 44,
           child: ListView(
             key: calendarChipRowKey,
             scrollDirection: Axis.horizontal,
@@ -342,6 +575,14 @@ class _CalendarChip extends StatelessWidget {
   /// a second line of text: a filled dot means the whole account.
   final bool partial;
 
+  /// The person this chip stands for, drawn in place of the colour dot.
+  ///
+  /// The row is people now, and a face is what makes six of them scannable
+  /// where six names are not — a parent picks their child's chip out of the row
+  /// without reading it. Null on "Alle", which stands for nobody and keeps the
+  /// dot it always had.
+  final Widget? face;
+
   const _CalendarChip({
     required this.label,
     required this.color,
@@ -349,6 +590,7 @@ class _CalendarChip extends StatelessWidget {
     required this.onTap,
     this.onExpand,
     this.partial = false,
+    this.face,
   });
 
   @override
@@ -362,22 +604,37 @@ class _CalendarChip extends StatelessWidget {
           border: Border.all(color: active ? color : Colors.transparent, width: 1.5),
         ),
         child: Container(
-          padding: EdgeInsets.only(left: 14, right: onExpand == null ? 14 : 8, top: 8, bottom: 8),
+          // A face sits close to the chip's edge the way an avatar does in a
+          // row; a bare colour dot needs the full inset or it reads as debris.
+          padding: EdgeInsets.only(
+            left: face == null ? 14 : 5,
+            right: onExpand == null ? 14 : 8,
+            top: face == null ? 8 : 5,
+            bottom: face == null ? 8 : 5,
+          ),
           decoration: BoxDecoration(color: active ? tint(color, .82) : AppColors.surfaceAlt, borderRadius: BorderRadius.circular(24)),
           alignment: Alignment.center,
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: partial ? Colors.transparent : color,
-                  shape: BoxShape.circle,
-                  border: partial ? Border.all(color: color, width: 1.5) : null,
+              // A face where the chip stands for somebody, the colour dot
+              // where it does not. The two are the same width apart so the row
+              // does not jitter as chips come and go.
+              if (face != null) ...[
+                face!,
+                const SizedBox(width: 7),
+              ] else ...[
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: partial ? Colors.transparent : color,
+                    shape: BoxShape.circle,
+                    border: partial ? Border.all(color: color, width: 1.5) : null,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 7),
+                const SizedBox(width: 7),
+              ],
               Text(label, style: AppText.caption.copyWith(fontWeight: active ? FontWeight.w600 : FontWeight.w400, color: active ? AppColors.ink : AppColors.muted)),
               if (onExpand != null) ...[
                 const SizedBox(width: 3),
@@ -405,6 +662,91 @@ class _CalendarChip extends StatelessWidget {
       ),
     );
   }
+}
+
+/// What a chip is called.
+///
+/// Every group but the family answers with the name the wire sent, which is the
+/// household's own word for that calendar or that person.
+///
+/// The **family** chip is the exception, and reads the household's name out of
+/// [familyProvider] instead. `calendar-events` does send it — `ownerDirectory`
+/// reads `families.name` — but that copy is only as fresh as the last read, and
+/// it is written into the offline snapshot on the way past. So an admin who
+/// renamed the household in Settings watched the chip keep the old name until
+/// something happened to trigger a full re-read of every connected account,
+/// which is seconds of work to learn a word the app was already holding.
+///
+/// The wire's copy stays as the fallback for the moment before the household
+/// has loaded, which is the only time this can't answer.
+String _groupLabel(WidgetRef ref, CalendarGroup group) {
+  if (!group.isFamily) return group.name;
+  final name = ref.watch(familyProvider.select((s) => s.household?.name))?.trim();
+  return name == null || name.isEmpty ? group.name : name;
+}
+
+/// The circle on a person's chip.
+///
+/// Three cases, in the order the wire spells them: a household member wears
+/// their own picture (or their initials on their tone), the family chip wears
+/// the household's picture, and a child with no account — most of them, since
+/// members join by e-mail invitation — wears their initial on a tone derived
+/// from the calendar's own colour, so their chip still reads as a person rather
+/// than as the odd one out.
+///
+/// The hollow ring for a partial selection is kept: it is the one piece of
+/// state the row carries without a second line of text, and it works over a
+/// face as well as it worked over a dot.
+Widget _groupFace(WidgetRef ref, CalendarGroup group, {required bool partial}) {
+  final border = partial ? Border.all(color: group.color, width: 1.5) : null;
+  // Big enough that a photograph is a face rather than a smudge. A 20pt circle
+  // reads as a coloured dot on a phone held at arm's length, which defeats the
+  // whole reason the row is people: a parent should pick their child's chip out
+  // without reading it.
+  const size = 26.0;
+
+  if (group.isFamily) {
+    final household = ref.watch(familyProvider).household;
+    final tone = AppTones.list[(household?.tone ?? 0) % AppTones.list.length];
+    return Avatar(
+      size: size,
+      bg: tone.bg,
+      fg: tone.fg,
+      initials: household?.initials ?? '?',
+      fontSize: 11,
+      border: border,
+      imageUrl: household?.avatarUrl,
+    );
+  }
+
+  if (group.ownerMemberId.isNotEmpty) {
+    for (final m in ref.watch(householdMembersProvider)) {
+      if (m.id != group.ownerMemberId) continue;
+      final tone = AppTones.list[m.tone % AppTones.list.length];
+      return Avatar(
+        size: size,
+        bg: tone.bg,
+        fg: tone.fg,
+        initials: m.initials,
+        fontSize: 11,
+        border: border,
+        imageUrl: m.imageUrl,
+      );
+    }
+  }
+
+  // Somebody with no account. Their initial over the calendar's own colour,
+  // which for a Stundenplan is the school's orange — so the chip is still a
+  // face, and still tells you which of two children it is.
+  final name = group.name.trim();
+  return Avatar(
+    size: size,
+    bg: tint(group.color, .78),
+    fg: group.color,
+    initials: name.isEmpty ? '?' : name.substring(0, 1).toUpperCase(),
+    fontSize: 11,
+    border: border,
+  );
 }
 
 /// One account's chip: tap to show all of it, tap again — or hit the chevron —
@@ -452,18 +794,19 @@ class _CalendarGroupChipState extends ConsumerState<_CalendarGroupChip> {
   Widget build(BuildContext context) {
     final group = widget.group;
     final shown = _shown;
-    final filtered = widget.state.calendarFilter != null;
-    // "Selected" means the filter is pointing at this account and nothing else.
-    final active = filtered && shown.isNotEmpty &&
-        shown.length == widget.state.calendarFilter!.length;
+    // Which chip is lit is tracked rather than inferred: filtering to a person
+    // also brings the household's shared calendars in, so an id-set comparison
+    // would light their chip and the family's together.
+    final active = widget.state.filterGroupId == group.id;
 
     return KeyedSubtree(
       key: _anchorKey,
       child: _CalendarChip(
-        label: group.name,
+        label: _groupLabel(ref, group),
         color: group.color,
         active: active,
         partial: active && shown.length < group.calendars.length,
+        face: _groupFace(ref, group, partial: active && shown.length < group.calendars.length),
         onExpand: group.hasChoices ? _open : null,
         // The second tap on an already-selected account opens the list rather
         // than clearing the filter — which is what the chevron beside it has
@@ -473,7 +816,7 @@ class _CalendarGroupChipState extends ConsumerState<_CalendarGroupChip> {
           if (active && group.hasChoices) {
             _open();
           } else {
-            ref.read(calendarProvider.notifier).setCalendarFilter(group.ids);
+            ref.read(calendarProvider.notifier).filterToGroup(group);
           }
         },
       ),

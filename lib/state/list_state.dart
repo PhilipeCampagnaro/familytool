@@ -1,8 +1,13 @@
+import 'dart:io';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/icon_suggestions.dart';
 import '../data/repositories/list_repository.dart';
+import '../data/repositories/photo_repository.dart';
 import '../models/attachment.dart';
+import '../models/picked_file.dart';
+import '../models/event_link.dart';
 import '../models/shopping_list.dart';
 import '../services/supabase.dart';
 import 'auth_state.dart';
@@ -32,8 +37,12 @@ class ListScreenState {
   final Set<String> guestListIds;
 
   /// Item id → what the row menu's Foto/Kamera/Dateien have attached to it.
-  /// Still device-local: `list_item_attachments` needs a Storage bucket, and
-  /// those are not created yet (docs/backend.md, "Status").
+  ///
+  /// Stored now. This map used to be the whole feature — the objects lived in
+  /// `Documents/attachments/` and the map died with the process, so a photo of
+  /// the shelf survived until the next launch and never reached the other
+  /// parent at all. It is a cache of `list_item_attachments` rows, refilled on
+  /// every [ListNotifier.load].
   final Map<String, List<ItemAttachment>> attachments;
 
   /// The create/edit sheet's draft "Für wen?" answer, in the two fields the
@@ -166,11 +175,12 @@ class DeletedList {
 }
 
 class ListNotifier extends StateNotifier<ListScreenState> {
-  ListNotifier(this._repo, this._userId, this._familyId) : super(const ListScreenState()) {
+  ListNotifier(this._repo, this._photos, this._userId, this._familyId) : super(const ListScreenState()) {
     if (_userId != null) load();
   }
 
   final ListRepository _repo;
+  final PhotoRepository _photos;
   final String? _userId;
   final String? _familyId;
 
@@ -197,15 +207,41 @@ class ListNotifier extends StateNotifier<ListScreenState> {
         lists: snapshot.lists,
         itemsByList: snapshot.itemsByList,
         guestListIds: snapshot.guestListIds,
+        // Replaced wholesale, not merged: the server is the source of truth for
+        // what is attached, and a stale entry here would draw a thumbnail for a
+        // file somebody else has already removed.
+        attachments: snapshot.attachmentsByItem,
         loading: false,
         // A list can vanish between two launches (deleted on another device,
         // or a share revoked) while its detail view is the one being restored.
         openId: _resolveOpenId(state.openId, snapshot),
       );
+      // After the rows: a signing round trip must not hold the articles back,
+      // and an attachment whose URL hasn't arrived yet is still named on its
+      // row.
+      await _signAttachments();
     } catch (_) {
       if (!mounted) return;
       state = state.copyWith(loading: false, error: L.s.listsLoadFailed);
     }
+  }
+
+  /// Signs every attached object in one round trip. Never throws: a failure
+  /// here costs thumbnails, not the screen.
+  Future<void> _signAttachments() async {
+    final urls = await _photos.signUrls(
+      PhotoRepository.listBucket,
+      [for (final list in state.attachments.values) for (final a in list) a.storagePath],
+    );
+    if (!mounted || urls.isEmpty) return;
+    state = state.copyWith(
+      attachments: {
+        for (final entry in state.attachments.entries)
+          entry.key: [
+            for (final a in entry.value) urls[a.storagePath] == null ? a : a.copyWith(url: urls[a.storagePath]),
+          ],
+      },
+    );
   }
 
   String _resolveOpenId(String openId, ListSnapshot snapshot) {
@@ -264,7 +300,12 @@ class ListNotifier extends StateNotifier<ListScreenState> {
   /// True only when the row really landed on the server — the screen shows its
   /// confirmation chip off that, so a failed write gets the error snack and no
   /// chip rather than both.
-  Future<bool> createList({required String name, required ListKind kind, String? iconKey}) async {
+  Future<bool> createList({
+    required String name,
+    required ListKind kind,
+    String? iconKey,
+    EventLink? eventLink,
+  }) async {
     final trimmed = name.trim();
     if (trimmed.isEmpty) return false;
     final familyId = _familyId;
@@ -286,6 +327,7 @@ class ListNotifier extends StateNotifier<ListScreenState> {
         visibility: state.newVisibility,
         sharedWith: state.newSharedWith,
         position: state.lists.length,
+        eventLink: eventLink,
       );
       if (!mounted) return false;
       state = state.copyWith(
@@ -395,6 +437,10 @@ class ListNotifier extends StateNotifier<ListScreenState> {
         visibility: list.visibility,
         sharedWith: list.sharedWith.toSet(),
         position: list.position,
+        // Undo has to give back the list that was deleted, and where it came
+        // from is part of that — without this, "Rückgängig" would quietly return
+        // an unlinked list and the event would offer to create it again.
+        eventLink: list.eventLink,
       );
 
       // In parallel: each article carries its own `position`, so the order it
@@ -403,6 +449,12 @@ class ListNotifier extends StateNotifier<ListScreenState> {
       final restored = await Future.wait([
         for (final item in deleted.items) _restoreItem(saved.id, item),
       ]);
+      // The attached files have to be copied, not re-keyed. Undo re-inserts
+      // under a fresh uuid — the old rows are gone and their ids with them —
+      // and every object is filed under the id of the *list* it belongs to, so
+      // the old `storage_path` would name something no list owns any more and
+      // the read policy would rightly refuse it.
+      final movedAttachments = await _restoreAttachments(saved.id, restored, deleted);
       if (!mounted) return false;
 
       final lists = [...state.lists];
@@ -410,19 +462,66 @@ class ListNotifier extends StateNotifier<ListScreenState> {
       state = state.copyWith(
         lists: lists,
         itemsByList: {...state.itemsByList, saved.id: restored},
-        // The photos were only ever on this device, and they were filed under
-        // the *old* article ids — re-key them or they are lost with rows that
-        // still exist.
-        attachments: {
-          ...state.attachments,
-          for (final (i, item) in deleted.items.indexed) restored[i].id: ?deleted.attachments[item.id],
-        },
+        attachments: {...state.attachments, ...movedAttachments},
       );
       return true;
     } catch (_) {
       _fail(L.s.listRestoreFailed);
       return false;
     }
+  }
+
+  /// Copies a restored list's attached files under its new id and files them
+  /// against the new articles, index for index — `Future.wait` keeps the order,
+  /// so [restored] and `deleted.items` line up.
+  ///
+  /// Best-effort per file: one object that has already been swept up must not
+  /// turn undo into a failed restore. A list that comes back missing one photo
+  /// is a far better outcome than a list that doesn't come back.
+  Future<Map<String, List<ItemAttachment>>> _restoreAttachments(
+    String listId,
+    List<ShoppingListItem> restored,
+    DeletedList deleted,
+  ) async {
+    final out = <String, List<ItemAttachment>>{};
+    for (final (i, original) in deleted.items.indexed) {
+      final files = deleted.attachments[original.id];
+      if (files == null || files.isEmpty || i >= restored.length) continue;
+
+      final moved = <ItemAttachment>[];
+      for (final file in files) {
+        try {
+          final path = await _photos.copyTo(
+            bucket: PhotoRepository.listBucket,
+            fromPath: file.storagePath,
+            containerId: listId,
+          );
+          moved.add(
+            await _repo.addAttachment(
+              itemId: restored[i].id,
+              storagePath: path,
+              name: file.name,
+              isImage: file.isImage,
+            ),
+          );
+        } catch (_) {
+          continue;
+        }
+      }
+      if (moved.isNotEmpty) out[restored[i].id] = moved;
+    }
+
+    if (out.isEmpty) return out;
+    final urls = await _photos.signUrls(
+      PhotoRepository.listBucket,
+      [for (final list in out.values) for (final a in list) a.storagePath],
+    );
+    return {
+      for (final entry in out.entries)
+        entry.key: [
+          for (final a in entry.value) urls[a.storagePath] == null ? a : a.copyWith(url: urls[a.storagePath]),
+        ],
+    };
   }
 
   /// One article of a restored list, back with everything the columns hold —
@@ -630,13 +729,73 @@ class ListNotifier extends StateNotifier<ListScreenState> {
     }
   }
 
-  /// Files the picked photo/document under its item. Appends rather than
-  /// replaces: picking a second photo adds to the first. Device-local until
-  /// there is a Storage bucket behind `list_item_attachments`.
-  void addAttachment(String itemId, ItemAttachment attachment) {
-    final attachments = Map<String, List<ItemAttachment>>.from(state.attachments);
-    attachments[itemId] = [...?attachments[itemId], attachment];
-    state = state.copyWith(attachments: attachments);
+  /// Files the picked photo/document under its article. Appends rather than
+  /// replaces: picking a second photo adds to the first.
+  ///
+  /// **Object first, row second.** A row naming an object that isn't there
+  /// draws a broken thumbnail for the whole household, while an object no row
+  /// names is a few kilobytes nobody can reach — so the upload has to have
+  /// landed before anything points at it.
+  ///
+  /// The picked file's own path is carried on the result as
+  /// [ItemAttachment.localPath] and drawn in preference to the signed URL for
+  /// the rest of the session: it is already on this disk, so there is nothing
+  /// to fetch and no wait between the tap and the picture.
+  Future<void> addAttachment(ShoppingListItem item, PickedFile picked) async {
+    if (_isTemp(item.id)) return; // Still in flight; there is no row to hang it on.
+
+    try {
+      final path = await _photos.upload(
+        bucket: PhotoRepository.listBucket,
+        containerId: item.listId,
+        file: File(picked.path),
+      );
+      final saved = await _repo.addAttachment(
+        itemId: item.id,
+        storagePath: path,
+        name: picked.name,
+        isImage: picked.isImage,
+      );
+      final urls = await _photos.signUrls(PhotoRepository.listBucket, [path]);
+      if (!mounted) return;
+      _putAttachments(item.id, [
+        ...state.attachmentsFor(item),
+        saved.copyWith(url: urls[path], localPath: picked.path),
+      ]);
+    } catch (_) {
+      if (!mounted) return;
+      _fail(L.s.photoUploadFailed);
+    }
+  }
+
+  /// Takes one file off an article — the row, then the object.
+  ///
+  /// `list_item_attachments_delete` is the uploader's own rows only, so
+  /// somebody else's photo comes back as an empty result rather than as a
+  /// raise; the row is put back on screen in that case, because it is still
+  /// there on the server.
+  Future<void> removeAttachment(ShoppingListItem item, ItemAttachment attachment) async {
+    final previous = state.attachmentsFor(item);
+    _putAttachments(item.id, [for (final a in previous) if (a.id != attachment.id) a]);
+
+    try {
+      await _repo.deleteAttachment(attachment.id);
+      await _photos.remove(PhotoRepository.listBucket, [attachment.storagePath]);
+    } catch (_) {
+      if (!mounted) return;
+      _putAttachments(item.id, previous);
+      _fail(L.s.photoRemoveFailed);
+    }
+  }
+
+  void _putAttachments(String itemId, List<ItemAttachment> attachments) {
+    final map = Map<String, List<ItemAttachment>>.from(state.attachments);
+    if (attachments.isEmpty) {
+      map.remove(itemId);
+    } else {
+      map[itemId] = attachments;
+    }
+    state = state.copyWith(attachments: map);
   }
 
   // ---------------------------------------------------------------------------
@@ -703,6 +862,7 @@ final listRepositoryProvider = Provider<ListRepository>((ref) => ListRepository(
 final listProvider = StateNotifierProvider<ListNotifier, ListScreenState>((ref) {
   return ListNotifier(
     ref.watch(listRepositoryProvider),
+    ref.watch(photoRepositoryProvider),
     ref.watch(currentUserIdProvider),
     ref.watch(familyProvider.select((s) => s.household?.id)),
   );

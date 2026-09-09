@@ -144,6 +144,8 @@ class _RenameHeader extends StatelessWidget {
       valueListenable: flow.phase,
       builder: (context, phase, _) => SheetActionHeader(
         title: title,
+        // Naming is the whole sheet, so an empty field has nothing to confirm.
+        requiredField: flow.name,
         action: switch (phase) {
           _Phase.editing => SheetHeaderAction.confirm,
           _Phase.busy => SheetHeaderAction.busy,

@@ -21,7 +21,14 @@ class NativeTabBar extends StatefulWidget {
   final int index;
   final ValueChanged<int> onTap;
 
-  const NativeTabBar({super.key, required this.index, required this.onTap});
+  /// Reports the height UIKit laid the bar out at, once it has one. Nothing
+  /// in Dart can predict it — an iOS 26 capsule is a good deal taller than the
+  /// classic bar — so anything that has to line up with the bar's centre (the
+  /// compacted nav button in `AppShell`) has to be told rather than assume
+  /// [kNativeTabBarHeight].
+  final ValueChanged<double>? onHeight;
+
+  const NativeTabBar({super.key, required this.index, required this.onTap, this.onHeight});
 
   @override
   State<NativeTabBar> createState() => _NativeTabBarState();
@@ -93,6 +100,7 @@ class _NativeTabBarState extends State<NativeTabBar> {
     final height = size['height'] ?? 0;
     if (width <= 0 || height <= 0) return;
     setState(() => _intrinsicSize = Size(width, height));
+    widget.onHeight?.call(height);
   }
 
   @override

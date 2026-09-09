@@ -4,9 +4,20 @@ part of '../calendar_screen.dart';
 // Event detail sheet
 // ---------------------------------------------------------------------------
 
-/// The event-detail sheet's header: a centered title with the close button
-/// beside it — the same single row every other sheet in the app has
-/// (`_AppSheetBody._defaultHeader`), whose shape this copies.
+/// The event-detail sheet's header: a centered title flanked by the close
+/// button and "Bearbeiten" — the same single row every other sheet in the app
+/// has (`_AppSheetBody._defaultHeader`), whose shape and *sides* this copies:
+/// the way out on the left, the sheet's own action on the right.
+///
+/// Both buttons live up here rather than the close alone, because the pair the
+/// sheet used to end with — a trash [GlassIconButton] and a full-width
+/// "Bearbeiten" pill — was a second row of controls below a column of cards
+/// that already reads as finished. Editing moved into the header beside the
+/// title, and deleting moved *inside* the edit sheet ([_openEditEventSheet]),
+/// where the rest of the destructive actions in the app already are (the task
+/// sheet's "Aufgabe löschen"). Looking at an appointment and changing one are
+/// now two different sheets with two different sets of buttons, which is the
+/// distinction the old footer blurred.
 ///
 /// The word "Termin", not the event's own name. The name is
 /// [_buildEventHeadline], right below in the body, where it has the full width
@@ -23,6 +34,10 @@ part of '../calendar_screen.dart';
 /// written around. A plain row has neither problem, and the source/owner chips
 /// moved into the body, over the first card.
 Widget _buildEventDetailHeader(BuildContext context, WidgetRef ref) {
+  final state = ref.watch(calendarProvider);
+  final event = state.openEvent;
+  final editable = event != null && (state.sourceById(event.calendarId)?.editable ?? false);
+
   return Padding(
     padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
     child: SizedBox(
@@ -50,7 +65,7 @@ Widget _buildEventDetailHeader(BuildContext context, WidgetRef ref) {
             ),
           ),
           Align(
-            alignment: Alignment.centerRight,
+            alignment: Alignment.centerLeft,
             child: GlassIconButton(
               icon: LucideIcons.x,
               onTap: () {
@@ -59,6 +74,31 @@ Widget _buildEventDetailHeader(BuildContext context, WidgetRef ref) {
               },
             ),
           ),
+          // Absent for anything proxied from a connected account or a public
+          // feed: Aporah keeps no copy of those, so there is nothing here to
+          // edit. The source app — or the Stadtreinigung — owns them, and the
+          // header is then the close button and the title alone.
+          if (editable)
+            Align(
+              alignment: Alignment.centerRight,
+              // Accent-tinted, like the save button occupying this corner one
+              // sheet up: the right-hand glass button is this sheet's own
+              // action, and a plain one here would sit at the same weight as
+              // the way out beside a title that is only a label. The pencil,
+              // not a check, keeps it from reading as a save.
+              child: GlassConfirmButton(
+                icon: LucideIcons.pencil,
+                onTap: () async {
+                  final deleted = await _openEditEventSheet(context, ref, event);
+                  // Deleting from inside the edit sheet leaves this one showing
+                  // an appointment that no longer exists — so it goes too, and
+                  // the tap lands back on the calendar.
+                  if (!deleted || !context.mounted) return;
+                  ref.read(calendarProvider.notifier).closeEvent();
+                  Navigator.of(context).pop();
+                },
+              ),
+            ),
         ],
       ),
     ),
@@ -120,12 +160,6 @@ Widget _buildEventChips(CalendarEvent e) {
   );
 }
 
-/// Height of the event-detail sheet's action row. The trash [GlassIconButton]
-/// is square, so this is also its width — it's sized from the "Bearbeiten"
-/// pill beside it, whose height is its 14pt padding top and bottom around a
-/// ~22pt line of Poppins 15.
-const _detailActionHeight = 50.0;
-
 /// The header row's height — [GlassIconButton]'s own diameter, so the title
 /// line and the button are one row rather than two stacked ones.
 const _eventDetailHeaderHeight = 40.0;
@@ -144,6 +178,9 @@ void _showEventDetailSheet(BuildContext context, WidgetRef ref) {
         final accent = Theme.of(context).colorScheme.primary;
         if (e == null) return const SizedBox.shrink();
         final weather = _weatherFor(ref, e);
+        final homework = _homeworkFor(ref, e);
+        final linkedLists = _linkedListsFor(ref, e);
+        final linkedTasks = _linkedTasksFor(ref, e);
 
         return Column(
           // Stretch, not start: under `start` every card is only as wide as its
@@ -178,6 +215,19 @@ void _showEventDetailSheet(BuildContext context, WidgetRef ref) {
                           Text(state.openEventDateLine, style: AppText.itemTitle),
                           const SizedBox(height: 2),
                           Text(e.timeRangeLabel, style: AppText.caption.copyWith(fontWeight: FontWeight.w300, color: AppColors.inkTertiary)),
+                          // That it comes round, not how often. An expanded
+                          // occurrence is all a provider hands back, so the
+                          // frequency is genuinely unknown here — and the one
+                          // thing this line has to earn is that "Löschen" is
+                          // about to ask a question.
+                          if (e.repeats) ...[
+                            const SizedBox(height: 5),
+                            Row(children: [
+                              Icon(LucideIcons.repeat, size: 12, color: AppColors.muted),
+                              const SizedBox(width: 6),
+                              Text(L.s.repeats, style: AppText.microLabel),
+                            ]),
+                          ],
                         ],
                       ),
                     ),
@@ -192,6 +242,15 @@ void _showEventDetailSheet(BuildContext context, WidgetRef ref) {
                 ],
               ),
             ),
+            // Above the room and the notes, because on a lesson it is the thing
+            // the sheet was opened to find out. Absent entirely for every event
+            // that is not a school lesson with work due in it, which is almost
+            // all of them — an empty "Hausaufgaben" card on a dentist
+            // appointment would be a permanent puzzle.
+            if (homework.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              _HomeworkCard(homework: homework),
+            ],
             // A card for a place the event doesn't have is an empty row over a
             // map of nowhere — a Ferien block has no location and shouldn't
             // pretend to.
@@ -220,6 +279,16 @@ void _showEventDetailSheet(BuildContext context, WidgetRef ref) {
                 ],
               ),
             ),
+            // What already hangs off this appointment, above the offer to hang
+            // something else off it. This card is why the link exists: the
+            // sheet used to offer "Liste zum Termin erstellen" every time it
+            // opened, including on the event whose list was made from it five
+            // minutes earlier, so the one place that knew about the list was
+            // the Listen tab.
+            if (linkedLists.isNotEmpty || linkedTasks.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              _LinkedCard(lists: linkedLists, tasks: linkedTasks),
+            ],
             // Hang something off this appointment.
             //
             // Deliberately *outside* the `editable` guard below: a packing list
@@ -234,61 +303,55 @@ void _showEventDetailSheet(BuildContext context, WidgetRef ref) {
             // is already a column of single-purpose cards (Datum, Ort,
             // Notizen), and an explanatory paragraph that never goes away is
             // the tallest thing in a sheet you open dozens of times.
+            //
+            // Still offered when something is already linked, and on purpose: a
+            // weekend away wants a packing list *and* a shopping list, and the
+            // card above already answers "is there one?" — which was the only
+            // question the old unconditional pair could not answer.
             const SizedBox(height: 12),
             SectionCard(
               children: dividedRows([
                 // The two tab icons, so the row says where it lands as well as
                 // what it does.
                 SettingsRow(
-                  icon: LucideIcons.clipboardCheck,
+                  leading: _LinkTile(
+                    iconKey: null,
+                    fallbackIcon: LucideIcons.clipboardCheck,
+                    action: true,
+                  ),
                   title: L.s.createListFromEvent,
                   // The event's own name, as a name for the container — which
                   // is what makes this worth a tap: "Wochenende Hamburg" is a
                   // good list. Untouched-but-prefilled counts as typed, so
                   // `suggestIcon` picks the list's icon off it for free.
-                  onTap: () => openListSheet(context, ref, initialName: e.title.trim()),
+                  onTap: () => openListSheet(
+                    context,
+                    ref,
+                    initialName: e.title.trim(),
+                    eventLink: _linkTo(e),
+                  ),
                 ),
                 SettingsRow(
-                  icon: LucideIcons.layoutPanelLeft,
+                  leading: _LinkTile(
+                    iconKey: null,
+                    fallbackIcon: LucideIcons.layoutPanelLeft,
+                    action: true,
+                  ),
                   title: L.s.createTaskFromEvent,
                   // The date, not the title — see [openTaskSheet]. A task named
                   // after the appointment only repeats the appointment.
-                  onTap: () => openTaskSheet(context, ref, initialDue: e.startsAt),
+                  onTap: () => openTaskSheet(
+                    context,
+                    ref,
+                    initialDue: e.startsAt,
+                    eventLink: _linkTo(e),
+                  ),
                 ),
               ]),
             ),
-            // Wider than the 12pt rhythm between the detail cards above: these
-            // are the sheet's actions, not another card, so they need to read as
-            // a separate group rather than crowding the last one.
-            const SizedBox(height: 22),
-            // Hidden for anything proxied from a connected account or a public
-            // feed: Aporah keeps no copy of those, so there is nothing here to
-            // edit or delete. The source app — or the Stadtreinigung — owns them.
-            if (state.sourceById(e.calendarId)?.editable ?? false)
-              Row(
-                children: [
-                  // Same size as the pill beside it is tall, so the pair reads as
-                  // one row of controls in the same material rather than a button
-                  // and a card. Plain ink, like every other icon in the app: red
-                  // is how the confirm dialog's "Löschen" reads, and spending it
-                  // out here too made a button you have not pressed yet look like
-                  // the consequence of pressing it.
-                  GlassIconButton(
-                    icon: LucideIcons.trash,
-                    size: _detailActionHeight,
-                    iconSize: 18,
-                    onTap: () => _confirmDeleteEvent(context, ref, e, closeParentSheet: true),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: GlassAccentButton(
-                      label: L.s.edit,
-                      expand: true,
-                      onTap: () => _openEditEventSheet(context, ref, e),
-                    ),
-                  ),
-                ],
-              ),
+            // "Bearbeiten" and "Löschen" used to end this column. They are the
+            // header's right-hand button and a row inside the edit sheet now —
+            // see [_buildEventDetailHeader].
           ],
         );
       },
@@ -649,37 +712,274 @@ class _MapPinPainter extends CustomPainter {
   bool shouldRepaint(_MapPinPainter oldDelegate) => oldDelegate.color != color || oldDelegate.ring != ring;
 }
 
-/// [closeParentSheet] should only be `true` when called from within the
-/// event detail sheet itself (closing it after delete) — the swipe-action
-/// entry point on the agenda card calls this directly from the screen, with
-/// no parent sheet route to pop.
-void _confirmDeleteEvent(BuildContext context, WidgetRef ref, CalendarEvent event, {bool closeParentSheet = false}) {
+/// [onDeleted] runs the moment the removal is *started*, not when it comes
+/// back: it is how the caller closes whatever it was showing the event in (the
+/// edit sheet pops itself here), and a sheet that lingers until the provider
+/// answers would sit there over a row the calendar has already dropped. The
+/// swipe-action entry point on the agenda card passes nothing — it is called
+/// straight from the screen, with no route of its own to pop.
+/// The one destructive control in Kalender, behind a question.
+///
+/// A repeating appointment is asked a different question with two answers: "Nur
+/// dieser Termin" and "Ganze Serie" replace the single "Löschen", because on a
+/// series the two are wildly different outcomes and there is no way to infer
+/// which one a tap meant. One of the two also cannot be undone — see below.
+void _confirmDeleteEvent(BuildContext context, WidgetRef ref, CalendarEvent event, {VoidCallback? onDeleted}) {
   showDialog<void>(
     context: context,
-    builder: (dialogContext) => AlertDialog(
-      title: Text(L.s.deleteEventQuestion),
-      content: Text(L.s.deleteEventBody(event.title)),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(dialogContext).pop(),
-          child: Text(L.s.cancel),
+    builder: (dialogContext) {
+      Future<void> remove(EventScope scope) async {
+        // Before [onDeleted]: [context] is the sheet's own when the delete
+        // came from inside it, and that route is about to go.
+        final confirm = confirmChipOf(context);
+        final notifier = ref.read(calendarProvider.notifier);
+        final deleting = notifier.deleteEvent(event, scope: scope);
+        Navigator.of(dialogContext).pop();
+        onDeleted?.call();
+        if (!await deleting) return;
+        // No undo on a series. [CalendarNotifier.restoreEvent] writes the one
+        // occurrence back out as a fresh appointment, which after "Ganze Serie"
+        // would put a single Monday where a term of them used to be and call it
+        // restored. Better to offer nothing than to offer that.
+        confirm(
+          L.s.eventDeleted,
+          undo: scope == EventScope.series ? null : () => notifier.restoreEvent(event),
+        );
+      }
+
+      final danger = AppText.rowTitle.copyWith(color: AppColors.danger);
+
+      return AlertDialog(
+        title: Text(event.repeats ? L.s.repeatingEvent : L.s.deleteEventQuestion),
+        content: Text(
+          event.repeats ? L.s.deleteRepeatingEventBody : L.s.deleteEventBody(event.title),
         ),
-        TextButton(
-          onPressed: () async {
-            // Before the pops: [context] is the sheet's own when the delete came
-            // from inside it, and that route is about to go.
-            final confirm = confirmChipOf(context);
-            final notifier = ref.read(calendarProvider.notifier);
-            final deleting = notifier.deleteEvent(event);
-            Navigator.of(dialogContext).pop();
-            if (closeParentSheet) Navigator.of(context).pop();
-            if (await deleting) {
-              confirm(L.s.eventDeleted, undo: () => notifier.restoreEvent(event));
-            }
-          },
-          child: Text(L.s.delete, style: AppText.rowTitle.copyWith(color: AppColors.danger)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(L.s.cancel),
+          ),
+          if (event.repeats) ...[
+            TextButton(
+              onPressed: () => remove(EventScope.single),
+              child: Text(L.s.thisEventOnly, style: danger),
+            ),
+            TextButton(
+              onPressed: () => remove(EventScope.series),
+              child: Text(L.s.wholeSeries, style: danger),
+            ),
+          ] else
+            TextButton(
+              onPressed: () => remove(EventScope.single),
+              child: Text(L.s.delete, style: danger),
+            ),
+        ],
+      );
+    },
+  );
+}
+
+/// The homework due in the lesson this sheet is showing.
+///
+/// **The payoff for the badge on the card.** The badge says *that* something is
+/// due; this says what — "S.17/5", or a materials list with an emoji per line —
+/// which is the question the sheet was opened to answer, and it answers it
+/// without leaving Kalender for Board.
+///
+/// Read-only, and pointedly so: [Homework.done] is the pupil's own tick in
+/// Untis, shown here and never written. A checkbox in this card would give the
+/// household two answers to whether the Vokabeln are learnt.
+class _HomeworkCard extends StatelessWidget {
+  final List<Homework> homework;
+
+  const _HomeworkCard({required this.homework});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: AppShadows.card,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            Icon(LucideIcons.bookOpenCheck, size: 15, color: AppColors.muted),
+            const SizedBox(width: 9),
+            Text(
+              L.s.homeworkCount(homework.length),
+              style: AppText.microLabel.copyWith(letterSpacing: 0.3),
+            ),
+          ]),
+          for (final h in homework) ...[
+            const SizedBox(height: 11),
+            _HomeworkEntry(homework: h),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// One homework inside [_HomeworkCard].
+class _HomeworkEntry extends StatelessWidget {
+  final Homework homework;
+
+  const _HomeworkEntry({required this.homework});
+
+  @override
+  Widget build(BuildContext context) {
+    // Ticked off in Untis: greyed and struck through rather than hidden. A
+    // parent looking at Wednesday's Deutsch wants to see that the Arbeitsblatt
+    // exists *and* that it is done — dropping it would read as no homework set.
+    final ink = homework.done ? AppColors.doneInk : AppColors.ink;
+
+    // The teacher is the homework payload's own — full name plus Kürzel,
+    // "Meyer (MYE)" — which is nicer than the Kürzel the timetable carries.
+    final meta = [
+      if (homework.done) L.s.homeworkDone,
+      if (homework.teacher.isNotEmpty) '${L.s.homeworkSetBy} ${homework.teacher}',
+      if (homework.remark.isNotEmpty) homework.remark,
+    ].join(' · ');
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          homework.text,
+          style: AppText.body.copyWith(
+            color: ink,
+            decoration: homework.done ? TextDecoration.lineThrough : null,
+            decorationColor: AppColors.doneInk,
+          ),
+        ),
+        if (meta.isNotEmpty) ...[
+          const SizedBox(height: 3),
+          Text(meta, style: AppText.caption.copyWith(color: AppColors.inkTertiary)),
+        ],
+      ],
+    );
+  }
+}
+
+/// The disc in front of every row of the sheet's two link cards.
+///
+/// **Not [SettingsRow]'s own [GlassIconTile].** That is an accent-tinted glass
+/// lens, and the sheet it sits in is a column of white cards over a photograph
+/// of the day — five accent lenses down two adjacent cards read as the loudest
+/// thing on the sheet, and they made a list called "Rewe" (which draws the
+/// shop's actual logo) sit in a row of blue circles it obviously did not belong
+/// to. This is the plain circle Listen and Boxen already draw their containers
+/// with, so a list looks the same wherever the household meets it.
+///
+/// [action] is the one distinction the fill carries: **grey for a thing that
+/// exists, white for a row that makes one**. The two cards are otherwise the
+/// same five rows in the same shape, and "Liste zum Termin erstellen" is a very
+/// different tap from "Wochenende Hamburg".
+class _LinkTile extends StatelessWidget {
+  final String? iconKey;
+  final IconData fallbackIcon;
+  final bool action;
+
+  const _LinkTile({required this.iconKey, required this.fallbackIcon, this.action = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return IconTile(
+      iconKey: iconKey,
+      // The 34 [SettingsRow] gives its own tile, so the rows keep the indent
+      // every other row in the app has.
+      size: 34,
+      imageSize: 23,
+      // Fixed rather than derived from [imageSize]: a glyph and a shop logo want
+      // different sizes inside the same disc, and these rows carry both.
+      glyphSize: 17,
+      fallbackIcon: fallbackIcon,
+      glyphColor: AppColors.ink,
+      // `surface`, not `brandTile` — the white disc for artwork is white in both
+      // palettes on purpose, and an ink glyph on it would vanish on dark.
+      background: action ? AppColors.surface : null,
+    );
+  }
+}
+
+/// What the household has already hung off this appointment, and the way to it.
+///
+/// **The half of the link the event sheet was missing.** "Liste zum Termin
+/// erstellen" was offered unconditionally, so the sheet asked you to create the
+/// list it had just been used to create — the two rows below this card can only
+/// ever say what *could* exist. This says what does, and gets you there.
+///
+/// Tapping a row leaves Kalender: the sheet closes, the shell switches tab, and
+/// Listen opens the list or Board opens the task's sheet ([TabJump]). Rendering
+/// the list's contents here instead was the alternative and is worse — it would
+/// be a second, smaller Listen inside a calendar sheet, with none of its
+/// gestures, and the tick you make there has to land in the same place either
+/// way.
+class _LinkedCard extends ConsumerWidget {
+  final List<ShoppingList> lists;
+  final List<BoardTask> tasks;
+
+  const _LinkedCard({required this.lists, required this.tasks});
+
+  /// Closes the sheet — and the event behind it, exactly as the header's × does
+  /// — before asking the shell to move. Leaving the sheet up over the tab
+  /// transition would put a Kalender sheet on top of Board.
+  void _leaveFor(BuildContext context, WidgetRef ref, void Function() jump) {
+    ref.read(calendarProvider.notifier).closeEvent();
+    Navigator.of(context).pop();
+    jump();
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final nav = ref.read(tabJumpProvider.notifier);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        GroupLabel(L.s.linkedToEvent),
+        SectionCard(
+          children: dividedRows([
+            for (final list in lists)
+              SettingsRow(
+                // The list's own symbol, the one Listen draws it with — a
+                // generic clipboard here would make two lists off the same
+                // weekend indistinguishable at exactly the moment you are
+                // choosing between them.
+                leading: _LinkTile(
+                  iconKey: list.iconKey,
+                  fallbackIcon: list.kind == ListKind.grocery
+                      ? LucideIcons.shoppingCart
+                      : LucideIcons.clipboardCheck,
+                ),
+                title: list.name,
+                onTap: () => _leaveFor(context, ref, () => nav.toList(list.id)),
+              ),
+            for (final task in tasks)
+              SettingsRow(
+                // The same disc as the lists above it, not [SettingsRow]'s own
+                // accent glass lens: a card of five rows in two tile styles
+                // reads as two cards, and the thing that separates a list from a
+                // task here is the glyph, not the material behind it.
+                leading: _LinkTile(iconKey: null, fallbackIcon: LucideIcons.layoutPanelLeft),
+                title: task.text,
+                // The note, where there is one: a task called "Packen" with
+                // "Reisepass, Ladegerät" under it is the row that saves the trip
+                // to Board.
+                subtitle: task.meta?.trim().isEmpty ?? true ? null : task.meta,
+                // A ticked task stays on the card rather than dropping off it.
+                // It disappearing would read as "nobody ever made one", which is
+                // the opposite of what happened.
+                value: task.done ? L.s.doneLabel : null,
+                onTap: () => _leaveFor(context, ref, () => nav.toTask(task.id)),
+              ),
+          ]),
         ),
       ],
-    ),
-  );
+    );
+  }
 }

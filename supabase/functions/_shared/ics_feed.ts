@@ -169,6 +169,9 @@ export async function readFeedEvents(
     startsAt: p.startsAt,
     endsAt: p.endsAt,
     allDay: p.allDay,
+    // No `seriesUid` either, deliberately. It exists to make "ganze Serie"
+    // addressable, and nothing in a feed is writable — a Ferien block that
+    // announced it repeats would only offer a choice the write path refuses.
     // A link feed is read-only and has no addressable resource behind an
     // event, so there is nothing for calendar-write to target. `is_read_only`
     // on the connection is what actually refuses the write; these are null

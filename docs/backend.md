@@ -31,6 +31,46 @@ out loud: *"Zugewiesen an Lea — für alle sichtbar."* The backend splits it in
 External sharing is deliberately **not** part of the "Für wen?" picker. Mixing outsiders into the
 family avatar row would make a mis-tap leak family data; it gets its own "Teilen" sheet.
 
+## Board: Aufgaben and Tracker are two tables
+
+`public.tasks` is the one-off to-do it always was. `public.trackers` is the rhythm beside it, and
+the split exists because the two behave differently in the one place a household notices:
+
+| | Aufgabe | Tracker |
+|---|---|---|
+| Termin | `due_date`, or none | a rule: `schedule` + `weekdays` / `target` |
+| Verpasst | Überfällig, and it stays | a gap in the record, and nothing else |
+| Erledigt | off the list | recorded, and back on the next scheduled day |
+| Verlauf | none | `public.tracker_checks`, one row per day kept |
+| Extern teilbar | yes | **no** — `shareable_kind` names no value for it |
+
+`tracker_schedule` is `('daily','weekdays','weekly_count')`, and `weekdays` against `weekly_count`
+is not two spellings of one idea. A `weekdays` tracker makes the **day** the unit and can say
+"heute dran"; a `weekly_count` tracker makes the **week** the unit, owes nothing on any particular
+day, and can only be missed once Sunday has closed. `trackers_schedule_shape` keeps a row from
+carrying both shapes at once.
+
+**The future is never materialised.** There is no row per scheduled day: the rule stays one row and
+the app computes which days it covers at read time
+([lib/data/tracker_data.dart](../lib/data/tracker_data.dart)). Generating occurrences would need a
+job to keep them coming, a rewrite of the whole future whenever somebody edits a rhythm, and it
+would strand hundreds of rows on delete. Nor is a tracker a task with a rolling `due_date`:
+advancing the date on completion keeps no history at all, which is the one thing a tracker is for.
+
+**A tick is a row and an untick is a delete.** There is no "not done" to store, because a miss is
+the absence of a check on a day the rule scheduled, and only the rule knows which days those were.
+`done_by` sits in the primary key `(tracker_id, day, done_by)` even though one tick currently
+settles the day for the whole household — that is what "Müll rausbringen" wants, and a later
+"everybody has to tick" mode then needs a column on `trackers` and no migration of existing rows.
+
+`can_read_tracker` / `can_write_tracker` live in `private` like every other helper, and they have
+**no guest branch**: a link handing an outsider a page of the household's habits has no reader worth
+the leak. Note the grants — a function *created* in `private` starts with EXECUTE for PUBLIC only,
+so the migration grants `authenticated` explicitly. The seventeen helpers next door only kept it
+because they were moved into the schema carrying the grants Supabase had given them in `public`.
+Revoking PUBLIC without granting it back takes every policy on the table down with a permission
+error.
+
 ## One household per user, always
 
 `unique (user_id)` on `family_members` makes this a database fact, not a convention:
@@ -112,8 +152,9 @@ a policy decision with a test, not an emergent property:
    guest impossible at the database level, not merely unlikely.
 4. **Container metadata.** `enforce_container_ownership` keeps `owner_id`, `family_id` and
    `visibility` with the owner, so `can_edit` never becomes "take this list home with me".
-5. **Attachments.** Storage policies must key on `can_read_list(...)` alone, never on household
-   membership, or guests silently lose photos on shared items.
+5. **Attachments.** Storage policies must key on `can_read_list(...)` / `can_read_box(...)` alone,
+   never on household membership, or guests silently lose photos on shared items. Both picture
+   buckets do — see "Storage: the picture buckets".
 6. **Everything inside a shared container is shared** — `list_items` have no visibility of their
    own. The Teilen sheet's copy should say so.
 
@@ -159,6 +200,41 @@ So a repository creates a container by generating the uuid on the device (`newUu
 inserting without a representation, and reading the row back in a second statement. The read-back
 earns its round trip: it is what proves the creator can actually see what they just made. Child
 rows and every update keep `.select()`.
+
+## Linking a list or a task to an appointment
+
+`lists` and `tasks` each carry three nullable columns — `event_calendar_id`, `event_uid`,
+`event_starts_at` — written once when the container is created from an event's detail sheet in
+Kalender. `EventLink` ([lib/models/event_link.dart](../lib/models/event_link.dart))
+is the Dart side; a `*_event_link_complete` check keeps the first two together, so half a link is
+not representable.
+
+Three things about it are load-bearing:
+
+- **The reference is `(calendar, provider uid)`, not a foreign key.** There is nothing to point at:
+  every event is proxied from the connected account or the shared feed on each read and none is
+  stored. `untis_homework.event_uid` names a lesson exactly this way already, and reusing the
+  mechanism is deliberate.
+- **`event_calendar_id` has no FK either**, because the id is a `public.calendars.id` for a
+  connected calendar and a `public.public_feeds.id` for Ferien and Abfall — two tables, on purpose.
+  An FK to `calendars` alone would reject the packing list somebody hangs off a Schulferien block.
+- **There is no `event_title`, and that is the point.** An earlier draft copied the appointment's
+  name onto the row so a task could label its badge months later. That is content out of somebody's
+  calendar sitting in our database, which is the one thing this schema refuses to do, and its being
+  one short line does not make it a pointer instead of a copy. `EventLinkChip` resolves the live
+  name through `CalendarScreenState.eventForLink` while Kalender holds the event — so a renamed
+  appointment renames every badge — and prints the date when it does not.
+- **`event_starts_at` is the exception, and it is a date rather than content.** It is what makes
+  the jump back work for an appointment outside the fortnight Kalender loads, which is most of
+  them. On a task the same day is already in `due_date`, so it adds nothing there; on a list it
+  adds one day per link. It goes stale if the appointment is moved, which costs a wrong day and
+  never a wrong list.
+
+No policy changes came with it. The link is an ordinary column on a container that already has a
+complete access story, and `enforce_container_ownership` guards ownership, household and visibility
+— none of which this touches. There is no edit path and no unlink: a list belongs to the event it
+was made for, and deleting the list is how the link ends. Undo re-creates it with the link intact
+(`ListNotifier.restoreList`), which is the one place it would otherwise be dropped silently.
 
 ## Privileged paths
 
@@ -222,6 +298,47 @@ Three details worth knowing before touching it:
   they typed it, and an event created in August would move an hour in November. All-day events use
   an **exclusive** end date throughout — model, wire, `DTEND;VALUE=DATE` and Google's `end.date`
   all agree on it.
+
+### Recurrence, and the one occurrence in the middle of it
+
+A `repeat` on the wire (`freq`, `interval`, `until`, `weekday`) becomes a rule in whatever shape the
+provider takes. Google and CalDAV get an `RRULE`; **Graph does not accept one** and wants a
+`pattern` + `range` object instead, and unlike iCalendar it infers nothing from the start — a weekly
+pattern needs `daysOfWeek` spelled out and a monthly one needs `dayOfMonth`, which is what `weekday`
+rides along for. `UNTIL` is inclusive and has to match `DTSTART`'s value type: a bare `DATE` for an
+all-day series, and for a timed one the end of that day **in Berlin, expressed in UTC**
+(`20261109T225959Z` in winter, `…T215959Z` in summer). Graph's `range.endDate` is a plain date and
+needs none of that.
+
+On an update, `recurrence` is included **only when there is a rule to state**. Both Google and Graph
+take a PATCH as a merge, so omitting the key keeps the rule the event already has — sending a null
+would strip it and turn a whole series into one appointment.
+
+Then the part that bit us. **Google and Graph address an occurrence and its series by two different
+ids** (`recurringEventId`, `seriesMasterId`), so "nur dieser Termin" and "ganze Serie" are the same
+call on one id or the other. **iCalendar gives them the same UID.** `writeCalDav` used to look the
+event up by UID and `PUT` a freshly built single VEVENT over whatever it found — which on a
+repeating appointment replaced the series with one date: changing the time of one football training
+silently deleted the rest of the term.
+
+So nothing is written blind there any more. The resource is read first (`readEventIcs`), and if it
+holds an RRULE the change is *amended into* it rather than replacing it, through `ical.js` rather
+than through the text — the value that has to match is not a string but a moment in a particular
+shape, whichever the master itself uses:
+
+- **cancel one occurrence** → an `EXDATE`, plus the removal of any override already written for that
+  day (`excludeOccurrence`);
+- **change one occurrence** → a second VEVENT under the same UID carrying a `RECURRENCE-ID`, written
+  fresh so editing the same Monday twice leaves one override rather than two (`overrideOccurrence`);
+- **change the series** → the master edited in place (`editSeries`), keeping its rule, its EXDATEs
+  and its overrides. **Exceptions are shifted by the same delta as DTSTART**, because an EXDATE names
+  a slot the rule generates: move the series an hour and every one of them points at a moment that
+  no longer exists, so the cancelled Monday comes back and the moved one detaches into a stray
+  VEVENT. An override's own times are left alone — they were typed for that day.
+
+`parseIcs` has the matching half: it relates overrides to their master (`relateException`) instead of
+parsing them beside it. Without that, every single-occurrence edit Aporah writes would show **twice**
+— once at the new time from the override, once at the old one from the rule.
 
 One environment invariant the read path depends on: `parseIcs` resolves a floating `VALUE=DATE`
 in the *runtime's* zone, and Edge Functions run in UTC. That is what makes all-day events land on
@@ -407,12 +524,13 @@ See the migration list for what exists:
 | `…100800_rpc` | Transaktionale RPCs (nur `service_role`) |
 | `…101000_calendar_connections` | Kalender-Verbindungen + verschlüsselte Secrets |
 | `…20260805174643_avatar_pictures` | `avatars` Storage-Bucket + Policies |
+| `…20260909170000_item_photos` | `boxes.photo_path`, `box_items.photo_path`, `box-photos` + `list-attachments` Buckets |
 
 Still to build: Realtime, the web landing page for share links, and the finance module.
 
 ## Storage: the `avatars` bucket
 
-The one bucket there is, and the shape any later one should copy.
+The first bucket, and the shape the two picture buckets copied.
 
 - **Private, and `profiles.avatar_url` holds an object path — not a URL.** A public bucket would
   have been less code and would have put a photo of somebody's kid on an unauthenticated CDN URL
@@ -430,3 +548,42 @@ The one bucket there is, and the shape any later one should copy.
 - Each upload gets a fresh object name and the old one is deleted after the new one lands.
   Overwriting a fixed name would leave every signed URL already handed out — and every image cache
   holding one — serving the previous face until it expired.
+
+## Storage: the picture buckets
+
+Two more, added by `…20260909170000_item_photos`, and both follow the `avatars` shape above:
+private, an object path in a column rather than a URL, one batched signing per load, a fresh object
+name on every write. What is worth reading before touching them is the part that is *different*.
+
+| Bucket | Holds | Named by | Layout |
+|---|---|---|---|
+| `box-photos` | one picture per box and per box item, images only, 10 MB | `boxes.photo_path`, `box_items.photo_path` | `<box_id>/<uuid>.<ext>` |
+| `list-attachments` | the files on a list article, images + PDF + text, 20 MB | `list_item_attachments.storage_path` | `<list_id>/<uuid>.<ext>` |
+
+- **The layout is the access rule, and the container is what it names.** An item photo is filed
+  under its **box**, not under itself, and a list attachment under its **list**. That is not
+  tidiness: an item inside a container has no visibility of its own — it inherits the container's —
+  so the container is the only thing a storage policy can usefully ask about, and asking it takes
+  one predicate instead of a join per row. Change the layout and the policies stop matching,
+  silently and only for the people who are not the owner.
+- **Read is `can_read_box` / `can_read_list`; write and delete are `can_write_*`.** Never household
+  membership — a guest holding a share link on one box can read that box's rows, and a policy that
+  asked "same household?" would hand them the words and keep the pictures back. Delete is
+  `can_write_*` rather than "your own upload", because replacing a picture deletes the one it
+  replaces and a box whose photo only its first photographer could change is a box with a wrong
+  photo on it forever.
+- **The subquery joins through the table on text, never casting the path segment to uuid.** A cast
+  raises on a malformed object name, and an object nobody may read has to fail closed rather than
+  error the whole listing. Same reason `avatars_read_visible_profiles` does it.
+- **Undo copies, it does not re-key.** Restoring a deleted box or list re-inserts under a fresh
+  uuid, so the old `photo_path` names an object no container owns any more. `PhotoRepository.copyTo`
+  puts a copy under the new id and the row is pointed at that; the original is left as litter.
+  Best-effort per picture — a box that comes back missing one photo beats a box that does not come
+  back.
+- **`list_item_attachments` was in the schema from the first migration and had no bucket until
+  now.** Until this migration the Listen attach menu wrote to a `Map` on `ListState` and the photos
+  died with the process. They are stored, signed and shared with the household now; anything still
+  saying otherwise is out of date.
+- **Orphans are accepted.** Deleting a box or a list leaves its objects behind (undo needs them),
+  and nothing sweeps them up. They are unreachable — the read policy has no row left to match — so
+  the cost is bytes, not exposure. A cleanup job is a backend task nobody has needed yet.

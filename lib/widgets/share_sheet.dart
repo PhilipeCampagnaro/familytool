@@ -119,6 +119,7 @@ class _ShareSheetBodyState extends ConsumerState<_ShareSheetBody> {
                 controller: _email,
                 keyboardType: TextInputType.emailAddress,
                 autocorrect: false,
+                textInputAction: TextInputAction.done,
                 style: AppText.searchInput,
                 decoration: InputDecoration(
                   border: InputBorder.none,

@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../theme/tokens.dart';
@@ -18,6 +20,7 @@ Future<T?> showAppSheet<T>({
   Widget? header,
   required Widget child,
   VoidCallback? onSave,
+  TextEditingController? requiredField,
   double heightFactor = 0.92,
   SheetCollapsingHeader? collapsingHeader,
 }) {
@@ -34,6 +37,7 @@ Future<T?> showAppSheet<T>({
       title: title,
       header: header,
       onSave: onSave,
+      requiredField: requiredField,
       heightFactor: heightFactor,
       collapsingHeader: collapsingHeader,
       child: child,
@@ -96,15 +100,63 @@ class SheetCollapsingHeader {
 /// and the room its title has to keep clear on either side.
 const double _headerButtonSize = 40;
 
+/// How much screen a sheet leaves above itself once the keyboard has pushed it
+/// as tall as it will go — measured from below the status bar, not from the top
+/// of the screen. Without it a grown sheet ends exactly on the safe-area line,
+/// which reads as a page rather than as something laid over one.
+const double _sheetTopGap = 12;
+
+/// The header's blue check, inert while a required name is still empty.
+///
+/// A create sheet used to save on every tap: the write was refused for having
+/// no text, but the chrome had already popped the sheet, so the whole thing
+/// read as "I confirmed it and nothing was created". Worse, the placeholder
+/// ("Listenname", "Was ist zu tun?") was dark enough to look like a name
+/// somebody had already typed, so the tap was made in good faith.
+///
+/// Greyed rather than hidden: a missing button is a puzzle, a grey one is an
+/// answer. Tapping it does nothing at all — the sheet stays open with the
+/// field where the user can see it.
+class _SaveButton extends StatelessWidget {
+  final TextEditingController? requiredField;
+  final VoidCallback onSave;
+  final IconData icon;
+
+  const _SaveButton({required this.requiredField, required this.onSave, this.icon = LucideIcons.check});
+
+  @override
+  Widget build(BuildContext context) {
+    final field = requiredField;
+    if (field == null) return GlassConfirmButton(icon: icon, onTap: onSave);
+    return ValueListenableBuilder<TextEditingValue>(
+      valueListenable: field,
+      builder: (context, value, _) => GlassConfirmButton(
+        icon: icon,
+        onTap: onSave,
+        enabled: value.text.trim().isNotEmpty,
+      ),
+    );
+  }
+}
+
 class _AppSheetBody extends StatefulWidget {
   final String? title;
   final Widget? header;
   final VoidCallback? onSave;
+  final TextEditingController? requiredField;
   final Widget child;
   final double heightFactor;
   final SheetCollapsingHeader? collapsingHeader;
 
-  const _AppSheetBody({required this.title, required this.header, required this.onSave, required this.child, required this.heightFactor, this.collapsingHeader});
+  const _AppSheetBody({
+    required this.title,
+    required this.header,
+    required this.onSave,
+    required this.requiredField,
+    required this.child,
+    required this.heightFactor,
+    this.collapsingHeader,
+  });
 
   @override
   State<_AppSheetBody> createState() => _AppSheetBodyState();
@@ -159,8 +211,9 @@ class _AppSheetBodyState extends State<_AppSheetBody> {
             ),
             Align(
               alignment: Alignment.centerRight,
-              child: GlassConfirmButton(
-                onTap: () {
+              child: _SaveButton(
+                requiredField: widget.requiredField,
+                onSave: () {
                   widget.onSave?.call();
                   Navigator.of(context).pop();
                 },
@@ -174,6 +227,18 @@ class _AppSheetBodyState extends State<_AppSheetBody> {
 
   @override
   Widget build(BuildContext context) {
+    // What the keyboard is covering. Flutter's `showModalBottomSheet` never
+    // applies `viewInsets` to the sheet it builds, so without this a sheet with
+    // a field in it keeps its full height while the keyboard is drawn over the
+    // lower half: the field being typed into is underneath, and the body's
+    // scroll view — which still believes it has the whole sheet to lay out in —
+    // has nothing to scroll, so there is no way to bring the field back. Both
+    // halves of the fix are needed. The scroll viewport has to *end* where the
+    // keyboard starts (the padding below), or the field can't be scrolled clear
+    // of it; and the sheet has to grow by what the keyboard took (the height
+    // below), or an 0.92 sheet would be left showing about half of itself.
+    final keyboard = MediaQuery.viewInsetsOf(context).bottom;
+
     final grayBody = Container(
       // `width: double.infinity` is load-bearing: the enclosing Column centers
       // its children (loose width constraints), so without it the gray panel
@@ -182,7 +247,10 @@ class _AppSheetBodyState extends State<_AppSheetBody> {
       // body (a centered empty state) left the panel floating as a too-narrow
       // slab with white either side.
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 28),
+      // The keyboard inset goes on the container rather than inside the scroll
+      // view, so the gray still paints all the way down behind the keyboard
+      // while the part that scrolls stops above it.
+      padding: EdgeInsets.fromLTRB(18, 18, 18, 28 + keyboard),
       decoration: BoxDecoration(
         color: AppColors.screenBg,
         borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
@@ -194,41 +262,67 @@ class _AppSheetBodyState extends State<_AppSheetBody> {
 
     return SheetCountdown(
       remaining: _countdown,
-      child: FractionallySizedBox(
-        heightFactor: widget.heightFactor,
-        alignment: Alignment.bottomCenter,
-        child: Container(
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-            boxShadow: AppShadows.sheet,
-          ),
-          child: Column(
-            children: [
-              _GrabHandle(countdown: _countdown),
-              if (widget.collapsingHeader case final collapsing?)
-                Expanded(
-                  child: NestedScrollView(
-                    headerSliverBuilder: (context, _) => [
-                      SliverPersistentHeader(
-                        pinned: true,
-                        delegate: CollapsingSliverHeaderDelegate(
-                          expandedHeight: collapsing.expandedHeight,
-                          collapsedHeight: collapsing.collapsedHeight,
-                          builder: collapsing.builder,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // The notch, read off the view rather than the MediaQuery. A modal
+          // bottom sheet is built inside
+          // `MediaQuery.removePadding(removeTop: true)` — `useSafeArea`
+          // defaults to false — so in here `padding.top` *and* `viewPadding.top`
+          // are both 0, and a ceiling computed from them is simply the top of
+          // the screen. That shipped: with the keyboard up the sheet grew until
+          // the clock and the wifi bars sat on top of the grab handle and the X.
+          // Read inside the [LayoutBuilder] so a rotation, which re-runs it,
+          // brings the new inset with it.
+          final topInset = MediaQueryData.fromView(View.of(context)).padding.top;
+          // [heightFactor] of what is *visible*, not of the screen: with the
+          // keyboard up, a sheet that kept its old height would be showing the
+          // fraction of itself the keyboard left over. It grows by exactly what
+          // was taken, so the sheet above the keyboard is the size it always
+          // was — the same thing iOS does with its own sheets. Never past the
+          // status bar, and never flush against it either: iOS leaves its own
+          // sheets short of the top so the card is read as a card.
+          final base = constraints.maxHeight * widget.heightFactor;
+          final ceiling = constraints.maxHeight - topInset - _sheetTopGap;
+          final height = math.max(base, math.min(ceiling, base + keyboard));
+          return Align(
+            alignment: Alignment.bottomCenter,
+            child: SizedBox(
+              height: height,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+                  boxShadow: AppShadows.sheet,
+                ),
+                child: Column(
+                  children: [
+                    _GrabHandle(countdown: _countdown),
+                    if (widget.collapsingHeader case final collapsing?)
+                      Expanded(
+                        child: NestedScrollView(
+                          headerSliverBuilder: (context, _) => [
+                            SliverPersistentHeader(
+                              pinned: true,
+                              delegate: CollapsingSliverHeaderDelegate(
+                                expandedHeight: collapsing.expandedHeight,
+                                collapsedHeight: collapsing.collapsedHeight,
+                                builder: collapsing.builder,
+                              ),
+                            ),
+                          ],
+                          body: Container(margin: const EdgeInsets.only(top: 14), child: grayBody),
                         ),
-                      ),
+                      )
+                    else ...[
+                      widget.header ?? _defaultHeader(context),
+                      Expanded(child: Container(margin: const EdgeInsets.only(top: 14), child: grayBody)),
                     ],
-                    body: Container(margin: const EdgeInsets.only(top: 14), child: grayBody),
-                  ),
-                )
-              else ...[
-                widget.header ?? _defaultHeader(context),
-                Expanded(child: Container(margin: const EdgeInsets.only(top: 14), child: grayBody)),
-              ],
-            ],
-          ),
-        ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -381,6 +475,11 @@ class SheetActionHeader extends StatelessWidget {
   final SheetHeaderAction action;
   final VoidCallback? onConfirm;
 
+  /// A name the sheet cannot do without. While it is empty the accent button
+  /// greys out and swallows its tap, exactly as in the standard header — see
+  /// [showAppSheet]'s own `requiredField`.
+  final TextEditingController? requiredField;
+
   /// What the X does. Defaults to popping the sheet with no result.
   final VoidCallback? onClose;
 
@@ -398,6 +497,7 @@ class SheetActionHeader extends StatelessWidget {
     required this.title,
     required this.action,
     this.onConfirm,
+    this.requiredField,
     this.onClose,
     this.closeIcon = LucideIcons.x,
     this.confirmIcon = LucideIcons.check,
@@ -436,8 +536,11 @@ class SheetActionHeader extends StatelessWidget {
             Align(
               alignment: Alignment.centerRight,
               child: switch (action) {
-                SheetHeaderAction.confirm =>
-                  GlassConfirmButton(icon: confirmIcon, onTap: onConfirm ?? () {}),
+                SheetHeaderAction.confirm => _SaveButton(
+                  icon: confirmIcon,
+                  requiredField: requiredField,
+                  onSave: onConfirm ?? () {},
+                ),
                 SheetHeaderAction.busy => const SizedBox(
                   width: _headerButtonSize,
                   height: _headerButtonSize,

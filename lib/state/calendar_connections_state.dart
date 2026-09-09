@@ -177,6 +177,42 @@ class CalendarConnectionsNotifier extends StateNotifier<CalendarConnectionsState
     return _afterConnect(result.connectionId);
   }
 
+  /// Checks a scanned or typed WebUntis key. Touches no state, for the same
+  /// reason [checkCalendarLink] does not: the sheet is asking whether these
+  /// credentials work before it offers to keep them.
+  Future<({String student, String school, int lessons})> checkUntis({
+    String? qr,
+    String? server,
+    String? school,
+    String? user,
+    String? secret,
+  }) => _repo.checkUntis(qr: qr, server: server, school: school, user: user, secret: secret);
+
+  /// Stores a WebUntis connection: the key, its one timetable, and the name the
+  /// household gave it, in a single call.
+  Future<String?> connectUntis({
+    required String pupil,
+    String? memberId,
+    String? qr,
+    String? server,
+    String? school,
+    String? user,
+    String? secret,
+  }) async {
+    final result = await _repo.connectUntis(
+      pupil: pupil,
+      memberId: memberId,
+      qr: qr,
+      server: server,
+      school: school,
+      user: user,
+      secret: secret,
+    );
+    // No `displayName` to apply — the account is named after the pupil the key
+    // turned out to belong to, which is better than anything we could ask for.
+    return _afterConnect(result.connectionId);
+  }
+
   /// Connecting a calendar and then having to ask for its events separately is
   /// not two steps a user should know about — the first read runs here.
   ///
@@ -206,11 +242,23 @@ class CalendarConnectionsNotifier extends StateNotifier<CalendarConnectionsState
   Future<void> refresh() async {
     state = state.copyWith(refreshing: true, clearError: true);
     try {
-      await _repo.refresh();
+      // The calendar read *first*, and only one of them.
+      //
+      // This used to call `_repo.refresh()` and then `_onCalendarChanged`, which
+      // are the same Edge Function: every tap here went out to Google, Outlook
+      // and every connected CalDAV server twice over, seconds apart, for one
+      // set of answers. Kalender is where the events are actually shown, so its
+      // own read is the one worth keeping — and because `calendar-events`
+      // writes each connection's status on its way past, doing it before
+      // `load()` is also what makes this screen show the status the read just
+      // produced rather than the one from before it.
+      //
+      // The fallback is for tests, which construct this notifier directly and
+      // leave the callback null; without it they would refresh no statuses at
+      // all and quietly assert on stale rows.
+      final readCalendar = _onCalendarChanged;
+      await (readCalendar != null ? readCalendar() : _repo.refresh());
       await load();
-      // The events just read are the calendar's, not this screen's — Kalender is
-      // where they are actually shown.
-      await _onCalendarChanged?.call();
     } on CalendarConnectionException catch (e) {
       if (mounted) state = state.copyWith(error: e.message);
     } finally {
@@ -263,6 +311,33 @@ class CalendarConnectionsNotifier extends StateNotifier<CalendarConnectionsState
       name: name,
     );
     await _settle();
+  }
+
+  /// Says whose calendar this row is — the person its chip appears under in
+  /// Kalender and on the Board.
+  ///
+  /// **Not visibility.** Everyone in the household still sees it; this only
+  /// decides whose day it counts as, exactly as `tasks.assignee_id` is separate
+  /// from `tasks.visibility`.
+  ///
+  /// The one write in this class that does **not** wait for `_settle`, and the
+  /// only one where that is right: the chips move on the next `calendar-events`
+  /// read, which fans out across every account the household has, and a
+  /// household filing six calendars in a row should not sit through that six
+  /// times. What can actually fail is the update, and that is what the caller
+  /// gets to await; the read behind it already swallows its own errors and
+  /// repaints when it lands.
+  Future<void> setCalendarOwner(
+    CalendarConnection connection,
+    String? externalId,
+    String owner,
+  ) async {
+    await _repo.setCalendarOwner(
+      connection: connection,
+      externalId: externalId,
+      owner: owner,
+    );
+    unawaited(_settle());
   }
 
   /// Stops reading one calendar of an account, leaving the account connected.

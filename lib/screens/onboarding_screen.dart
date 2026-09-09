@@ -5,6 +5,7 @@ import '../models/calendar_connection.dart';
 import '../state/family_state.dart';
 import '../state/onboarding_state.dart';
 import '../theme/tokens.dart';
+import '../widgets/action_bar.dart';
 import '../widgets/app_sheet.dart';
 import '../widgets/confirmation.dart';
 import '../widgets/error_note.dart';
@@ -123,20 +124,28 @@ class _TopBar extends StatelessWidget {
         height: 44,
         child: Stack(
           children: [
-            Positioned.fill(child: Center(child: StepDots(count: _stepCount, index: step))),
+            Positioned.fill(
+              child: Center(
+                child: StepDots(count: _stepCount, index: step),
+              ),
+            ),
             if (onBack case final back?)
               Positioned(
                 left: 0,
                 top: 0,
                 bottom: 0,
-                child: Center(child: GlassIconButton(icon: LucideIcons.chevronLeft, onTap: back)),
+                child: Center(
+                  child: GlassIconButton(icon: LucideIcons.chevronLeft, onTap: back),
+                ),
               ),
             if (onSkip case final skip?)
               Positioned(
                 right: 0,
                 top: 0,
                 bottom: 0,
-                child: Center(child: GlassPillButton(label: L.s.skip, onTap: skip)),
+                child: Center(
+                  child: GlassPillButton(label: L.s.skip, onTap: skip),
+                ),
               ),
           ],
         ),
@@ -195,23 +204,11 @@ class _StepButton extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: AppColors.surfaceAlt,
-          borderRadius: BorderRadius.circular(AppRadii.bar),
-        ),
-        child: Text(
-          label,
-          style: AppText.buttonLarge.copyWith(color: AppColors.mutedLight),
-        ),
+        decoration: BoxDecoration(color: AppColors.surfaceAlt, borderRadius: BorderRadius.circular(AppRadii.bar)),
+        child: Text(label, style: AppText.buttonLarge.copyWith(color: AppColors.mutedLight)),
       );
     }
-    return GlassAccentButton(
-      label: label,
-      onTap: onTap,
-      expand: true,
-      fontSize: 16,
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-    );
+    return GlassAccentButton(label: label, onTap: onTap, expand: true, fontSize: 16, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16));
   }
 }
 
@@ -227,22 +224,21 @@ class _WelcomeStep extends ConsumerWidget {
       children: [
         _TopBar(step: 0, onSkip: () => _leaveTour(context, ref, replay)),
         Expanded(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(AppSpacing.screenPad, 12, AppSpacing.screenPad, 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const _Hero('assets/onboarding/hero_welcome.png'),
-                const SizedBox(height: 28),
-                Text(L.s.onboardSetUpFamily, style: AppText.screenTitle),
-                const SizedBox(height: 10),
-                Text(
-                  L.s.onboardSetUpFamilyBody,
-                  style: AppText.body,
-                ),
-                const SizedBox(height: 28),
-                _StepButton(label: L.s.letsGo, onTap: () => ref.read(onboardingProvider.notifier).next()),
-              ],
+          child: PinnedActionLayout(
+            fadeInto: AppColors.surface,
+            action: _StepButton(label: L.s.letsGo, onTap: () => ref.read(onboardingProvider.notifier).next()),
+            bodyBuilder: (context, bottomInset) => SingleChildScrollView(
+              padding: EdgeInsets.fromLTRB(AppSpacing.screenPad, 12, AppSpacing.screenPad, bottomInset),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const _Hero('assets/onboarding/hero_welcome.png'),
+                  const SizedBox(height: 28),
+                  Text(L.s.onboardSetUpFamily, style: AppText.screenTitle),
+                  const SizedBox(height: 10),
+                  Text(L.s.onboardSetUpFamilyBody, style: AppText.body),
+                ],
+              ),
             ),
           ),
         ),
@@ -272,6 +268,10 @@ class _FamilyStepState extends ConsumerState<_FamilyStep> {
   /// typing. Only the e-mail counts: a name on its own can't be invited, so
   /// holding the step for one would be a trap with nothing behind it.
   bool _hasUnsentEmail = false;
+
+  /// One of the two fields has the keyboard. "Weiter" stands down while it
+  /// does — see [build] for why this step is the one that hides it.
+  bool _typing = false;
 
   @override
   void initState() {
@@ -317,11 +317,7 @@ class _FamilyStepState extends ConsumerState<_FamilyStep> {
     }
 
     setState(() => _sending = true);
-    final outcome = await ref.read(familyProvider.notifier).inviteMember(
-          email: email,
-          name: name,
-          role: _isChild ? FamilyRole.kid : FamilyRole.member,
-        );
+    final outcome = await ref.read(familyProvider.notifier).inviteMember(email: email, name: name, role: _isChild ? FamilyRole.kid : FamilyRole.member);
     if (!mounted) return false;
     setState(() => _sending = false);
 
@@ -368,114 +364,134 @@ class _FamilyStepState extends ConsumerState<_FamilyStep> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _TopBar(
-          step: 1,
-          onBack: () => ref.read(onboardingProvider.notifier).back(),
-          onSkip: () => ref.read(onboardingProvider.notifier).next(),
-        ),
+        _TopBar(step: 1, onBack: () => ref.read(onboardingProvider.notifier).back(), onSkip: () => ref.read(onboardingProvider.notifier).next()),
         Expanded(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(AppSpacing.screenPad, 4, AppSpacing.screenPad, 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const _Hero('assets/onboarding/hero_members.png'),
-                const SizedBox(height: 24),
-                Text(L.s.onboardInviteTitle, style: AppText.screenTitle),
-                const SizedBox(height: 8),
-                Text(L.s.onboardInviteBody, style: AppText.body),
-                const SizedBox(height: 16),
-                // The role is a property of the invitation being typed, so it
-                // reads before the fields rather than under them — and moving
-                // it out of the card lets the card's last row carry the send
-                // button, which is what the separate "Hinzufügen" button used
-                // to be. Two rows of the step's height come back that way.
-                Row(
-                  children: [
-                    Expanded(child: _RoleChip(label: L.s.adult, selected: !_isChild, accent: accent, onTap: () => setState(() => _isChild = false))),
-                    const SizedBox(width: 8),
-                    Expanded(child: _RoleChip(label: L.s.child, selected: _isChild, accent: accent, onTap: () => setState(() => _isChild = true))),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                // Same two fields as the Settings invite sheet, so they are
-                // typed the same way: [AppText.searchInput] in a 56pt row.
-                // [AppText.inputTitle] belongs to the *headline* field of a
-                // create sheet — a task's text, an event's title — not to an
-                // ordinary form field like these.
-                SectionCard(
-                  children: [
-                    _InviteFieldRow(
-                      child: TextField(
-                        controller: _nameController,
-                        textInputAction: TextInputAction.next,
-                        style: AppText.searchInput,
-                        decoration: InputDecoration(border: InputBorder.none, hintText: L.s.nameOptional, isDense: true),
-                      ),
-                    ),
-                    CardDivider(),
-                    _InviteFieldRow(
-                      // Inset on the right for the send button, which is taller
-                      // than the text it sits beside.
-                      trailingPad: 8,
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: _emailController,
-                              keyboardType: TextInputType.emailAddress,
-                              autocorrect: false,
-                              textInputAction: TextInputAction.done,
-                              onSubmitted: (_) => _sendInvite(),
-                              style: AppText.searchInput,
-                              decoration: InputDecoration(border: InputBorder.none, hintText: L.s.emailAddress, isDense: true),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          // The spinner takes the button's place rather than
-                          // sitting over it, so the row doesn't reflow while an
-                          // invitation is on its way out.
-                          if (_sending)
-                            const SizedBox(
-                              width: 36,
-                              height: 36,
-                              child: Center(child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))),
-                            )
-                          else
-                            GlassConfirmButton(icon: LucideIcons.send, size: 36, onTap: _sendInvite),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                // Points at the button that is being overlooked, in the accent
-                // that button is drawn in, and only while there is something to
-                // send. It says what to do rather than what went wrong: nothing
-                // has gone wrong yet, which is the whole idea.
-                if (_hasUnsentEmail) ...[
-                  const SizedBox(height: 10),
+          child: PinnedActionLayout(
+            fadeInto: AppColors.surface,
+            // **"Weiter" steps aside while a field has the keyboard**, which is
+            // the opposite of what the sign-in screen does — and the difference
+            // is what the button is *for*. There, it submits the field being
+            // typed, so keeping it above the keyboard is the same courtesy as
+            // an iOS input accessory. Here it leaves the step, while the thing
+            // that submits the address is the send button on the row itself. A
+            // control that does not act on what you are typing has no claim on
+            // the strip of screen the keyboard left over — and this one is
+            // *disabled* for as long as the address is unsent, so it would be a
+            // dead button holding the best real estate on the step. The hint
+            // pointing at the send button lives in the scroll body, so nothing
+            // the user still needs goes away with it.
+            action: _typing ? null : _StepButton(label: L.s.next, onTap: _goNext, enabled: !_hasUnsentEmail && !_sending),
+            bodyBuilder: (context, bottomInset) => SingleChildScrollView(
+              padding: EdgeInsets.fromLTRB(AppSpacing.screenPad, 4, AppSpacing.screenPad, bottomInset),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const _Hero('assets/onboarding/hero_members.png'),
+                  const SizedBox(height: 24),
+                  Text(L.s.onboardInviteTitle, style: AppText.screenTitle),
+                  const SizedBox(height: 8),
+                  Text(L.s.onboardInviteBody, style: AppText.body),
+                  const SizedBox(height: 16),
+                  // The role is a property of the invitation being typed, so it
+                  // reads before the fields rather than under them — and moving
+                  // it out of the card lets the card's last row carry the send
+                  // button, which is what the separate "Hinzufügen" button used
+                  // to be. Two rows of the step's height come back that way.
                   Row(
                     children: [
-                      Icon(LucideIcons.arrowUp, size: 14, color: accent),
-                      const SizedBox(width: 6),
-                      Expanded(child: Text(L.s.tapSendToInvite, style: AppText.caption.copyWith(color: accent))),
+                      Expanded(
+                        child: _RoleChip(label: L.s.adult, selected: !_isChild, accent: accent, onTap: () => setState(() => _isChild = false)),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _RoleChip(label: L.s.child, selected: _isChild, accent: accent, onTap: () => setState(() => _isChild = true)),
+                      ),
                     ],
                   ),
-                ],
-                if (invites.isNotEmpty) ...[
-                  const SizedBox(height: 14),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      for (final invite in invites)
-                        Chip(label: Text(invite.name.isNotEmpty ? invite.name : invite.email)),
-                    ],
+                  const SizedBox(height: 12),
+                  // Same two fields as the Settings invite sheet, so they are
+                  // typed the same way: [AppText.searchInput] in a 56pt row.
+                  // [AppText.inputTitle] belongs to the *headline* field of a
+                  // create sheet — a task's text, an event's title — not to an
+                  // ordinary form field like these.
+                  // Asks the focus tree rather than each field: `hasFocus` on
+                  // this node is true while anything under it holds the
+                  // keyboard, so moving between the two rows is not a moment
+                  // with no focus in which the bar flickers back.
+                  Focus(
+                    canRequestFocus: false,
+                    skipTraversal: true,
+                    onFocusChange: (has) {
+                      if (has != _typing) setState(() => _typing = has);
+                    },
+                    child: SectionCard(
+                      children: [
+                        _InviteFieldRow(
+                          child: TextField(
+                            controller: _nameController,
+                            textInputAction: TextInputAction.next,
+                            style: AppText.searchInput,
+                            decoration: InputDecoration(border: InputBorder.none, hintText: L.s.nameOptional, isDense: true),
+                          ),
+                        ),
+                        CardDivider(),
+                        _InviteFieldRow(
+                          // Inset on the right for the send button, which is taller
+                          // than the text it sits beside.
+                          trailingPad: 8,
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  controller: _emailController,
+                                  keyboardType: TextInputType.emailAddress,
+                                  autocorrect: false,
+                                  textInputAction: TextInputAction.done,
+                                  onSubmitted: (_) => _sendInvite(),
+                                  style: AppText.searchInput,
+                                  decoration: InputDecoration(border: InputBorder.none, hintText: L.s.emailAddress, isDense: true),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              // The spinner takes the button's place rather than
+                              // sitting over it, so the row doesn't reflow while an
+                              // invitation is on its way out.
+                              if (_sending)
+                                const SizedBox(
+                                  width: 36,
+                                  height: 36,
+                                  child: Center(child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))),
+                                )
+                              else
+                                GlassConfirmButton(icon: LucideIcons.send, size: 36, onTap: _sendInvite),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
+                  // Points at the button that is being overlooked, in the accent
+                  // that button is drawn in, and only while there is something to
+                  // send. It says what to do rather than what went wrong: nothing
+                  // has gone wrong yet, which is the whole idea.
+                  if (_hasUnsentEmail) ...[
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Icon(LucideIcons.arrowUp, size: 14, color: accent),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(L.s.tapSendToInvite, style: AppText.caption.copyWith(color: accent)),
+                        ),
+                      ],
+                    ),
+                  ],
+                  if (invites.isNotEmpty) ...[
+                    const SizedBox(height: 14),
+                    Wrap(spacing: 8, runSpacing: 8, children: [for (final invite in invites) Chip(label: Text(invite.name.isNotEmpty ? invite.name : invite.email))]),
+                  ],
                 ],
-                const SizedBox(height: 22),
-                _StepButton(label: L.s.next, onTap: _goNext, enabled: !_hasUnsentEmail && !_sending),
-              ],
+              ),
             ),
           ),
         ),
@@ -598,40 +614,35 @@ class _AddressStepState extends ConsumerState<_AddressStep> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _TopBar(
-          step: 2,
-          onBack: () => _onboarding.back(),
-          onSkip: () => _onboarding.next(),
-        ),
+        _TopBar(step: 2, onBack: () => _onboarding.back(), onSkip: () => _onboarding.next()),
         Expanded(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(AppSpacing.screenPad, 4, AppSpacing.screenPad, 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const _Hero('assets/onboarding/hero_address.png'),
-                const SizedBox(height: 24),
-                Text(L.s.onboardAddressTitle, style: AppText.screenTitle),
-                const SizedBox(height: 8),
-                Text(L.s.onboardAddressBody, style: AppText.body),
-                const SizedBox(height: 20),
-                SectionCard(radius: AppRadii.card, children: dividedRows(_addressRows(state), inset: true)),
-                if (state.found case final found?) ...[
-                  const SizedBox(height: 16),
-                  _FoundCalendars(found: found, state: state),
-                  const SizedBox(height: 10),
-                  SettingsNote(found.any ? L.s.onboardRenameLater : L.s.onboardNothingForAddress),
+          child: PinnedActionLayout(
+            fadeInto: AppColors.surface,
+            // The lookup replaces the button with its spinner rather than
+            // greying it out, same as it always did — the bar keeps the height
+            // either way, so the step doesn't jump while an address resolves.
+            action: state.connecting ? _InlineBusy() : _StepButton(label: L.s.next, onTap: _continue),
+            bodyBuilder: (context, bottomInset) => SingleChildScrollView(
+              padding: EdgeInsets.fromLTRB(AppSpacing.screenPad, 4, AppSpacing.screenPad, bottomInset),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const _Hero('assets/onboarding/hero_address.png'),
+                  const SizedBox(height: 24),
+                  Text(L.s.onboardAddressTitle, style: AppText.screenTitle),
+                  const SizedBox(height: 8),
+                  Text(L.s.onboardAddressBody, style: AppText.body),
+                  const SizedBox(height: 20),
+                  SectionCard(radius: AppRadii.card, children: dividedRows(_addressRows(state), inset: true)),
+                  if (state.found case final found?) ...[
+                    const SizedBox(height: 16),
+                    _FoundCalendars(found: found, state: state),
+                    const SizedBox(height: 10),
+                    SettingsNote(found.any ? L.s.onboardRenameLater : L.s.onboardNothingForAddress),
+                  ],
+                  if (state.addressError case final message?) ...[const SizedBox(height: 12), ErrorNote(message: message)],
                 ],
-                if (state.addressError case final message?) ...[
-                  const SizedBox(height: 12),
-                  ErrorNote(message: message),
-                ],
-                const SizedBox(height: 28),
-                if (state.connecting)
-                  _InlineBusy()
-                else
-                  _StepButton(label: L.s.next, onTap: _continue),
-              ],
+              ),
             ),
           ),
         ),
@@ -655,26 +666,15 @@ class _AddressStepState extends ConsumerState<_AddressStep> {
               autocorrect: false,
               enableSuggestions: false,
               textCapitalization: TextCapitalization.words,
+              textInputAction: TextInputAction.search,
               style: AppText.searchInput,
-              decoration: InputDecoration(
-                border: InputBorder.none,
-                hintText: L.s.addressPlaceholder,
-                isDense: true,
-              ),
+              decoration: InputDecoration(border: InputBorder.none, hintText: L.s.addressPlaceholder, isDense: true),
               onChanged: _onboarding.onAddressQueryChanged,
             ),
           ),
         ),
-        if (state.searchingAddress)
-          _BusyRow(L.s.searchingAddresses)
-        else if (state.addressResults.isEmpty && state.address.trim().length >= 3)
-          _MutedRow(L.s.noAddressFound),
-        for (final found in state.addressResults)
-          SettingsRow(
-            icon: found.prefix ? LucideIcons.mapPin : LucideIcons.house,
-            title: found.label,
-            onTap: () => _pick(found),
-          ),
+        if (state.searchingAddress) _BusyRow(L.s.searchingAddresses) else if (state.addressResults.isEmpty && state.address.trim().length >= 3) _MutedRow(L.s.noAddressFound),
+        for (final found in state.addressResults) SettingsRow(icon: found.prefix ? LucideIcons.mapPin : LucideIcons.house, title: found.label, onTap: () => _pick(found)),
       ];
     }
 
@@ -760,13 +760,7 @@ class _CalendarRow extends StatelessWidget {
   final bool? value;
   final ValueChanged<bool> onChanged;
 
-  const _CalendarRow({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.value,
-    required this.onChanged,
-  });
+  const _CalendarRow({required this.icon, required this.title, required this.subtitle, required this.value, required this.onChanged});
 
   @override
   Widget build(BuildContext context) {
@@ -789,19 +783,12 @@ class _CalendarRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: AppText.rowTitle.copyWith(color: missing ? AppColors.muted : null),
-                ),
-                if (subtitle case final line?)
-                  Text(line, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.label),
+                Text(title, style: AppText.rowTitle.copyWith(color: missing ? AppColors.muted : null)),
+                if (subtitle case final line?) Text(line, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.label),
               ],
             ),
           ),
-          if (value case final on?)
-            NativeSwitch(value: on, onChanged: onChanged)
-          else
-            Icon(LucideIcons.x, size: 16, color: AppColors.mutedLight),
+          if (value case final on?) NativeSwitch(value: on, onChanged: onChanged) else Icon(LucideIcons.x, size: 16, color: AppColors.mutedLight),
         ],
       ),
     );
@@ -821,7 +808,9 @@ class _BusyRow extends StatelessWidget {
         children: [
           const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
           const SizedBox(width: 12),
-          Expanded(child: Text(label, style: AppText.body.copyWith(color: AppColors.muted))),
+          Expanded(
+            child: Text(label, style: AppText.body.copyWith(color: AppColors.muted)),
+          ),
         ],
       ),
     );
@@ -888,51 +877,54 @@ class _DoneStep extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(onboardingProvider);
 
-    return LayoutBuilder(
-      builder: (context, constraints) => SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(AppSpacing.screenPad, 20, AppSpacing.screenPad, 24),
-        child: ConstrainedBox(
-          // Minus the padding this scroll view already adds, so a screen that
-          // exactly fits doesn't gain a scrollbar's worth of overflow.
-          constraints: BoxConstraints(minHeight: constraints.maxHeight - 44),
-          child: ConfirmationView(
-            mark: ConfirmationMark.celebration,
-            headline: L.s.onboardReady,
-            message: L.s.onboardReadyBody,
-            action: ConfirmationAction.accentPill,
-            doneLabel: L.s.letsGo,
-            onDone: () => _leaveTour(context, ref, replay),
-            content: [
-              SectionCard(
-                children: [
-                  _RecapRow(
-                    icon: LucideIcons.userPlus,
-                    label: state.invites.isEmpty ? L.s.noInvitesSent : L.s.invitedCount(state.invites.length),
-                    done: state.invites.isNotEmpty,
-                  ),
-                  CardDivider(),
-                  _RecapRow(icon: LucideIcons.recycle, label: L.s.wasteCalendar, done: state.trashCalendar),
-                  CardDivider(),
-                  _RecapRow(icon: LucideIcons.graduationCap, label: L.s.holidayCalendar, done: state.ferienCalendar),
-                ],
-              ),
-              // The personal accounts, offered exactly once and never as a
-              // step. Google and Outlook consent happens in Safari and comes
-              // back through a deep link — the most fragile minute in the app,
-              // and no place for it is worse than the middle of a wizard. So
-              // the tour finishes first and this lands on the connect page with
-              // onboarding already behind it.
-              SectionCard(
-                children: [
-                  SettingsRow(
-                    icon: LucideIcons.calendarPlus,
-                    title: L.s.connectCalendars,
-                    subtitle: L.s.onboardConnectMoreHint,
-                    onTap: () => _leaveTour(context, ref, replay, then: CalendarConnectionsPage()),
-                  ),
-                ],
-              ),
-            ],
+    return PinnedActionLayout(
+      fadeInto: AppColors.surface,
+      // The celebration's own pill, moved out of the confirmation and onto the
+      // bottom edge with the other three steps' — which is why the view is
+      // asked for [ConfirmationAction.none] rather than an accent pill. The
+      // recap cards are the content here; the way out of the tour is not part
+      // of them.
+      action: _StepButton(label: L.s.letsGo, onTap: () => _leaveTour(context, ref, replay)),
+      bodyBuilder: (context, bottomInset) => LayoutBuilder(
+        builder: (context, constraints) => SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(AppSpacing.screenPad, 20, AppSpacing.screenPad, bottomInset),
+          child: ConstrainedBox(
+            // Minus the padding this scroll view already adds, so a screen that
+            // exactly fits doesn't gain a scrollbar's worth of overflow.
+            constraints: BoxConstraints(minHeight: constraints.maxHeight - 20 - bottomInset),
+            child: ConfirmationView(
+              mark: ConfirmationMark.celebration,
+              headline: L.s.onboardReady,
+              message: L.s.onboardReadyBody,
+              action: ConfirmationAction.none,
+              content: [
+                SectionCard(
+                  children: [
+                    _RecapRow(icon: LucideIcons.userPlus, label: state.invites.isEmpty ? L.s.noInvitesSent : L.s.invitedCount(state.invites.length), done: state.invites.isNotEmpty),
+                    CardDivider(),
+                    _RecapRow(icon: LucideIcons.recycle, label: L.s.wasteCalendar, done: state.trashCalendar),
+                    CardDivider(),
+                    _RecapRow(icon: LucideIcons.graduationCap, label: L.s.holidayCalendar, done: state.ferienCalendar),
+                  ],
+                ),
+                // The personal accounts, offered exactly once and never as a
+                // step. Google and Outlook consent happens in Safari and comes
+                // back through a deep link — the most fragile minute in the app,
+                // and no place for it is worse than the middle of a wizard. So
+                // the tour finishes first and this lands on the connect page with
+                // onboarding already behind it.
+                SectionCard(
+                  children: [
+                    SettingsRow(
+                      icon: LucideIcons.calendarPlus,
+                      title: L.s.connectCalendars,
+                      subtitle: L.s.onboardConnectMoreHint,
+                      onTap: () => _leaveTour(context, ref, replay, then: CalendarConnectionsPage()),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),

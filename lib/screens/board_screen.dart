@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../data/board_data.dart';
+import '../models/event_link.dart';
 import '../models/task.dart';
+import '../models/tracker.dart';
 import '../models/who.dart';
 import '../state/auth_state.dart';
 import '../state/board_state.dart';
-import '../state/board_streak_state.dart';
+import '../state/nav_state.dart';
 import '../state/sharing_state.dart';
 import '../state/family_state.dart';
 import '../theme/tokens.dart';
@@ -17,26 +19,37 @@ import '../widgets/check_off.dart';
 import '../widgets/collapsing_header.dart';
 import '../widgets/floating_pill.dart';
 import '../widgets/glass.dart';
+import '../widgets/segmented_control.dart';
 import '../widgets/share_sheet.dart';
 import '../widgets/swipe_actions.dart';
 import '../widgets/error_note.dart';
+import '../widgets/event_link_chip.dart';
 import '../widgets/visibility_picker.dart';
 import '../widgets/toast_chip.dart';
 import 'board/due_date_sheet.dart';
+import 'board/schedule_sheet.dart';
 import 'board/tracker_strip.dart';
+import '../models/homework.dart';
+import '../state/calendar_state.dart';
+import '../state/tracker_state.dart';
 import '../l10n/l10n.dart';
 
 /// Opens Board's create-task sheet from outside Board.
 ///
 /// The sheet itself is [BoardScreen._openTaskSheet] and stays private — this is
 /// the one door into it, for the event detail sheet's "Aufgabe zum Termin".
-/// Only [initialDue] is offered: a task hung off an appointment wants the
+/// The text is not prefilled: a task hung off an appointment wants the
 /// appointment's *date*, not its title. Prefilling the text with "Wochenende
 /// Hamburg" would produce a task that says what the event beside it already
 /// says; what the user is about to type is "Reisepass einpacken", and the
 /// deadline is the part they'd otherwise have to set by hand.
-void openTaskSheet(BuildContext context, WidgetRef ref, {DateTime? initialDue}) =>
-    BoardScreen._openTaskSheet(context, ref, initialDue: initialDue);
+///
+/// [initialDue] is that deadline; [eventLink] is what makes the task point back
+/// at the appointment afterwards, on both screens. They are separate on purpose
+/// — the date is a day, the link is one specific event, and two tasks due the
+/// same Thursday are exactly the case the link disambiguates.
+void openTaskSheet(BuildContext context, WidgetRef ref, {DateTime? initialDue, EventLink? eventLink}) =>
+    BoardScreen._openTaskSheet(context, ref, initialDue: initialDue, eventLink: eventLink);
 
 /// Label colour of a checked-off task — the strike-through fades the open row's
 /// text to it, so landing in "Erledigt" isn't a colour jump.
@@ -50,7 +63,22 @@ class BoardScreen extends ConsumerWidget {
     final state = ref.watch(boardProvider);
     final notifier = ref.read(boardProvider.notifier);
     final accent = Theme.of(context).colorScheme.primary;
-    final members = ref.watch(householdMembersProvider);
+
+    // Arriving from a task card in an event's detail sheet. The task's own sheet
+    // is what opens, rather than a highlight on a row somewhere down a scrolled
+    // list — a task has no detail screen to land on, and "your task is in here
+    // somewhere" is not an arrival.
+    ref.listen<TabJump?>(tabJumpProvider, (_, jump) {
+      if (jump?.taskId case final id?) {
+        ref.read(tabJumpProvider.notifier).done();
+        for (final task in ref.read(boardProvider).tasks) {
+          if (task.id == id) {
+            _openTaskSheet(context, ref, task: task);
+            return;
+          }
+        }
+      }
+    });
 
     // A write that didn't land is reported once, transiently. A failed *load*
     // is not snacked: it leaves an empty screen behind, which needs an
@@ -63,16 +91,47 @@ class BoardScreen extends ConsumerWidget {
       ref.read(boardProvider.notifier).clearError();
     });
 
+    // Trackers get the same treatment, and unconditionally: there is no
+    // [ErrorNote] for them to fall back on, because a household with no
+    // trackers and a household whose trackers failed to load draw the same
+    // empty grid. Without this a rejected save was simply nothing happening.
+    ref.listen<String?>(trackerProvider.select((s) => s.error), (_, message) {
+      if (message == null) return;
+      showErrorSnack(context, message);
+      ref.read(trackerProvider.notifier).clearError();
+    });
+
     // The device clock, read on every build so the sections are still right
     // after the app has sat open past midnight.
     final today = boardDay(DateTime.now());
     final groups = state.groupsOn(today);
     final done = state.doneTasks;
 
+    // Homework comes down with the calendar's refresh — same WebUntis session
+    // as the timetable — so the Board reads it rather than fetching it.
+    final homework = _visibleHomework(ref, state.personFilter);
+    final homeworkSections = homeworkBySection(homework, today);
+    // Every section that has something in it, in the enum's own order, so a
+    // section holding only homework still gets a heading and one holding only
+    // tasks is unchanged.
+    final sections = [
+      for (final section in BoardSection.values)
+        if (groups.any((g) => g.section == section) || homeworkSections[section]?.isNotEmpty == true) section,
+    ];
+    List<BoardTask> tasksIn(BoardSection section) {
+      for (final g in groups) {
+        if (g.section == section) return g.tasks;
+      }
+      return const [];
+    }
+
     // The header reports on today, not on the whole list: a board with eleven
     // tasks spread over three weeks has no meaningful single percentage.
     final onDeck = state.onDeck(today);
-    final onDeckDone = [for (final t in onDeck) if (t.done) t].length;
+    final onDeckDone = [
+      for (final t in onDeck)
+        if (t.done) t,
+    ].length;
     final progress = onDeck.isEmpty ? 0.0 : onDeckDone / onDeck.length;
 
     // The task the undo pill is offering to put back: the one that just moved,
@@ -90,26 +149,20 @@ class BoardScreen extends ConsumerWidget {
               titleRowBuilder: (context, t) => CollapsingScreenTitle(
                 title: L.s.boardTitle,
                 t: t,
-                trailingWidth: _avatarStackWidth(members.length) + 12 + 48,
-                // The avatar stack folds away as the header collapses (see
-                // _CollapsingAvatars), so the collapsed title only has to clear the
-                // add button — reserving the full expanded slot would squeeze it to
-                // a few characters.
-                collapsedSideInset: 86,
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _CollapsingAvatars(t: t, members: members),
-                    SizedBox(width: 12 * (1 - t).clamp(0.0, 1.0)),
-                    GlassIconButton(icon: LucideIcons.plus, onTap: () => _openNewTaskSheet(context, ref)),
-                  ],
-                ),
+                trailingWidth: 48,
+                trailing: GlassIconButton(icon: LucideIcons.plus, onTap: () => _openNewTaskSheet(context, ref)),
               ),
               estimatedExtraHeight: _extraHeight,
               // Today, and how much of it is behind you. This is what the week strip
               // used to occupy, and it is deliberately *not* a picker any more:
               // the date is a property of a task now, so there is no day to select.
-              extra: _TodayHeader(today: today, progress: progress, done: onDeckDone, total: onDeck.length, accent: accent),
+              extra: _TodayHeader(
+                today: today,
+                progress: progress,
+                done: onDeckDone,
+                total: onDeck.length,
+                accent: accent,
+              ),
               body: ScreenBodyPanel(
                 child: ListView(
                   padding: EdgeInsets.fromLTRB(16, 20, 16, navContentInset(context)),
@@ -118,54 +171,89 @@ class BoardScreen extends ConsumerWidget {
                       ErrorNote(message: state.error!, onRetry: () => notifier.load()),
                       const SizedBox(height: 16),
                     ],
-                    if (groups.isEmpty && !state.loading)
+                    // Above the dated sections, and never inside one. A
+                    // tracker is not owed on a deadline, so it belongs to
+                    // neither "Heute" nor "Überfällig" — putting it in the
+                    // former would be close enough to look right and wrong
+                    // every time one was missed.
+                    _TrackerCard(today: today, accent: accent, personFilter: state.personFilter),
+                    if (sections.isEmpty && !state.loading)
                       _EmptyBoard(onAdd: () => _openNewTaskSheet(context, ref))
                     else
-                      for (final group in groups) ...[
-                        _SectionHeading(section: group.section, count: group.tasks.length),
-                        SectionCard(
-                          // [dividedRows] rather than a border on the row itself:
-                          // the row used to sit under the day card's own header and
-                          // drew its own top rule, which at the top of a card of its
-                          // own would be a line against the card's edge.
-                          children: dividedRows([
-                            // The row plays the check-off animation first and only
-                            // then tells the notifier, so it strikes through in place
-                            // before moving to "Erledigt" — and an undone task slides
-                            // back in here from below.
-                            for (final task in group.tasks)
-                              CheckOffArrival(
-                                key: ValueKey(task.id),
-                                animate: task.id == state.justMoved,
-                                fromBelow: true,
-                                child: CheckOffRow(
-                                  onCompleted: () => notifier.toggle(task),
-                                  // Same gesture as a Listen or Boxen row: swipe
-                                  // left for Bearbeiten and Löschen. The row's own
-                                  // tap opens the sheet from here rather than from
-                                  // a detector inside [_TaskRow] — an inner one
-                                  // would swallow the tap that closes an open
-                                  // swipe.
-                                  builder: (context, strike, checkOff) => SwipeToEditDelete(
-                                    onTap: () => _openTaskSheet(context, ref, task: task),
-                                    onEdit: () => _openTaskSheet(context, ref, task: task),
-                                    onDelete: () => _deleteTask(context, ref, task),
-                                    child: _TaskRow(
-                                      task: task,
-                                      accent: accent,
-                                      strike: strike,
-                                      onCheckOff: checkOff,
-                                      // Only where the heading doesn't already say
-                                      // it. "Heute" above a row stamped "13. Aug"
-                                      // is the same fact printed twice.
-                                      showDate: _sectionSpansDays(group.section),
-                                      overdue: group.section == BoardSection.overdue,
+                      for (final section in sections) ...[
+                        // The heading counts both kinds. A section that says
+                        // "3" and lists three things is the only version of
+                        // this that survives a household where two of the three
+                        // came from school.
+                        _SectionHeading(
+                          title: _sectionTitle(section),
+                          overdue: section == BoardSection.overdue,
+                          count: tasksIn(section).length + (homeworkSections[section]?.length ?? 0),
+                        ),
+                        if (tasksIn(section).isNotEmpty)
+                          SectionCard(
+                            // [dividedRows] rather than a border on the row itself:
+                            // the row used to sit under the day card's own header and
+                            // drew its own top rule, which at the top of a card of its
+                            // own would be a line against the card's edge.
+                            children: dividedRows([
+                              // The row plays the check-off animation first and only
+                              // then tells the notifier, so it strikes through in place
+                              // before moving to "Erledigt" — and an undone task slides
+                              // back in here from below.
+                              for (final task in tasksIn(section))
+                                CheckOffArrival(
+                                  key: ValueKey(task.id),
+                                  animate: task.id == state.justMoved,
+                                  fromBelow: true,
+                                  child: CheckOffRow(
+                                    onCompleted: () => notifier.toggle(task),
+                                    // Same gesture as a Listen or Boxen row: swipe
+                                    // left for Bearbeiten and Löschen. The row's own
+                                    // tap opens the sheet from here rather than from
+                                    // a detector inside [_TaskRow] — an inner one
+                                    // would swallow the tap that closes an open
+                                    // swipe.
+                                    builder: (context, strike, checkOff) => SwipeToEditDelete(
+                                      onTap: () => _openTaskSheet(context, ref, task: task),
+                                      onEdit: () => _openTaskSheet(context, ref, task: task),
+                                      onDelete: () => _deleteTask(context, ref, task),
+                                      child: _TaskRow(
+                                        task: task,
+                                        accent: accent,
+                                        strike: strike,
+                                        onCheckOff: checkOff,
+                                        // Only where the heading doesn't already say
+                                        // it. "Heute" above a row stamped "13. Aug"
+                                        // is the same fact printed twice.
+                                        showDate: _sectionSpansDays(section),
+                                        overdue: section == BoardSection.overdue,
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
-                          ]),
-                        ),
+                            ]),
+                          ),
+                        // Homework in its own card under the household's own
+                        // tasks, not mixed into theirs. Every row above can be
+                        // ticked, swiped, edited and deleted; not one row below
+                        // can be any of those, because it belongs to the school.
+                        // Two cards say that without a word of explanation,
+                        // where one card would have half its rows quietly
+                        // ignoring the gestures the other half answers.
+                        if (homeworkSections[section] case final due?) ...[
+                          if (tasksIn(section).isNotEmpty) const SizedBox(height: 10),
+                          SectionCard(
+                            children: dividedRows([
+                              for (final h in due)
+                                _HomeworkRow(
+                                  homework: h,
+                                  showDate: _sectionSpansDays(section),
+                                  overdue: section == BoardSection.overdue,
+                                ),
+                            ]),
+                          ),
+                        ],
                         const SizedBox(height: 18),
                       ],
                     if (done.isNotEmpty) ...[
@@ -179,16 +267,10 @@ class BoardScreen extends ConsumerWidget {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(
-                                L.s.doneCountSeparator(done.length),
-                                style: AppText.caption,
-                              ),
+                              Text(L.s.doneCountSeparator(done.length), style: AppText.caption),
                               GestureDetector(
                                 onTap: notifier.clearDone,
-                                child: Text(
-                                  L.s.delete,
-                                  style: AppText.caption.copyWith(color: accent),
-                                ),
+                                child: Text(L.s.delete, style: AppText.caption.copyWith(color: accent)),
                               ),
                             ],
                           ),
@@ -261,7 +343,21 @@ class BoardScreen extends ConsumerWidget {
   /// it's laid out, which is the number that counts. See the collapsing-headers
   /// section of `docs/design-system.md`: this is frame one only, and a value
   /// tuned against a widget test's fallback font clips the real one.
+  ///
+  /// The person row is **not** in this sum. It only exists once a school
+  /// account is connected, so a constant that included it would over-reserve on
+  /// every other household's first frame; the re-measure catches it either way,
+  /// and over-reserving is the more visible of the two mistakes.
   static const _extraHeight = 12 + BoardTrackerStrip.height + 16 + 24 + 12 + 7.0;
+
+  static String _sectionTitle(BoardSection section) => switch (section) {
+    BoardSection.overdue => L.s.sectionOverdue,
+    BoardSection.today => L.s.sectionToday,
+    BoardSection.tomorrow => L.s.sectionTomorrow,
+    BoardSection.thisWeek => L.s.sectionThisWeek,
+    BoardSection.later => L.s.sectionLater,
+    BoardSection.undated => L.s.sectionUndated,
+  };
 
   /// Whether a section's rows still need their own date printed on them. The
   /// three that name exactly one day answer the question in their heading;
@@ -270,51 +366,113 @@ class BoardScreen extends ConsumerWidget {
   static bool _sectionSpansDays(BoardSection section) =>
       section == BoardSection.thisWeek || section == BoardSection.later || section == BoardSection.overdue;
 
-  /// [AvatarStack]'s own width formula (avatar size + step per extra member),
-  /// needed up front to keep the expanded title clear of the stack. Zero while
-  /// the household is empty, so the title gets the whole row instead of
-  /// reserving space for avatars that aren't drawn.
+  /// The create/edit sheet, for both kinds of row.
   ///
-  /// A function of the live roster rather than a `static final` off a constant:
-  /// members arrive after the first frame, and a width computed once at class
-  /// load would reserve room for a household nobody had joined yet.
-  static int _avatarStackWidth(int count) => count == 0 ? 0 : 28 + (28 - 9) * (count - 1);
-
-  /// The create/edit sheet. Same sheet either way — [task] set means editing —
-  /// so a task's notes and audience can be corrected, not only typed once.
-  static void _openTaskSheet(BuildContext context, WidgetRef ref, {BoardTask? task, DateTime? initialDue}) {
-    final text = TextEditingController(text: task?.text ?? '');
-    final notes = TextEditingController(text: task?.meta ?? '');
+  /// [task] or [tracker] set means editing that one, and the type switch is then
+  /// not offered: a task that turns out to be a rhythm is a new tracker and an
+  /// old task, not one row changing species — the record a tracker keeps has
+  /// nowhere to come from, and the "erledigt" a task carries has nowhere to go.
+  /// With neither set the sheet is creating, and the segmented control at the
+  /// top decides which.
+  static void _openTaskSheet(
+    BuildContext context,
+    WidgetRef ref, {
+    BoardTask? task,
+    Tracker? tracker,
+    DateTime? initialDue,
+    EventLink? eventLink,
+  }) {
+    final text = TextEditingController(text: task?.text ?? tracker?.text ?? '');
+    final notes = TextEditingController(text: task?.meta ?? tracker?.meta ?? '');
+    final editing = task != null || tracker != null;
     final notifier = ref.read(boardProvider.notifier);
+    final trackerNotifier = ref.read(trackerProvider.notifier);
     // Held under its own name because the sheet body's `Consumer` shadows
     // `context` with the sheet's own — which is unmounted by the time a write
     // comes back. The confirmation belongs to the screen, so it needs this one.
     final screen = context;
-    // Before the sheet is built, so it opens on this task's own answers rather
+    // Before the sheet is built, so it opens on this row's own answers rather
     // than on whatever the last sheet left behind.
-    notifier.primeDraft(task, initialDue: initialDue);
+    if (tracker != null) {
+      notifier.primeTrackerDraft(tracker);
+    } else {
+      notifier.primeDraft(task, initialDue: initialDue);
+    }
+    trackerNotifier.primeDraft(tracker);
     showAppSheet(
       context: context,
-      title: task == null ? L.s.newTask : L.s.editTask,
+      // Neutral while the sheet can still become either kind — see
+      // [AppStrings.newEntry].
+      title: tracker != null
+          ? L.s.editTracker
+          : task != null
+          ? L.s.editTask
+          : L.s.newEntry,
+      requiredField: text,
       onSave: () async {
         // The sheet is already gone by the time the write comes back (the
         // chrome pops it the moment save is tapped), so the chip lands on the
         // screen behind it — which is where it belongs.
         final confirm = confirmChipOf(screen);
+        final draft = ref.read(boardProvider);
+
+        if (tracker != null) {
+          final saved = await trackerNotifier.updateTracker(
+            tracker,
+            text: text.text,
+            meta: notes.text,
+            assigneeId: draft.newAssigneeId,
+            visibility: draft.newVisibility,
+            sharedWith: draft.newSharedWith,
+          );
+          if (saved) confirm(L.s.trackerUpdated);
+          return;
+        }
         if (task != null) {
           if (await notifier.updateTask(task, text: text.text, meta: notes.text)) confirm(L.s.taskUpdated);
           return;
         }
-        if (await notifier.addTask(text.text, meta: notes.text)) confirm(L.s.taskCreated);
+        if (draft.newKind == BoardItemKind.tracker) {
+          final saved = await trackerNotifier.addTracker(
+            text.text,
+            meta: notes.text.trim().isEmpty ? null : notes.text.trim(),
+            assigneeId: draft.newAssigneeId,
+            visibility: draft.newVisibility,
+            sharedWith: draft.newSharedWith,
+          );
+          if (saved) confirm(L.s.trackerCreated);
+          return;
+        }
+        if (await notifier.addTask(text.text, meta: notes.text, eventLink: eventLink)) {
+          confirm(L.s.taskCreated);
+        }
       },
       child: Consumer(
         builder: (context, ref, _) {
           final state = ref.watch(boardProvider);
           final members = ref.watch(householdMembersProvider);
           final me = ref.watch(currentUserIdProvider);
+          final isTracker = tracker != null || (!editing && state.newKind == BoardItemKind.tracker);
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Only while creating. The same switch on an edit sheet would read
+              // as an offer to convert the row, which is not on the table.
+              if (!editing) ...[
+                Padding(
+                  padding: const EdgeInsets.only(left: 2, bottom: 8),
+                  child: Text(L.s.whatToCreate, style: AppText.microLabel),
+                ),
+                SegmentedControl<BoardItemKind>(
+                  value: state.newKind,
+                  onChanged: notifier.setKind,
+                  options: [
+                    SegmentedOption(value: BoardItemKind.task, label: L.s.kindTask, icon: LucideIcons.circleCheck),
+                    SegmentedOption(value: BoardItemKind.tracker, label: L.s.kindTracker, icon: LucideIcons.repeat),
+                  ],
+                ),
+                const SizedBox(height: 14),
+              ],
               SectionCard(
                 children: [
                   Padding(
@@ -322,8 +480,13 @@ class BoardScreen extends ConsumerWidget {
                     child: TextField(
                       controller: text,
                       textCapitalization: TextCapitalization.sentences,
+                      textInputAction: TextInputAction.next,
                       style: AppText.inputTitle,
-                      decoration: InputDecoration(border: InputBorder.none, hintText: L.s.taskPlaceholder, isDense: true),
+                      decoration: InputDecoration(
+                        border: InputBorder.none,
+                        hintText: isTracker ? L.s.trackerPlaceholder : L.s.taskPlaceholder,
+                        isDense: true,
+                      ),
                     ),
                   ),
                   CardDivider(),
@@ -335,10 +498,13 @@ class BoardScreen extends ConsumerWidget {
                   // The "Wiederholen · Nie" row that used to sit under it is
                   // still gone — `tasks` has no recurrence column, so it promised
                   // something nothing behind it could deliver.
-                  _DueDateField(
-                    value: state.newDueDate,
-                    onChanged: notifier.setDueDate,
-                  ),
+                  // The one row that differs between the two kinds. A tracker has
+                  // no deadline to miss — it has a rhythm — and offering both
+                  // would be offering a contradiction.
+                  if (isTracker)
+                    _RhythmField(value: ref.watch(trackerProvider).newSchedule, onChanged: trackerNotifier.setSchedule)
+                  else
+                    _DueDateField(value: state.newDueDate, onChanged: notifier.setDueDate),
                   CardDivider(),
                   // "Wer macht das?" as a field row rather than a second avatar
                   // strip: stacked under "Für wen?" the two avatar pickers read
@@ -384,24 +550,26 @@ class BoardScreen extends ConsumerWidget {
                 onChanged: notifier.setVisibility,
                 members: members,
                 currentUserId: me,
-                noun: L.s.theTask,
+                noun: isTracker ? L.s.theTracker : L.s.theTask,
                 avatarSize: 52,
               ),
               // Only on an existing task: an external link needs a row to point
               // at, and a task that has not been saved yet has no id. Its own
               // action, never folded into "Für wen?" — see [showShareSheet].
+              //
+              // **A tracker is never offered it.** `public.shareable_kind` names
+              // no value for one, and a link handing an outsider a page of the
+              // household's habits has no reader worth the leak.
               if (task != null && ref.watch(canShareExternallyProvider)) ...[
                 const SizedBox(height: 14),
                 OutlinedSheetAction(
                   icon: LucideIcons.userPlus,
                   label: L.s.share,
-                  onTap: () => showShareSheet(
-                    context,
-                    kind: ShareableKind.task,
-                    resourceId: task.id,
-                    resourceName: task.text,
-                  ),
+                  onTap: () =>
+                      showShareSheet(context, kind: ShareableKind.task, resourceId: task.id, resourceName: task.text),
                 ),
+              ],
+              if (task != null) ...[
                 const SizedBox(height: 10),
                 OutlinedSheetAction(
                   icon: LucideIcons.trash2,
@@ -412,6 +580,21 @@ class BoardScreen extends ConsumerWidget {
                     Navigator.of(context).pop();
                     if (await notifier.deleteTask(task)) {
                       confirm(L.s.taskDeleted, undo: () => notifier.restoreTask(task));
+                    }
+                  },
+                ),
+              ],
+              if (tracker != null) ...[
+                const SizedBox(height: 14),
+                OutlinedSheetAction(
+                  icon: LucideIcons.trash2,
+                  label: L.s.deleteTracker,
+                  destructive: true,
+                  onTap: () async {
+                    final confirm = confirmChipOf(screen);
+                    Navigator.of(context).pop();
+                    if (await trackerNotifier.deleteTracker(tracker)) {
+                      confirm(L.s.trackerDeleted, undo: () => trackerNotifier.restoreTracker(tracker));
                     }
                   },
                 ),
@@ -438,46 +621,6 @@ class BoardScreen extends ConsumerWidget {
   }
 }
 
-/// The Board header's member stack, folded away as the header collapses: the
-/// width factor and the opacity both ride `t`, so the add button ends up flush
-/// against the collapsed title bar instead of leaving a hole where the avatars
-/// used to be.
-class _CollapsingAvatars extends StatelessWidget {
-  final double t;
-  final List<FamilyMember> members;
-
-  const _CollapsingAvatars({required this.t, required this.members});
-
-  @override
-  Widget build(BuildContext context) {
-    final visible = (1 - t).clamp(0.0, 1.0);
-    // Nobody in the household yet — no stack, and no gap where one would be.
-    if (visible == 0 || members.isEmpty) return const SizedBox.shrink();
-    return ClipRect(
-      child: Align(
-        alignment: Alignment.centerLeft,
-        widthFactor: visible,
-        child: Opacity(
-          opacity: visible,
-          child: AvatarStack(
-            avatars: [
-              for (final m in members)
-                Avatar(
-                  size: 28,
-                  bg: m.toneColors.bg,
-                  fg: m.toneColors.fg,
-                  initials: m.initials,
-                  fontSize: 10,
-                  imageUrl: m.imageUrl,
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 /// Today, at the top of the Board, in the space the week strip used to take.
 ///
 /// Not a picker: with the date living on the task there is no day to select, so
@@ -498,38 +641,55 @@ class _TodayHeader extends ConsumerWidget {
   final int total;
   final Color accent;
 
-  const _TodayHeader({required this.today, required this.progress, required this.done, required this.total, required this.accent});
+  const _TodayHeader({
+    required this.today,
+    required this.progress,
+    required this.done,
+    required this.total,
+    required this.accent,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final tracker = ref.watch(boardStreakProvider);
+    // The grid's source, and the change that dissolves the confusion this
+    // feature came out of: it counts the household's *trackers*, not whichever
+    // one-off tasks happened to fall on a day. A to-do is no longer a data
+    // point in a habit chart.
+    final trackers = ref.watch(trackerProvider);
+    final days = trackers.dayTallies(today);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 12),
+        // Faces first, above the tracker: it is the control, and the grid
+        // behind it is a report. The row appears only once a school account is
+        // connected — a household with no homework has nothing here it could
+        // not already see, and an empty filter row above every Board would be
+        // one more thing to explain.
+        const _PersonFilterRow(),
         // Named rather than left to explain itself — it has no axis, no numbers
         // and nothing to tap. The caption is drawn inside the grid's first row
         // (see [BoardTrackerStrip]) rather than above it: a line of its own here
         // would be a second title under "Board", and would cost the header a
         // whole row to say one word.
-        BoardTrackerStrip(days: tracker.days, today: today, accent: accent),
+        BoardTrackerStrip(
+          days: days,
+          today: today,
+          // An empty grid on a Board with no trackers reads as lost data rather
+          // than as a chart waiting for its first one, so it says so instead.
+          hasTrackers: trackers.trackers.isNotEmpty,
+          accent: accent,
+        ),
         const SizedBox(height: 16),
         Row(
           crossAxisAlignment: CrossAxisAlignment.baseline,
           textBaseline: TextBaseline.alphabetic,
           children: [
             Expanded(
-              child: Text(
-                boardLongDayName(today),
-                overflow: TextOverflow.ellipsis,
-                style: AppText.sectionHeading,
-              ),
+              child: Text(boardLongDayName(today), overflow: TextOverflow.ellipsis, style: AppText.sectionHeading),
             ),
             const SizedBox(width: 10),
-            Text(
-              total == 0 ? L.s.nothingPlanned : L.s.doneOfTotal(done, total),
-              style: AppText.label,
-            ),
+            Text(total == 0 ? L.s.nothingPlanned : L.s.doneOfTotal(done, total), style: AppText.label),
           ],
         ),
         const SizedBox(height: 12),
@@ -582,37 +742,170 @@ class _ProgressBar extends StatelessWidget {
 /// and the header's own `+` plus the "Fällig" row in the sheet already reach
 /// every date — including the ones no section names.
 class _SectionHeading extends StatelessWidget {
-  final BoardSection section;
+  final String title;
   final int count;
 
-  const _SectionHeading({required this.section, required this.count});
+  /// The one heading that carries a colour — "Überfällig" is the only section
+  /// whose contents are a problem rather than a plan. Never a tracker: a rhythm
+  /// that slipped is not overdue, it is a gap.
+  final bool overdue;
 
-  String get _title => switch (section) {
-    BoardSection.overdue => L.s.sectionOverdue,
-    BoardSection.today => L.s.sectionToday,
-    BoardSection.tomorrow => L.s.sectionTomorrow,
-    BoardSection.thisWeek => L.s.sectionThisWeek,
-    BoardSection.later => L.s.sectionLater,
-    BoardSection.undated => L.s.sectionUndated,
-  };
+  const _SectionHeading({required this.title, required this.count, this.overdue = false});
 
   @override
   Widget build(BuildContext context) {
-    // Overdue is the one heading that carries a colour: it is the only section
-    // whose contents are a problem rather than a plan.
-    final tone = section == BoardSection.overdue ? AppColors.danger : AppColors.muted;
+    final tone = overdue ? AppColors.danger : AppColors.muted;
     return Padding(
       padding: const EdgeInsets.fromLTRB(6, 0, 6, 10),
       child: Row(
         children: [
-          Text(
-            _title,
-            style: AppText.groupHeading.copyWith(letterSpacing: 0, color: tone),
-          ),
+          Text(title, style: AppText.groupHeading.copyWith(letterSpacing: 0, color: tone)),
           const SizedBox(width: 7),
           Text(
             '$count',
             style: AppText.caption.copyWith(fontWeight: FontWeight.w400, color: AppColors.mutedLight),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Today's rhythms, above the dated sections.
+///
+/// Renders nothing at all when the household keeps none, rather than an empty
+/// card: the Board is a task list first, and a permanent empty shell for a
+/// feature nobody has used would cost every screen a heading and a box.
+///
+/// **What a row does when it is ticked is the whole difference from a task.** It
+/// stays exactly where it is, with its circle filled — a tracker's day is
+/// recorded, not cleared away — where a task collapses out of its section and
+/// travels to "Erledigt". So there is no [CheckOffRow] here: that widget's job
+/// is the collapse, and a tracker never does it.
+class _TrackerCard extends ConsumerWidget {
+  final DateTime today;
+  final Color accent;
+  final String? personFilter;
+
+  const _TrackerCard({required this.today, required this.accent, required this.personFilter});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(trackerProvider);
+    final due = state.dueOn(today, personFilter: personFilter);
+    if (due.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SectionHeading(title: L.s.trackersTitle, count: due.length),
+        SectionCard(
+          children: dividedRows([
+            for (final tracker in due)
+              SwipeToEditDelete(
+                onTap: () => BoardScreen._openTaskSheet(context, ref, tracker: tracker),
+                onEdit: () => BoardScreen._openTaskSheet(context, ref, tracker: tracker),
+                onDelete: () => _delete(context, ref, tracker),
+                child: _TrackerRow(tracker: tracker, state: state, today: today, accent: accent),
+              ),
+          ]),
+        ),
+        const SizedBox(height: 18),
+      ],
+    );
+  }
+
+  static Future<void> _delete(BuildContext context, WidgetRef ref, Tracker tracker) async {
+    final confirm = confirmChipOf(context);
+    final notifier = ref.read(trackerProvider.notifier);
+    if (await notifier.deleteTracker(tracker)) {
+      confirm(L.s.trackerDeleted, undo: () => notifier.restoreTracker(tracker));
+    }
+  }
+}
+
+/// One tracker on the Board's card.
+///
+/// The subtitle is the row's whole state, and it says a different thing for each
+/// kind of rhythm — which is the point of having two. A day-based tracker prints
+/// the days it runs on and, once there is one, the streak. A weekly one prints
+/// how far into its week it is, because it is never due today and "Mo, Do" would
+/// be a lie about days it does not care about.
+class _TrackerRow extends ConsumerWidget {
+  final Tracker tracker;
+  final TrackerState state;
+  final DateTime today;
+  final Color accent;
+
+  const _TrackerRow({required this.tracker, required this.state, required this.today, required this.accent});
+
+  String _subtitle() {
+    final streak = state.streakOf(tracker, today);
+    if (!tracker.schedule.isDayBased) {
+      final week = L.s.weekProgressLabel(state.weekDoneFor(tracker, today), tracker.schedule.target);
+      return streak > 0 ? '$week · ${L.s.streakWeeks(streak)}' : week;
+    }
+    final rhythm = scheduleSummary(tracker.schedule);
+    return streak > 0 ? '$rhythm · ${L.s.streakDays(streak)}' : rhythm;
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final checked = state.isCheckedOn(tracker.id, today);
+    final w = whoBadge(
+      assigneeId: tracker.assigneeId,
+      visibility: tracker.visibility,
+      sharedWith: tracker.sharedWith,
+      members: ref.watch(householdMembersProvider),
+    );
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  tracker.text,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  // A kept tracker greys the way a done task does, but keeps its
+                  // text un-struck: the day is recorded, not crossed out.
+                  style: AppText.itemTitle.copyWith(color: checked ? _doneInk : AppColors.ink),
+                ),
+                const SizedBox(height: 3),
+                Text(_subtitle(), maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.label),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Semantics(
+                      label: w.label,
+                      excludeSemantics: true,
+                      child: WhoAvatars(who: w, size: 22, fontSize: 9.5),
+                    ),
+                    if (tracker.assigneeId != null)
+                      VisibilityBadge(
+                        visibility: tracker.visibility,
+                        sharedWith: tracker.sharedWith,
+                        members: ref.watch(householdMembersProvider),
+                        padding: const EdgeInsets.only(left: 6),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          CheckOffButton(
+            progress: checked ? 1 : 0,
+            accent: accent,
+            // Ticking and un-ticking are the same tap, unlike a task's, because
+            // the row does not go anywhere — a mis-tap at breakfast is undone by
+            // tapping it again rather than by hunting for it in "Erledigt".
+            onTap: () => ref.read(trackerProvider.notifier).toggleCheck(tracker, today),
+            size: 26,
+            filled: true,
           ),
         ],
       ),
@@ -635,10 +928,7 @@ class _EmptyBoard extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 34, horizontal: 20),
           child: Column(
             children: [
-              Text(
-                L.s.noOpenTasks,
-                style: AppText.body.copyWith(color: AppColors.inkTertiary),
-              ),
+              Text(L.s.noOpenTasks, style: AppText.body.copyWith(color: AppColors.inkTertiary)),
               const SizedBox(height: 16),
               GlassAccentButton(label: L.s.addTask, onTap: onAdd),
             ],
@@ -710,12 +1000,7 @@ class _TaskRow extends ConsumerWidget {
                   const SizedBox(height: 2),
                   Opacity(
                     opacity: 1 - 0.45 * strike,
-                    child: Text(
-                      note,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppText.label,
-                    ),
+                    child: Text(note, maxLines: 2, overflow: TextOverflow.ellipsis, style: AppText.label),
                   ),
                 ],
                 const SizedBox(height: 6),
@@ -763,6 +1048,14 @@ class _TaskRow extends ConsumerWidget {
                             fontWeight: overdue ? FontWeight.w500 : null,
                           ),
                         ),
+                      ],
+                      // The appointment this task was made for, and the way back
+                      // to it. Last in the row and flexible, so the faces and
+                      // the date — which are on every task — keep their width
+                      // and the name of the event is what gives way.
+                      if (task.eventLink case final link?) ...[
+                        const SizedBox(width: 8),
+                        Flexible(child: EventLinkChip(link: link)),
                       ],
                     ],
                   ),
@@ -920,12 +1213,7 @@ class _AssigneeFieldState extends State<_AssigneeField> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
             child: Row(
               children: [
-                Expanded(
-                  child: Text(
-                    L.s.assigneeLabel,
-                    style: AppText.rowTitle,
-                  ),
-                ),
+                Expanded(child: Text(L.s.assigneeLabel, style: AppText.rowTitle)),
                 // One tight flex child holding the whole answer, aligned to the
                 // end — not three loose siblings. A bare `Flexible` around the
                 // name competes with the label's `Expanded` for the free space,
@@ -1016,12 +1304,7 @@ class _AssigneeOption extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
 
-  const _AssigneeOption({
-    required this.member,
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
+  const _AssigneeOption({required this.member, required this.label, required this.selected, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -1067,6 +1350,60 @@ class _AssigneeOption extends StatelessWidget {
 /// wearing the affordance of a control without being one, and the date it showed
 /// could not be changed from anywhere. Both are fixed here: it opens
 /// [showDueDateSheet], and "—" is a legitimate answer rather than a missing one.
+/// A tracker's rhythm row — where a task has "Fällig am".
+///
+/// Reads its answer back as a summary ("Jeden Tag", "Mo, Do", "4-mal pro
+/// Woche") rather than as the kind alone, because the kind on its own does not
+/// say what the tracker will do. No "—" state: every rhythm is a complete
+/// answer, and a tracker without one is not a thing this sheet can produce.
+class _RhythmField extends StatelessWidget {
+  final TrackerSchedule value;
+  final ValueChanged<TrackerSchedule> onChanged;
+
+  const _RhythmField({required this.value, required this.onChanged});
+
+  Future<void> _pick(BuildContext context) async {
+    final picked = await showScheduleSheet(context, current: value);
+    // Null means dismissed — the sheet's only other exit hands back a rhythm.
+    if (picked == null) return;
+    onChanged(picked);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => _pick(context),
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+        child: Row(
+          children: [
+            Text(L.s.trackerRhythm, style: AppText.rowTitle),
+            const SizedBox(width: 12),
+            // The label takes its own width and the answer takes the rest,
+            // right-aligned against the chevron — the same geometry as the
+            // "Fällig" row it replaces. `Expanded` on *both* halves splits the
+            // row down the middle instead, which left a short summary
+            // ("Jeden Tag") stranded mid-row while every other field row in the
+            // app ends its value at the edge.
+            Expanded(
+              child: Text(
+                scheduleSummary(value),
+                textAlign: TextAlign.right,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppText.input.copyWith(color: AppColors.inkTertiary),
+              ),
+            ),
+            const SizedBox(width: 4),
+            Icon(LucideIcons.chevronRight, size: 16, color: AppColors.mutedLight),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _DueDateField extends StatelessWidget {
   final DateTime? value;
   final ValueChanged<DateTime?> onChanged;
@@ -1091,18 +1428,250 @@ class _DueDateField extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
         child: Row(
           children: [
-            Expanded(child: Text(L.s.dueLabel, style: AppText.rowTitle)),
-            Text(
-              due == null ? L.s.dueNone : boardLongDayName(due),
-              style: AppText.input.copyWith(
-                // The dash is punctuation standing in for an answer, so it sits
-                // a shade back from a date that really is one.
-                color: due == null ? AppColors.mutedLight : AppColors.inkTertiary,
+            Text(L.s.dueLabel, style: AppText.rowTitle),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                due == null ? L.s.dueNone : boardLongDayName(due),
+                textAlign: TextAlign.right,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppText.input.copyWith(
+                  // The dash is punctuation standing in for an answer, so it sits
+                  // a shade back from a date that really is one.
+                  color: due == null ? AppColors.mutedLight : AppColors.inkTertiary,
+                ),
               ),
             ),
             const SizedBox(width: 4),
             Icon(LucideIcons.chevronRight, size: 16, color: AppColors.mutedLight),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The homework the person chip lets through.
+///
+/// Two different ways of belonging to somebody meet here. A task is filtered by
+/// its **assignee**, because that is the axis that already answers "who does
+/// it"; a homework has no assignee and never will — it is the school's row, not
+/// ours — so it is filtered by the **calendar it came in on**, whose owner is
+/// the same person. The chip is one face either way, which is the point.
+List<Homework> _visibleHomework(WidgetRef ref, String? personFilter) {
+  final homework = ref.watch(homeworkProvider);
+  if (personFilter == null || homework.isEmpty) return homework;
+
+  // The family chip is the shared things — Ferien, Abfall, the household
+  // calendar — and nobody's homework is shared, so it shows none.
+  final owners = ref.watch(calendarOwnerProvider);
+  return [
+    for (final h in homework)
+      if (owners[h.calendarId] == personFilter) h,
+  ];
+}
+
+/// One homework on the Board.
+///
+/// **Deliberately not a [_TaskRow].** It carries no check-off circle, no swipe
+/// actions and no menu, because none of those would do anything: the row
+/// belongs to WebUntis, and the only tick that counts is the one the pupil
+/// makes in Untis itself. A row that looked tickable and silently was not would
+/// be worse than one that plainly is not.
+class _HomeworkRow extends StatelessWidget {
+  final Homework homework;
+
+  /// Whether the section heading already names the day. Same rule as a task
+  /// row: "Heute" over a row stamped "Mi, 10. Sept" says it twice.
+  final bool showDate;
+  final bool overdue;
+
+  const _HomeworkRow({required this.homework, this.showDate = false, this.overdue = false});
+
+  @override
+  Widget build(BuildContext context) {
+    final subject = homework.label;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // The subject where a task has its check-off circle, at the same
+          // width, so the two cards line up down the page rather than reading
+          // as two different lists that happen to be stacked.
+          Container(
+            width: 34,
+            padding: const EdgeInsets.symmetric(vertical: 3),
+            alignment: Alignment.centerLeft,
+            child: Text(
+              subject.length > 3 ? subject.substring(0, 3) : subject,
+              style: AppText.microLabel.copyWith(color: AppColors.accent, fontWeight: FontWeight.w600),
+            ),
+          ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // One line. Untis homework runs to whole paragraphs — one is a
+                // materials list with an emoji per line — and the Board is a
+                // list of what has to happen, not the place to read it. The
+                // whole text is on the lesson in Kalender.
+                Text(homework.summary, maxLines: 2, overflow: TextOverflow.ellipsis, style: AppText.itemTitle),
+                const SizedBox(height: 3),
+                Text(
+                  [
+                    if (showDate) boardLongDayName(homework.dueOn),
+                    if (homework.teacher.isNotEmpty) homework.teacher,
+                  ].join(' · '),
+                  style: AppText.caption.copyWith(color: overdue ? AppColors.danger : AppColors.inkTertiary),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Board's filter row: one face per person, plus the household.
+///
+/// **The same people, in the same order, as Kalender's chip row**, keyed on the
+/// same `'member:'` / `'person:'` / `'family'` identifiers — so a household
+/// learns the row once and it means the same thing on both tabs. Filtering to
+/// Alice here shows her homework and the chores assigned to her; filtering to
+/// her over in Kalender shows her lessons and the family's shared calendars.
+///
+/// Only rendered when there is homework to filter, which is the honest
+/// threshold: without a school account every chip but "Alle" would narrow a
+/// Board to the tasks assigned to one person, which is a feature this row was
+/// not asked for and would land on every household unannounced.
+///
+/// Scrolls horizontally. Four children plus two parents plus the family is
+/// seven chips, and this app is built for exactly that household.
+class _PersonFilterRow extends ConsumerWidget {
+  const _PersonFilterRow();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final homework = ref.watch(homeworkProvider);
+    if (homework.isEmpty) return const SizedBox.shrink();
+
+    final selected = ref.watch(boardProvider.select((s) => s.personFilter));
+    final notifier = ref.read(boardProvider.notifier);
+    final members = ref.watch(householdMembersProvider);
+    final owners = ref.watch(calendarOwnerProvider);
+
+    // Everybody with an account, then anybody who only exists as the owner of a
+    // school calendar — a child with no login, which is most of them. The
+    // second list is built from the homework actually on the Board, so a
+    // household never gets a chip for somebody with nothing behind it.
+    final people = <({String id, String name})>[for (final m in members) (id: 'member:${m.id}', name: m.name)];
+    final calendars = ref.watch(calendarProvider.select((s) => s.calendars));
+    final seen = {for (final p in people) p.id};
+    for (final h in homework) {
+      final group = owners[h.calendarId];
+      if (group == null || group == 'family' || !seen.add(group)) continue;
+      for (final c in calendars) {
+        if (c.id != h.calendarId) continue;
+        people.add((id: group, name: c.groupName));
+        break;
+      }
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: SizedBox(
+        // Sized to the face, like Kalender's row: 26 plus the chip's padding
+        // and its selected ring.
+        height: 40,
+        child: ListView(
+          scrollDirection: Axis.horizontal,
+          children: [
+            _PersonChip(label: L.s.all, active: selected == null, onTap: () => notifier.filterToPerson(null)),
+            for (final person in people)
+              _PersonChip(
+                label: person.name,
+                active: selected == person.id,
+                onTap: () => notifier.filterToPerson(person.id),
+                face: _personFace(ref, person.id, person.name),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The circle on a Board person chip — a member's own picture where there is
+/// one, their initials on their tone where there is not, and the initial of a
+/// name for somebody with no account at all.
+Widget _personFace(WidgetRef ref, String groupId, String name) {
+  // The same 26pt Kalender's row uses, and for the same reason: below about
+  // that, a photograph stops being a face and becomes a coloured dot, which is
+  // the one thing a row of people must not look like.
+  const size = 26.0;
+
+  if (groupId.startsWith('member:')) {
+    final id = groupId.substring('member:'.length);
+    for (final m in ref.watch(householdMembersProvider)) {
+      if (m.id != id) continue;
+      final tone = AppTones.list[m.tone % AppTones.list.length];
+      return Avatar(size: size, bg: tone.bg, fg: tone.fg, initials: m.initials, fontSize: 11, imageUrl: m.imageUrl);
+    }
+  }
+  final tone = AppTones.list[name.hashCode.abs() % AppTones.list.length];
+  return Avatar(
+    size: size,
+    bg: tone.bg,
+    fg: tone.fg,
+    initials: name.isEmpty ? '?' : name.substring(0, 1).toUpperCase(),
+    fontSize: 11,
+  );
+}
+
+/// One chip in [_PersonFilterRow]. Shaped like Kalender's so the two rows read
+/// as the same control; it has no chevron, because a person on the Board has
+/// nothing to open into — their tasks and their homework are already the whole
+/// answer.
+class _PersonChip extends StatelessWidget {
+  final String label;
+  final bool active;
+  final VoidCallback onTap;
+  final Widget? face;
+
+  const _PersonChip({required this.label, required this.active, required this.onTap, this.face});
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = Theme.of(context).colorScheme.primary;
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: EdgeInsets.only(left: face == null ? 14 : 4, right: 14, top: 4, bottom: 4),
+          decoration: BoxDecoration(
+            color: active ? tint(accent, .82) : AppColors.surfaceAlt,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: active ? accent : Colors.transparent, width: 1.5),
+          ),
+          alignment: Alignment.center,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (face != null) ...[face!, const SizedBox(width: 7)],
+              Text(
+                label,
+                style: AppText.caption.copyWith(
+                  fontWeight: active ? FontWeight.w600 : FontWeight.w400,
+                  color: active ? AppColors.ink : AppColors.muted,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

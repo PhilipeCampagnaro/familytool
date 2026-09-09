@@ -2,7 +2,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/board_data.dart';
 import '../data/repositories/board_repository.dart';
+import '../models/event_link.dart';
 import '../models/task.dart';
+import '../models/tracker.dart';
 import '../models/visibility.dart';
 import '../services/supabase.dart';
 import 'auth_state.dart';
@@ -36,6 +38,15 @@ class BoardState {
   final Set<String> newSharedWith;
   final String? newAssigneeId;
 
+  /// What the create sheet is making. Held here rather than on
+  /// [TrackerState] because this is where the rest of the sheet's draft lives:
+  /// the notes, who does it and who may see it are asked identically of both
+  /// kinds, and only one row of the sheet changes with the answer.
+  ///
+  /// The same shape as `ListState.newType`, which drives the Listen sheet's
+  /// segmented control.
+  final BoardItemKind newKind;
+
   /// The draft's due date, and null is a real answer — "Ohne Datum" is where a
   /// new task starts. It used to be `selectedDay`, i.e. whatever the week strip
   /// happened to be on, which meant the sheet could not ask the question at all.
@@ -46,6 +57,15 @@ class BoardState {
   /// rest at rest. Pass `''` to clear it.
   final String justMoved;
 
+  /// The person chip the Board is filtered to, or null for "Alle".
+  ///
+  /// The same identifiers Kalender's chips use — `'member:<uuid>'`,
+  /// `'person:<name>'`, `'family'` — so one row of faces means the same thing
+  /// on both screens and a household learns it once. Filtering to Alice shows
+  /// her homework *and* the chores assigned to her, which is the question
+  /// somebody actually has at seven in the morning.
+  final String? personFilter;
+
   final bool loading;
 
   /// German, and safe to render verbatim.
@@ -53,6 +73,8 @@ class BoardState {
 
   const BoardState({
     this.tasks = const [],
+    this.personFilter,
+    this.newKind = BoardItemKind.task,
     this.newVisibility = ItemVisibility.family,
     this.newSharedWith = const {},
     this.newAssigneeId,
@@ -64,6 +86,7 @@ class BoardState {
 
   BoardState copyWith({
     List<BoardTask>? tasks,
+    BoardItemKind? newKind,
     ItemVisibility? newVisibility,
     Set<String>? newSharedWith,
     String? newAssigneeId,
@@ -71,12 +94,16 @@ class BoardState {
     DateTime? newDueDate,
     bool clearDueDate = false,
     String? justMoved,
+    String? personFilter,
+    bool clearPersonFilter = false,
     bool? loading,
     String? error,
     bool clearError = false,
   }) {
     return BoardState(
       tasks: tasks ?? this.tasks,
+      newKind: newKind ?? this.newKind,
+      personFilter: clearPersonFilter ? null : (personFilter ?? this.personFilter),
       newVisibility: newVisibility ?? this.newVisibility,
       newSharedWith: newSharedWith ?? this.newSharedWith,
       newAssigneeId: clearAssignee ? null : (newAssigneeId ?? this.newAssigneeId),
@@ -89,12 +116,28 @@ class BoardState {
 
   /// The open tasks, in the sections the screen draws. Empty sections are
   /// already gone.
-  List<BoardGroup> groupsOn(DateTime today) => boardGroups(tasks, today);
+  List<BoardGroup> groupsOn(DateTime today) => boardGroups(visibleTasks, today);
+
+  /// The tasks the person filter lets through.
+  ///
+  /// A chip standing for a household member narrows to what is **assigned** to
+  /// them — `assigneeId`, which is the axis that already answers "who does it".
+  /// The family chip and a chip for somebody with no account have no assignee to
+  /// match, so they narrow the homework and leave the household's own tasks
+  /// alone: a chore nobody has been given is everybody's, and hiding it under
+  /// every filter would make the Board look empty at exactly the moment
+  /// somebody was looking for something to do.
+  List<BoardTask> get visibleTasks {
+    final filter = personFilter;
+    if (filter == null || !filter.startsWith('member:')) return tasks;
+    final memberId = filter.substring('member:'.length);
+    return [for (final t in tasks) if (t.assigneeId == memberId) t];
+  }
 
   /// Recently finished tasks, newest first — the "Erledigt" card. How far back
   /// "recently" reaches is [BoardRepository.fetchBoard]'s call, not the UI's.
   List<BoardTask> get doneTasks {
-    final done = [for (final t in tasks) if (t.done) t];
+    final done = [for (final t in visibleTasks) if (t.done) t];
     done.sort((a, b) => (b.doneAt ?? DateTime(0)).compareTo(a.doneAt ?? DateTime(0)));
     return done;
   }
@@ -107,7 +150,7 @@ class BoardState {
   /// A task that was overdue and *is* done stays out: it would only ever pad
   /// both halves of "3 von 8 erledigt" with work nobody has to think about.
   List<BoardTask> onDeck(DateTime today) => [
-    for (final t in tasks)
+    for (final t in visibleTasks)
       if (t.dueDate case final due?)
         if (boardDay(due) == today || (boardDay(due).isBefore(today) && !t.done)) t,
   ];
@@ -136,6 +179,15 @@ class BoardNotifier extends StateNotifier<BoardState> {
   /// loading (every open task, plus the recently finished ones). The date-window
   /// refetch that used to fire when the week strip walked out of range went with
   /// the strip.
+  /// Picks a person chip, or clears it when the lit one is tapped again.
+  void filterToPerson(String? groupId) {
+    final same = groupId != null && state.personFilter == groupId;
+    state = state.copyWith(
+      personFilter: same ? null : groupId,
+      clearPersonFilter: same || groupId == null,
+    );
+  }
+
   Future<void> load() async {
     if (_userId == null) {
       state = state.copyWith(loading: false);
@@ -172,6 +224,12 @@ class BoardNotifier extends StateNotifier<BoardState> {
     );
   }
 
+  /// The create sheet's segmented control. Nothing else moves with it — the
+  /// text already typed, the assignee and the audience all survive a switch, so
+  /// somebody who started a task and realised it is really a rhythm keeps what
+  /// they wrote.
+  void setKind(BoardItemKind kind) => state = state.copyWith(newKind: kind);
+
   void setVisibility(ItemVisibility visibility, Set<String> sharedWith) {
     state = state.copyWith(
       newVisibility: visibility,
@@ -193,21 +251,52 @@ class BoardNotifier extends StateNotifier<BoardState> {
   /// [initialDue] is the date a *new* task starts on, which is null — undated —
   /// unless the sheet was opened from a section header that names a day. An
   /// existing task always brings its own date, whatever it is.
-  void primeDraft(BoardTask? task, {DateTime? initialDue}) {
-    // Somebody is always on the hook — a task nobody is responsible for is a
-    // task nobody does. A new one starts on you; an older one carrying no
-    // `assignee_id` falls back to whoever created it rather than to whoever
-    // happens to be opening the sheet.
-    final owner = (task?.ownerId ?? '').isEmpty ? null : task!.ownerId;
-    final assignee = task?.assigneeId ?? owner ?? _userId;
-    final due = task == null ? initialDue : task.dueDate;
+  void primeDraft(BoardTask? task, {DateTime? initialDue}) => primeFor(
+    // A new sheet starts on a task: that is what the + is reached for, and a
+    // rhythm is the deliberate choice.
+    kind: BoardItemKind.task,
+    ownerId: task?.ownerId,
+    assigneeId: task?.assigneeId,
+    visibility: task?.visibility,
+    sharedWith: task?.sharedWith,
+    dueDate: task == null ? initialDue : task.dueDate,
+  );
+
+  /// The same, for a tracker. It answers three of the sheet's four questions
+  /// identically to a task — who does it, who may see it, the notes — which is
+  /// why one draft serves both and only the date/rhythm row differs.
+  void primeTrackerDraft(Tracker tracker) => primeFor(
+    kind: BoardItemKind.tracker,
+    ownerId: tracker.ownerId,
+    assigneeId: tracker.assigneeId,
+    visibility: tracker.visibility,
+    sharedWith: tracker.sharedWith,
+  );
+
+  /// The shared primer behind both.
+  ///
+  /// Somebody is always on the hook — a chore nobody is responsible for is a
+  /// chore nobody does. A new row starts on you; an older one carrying no
+  /// `assignee_id` falls back to whoever created it rather than to whoever
+  /// happens to be opening the sheet.
+  void primeFor({
+    required BoardItemKind kind,
+    String? ownerId,
+    String? assigneeId,
+    ItemVisibility? visibility,
+    List<String>? sharedWith,
+    DateTime? dueDate,
+  }) {
+    final owner = (ownerId ?? '').isEmpty ? null : ownerId;
+    final assignee = assigneeId ?? owner ?? _userId;
     state = state.copyWith(
-      newVisibility: task?.visibility ?? ItemVisibility.family,
-      newSharedWith: {...?task?.sharedWith},
+      newKind: kind,
+      newVisibility: visibility ?? ItemVisibility.family,
+      newSharedWith: {...?sharedWith},
       newAssigneeId: assignee,
       clearAssignee: assignee == null,
-      newDueDate: due,
-      clearDueDate: due == null,
+      newDueDate: dueDate,
+      clearDueDate: dueDate == null,
     );
   }
 
@@ -221,7 +310,7 @@ class BoardNotifier extends StateNotifier<BoardState> {
   /// True only once the server has it: the row appears optimistically either
   /// way, but the confirmation chip is a claim about the *write*, and a rolled
   /// back row gets the error snack instead.
-  Future<bool> addTask(String text, {String? meta}) async {
+  Future<bool> addTask(String text, {String? meta, EventLink? eventLink}) async {
     final trimmed = text.trim();
     if (trimmed.isEmpty) return false;
     final familyId = _familyId;
@@ -241,6 +330,7 @@ class BoardNotifier extends StateNotifier<BoardState> {
       ownerId: _userId ?? '',
       visibility: state.newVisibility,
       sharedWith: state.newSharedWith.toList(),
+      eventLink: eventLink,
       // Only so the optimistic row sorts where the saved one will — every other
       // timestamp on the model comes from the server.
       createdAt: DateTime.now(),
@@ -256,6 +346,7 @@ class BoardNotifier extends StateNotifier<BoardState> {
         assigneeId: state.newAssigneeId,
         visibility: state.newVisibility,
         sharedWith: state.newSharedWith,
+        eventLink: eventLink,
       );
       if (!mounted) return false;
       _patchTask(optimistic.id, (_) => saved);
@@ -412,6 +503,9 @@ class BoardNotifier extends StateNotifier<BoardState> {
         assigneeId: task.assigneeId,
         visibility: task.visibility,
         sharedWith: task.sharedWith.toSet(),
+        // See [ListNotifier.restoreList]: an undo that drops the link is not an
+        // undo.
+        eventLink: task.eventLink,
       );
       // `createTask` has no say over it, and a restored task landing in "Offen"
       // when it was ticked off would be a change, not an undo.

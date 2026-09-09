@@ -9,9 +9,11 @@ import UIKit
   private var mediaChannel: FlutterMethodChannel?
   private var mapChannel: FlutterMethodChannel?
   private var actionSheetChannel: FlutterMethodChannel?
+  private var scannerChannel: FlutterMethodChannel?
   private let mediaPicker = MediaPicker()
   private let mapSnapshot = MapSnapshot()
   private let actionSheet = ActionSheet()
+  private let codeScanner = CodeScanner()
 
   override func application(
     _ application: UIApplication,
@@ -90,6 +92,15 @@ import UIKit
         actionSheet.handle(call, result: result)
       }
       actionSheetChannel = channel
+    }
+    // The camera the WebUntis QR code is scanned with — see CodeScanner.swift
+    // and lib/services/code_scanner.dart.
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "AporahScanner") {
+      let channel = FlutterMethodChannel(name: "aporah/scanner", binaryMessenger: registrar.messenger())
+      channel.setMethodCallHandler { [codeScanner] call, result in
+        codeScanner.handle(call, result: result)
+      }
+      scannerChannel = channel
     }
   }
 }

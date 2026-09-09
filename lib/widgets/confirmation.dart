@@ -31,7 +31,11 @@ enum ConfirmationMark {
 /// How the way out is drawn: the bordered [OutlinedSheetAction] a sheet ends
 /// with, or the accent glass pill a **full screen** ends with — a filled pill
 /// inside a sheet would compete with the accent check in its header.
-enum ConfirmationAction { sheetAction, accentPill }
+/// [none] is for a screen that pins the action to its own bottom edge — the
+/// tour's last step — and so must not also carry one in the middle of the
+/// column. It is only meaningful on the screen shape; a beat has no action to
+/// suppress.
+enum ConfirmationAction { sheetAction, accentPill, none }
 
 /// **The** confirmation in this app: one mark, a headline, a line of detail,
 /// and whatever content the thing that just happened left behind. Every "that
@@ -250,9 +254,10 @@ class _ConfirmationViewState extends State<ConfirmationView> with SingleTickerPr
                 const SizedBox(height: 16),
                 card,
               ],
-              if (waits) ...[
+              if (waits && widget.action != ConfirmationAction.none) ...[
                 const SizedBox(height: 22),
                 switch (widget.action) {
+                  ConfirmationAction.none => const SizedBox.shrink(),
                   ConfirmationAction.sheetAction => OutlinedSheetAction(
                     icon: LucideIcons.check,
                     label: widget.doneLabel ?? L.s.doneAction,

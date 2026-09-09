@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../models/event_link.dart';
 import '../../models/task.dart';
 import '../../models/visibility.dart';
 import '../../services/supabase.dart';
@@ -17,7 +18,8 @@ class BoardRepository {
   final SupabaseClient _db;
 
   static const _columns =
-      'id, family_id, due_date, text, meta, assignee_id, done, done_by, done_at, owner_id, visibility, created_at, updated_at';
+      'id, family_id, due_date, text, meta, assignee_id, done, done_by, done_at, owner_id, visibility, '
+      'event_calendar_id, event_uid, event_starts_at, created_at, updated_at';
 
   String get _uid {
     final id = AporahSupabase.userId;
@@ -81,6 +83,7 @@ class BoardRepository {
     String? assigneeId,
     ItemVisibility visibility = ItemVisibility.family,
     Set<String> sharedWith = const {},
+    EventLink? eventLink,
   }) async {
     final id = newUuidV4();
     final ownerId = _uid;
@@ -93,6 +96,10 @@ class BoardRepository {
       assigneeId: assigneeId,
       ownerId: ownerId,
       visibility: visibility,
+      // Only ever on the insert. There is no edit path for it: a task belongs
+      // to the appointment it was made from, and re-pointing it at another one
+      // is not a thing anybody has asked to do.
+      eventLink: eventLink,
     );
 
     await _db.from('tasks').insert({...draft.toMap(forInsert: true), 'id': id});

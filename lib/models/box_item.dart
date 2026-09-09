@@ -23,6 +23,14 @@ class StorageBox {
   /// from the picker. Stored in `icon_asset`, the same column the lists use.
   final String? iconKey;
 
+  /// A photograph of the box itself, as an object path in the private
+  /// `box-photos` bucket — `<box_id>/<uuid>.jpg`, never a URL, so nothing here
+  /// expires. It **replaces** [iconKey] wherever the box is drawn: a picture of
+  /// the actual crate in the cellar is what makes it findable, and a symbol
+  /// under it would only be a second answer to the same question. [iconKey]
+  /// stays as the fallback for the boxes that have no picture.
+  final String? photoPath;
+
   /// The household this box belongs to. Written on insert and **never** used to
   /// filter a read — see `BoxRepository`.
   final String familyId;
@@ -46,6 +54,7 @@ class StorageBox {
     this.place = '',
     this.tone = 0,
     this.iconKey,
+    this.photoPath,
     this.visibility = ItemVisibility.family,
     this.sharedWith = const [],
     this.position = 0,
@@ -60,6 +69,7 @@ class StorageBox {
       place: map['place'] as String? ?? '',
       tone: (map['tone'] as num?)?.toInt() ?? 0,
       iconKey: map['icon_asset'] as String?,
+      photoPath: map['photo_path'] as String?,
       familyId: map['family_id'] as String,
       ownerId: map['owner_id'] as String,
       visibility: visibilityFrom(map['visibility'] as String?),
@@ -77,6 +87,7 @@ class StorageBox {
     'place': place.isEmpty ? null : place,
     'tone': tone,
     'icon_asset': iconKey,
+    'photo_path': photoPath,
     'visibility': visibility.name,
     'position': position,
     if (forInsert) ...{'family_id': familyId, 'owner_id': ownerId},
@@ -88,6 +99,8 @@ class StorageBox {
     int? tone,
     String? iconKey,
     bool clearIconKey = false,
+    String? photoPath,
+    bool clearPhotoPath = false,
     ItemVisibility? visibility,
     List<String>? sharedWith,
     int? position,
@@ -97,6 +110,7 @@ class StorageBox {
     place: place ?? this.place,
     tone: tone ?? this.tone,
     iconKey: clearIconKey ? null : (iconKey ?? this.iconKey),
+    photoPath: clearPhotoPath ? null : (photoPath ?? this.photoPath),
     familyId: familyId,
     ownerId: ownerId,
     visibility: visibility ?? this.visibility,
@@ -129,6 +143,13 @@ class BoxItem {
   /// text. Same key format as [StorageBox.iconKey].
   final String? iconKey;
 
+  /// A photograph of the thing, and the reason this feature exists: a symbol
+  /// can say "Werkzeug", only a picture says *which* drill. Object path in the
+  /// private `box-photos` bucket, filed under the **box** id rather than the
+  /// item's — an item inherits its box's visibility, so the box is the unit the
+  /// storage policy can key on. Replaces [iconKey] wherever the item is drawn.
+  final String? photoPath;
+
   final String? createdBy;
   final int position;
   final DateTime? createdAt;
@@ -142,6 +163,7 @@ class BoxItem {
     this.qty = 1,
     this.note,
     this.iconKey,
+    this.photoPath,
     this.createdBy,
     this.position = 0,
     this.createdAt,
@@ -156,6 +178,7 @@ class BoxItem {
     qty: (map['qty'] as num?)?.toInt() ?? 1,
     note: map['note'] as String?,
     iconKey: map['icon_asset'] as String?,
+    photoPath: map['photo_path'] as String?,
     createdBy: map['created_by'] as String?,
     position: (map['position'] as num?)?.toInt() ?? 0,
     createdAt: _timeFrom(map['created_at']),
@@ -169,6 +192,7 @@ class BoxItem {
     'qty': qty,
     'note': note,
     'icon_asset': iconKey,
+    'photo_path': photoPath,
     'position': position,
     if (forInsert) 'created_by': createdBy,
   };
@@ -182,6 +206,8 @@ class BoxItem {
     bool clearNote = false,
     String? iconKey,
     bool clearIconKey = false,
+    String? photoPath,
+    bool clearPhotoPath = false,
     int? position,
   }) => BoxItem(
     id: id,
@@ -191,6 +217,7 @@ class BoxItem {
     qty: qty ?? this.qty,
     note: clearNote ? null : (note ?? this.note),
     iconKey: clearIconKey ? null : (iconKey ?? this.iconKey),
+    photoPath: clearPhotoPath ? null : (photoPath ?? this.photoPath),
     createdBy: createdBy,
     position: position ?? this.position,
     createdAt: createdAt,

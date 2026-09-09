@@ -119,6 +119,10 @@ abstract class AppStrings {
   String get navBoard;
   String get navBox;
 
+  /// VoiceOver label for the collapsed nav button on Kalender — the only thing
+  /// left of the bar once the agenda is scrolled, and the way back to it.
+  String get navExpand;
+
   // ------------------------------------------------------------ start tab --
   String get startNotDesigned;
 
@@ -166,6 +170,97 @@ abstract class AppStrings {
   /// of them, stepping through the grid cell by cell is not a way anybody can
   /// read it.
   String trackerDaysDone(int done, int total);
+
+  // -------------------------------------------------------------- tracker --
+  //
+  // A tracker is the Board's second kind of row: a rhythm the household keeps,
+  // beside the one-off tasks. The vocabulary is deliberately its own rather
+  // than borrowed from the Kalender's recurrence card — [repeatDaily] and
+  // friends describe an appointment that comes round, and a rename there must
+  // not quietly relabel what a family is trying to stick to.
+
+  /// The create sheet's first question, above the segmented control. Both
+  /// answers are nouns for a thing, not verbs for an act: the user is choosing
+  /// what to make, and "Aufgabe" against "Tracker" is the whole distinction.
+  String get whatToCreate;
+
+  /// The create sheet's title while it can still become either kind. Short on
+  /// purpose: the segmented control directly beneath it is the answer, and a
+  /// title that named one of the two would contradict the control every time
+  /// somebody switched.
+  String get newEntry;
+  String get kindTask;
+  String get kindTracker;
+
+  String get newTracker;
+  String get editTracker;
+
+  /// Deliberately not "Was ist zu tun?" — that is the task's placeholder, and
+  /// the difference between the two sheets has to survive the one field they
+  /// both have.
+  String get trackerPlaceholder;
+
+  String get theTracker;
+  String get deleteTracker;
+
+  /// The row a tracker has where a task has "Fällig am", and the three rhythms
+  /// behind it.
+  ///
+  /// The hints matter more here than on most pickers: [rhythmWeekdays] and
+  /// [rhythmTimesPerWeek] are two different *kinds* of promise, and a household
+  /// that reads them as two ways of saying the same thing will pick the wrong
+  /// one and find it nags on days they never chose.
+  String get trackerRhythm;
+  String get rhythmDaily;
+  String get rhythmDailyHint;
+  String get rhythmWeekdays;
+  String get rhythmWeekdaysHint;
+  String get rhythmTimesPerWeek;
+  String get rhythmTimesPerWeekHint;
+  String get whichDays;
+  String get howOften;
+
+  /// "4-mal pro Woche". Both languages special-case one, because "1-mal" and
+  /// "1 times" are the kind of wrong that makes a careful app look careless.
+  String timesPerWeekValue(int times);
+
+  /// Why a weekly tracker never says "heute dran": the week is what counts, and
+  /// it can only be missed once Sunday has passed. Worth a sentence, because it
+  /// is the one rule a user cannot infer from the row.
+  String get timesPerWeekExplainer;
+
+  /// The Board's tracker card, above the dated sections.
+  String get trackersTitle;
+
+  /// "2 von 4 diese Woche" — a weekly tracker's whole state, since it is never
+  /// due on any particular day.
+  String weekProgressLabel(int done, int target);
+
+  /// The streak, counted in whatever period the rhythm uses. Separate strings
+  /// rather than one with a unit, because a plural rule is not a word that can
+  /// be swapped in.
+  String streakDays(int days);
+  String streakWeeks(int weeks);
+
+  /// What the header grid says before the household keeps anything. Without it
+  /// the change lands as a wall of blank squares where a filled chart used to
+  /// be, which reads as lost data rather than as a chart waiting for its first
+  /// tracker.
+  String get trackerGridEmpty;
+
+  String get trackersLoadFailed;
+  String get trackerSaveFailed;
+  String get trackerDeleteFailed;
+  String get trackerCheckFailed;
+  String get trackerRestoreFailed;
+
+  /// Refused at the sheet rather than by the database: a tracker on no days at
+  /// all is not a rhythm somebody is part-way through typing.
+  String get pickAtLeastOneDay;
+
+  String get trackerCreated;
+  String get trackerUpdated;
+  String get trackerDeleted;
 
   String get noOpenTasks;
   String get addTask;
@@ -262,6 +357,44 @@ abstract class AppStrings {
   String get editEvent;
   String get startsAt;
   String get endsAt;
+
+  /// The repeat card in the event form, and the "Wiederholt sich" the detail
+  /// sheet prints on an occurrence of a series.
+  ///
+  /// [repeatWeekly] and [repeatBiweekly] are handed the start's own weekday
+  /// name, because the rule has no day of its own — see [EventRepeat].
+  /// [repeatMonthly] and [repeatYearly] stay unqualified for the same reason:
+  /// the day of the month is the one the appointment already starts on.
+  /// Deliberately its own string rather than the settings "Wiederholen" that
+  /// happens to read the same in both languages today. That one replays the
+  /// welcome tour; a rename there must not quietly relabel a recurrence rule.
+  String get eventRepeat;
+  String get repeatNever;
+  String get repeatDaily;
+  String repeatWeekly(String weekday);
+  String repeatBiweekly(String weekday);
+  String get repeatMonthly;
+  String get repeatYearly;
+  String get repeatEnds;
+  String get repeats;
+
+  /// Why the repeat card has nothing to tap on an event that already repeats: a
+  /// provider hands back expanded occurrences and never the rule behind them,
+  /// so the app can show that an appointment comes round without being able to
+  /// say how often.
+  String get repeatNotEditable;
+
+  /// The two-way question asked before a repeating appointment is changed or
+  /// deleted, and the two answers.
+  String get repeatingEvent;
+  String get changeRepeatingEventBody;
+  String get deleteRepeatingEventBody;
+  String get thisEventOnly;
+
+  /// Why "ganze Serie" and a different calendar cannot both be true — see
+  /// `CalendarNotifier.saveEvent`.
+  String get seriesCannotMoveCalendar;
+  String get wholeSeries;
   String get noEventsThisDay;
   String get addEvent;
   String get eventsPerCalendar;
@@ -287,8 +420,27 @@ abstract class AppStrings {
   /// is which of the two screens it lands on.
   String get createListFromEvent;
   String get createTaskFromEvent;
+
+  /// Both directions of the link between an appointment and the lists and tasks
+  /// hung off it.
+  ///
+  /// [linkedToEvent] heads the event sheet's card of what already exists, so
+  /// that "Liste zum Termin erstellen" stops being offered for a list that is
+  /// already there. [linkedEventLabel] is the same fact read from the other end,
+  /// on the task or the list, where the word has to name the *destination* —
+  /// tapping it leaves for Kalender.
+  String get linkedToEvent;
+  String get linkedEventLabel;
+
+  /// Bare "Erledigt" — the app had it only as `homeworkDone` and as part of a
+  /// count, and a linked task's row needs the plain word.
+  String get doneLabel;
+  String get openInCalendar;
+  String linkedListCount(int count);
+  String linkedTaskCount(int count);
   String get route;
   String get reminder;
+  String get deleteEvent;
   String get deleteEventQuestion;
   String deleteEventBody(String title);
   String get untitledEvent;
@@ -443,6 +595,40 @@ abstract class AppStrings {
   String eventsFoundAtLink(int count);
   String get noEventsAtLinkYet;
 
+  // -- WebUntis connected by the pupil's app secret
+  //
+  // The QR code under Profil → Freigaben → "Zugriff über Untis Mobile" carries
+  // the school, the login and a base32 key, and prints all four as text beneath
+  // itself — so the same dialog serves the scan and the typing. The field
+  // labels below deliberately match the words on that dialog ("Url", "Schule",
+  // "Benutzer", "Schlüssel"), because somebody copying them across is reading
+  // one screen and filling in the other.
+  List<String> get webuntisSecretSteps;
+  String get scanUntisCode;
+  String get scanUntisCodeBody;
+  String get scanAgain;
+  String get codeScanned;
+  String get enterManually;
+  String get untisServerField;
+  String get untisSchoolField;
+  String get untisUserField;
+  String get untisKeyField;
+  String get untisFieldsHint;
+  String get untisFieldsMissing;
+  String get checkingAccessEllipsis;
+  String get cameraNotAvailable;
+  String get cameraDenied;
+  String get notAnUntisCode;
+  String get untisCalendarName;
+  String untisCalendarNameSuggestion(String pupil);
+  String get untisCalendarNameHint;
+  String get untisConnectedNote;
+  String lessonsFound(int count);
+  String get noLessonsYet;
+  String get connectWithLink;
+  String get connectWithLinkBody;
+  String get untisKeyStaysValid;
+
   String get calendarLinkIcs;
   String get calendarLinkHint;
   String get pasteLinkHere;
@@ -525,6 +711,12 @@ abstract class AppStrings {
   String get symbol;
   String get change;
   String get chooseSymbol;
+
+  /// A box, a box item or a list article can carry a photograph instead of a
+  /// symbol — see `data/repositories/photo_repository.dart`. Both failures are
+  /// snacked and neither is fatal: the row falls back to its symbol.
+  String get photoUploadFailed;
+  String get photoRemoveFailed;
   String get searchSymbolOrShop;
   String get matches;
   String nothingFoundFor(String query);
@@ -664,4 +856,61 @@ abstract class AppStrings {
   String get roleChangeFailed;
   String get memberRemoveFailed;
   String get inviteRevokeFailed;
+
+  // --------------------------------------------------------------- homework --
+  String get homework;
+  /// The badge on a lesson card. Singular carries no number: "Hausaufgabe" on
+  /// its own is shorter and reads better than "1 Hausaufgabe".
+  String homeworkCount(int count);
+  String get homeworkDue;
+  String get homeworkDone;
+  String get homeworkSetBy;
+
+  /// Asked when a WebUntis account is connected. The **child**, not the
+  /// calendar: the calendar's name falls out of it and so do the person chips.
+  String get untisPupilName;
+  String get untisPupilNameHint;
+
+  /// The WebUntis step asks whose timetable it is, so an empty field is a
+  /// missing *person* rather than a missing calendar name.
+  String get untisPupilMissing;
+
+  /// Settings → a connected calendar → "Zuordnen": whose calendar this is, i.e.
+  /// which person's chip it appears under.
+  ///
+  /// Never say "sichtbar" in any of these. Assigning a calendar to somebody does
+  /// not hide it from anybody — every calendar stays visible to the whole
+  /// household, and a household that read this as a privacy control would file
+  /// their calendars wrong and then wonder why everyone could still see them.
+  String get assignCalendar;
+  String assignCalendarBody(String calendar);
+
+  /// The "Familie" row, which is the one that could be misread as a person.
+  String get assignCalendarFamilyHint;
+
+  /// The field for somebody with no account — a kindergarten child, most often.
+  String get assignCalendarNewPerson;
+  String get assignCalendarNewPersonHint;
+
+  /// The line under the picker that says what it is not.
+  String get assignCalendarNotVisibility;
+
+  String get assignCalendarFailed;
+
+  /// Falls back for the household's own name while it is still loading.
+  String get family;
+
+  /// Somebody who is in the household but has no login — a schoolchild whose
+  /// calendar was assigned to them, a pre-schooler with a Kindergarten
+  /// calendar. Shown wherever they sit beside people who *do* have an account,
+  /// because otherwise the two are indistinguishable.
+  String get noAccountYet;
+
+  /// Settings → Familienmitglieder: the household's own name, which is also the
+  /// label on the "Familie" chip in Kalender and on the Board.
+  String get familyName;
+  String get familyNameHint;
+  String get renameFamily;
+  String get renameFamilyBody;
+  String get familyRenameFailed;
 }

@@ -219,6 +219,7 @@ class ProfilePageState extends ConsumerState<ProfilePage> {
                         child: FieldBox(
                           child: TextField(
                             controller: _nameController,
+                            textInputAction: TextInputAction.done,
                             style: AppText.searchInput,
                             decoration: InputDecoration(
                               border: InputBorder.none,

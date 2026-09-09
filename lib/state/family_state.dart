@@ -154,12 +154,59 @@ class Household {
   final String? address;
   final bool onboardingDone;
 
+  /// The household's own picture — object path in the private `avatars` bucket
+  /// and the signed URL for it, exactly as a member's works. Uploaded by an
+  /// admin; null means the family falls back to its initials, which is a
+  /// complete answer and what every household starts as.
+  ///
+  /// It exists so the family can be a **face** in the filter rows rather than a
+  /// word among faces: "Alle · 👨‍👩‍👧 Familie · Papa · Alice" reads as one row,
+  /// where a text chip in the middle of avatars reads as a button.
+  final String? avatarPath;
+  final String? avatarUrl;
+
   const Household({
     required this.id,
     required this.name,
     required this.onboardingDone,
     this.address,
+    this.avatarPath,
+    this.avatarUrl,
   });
+
+  /// Up to two letters for the fallback circle — "Familie Campagnaro" -> "FC",
+  /// "Zuhause" -> "ZU". Same shape as `profiles.initials`, computed rather than
+  /// stored because nobody should have to type it.
+  String get initials {
+    final words = name.trim().split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
+    if (words.isEmpty) return '?';
+    if (words.length == 1) {
+      final one = words.first;
+      return (one.length == 1 ? one : one.substring(0, 2)).toUpperCase();
+    }
+    return (words.first.substring(0, 1) + words[1].substring(0, 1)).toUpperCase();
+  }
+
+  /// Index into `AppTones.list`, stable for the life of the household: derived
+  /// from the id so the circle is the same colour on every device and after
+  /// every reinstall, without a column to store it in.
+  int get tone => id.hashCode.abs() % 5;
+
+  Household copyWith({
+    String? name,
+    String? address,
+    bool? onboardingDone,
+    String? avatarPath,
+    String? avatarUrl,
+    bool clearAvatar = false,
+  }) => Household(
+    id: id,
+    name: name ?? this.name,
+    address: address ?? this.address,
+    onboardingDone: onboardingDone ?? this.onboardingDone,
+    avatarPath: clearAvatar ? null : (avatarPath ?? this.avatarPath),
+    avatarUrl: clearAvatar ? null : (avatarUrl ?? this.avatarUrl),
+  );
 }
 
 /// An invitation that has been sent and not yet accepted — a `family_invites`
@@ -330,7 +377,7 @@ class HouseholdNotifier extends StateNotifier<FamilyState> {
 
       final familyRow = await db
           .from('families')
-          .select('id, name, address, onboarding_done')
+          .select('id, name, address, onboarding_done, avatar_url')
           .eq('id', familyId)
           .maybeSingle();
 
@@ -352,9 +399,14 @@ class HouseholdNotifier extends StateNotifier<FamilyState> {
 
       final profiles = {for (final p in profileRows) p['id'] as String: p};
 
+      // The household's own picture rides in the same batch as the faces: one
+      // request for the whole roster including the family, re-signed on every
+      // load exactly as the members' are.
+      final familyAvatarPath = familyRow?['avatar_url'] as String?;
       final signed = await signAvatarUrls([
         for (final p in profileRows)
           if (p['avatar_url'] is String) p['avatar_url'] as String,
+        ?familyAvatarPath,
       ]);
 
       final members = <HouseholdMember>[
@@ -417,6 +469,8 @@ class HouseholdNotifier extends StateNotifier<FamilyState> {
                 name: familyRow['name'] as String,
                 address: familyRow['address'] as String?,
                 onboardingDone: familyRow['onboarding_done'] as bool? ?? false,
+                avatarPath: familyAvatarPath,
+                avatarUrl: familyAvatarPath == null ? null : signed[familyAvatarPath],
               ),
         members: members,
         invites: invites,
@@ -630,13 +684,7 @@ class HouseholdNotifier extends StateNotifier<FamilyState> {
     final uid = _userId;
     if (uid == null) return false;
 
-    final extension = () {
-      final dot = file.path.lastIndexOf('.');
-      final ext = dot == -1 ? '' : file.path.substring(dot + 1).toLowerCase();
-      // The bucket accepts five types; anything else is named .jpg and will be
-      // rejected by Storage on content type if it really isn't an image.
-      return const {'jpg', 'jpeg', 'png', 'heic', 'heif', 'webp'}.contains(ext) ? ext : 'jpg';
-    }();
+    final extension = _extensionOf(file);
     final path = '$uid/${DateTime.now().microsecondsSinceEpoch}.$extension';
     final previous = state.me(uid)?.avatarPath;
 
@@ -670,6 +718,68 @@ class HouseholdNotifier extends StateNotifier<FamilyState> {
     }
   }
 
+  /// Uploads [file] as the **household's** picture. Admins only.
+  ///
+  /// Deliberately the same shape as [setMyAvatar], down to the unique object
+  /// name and the delete-after-write: the reasoning in that method — signed URLs
+  /// already handed out keep serving the old face, so overwriting a fixed name
+  /// leaves stale pictures in every cache holding one — applies here word for
+  /// word, and two copies of it is two places to get it wrong.
+  ///
+  /// The one real difference is the path. A member's picture is filed under
+  /// their user id; the household's is filed under the **family** id, because it
+  /// belongs to the household and has to outlive whichever admin uploaded it.
+  /// Storage enforces both halves — see the `avatars_*_family_picture` policies.
+  Future<bool> setFamilyAvatar(File file) async {
+    final household = state.household;
+    if (household == null) return false;
+
+    final path = '${household.id}/${DateTime.now().microsecondsSinceEpoch}.${_extensionOf(file)}';
+    final previous = household.avatarPath;
+
+    try {
+      final storage = AporahSupabase.client.storage.from(_avatarBucket);
+      await storage.upload(path, file, fileOptions: FileOptions(contentType: _contentTypeFor(_extensionOf(file))));
+      await AporahSupabase.client.from('families').update({'avatar_url': path}).eq('id', household.id);
+
+      final signed = await storage.createSignedUrl(path, _avatarUrlTtl.inSeconds);
+      if (mounted) {
+        state = state.copyWith(household: household.copyWith(avatarPath: path, avatarUrl: signed));
+      }
+
+      if (previous != null && previous != path) {
+        try {
+          await storage.remove([previous]);
+        } catch (_) {}
+      }
+      return true;
+    } catch (_) {
+      _fail(L.s.avatarUploadFailed);
+      return false;
+    }
+  }
+
+  /// Drops the household's picture, back to its initials on a tone circle.
+  Future<void> removeFamilyAvatar() async {
+    final household = state.household;
+    final previous = household?.avatarPath;
+    if (household == null || previous == null) return;
+
+    try {
+      await AporahSupabase.client.from('families').update({'avatar_url': null}).eq('id', household.id);
+      if (mounted) {
+        state = state.copyWith(household: household.copyWith(clearAvatar: true));
+      }
+      try {
+        await AporahSupabase.client.storage.from(_avatarBucket).remove([previous]);
+      } catch (_) {
+        // The row no longer points at it; the object is just litter.
+      }
+    } catch (_) {
+      _fail(L.s.avatarRemoveFailed);
+    }
+  }
+
   /// Drops the picture, so the avatar goes back to initials on a tone colour.
   Future<void> removeMyAvatar() async {
     final uid = _userId;
@@ -697,6 +807,16 @@ class HouseholdNotifier extends StateNotifier<FamilyState> {
     }
   }
 
+  /// The file's extension, narrowed to what the bucket accepts.
+  ///
+  /// The bucket allows five types; anything else is named `.jpg` and will be
+  /// rejected by Storage on content type if it really isn't an image.
+  static String _extensionOf(File file) {
+    final dot = file.path.lastIndexOf('.');
+    final ext = dot == -1 ? '' : file.path.substring(dot + 1).toLowerCase();
+    return const {'jpg', 'jpeg', 'png', 'heic', 'heif', 'webp'}.contains(ext) ? ext : 'jpg';
+  }
+
   /// Storage matches the upload against the bucket's `allowed_mime_types`, and
   /// the SDK's default (`application/octet-stream`) is not on that list — so
   /// the type has to be named rather than guessed by the server.
@@ -707,6 +827,39 @@ class HouseholdNotifier extends StateNotifier<FamilyState> {
     'heif' => 'image/heif',
     _ => 'image/jpeg',
   };
+
+  /// Renames the household.
+  ///
+  /// Admin-only, and enforced where it should be: `families_update_admin` is
+  /// the same policy that already covers the address and the onboarding flag,
+  /// so this needs no Edge Function and no grant of its own. A non-admin's
+  /// update is refused by returning nothing rather than by raising, which is
+  /// why the empty result is checked.
+  ///
+  /// The name reaches further than the Settings page it is typed on: it is the
+  /// "Familie" chip's label in Kalender and on the Board, so a household that
+  /// renames itself sees it there on the next read.
+  Future<bool> renameFamily(String name) async {
+    final household = state.household;
+    final trimmed = name.trim();
+    if (household == null || trimmed.isEmpty || trimmed == household.name) return true;
+
+    final previous = household;
+    state = state.copyWith(household: household.copyWith(name: trimmed));
+
+    try {
+      final updated = await AporahSupabase.client
+          .from('families')
+          .update({'name': trimmed})
+          .eq('id', household.id)
+          .select('id');
+      if (updated.isEmpty) throw StateError('refused');
+      return true;
+    } catch (_) {
+      if (mounted) state = state.copyWith(household: previous, actionError: L.s.familyRenameFailed);
+      return false;
+    }
+  }
 
   /// The household's own address, as picked in onboarding.
   ///
@@ -724,12 +877,7 @@ class HouseholdNotifier extends StateNotifier<FamilyState> {
     if (household == null || value.isEmpty || household.address == value) return;
 
     state = state.copyWith(
-      household: Household(
-        id: household.id,
-        name: household.name,
-        address: value,
-        onboardingDone: household.onboardingDone,
-      ),
+      household: household.copyWith(address: value),
     );
 
     try {
@@ -751,12 +899,7 @@ class HouseholdNotifier extends StateNotifier<FamilyState> {
     if (household == null || household.onboardingDone) return;
 
     state = state.copyWith(
-      household: Household(
-        id: household.id,
-        name: household.name,
-        address: household.address,
-        onboardingDone: true,
-      ),
+      household: household.copyWith(onboardingDone: true),
     );
 
     try {

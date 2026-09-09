@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../services/board_streak_cache.dart';
 import '../services/calendar_cache.dart';
 import '../services/supabase.dart';
 import '../l10n/l10n.dart';
@@ -175,11 +174,13 @@ class AuthNotifier extends StateNotifier<AuthScreenState> {
   Future<void> signOut() async {
     // The calendar cache is the one place this app keeps event bodies at rest.
     // Signing out has to take it with it, or the next person to open Aporah on
-    // this phone finds the last household's appointments in a file. The Board's
-    // day ledger goes the same way — it holds only counts, but how busy the last
-    // household's fortnight was is still theirs.
+    // this phone finds the last household's appointments in a file.
+    //
+    // The Board's day ledger used to be wiped here too. There is no longer one:
+    // the tracker record is `public.tracker_checks` and goes when the session
+    // does, which also means both parents finally see the same grid instead of
+    // whatever their own phone happened to witness.
     await CalendarCache().clear();
-    await BoardStreakCache().clear();
     await AporahSupabase.client.auth.signOut();
     if (mounted) state = const AuthScreenState(status: AuthStatus.signedOut);
   }

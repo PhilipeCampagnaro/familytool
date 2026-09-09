@@ -1,8 +1,13 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../data/icon_suggestions.dart';
+import '../services/action_sheet.dart';
 import '../theme/tokens.dart';
+import 'anchored_menu.dart';
 import 'app_sheet.dart';
 import '../l10n/l10n.dart';
 
@@ -23,7 +28,15 @@ import '../l10n/l10n.dart';
 class IconDraft {
   String? picked;
 
-  IconDraft(this.picked);
+  /// A photograph chosen on a sheet that has nothing to attach it to yet.
+  ///
+  /// Only the **new**-box case needs this. Every other picture is written the
+  /// moment it is chosen, exactly as the profile picture is — but a box that
+  /// does not exist has no id, and the object layout keys on that id, so the
+  /// file waits here until the insert comes back. See `BoxNotifier.createBox`.
+  String? photoFile;
+
+  IconDraft(this.picked, {this.photoFile});
 }
 
 /// The round icon in front of a list, a box or a row.
@@ -37,6 +50,23 @@ class IconDraft {
 class IconTile extends StatelessWidget {
   final String? iconKey;
   final double size;
+
+  /// A signed URL for a photograph the user took of this very thing, which
+  /// **replaces** [iconKey] when it is there.
+  ///
+  /// It fills the disc edge to edge rather than sitting inside it like a logo,
+  /// and that is the honest treatment: the two catalog cases are *art on a
+  /// background*, drawn small and centred, whereas a photo of the drill in the
+  /// cellar is a photo — cropping it to the circle is what makes the row read
+  /// as "this is the thing" instead of "here is a picture of something".
+  final String? photoUrl;
+
+  /// A picture that is on **this** device already — the file the picker just
+  /// handed over, before (or instead of) an upload. Drawn in preference to
+  /// [photoUrl]: it needs no round trip, so the tile fills the instant the user
+  /// chooses, and a new box's picture has somewhere to be shown while the box
+  /// it belongs to does not exist yet.
+  final String? photoFile;
 
   /// Edge length of the picture inside the disc. A glyph is drawn at
   /// [glyphSize], which defaults to a little under it — outline icons need the
@@ -52,6 +82,18 @@ class IconTile extends StatelessWidget {
   /// ink a logo would sit at.
   final Color? glyphColor;
 
+  /// Overrides the fill the tile would pick for itself — the white disc for art,
+  /// the [AppPalette.surfaceAlt] one for a glyph.
+  ///
+  /// For the one case where the fill is carrying a *distinction* rather than
+  /// making a picture readable: the event sheet draws what already hangs off the
+  /// appointment on the ordinary grey disc and the two "…erstellen" rows on a
+  /// white one, so the card of things and the card of actions are told apart
+  /// before either label is read. Leave it null everywhere else — the automatic
+  /// choice is about legibility (see the class doc) and second-guessing it is
+  /// how a shop logo ends up unreadable on dark.
+  final Color? background;
+
   final bool border;
 
   const IconTile({
@@ -59,9 +101,12 @@ class IconTile extends StatelessWidget {
     required this.iconKey,
     required this.size,
     required this.imageSize,
+    this.photoUrl,
+    this.photoFile,
     this.glyphSize,
     this.fallbackIcon = LucideIcons.clipboardCheck,
     this.glyphColor,
+    this.background,
     this.border = true,
   });
 
@@ -69,24 +114,96 @@ class IconTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final choice = resolveIcon(iconKey);
     final asset = choice?.asset;
+    final hasPhoto = photoFile != null || photoUrl != null;
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: asset != null ? AppColors.brandTile : AppColors.surfaceAlt,
+        color: background ?? (asset != null ? AppColors.brandTile : AppColors.surfaceAlt),
         shape: BoxShape.circle,
         border: border ? Border.all(color: AppColors.hairline) : null,
       ),
       alignment: Alignment.center,
-      child: asset != null
-          ? ClipOval(child: IconImage(asset: asset, size: imageSize))
-          : Icon(
-              choice?.glyph ?? fallbackIcon,
-              size: glyphSize ?? imageSize * 0.78,
-              color: glyphColor ?? AppColors.inkSecondary,
-            ),
+      clipBehavior: hasPhoto ? Clip.antiAlias : Clip.none,
+      child: hasPhoto
+          ? PhotoThumbnail(url: photoUrl, filePath: photoFile, size: size)
+          : asset != null
+              ? ClipOval(child: IconImage(asset: asset, size: imageSize))
+              : Icon(
+                  choice?.glyph ?? fallbackIcon,
+                  size: glyphSize ?? imageSize * 0.78,
+                  color: glyphColor ?? AppColors.inkSecondary,
+                ),
     );
   }
+}
+
+/// A stored photograph, cropped square and sized for the tile it fills.
+///
+/// The URL is signed and expires (a week, re-signed on every load), so a
+/// failure here is ordinary rather than exceptional — an expired link, a phone
+/// with no signal, an object swept up on another device. Every one of them
+/// resolves to the muted placeholder rather than to Flutter's grey exception
+/// box, and the row around it carries on saying what the thing is called.
+class PhotoThumbnail extends StatelessWidget {
+  /// A signed URL from Storage. Used when there is no [filePath].
+  final String? url;
+
+  /// A file on this device. Preferred, because there is nothing to fetch.
+  final String? filePath;
+
+  final double size;
+
+  const PhotoThumbnail({super.key, this.url, this.filePath, required this.size});
+
+  @override
+  Widget build(BuildContext context) {
+    final scale = MediaQuery.maybeDevicePixelRatioOf(context) ?? 3.0;
+    // Decoded at the size it is drawn at. A 1600px photo decoded for a 44pt
+    // circle is several megabytes of memory per row, and a box screen is a list
+    // of them.
+    final cache = (size * scale).round();
+    final broken = _broken(size);
+
+    final local = filePath;
+    if (local != null) {
+      return Image.file(
+        File(local),
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+        cacheWidth: cache,
+        // The device copy is gone (a reinstall moved the app container, or the
+        // file was swept up) — fall through to the stored one rather than
+        // showing a hole.
+        errorBuilder: (context, _, _) => url == null
+            ? broken
+            : Image.network(url!, width: size, height: size, fit: BoxFit.cover, cacheWidth: cache,
+                errorBuilder: (context, _, _) => broken),
+      );
+    }
+
+    // Both empty is ordinary rather than exceptional: an attachment whose
+    // signing failed and whose device copy is from a previous install has
+    // neither, and it must still draw its row.
+    final remote = url;
+    if (remote == null) return SizedBox(width: size, height: size, child: Center(child: broken));
+
+    return Image.network(
+      remote,
+      width: size,
+      height: size,
+      fit: BoxFit.cover,
+      cacheWidth: cache,
+      errorBuilder: (context, _, _) => broken,
+    );
+  }
+
+  /// An expired link, a phone with no signal, an object swept up on another
+  /// device — all ordinary here, and all of them resolve to this rather than to
+  /// Flutter's grey exception box. The row around it still says what the thing
+  /// is called.
+  Widget _broken(double size) => Icon(LucideIcons.image, size: size * 0.45, color: AppColors.mutedLight);
 }
 
 /// An icon asset at a bounded decode size. The shop logos are full-size
@@ -131,20 +248,72 @@ class IconFieldRow extends StatelessWidget {
   final IconData fallbackIcon;
   final VoidCallback onTap;
 
-  const IconFieldRow({super.key, required this.iconKey, required this.onTap, this.suggested = false, this.fallbackIcon = LucideIcons.clipboardCheck});
+  /// A photograph standing in for the symbol — see [IconTile.photoUrl]. When it
+  /// is set the row names it "Foto" and drops the sparkle: the picture is the
+  /// user's own, so there is no automatic match left to explain.
+  final String? photoUrl;
+
+  /// A picture that has not been uploaded yet — see [IconTile.photoFile]. This
+  /// is what a *new* box's photo is until the box exists to hang it on.
+  final String? photoFile;
+
+  /// Where the fallback dropdown hangs when there is no system action sheet to
+  /// put up — see [showPictureMenu]. Only needed by a row whose [onTap] opens
+  /// one.
+  final GlobalKey? anchorKey;
+
+  /// Marks the row as busy while a picture is on its way up, so a slow upload
+  /// is a spinner rather than a row that looks like it ignored the tap.
+  final bool uploading;
+
+  const IconFieldRow({
+    super.key,
+    required this.iconKey,
+    required this.onTap,
+    this.suggested = false,
+    this.fallbackIcon = LucideIcons.clipboardCheck,
+    this.photoUrl,
+    this.photoFile,
+    this.anchorKey,
+    this.uploading = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     final accent = Theme.of(context).colorScheme.primary;
-    final label = resolveIcon(iconKey)?.label;
+    final hasPhoto = photoFile != null || photoUrl != null;
+    final label = hasPhoto ? L.s.photo : resolveIcon(iconKey)?.label;
     return GestureDetector(
+      key: anchorKey,
       behavior: HitTestBehavior.opaque,
-      onTap: onTap,
+      onTap: uploading ? null : onTap,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
-            IconTile(iconKey: iconKey, size: 32, imageSize: 22, fallbackIcon: fallbackIcon, glyphColor: accent, border: false),
+            if (uploading)
+              SizedBox(
+                width: 32,
+                height: 32,
+                child: Center(
+                  child: SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: accent),
+                  ),
+                ),
+              )
+            else
+              IconTile(
+                iconKey: iconKey,
+                size: 32,
+                imageSize: 22,
+                photoUrl: photoUrl,
+                photoFile: photoFile,
+                fallbackIcon: fallbackIcon,
+                glyphColor: accent,
+                border: false,
+              ),
             const SizedBox(width: 11),
             // The name takes all the room the action leaves, so a long one
             // ellipsises instead of pushing "Ändern" off the row.
@@ -159,7 +328,7 @@ class IconFieldRow extends StatelessWidget {
                       style: AppText.rowTitle,
                     ),
                   ),
-                  if (suggested && label != null) ...[
+                  if (suggested && !hasPhoto && label != null) ...[
                     const SizedBox(width: 6),
                     Icon(LucideIcons.sparkles, size: 13, color: accent),
                   ],
@@ -248,6 +417,7 @@ class _IconPickerBodyState extends State<_IconPickerBody> {
                   Expanded(
                     child: TextField(
                       controller: _controller,
+                      textInputAction: TextInputAction.search,
                       style: AppText.searchInput,
                       decoration: InputDecoration(
                         border: InputBorder.none,
@@ -473,4 +643,89 @@ class _IconRow extends StatelessWidget {
       ),
     );
   }
+}
+
+
+/// What a picture row's menu can produce.
+enum PictureChoice {
+  /// The photo library.
+  photo,
+
+  /// Take one now.
+  camera,
+
+  /// Fall back to [showIconPicker] — a symbol, a shop logo or a grocery
+  /// picture, whichever the subject allows.
+  symbol,
+
+  /// Back to the symbol the name chose, and the object deleted.
+  remove,
+}
+
+/// The menu behind the picture row on a create/edit sheet.
+///
+/// **The system's own sheet first, the app's dropdown only as a fallback**, and
+/// that is not a style choice. This opens from *inside* a [showAppSheet], whose
+/// header carries native glass buttons, and Flutter content composited after a
+/// platform view can be dropped whole on device — the failure that already ate
+/// the Kalender event sheet's route menu, which opened, swallowed the taps
+/// behind it and never painted. `UIAlertController` is presented by UIKit, so
+/// there is no Flutter layer left to lose. [showNativeActionSheet] returns null
+/// where there is no system sheet to put up (everything but iOS), which is the
+/// cue to use the dropdown.
+///
+/// [hasPhoto] adds the destructive "Foto entfernen" — there is nothing to
+/// remove until there is.
+Future<PictureChoice?> showPictureMenu(
+  BuildContext context, {
+  required GlobalKey anchorKey,
+  required bool hasPhoto,
+}) async {
+  final choices = [
+    PictureChoice.photo,
+    PictureChoice.camera,
+    PictureChoice.symbol,
+    if (hasPhoto) PictureChoice.remove,
+  ];
+  String label(PictureChoice c) => switch (c) {
+    PictureChoice.photo => L.s.photo,
+    PictureChoice.camera => L.s.camera,
+    PictureChoice.symbol => L.s.chooseSymbol,
+    PictureChoice.remove => L.s.removePhoto,
+  };
+
+  final picked = await showNativeActionSheet(
+    options: [for (final c in choices) label(c)],
+    cancelLabel: L.s.cancel,
+    dark: AppColors.isDark,
+  );
+  if (picked == actionSheetCancelled) return null;
+  if (picked != null) return choices[picked];
+  if (!context.mounted) return null;
+
+  // No system sheet here — the dropdown, and a completer to give it the same
+  // shape as the branch above. `showAnchoredMenu` awaits its route before it
+  // calls `onSelected`, so a menu dismissed without a choice simply leaves the
+  // completer alone.
+  final completer = Completer<PictureChoice?>();
+  await showAnchoredMenu(
+    context: context,
+    anchorKey: anchorKey,
+    items: [
+      for (final c in choices)
+        AnchoredMenuItem(
+          label: label(c),
+          icon: switch (c) {
+            PictureChoice.photo => LucideIcons.image,
+            PictureChoice.camera => LucideIcons.camera,
+            PictureChoice.symbol => LucideIcons.shapes,
+            PictureChoice.remove => LucideIcons.trash2,
+          },
+          destructive: c == PictureChoice.remove,
+          onSelected: () => completer.complete(c),
+        ),
+    ],
+  );
+  if (!completer.isCompleted) completer.complete(null);
+  return completer.future;
 }

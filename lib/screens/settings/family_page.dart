@@ -1,16 +1,22 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../state/calendar_state.dart';
 import '../../state/family_state.dart';
 import '../../state/auth_state.dart';
+import '../../services/media_picker.dart';
 import '../../theme/tokens.dart';
+import '../../widgets/anchored_menu.dart';
 import '../../widgets/app_sheet.dart';
 import '../../widgets/avatar.dart';
 import '../../widgets/confirmation.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/error_note.dart';
 import '../../widgets/icon_tile.dart';
+import '../../widgets/rename_sheet.dart';
 import '../../widgets/settings_chrome.dart';
 import '../../l10n/l10n.dart';
 
@@ -38,7 +44,43 @@ class FamilyPage extends ConsumerWidget {
       icon: LucideIcons.users,
       title: L.s.familyMembers,
       description: isAdmin ? L.s.familyMembersDesc : L.s.familyMembersDescAdmin,
+      // The household's own face where the page's glyph would be. Admins only —
+      // `avatars_write_family_picture` enforces that, this just doesn't offer
+      // the tap to anybody else.
+      leading: _FamilyAvatarHero(canEdit: isAdmin),
+      // The gate is courtesy, not security: `invite-member` checks the role
+      // itself and RLS refuses the writes regardless. Showing a control that
+      // is going to be refused is just a worse way of saying no. A non-admin
+      // gets no bar at all rather than an empty one, so their page ends where
+      // the list ends.
+      bottomAction: !isAdmin
+          ? null
+          : AccentAction(
+              icon: LucideIcons.userPlus,
+              label: L.s.inviteMember,
+              onTap: () => _openInviteSheet(context, ref),
+            ),
       children: [
+        // The household's name, above the people in it. It has to live
+        // *somewhere* on this page: it is the label on the "Familie" chip in
+        // Kalender and on the Board, so a household that wants to be "Zuhause"
+        // rather than "Familie Campagnaro" changes it here and sees it there.
+        if (family.household case final household?) ...[
+          SectionCard(
+            radius: AppRadii.card,
+            children: [
+              SettingsRow(
+                icon: LucideIcons.house,
+                title: household.name,
+                subtitle: L.s.familyName,
+                // Admins only, and the chevron goes with the tap: a row that
+                // looks tappable and refuses is worse than a row that doesn't.
+                onTap: isAdmin ? () => _renameFamily(context, ref, household) : null,
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.blockGap),
+        ],
         // Members and the people who have been invited but haven't joined yet
         // are one list, not two: an invitation *is* a place at the table that
         // nobody has taken. Its own row already says so — the envelope instead
@@ -56,6 +98,19 @@ class FamilyPage extends ConsumerWidget {
                 ]
               : dividedRows(inset: true, [
                   for (final m in family.members) _MemberRow(member: m, isMe: m.userId == me, canManage: isAdmin),
+                  // People in the household who have no account. They exist as
+                  // the owner of a calendar and nowhere else — a child with a
+                  // WebUntis login and no e-mail address, a four-year-old whose
+                  // Kindergarten calendar was assigned to them — so this is
+                  // derived from the calendars rather than read from a table.
+                  //
+                  // Read-only on purpose. There is no row to rename, no role to
+                  // give somebody who cannot log in, and nothing to delete: the
+                  // way to remove one of these is to reassign their calendars,
+                  // which is done where they are assigned. What this fixes is
+                  // that the family list used to answer "who is in this
+                  // household?" with only the half that has passwords.
+                  for (final person in _peopleWithoutAccounts(ref)) _PersonRow(name: person),
                   for (final invite in family.invites)
                     SettingsRow(
                       // Sized like the avatar beside it, so the merged list has
@@ -78,21 +133,32 @@ class FamilyPage extends ConsumerWidget {
                     ),
                 ]),
         ),
-        // The gate is courtesy, not security: `invite-member` checks the role
-        // itself and RLS refuses the writes regardless. Showing a control that
-        // is going to be refused is just a worse way of saying no.
-        //
-        // Last on the page on purpose: it acts on the list above it, so it
-        // stays under the whole list however long it grows.
-        if (isAdmin) ...[
-          const SizedBox(height: AppSpacing.blockGap),
-          AccentAction(
-            icon: LucideIcons.userPlus,
-            label: L.s.inviteMember,
-            onTap: () => _openInviteSheet(context, ref),
-          ),
-        ],
       ],
+    );
+  }
+
+  /// Renaming the household — the app's one rename sheet, same as a calendar's.
+  ///
+  /// Optimistic in the notifier and put back if the database refuses, so an
+  /// admin sees the new name the moment they confirm and a non-admin who got
+  /// this far sees it revert with the reason.
+  void _renameFamily(BuildContext context, WidgetRef ref, Household household) {
+    showRenameSheet(
+      context: context,
+      icon: LucideIcons.house,
+      title: L.s.renameFamily,
+      headline: household.name,
+      message: L.s.renameFamilyBody,
+      initialName: household.name,
+      fieldHint: L.s.familyNameHint,
+      busyLabel: L.s.savingEllipsis,
+      successLabel: L.s.nameChanged,
+      onConfirm: (name) async {
+        final ok = await ref.read(familyProvider.notifier).renameFamily(name);
+        // The sheet's own contract: a throw keeps it open with the message
+        // under the field, which is where a refused rename belongs.
+        if (!ok) throw StateError('refused');
+      },
     );
   }
 
@@ -261,6 +327,7 @@ class _InviteFormBodyState extends State<_InviteFormBody> {
                 enabled: !widget.busy,
                 keyboardType: TextInputType.emailAddress,
                 autocorrect: false,
+                textInputAction: TextInputAction.next,
                 style: AppText.searchInput,
                 decoration: InputDecoration(border: InputBorder.none, hintText: L.s.emailAddress, isDense: true),
               ),
@@ -269,6 +336,7 @@ class _InviteFormBodyState extends State<_InviteFormBody> {
               child: TextField(
                 controller: widget.flow.name,
                 enabled: !widget.busy,
+                textInputAction: TextInputAction.done,
                 style: AppText.searchInput,
                 decoration: InputDecoration(border: InputBorder.none, hintText: L.s.nameOptional, isDense: true),
               ),
@@ -524,6 +592,205 @@ class _RolePicker extends StatelessWidget {
             Icon(LucideIcons.chevronsUpDown, size: 14, color: AppColors.mutedLight),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Everybody who owns a calendar but holds no account, by name.
+///
+/// The chip rows in Kalender and on the Board are built from exactly the same
+/// groups, so a name here is a face there and vice versa — which is the whole
+/// point: somebody who can be filtered to on two screens should not be missing
+/// from the list of who is in the family.
+///
+/// Sorted, and deduplicated by the group key rather than by the name, because
+/// the key is already lower-cased: "Mia" and "mia" are one person on the chip
+/// row and have to be one person here.
+List<String> _peopleWithoutAccounts(WidgetRef ref) {
+  // `select` on the calendar list rather than a bare watch of the whole state:
+  // the calendar notifier carries a clock that ticks, and a settings page has
+  // no business rebuilding every minute.
+  final calendars = ref.watch(calendarProvider.select((s) => s.calendars));
+
+  final seen = <String>{};
+  final names = <String>[];
+  for (final src in calendars) {
+    if (!src.groupId.startsWith('person:') || !seen.add(src.groupId)) continue;
+    names.add(src.groupName);
+  }
+  names.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+  return names;
+}
+
+/// One person in the household who has no account: their face, their name, and
+/// a line saying so.
+///
+/// Deliberately shaped like [_MemberRow] and deliberately without its controls.
+/// A role picker on somebody who cannot sign in would be a control with nothing
+/// behind it, and the tone comes from the name rather than from a `profiles`
+/// row because there is no profile to have stored one.
+class _PersonRow extends StatelessWidget {
+  final String name;
+
+  const _PersonRow({required this.name});
+
+  @override
+  Widget build(BuildContext context) {
+    final tone = AppTones.list[name.hashCode.abs() % AppTones.list.length];
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      child: Row(
+        children: [
+          Avatar(
+            size: 40,
+            bg: tone.bg,
+            fg: tone.fg,
+            initials: name.isEmpty ? '?' : name.substring(0, 1).toUpperCase(),
+            fontSize: 14,
+          ),
+          const SizedBox(width: 13),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.rowTitle),
+                const SizedBox(height: 2),
+                Text(L.s.noAccountYet, style: AppText.label),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The household's picture, in the masthead's glyph slot.
+///
+/// It replaces the page's `users` icon rather than sitting in a card of its
+/// own. A card whose whole content was "here is the family, tap to change the
+/// picture" was saying what the masthead directly above it was already saying,
+/// and pushed the actual subject of the page — the members — a screenful down.
+/// The masthead is where a page's identity lives; an editable identity only has
+/// to look editable, which is what the pencil badge is for.
+///
+/// The same three-item menu a profile picture gets — Foto, Kamera, Entfernen —
+/// and the same optimistic swap, because it is the same operation on a
+/// different row. What differs is who may: an admin, checked here so the tap
+/// simply isn't offered, and checked again by `avatars_write_family_picture` in
+/// Storage, which is what actually decides.
+///
+/// Without a picture the circle is the household's initials on a tone derived
+/// from its id — a complete answer that every family starts with, and what the
+/// "Familie" chip in Kalender and Board falls back to as well.
+class _FamilyAvatarHero extends ConsumerStatefulWidget {
+  final bool canEdit;
+
+  const _FamilyAvatarHero({required this.canEdit});
+
+  @override
+  ConsumerState<_FamilyAvatarHero> createState() => _FamilyAvatarHeroState();
+}
+
+class _FamilyAvatarHeroState extends ConsumerState<_FamilyAvatarHero> {
+  final _avatarKey = GlobalKey();
+
+  /// The freshly picked file, held while it uploads and for as long as this
+  /// page is open. Handing straight back to the signed URL would blink the
+  /// picture back to initials while that URL is fetched.
+  File? _uploading;
+
+  Future<void> _pick(AttachmentSource source) async {
+    final picked = await pickAttachment(source, maxDimension: avatarMaxDimension);
+    if (picked == null || !picked.isImage) return;
+
+    final file = File(picked.path);
+    setState(() => _uploading = file);
+    final ok = await ref.read(familyProvider.notifier).setFamilyAvatar(file);
+    if (!mounted) return;
+    if (!ok) setState(() => _uploading = null);
+  }
+
+  void _menu(Household household) {
+    showAnchoredMenu(
+      context: context,
+      anchorKey: _avatarKey,
+      items: [
+        AnchoredMenuItem(
+          label: L.s.photo,
+          icon: LucideIcons.image,
+          onSelected: () => _pick(AttachmentSource.photos),
+        ),
+        AnchoredMenuItem(
+          label: L.s.camera,
+          icon: LucideIcons.camera,
+          onSelected: () => _pick(AttachmentSource.camera),
+        ),
+        if (household.avatarPath != null || _uploading != null)
+          AnchoredMenuItem(
+            label: L.s.removePhoto,
+            icon: LucideIcons.trash2,
+            destructive: true,
+            onSelected: () {
+              setState(() => _uploading = null);
+              ref.read(familyProvider.notifier).removeFamilyAvatar();
+            },
+          ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final household = ref.watch(familyProvider).household;
+    // The page's own glyph until the household is known, so the masthead never
+    // measures a different height on the first frame than on the second.
+    if (household == null) return GlassIconTile(icon: LucideIcons.users, size: 52, iconSize: 25);
+
+    final tone = AppTones.list[household.tone % AppTones.list.length];
+    final avatar = Avatar(
+      size: 52,
+      bg: tone.bg,
+      fg: tone.fg,
+      initials: household.initials,
+      fontSize: 19,
+      imageUrl: household.avatarUrl,
+      imageFile: _uploading,
+    );
+
+    if (!widget.canEdit) return avatar;
+
+    return GestureDetector(
+      key: _avatarKey,
+      onTap: () => _menu(household),
+      // The badge overhangs the circle, so the tap has to be caught outside the
+      // avatar's own bounds as well.
+      behavior: HitTestBehavior.opaque,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          avatar,
+          // Bottom-right, the corner every camera-roll and profile editor puts
+          // it in. A ring in the page's own background colour separates it from
+          // whatever the picture happens to be behind it.
+          Positioned(
+            right: -2,
+            bottom: -2,
+            child: Container(
+              width: 22,
+              height: 22,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary,
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.surface, width: 2),
+              ),
+              child: Icon(LucideIcons.pencil, size: 10, color: Colors.white),
+            ),
+          ),
+        ],
       ),
     );
   }

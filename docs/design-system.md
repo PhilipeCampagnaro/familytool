@@ -99,6 +99,12 @@ reach for the neighbouring token instead of adding one back.
   settings rows that configure it. Two Board rows that changed weight the moment you checked them
   off (open w600, done w500 — the same bug in Listen) both use the row's own token now, so a task
   doesn't restyle itself on completion.
+- **A placeholder is `mutedLight`, and `buildAppTheme` sets that once for the whole app.** Left to
+  Material's `ColorScheme.onSurfaceVariant`, a `hintText` sat close enough to real ink that people
+  read "Listenname" or "Was ist zu tun?" as something already typed — one user confirmed an unnamed
+  list on exactly that reading. The `inputDecorationTheme.hintStyle` in `app_theme.dart` overrides
+  only the colour, so each field keeps the size and weight of its own `style`; a field passing its
+  own `hintStyle` still wins, which is why the two search boxes keep the slightly stronger `muted`.
 - **`body` carries `height: 1.55`, and that is the reason to use it.** Six places hand-wrote its
   14/w300 and dropped the leading, so the same paragraph was set tighter outside Settings.
 
@@ -208,6 +214,25 @@ are worth knowing before tuning any of it:
 tone, a list's brand colour) as this rolls out past Settings. Reads tokens in `build`, so **never
 `const`-construct it**.
 
+### When a row uses `IconTile` instead
+
+`SettingsRow`'s `icon:` parameter draws a `GlassIconTile`, and that is the default for a settings
+list. The event sheet's two link cards pass `leading:` with a plain `IconTile` instead
+(`_LinkTile` in `event_detail_sheet.dart`), for two reasons that generalise:
+
+- **The rows carry containers the user already knows by their own symbol.** A list draws a shop
+  logo or a grocery picture in Listen; giving it an accent lens here would make the same list look
+  like two different things in two places.
+- **Five accent lenses over two adjacent cards is the loudest thing on the sheet**, which is a
+  column of white cards over the day.
+
+Inside those cards the fill carries one distinction — grey `surfaceAlt` for something that exists,
+white `surface` for a row that creates one — via `IconTile.background`. That override exists for
+this case only: the automatic choice (white disc for artwork, grey for a glyph) is about
+legibility, and overriding it elsewhere is how a shop logo ends up unreadable on dark. Note it is
+`surface` and not `brandTile`: `brandTile` is white in *both* palettes so that logos stay readable,
+and an ink glyph on it would disappear on dark.
+
 ## `FrostedHeaderBackground` (`glass.dart`)
 
 Progressive blur + translucent white; the material behind a collapsing header so scrolled content
@@ -281,6 +306,53 @@ Non-obvious bits, each one a bug that shipped first:
 
 ## Other shared widgets
 
+- **`SegmentedControl` (`segmented_control.dart`)** — the app's two-or-three-way switch, at the top
+  of the Listen sheet ("Welche Art von Liste?") and the Board sheet ("Was möchtest du anlegen?" —
+  Aufgabe or Tracker). It lived as a private `_SegButton` inside `list_screen.dart` until the Board
+  needed the same question asked the same way.
+  - **The track needs its hairline.** `surfaceAlt` is within a percent of the sheet's own
+    `screenBg` body on light, so without the border the control has no visible edge at all and
+    reads as two loose labels, one of which happens to sit on a white pill. The border draws the
+    control; the fill only separates the inactive half from the white thumb.
+  - The selected half is `AppColors.surface` plus `AppShadows.thumb`, so it reads as a thumb
+    sitting on the track rather than as a second fill.
+
+- **`PinnedActionLayout` / `PinnedActionBar` (`action_bar.dart`)** — a screen's primary action
+  pinned to the bottom edge, with the body scrolling underneath it. Used by every Settings
+  sub-page (`SettingsDetailPage.bottomAction`), all four onboarding steps, and both auth screens.
+  - **Pass the action to the layout, never as the last child of the list.** That is where all of
+    these used to be, and it put the same button in a different place on every screen: a third of
+    the way down a short page with nothing under it, below the fold on a long one. The bottom edge
+    is the one position that is the same on both.
+  - The bar **measures itself** and hands its height to `bodyBuilder`, which must add it to the
+    scroll view's bottom padding. Don't replace that with a constant — the bar carries the
+    home-indicator inset and a label that wraps at large text sizes, so a constant buries the last
+    row on exactly the phones that can least afford it.
+  - `fit: StackFit.expand` is load-bearing. Loose constraints let a short scroll view shrink-wrap,
+    and the bar then sits under the last paragraph instead of at the bottom of the screen.
+  - `fadeInto` is the colour behind the bar — `AppColors.screenBg` by default (the gray body
+    panel), `AppColors.surface` for onboarding. The gradient rather than a flat fill: a hard edge
+    reads as the end of the page, and content would appear to stop at a line it is still scrolling
+    past.
+  - **Nothing may be added after the action inside the bar** — the accent pill is a platform view,
+    and Flutter content painted after one lands in an overlay that lags during a route push. The
+    gradient is painted first for that reason, not just for the stacking order.
+  - **The bar must sit under a `Material`.** It carries its own transparent one for that reason:
+    put it beside a `Scaffold` rather than inside it and its label renders in the debug text
+    style — yellow and double-underlined — because nothing else on the route supplies a text
+    style. `SettingsDetailPage` learned this the hard way; the layout goes *inside* the Scaffold,
+    with the `SafeArea` inside the body builder so the bar keeps the home-indicator inset it
+    needs to carry itself.
+  - On a form the Scaffold's keyboard resize carries the bar up with the keyboard, so the action
+    stays in view rather than being the thing the keyboard covers (`auth_screen.dart`).
+  - A screen whose action lives inside another widget suppresses that one rather than showing
+    two: the tour's last step passes `ConfirmationAction.none` to `ConfirmationView` and pins the
+    pill itself.
+  - Not for sheets. A sheet confirms from the chevron/check in its header (`SheetActionHeader`),
+    which is its own convention and stays that way.
+  - `null` action draws no bar at all, so a page whose action is gated (a non-admin's
+    Familienmitglieder) ends where its content ends rather than on an empty band.
+
 - Bottom navigation — **two bars, one per platform**, both fed from the same `navTabs` list and
   both floating over the content (see `useNativeTabBar` in `bottom_nav.dart`).
   - **iOS: `NativeTabBar` (`native_tab_bar.dart`)** — a real `UITabBar` embedded as a platform
@@ -301,17 +373,66 @@ Non-obvious bits, each one a bug that shipped first:
     - Not available without a `UITabBarController`: the iOS 26 *minimize-on-scroll* behaviour.
   - **Everywhere else: `AppBottomNav` (`bottom_nav.dart`)** — the floating glass pill from the
     handoff.
+  - **Compacting on scroll (Kalender only)** — scrolling the agenda down collapses the bar to
+    `CompactNavButton`, a glass circle at the bottom-left carrying the **active tab's** icon;
+    tapping it brings the bar back, as does scrolling to the top. This is our answer to the iOS 26
+    minimize-on-scroll behaviour listed above as unavailable: `_CompactNavOnScroll`
+    (`calendar_screen.dart`) writes `navBarProvider` (`lib/state/nav_state.dart`), and
+    `_NavLayer` / `_NavShape` in `main.dart` animate the swap. Four things there are load-bearing:
+    - The two shapes are **separate children that slide and fade past each other**, never one
+      morphing control — a `UITabBar` platform view cannot be reshaped into a circle. What sells
+      it as a collapse is that all the motion is on **one axis**: the bar drifts left as it goes,
+      the circle arrives from the left, and both hang off the same centre line.
+    - That centre line needs the bar's **measured** height (`NativeTabBar.onHeight`), not
+      `kNativeTabBarHeight` — an iOS 26 capsule is taller, and guessing drops the circle visibly
+      below where the bar was.
+    - `_NavShape` takes a shape **offstage** at zero opacity. A platform view left at zero opacity
+      is still a UIKit view in the scene, over both the pixels and the touches behind it. It is
+      `Offstage`, not removed, so the native bar keeps its geometry and its channel.
+    - The scroll test is on the **delta**, not the position: the week view is a `NestedScrollView`
+      and its inner list reports `pixels == 0` for the whole time the header is collapsing.
+  - The bar is the **shell's**, so a screen never builds one; drive it through
+    `navBarProvider` rather than passing callbacks down. That provider also publishes the
+    measured bar height, because Kalender's "Heute" button hangs off the same centre line from a
+    different subtree.
+  - Flutter-drawn controls on that row take their icons through `navRowIcon` — Cupertino glyphs
+    on iOS, the handoff's Lucide ones elsewhere. The iOS bar draws real SF Symbols, so a Lucide
+    calendar in the button that replaces it reads as a second, subtly different calendar.
   - Scrolling screens must pad their last row clear of whichever bar is up: use
     `navContentInset(context)`, with the `pill:` argument for the non-iOS clearance. Same helper
     for anything `Positioned` off the bottom edge (e.g. the calendar's "Heute" button) — but pass
     a larger `gap:` for those: scrolling content may sit close and slide under the glass, while a
     control *parked* above the bar needs air or the two glass surfaces touch and it reads as
     hiding behind the bar.
-- `FloatingGlassPill` / `UndoPill` (`floating_pill.dart`) — the glass pill that parks above the
-  bottom nav and comes and goes with the state behind it: the calendar's "Heute", Board's and
-  Listen's "Rückgängig". The widget only draws itself; every caller positions it the same way,
-  `Positioned(left: 0, right: 0, bottom: navContentInset(context, pill: 106, gap: 36))` around a
-  `Center`, and taps beside it fall through to the screen underneath.
+- `GlassIconGroup` (`glass.dart`) — two or more icon buttons in **one** glass capsule: iOS 26's
+  grouped bar buttons. **No separator between the segments** — one was tried and the capsule read
+  as a button that had cracked down the middle. The glass carries no line of its own, so a
+  hairline is the only hard edge inside it and the eye lands on it; Apple's own grouped items have
+  none either. Spacing does the work instead, including padding at the ends so the outer icons
+  aren't pressed against the round caps.
+  - Segments are **44pt wide** in a 40pt-tall capsule — Apple's minimum target, and wider than the
+    control is tall because two icons this close are otherwise easy to mis-hit.
+  - Same material arguments as the "Heute" pill: no forced `tint`, `fallbackTint:
+    AppColors.navPillTint`, and `AppShadows.floatingPill` rather than `glassButton`, whose lift is
+    sized for a 40pt circle and smudges under something ~100pt wide. Leaving `fallbackTint` off
+    hands the Flutter drawing `AppColors.glassFallbackTint`, a **dark** neutral — a grey slab with
+    a bright rim, which is not glass at any size.
+  - On the iOS Simulator this renders flat: a grey fill and a hard rim, with none of the
+    refraction. That is the Simulator, not the code — judge any glass surface on a device. Kalender's header uses it for "verbinden" + "neuer
+  Termin". Reach for it rather than two `GlassIconButton`s side by side, which read as one button
+  that failed to draw: each is its own piece of glass with its own rim. Only the pressed segment
+  reacts, and it is the **icon** that scales — the capsule is a `UIGlassEffect` platform view on
+  iOS and scaling one smears. A header that reserves room for it should track `width`.
+- `FloatingGlassPill` / `UndoPill` (`floating_pill.dart`) — the glass control that comes and goes
+  with the state behind it: the calendar's "Heute", Board's and Listen's "Rückgängig". The widget
+  only draws itself and taps beside it fall through to the screen underneath.
+  - Two shapes. The default is the small icon + label pill, parked above the bottom nav at
+    `Positioned(left: 0, right: 0, bottom: navContentInset(context, pill: 106, gap: 36))` around a
+    `Center` — that is "Rückgängig". `onNavRow: true` is the taller capsule that stands on the nav
+    bar's row, the height of `CompactNavButton` at the other end of it — that is "Heute".
+  - `icon` is **nullable**, and "Heute" passes none: it stands a finger's width from the bar's
+    calendar icon, so any calendar glyph on it reads as a duplicate of that icon rather than as a
+    different offer. Don't put one back.
   - `UndoPill` is the check-off half: it takes a **token** (the id of the row that just moved into
     "Erledigt", `''` for nothing) and shows itself for five seconds each time that token *changes*.
     The screens derive the token from `state.justMoved` plus the row's `done` flag rather than
@@ -328,6 +449,38 @@ Non-obvious bits, each one a bug that shipped first:
     same place, still draggable; a sheet that never counts down looks exactly as it always did.
     `ConfirmationView` sets it from its own `dismissAfter`, so no caller has to keep the two in
     sync.
+  - **A create sheet names its `requiredField`, and the check goes grey without it.** Pass the
+    sheet's own name/title `TextEditingController` and the header's blue button dims and swallows
+    its tap while that field is blank — the sheet stays open with the empty field in view. It
+    exists because the opposite shipped: the chrome popped the sheet on every tap and the write
+    was then refused for having no text, so confirming an unnamed list closed the sheet and
+    created nothing, with no error anywhere. Two of the app's placeholders ("Listenname", "Was ist
+    zu tun?") were dark enough to read as text somebody had already typed, so that tap was made in
+    good faith — the hint colour is fixed in `buildAppTheme` (see below), and this is the guard
+    behind it. `SheetActionHeader` takes the same argument. Skip it where an empty title is a
+    legitimate state to save from: the Kalender **edit** sheet, because a proxied Google or
+    Outlook event may genuinely have no summary, and the Box item sheet, where an emptied name
+    means "leave it alone".
+  - **The keyboard is handled here, once, for every sheet in the app.** Flutter's
+    `showModalBottomSheet` does not apply `viewInsets` to what it builds, so a sheet left to
+    itself keeps its full height and the keyboard is simply drawn over the lower half of it — the
+    field being typed into ends up underneath, and the body cannot be scrolled to reach it,
+    because its scroll view still believes it has the whole sheet to lay out in. `showAppSheet`
+    does two things about it: the gray body's bottom padding carries the keyboard inset, so the
+    part that scrolls **ends** where the keyboard starts, and the sheet's height grows by that
+    same inset, so `heightFactor` is a fraction of what is *visible* rather than of the screen.
+    An 0.92 sheet is otherwise showing about half of itself. Nothing a caller passes is involved,
+    so a new sheet gets this for free — which is another reason not to hand-roll a
+    `showModalBottomSheet`.
+  - **The top inset has to be read off the view, not off the `MediaQuery`.** A grown sheet stops
+    short of the status bar, or the clock and the wifi bars end up sitting on the grab handle and
+    the X. But the ceiling that does it cannot be measured the obvious way: `showModalBottomSheet`
+    builds its content inside `MediaQuery.removePadding(removeTop: true)` — `useSafeArea` defaults
+    to false — so **inside any sheet, `padding.top` and `viewPadding.top` both read 0**, and a
+    ceiling computed from either is just the top of the screen. The real inset comes from
+    `MediaQueryData.fromView(View.of(context))`, read inside the `LayoutBuilder` so a rotation
+    brings the new one with it. The same trap is waiting for anything else in a sheet that
+    wants to know where the notch is — a `SafeArea` in there does nothing at the top edge.
 - `SheetActionHeader` (`app_sheet.dart`) — the same X/title/check row for a sheet that **submits
   while it stays open**: `SheetHeaderAction.confirm` → `.busy` (spinner, and the X withdrawn — the
   request wouldn't be cancelled by closing) → `.none` (the sheet has become a confirmation; the X
@@ -527,6 +680,21 @@ Non-obvious bits, each one a bug that shipped first:
     body owns the picker, but the save callback is handed to `showAppSheet` before the body exists,
     so the picked key can't live in the body's `State`. `picked == null` means "the name is still
     choosing" — which is what `IconFieldRow`'s `suggested:` flag renders.
+  - **A photograph beats all three.** `IconTile.photoUrl` / `.photoFile` and the `PhotoThumbnail`
+    behind them draw a picture the user took of the thing itself, and it *replaces* the icon rather
+    than sitting beside it. It fills the disc edge to edge (`BoxFit.cover`), unlike a logo or a
+    grocery picture, which are art on a background and stay small and centred — cropping a real
+    photo to the circle is what makes the row read as "this is the thing". `photoFile` (a path on
+    this device) wins over `photoUrl` (signed, expiring): it needs no round trip, and it is what a
+    brand-new box's picture has before there is a box to hang it on. Every failure — expired link,
+    no signal, object swept up elsewhere — lands on the muted placeholder, never on Flutter's grey
+    exception box.
+  - `showPictureMenu` is the menu behind a picture row: Foto / Kamera / Symbol wählen, plus a
+    destructive Foto entfernen once there is one. **It is a `showNativeActionSheet` first and the
+    dropdown only as a fallback**, because it opens from inside a sheet whose header carries native
+    glass buttons — see the platform-view note further up. `IconDraft.photoFile` is the pending
+    half: every picture is written the moment it is chosen, exactly as a profile picture is, except
+    a *new* box's, which has no id for the object to be filed under until the insert comes back.
 - `SwipeActionsRow` / `SwipeAction` (`swipe_actions.dart`) — iOS swipe-left row actions, shared by
   the Kalender event cards (Edit + Delete) and the Listen/Boxen item rows (Delete). The reveal is
   a 0→1 fraction on an `AnimationController`, not a pixel offset, so the live drag and the release

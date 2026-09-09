@@ -367,6 +367,118 @@ class GlassIconButton extends StatelessWidget {
   }
 }
 
+/// Two or more icon buttons sharing **one** glass capsule — iOS 26's grouped
+/// bar buttons. Kalender's header uses it for "verbinden" and "neuer Termin".
+///
+/// One capsule rather than two [GlassIconButton]s side by side, because two
+/// pieces of real glass touching read as a mistake: each refracts its own
+/// little rim and the pair looks like one button that failed to draw. The
+/// group is also how iOS says these belong together — same row, same subject,
+/// different verbs.
+///
+/// **No separator between the segments.** One was tried and it read as a
+/// button that had cracked down the middle rather than as a group: on the real
+/// material the glass carries no line of its own, so a hairline is the only
+/// hard edge inside the capsule and the eye lands on it. Apple's own grouped
+/// items have none either. Spacing is what says "two things" — hence the
+/// [_hPad] at the ends, without which the outer icons sit against the capsule's
+/// curve and the whole thing looks cramped.
+///
+/// Only the pressed segment reacts, and it is the *icon* that scales, not the
+/// capsule: on iOS the capsule is a `UIGlassEffect` platform view, and
+/// scaling one of those smears (see [GlassSurface.forceFlutterApproximation]).
+class GlassIconGroup extends StatefulWidget {
+  final List<GlassIconAction> actions;
+
+  /// The capsule's height. Matches [GlassIconButton] so a header that mixes
+  /// the two sits on one line.
+  final double size;
+  final double iconSize;
+
+  const GlassIconGroup({super.key, required this.actions, this.size = 40, this.iconSize = 19});
+
+  /// Each segment's tap target, wider than the capsule is tall: the icons are
+  /// a finger's width apart in a control that is only 40pt high, and at the
+  /// segment's own height the two are easy to mis-hit. 44 is Apple's floor.
+  static const _segmentWidth = 44.0;
+
+  /// Breathing room at each end of the capsule, so the outer icons aren't
+  /// pressed against its round caps.
+  static const _hPad = 6.0;
+
+  /// What the group measures, for a header that has to reserve room for it.
+  double get width => actions.length * _segmentWidth + 2 * _hPad;
+
+  @override
+  State<GlassIconGroup> createState() => _GlassIconGroupState();
+}
+
+/// One segment of a [GlassIconGroup]. [label] is never drawn — it is the
+/// segment's accessible name, which an icon on its own hasn't got.
+class GlassIconAction {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const GlassIconAction({required this.icon, required this.label, required this.onTap});
+}
+
+class _GlassIconGroupState extends State<GlassIconGroup> {
+  int? _pressed;
+
+  void _setPressed(int? index) {
+    if (_pressed != index) setState(() => _pressed = index);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassSurface(
+      borderRadius: BorderRadius.circular(widget.size / 2),
+      // Same material arguments as the "Heute" pill, which is the shape this
+      // is meant to match: no forced `tint`, so iOS's real `UIGlassEffect`
+      // adapts, and a *light* fallback for everywhere the Flutter drawing is
+      // used. Without the fallback it takes `AppColors.glassFallbackTint`,
+      // which is a dark neutral — a grey slab with a bright rim, which is not
+      // glass at any size.
+      fallbackTint: AppColors.navPillTint,
+      blurSigma: 20,
+      // Not `glassButton`: that lift is sized for a 40pt circle and reads as a
+      // dark smudge under something this wide. See [AppShadows.floatingPill].
+      boxShadow: AppShadows.floatingPill,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: GlassIconGroup._hPad),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (var i = 0; i < widget.actions.length; i++)
+              Semantics(
+                button: true,
+                label: widget.actions[i].label,
+                child: GestureDetector(
+                  onTap: widget.actions[i].onTap,
+                  behavior: HitTestBehavior.opaque,
+                  onTapDown: (_) => _setPressed(i),
+                  onTapUp: (_) => _setPressed(null),
+                  onTapCancel: () => _setPressed(null),
+                  child: SizedBox(
+                    width: GlassIconGroup._segmentWidth,
+                    height: widget.size,
+                    child: AnimatedScale(
+                      scale: _pressed == i ? 0.82 : 1.0,
+                      duration: const Duration(milliseconds: 120),
+                      curve: Curves.easeOut,
+                      child: Icon(widget.actions[i].icon, size: widget.iconSize, color: AppColors.ink),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 /// The **neutral** labelled glass pill: a way *out* rather than the action —
 /// Settings' "Fertig", the onboarding header's "Überspringen". A text-labelled
 /// sibling of [GlassIconButton], so a header that mixes the two reads as one
@@ -420,19 +532,33 @@ class GlassConfirmButton extends StatelessWidget {
   final IconData icon;
   final double size;
 
-  const GlassConfirmButton({super.key, required this.onTap, this.icon = LucideIcons.check, this.size = 40});
+  /// False while the sheet has nothing worth saving — a create form whose name
+  /// is still empty. The button keeps its place and its shape and loses the
+  /// accent, so it reads as "not yet" rather than disappearing; the tap is
+  /// swallowed, because a confirm that closes the sheet and creates nothing is
+  /// the worst of the three outcomes.
+  final bool enabled;
+
+  const GlassConfirmButton({
+    super.key,
+    required this.onTap,
+    this.icon = LucideIcons.check,
+    this.size = 40,
+    this.enabled = true,
+  });
 
   @override
   Widget build(BuildContext context) {
     final accent = Theme.of(context).colorScheme.primary;
+    final tint = enabled ? accent : AppColors.mutedLight;
     return GlassIconButton(
       icon: icon,
-      onTap: onTap,
+      onTap: enabled ? onTap : () {},
       size: size,
-      tint: accent,
-      fallbackTint: accent,
+      tint: tint,
+      fallbackTint: tint,
       iconColor: Colors.white,
-      boxShadow: AppShadows.accentGlass(accent),
+      boxShadow: enabled ? AppShadows.accentGlass(accent) : null,
     );
   }
 }

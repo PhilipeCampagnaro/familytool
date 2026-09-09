@@ -149,7 +149,7 @@ class _FilterMenuRoute extends PopupRoute<Set<String>> {
 /// month grid just let the day numbers read through the rows. This matches the
 /// native menu instead — a blurred backdrop under an almost-solid fill, tight
 /// 14pt corners and hairline separators.
-class _FilterMenuSurface extends StatelessWidget {
+class _FilterMenuSurface extends ConsumerWidget {
   static const width = 244.0;
 
   final CalendarScreenState state;
@@ -157,7 +157,7 @@ class _FilterMenuSurface extends StatelessWidget {
   const _FilterMenuSurface({required this.state});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Material(
       color: Colors.transparent,
       child: DecoratedBox(
@@ -197,7 +197,7 @@ class _FilterMenuSurface extends StatelessWidget {
                       child: Divider(height: 0.5, thickness: 0.5, color: AppColors.menuSeparator),
                     ),
                     _FilterMenuRow(
-                      label: group.name,
+                      label: _groupLabel(ref, group),
                       color: group.color,
                       active: _isWholeFilter(state, group.ids),
                       value: group.ids,
@@ -390,7 +390,7 @@ class _CalendarPickerSurface extends ConsumerWidget {
                   // chip it came out of.
                   Padding(
                     padding: const EdgeInsets.only(left: 16, right: 16, top: 12, bottom: 6),
-                    child: Text(group.name, style: AppText.microLabel),
+                    child: Text(_groupLabel(ref, group), style: AppText.microLabel),
                   ),
                   for (final src in group.calendars)
                     _CalendarPickerRow(
@@ -437,13 +437,29 @@ class _CalendarPickerRow extends StatelessWidget {
                 style: checked ? AppText.itemTitle : AppText.input,
               ),
             ),
-            // The box is drawn either way rather than only when ticked: an
-            // unticked row with nothing on the right reads as a label, and the
-            // whole point of this panel is that every row is a switch.
-            Icon(
-              checked ? LucideIcons.squareCheck : LucideIcons.square,
-              size: 17,
-              color: checked ? source.color : AppColors.inkTertiary,
+            // Drawn either way rather than only when ticked: an unticked row
+            // with nothing on the right reads as a label, and the whole point
+            // of this panel is that every row is a switch.
+            //
+            // Round and accent-blue, the shape a multiple-choice tick has on
+            // iOS — and deliberately *not* the calendar's own colour, which is
+            // already saying which calendar this is in the dot on the left. A
+            // box that changed hue per row would read as a second piece of
+            // information rather than as "on".
+            Container(
+              width: 20,
+              height: 20,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: checked ? AppColors.accent : Colors.transparent,
+                border: checked
+                    ? null
+                    : Border.all(color: AppColors.inkTertiary, width: 1.5),
+              ),
+              child: checked
+                  ? const Icon(LucideIcons.check, size: 13, color: Colors.white)
+                  : null,
             ),
           ],
         ),

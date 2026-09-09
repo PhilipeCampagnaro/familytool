@@ -1,7 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/icon_suggestions.dart';
 import '../data/repositories/box_repository.dart';
+import '../data/repositories/photo_repository.dart';
 import '../models/box_item.dart';
 import '../models/visibility.dart';
 import '../services/supabase.dart';
@@ -29,6 +32,15 @@ class BoxScreenState {
   /// Boxes that reached this account through an external share link.
   final Set<String> guestBoxIds;
 
+  /// `photo_path` → a signed URL for it, for every picture on screen.
+  ///
+  /// Keyed by path rather than held on the model because that is what the
+  /// signing is keyed by, and because a box and one of its items can perfectly
+  /// well be photographed twice into the same map without either of them
+  /// caring. Missing means "no picture, or signing failed" — both fall back to
+  /// the symbol, which is what a box without a photo already shows.
+  final Map<String, String> photoUrls;
+
   /// The create/edit sheet's draft "Für wen?" answer, in the two fields the
   /// database actually has. Replaces the old single `who` string, which
   /// conflated assignment with visibility.
@@ -49,6 +61,7 @@ class BoxScreenState {
     this.boxes = const [],
     this.itemsByBox = const {},
     this.guestBoxIds = const {},
+    this.photoUrls = const {},
     this.newVisibility = ItemVisibility.family,
     this.newSharedWith = const {},
     this.loading = true,
@@ -63,6 +76,7 @@ class BoxScreenState {
     List<StorageBox>? boxes,
     Map<String, List<BoxItem>>? itemsByBox,
     Set<String>? guestBoxIds,
+    Map<String, String>? photoUrls,
     ItemVisibility? newVisibility,
     Set<String>? newSharedWith,
     bool? loading,
@@ -75,6 +89,7 @@ class BoxScreenState {
       boxes: boxes ?? this.boxes,
       itemsByBox: itemsByBox ?? this.itemsByBox,
       guestBoxIds: guestBoxIds ?? this.guestBoxIds,
+      photoUrls: photoUrls ?? this.photoUrls,
       newVisibility: newVisibility ?? this.newVisibility,
       newSharedWith: newSharedWith ?? this.newSharedWith,
       loading: loading ?? this.loading,
@@ -90,6 +105,11 @@ class BoxScreenState {
   }
 
   List<BoxItem> itemsFor(String id) => itemsByBox[id] ?? const [];
+
+  /// The signed URL for a stored picture, or null while there isn't one to
+  /// draw. Callers pass [StorageBox.photoPath] / [BoxItem.photoPath] straight
+  /// in, so neither of them has to know a map is involved.
+  String? photoUrl(String? path) => path == null ? null : photoUrls[path];
 
   int get totalItems => boxes.fold(0, (n, b) => n + itemsFor(b.id).length);
 }
@@ -108,11 +128,12 @@ class DeletedBox {
 }
 
 class BoxNotifier extends StateNotifier<BoxScreenState> {
-  BoxNotifier(this._repo, this._userId, this._familyId) : super(const BoxScreenState()) {
+  BoxNotifier(this._repo, this._photos, this._userId, this._familyId) : super(const BoxScreenState()) {
     if (_userId != null) load();
   }
 
   final BoxRepository _repo;
+  final PhotoRepository _photos;
   final String? _userId;
   final String? _familyId;
 
@@ -145,10 +166,29 @@ class BoxNotifier extends StateNotifier<BoxScreenState> {
         openId: open ? state.openId : '',
         isDetail: open && state.isDetail,
       );
+      // After the rows, not with them: a signing round trip must not hold the
+      // shelf back, and a box whose URL hasn't arrived yet simply shows its
+      // symbol for a moment — the same thing it shows for good if it has no
+      // picture at all.
+      await _signVisiblePhotos(snapshot);
     } catch (_) {
       if (!mounted) return;
       state = state.copyWith(loading: false, error: L.s.boxesLoadFailed);
     }
+  }
+
+  /// Signs every `photo_path` in one round trip and folds the result into the
+  /// state. Never throws: a failure here costs thumbnails, not the screen.
+  Future<void> _signVisiblePhotos(BoxSnapshot snapshot) async {
+    final paths = <String>[
+      for (final box in snapshot.boxes) ?box.photoPath,
+      for (final items in snapshot.itemsByBox.values)
+        for (final item in items) ?item.photoPath,
+    ];
+    if (paths.isEmpty) return;
+    final urls = await _photos.signUrls(PhotoRepository.boxBucket, paths);
+    if (!mounted || urls.isEmpty) return;
+    state = state.copyWith(photoUrls: {...state.photoUrls, ...urls});
   }
 
   void clearError() => state = state.copyWith(clearError: true);
@@ -196,7 +236,7 @@ class BoxNotifier extends StateNotifier<BoxScreenState> {
   ///
   /// True only when the row really landed on the server — the screen's
   /// confirmation chip hangs off that, exactly as it does in `list_state.dart`.
-  Future<bool> createBox({required String name, required String place, String? iconKey}) async {
+  Future<bool> createBox({required String name, required String place, String? iconKey, File? photo}) async {
     final trimmed = name.trim();
     if (trimmed.isEmpty) return false;
     final familyId = _familyId;
@@ -220,10 +260,113 @@ class BoxNotifier extends StateNotifier<BoxScreenState> {
         boxes: [...state.boxes, saved],
         itemsByBox: {...state.itemsByBox, saved.id: const []},
       );
+      // Only now: the object is filed under the box's id and the storage policy
+      // asks whether that box may be written, so there has to *be* one first.
+      // A picture that fails to upload leaves a created box behind rather than
+      // failing the save — the box is the thing the user asked for.
+      if (photo != null) await setBoxPhoto(saved.id, photo);
       return true;
     } catch (_) {
       _fail(L.s.boxSaveFailed);
       return false;
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Pictures
+  //
+  // Always written straight away rather than on the sheet's save, and for the
+  // same reason the profile picture is: the upload has to have landed before a
+  // column may name the object, and a user who has just watched their photo
+  // appear in the row does not expect a Sichern to be what keeps it.
+  // ---------------------------------------------------------------------------
+
+  /// Puts [file] up as the box's picture and points the row at it.
+  ///
+  /// The object it replaces is deleted afterwards, never before: a failed
+  /// upload that had already removed the old picture costs the user the only
+  /// copy they had.
+  Future<bool> setBoxPhoto(String boxId, File file) async {
+    final box = state.boxById(boxId);
+    if (box == null) return false;
+    final previous = box.photoPath;
+
+    try {
+      final path = await _photos.upload(bucket: PhotoRepository.boxBucket, containerId: boxId, file: file);
+      final saved = await _repo.setPhoto(boxId, path);
+      final urls = await _photos.signUrls(PhotoRepository.boxBucket, [path]);
+      if (!mounted) return false;
+      // `setPhoto` reads the row back without its share rows — the same reason
+      // `updateBox` carries them over by hand.
+      state = state.copyWith(
+        boxes: [for (final b in state.boxes) b.id == boxId ? saved.copyWith(sharedWith: box.sharedWith) : b],
+        photoUrls: {...state.photoUrls, ...urls},
+      );
+      if (previous != null && previous != path) {
+        await _photos.remove(PhotoRepository.boxBucket, [previous]);
+      }
+      return true;
+    } catch (_) {
+      _fail(L.s.photoUploadFailed);
+      return false;
+    }
+  }
+
+  /// Takes the box's picture away, back to the symbol its name chose.
+  Future<void> removeBoxPhoto(String boxId) async {
+    final box = state.boxById(boxId);
+    final previous = box?.photoPath;
+    if (box == null || previous == null) return;
+
+    try {
+      final saved = await _repo.setPhoto(boxId, null);
+      if (!mounted) return;
+      state = state.copyWith(
+        boxes: [for (final b in state.boxes) b.id == boxId ? saved.copyWith(sharedWith: box.sharedWith) : b],
+      );
+      // The row no longer points at it; the object is just litter.
+      await _photos.remove(PhotoRepository.boxBucket, [previous]);
+    } catch (_) {
+      _fail(L.s.photoRemoveFailed);
+    }
+  }
+
+  /// The item side of [setBoxPhoto] — and the one this feature was asked for.
+  ///
+  /// Filed under the **box's** id, not the item's: an item inherits its box's
+  /// visibility, so the box is what the storage policy can ask about.
+  Future<bool> setItemPhoto(BoxItem item, File file) async {
+    if (_isTemp(item.id)) return false; // Still in flight; there is no row to point yet.
+    final previous = item.photoPath;
+
+    try {
+      final path = await _photos.upload(bucket: PhotoRepository.boxBucket, containerId: item.boxId, file: file);
+      final saved = await _repo.setItemPhoto(item.id, path);
+      final urls = await _photos.signUrls(PhotoRepository.boxBucket, [path]);
+      if (!mounted) return false;
+      _patchItem(item.boxId, item.id, (_) => saved);
+      state = state.copyWith(photoUrls: {...state.photoUrls, ...urls});
+      if (previous != null && previous != path) {
+        await _photos.remove(PhotoRepository.boxBucket, [previous]);
+      }
+      return true;
+    } catch (_) {
+      _fail(L.s.photoUploadFailed);
+      return false;
+    }
+  }
+
+  Future<void> removeItemPhoto(BoxItem item) async {
+    final previous = item.photoPath;
+    if (previous == null || _isTemp(item.id)) return;
+
+    try {
+      final saved = await _repo.setItemPhoto(item.id, null);
+      if (!mounted) return;
+      _patchItem(item.boxId, item.id, (_) => saved);
+      await _photos.remove(PhotoRepository.boxBucket, [previous]);
+    } catch (_) {
+      _fail(L.s.photoRemoveFailed);
     }
   }
 
@@ -312,16 +455,85 @@ class BoxNotifier extends StateNotifier<BoxScreenState> {
       final restored = await Future.wait([
         for (final item in deleted.items) _restoreItem(saved.id, item),
       ]);
+      // The pictures have to be copied, not carried over. Undo re-inserts under
+      // a fresh uuid — the old row is gone and its id with it — and every object
+      // is filed under the id of the box it belongs to, so the old `photo_path`
+      // would name something no box owns any more and the read policy would
+      // rightly refuse it. See [PhotoRepository.copyTo].
+      final withPhotos = await _restorePhotos(saved, restored, deleted.items, box.photoPath);
       if (!mounted) return false;
 
       final boxes = [...state.boxes];
-      boxes.insert(deleted.index.clamp(0, boxes.length), saved);
-      state = state.copyWith(boxes: boxes, itemsByBox: {...state.itemsByBox, saved.id: restored});
+      boxes.insert(deleted.index.clamp(0, boxes.length), withPhotos.box);
+      state = state.copyWith(
+        boxes: boxes,
+        itemsByBox: {...state.itemsByBox, saved.id: withPhotos.items},
+        photoUrls: {...state.photoUrls, ...withPhotos.urls},
+      );
       return true;
     } catch (_) {
       _fail(L.s.boxRestoreFailed);
       return false;
     }
+  }
+
+  /// Copies a restored box's pictures under its new id and points the rows at
+  /// them, then signs them so the shelf comes back looking as it went.
+  ///
+  /// Every step is best-effort per picture: one object that has already been
+  /// swept up must not turn undo into a failed restore, and a box that comes
+  /// back without one photo is a far better outcome than a box that doesn't
+  /// come back.
+  /// [items] are the rows that were just re-inserted and [originals] the ones
+  /// they were copied from, index for index — `Future.wait` keeps the order, and
+  /// the new rows are the only place with an id to write to while the old ones
+  /// are the only place with a picture to copy.
+  Future<({StorageBox box, List<BoxItem> items, Map<String, String> urls})> _restorePhotos(
+    StorageBox box,
+    List<BoxItem> items,
+    List<BoxItem> originals,
+    String? boxPhoto,
+  ) async {
+    Future<String?> copy(String? from) async {
+      if (from == null) return null;
+      try {
+        return await _photos.copyTo(bucket: PhotoRepository.boxBucket, fromPath: from, containerId: box.id);
+      } catch (_) {
+        return null;
+      }
+    }
+
+    var restoredBox = box;
+    if (await copy(boxPhoto) case final path?) {
+      try {
+        restoredBox = (await _repo.setPhoto(box.id, path)).copyWith(sharedWith: box.sharedWith);
+      } catch (_) {}
+    }
+
+    final restoredItems = <BoxItem>[];
+    for (final (i, item) in items.indexed) {
+      final source = i < originals.length ? originals[i].photoPath : null;
+      if (source == null) {
+        restoredItems.add(item);
+        continue;
+      }
+      final path = await copy(source);
+      if (path == null) {
+        restoredItems.add(item);
+        continue;
+      }
+      try {
+        restoredItems.add(await _repo.setItemPhoto(item.id, path));
+      } catch (_) {
+        restoredItems.add(item);
+      }
+    }
+
+    final paths = <String>[
+      ?restoredBox.photoPath,
+      for (final item in restoredItems) ?item.photoPath,
+    ];
+    return (box: restoredBox, items: restoredItems, urls: await _photos.signUrls(PhotoRepository.boxBucket, paths));
   }
 
   /// One item of a restored box. Two statements, because `addItem` only takes
@@ -498,6 +710,7 @@ final boxRepositoryProvider = Provider<BoxRepository>((ref) => BoxRepository(Apo
 final boxProvider = StateNotifierProvider<BoxNotifier, BoxScreenState>((ref) {
   return BoxNotifier(
     ref.watch(boxRepositoryProvider),
+    ref.watch(photoRepositoryProvider),
     ref.watch(currentUserIdProvider),
     ref.watch(familyProvider.select((s) => s.household?.id)),
   );

@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../models/calendar_event.dart';
+import '../../models/homework.dart';
 import '../../services/calendar_cache.dart';
 import '../../services/supabase.dart';
 import '../../l10n/l10n.dart';
@@ -15,6 +16,14 @@ class CalendarSnapshot {
   /// expansion happens once here rather than in every view.
   final Map<String, List<CalendarEvent>> eventsByDay;
 
+  /// Every homework the household's school accounts carry, in due-date order.
+  ///
+  /// A flat list rather than another day map: unlike an event, a homework is
+  /// shown on the lesson it is *due in* and in a list on Board, never as an
+  /// entry on the days it spans. [homeworkByEvent] is the index the calendar
+  /// actually reads.
+  final List<Homework> homework;
+
   /// True when this came off the device cache rather than the network, so the
   /// screen can say "Stand von …" instead of implying it is live.
   final bool fromCache;
@@ -22,8 +31,24 @@ class CalendarSnapshot {
   const CalendarSnapshot({
     required this.calendars,
     required this.eventsByDay,
+    this.homework = const [],
     this.fromCache = false,
   });
+
+  /// Lesson `uid` -> the homework due in it. Only the homework that matched a
+  /// lesson appears here, so a lookup miss is the ordinary "nothing due in this
+  /// period" rather than a gap.
+  ///
+  /// A list per lesson, not one: two teachers can set work due in the same
+  /// period, and a single Religion lesson in the probe carried two.
+  Map<String, List<Homework>> get homeworkByEvent {
+    final out = <String, List<Homework>>{};
+    for (final h in homework) {
+      if (h.eventUid.isEmpty) continue;
+      (out[h.eventUid] ??= []).add(h);
+    }
+    return out;
+  }
 
   static const empty = CalendarSnapshot(calendars: [], eventsByDay: {});
 }
@@ -73,6 +98,10 @@ class CalendarRepository {
         _rows(raw['calendars']),
         _rows(raw['events']),
         _names(_rows(raw['profiles'])),
+        // Absent from a cache written before homework existed, which is every
+        // cache on every device the first time this ships. An empty list is the
+        // right answer there — the refresh already on its way fills it in.
+        homeworkRows: _rows(raw['homework']),
         fromCache: true,
       );
     } catch (_) {
@@ -90,15 +119,25 @@ class CalendarRepository {
       _profiles(),
     ]);
 
-    final external = results[0] as ({List<Map<String, dynamic>> calendars, List<Map<String, dynamic>> events});
+    final external = results[0] as ({
+      List<Map<String, dynamic>> calendars,
+      List<Map<String, dynamic>> events,
+      List<Map<String, dynamic>> homework,
+    });
     final profiles = results[1] as List<Map<String, dynamic>>;
 
     await _cache.write({
       'calendars': external.calendars,
       'events': external.events,
+      'homework': external.homework,
       'profiles': profiles,
     });
-    return _assemble(external.calendars, external.events, _names(profiles));
+    return _assemble(
+      external.calendars,
+      external.events,
+      _names(profiles),
+      homeworkRows: external.homework,
+    );
   }
 
   /// Connected accounts and public feeds, proxied — **every calendar there is.**
@@ -109,15 +148,35 @@ class CalendarRepository {
   /// calendar behind it there is nothing else to render, so the cache is what
   /// stands between a timeout and an empty screen. The connections page is still
   /// where a broken account gets reported.
-  Future<({List<Map<String, dynamic>> calendars, List<Map<String, dynamic>> events})> _external() async {
-    try {
-      final res = await _db.functions.invoke('calendar-events', body: const {});
-      final data = res.data;
-      if (data is! Map) return (calendars: <Map<String, dynamic>>[], events: <Map<String, dynamic>>[]);
-      return (calendars: _rows(data['calendars']), events: _rows(data['events']));
-    } catch (_) {
-      return (calendars: <Map<String, dynamic>>[], events: <Map<String, dynamic>>[]);
-    }
+  /// **Throws when the read fails, and that is deliberate.** This used to
+  /// swallow the error and return two empty lists, which read as "the household
+  /// has no calendars" — indistinguishable, one line later, from the truth. The
+  /// consequences ran the wrong way twice over: `fetch` wrote that emptiness
+  /// over the device cache, so a single timeout did not just blank the calendar,
+  /// it destroyed the offline copy that was supposed to cover exactly this case,
+  /// and the next cold start came up blank too with nothing left to recover
+  /// from. `CalendarNotifier.refresh` already handles a throw the way this
+  /// wanted to be handled — it keeps whatever is on screen and only sets the
+  /// banner — so failing loudly here is what makes the cache do its job.
+  ///
+  /// An **empty but successful** read is not a failure and never was: a
+  /// household that has connected nothing has no calendars, and that emptiness
+  /// is real and belongs in the cache.
+  Future<({
+    List<Map<String, dynamic>> calendars,
+    List<Map<String, dynamic>> events,
+    List<Map<String, dynamic>> homework,
+  })> _external() async {
+    final res = await _db.functions.invoke('calendar-events', body: const {});
+    final data = res.data;
+    if (data is! Map) throw const CalendarReadException();
+    return (
+      calendars: _rows(data['calendars']),
+      events: _rows(data['events']),
+      // Absent until the function that sends it is deployed, and absent for
+      // ever in a household with no school account. Neither is an error.
+      homework: _rows(data['homework']),
+    );
   }
 
   Future<List<Map<String, dynamic>>> _profiles() async {
@@ -153,6 +212,7 @@ class CalendarRepository {
     List<Map<String, dynamic>> calendarRows,
     List<Map<String, dynamic>> eventRows,
     Map<String?, ({String name, String initials, int tone})> names, {
+    List<Map<String, dynamic>> homeworkRows = const [],
     bool fromCache = false,
   }) {
     final calendars = [for (final row in calendarRows) CalendarSource.fromMap(row)];
@@ -192,7 +252,24 @@ class CalendarRepository {
       });
     }
 
-    return CalendarSnapshot(calendars: calendars, eventsByDay: eventsByDay, fromCache: fromCache);
+    // Homework, in the order Board reads it: soonest first, and a homework the
+    // pupil has already ticked off in Untis sinks below one that is still open
+    // on the same day.
+    final homework = <Homework>[
+      for (final row in homeworkRows)
+        if (byId.containsKey(row['calendar_id'] as String?)) ?Homework.fromMap(row),
+    ]..sort((a, b) {
+      if (a.done != b.done) return a.done ? 1 : -1;
+      final byDue = a.dueOn.compareTo(b.dueOn);
+      return byDue != 0 ? byDue : a.label.compareTo(b.label);
+    });
+
+    return CalendarSnapshot(
+      calendars: calendars,
+      eventsByDay: eventsByDay,
+      homework: homework,
+      fromCache: fromCache,
+    );
   }
 
   // -------------------------------------------------------------------------
@@ -217,17 +294,39 @@ class CalendarRepository {
   /// costs the user a refresh; a write that fails silently loses what they
   /// typed, and lets them close the sheet believing a doctor's appointment is in
   /// the family calendar when it is nowhere.
+  /// [scope] says which occurrences of a repeating appointment the change
+  /// reaches, and is meaningless — but harmless — for a one-off. [seriesUid] and
+  /// [occurrence] are what make each of the two answers addressable: Google and
+  /// Graph want the series' own id for "alle Termine", and a CalDAV server wants
+  /// the occurrence's original start, because there the series and the
+  /// occurrence share a UID and nothing else tells them apart.
   Future<String> writeExternal({
     required String action,
     required String calendarId,
     String? uid,
     EventDraft? draft,
+    EventScope scope = EventScope.single,
+    String seriesUid = '',
+    CalendarEvent? occurrence,
   }) async {
     try {
       final res = await _db.functions.invoke('calendar-write', body: {
         'action': action,
         'calendar_id': calendarId,
         if (uid != null && uid.isNotEmpty) 'uid': uid,
+        if (seriesUid.isNotEmpty) ...{
+          'series_uid': seriesUid,
+          'scope': scope == EventScope.series ? 'series' : 'single',
+          // The occurrence as it stands *now*, before the draft's edits — the
+          // RECURRENCE-ID/EXDATE a CalDAV server needs in order to find the one
+          // Monday being changed. Sent alongside the draft rather than derived
+          // from it, because moving an appointment changes the draft's start
+          // and this has to keep pointing at where it used to be.
+          if (occurrence != null) ...{
+            'occurrence_date': _date(occurrence.startsAt),
+            'occurrence_time': occurrence.allDay ? null : _clock(occurrence.startsAt),
+          },
+        },
         if (draft != null) ...draft.toWire(),
       });
       final data = res.data;
@@ -245,6 +344,12 @@ class CalendarRepository {
       throw CalendarWriteException(L.s.noServerConnection);
     }
   }
+
+  static String _date(DateTime d) =>
+      '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+  static String _clock(DateTime d) =>
+      '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
 }
 
 /// Carries the Edge Function's own German message up to the notifier, so the
@@ -256,4 +361,17 @@ class CalendarWriteException implements Exception {
 
   @override
   String toString() => message;
+}
+
+/// `calendar-events` answered with something that is not a calendar.
+///
+/// Carries no message on purpose: nothing here is the user's to act on, and
+/// `CalendarNotifier.refresh` already has the one string this turns into — after
+/// it has decided whether to show a banner at all, which depends on whether
+/// there is a cached calendar underneath it rather than on what went wrong.
+class CalendarReadException implements Exception {
+  const CalendarReadException();
+
+  @override
+  String toString() => 'CalendarReadException';
 }

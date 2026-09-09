@@ -23,6 +23,15 @@ import {
 } from "./calendar.ts";
 import { collections, readEvents } from "./caldav.ts";
 import { feedsOf, readFeedEvents } from "./ics_feed.ts";
+import {
+  login as untisLogin,
+  normaliseConfig as normaliseUntis,
+  readHomework as untisHomework,
+  readTimetable,
+  UNTIS_TIMETABLE,
+  type UntisConfig,
+  type UntisHomework,
+} from "./untis.ts";
 import { fetchWithTimeout } from "./net.ts";
 
 /// Signals "the user has to do something" as opposed to "this failed, try
@@ -49,6 +58,27 @@ export interface Connection {
 
   is_read_only: boolean;
   created_by: string | null;
+
+  /// Whose day the calendars from this account belong to — the default a new
+  /// `calendars` row starts with. **Not a visibility field:** everyone in the
+  /// household sees every calendar regardless. See the migration.
+  ///
+  /// `owner_label` covers the person who has no account to be a member of, which
+  /// for a school connection is most children. Both null means the household.
+  ///
+  /// Optional for the same reason as `calendar_names`: only `calendar-events`
+  /// reads them, because it is the only function that writes a `calendars` row.
+  owner_member_id?: string | null;
+  owner_label?: string | null;
+
+  /// external_id -> whose that one calendar is, overriding the two fields
+  /// above for it. `"family"`, `"member:<user_id>"` or `"person:<Name>"`, with
+  /// `"*"` standing for every calendar on the account.
+  ///
+  /// The household's own choice, made per calendar in Settings, because one
+  /// Apple ID routinely carries the family's calendar and one parent's work
+  /// calendar — see the migration.
+  calendar_owners?: Record<string, string> | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -69,7 +99,10 @@ export async function listRemoteCalendars(
       return await listOutlook(token);
     }
     case "webuntis":
-      // WebUntis exists only as pasted links — there is no account to enumerate.
+      // Two routes, told apart by `auth_type` exactly as IServ's are. 'secret'
+      // is the app-secret login, where a pupil has one timetable and there is
+      // nothing to enumerate; 'public' is the pasted-link kind.
+      if (connection.auth_type === "secret") return untisTimetable(connection);
       return linkedFeeds(connection);
     case "icloud":
     case "iserv": {
@@ -88,6 +121,21 @@ export async function listRemoteCalendars(
       }));
     }
   }
+}
+
+/// The one calendar a WebUntis login offers.
+///
+/// A constant rather than a listing, because a pupil has exactly one timetable:
+/// asking Untis what calendars this account has would be a round trip whose
+/// answer we already know. The household's own name for it wins where it has
+/// given one — `calendar-untis` writes that at connect time, so it is set from
+/// the first sync onwards.
+function untisTimetable(connection: Connection): RemoteCalendar[] {
+  return [{
+    externalId: UNTIS_TIMETABLE,
+    name: connection.calendar_names?.[UNTIS_TIMETABLE]?.trim() || "Stundenplan",
+    readOnly: true,
+  }];
 }
 
 /// The pasted feeds on a link connection, as sub-calendars.
@@ -122,6 +170,67 @@ export async function caldavCredentials(db: SupabaseClient, connection: Connecti
   if (!password || !home) throw new ReconnectRequired("no usable CalDAV credentials");
 
   return { user: connection.external_account, password, home };
+}
+
+/// The four fields a WebUntis read needs, from `config` plus the sealed secret.
+///
+/// A key that will not unseal — written under a rotated CALENDAR_SECRET_KEY, or
+/// simply absent — is a ReconnectRequired rather than an error, because the fix
+/// is the user showing us the QR code again and that is precisely what the
+/// reconnect_required status asks for.
+export async function untisCredentials(
+  db: SupabaseClient,
+  connection: Connection,
+): Promise<UntisConfig> {
+  const { data } = await db
+    .from("calendar_connection_secrets")
+    .select("app_secret")
+    .eq("connection_id", connection.id)
+    .maybeSingle();
+
+  const secret = await open(data?.app_secret);
+  const config = secret
+    ? normaliseUntis({
+      server: connection.config.server as string | undefined,
+      school: connection.config.school as string | undefined,
+      // The login is the second half of `external_account` — school/user — and
+      // is read from there rather than duplicated into config.
+      user: connection.external_account.split("/").slice(1).join("/"),
+      secret,
+    })
+    : null;
+
+  if (!config) throw new ReconnectRequired("no usable WebUntis credentials");
+  return config;
+}
+
+/// The homework a connection carries, or nothing at all.
+///
+/// Only WebUntis has any, and only over the app secret — a pasted ICS link is
+/// flat text with no such thing in it. Everything else answers `[]` so the
+/// caller can ask every connection without knowing which is which.
+///
+/// **Never allowed to fail a refresh.** Homework is an extra on top of the
+/// timetable, and a school that has the module switched off, or switches it off
+/// mid-term, must not cost the family their lessons. The error is logged and
+/// the calendars come back regardless.
+export async function readConnectionHomework(
+  db: SupabaseClient,
+  connection: Connection,
+  window: { from: Date; to: Date },
+): Promise<UntisHomework[]> {
+  if (connection.provider !== "webuntis" || connection.auth_type !== "secret") return [];
+
+  try {
+    // A second login rather than the one `readRemoteEvents` just made: sessions
+    // are not passed between provider calls, and a WebUntis login is one round
+    // trip against a fortnight of timetable that has to be fetched anyway.
+    const config = await untisCredentials(db, connection);
+    return await untisHomework(config, await untisLogin(config), window);
+  } catch (e) {
+    console.error(`homework failed for ${connection.id}: ${(e as Error).message}`);
+    return [];
+  }
 }
 
 async function listGoogle(token: string): Promise<RemoteCalendar[]> {
@@ -207,8 +316,18 @@ export async function readRemoteEvents(
       return await readGoogle(await accessToken(db, connection), calendar.externalId, window);
     case "outlook":
       return await readOutlook(await accessToken(db, connection), calendar.externalId, window);
-    case "webuntis":
-      return await readFeedEvents(calendar.externalId, window);
+    case "webuntis": {
+      if (connection.auth_type !== "secret") {
+        return await readFeedEvents(calendar.externalId, window);
+      }
+      // One login per refresh. Untis sessions expire after ~10 minutes idle and
+      // there is nothing to keep between reads, so the TOTP is computed fresh
+      // rather than a cookie stored — which also means a revoked key stops
+      // working at the next refresh instead of whenever a cached session ran
+      // out.
+      const config = await untisCredentials(db, connection);
+      return await readTimetable(config, await untisLogin(config), window);
+    }
     case "icloud":
     case "iserv": {
       // Same fork as the listing above: a link connection's externalId *is* the
@@ -221,6 +340,7 @@ export async function readRemoteEvents(
       const parsed = await readEvents(calendar.externalId, user, password, window.from, window.to);
       return parsed.map((p) => ({
         uid: p.uid,
+        seriesUid: p.seriesUid,
         title: p.title,
         notes: p.notes,
         location: p.location,
@@ -276,6 +396,9 @@ async function readGoogle(
         // The per-instance id, not iCalUID: iCalUID is shared by every
         // occurrence of a series and would collapse them all into one row.
         uid: item.id,
+        // Present on an instance of a recurring event and nothing else, which
+        // makes it both the series' address and the flag that there is one.
+        seriesUid: typeof item.recurringEventId === "string" ? item.recurringEventId : null,
         title: (item.summary ?? "").trim() || "Ohne Titel",
         notes: item.description ?? null,
         location: item.location ?? null,
@@ -301,7 +424,8 @@ async function readOutlook(
     `https://graph.microsoft.com/v1.0/me/calendars/${encodeURIComponent(calendarId)}/calendarView` +
     `?startDateTime=${encodeURIComponent(window.from.toISOString())}` +
     `&endDateTime=${encodeURIComponent(window.to.toISOString())}` +
-    "&$top=500&$select=id,subject,bodyPreview,location,start,end,isAllDay,isCancelled";
+    "&$top=500&$select=id,subject,bodyPreview,location,start,end,isAllDay,isCancelled" +
+    ",type,seriesMasterId";
   let guard = 0;
 
   const toIso = (value: string | null | undefined): string | null =>
@@ -329,6 +453,8 @@ async function readOutlook(
       end?: { dateTime?: string };
       isAllDay?: boolean;
       isCancelled?: boolean;
+      type?: string;
+      seriesMasterId?: string;
     }> = await res.json();
     for (const item of body.value ?? []) {
       if (item.isCancelled) continue;
@@ -337,6 +463,9 @@ async function readOutlook(
 
       out.push({
         uid: item.id,
+        // Graph fills this in on an `occurrence` and an `exception`; a
+        // `singleInstance` has neither the field nor a series behind it.
+        seriesUid: typeof item.seriesMasterId === "string" ? item.seriesMasterId : null,
         title: (item.subject ?? "").trim() || "Ohne Titel",
         notes: item.bodyPreview ?? null,
         location: item.location?.displayName ?? null,

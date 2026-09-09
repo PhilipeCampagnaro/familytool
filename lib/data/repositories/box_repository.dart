@@ -39,9 +39,9 @@ class BoxRepository {
   final SupabaseClient _db;
 
   static const _boxColumns =
-      'id, family_id, name, place, tone, icon_asset, owner_id, visibility, position, created_at, updated_at';
+      'id, family_id, name, place, tone, icon_asset, photo_path, owner_id, visibility, position, created_at, updated_at';
   static const _itemColumns =
-      'id, box_id, name, size, qty, note, icon_asset, position, created_by, created_at, updated_at';
+      'id, box_id, name, size, qty, note, icon_asset, photo_path, position, created_by, created_at, updated_at';
 
   String get _uid {
     final id = AporahSupabase.userId;
@@ -175,6 +175,17 @@ class BoxRepository {
     return saved.copyWith(sharedWith: members.toList());
   }
 
+  /// Points a box at a picture, or takes it away with a null.
+  ///
+  /// Its own statement rather than a field on [updateBox]: a photo is picked
+  /// and uploaded when the user taps it, not when the sheet is saved, and the
+  /// upload has to have landed before the column may name it. Bundling the two
+  /// would mean a `photo_path` pointing at an object that isn't there yet.
+  Future<StorageBox> setPhoto(String boxId, String? path) async {
+    final row = await _db.from('boxes').update({'photo_path': path}).eq('id', boxId).select(_boxColumns).single();
+    return StorageBox.fromMap(row);
+  }
+
   Future<void> deleteBox(String id) async {
     await _db.from('boxes').delete().eq('id', id);
   }
@@ -239,6 +250,12 @@ class BoxRepository {
         .eq('id', itemId)
         .select(_itemColumns)
         .single();
+    return BoxItem.fromMap(row);
+  }
+
+  /// The item side of [setPhoto], and the same reasoning.
+  Future<BoxItem> setItemPhoto(String itemId, String? path) async {
+    final row = await _db.from('box_items').update({'photo_path': path}).eq('id', itemId).select(_itemColumns).single();
     return BoxItem.fromMap(row);
   }
 

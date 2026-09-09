@@ -34,18 +34,28 @@ class CalendarSource {
   /// [binColorFor]. A feed is otherwise an ordinary read-only calendar.
   final String feedKind;
 
-  /// The connected account this calendar came in on, and what the household
-  /// calls it — `calendar-events` sends both.
+  /// **Whose day this calendar belongs to** — the chip it appears under, and
+  /// what that chip is called. `calendar-events` resolves both.
   ///
-  /// Kalender's filter chips group on this: an account offering several
-  /// calendars is one chip that opens into them, not one chip each. A child
-  /// with an IServ Aufgaben, Klausurplan and Klassenkalender reads as
-  /// "Alice · IServ", which is also how the family talks about it.
+  /// The filter row is people, not accounts. That is what makes it usable in a
+  /// household with four children at school: a dozen calendars is a dozen chips
+  /// nobody can read, and the same twelve as six faces is a row you use every
+  /// morning. A parent's work and private calendars are one chip; so are a
+  /// child's Stundenplan and Klausurplan.
   ///
-  /// Empty for a public feed (Ferien, Abfall), which belongs to no account and
-  /// stands alone in the row.
+  /// `'member:<uuid>'`, `'person:<name>'` for somebody with no account, or
+  /// `'family'` for the shared calendars and the public feeds.
+  ///
+  /// **Not visibility.** Every calendar in Aporah belongs to the whole
+  /// household and always has; this only says whose day it shows up on, the way
+  /// `BoardTask.assigneeId` says who does a task without saying who may see it.
   final String groupId;
   final String groupName;
+
+  /// The member behind a `'member:'` group, so a chip can wear their face from
+  /// the roster the app already holds. Empty for a person without an account
+  /// and for the family, both of which fall back to initials on a tone.
+  final String ownerMemberId;
 
   const CalendarSource({
     required this.id,
@@ -55,6 +65,7 @@ class CalendarSource {
     this.feedKind = '',
     this.groupId = '',
     this.groupName = '',
+    this.ownerMemberId = '',
   });
 
   /// Whether the household can add to, change or delete events in this calendar
@@ -73,6 +84,7 @@ class CalendarSource {
     feedKind: map['feed_kind'] as String? ?? '',
     groupId: map['group_id'] as String? ?? '',
     groupName: map['group_name'] as String? ?? '',
+    ownerMemberId: map['owner_member_id'] as String? ?? '',
   );
 }
 
@@ -94,6 +106,17 @@ class CalendarGroup {
   final List<CalendarSource> calendars;
 
   const CalendarGroup({required this.id, required this.name, required this.calendars});
+
+  /// The member whose face belongs on this chip, or empty for the family chip
+  /// and for a child with no account. Taken from the first calendar because
+  /// every calendar in a group shares an owner by construction — that is what
+  /// makes it a group.
+  String get ownerMemberId => calendars.first.ownerMemberId;
+
+  /// True for the household's own chip — the shared calendars, Ferien and
+  /// Abfall. It wears the family picture rather than a member's, and it is the
+  /// one group whose calendars also show up under everybody else.
+  bool get isFamily => id == 'family';
 
   /// True where the chip opens into a list — an account with more than one
   /// calendar in the loaded window. The chevron and the popup hang off this.
@@ -118,6 +141,26 @@ class CalendarGroup {
       CalendarGroup(id: id, name: calendars.first.name, calendars: calendars);
 }
 
+/// How often an appointment comes round.
+///
+/// A flat list rather than a frequency and an interval side by side, because
+/// the interval only ever has two useful values and "Jeden 2. Montag" is a
+/// thing a person says. [EventDraft.toWire] splits it back into the
+/// `FREQ`/`INTERVAL` pair every provider actually wants.
+///
+/// **Weekly and monthly carry no day of their own.** iCalendar, Google and
+/// Graph all anchor a rule to its start, so "every Monday" is a start on a
+/// Monday plus [weekly] — there is no second control to leave contradicting the
+/// first.
+enum EventRepeat { never, daily, weekly, biweekly, monthly, yearly }
+
+/// Which of a repeating appointment's occurrences a change applies to.
+///
+/// Asked, never guessed. "Football moved to 18:00" and "football is cancelled
+/// this week" are the same gesture on the same row, and picking one silently
+/// is how a family loses a whole term of Mondays.
+enum EventScope { single, series }
+
 /// What the event form produces: one event as the user typed it, before
 /// anything has decided where it will be stored.
 ///
@@ -139,6 +182,19 @@ class EventDraft {
   final DateTime start;
   final DateTime end;
 
+  /// [EventRepeat.never] for the ordinary one-off appointment, which is most of
+  /// them.
+  final EventRepeat repeat;
+
+  /// The last day the series may land on, **inclusive**, or null for a rule
+  /// with no end — which is what every calendar app defaults to and what a
+  /// weekly Sportkurs actually is until somebody stops going.
+  ///
+  /// A date, not an instant: "bis zum 9. November" is a day, and turning it
+  /// into a moment would make the last occurrence depend on the clock time the
+  /// appointment happens to start at.
+  final DateTime? repeatUntil;
+
   const EventDraft({
     required this.calendarId,
     required this.title,
@@ -147,6 +203,8 @@ class EventDraft {
     required this.allDay,
     required this.start,
     required this.end,
+    this.repeat = EventRepeat.never,
+    this.repeatUntil,
   });
 
   EventDraft copyWith({
@@ -157,6 +215,9 @@ class EventDraft {
     bool? allDay,
     DateTime? start,
     DateTime? end,
+    EventRepeat? repeat,
+    DateTime? repeatUntil,
+    bool clearRepeatUntil = false,
   }) => EventDraft(
     calendarId: calendarId ?? this.calendarId,
     title: title ?? this.title,
@@ -165,6 +226,8 @@ class EventDraft {
     allDay: allDay ?? this.allDay,
     start: start ?? this.start,
     end: end ?? this.end,
+    repeat: repeat ?? this.repeat,
+    repeatUntil: clearRepeatUntil ? null : (repeatUntil ?? this.repeatUntil),
   );
 
   /// The shape `calendar-write` reads: a date and a clock time, kept apart so
@@ -179,6 +242,30 @@ class EventDraft {
     'end_time': allDay ? null : _clock(end),
     'location': location,
     'notes': notes,
+    // Absent, not null, when the appointment happens once. `calendar-write`
+    // leaves a provider's existing rule alone when this key is missing, which
+    // is what lets an edit change a series' time without also re-stating how
+    // often it comes round.
+    if (repeat != EventRepeat.never) 'repeat': _repeatWire(),
+  };
+
+  /// The rule, split the way every provider wants it back: a frequency, an
+  /// interval, and where it stops.
+  ///
+  /// [weekday] is `DateTime.monday`..`DateTime.sunday` and rides along for
+  /// Graph alone, which unlike iCalendar and Google will not infer a weekly
+  /// pattern's day from the start it is given.
+  Map<String, dynamic> _repeatWire() => {
+    'freq': switch (repeat) {
+      EventRepeat.daily => 'daily',
+      EventRepeat.weekly || EventRepeat.biweekly => 'weekly',
+      EventRepeat.monthly => 'monthly',
+      EventRepeat.yearly => 'yearly',
+      EventRepeat.never => 'daily', // unreachable; the caller guards
+    },
+    'interval': repeat == EventRepeat.biweekly ? 2 : 1,
+    'until': repeatUntil == null ? null : _date(repeatUntil!),
+    'weekday': start.weekday,
   };
 
   static String _date(DateTime d) =>
@@ -188,6 +275,15 @@ class EventDraft {
       '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
 
   /// Reopens an existing event in the form.
+  ///
+  /// [repeat] is deliberately left at [EventRepeat.never] even for an occurrence
+  /// of a series. What comes back from a provider is an occurrence, not a rule —
+  /// Google hands out expanded instances and a CalDAV REPORT is expanded here —
+  /// so the app knows *that* an appointment repeats ([CalendarEvent.repeats])
+  /// and never how. Saying "Nie" in the form would be a lie the save then acts
+  /// on, which is why the form hides the repeat picker on a series and
+  /// [toWire] omits the key rather than sending a null the provider would read
+  /// as "stop repeating".
   factory EventDraft.of(CalendarEvent e) => EventDraft(
     calendarId: e.calendarId,
     title: e.title,
@@ -208,6 +304,16 @@ class CalendarEvent {
   /// row. This is what `calendar-write` needs in order to change the right event
   /// in Google or on the CalDAV server.
   final String uid;
+
+  /// The provider's id for the **series** this occurrence belongs to, or empty
+  /// for a one-off appointment.
+  ///
+  /// Google's `recurringEventId` and Graph's `seriesMasterId`; for CalDAV, the
+  /// series and the occurrence share a UID, so this is [uid] again. It is what
+  /// makes "Alle Termine" addressable — and its mere presence is how the sheet
+  /// knows to ask the question at all, since [repeats] is the only thing an
+  /// expanded occurrence can tell us about the rule behind it.
+  final String seriesUid;
 
   final String title;
 
@@ -253,6 +359,7 @@ class CalendarEvent {
     required this.source,
     required this.srcColor,
     this.uid = '',
+    this.seriesUid = '',
     this.allDay = false,
     this.body = '',
     this.loc = '',
@@ -309,6 +416,10 @@ class CalendarEvent {
   /// All-day events are compared on the whole span, so a Ferien week reads as
   /// "now" for its entire duration rather than being done at one minute past
   /// midnight on the first day.
+  /// Whether this appointment is one of several — the question the edit and
+  /// delete paths have to ask before they act.
+  bool get repeats => seriesUid.isNotEmpty;
+
   EventPhase phaseAt(DateTime now) {
     if (!now.isBefore(endsAt)) return EventPhase.done;
     if (!now.isBefore(startsAt)) return EventPhase.now;
@@ -373,6 +484,7 @@ class CalendarEvent {
       id: id,
       calendarId: calendarId,
       uid: uid,
+      seriesUid: seriesUid,
       title: title ?? this.title,
       startsAt: startsAt ?? this.startsAt,
       endsAt: endsAt ?? this.endsAt,
@@ -420,6 +532,7 @@ class CalendarEvent {
       // Absent on a PostgREST row by design: our own events have no provider
       // identity, and inventing one would make them look proxied.
       uid: map['uid'] as String? ?? '',
+      seriesUid: map['series_uid'] as String? ?? '',
       title: title.isEmpty ? L.s.untitledEvent : title,
       startsAt: starts,
       endsAt: endsRaw == null ? starts : _readAt(endsRaw, allDay),

@@ -6,6 +6,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../l10n/l10n.dart';
 import '../theme/tokens.dart';
+import 'bottom_nav.dart';
 import 'glass.dart';
 
 /// A liquid-glass pill parked above the bottom nav that comes and goes with the
@@ -19,18 +20,29 @@ import 'glass.dart';
 /// it doesn't read as hiding behind the bar (see `bottom_nav.dart`).
 class FloatingGlassPill extends StatefulWidget {
   final bool visible;
-  final IconData icon;
+
+  /// Null draws the label on its own. That is what "Heute" does: it sits a
+  /// finger's width from the nav bar's calendar icon, and a second calendar
+  /// glyph beside that one reads as a duplicate of it rather than as a
+  /// different offer.
+  final IconData? icon;
   final String label;
   final Color accent;
   final VoidCallback onTap;
 
+  /// Sizes the capsule to the nav bar's row — the height of `CompactNavButton`
+  /// at the other end of it — instead of the smaller shape that parks above
+  /// the bar.
+  final bool onNavRow;
+
   const FloatingGlassPill({
     super.key,
     required this.visible,
-    required this.icon,
+    this.icon,
     required this.label,
     required this.accent,
     required this.onTap,
+    this.onNavRow = false,
   });
 
   @override
@@ -44,45 +56,73 @@ class _FloatingGlassPillState extends State<FloatingGlassPill> {
     if (_pressed != value) setState(() => _pressed = value);
   }
 
+  /// Icon (when there is one), then label. The row shape gets the larger type:
+  /// it is a taller capsule standing beside the nav bar, not a small pill
+  /// floating over the content.
+  Widget _content({required bool rowShape}) {
+    final icon = widget.icon;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (icon != null) ...[
+          Icon(icon, size: rowShape ? 18 : 15, color: widget.accent),
+          const SizedBox(width: 7),
+        ],
+        Text(
+          widget.label,
+          // The row shape keeps [AppText.rowTitle]'s own weight: at 15pt in a
+          // capsule this tall, the semibold the small pill uses reads as
+          // shouting.
+          style: rowShape ? AppText.rowTitle : AppText.buttonSmall.copyWith(fontWeight: FontWeight.w600),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return IgnorePointer(
-      ignoring: !widget.visible,
-      child: AnimatedSlide(
-        duration: const Duration(milliseconds: 220),
-        curve: Curves.easeOutCubic,
-        offset: widget.visible ? Offset.zero : const Offset(0, 0.7),
-        child: AnimatedOpacity(
+    return Semantics(
+      button: true,
+      label: widget.label,
+      child: IgnorePointer(
+        ignoring: !widget.visible,
+        child: AnimatedSlide(
           duration: const Duration(milliseconds: 220),
           curve: Curves.easeOutCubic,
-          opacity: widget.visible ? 1 : 0,
-          child: GestureDetector(
-            onTap: widget.onTap,
-            onTapDown: (_) => _setPressed(true),
-            onTapUp: (_) => _setPressed(false),
-            onTapCancel: () => _setPressed(false),
-            child: AnimatedScale(
-              scale: _pressed ? 0.92 : 1.0,
-              duration: const Duration(milliseconds: 120),
-              curve: Curves.easeOut,
-              child: GlassSurface(
-                borderRadius: BorderRadius.circular(22),
-                // Same reasoning as _CalendarFilterButton: let the real
-                // UIGlassEffect adapt on iOS, tint only the fallback so the
-                // dark label stays legible off-iOS.
-                fallbackTint: AppColors.navPillTint,
-                blurSigma: 20,
-                boxShadow: AppShadows.floatingPill,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(widget.icon, size: 15, color: widget.accent),
-                      const SizedBox(width: 7),
-                      Text(widget.label, style: AppText.buttonSmall.copyWith(fontWeight: FontWeight.w600)),
-                    ],
-                  ),
+          offset: widget.visible ? Offset.zero : const Offset(0, 0.7),
+          child: AnimatedOpacity(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOutCubic,
+            opacity: widget.visible ? 1 : 0,
+            child: GestureDetector(
+              onTap: widget.onTap,
+              onTapDown: (_) => _setPressed(true),
+              onTapUp: (_) => _setPressed(false),
+              onTapCancel: () => _setPressed(false),
+              child: AnimatedScale(
+                scale: _pressed ? 0.92 : 1.0,
+                duration: const Duration(milliseconds: 120),
+                curve: Curves.easeOut,
+                child: GlassSurface(
+                  borderRadius: BorderRadius.circular(widget.onNavRow ? kCompactNavSize / 2 : 22),
+                  // Same reasoning as _CalendarFilterButton: let the real
+                  // UIGlassEffect adapt on iOS, tint only the fallback so the
+                  // dark label stays legible off-iOS.
+                  fallbackTint: AppColors.navPillTint,
+                  blurSigma: 20,
+                  boxShadow: AppShadows.floatingPill,
+                  child: widget.onNavRow
+                      ? SizedBox(
+                          height: kCompactNavSize,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 22),
+                            child: _content(rowShape: true),
+                          ),
+                        )
+                      : Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
+                          child: _content(rowShape: false),
+                        ),
                 ),
               ),
             ),

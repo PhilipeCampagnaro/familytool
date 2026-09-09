@@ -74,6 +74,21 @@ The menu panel (`_FilterMenuSurface`) is deliberately **not** a `GlassSurface` �
 menus are a near-opaque vibrant material, not liquid glass, and a glass panel let the month grid
 read straight through the rows.
 
+## Header actions
+
+The right of `_TitleRow` is a single `GlassIconGroup` (`glass.dart`) holding **two** segments:
+"Kalender verbinden" (a link glyph, pushing `CalendarConnectionsPage`) and "neuer Termin" (the
+plus). One capsule, iOS 26-style, not two glass buttons touching.
+
+- Connecting belongs here rather than only in Einstellungen — it is Kalender's own job, and a
+  household adding the school's ICS link should not walk through three screens for it. It rides
+  *beside* the daily action instead of taking a button of its own, because it is a setup action
+  done a handful of times ever.
+- The connect segment deliberately does **not** use the empty state's `calendarPlus`: beside a
+  bare plus, two plus-bearing glyphs read as two ways to add the same thing.
+- `_TitleRow._actionsSlot` and `_collapsedSideInset` are sized off the group's width. Change the
+  number of segments and both have to move, or the collapsed title stops being centered.
+
 ## Collapsing headers
 
 **Centered title.** In `_TitleRow` (both views) and in `_buildEventDetailHeader`, the title is a
@@ -100,8 +115,9 @@ header does *not* get this — it's a plain `Column` sibling above the grid, so 
 under it.
 
 **The event-detail sheet's header is deliberately not one of these.** It is a plain
-`showAppSheet(header:)` row — the event's title small (`AppText.sheetTitle`) and centered, the
-close button beside it — and the source/owner chips live in the body, over the first card. It was
+`showAppSheet(header:)` row — the word "Termin" small (`AppText.sheetTitle`) and centered, the
+close button on the left and the accent pencil on the right, the same sides `_defaultHeader` puts
+its close and save on — and the source/owner chips live in the body, over the first card. It was
 a collapsing header with a 23pt title that shrank as the body scrolled, and that was wrong twice
 over: a heading that size belongs to a screen, so over the first card of a sheet it read as a
 second screen title; and its `FrostedHeaderBackground`, i.e. a `BackdropFilter`, under a native
@@ -223,8 +239,8 @@ map of it**, and the "Route" button. Three things about it are load-bearing:
 
 "Route" (and a tap on the row) opens the standard `showAnchoredMenu` with two items, **Waze and
 Google Maps** — both anchored to the **address row**, never to the "Route" pill. From the pill the
-menu drops straight into the sheet's action row, and "Bearbeiten" and the trash button are native
-glass platform views that composite over anything Flutter paints; from the row it opens over the
+menu drops towards the foot of the sheet, and a Flutter-painted menu inside a sheet carrying
+native glass platform views composites into a layer iOS can drop; from the row it opens over the
 map, which is ours. `openNavigation` (`../lib/services/external_links.dart`) tries the app's URL scheme
 first and falls back to its website, which is why this needs no `LSApplicationQueriesSchemes` entry:
 `UIApplication.open` reports whether anything claimed the scheme. The two labels are brand names and
@@ -246,6 +262,35 @@ The **Erinnerung card is gone entirely**, on the user's call. `CalendarEvent.rem
 real — it comes from `reminder_minutes` on the row — but nothing in the app writes that column yet
 (the editor is title-only), so in practice every event showed a bell over a blank line. Bring the
 card back when something sets a reminder, and give it the same empty rule as the rest.
+
+## Lists and tasks hung off an appointment
+
+The sheet's "Liste zum Termin erstellen" / "Aufgabe zum Termin erstellen" rows now file the new
+container against the event (`EventLink`, see [backend.md](backend.md)), and a `_LinkedCard` above
+them shows what is already there. Before, the sheet offered to create the list it had just been
+used to create, and the only place that knew about it was the Listen tab.
+
+Three surfaces, one fact:
+
+- **The agenda card** grows a chip per kind — the clipboard for lists, the panel for tasks — in the
+  same row and the same shape as the homework badge, and for the same reason: a marker, not a
+  button. Two chips rather than a summed count, because "2" over a clipboard means two lists.
+- **The detail sheet** lists them by name, with each list's own symbol. Tapping one closes the
+  sheet and leaves Kalender. Rendering the list's contents here instead would be a second, smaller
+  Listen inside a calendar sheet with none of its gestures.
+- **Board and Listen** carry the return chip (`EventLinkChip`) on the row's **subtitle line**,
+  ahead of the count or the date already there — it says what the container is *for*, which is read
+  before how it is going. It is its own tap target
+  inside a row that already has one — unlike the homework badge, it leads somewhere the row's own
+  tap never does. The cost is that a tap on it while the row is swiped open navigates instead of
+  closing the swipe. **Its label is never stored**: the appointment's name is read off the live
+  event through `eventForLink`, so a renamed appointment renames every badge, and a link pointing
+  outside the loaded fortnight shows the date instead.
+
+Crossing tabs goes through `tabJumpProvider`: the shell switches tab, the destination screen opens
+the thing. Arriving at Kalender selects the day, **widens the calendar filter if it would have
+hidden the event**, and opens the sheet — an event outside the loaded fortnight selects the day and
+stops there, which is everything the link knows.
 
 ## The event form's "Ort" field searches, and its calendar is a card
 
@@ -312,18 +357,72 @@ Note the split: mock "today" is pinned to **2026-08-13** (`calTodayY/M/D`) and i
 
 ## Edit / delete
 
-The event-detail sheet's "Bearbeiten" button opens a small title-only edit sheet
-(`_openEditEventSheet`, reuses `showAppSheet`) → `updateOpenEventTitle`. The trash button shows a
-confirm dialog (`_confirmDeleteEvent`) → `deleteOpenEvent`. Both only support editing/deleting
-**title**, matching the "Neuer Termin" form's current scope — that form's location / time /
-reminder / notes fields are still static placeholders, not wired to state. If you wire those up
-for creation, extend edit to match at the same time so the two don't drift.
+**The detail sheet reads, the edit sheet writes, and each has its own buttons.** The detail sheet
+ends at its last card: no action row, no pill. Its header carries the close on the left and an
+accent-tinted pencil (`GlassConfirmButton`) on the right, and that pencil is the only way from
+reading an appointment to changing one. It is absent when `CalendarSource.editable` is false —
+Ferien, Abfall and read-only provider calendars are somebody else's to change, so the header is
+then just a close button and a label.
+
+"Löschen" lives at the **foot of the edit sheet** (`OutlinedSheetAction`, the same widget and the
+same place as the task sheet's "Aufgabe löschen"), not beside the pencil. One destructive control,
+one sheet behind the deliberate act of opening the editor, and the sheet people open dozens of
+times a week to read a time off has none.
+
+`_confirmDeleteEvent` puts up the confirm dialog and takes an `onDeleted` callback that fires when
+the removal *starts*, not when it lands — a sheet that waited for the provider would hang over a
+row the calendar has already dropped. The edit sheet passes `Navigator.pop(true)`, and
+`_openEditEventSheet` answers `true`, which is how the detail sheet underneath knows to close too
+rather than sit there describing an event that is gone. Swiping an agenda card straight into the
+edit sheet ignores that answer, since there is nothing behind it; the swipe's own trash action
+passes no callback at all.
+
+One form serves create and edit (`_EventFormBody`), and `event` is null only for a new one — which
+is exactly what hides the delete row before the first save.
+
+## Recurrence
+
+**The form sets a rule; nothing ever reads one back.** Every provider hands Aporah *expanded
+occurrences* — Google with `singleEvents=true`, Graph's `calendarView` by construction, CalDAV
+through `parseIcs` — so the RRULE behind them never reaches the app. That single fact shapes the
+whole feature:
+
+- `EventDraft.repeat` (`EventRepeat`: never / daily / weekly / biweekly / monthly / yearly) plus
+  `repeatUntil` are set in the repeat card, and go out under a `repeat` key on the wire.
+  **`toWire` omits the key rather than sending a null**, because on an update a null would read as
+  "stop repeating" and a missing key reads as "leave the rule alone" — which is the only thing the
+  app is in a position to say.
+- The rule carries **no day of its own**. iCalendar, Google and Graph all anchor a rule to its
+  start, so "jeden Montag" is a Monday start plus `weekly`; there is no second control to leave
+  contradicting the first, and the label is regenerated from `_draft.start` on every rebuild.
+- Editing an occurrence of an existing series shows **no repeat picker at all** — there is nothing
+  truthful to put in it. `CalendarEvent.seriesUid` (`repeats`) is all that survives the expansion,
+  and the card asks the one answerable question instead: `EventScope.single` or
+  `EventScope.series`. Changing how often something comes round means doing it in the calendar the
+  appointment lives in.
+- Deleting a repeating appointment asks the same question, as two destructive actions in
+  `_confirmDeleteEvent` rather than one. **"Ganze Serie" is offered no undo**: `restoreEvent` writes
+  one occurrence back out as a fresh appointment, which after a series delete would put a single
+  Monday where a term of them used to be and call it restored.
+- **A series cannot move to another calendar** and `saveEvent` says so. A move is a create on the
+  far side and a delete on this one, and the create has no rule to carry — so "ganze Serie" plus a
+  new calendar could only produce one appointment over there and an entire term deleted over here.
+  Moving a single occurrence still works.
+
+How the three providers take it, and why one of them needed surgery, is the recurrence part of
+[backend.md](backend.md).
 
 ## "Heute" jump button (`_JumpToTodayButton`)
 
-A small floating liquid-glass pill centered above the bottom nav (`bottom: 106` = the nav's
-`bottom: 22` + 70px height + a 14px gap), shown only when mock today (`calTodayY/M/D`) isn't on
-screen. Fades/slides via `AnimatedOpacity`/`AnimatedSlide`, wrapped in `IgnorePointer` while
+A liquid-glass capsule at the **right end of the nav bar's row**, the same height as the compacted
+nav button at the left end, shown only when today isn't on screen. **The word only, no icon** —
+it stands a finger's width from the bar's calendar icon, so a calendar glyph on it reads as a
+duplicate of that icon rather than as a different offer. `_JumpToTodaySlot` places it
+and is the only thing that moves: while the bar is expanded the button would be under it, so it
+rides up to park above the bar (`navContentInset(context, pill: 106, gap: 36)`) and drops back
+onto the bar's centre line (`navRowBottom`) as the bar collapses — on `kNavSwapDuration`, the
+same clock the bar collapses on, so the two read as one movement. The horizontal position never
+changes. Fades/slides via `AnimatedOpacity`/`AnimatedSlide`, wrapped in `IgnorePointer` while
 hidden. Condition differs per view:
 
 - **Week view**: purely derived from `state.selected` each build — visible whenever the selected

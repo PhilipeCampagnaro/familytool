@@ -28,10 +28,22 @@ task:
   single `IndexedStack` of five always-mounted screens switched by index
   ([lib/main.dart](lib/main.dart)).
 - State: `flutter_riverpod` (`StateNotifier` + `StateNotifierProvider`), one notifier/state pair
-  per screen — `boardProvider`, `boxProvider`, `listProvider`, `calendarProvider`
-  ([lib/state/](lib/state/)). Screens are `ConsumerWidget`s; read with `ref.watch`, mutate via
+  per screen — `boardProvider`, `boxProvider`, `listProvider`, `calendarProvider`, plus
+  `trackerProvider` beside `boardProvider` ([lib/state/](lib/state/)). Screens are
+  `ConsumerWidget`s; read with `ref.watch`, mutate via
   `ref.read(xProvider.notifier).someMethod()`. Use this pattern for anything new rather than
   introducing another state-management approach.
+- **The Board holds two different objects, and the create sheet asks which.** A **Aufgabe** is
+  one-off: it has a due date or none, it goes Überfällig when it is missed, and finishing it takes
+  it off the list. A **Tracker** is a rhythm the household keeps — daily, on chosen weekdays, or a
+  number of days per week — and it is **never overdue**: a day it was not kept is a gap in the
+  record, not a row that follows anybody around. `public.trackers` stores the rule and
+  `public.tracker_checks` one row per day it was met; which days were *due* is computed from the
+  rule ([lib/data/tracker_data.dart](lib/data/tracker_data.dart)), never materialised, for the same
+  reason `german_holidays.dart` computes the Feiertage. **The header's day grid counts trackers
+  only** — counting whatever tasks happened to fall on a day is exactly what made a to-do read as a
+  habit. Don't put a tracker in a dated section, don't give one an `is_done` column, and don't make
+  one externally shareable: `shareable_kind` names no value for it on purpose.
 - **Localization: German + English, and every user-facing string goes through
   [lib/l10n/](lib/l10n/).** `AppStrings` declares them, `StringsDe`/`StringsEn` answer them, and
   `L.s.someString` reads the live one. Because `AppStrings` is abstract, a string you add to one
@@ -116,8 +128,13 @@ task:
   ([lib/state/weather_state.dart](lib/state/weather_state.dart)) resolves each appointment's place
   and hour and hands the agenda row and detail sheet a `WeatherReading`; `CalendarEvent` carries no
   weather, because weather is not a property of an event. This is the **one external service the
-  app calls directly** — no key, no personal data on the wire, so an Edge Function in front of it
-  would buy nothing. Location is the event's own `loc` with the household's town from
+  app calls directly** — no key, and nothing that names the household. It is *not* "no personal
+  data on the wire": the request carries a coordinate and an hour, and because it leaves the phone
+  rather than an Edge Function, Open-Meteo also sees the **user's IP**, which with a residential
+  coordinate is personal data under the DSGVO. That is a defensible trade rather than a free one —
+  Open-Meteo is German-hosted, so no third-country transfer, and a proxy would buy privacy at the
+  cost of a hop, a deploy and a place where household addresses could be logged. It belongs in the
+  Datenschutzerklärung either way. Location is the event's own `loc` with the household's town from
   `families.address` as fallback, **never device GPS**, and every failure resolves to "no icon on
   that row" rather than an error. See the weather section of
   [docs/ported-features.md](docs/ported-features.md) before changing any of it.
@@ -130,6 +147,15 @@ task:
   rejected on `lists`/`boxes`/`tasks`/`calendars` (the SELECT policy is a `stable` function that
   cannot see the row being inserted), so `.insert(…).select()` does not work there — every
   container is inserted with a client-side uuid and read back in a second statement.
+- **A picture of the thing beats a symbol of it, and it is stored.** A box and a box item each
+  carry one photograph (`photo_path`) that *replaces* the `icon_asset` symbol wherever it is drawn;
+  a list article keeps its list of attachments. Both live in private Storage buckets keyed on
+  `can_read_box` / `can_read_list` — **never on household membership**, or a guest loses the
+  pictures on the box shared with them. `PhotoRepository`
+  ([lib/data/repositories/photo_repository.dart](lib/data/repositories/photo_repository.dart)) is
+  the only file that knows about Storage, and the object layout (`<container_id>/<uuid>.<ext>`) *is*
+  the access rule — read the picture-buckets section of [docs/backend.md](docs/backend.md) before
+  changing it. Off iOS there is no picker, so there is no photo.
 - **Three independent axes, never one string.** `assignee_id` is *who does it*; `visibility` +
   the `*_shares` rows are *who in the household may see it*
   ([lib/models/visibility.dart](lib/models/visibility.dart), one enum for all three containers);
@@ -139,6 +165,21 @@ task:
   External sharing is its own action ([lib/widgets/share_sheet.dart](lib/widgets/share_sheet.dart)),
   reached from a row menu and **never** from the "Für wen?" picker: mixing outsiders into the
   family avatar row would make a mis-tap leak household data.
+- **A list or a task can point at an event, and the pointer carries no event in it.** Three columns
+  on `lists`/`tasks` — `event_calendar_id`, `event_uid`, `event_starts_at` — read as
+  [lib/models/event_link.dart](lib/models/event_link.dart). The reference is the
+  `(calendar, provider uid)` pair `untis_homework.event_uid` already uses, because **we store no
+  events to hold a foreign key to**; there is no FK for that reason and one more, that the id is a
+  `calendars.id` for a connected calendar and a `public_feeds.id` for Ferien/Abfall. **No
+  `event_title`** — the appointment's name would be a copy of somebody's calendar sitting in our
+  database, so `EventLinkChip` reads it off the live proxied event and prints the date when
+  Kalender isn't holding it. `event_starts_at` is the one thing kept, is a date rather than
+  content, and on a task duplicates the `due_date` already there; without it the tap back has
+  nowhere to go for an appointment outside the loaded fortnight. Set once, on create, from the
+  event sheet's "Liste/Aufgabe zum Termin erstellen" — no edit path, no unlink, and undo re-creates
+  it with the link. Crossing tabs goes through `tabJumpProvider`
+  ([lib/state/nav_state.dart](lib/state/nav_state.dart)): the shell switches tab, the destination
+  screen opens the thing.
 - Don't filter content by `family_id` in Dart. RLS already decides what "my lists" means, and a
   client-side family filter would hide exactly the rows a guest is meant to see. (Edge Functions
   are the exception and must filter — `service_role` bypasses RLS, so there the family filter *is*

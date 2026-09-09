@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import '../models/attachment.dart';
+import '../models/picked_file.dart';
 
 /// Which system picker to put up.
 enum AttachmentSource {
@@ -34,11 +34,20 @@ const _channel = MethodChannel('aporah/media');
 /// megabytes of upload for a circle the size of a thumbnail.
 const avatarMaxDimension = 512;
 
+/// The longest edge a picture of a *thing* is stored at.
+///
+/// Far more generous than [avatarMaxDimension], and for the opposite reason: an
+/// avatar is only ever a circle the size of a thumbnail, whereas the point of
+/// photographing what is in a box is being able to look at it — the serial
+/// number on the drill, which of the three cables it is. Still a cap, because
+/// the alternative is a household uploading twelve megapixels per screwdriver.
+const itemPhotoMaxDimension = 1600;
+
 /// [maxDimension] caps the longest edge of a picked *image*, in pixels; null
 /// keeps it as it was picked. The native side also re-encodes anything Flutter
 /// cannot decode — HEIC above all, which is what an iPhone camera produces by
 /// default — so what comes back here is always drawable.
-Future<ItemAttachment?> pickAttachment(AttachmentSource source, {int? maxDimension}) async {
+Future<PickedFile?> pickAttachment(AttachmentSource source, {int? maxDimension}) async {
   if (kIsWeb || defaultTargetPlatform != TargetPlatform.iOS) return null;
   try {
     final picked = await _channel.invokeMapMethod<String, dynamic>(
@@ -46,7 +55,7 @@ Future<ItemAttachment?> pickAttachment(AttachmentSource source, {int? maxDimensi
       {'maxDimension': maxDimension},
     );
     if (picked == null) return null;
-    return ItemAttachment(
+    return PickedFile(
       path: picked['path'] as String,
       name: picked['name'] as String,
       isImage: picked['isImage'] as bool? ?? false,

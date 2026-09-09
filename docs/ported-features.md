@@ -189,10 +189,20 @@ strip — neither is ported, and the Start tab has no design).
 | Device cache (places forever, forecasts 1 h) | [lib/services/weather_cache.dart](../lib/services/weather_cache.dart) |
 | `weatherProvider`, resolve pass, forecast window | [lib/state/weather_state.dart](../lib/state/weather_state.dart) |
 
-- **Provider: Open-Meteo** — free, no API key, no personal data on the wire (a lat/lon, nothing
-  about who asked), so it is called **straight from the app**. It is the one external service with
-  no Edge Function in front of it, deliberately: a proxy would add a hop, a deploy and a place for
-  household addresses to be logged, in exchange for nothing.
+- **Provider: Open-Meteo** — free, no API key, and nothing in the payload that names the household,
+  so it is called **straight from the app**. It is the one external service with no Edge Function
+  in front of it, deliberately: a proxy would add a hop, a deploy and a place for household
+  addresses to be logged.
+  - **What that costs, stated honestly.** This used to be written as "no personal data on the
+    wire", which is wrong. The request carries a coordinate and an hour, and because it leaves the
+    phone, Open-Meteo also sees the **user's IP address** — which the Edge Function route would
+    have hidden behind Supabase's. An IP plus a residential coordinate plus a timestamp is personal
+    data under the DSGVO, so this is a trade, not a freebie. It stays the right trade: Open-Meteo
+    is German-hosted, so there is no third-country transfer to paper over, the coordinate is an
+    *appointment's* town rather than the device's GPS, and a forecast request reveals far less than
+    the proxy's own logs would have accumulated. But the service belongs in the
+    Datenschutzerklärung, and if the app ever needs to shrink its external footprint, this is the
+    one place where moving *behind* an Edge Function would improve privacy rather than not.
 - Hourly/16-day forecast:
   `GET https://api.open-meteo.com/v1/forecast?latitude=..&longitude=..&hourly=temperature_2m,weather_code,precipitation_probability,is_day&forecast_days=16&timezone=auto`
   Geocoding (place → lat/lon):
@@ -466,10 +476,14 @@ How it is built:
   `calendar_connections.config.feeds` as `[{url, name, host, added_at}]`, with `auth_type =
   'public'` and `is_read_only = true` — a pairing the original migration's check constraint
   (`auth_type <> 'public' or is_read_only`) already required.
-- **`config` is household-readable and holds a bearer token.** That is a considered trade: the
-  only people who can read it are the members already looking at the events it returns, and
-  `authenticated` has no `UPDATE` grant on the column, so a member can read a link and never add
-  one. Adding one stays a `service_role` act, behind a fetch that proved it answers.
+- **`config` holds a bearer token, so the client cannot read it.** It once could: the original
+  `grant select on public.calendar_connections` was table-wide, and the trade was defended as "the
+  only people who can read it are the members already looking at the events it returns". That is
+  the same argument 20260908155018 rejected for `calendars.external_id`, and it is no better here
+  — seeing events is scoped, revocable and ends with the membership, while holding the URL is none
+  of those, and on a school connection one member's read returns *every* sibling's feed. 20260909101500
+  replaced the grant with a column list that omits `config`. Adding a feed was always a
+  `service_role` act behind a fetch that proved it answers; now reading one is too.
 - Each feed URL is a `RemoteCalendar.externalId`, so `selected_calendars`, `calendar_names`, the
   picker, the naming step and the stale sweep in `calendar-events` all work unchanged. Removing a
   feed goes through the function (`action: 'remove'`), because `config` is not client-writable;
@@ -613,7 +627,8 @@ Nothing here is in the repo, and none of it belongs in the repo. All of it goes 
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Google Cloud Console |
 | `MICROSOFT_CLIENT_ID`, `MICROSOFT_CLIENT_SECRET` | Azure Portal |
 | `CALENDAR_OAUTH_REDIRECT` | `https://uzhzrwakrtwbpuuupccu.supabase.co/functions/v1/calendar-connect` |
-| `CALENDAR_SECRET_KEY` | `openssl rand -base64 32` — generate once, never rotate casually |
+| `CALENDAR_SECRET_KEY` | `openssl rand -base64 32` — the active sealing key |
+| `CALENDAR_SECRET_KEY_RETIRED` | optional, comma-separated: previously active keys, still used to *open* |
 | `APORAH_APP_REDIRECT` | the app's deep link, e.g. `aporah://kalender/verbunden` |
 
 1. **Google** — console.cloud.google.com. Create a project, **enable the Google Calendar API**

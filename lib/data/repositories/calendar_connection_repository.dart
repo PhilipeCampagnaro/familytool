@@ -36,7 +36,8 @@ class CalendarConnectionRepository {
 
   static const _columns =
       'id, provider, auth_type, external_account, display_name, status, status_detail, '
-      'last_synced_at, created_by, position, selected_calendars, calendar_names';
+      'last_synced_at, created_by, position, selected_calendars, calendar_names, calendar_owners, '
+      'owner_member_id, owner_label';
 
   // -------------------------------------------------------------------------
   // Read
@@ -195,6 +196,32 @@ class CalendarConnectionRepository {
         .eq('id', connection.id);
   }
 
+  /// Says whose calendar one of an account's calendars is.
+  ///
+  /// A merge into the same kind of map [renameCalendar] writes, for the same
+  /// reason: the other calendars on this account keep their owner, and nobody
+  /// else writes this column. [externalId] is null for a row that stands for the
+  /// whole connection, which is stored under `'*'` and covers every calendar it
+  /// produces.
+  ///
+  /// [owner] is `'family'`, `'member:<user id>'` or `'person:<Name>'` — the chip
+  /// grammar, unchanged, so what is written here is the chip the calendar lands
+  /// under. `calendar-events` is what copies it onto the `calendars` row: the
+  /// app holds no grant on that table at all, and the chips only change on the
+  /// next read for that reason.
+  Future<void> setCalendarOwner({
+    required CalendarConnection connection,
+    required String? externalId,
+    required String owner,
+  }) async {
+    await _db
+        .from('calendar_connections')
+        .update({
+          'calendar_owners': {...connection.calendarOwners, externalId ?? '*': owner},
+        })
+        .eq('id', connection.id);
+  }
+
   // -------------------------------------------------------------------------
   // Connect — a pasted calendar link (IServ, WebUntis)
   // -------------------------------------------------------------------------
@@ -265,6 +292,111 @@ class CalendarConnectionRepository {
       'connection_id': connectionId,
       'external_id': externalId,
     });
+  }
+
+  // -------------------------------------------------------------------------
+  // Connect — WebUntis, by the pupil's app secret
+  // -------------------------------------------------------------------------
+
+  /// The four fields behind a WebUntis connection, however they were obtained.
+  ///
+  /// [qr] is the whole `untis://setschool?...` payload off the QR code and is
+  /// enough on its own; the other four are what the same dialog prints in plain
+  /// text underneath it, for a household that cannot scan. The server takes
+  /// either and normalises both to the same thing, so nothing here has to parse
+  /// a scan result.
+  ///
+  /// The key is a TOTP seed, not a password: it grants read access to that one
+  /// pupil's own timetable and is revoked from the page that made it.
+  Future<({String student, String school, int lessons})> checkUntis({
+    String? qr,
+    String? server,
+    String? school,
+    String? user,
+    String? secret,
+  }) async {
+    final body = await _invoke('calendar-untis', _untisBody(
+      action: 'check',
+      qr: qr,
+      server: server,
+      school: school,
+      user: user,
+      secret: secret,
+    ));
+    return (
+      student: body['student'] as String? ?? '',
+      school: body['school'] as String? ?? '',
+      lessons: (body['lessons'] as num?)?.toInt() ?? 0,
+    );
+  }
+
+  /// Stores the connection, having proved the key works one more time.
+  ///
+  /// One call does the lot — the credential, the single calendar and its name —
+  /// because none of the three is a column a client may write, and because for
+  /// this provider they are one decision: a pupil has exactly one timetable, so
+  /// there is nothing to pick between checking and naming.
+  /// [pupil] is the **child**, not the calendar: "Alice". The function makes
+  /// "Stundenplan Alice" out of it and files the connection under them, which
+  /// is what puts their face in the filter rows rather than a fourth calendar
+  /// name nobody can group by.
+  ///
+  /// [memberId] is that child's user id where they are a member of the
+  /// household. Usually null — members join by e-mail invitation, and most
+  /// schoolchildren have no account — and the connection then carries the name
+  /// alone, which is enough for a chip.
+  Future<({String? connectionId, String? externalId})> connectUntis({
+    required String pupil,
+    String? memberId,
+    String? qr,
+    String? server,
+    String? school,
+    String? user,
+    String? secret,
+  }) async {
+    final body = await _invoke('calendar-untis', _untisBody(
+      action: 'add',
+      qr: qr,
+      server: server,
+      school: school,
+      user: user,
+      secret: secret,
+      pupil: pupil,
+      memberId: memberId,
+    ));
+    return (
+      connectionId: body['connection_id'] as String?,
+      externalId: body['external_id'] as String?,
+    );
+  }
+
+  /// The scanned payload wins where there is one: it carries all four fields
+  /// exactly as Untis wrote them, where the typed ones have been through a
+  /// person reading a screen.
+  Map<String, dynamic> _untisBody({
+    required String action,
+    String? qr,
+    String? server,
+    String? school,
+    String? user,
+    String? secret,
+    String? pupil,
+    String? memberId,
+  }) {
+    final scanned = qr?.trim() ?? '';
+    return {
+      'action': action,
+      if (pupil != null) 'pupil': pupil.trim(),
+      if (memberId != null && memberId.isNotEmpty) 'member_id': memberId,
+      if (scanned.isNotEmpty)
+        'qr': scanned
+      else ...{
+        'server': server?.trim() ?? '',
+        'school': school?.trim() ?? '',
+        'user': user?.trim() ?? '',
+        'secret': secret?.trim() ?? '',
+      },
+    };
   }
 
   // -------------------------------------------------------------------------

@@ -121,9 +121,9 @@ class _WeekViewState extends ConsumerState<_WeekView> {
   // the glass buttons instead of butting straight against them.
   static const _collapsedGap = 14.0;
   static const _collapsedHeaderHeight = 48.0 + _collapsedGap;
-  // 16 top + 40 toggle row + 14 + 40 chip row + 12 + the strip + 4 bottom,
+  // 16 top + 40 toggle row + 14 + 44 chip row + 12 + the strip + 4 bottom,
   // rounded up so a font-metric wobble leaves slack rather than clipping.
-  static const _extraHeaderHeight = 240.0;
+  static const _extraHeaderHeight = 244.0;
   static const _expandedHeaderHeight = _collapsedHeaderHeight + _extraHeaderHeight;
 
   Widget _buildHeader(BuildContext context, double t, CalendarScreenState state, Color accent, String monthLabel) {
@@ -243,10 +243,7 @@ class _WeekViewState extends ConsumerState<_WeekView> {
     final sel = state.selected;
     final selDate = DateTime(sel.y, sel.m, sel.d);
     final events = state.eventsFor(sel.y, sel.m, sel.d);
-    final headingIsToday = _isToday(sel.y, sel.m, sel.d);
-    final headingText = headingIsToday
-        ? L.s.todayWithDate(sel.d, sel.m)
-        : L.s.weekdayWithDate(selDate.weekday % 7, sel.d, sel.m);
+    final headingText = _dayHeading(selDate);
     // The header names whatever month the strip is actually showing, not the
     // selected day's — see _stripAnchor.
     final monthLabel = L.s.monthYear(_stripAnchor.month, _stripAnchor.year);
@@ -336,18 +333,7 @@ class _WeekViewState extends ConsumerState<_WeekView> {
             ),
           ),
         ),
-        Positioned(
-          left: 0,
-          right: 0,
-          bottom: navContentInset(context, pill: 106, gap: 36),
-          child: Center(
-            child: _JumpToTodayButton(
-              visible: !_todayVisible,
-              accent: accent,
-              onTap: _jumpToToday,
-            ),
-          ),
-        ),
+        _JumpToTodaySlot(visible: !_todayVisible, accent: accent, onTap: _jumpToToday),
       ],
     );
   }
@@ -570,6 +556,9 @@ class _EventAgendaRow extends ConsumerWidget {
                     event: event,
                     compact: compact,
                     weather: _weatherFor(ref, event),
+                    homework: _homeworkFor(ref, event),
+                    linkedLists: _linkedListsFor(ref, event).length,
+                    linkedTasks: _linkedTasksFor(ref, event).length,
                   ),
                 ),
               ),
@@ -593,6 +582,11 @@ class _EventCard extends StatelessWidget {
   final CalendarEvent event;
   final bool compact;
 
+  /// The homework due in this lesson, or empty for every other event in the
+  /// app. Resolved by the row like the forecast is — the card renders what it
+  /// is handed and looks nothing up.
+  final List<Homework> homework;
+
   /// Resolved by the row, which has the `ref` — the card stays a pure render of
   /// what it is handed. Null when there is no forecast for this event, which is
   /// the common case for anything in the past.
@@ -601,7 +595,20 @@ class _EventCard extends StatelessWidget {
   /// with it, and it is the one thing here that draws itself.
   final WeatherReading? weather;
 
-  const _EventCard({required this.event, this.compact = false, this.weather});
+  /// How many lists and how many tasks were made from this appointment. Counts
+  /// rather than the rows themselves: the card shows a marker, and the sheet
+  /// behind it is where they can be read and opened.
+  final int linkedLists;
+  final int linkedTasks;
+
+  const _EventCard({
+    required this.event,
+    this.compact = false,
+    this.weather,
+    this.homework = const [],
+    this.linkedLists = 0,
+    this.linkedTasks = 0,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -654,6 +661,65 @@ class _EventCard extends StatelessWidget {
                       ])),
                       const SizedBox(width: 7),
                       _Chip(bg: AppColors.surfaceAlt, child:Text(event.durationLabel, style: AppText.microLabel)),
+                      // Homework due in this lesson. A marker, not a button —
+                      // the card is already one tap target and the detail sheet
+                      // behind it is where the homework can actually be read.
+                      // An icon small enough to fit here is far too small to
+                      // aim at inside a card this size.
+                      if (homework.isNotEmpty) ...[
+                        const SizedBox(width: 7),
+                        _Chip(
+                          bg: tint(AppColors.accent, .86),
+                          child: Row(children: [
+                            Icon(LucideIcons.bookOpenCheck, size: 12, color: AppColors.accent),
+                            const SizedBox(width: 5),
+                            Text(
+                              L.s.homeworkCount(homework.length),
+                              style: AppText.microLabel.copyWith(color: AppColors.accent),
+                            ),
+                          ]),
+                        ),
+                      ],
+                      // The lists and tasks hung off this appointment, in the
+                      // same shape and for the same reason as the homework chip
+                      // beside them: a marker, not a button. It carries the tab's
+                      // own icon so the row says *where* the thing is without a
+                      // word — which is the whole job of a 12pt glyph on a card
+                      // you read at arm's length while getting three people out
+                      // of the door.
+                      //
+                      // Two chips rather than one summed count: "2" over a
+                      // clipboard means two lists, and pooling them would make
+                      // the packing list and the dentist reminder into a number
+                      // that names neither.
+                      if (linkedLists > 0) ...[
+                        const SizedBox(width: 7),
+                        _Chip(
+                          bg: AppColors.surfaceAlt,
+                          child: Row(children: [
+                            Icon(LucideIcons.clipboardCheck, size: 12, color: AppColors.inkSecondary),
+                            const SizedBox(width: 5),
+                            Text(
+                              L.s.linkedListCount(linkedLists),
+                              style: AppText.microLabel.copyWith(color: AppColors.inkSecondary),
+                            ),
+                          ]),
+                        ),
+                      ],
+                      if (linkedTasks > 0) ...[
+                        const SizedBox(width: 7),
+                        _Chip(
+                          bg: AppColors.surfaceAlt,
+                          child: Row(children: [
+                            Icon(LucideIcons.layoutPanelLeft, size: 12, color: AppColors.inkSecondary),
+                            const SizedBox(width: 5),
+                            Text(
+                              L.s.linkedTaskCount(linkedTasks),
+                              style: AppText.microLabel.copyWith(color: AppColors.inkSecondary),
+                            ),
+                          ]),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -682,13 +748,16 @@ class _Chip extends StatelessWidget {
   }
 }
 
-/// Floating liquid-glass "Heute" pill shown above the bottom nav whenever
-/// today's date has scrolled out of view (week view: today isn't in the
-/// displayed week; month view: today's day cell isn't in the viewport).
-/// Tapping it re-selects today and (in month view) scrolls back to it.
+/// Liquid-glass "Heute" button shown whenever today's date has scrolled out of
+/// view (week view: today isn't in the displayed week; month view: today's day
+/// cell isn't in the viewport). Tapping it re-selects today and (in month
+/// view) scrolls back to it. [_JumpToTodaySlot] places it.
 ///
-/// Nothing but a labelled [FloatingGlassPill] — the shape and its come-and-go
-/// are shared with Board's and Listen's "Rückgängig".
+/// A [FloatingGlassPill] in its nav-row shape, and **the word on its own** —
+/// the come-and-go is shared with Board's and Listen's "Rückgängig", but this
+/// one stands a finger's width from the bar's calendar icon, and any calendar
+/// glyph on it reads as a duplicate of that icon rather than as a different
+/// offer. The word is also the shorter of the two, in both languages.
 class _JumpToTodayButton extends StatelessWidget {
   final bool visible;
   final Color accent;
@@ -700,9 +769,9 @@ class _JumpToTodayButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return FloatingGlassPill(
       visible: visible,
-      icon: LucideIcons.calendarCheck,
       label: L.s.today,
       accent: accent,
+      onNavRow: true,
       onTap: onTap,
     );
   }

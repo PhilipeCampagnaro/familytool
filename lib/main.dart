@@ -13,6 +13,7 @@ import 'screens/start_screen.dart';
 import 'services/supabase.dart';
 import 'state/auth_state.dart';
 import 'state/family_state.dart';
+import 'state/nav_state.dart';
 import 'state/settings_state.dart';
 import 'theme/app_theme.dart';
 import 'theme/tokens.dart';
@@ -155,11 +156,16 @@ List<Widget> _buildScreens() => [
   BoxScreen(),
 ];
 
-class AppShell extends StatefulWidget {
+/// Index of Kalender in [navTabs] — the one tab whose scrolling compacts the
+/// nav bar (see [navBarProvider]). Defined beside the other tab indices now
+/// that links between screens need to name one; see [calendarTabIndex].
+const _calendarTab = calendarTabIndex;
+
+class AppShell extends ConsumerStatefulWidget {
   const AppShell({super.key});
 
   @override
-  State<AppShell> createState() => _AppShellState();
+  ConsumerState<AppShell> createState() => _AppShellState();
 }
 
 /// Cross-fades + slides between tabs on every nav-bar tap instead of an
@@ -170,7 +176,7 @@ class AppShell extends StatefulWidget {
 /// only ever paints one child, this "out then in" sequence reads as a single
 /// smooth transition without the cost of a true crossfade (both screens
 /// visible at once), which `IndexedStack` can't do.
-class _AppShellState extends State<AppShell> with SingleTickerProviderStateMixin {
+class _AppShellState extends ConsumerState<AppShell> with SingleTickerProviderStateMixin {
   int _index = _initialTab;
 
   late final AnimationController _controller = AnimationController(
@@ -192,8 +198,14 @@ class _AppShellState extends State<AppShell> with SingleTickerProviderStateMixin
     super.dispose();
   }
 
+  void _expandNav() => ref.read(navBarProvider.notifier).expand();
+
   Future<void> _navigateTo(int i) async {
     if (i == _index) return;
+    // A compacted bar is Kalender's business and must not follow the user out
+    // of it: reset here as well as gating on the index below, so the tab the
+    // bar reappears on is never a surprise.
+    ref.read(navBarProvider.notifier).expand();
     await _controller.reverse();
     if (!mounted) return;
     setState(() => _index = i);
@@ -202,6 +214,13 @@ class _AppShellState extends State<AppShell> with SingleTickerProviderStateMixin
 
   @override
   Widget build(BuildContext context) {
+    // A link tapped on another tab — the calendar icon on a task, the list card
+    // in an event's sheet. The shell owns the tab and does that half; the
+    // payload is left in place for the destination screen's own listener, which
+    // is what clears it. See [TabJump].
+    ref.listen<TabJump?>(tabJumpProvider, (_, jump) {
+      if (jump != null) _navigateTo(jump.tab);
+    });
     // The `Scaffold` resizes its body around the keyboard so text fields stay
     // visible, which would otherwise carry the floating nav bar up with it and
     // park it on top of the keyboard. iOS keeps the tab bar at the bottom and
@@ -209,6 +228,9 @@ class _AppShellState extends State<AppShell> with SingleTickerProviderStateMixin
     // `Offstage` rather than dropping it from the tree, so the native bar isn't
     // torn down and re-measured on every keystroke session.
     final keyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
+    // Only Kalender compacts the bar, and only while it is the tab on screen.
+    final nav = ref.watch(navBarProvider);
+    final compact = nav.compact && _index == _calendarTab;
     return Scaffold(
       body: Stack(
         children: [
@@ -223,30 +245,191 @@ class _AppShellState extends State<AppShell> with SingleTickerProviderStateMixin
           // the native bar's glass has to have the screen behind it to refract,
           // exactly like the pill's. Screens leave room for whichever one is up
           // with `navContentInset`.
-          if (useNativeTabBar)
+          Positioned.fill(
+            child: _NavLayer(
+              index: _index,
+              compact: compact,
+              barHeight: nav.barHeight,
+              keyboardOpen: keyboardOpen,
+              onTap: _navigateTo,
+              onExpand: _expandNav,
+              onBarHeight: ref.read(navBarProvider.notifier).setBarHeight,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The bottom nav and its compacted stand-in, and the animation between them.
+///
+/// They are two separate children sliding and fading past each other, not one
+/// morphing control: the iOS bar is a `UITabBar` platform view, so there is no
+/// way to reshape it into a circle. What sells the collapse instead is that
+/// everything moves along one axis — the bar drifts left as it goes, the
+/// circle arrives from the left, and both sit on the same centre line — so it
+/// reads as the bar drawing itself in rather than one control blinking out and
+/// another blinking on.
+class _NavLayer extends StatefulWidget {
+  final int index;
+  final bool compact;
+
+  /// What UIKit measured the bar at, from [navBarProvider] — see
+  /// [navRowBottom]. Reported back up through [onBarHeight] rather than kept
+  /// here, because Kalender's "Heute" button needs the same number.
+  final double? barHeight;
+  final bool keyboardOpen;
+  final ValueChanged<int> onTap;
+  final VoidCallback onExpand;
+  final ValueChanged<double> onBarHeight;
+
+  const _NavLayer({
+    required this.index,
+    required this.compact,
+    required this.barHeight,
+    required this.keyboardOpen,
+    required this.onTap,
+    required this.onExpand,
+    required this.onBarHeight,
+  });
+
+  @override
+  State<_NavLayer> createState() => _NavLayerState();
+}
+
+class _NavLayerState extends State<_NavLayer> with SingleTickerProviderStateMixin {
+  /// Slower than the tab cross-fade and eased at both ends. This one runs
+  /// under the user's finger while they are reading, so it has to feel like
+  /// the bar getting out of the way; anything quicker reads as a glitch.
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: kNavSwapDuration,
+    value: widget.compact ? 1 : 0,
+  );
+  late final Animation<double> _t = CurvedAnimation(parent: _controller, curve: Curves.easeInOutCubic);
+
+  @override
+  void didUpdateWidget(_NavLayer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.compact != oldWidget.compact) {
+      widget.compact ? _controller.forward() : _controller.reverse();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final native = useNativeTabBar;
+    final barBottom = native ? nativeTabBarBottomInset(context) : 22.0;
+
+    return Offstage(
+      offstage: widget.keyboardOpen,
+      // A bare `Stack` over the whole screen takes no hits of its own, so the
+      // content underneath stays tappable everywhere the two shapes aren't.
+      child: Stack(
+        children: [
+          if (native)
             Positioned(
               left: 0,
               right: 0,
-              bottom: nativeTabBarBottomInset(context),
+              bottom: barBottom,
               // UIKit decides how wide the bar is (a capsule on iOS 26,
               // narrower than the screen), so it's centered rather than
               // stretched.
-              child: Offstage(
-                offstage: keyboardOpen,
-                child: Center(child: NativeTabBar(index: _index, onTap: _navigateTo)),
+              child: _NavShape(
+                t: _t,
+                compactShape: false,
+                child: Center(
+                  child: NativeTabBar(index: widget.index, onTap: widget.onTap, onHeight: widget.onBarHeight),
+                ),
               ),
             )
           else
             Positioned(
               left: 14,
               right: 14,
-              bottom: 22,
-              child: Offstage(
-                offstage: keyboardOpen,
-                child: AppBottomNav(index: _index, onTap: _navigateTo),
+              bottom: barBottom,
+              child: _NavShape(
+                t: _t,
+                compactShape: false,
+                child: AppBottomNav(index: widget.index, onTap: widget.onTap),
               ),
             ),
+          Positioned(
+            left: native ? AppSpacing.screenPad : 14,
+            // The circle hangs off the bar's own centre line, so the collapse
+            // stays strictly horizontal.
+            bottom: navRowBottom(context, barHeight: widget.barHeight),
+            child: _NavShape(
+              t: _t,
+              compactShape: true,
+              child: CompactNavButton(icon: navTabs[widget.index].compactIcon, onTap: widget.onExpand),
+            ),
+          ),
         ],
+      ),
+    );
+  }
+}
+
+/// One of the two nav shapes, faded and drifted by the swap animation (0 = the
+/// full bar, 1 = the compacted circle).
+///
+/// The two fades cross with only a sliver of overlap: enough that there is
+/// never a frame with neither shape on screen, little enough that two glass
+/// surfaces are never both at a readable opacity — glass over glass at half
+/// opacity is muddy, and near the left edge is exactly where that would show.
+///
+/// Going offstage at zero opacity is load-bearing rather than an optimisation.
+/// Both shapes are iOS platform views — the `UITabBar` itself, and the real
+/// `UIGlassEffect` behind [CompactNavButton] — and a platform view left at zero
+/// opacity is still a UIKit view composited into the scene, sitting over both
+/// the pixels and the touches behind it. `Offstage` and not removal, so the
+/// native bar keeps its measured geometry and its method channel across a swap
+/// instead of being torn down and re-measured.
+class _NavShape extends AnimatedWidget {
+  final bool compactShape;
+  final Widget child;
+
+  const _NavShape({required Animation<double> t, required this.compactShape, required this.child}) : super(listenable: t);
+
+  double get _progress => (listenable as Animation<double>).value;
+
+  /// How far each shape travels along the one axis the collapse moves on.
+  /// Small on purpose: the bar only has to *start* leaving for the eye to read
+  /// direction, and a big throw would put it under the circle.
+  static const _barDrift = 24.0;
+  static const _buttonDrift = 16.0;
+
+  /// Fraction of the swap each shape's fade takes. Anything over 0.5 is the
+  /// overlap between them.
+  static const _crossover = 0.575;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = _progress;
+    final opacity = compactShape
+        ? ((p - (1 - _crossover)) / _crossover).clamp(0.0, 1.0)
+        : ((_crossover - p) / _crossover).clamp(0.0, 1.0);
+    // Both drift left-to-right along the same line: the bar leaves to the
+    // left, the circle comes in from the left behind it.
+    final dx = compactShape ? -_buttonDrift * (1 - p) : -_barDrift * p;
+    return Offstage(
+      offstage: opacity == 0,
+      // Nothing is tappable mid-swap, so a tap that lands as the shapes cross
+      // can't hit the one that is on its way out.
+      child: IgnorePointer(
+        ignoring: opacity < 1,
+        child: Transform.translate(
+          offset: Offset(dx, 0),
+          child: Opacity(opacity: opacity, child: child),
+        ),
       ),
     );
   }

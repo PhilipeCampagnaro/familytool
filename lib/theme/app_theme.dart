@@ -33,5 +33,15 @@ ThemeData buildAppTheme(AppPalette palette) {
     splashFactory: NoSplash.splashFactory,
     highlightColor: Colors.transparent,
     dividerColor: palette.divider,
+    // **Placeholders are the palette's faintest grey, not Material's.** Left to
+    // `ColorScheme.onSurfaceVariant` a hint sat close enough to real ink that
+    // people read "Listenname" / "Was ist zu tun?" as a name already typed,
+    // tapped the check, and got an empty sheet closing on nothing. One line
+    // here rather than a `hintStyle` per field, so every sheet, search box and
+    // notes area in the app tells the same truth about what is typed and what
+    // is only being suggested.
+    inputDecorationTheme: base.inputDecorationTheme.copyWith(
+      hintStyle: TextStyle(color: palette.mutedLight),
+    ),
   );
 }

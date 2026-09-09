@@ -2,6 +2,8 @@ import 'dart:math';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../models/attachment.dart';
+import '../../models/event_link.dart';
 import '../../models/shopping_list.dart';
 import '../../services/supabase.dart';
 import '../../l10n/l10n.dart';
@@ -40,10 +42,16 @@ class ListSnapshot {
   /// docs/backend.md, "What the guest can never reach").
   final Set<String> guestListIds;
 
+  /// Item id → the files attached to it, in the order they were added. Empty
+  /// for the overwhelming majority of articles, which is why it is a sparse map
+  /// rather than a field on the item.
+  final Map<String, List<ItemAttachment>> attachmentsByItem;
+
   const ListSnapshot({
     required this.lists,
     required this.itemsByList,
     required this.guestListIds,
+    this.attachmentsByItem = const {},
   });
 
   static const empty = ListSnapshot(lists: [], itemsByList: {}, guestListIds: {});
@@ -66,9 +74,12 @@ class ListRepository {
 
   final SupabaseClient _db;
 
-  static const _listColumns = 'id, family_id, name, icon_asset, kind, owner_id, visibility, position, created_at, updated_at';
+  static const _listColumns =
+      'id, family_id, name, icon_asset, kind, owner_id, visibility, position, '
+      'event_calendar_id, event_uid, event_starts_at, created_at, updated_at';
   static const _itemColumns =
       'id, list_id, text, sub, unit, icon_asset, assignee_id, done, done_by, done_at, position, created_by, created_at, updated_at';
+  static const _attachmentColumns = 'id, item_id, storage_path, name, is_image, created_at';
 
   String get _uid {
     final id = AporahSupabase.userId;
@@ -80,7 +91,7 @@ class ListRepository {
   // Read
   // -------------------------------------------------------------------------
 
-  /// Everything the Listen screen needs, in four unfiltered selects. Unfiltered
+  /// Everything the Listen screen needs, in five unfiltered selects. Unfiltered
   /// is the point — see the class doc.
   Future<ListSnapshot> fetchAll() async {
     final listRows = await _db.from('lists').select(_listColumns).order('position').order('created_at');
@@ -125,7 +136,75 @@ class ListRepository {
       ],
       itemsByList: itemsByList,
       guestListIds: {for (final r in grantRows) r['resource_id'] as String},
+      // Deliberately not allowed to take the screen with it. Attachments are
+      // the one part of this snapshot nothing else depends on — an article
+      // whose photo failed to arrive still says what to buy — so a failure here
+      // costs thumbnails rather than the list.
+      attachmentsByItem: await _attachmentsOrNone([for (final r in itemRows) r['id'] as String]),
     );
+  }
+
+  Future<Map<String, List<ItemAttachment>>> _attachmentsOrNone(List<String> itemIds) async {
+    try {
+      return await fetchAttachments(itemIds);
+    } catch (_) {
+      return const {};
+    }
+  }
+
+  /// The files hanging off a screenful of articles, one statement for all of
+  /// them.
+  ///
+  /// `list_item_attachments_select` is `can_read_list` through the item, so this
+  /// needs no predicate of its own beyond narrowing to the items just read —
+  /// the same arrangement `list_shares` has. Signing the paths is the caller's
+  /// job (see `PhotoRepository`); this returns rows, and a row with no signed
+  /// URL still names its file.
+  Future<Map<String, List<ItemAttachment>>> fetchAttachments(Iterable<String> itemIds) async {
+    final ids = itemIds.toList();
+    if (ids.isEmpty) return const {};
+    final rows = await _db
+        .from('list_item_attachments')
+        .select(_attachmentColumns)
+        .inFilter('item_id', ids)
+        .order('created_at');
+
+    final byItem = <String, List<ItemAttachment>>{};
+    for (final r in rows) {
+      (byItem[r['item_id'] as String] ??= []).add(ItemAttachment.fromMap(r));
+    }
+    return byItem;
+  }
+
+  /// Files an already-uploaded object against its article.
+  ///
+  /// Object first, row second, always: a row naming an object that isn't there
+  /// draws a broken thumbnail for everyone, while an object no row names is a
+  /// few kilobytes nobody can reach.
+  Future<ItemAttachment> addAttachment({
+    required String itemId,
+    required String storagePath,
+    required String name,
+    required bool isImage,
+  }) async {
+    final row = await _db
+        .from('list_item_attachments')
+        .insert({
+          'item_id': itemId,
+          'storage_path': storagePath,
+          'name': name,
+          'is_image': isImage,
+          'created_by': _uid,
+        })
+        .select(_attachmentColumns)
+        .single();
+    return ItemAttachment.fromMap(row);
+  }
+
+  /// `list_item_attachments_delete` is the uploader's own rows only, so somebody
+  /// else's photo comes back as an empty result rather than as a raise.
+  Future<void> deleteAttachment(String id) async {
+    await _db.from('list_item_attachments').delete().eq('id', id);
   }
 
   // -------------------------------------------------------------------------
@@ -160,6 +239,7 @@ class ListRepository {
     ListVisibility visibility = ListVisibility.family,
     Set<String> sharedWith = const {},
     int position = 0,
+    EventLink? eventLink,
   }) async {
     final id = newUuidV4();
     final ownerId = _uid;
@@ -172,6 +252,8 @@ class ListRepository {
       ownerId: ownerId,
       visibility: visibility,
       position: position,
+      // Only ever on the insert — see [BoardRepository.createTask].
+      eventLink: eventLink,
     );
 
     await _db.from('lists').insert({...draft.toMap(forInsert: true), 'id': id});

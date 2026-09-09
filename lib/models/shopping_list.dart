@@ -1,3 +1,4 @@
+import 'event_link.dart';
 import 'visibility.dart';
 import '../l10n/l10n.dart';
 
@@ -58,6 +59,13 @@ class ShoppingList {
   final List<String> sharedWith;
 
   final int position;
+
+  /// The appointment this list was created for, or null — which is almost every
+  /// list. Set once, when the list is made from an event's detail sheet; the
+  /// edit sheet neither shows nor touches it, so a link is broken only by
+  /// deleting the list.
+  final EventLink? eventLink;
+
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -75,6 +83,7 @@ class ShoppingList {
     this.visibility = ListVisibility.family,
     this.sharedWith = const [],
     this.position = 0,
+    this.eventLink,
     this.createdAt,
     this.updatedAt,
   }) : isSummary = false;
@@ -93,6 +102,7 @@ class ShoppingList {
         visibility = ListVisibility.family,
         sharedWith = const [],
         position = -1,
+        eventLink = null,
         createdAt = null,
         updatedAt = null,
         isSummary = true;
@@ -108,6 +118,7 @@ class ShoppingList {
       visibility: visibilityFrom(map['visibility'] as String?),
       sharedWith: sharedWith,
       position: (map['position'] as num?)?.toInt() ?? 0,
+      eventLink: EventLink.fromMap(map),
       createdAt: _timeFrom(map['created_at']),
       updatedAt: _timeFrom(map['updated_at']),
     );
@@ -129,6 +140,9 @@ class ShoppingList {
       'kind': kind.name,
       'visibility': visibility.name,
       'position': position,
+      // All four columns or none: the `lists_event_link_complete` check refuses
+      // half a link, so an unlinked list writes four explicit nulls.
+      ...EventLink.columnsOf(eventLink),
       if (forInsert) ...{'family_id': familyId, 'owner_id': ownerId},
     };
   }
@@ -142,6 +156,7 @@ class ShoppingList {
     ListVisibility? visibility,
     List<String>? sharedWith,
     int? position,
+    EventLink? eventLink,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -155,6 +170,7 @@ class ShoppingList {
       visibility: visibility ?? this.visibility,
       sharedWith: sharedWith ?? this.sharedWith,
       position: position ?? this.position,
+      eventLink: eventLink ?? this.eventLink,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

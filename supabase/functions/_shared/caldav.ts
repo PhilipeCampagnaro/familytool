@@ -23,6 +23,10 @@ export interface Collection {
 
 export interface ParsedEvent {
   uid: string;
+  /// Set on every occurrence of a recurring event, to the same value as [uid] —
+  /// unlike Google and Graph, iCalendar gives a series and its occurrences one
+  /// identity, and the occurrence is told apart by its RECURRENCE-ID.
+  seriesUid: string | null;
   title: string;
   notes: string | null;
   location: string | null;
@@ -350,6 +354,11 @@ export interface CalDavEventInput {
   endTime: string | null;
   location?: string | null;
   notes?: string | null;
+
+  /// The recurrence rule's value, already formatted and **without** the
+  /// `RRULE:` name — `FREQ=WEEKLY;INTERVAL=2;UNTIL=20261109T215959Z`. Null for
+  /// an appointment that happens once, which is most of them.
+  rrule?: string | null;
 }
 
 /// RFC 5545 §3.3.11: comma, semicolon, backslash and newline are the four
@@ -399,6 +408,10 @@ export function buildVEvent(ev: CalDavEventInput): string {
     );
   }
 
+  // After DTSTART/DTEND, which is what the rule is anchored to: RFC 5545 does
+  // not care about property order, but every ICS a human ever reads has it this
+  // way round.
+  if (ev.rrule) lines.push(`RRULE:${ev.rrule}`);
   if (ev.notes) lines.push(`DESCRIPTION:${icsEscape(ev.notes)}`);
   if (ev.location) lines.push(`LOCATION:${icsEscape(ev.location)}`);
   lines.push("END:VEVENT", "END:VCALENDAR");
@@ -414,6 +427,18 @@ export async function putEvent(
   password: string,
   ev: CalDavEventInput,
 ): Promise<void> {
+  await putIcs(href, user, password, buildVEvent(ev));
+}
+
+/// The same PUT with the body already written — for a resource that is being
+/// *amended* rather than replaced, which is every change to one occurrence of a
+/// series.
+export async function putIcs(
+  href: string,
+  user: string,
+  password: string,
+  ics: string,
+): Promise<void> {
   const res = await fetchUntrusted(href, {
     method: "PUT",
     headers: {
@@ -421,7 +446,7 @@ export async function putEvent(
       "Content-Type": "text/calendar; charset=utf-8",
       "User-Agent": USER_AGENT,
     },
-    body: buildVEvent(ev),
+    body: ics,
   });
   if (!res.ok) throw new Error(`CalDAV PUT ${res.status}`);
 }
@@ -434,6 +459,311 @@ export async function createEvent(
   ev: CalDavEventInput,
 ): Promise<void> {
   await putEvent(`${trimSlash(collectionUrl)}/${ev.uid}.ics`, user, password, ev);
+}
+
+// ---------------------------------------------------------------------------
+// Writing one occurrence of a series
+// ---------------------------------------------------------------------------
+//
+// Google and Graph hand out an addressable id per occurrence, so there "nur
+// dieser Termin" is a PATCH like any other. iCalendar does not: a series and
+// every one of its occurrences share a UID, and the only thing that tells them
+// apart is a RECURRENCE-ID. So the three answers a user can give have to be
+// written into the resource itself — an EXDATE for a cancelled Monday, an
+// override VEVENT for a moved one, the master's own fields for the whole series
+// — which means reading the ICS first and putting a modified one back.
+//
+// This used to be a `putEvent` of a freshly built single VEVENT over whatever
+// was there. On a recurring appointment that replaced the series with one date:
+// a family that changed the time of one football training lost the rest of the
+// term, silently, and found out weeks later.
+//
+// The surgery goes through ical.js rather than through the text, because the
+// value that has to match is not a string but a moment in a particular shape —
+// a DATE, a `TZID=`-qualified wall clock, or a UTC instant, whichever the master
+// itself uses — and line folding has to survive it.
+
+/// One occurrence, as the app knows it: the wall-clock start it is shown at.
+export interface Occurrence {
+  /// YYYY-MM-DD.
+  date: string;
+  /// HH:MM, or null for an all-day series.
+  time: string | null;
+}
+
+/// GETs one event resource. Null when it is gone, which for a delete is the
+/// outcome asked for.
+export async function readEventIcs(
+  href: string,
+  user: string,
+  password: string,
+): Promise<string | null> {
+  const res = await fetchUntrusted(href, {
+    method: "GET",
+    headers: {
+      Authorization: basic(user, password),
+      "User-Agent": USER_AGENT,
+      Accept: "text/calendar",
+    },
+  });
+  if (res.status === 404 || res.status === 410) return null;
+  if (!res.ok) throw new Error(`CalDAV GET ${res.status}`);
+  const body = await res.text();
+  return body.includes("BEGIN:VEVENT") ? body : null;
+}
+
+/// The parsed blob plus the master VEVENT — the one without a RECURRENCE-ID,
+/// which is the series itself.
+// deno-lint-ignore no-explicit-any
+function openIcs(ics: string): { root: any; master: any } | null {
+  try {
+    const root = new ICAL.Component(ICAL.parse(ics));
+    registerBerlin();
+    registerEmbedded(root);
+    registerOffsetZones(root);
+    const master = root.getAllSubcomponents("vevent")
+      // deno-lint-ignore no-explicit-any
+      .find((v: any) => !v.hasProperty("recurrence-id"));
+    return master ? { root, master } : null;
+  } catch {
+    return null;
+  }
+}
+
+/// Whether this resource holds a repeating appointment. Asked of the ICS rather
+/// than trusted from the client: the app only knows that an occurrence *came
+/// from* a series, and what matters here is what the server actually holds.
+export function icsIsRecurring(ics: string): boolean {
+  const open = openIcs(ics);
+  return !!open && open.master.hasProperty("rrule");
+}
+
+/// The occurrence's start in the shape the master's own DTSTART uses, so an
+/// EXDATE or a RECURRENCE-ID written from it is comparable to the moments the
+/// rule generates.
+///
+/// The app always sends Berlin wall clock — that is what it showed the user —
+/// and this is where it is put back into the master's terms: left as a DATE for
+/// an all-day series, converted to UTC where the master is in UTC, and moved
+/// into the master's own zone where it names one.
+// deno-lint-ignore no-explicit-any
+function occurrenceTime(master: any, occ: Occurrence): any {
+  const [year, month, day] = occ.date.split("-").map(Number);
+  const dtstart = master.getFirstProperty("dtstart");
+  const reference = dtstart?.getFirstValue();
+
+  if (!occ.time || reference?.isDate === true) {
+    return ICAL.Time.fromData({ year, month, day, isDate: true });
+  }
+
+  const [hour, minute] = occ.time.split(":").map(Number);
+  const berlin = ICAL.TimezoneService.get("Europe/Berlin") ?? ICAL.Timezone.localTimezone;
+  const local = new ICAL.Time(
+    { year, month, day, hour, minute, second: 0, isDate: false },
+    berlin,
+  );
+
+  const tzid = dtstart?.getParameter("tzid");
+  if (typeof tzid === "string" && tzid !== "Europe/Berlin") {
+    const zone = ICAL.TimezoneService.get(tzid);
+    if (zone) return local.convertToZone(zone);
+  }
+  // No TZID and not floating means UTC — the form iCloud and most servers store
+  // a timed event in.
+  if (!tzid && reference?.zone === ICAL.Timezone.utcTimezone) {
+    return local.convertToZone(ICAL.Timezone.utcTimezone);
+  }
+  return local;
+}
+
+/// A property carrying one moment, with the TZID parameter the value needs.
+///
+/// ical.js writes the value in the zone the [ICAL.Time] holds but does not add
+/// the parameter that names it, and a `20260914T170000` with no TZID is a
+/// floating time every client resolves in its own zone.
+// deno-lint-ignore no-explicit-any
+function timeProperty(name: string, time: any): any {
+  const prop = new ICAL.Property(name);
+  // No `VALUE=DATE` here: `setValue` writes it for a date-valued time, and
+  // setting it as well emits the parameter twice.
+  const tzid = time.zone?.tzid;
+  if (!time.isDate && tzid && tzid !== "UTC" && tzid !== "floating") {
+    prop.setParameter("tzid", tzid);
+  }
+  prop.setValue(time);
+  return prop;
+}
+
+/// The blob with one occurrence taken out of the series — "nur dieser Termin"
+/// on a delete.
+///
+/// An EXDATE rather than a DELETE of the resource, which is what would remove
+/// every other Monday too. Any override already written for that day goes with
+/// it: a moved occurrence that has since been cancelled must not come back as
+/// its own appointment.
+export function excludeOccurrence(ics: string, occ: Occurrence): string | null {
+  const open = openIcs(ics);
+  if (!open) return null;
+
+  const at = occurrenceTime(open.master, occ);
+  open.master.addProperty(timeProperty("exdate", at));
+
+  // deno-lint-ignore no-explicit-any
+  for (const vevent of open.root.getAllSubcomponents("vevent") as any[]) {
+    const rid = vevent.getFirstPropertyValue("recurrence-id");
+    if (rid && sameMoment(rid, at)) open.root.removeSubcomponent(vevent);
+  }
+  return open.root.toString();
+}
+
+/// The blob with one occurrence given its own values — "nur dieser Termin" on an
+/// edit.
+///
+/// A second VEVENT under the same UID, carrying the RECURRENCE-ID of the slot it
+/// replaces. Written fresh each time: an occurrence already overridden is
+/// dropped first, so editing the same Monday twice leaves one override rather
+/// than two claiming the same slot.
+export function overrideOccurrence(
+  ics: string,
+  occ: Occurrence,
+  ev: CalDavEventInput,
+): string | null {
+  const open = openIcs(ics);
+  if (!open) return null;
+
+  const at = occurrenceTime(open.master, occ);
+  // deno-lint-ignore no-explicit-any
+  for (const vevent of open.root.getAllSubcomponents("vevent") as any[]) {
+    const rid = vevent.getFirstPropertyValue("recurrence-id");
+    if (rid && sameMoment(rid, at)) open.root.removeSubcomponent(vevent);
+  }
+
+  // Built through [buildVEvent] so the override says exactly what a one-off
+  // written by this app says — same escaping, same DTSTART/DTEND forms — and
+  // then lifted out of its VCALENDAR wrapper and given its RECURRENCE-ID.
+  const wrapper = new ICAL.Component(
+    ICAL.parse(buildVEvent({ ...ev, uid: open.master.getFirstPropertyValue("uid") ?? ev.uid, rrule: null })),
+  );
+  const override = wrapper.getFirstSubcomponent("vevent");
+  if (!override) return null;
+  override.addProperty(timeProperty("recurrence-id", at));
+
+  open.root.addSubcomponent(override);
+  return open.root.toString();
+}
+
+/// The blob with the series' own fields changed and its rule left alone —
+/// "ganze Serie" on an edit.
+///
+/// The master is edited in place rather than rebuilt, because everything this
+/// does not touch is worth keeping: the RRULE, every EXDATE for a Monday the
+/// family has already cancelled, and every override for one they moved.
+///
+/// [ev.rrule] replaces the rule only when the caller has one to set; a null
+/// leaves the existing rule exactly where it is, which is what an edit that says
+/// nothing about repetition should do.
+///
+/// **Exceptions are moved with the series.** An EXDATE and a RECURRENCE-ID both
+/// name a slot the rule generates, so shifting DTSTART by an hour leaves every
+/// one of them pointing at a moment that no longer exists: the cancelled Monday
+/// silently comes back and the moved one detaches into a stray VEVENT. Adding
+/// the same delta to each keeps them attached — the family said that Monday was
+/// off, and moving training an hour later does not put it back on. An override's
+/// *own* times are left alone, because they were typed for that day rather than
+/// derived from the series.
+export function editSeries(ics: string, ev: CalDavEventInput): string | null {
+  const open = openIcs(ics);
+  if (!open) return null;
+  const { master } = open;
+
+  const timed = ev.time !== null && ev.endTime !== null;
+  const berlin = ICAL.TimezoneService.get("Europe/Berlin") ?? ICAL.Timezone.localTimezone;
+
+  // deno-lint-ignore no-explicit-any
+  const moment = (date: string, time: string | null): any => {
+    const [year, month, day] = date.split("-").map(Number);
+    if (!timed || time === null) return ICAL.Time.fromData({ year, month, day, isDate: true });
+    const [hour, minute] = time.split(":").map(Number);
+    return new ICAL.Time({ year, month, day, hour, minute, second: 0, isDate: false }, berlin);
+  };
+
+  const before = master.getFirstProperty("dtstart")?.getFirstValue();
+  const after = moment(ev.date, ev.time);
+  let delta = 0;
+  try {
+    delta = Math.round((after.toJSDate().getTime() - before.toJSDate().getTime()) / 1000);
+  } catch { /* an unreadable DTSTART leaves the exceptions where they are */ }
+
+  master.removeAllProperties("dtstart");
+  master.removeAllProperties("dtend");
+  master.removeAllProperties("duration");
+  master.addProperty(timeProperty("dtstart", after));
+  master.addProperty(timeProperty("dtend", moment(ev.endDate, ev.endTime)));
+
+  const set = (name: string, value: string | null) => {
+    master.removeAllProperties(name);
+    if (value) master.addPropertyWithValue(name, value);
+  };
+  set("summary", ev.title);
+  set("location", ev.location ?? null);
+  set("description", ev.notes ?? null);
+  if (ev.rrule) set("rrule", ev.rrule);
+
+  // Bumped so a server that compares them can see this is the newer version.
+  // Through ICAL.Time rather than a formatted string, which ical.js would take
+  // as a text value and write back unquoted and unparseable.
+  master.removeAllProperties("dtstamp");
+  master.addPropertyWithValue("dtstamp", ICAL.Time.fromJSDate(new Date(), true));
+
+  if (delta !== 0) {
+    // deno-lint-ignore no-explicit-any
+    const excluded: any[] = [];
+    // deno-lint-ignore no-explicit-any
+    for (const prop of master.getAllProperties("exdate") as any[]) {
+      for (const value of prop.getValues()) excluded.push(shiftBy(value, delta));
+    }
+    master.removeAllProperties("exdate");
+    for (const at of excluded) master.addProperty(timeProperty("exdate", at));
+
+    // deno-lint-ignore no-explicit-any
+    for (const vevent of open.root.getAllSubcomponents("vevent") as any[]) {
+      const rid = vevent.getFirstProperty("recurrence-id");
+      if (!rid) continue;
+      const at = shiftBy(rid.getFirstValue(), delta);
+      vevent.removeAllProperties("recurrence-id");
+      vevent.addProperty(timeProperty("recurrence-id", at));
+    }
+  }
+
+  return open.root.toString();
+}
+
+/// [time] moved by [seconds]. A DATE moves in whole days — adding seconds to one
+/// is how a date-valued EXDATE ends up carrying a time nothing matches.
+// deno-lint-ignore no-explicit-any
+function shiftBy(time: any, seconds: number): any {
+  try {
+    const next = time.clone();
+    next.addDuration(
+      time.isDate
+        ? ICAL.Duration.fromSeconds(Math.round(seconds / 86_400) * 86_400)
+        : ICAL.Duration.fromSeconds(seconds),
+    );
+    return next;
+  } catch {
+    return time;
+  }
+}
+
+/// Two moments are the same slot. Compared as instants rather than as strings,
+/// so a RECURRENCE-ID stored in UTC still matches one written with a TZID.
+// deno-lint-ignore no-explicit-any
+function sameMoment(a: any, b: any): boolean {
+  try {
+    return a.toJSDate().getTime() === b.toJSDate().getTime();
+  } catch {
+    return false;
+  }
 }
 
 /// Locates the resource holding `uid` inside one collection.
@@ -659,8 +989,17 @@ function registerOffsetZones(component: any): void {
 }
 
 /// Parses one iCalendar blob into occurrences inside the window. Recurring
-/// series are expanded here rather than stored as a rule, because the Kalender
-/// screen reads plain rows out of public.events and knows nothing about RRULE.
+/// series are expanded here rather than passed on as a rule, because nothing
+/// downstream — the wire, the device cache, the Kalender screen — knows what an
+/// RRULE is.
+///
+/// **An override is folded into its master, not parsed beside it.** A series
+/// somebody has moved one day of carries a second VEVENT with the same UID and
+/// a RECURRENCE-ID, and the flat loop this used to be emitted that *and* the
+/// occurrence the rule still generates: the changed Monday twice, once at each
+/// time. `relateException` is what joins them, and since Aporah's own
+/// "nur dieser Termin" edits are written as exactly that kind of override, every
+/// one of them would otherwise show double the moment it was saved.
 export function parseIcs(ics: string, from: Date, to: Date): Omit<ParsedEvent, "href" | "etag">[] {
   const out: Omit<ParsedEvent, "href" | "etag">[] = [];
 
@@ -670,20 +1009,46 @@ export function parseIcs(ics: string, from: Date, to: Date): Omit<ParsedEvent, "
     registerEmbedded(component);
     registerOffsetZones(component);
 
-    for (const vevent of component.getAllSubcomponents("vevent")) {
+    const vevents = component.getAllSubcomponents("vevent");
+    const overrides = vevents.filter((v) => v.hasProperty("recurrence-id"));
+    const masters = vevents.filter((v) => !v.hasProperty("recurrence-id"));
+
+    // An override whose master is somewhere else — a server may split a series
+    // across resources — has nothing to fold into and stands as its own
+    // appointment rather than being dropped.
+    const claimed = new Set(masters.map((v) => v.getFirstPropertyValue("uid")));
+    const roots = [
+      ...masters,
+      ...overrides.filter((v) => !claimed.has(v.getFirstPropertyValue("uid"))),
+    ];
+
+    for (const vevent of roots) {
       try {
         const event = new ICAL.Event(vevent);
+        for (const ex of overrides) {
+          if (ex === vevent || ex.getFirstPropertyValue("uid") !== event.uid) continue;
+          // An override we cannot place — a RECURRENCE-ID in a zone this blob
+          // never declared — is skipped rather than allowed to sink the series.
+          try {
+            event.relateException(ex);
+          } catch { /* left to the rule that generated the occurrence */ }
+        }
+
+        const recurring = event.isRecurring();
 
         // deno-lint-ignore no-explicit-any
-        const build = (start: any): Omit<ParsedEvent, "href" | "etag"> | null => {
+        const build = (start: any, end: any, item: any): Omit<ParsedEvent, "href" | "etag"> | null => {
           const startDate = start?.toJSDate?.();
           if (!startDate) return null;
 
           let endDate: Date | null = null;
           try {
-            const seconds = event.duration?.toSeconds?.();
-            if (seconds && seconds > 0) endDate = new Date(startDate.getTime() + seconds * 1000);
-            else if (event.endDate) endDate = event.endDate.toJSDate();
+            if (end?.toJSDate) endDate = end.toJSDate();
+            else {
+              const seconds = item.duration?.toSeconds?.();
+              if (seconds && seconds > 0) endDate = new Date(startDate.getTime() + seconds * 1000);
+              else if (item.endDate) endDate = item.endDate.toJSDate();
+            }
           } catch { /* fall through to the default below */ }
 
           const allDay = start?.isDate === true;
@@ -691,18 +1056,20 @@ export function parseIcs(ics: string, from: Date, to: Date): Omit<ParsedEvent, "
             endDate = new Date(startDate.getTime() + (allDay ? 86_400_000 : 3_600_000));
           }
 
+          const uid = item.uid || event.uid || crypto.randomUUID();
           return {
-            uid: event.uid || crypto.randomUUID(),
-            title: (event.summary || "").trim() || "Ohne Titel",
-            notes: event.description || null,
-            location: event.location || null,
+            uid,
+            seriesUid: recurring ? uid : null,
+            title: (item.summary || "").trim() || "Ohne Titel",
+            notes: item.description || null,
+            location: item.location || null,
             startsAt: startDate.toISOString(),
             endsAt: endDate.toISOString(),
             allDay,
           };
         };
 
-        if (event.isRecurring()) {
+        if (recurring) {
           const iterator = event.iterator(event.startDate);
           let next;
           let guard = 0;
@@ -710,13 +1077,23 @@ export function parseIcs(ics: string, from: Date, to: Date): Omit<ParsedEvent, "
             const at = next.toJSDate();
             if (at > to) break;
             if (at < from) continue;
-            const built = build(next);
+            // Not the rule's own occurrence but whatever stands at that slot:
+            // an overridden Monday answers with the override's title and times,
+            // and a slot the series no longer has is not reached at all,
+            // because the iterator honours EXDATE.
+            let details;
+            try {
+              details = event.getOccurrenceDetails(next);
+            } catch { /* an override we cannot read must not lose the slot */ }
+            const built = details
+              ? build(details.startDate, details.endDate, details.item ?? event)
+              : build(next, null, event);
             if (built) out.push(built);
           }
         } else {
           const at = event.startDate?.toJSDate?.();
           if (at && at >= from && at <= to) {
-            const built = build(event.startDate);
+            const built = build(event.startDate, event.endDate, event);
             if (built) out.push(built);
           }
         }

@@ -74,6 +74,17 @@ export function oauthConfig(provider: Provider): OAuthConfig {
 /// end, the way iCalendar and Google both express them.
 export interface SyncedEvent {
   uid: string;
+
+  /// The provider's id for the series this is an occurrence of, absent for a
+  /// one-off appointment.
+  ///
+  /// Every read path here expands recurring events into occurrences — Google
+  /// with `singleEvents`, Graph's calendarView by construction, CalDAV through
+  /// ICAL.js — so the rule itself never reaches the app. This is the one thing
+  /// that survives the expansion, and it is what `calendar-write` addresses
+  /// when the user answers "Ganze Serie".
+  seriesUid?: string | null;
+
   title: string;
   notes: string | null;
   location: string | null;
@@ -243,14 +254,43 @@ export async function accountEmail(
 // Misc
 // ---------------------------------------------------------------------------
 
-/// The window every read covers: the start of last year to the end of next year.
-/// Wide enough for the Kalender screen's month paging and for Ferien, narrow
-/// enough that a full reconcile stays one page per provider for most accounts.
+/// The window every read covers: six months back, eighteen months forward.
+///
+/// It is a **rolling** window rather than whole calendar years, which is the
+/// part that matters. The old one ran from the start of last year to the start
+/// of the year after next — between 24 and 36 months depending on when you
+/// asked, and at its widest in January, when the twelve months nobody looks at
+/// any more are furthest from being useful.
+///
+/// The size is a cost decision, not a display one. Nothing is stored, so every
+/// refresh re-reads and re-sends this entire window: once from each provider,
+/// and again over the wire to the phone. A third of that was months a family
+/// organiser never shows — Kalender opens on today, and scrolling back half a
+/// year is already a deliberate act.
+///
+/// Both edges are chosen, not symmetric. Six months back covers "when was that
+/// appointment in the spring"; eighteen forward covers next summer's Ferien and
+/// the school year already published in a Klausurplan, which is the one thing
+/// families do genuinely look far ahead for.
+///
+/// **The month view scrolls without limit**, so there has always been an edge
+/// past which months render empty. This moves it closer. If that edge ever
+/// needs to stop being visible, the fix is a paged read keyed on the month in
+/// view, not a wider window here — widening this makes every refresh pay for
+/// months almost nobody scrolls to.
+const MONTHS_BACK = 6;
+const MONTHS_FORWARD = 18;
+
 export function syncWindow(): { from: Date; to: Date } {
-  const year = new Date().getUTCFullYear();
+  const now = new Date();
+  const year = now.getUTCFullYear();
+  const month = now.getUTCMonth();
   return {
-    from: new Date(Date.UTC(year - 1, 0, 1)),
-    to: new Date(Date.UTC(year + 2, 0, 1)),
+    // Day 1 of each bound: the whole of the first and last month is included,
+    // and the window only moves when the month does — so two refreshes on the
+    // same day ask every provider for byte-identical ranges.
+    from: new Date(Date.UTC(year, month - MONTHS_BACK, 1)),
+    to: new Date(Date.UTC(year, month + MONTHS_FORWARD + 1, 1)),
   };
 }
 

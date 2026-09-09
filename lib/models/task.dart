@@ -1,3 +1,4 @@
+import 'event_link.dart';
 import 'visibility.dart';
 
 DateTime? _timeFrom(Object? value) => value == null ? null : DateTime.tryParse(value as String)?.toLocal();
@@ -44,6 +45,16 @@ class BoardTask {
   /// [ItemVisibility.custom]. The owner is implicit and not repeated.
   final List<String> sharedWith;
 
+  /// The appointment this task was created for, or null — which is almost every
+  /// task. Set once, when the task is made from an event's detail sheet; the
+  /// edit sheet neither shows nor touches it.
+  ///
+  /// **Not the same thing as [dueDate].** A task made from an appointment gets
+  /// the appointment's date as its deadline, but a deadline is a day and this
+  /// is a specific event — two tasks due the same Thursday, one of them hung off
+  /// the Zahnarzt, are exactly the case the badge exists to tell apart.
+  final EventLink? eventLink;
+
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -60,6 +71,7 @@ class BoardTask {
     this.doneAt,
     this.visibility = ItemVisibility.family,
     this.sharedWith = const [],
+    this.eventLink,
     this.createdAt,
     this.updatedAt,
   });
@@ -81,6 +93,7 @@ class BoardTask {
       ownerId: map['owner_id'] as String,
       visibility: visibilityFrom(map['visibility'] as String?),
       sharedWith: sharedWith,
+      eventLink: EventLink.fromMap(map),
       createdAt: _timeFrom(map['created_at']),
       updatedAt: _timeFrom(map['updated_at']),
     );
@@ -97,6 +110,8 @@ class BoardTask {
     'done_by': doneBy,
     'done_at': doneAt?.toUtc().toIso8601String(),
     'visibility': visibility.name,
+    // All four columns or none — see [ShoppingList.toMap].
+    ...EventLink.columnsOf(eventLink),
     if (forInsert) ...{'family_id': familyId, 'owner_id': ownerId},
   };
 
@@ -115,6 +130,7 @@ class BoardTask {
     bool clearDoneAt = false,
     ItemVisibility? visibility,
     List<String>? sharedWith,
+    EventLink? eventLink,
   }) => BoardTask(
     id: id,
     familyId: familyId,
@@ -128,6 +144,7 @@ class BoardTask {
     ownerId: ownerId,
     visibility: visibility ?? this.visibility,
     sharedWith: sharedWith ?? this.sharedWith,
+    eventLink: eventLink ?? this.eventLink,
     createdAt: createdAt,
     updatedAt: updatedAt,
   );

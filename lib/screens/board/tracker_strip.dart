@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../data/board_data.dart';
-import '../../services/board_streak_cache.dart';
+import '../../data/tracker_data.dart';
 import '../../theme/tokens.dart';
 import '../../l10n/l10n.dart';
 
@@ -42,15 +42,19 @@ class BoardTrackerStrip extends StatelessWidget {
   final DateTime today;
   final Color accent;
 
+  /// Whether the household keeps any trackers at all. False draws a line saying
+  /// so in place of the grid — see [build].
+  final bool hasTrackers;
+
   /// Rows of days. Five rather than seven because the grid no longer stands for
   /// weeks — it is the height that keeps it a chart rather than a strip, and two
   /// rows of header are worth more to the screen than two more weeks of history.
   static const _rows = 5;
 
-  /// Never more columns than [BoardStreakCache.retentionDays] keeps. A day older
-  /// than the ledger could only ever be blank, and a wall of empty squares would
-  /// read as months of failure rather than as no record.
-  static const _maxColumns = BoardStreakCache.retentionDays ~/ _rows;
+  /// Never more columns than [trackerHistoryDays] loads. A day older than the
+  /// window could only ever be blank, and a wall of empty squares would read as
+  /// months of failure rather than as no record.
+  static const _maxColumns = trackerHistoryDays ~/ _rows;
 
   /// The least clear air between the caption and the first square of the row it
   /// runs into. The slot is rounded up to a whole column from here, so the real
@@ -77,6 +81,7 @@ class BoardTrackerStrip extends StatelessWidget {
   const BoardTrackerStrip({
     super.key,
     required this.days,
+    required this.hasTrackers,
     required this.today,
     required this.accent,
   });
@@ -91,6 +96,31 @@ class BoardTrackerStrip extends StatelessWidget {
     // the leftover air in front of the first square was the whole of that
     // column, and is now about half of it.
     final captionStyle = AppText.groupHeading.copyWith(letterSpacing: 1);
+
+    // Nothing to chart yet. Five rows of blank squares would be the honest
+    // rendering of an empty record and the wrong thing to show: it looks like a
+    // chart that broke, or like history somebody deleted. A household that has
+    // never made a tracker is told that in a line, and gets the header's height
+    // back until it does.
+    if (!hasTrackers) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          children: [
+            Text(caption, style: captionStyle),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                L.s.trackerGridEmpty,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppText.label.copyWith(color: AppColors.mutedLight),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
 
     return LayoutBuilder(
       builder: (context, constraints) {

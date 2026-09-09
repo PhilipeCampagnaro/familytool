@@ -1,4 +1,3 @@
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,6 +8,7 @@ import '../data/grocery_search.dart';
 import '../data/icon_suggestions.dart';
 import '../data/list_data.dart';
 import '../models/attachment.dart';
+import '../models/event_link.dart';
 import '../models/grocery_unit.dart';
 import '../models/shopping_list.dart';
 import '../services/action_sheet.dart';
@@ -17,6 +17,7 @@ import '../services/media_picker.dart';
 import '../state/auth_state.dart';
 import '../state/family_state.dart';
 import '../state/list_state.dart';
+import '../state/nav_state.dart';
 import '../state/sharing_state.dart';
 import '../theme/tokens.dart';
 import '../widgets/anchored_menu.dart';
@@ -27,11 +28,13 @@ import '../widgets/check_off.dart';
 import '../widgets/collapsing_header.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/error_note.dart';
+import '../widgets/event_link_chip.dart';
 import '../widgets/floating_pill.dart';
 import '../widgets/glass.dart';
 import '../widgets/icon_picker.dart';
 import '../widgets/overview_screen.dart';
 import '../widgets/search.dart';
+import '../widgets/segmented_control.dart';
 import '../widgets/share_sheet.dart';
 import '../widgets/swipe_actions.dart';
 import '../widgets/toast_chip.dart';
@@ -87,6 +90,15 @@ class ListScreen extends ConsumerWidget {
       if (current.lists.isEmpty && !current.loading) return;
       showErrorSnack(context, message);
       ref.read(listProvider.notifier).clearError();
+    });
+
+    // Arriving from a list card in an event's detail sheet. The shell has
+    // already switched tab; opening the list is Listen's own half of it.
+    ref.listen<TabJump?>(tabJumpProvider, (_, jump) {
+      if (jump?.listId case final id?) {
+        ref.read(tabJumpProvider.notifier).done();
+        ref.read(listProvider.notifier).open(id);
+      }
     });
 
     return Scaffold(
@@ -230,7 +242,10 @@ class _ListOverview extends ConsumerWidget {
             rows: [
               for (final hit in hits)
                 SearchResultRow(
-                  leading: IconTile(iconKey: hit.iconKey ?? list.iconKey, size: 38, imageSize: 26),
+                  // The article's own picture only where the list shows one;
+                  // a Sonstige hit wears its list's icon, which is what says
+                  // where the row was found anyway.
+                  leading: IconTile(iconKey: (list.kind == ListKind.grocery ? hit.iconKey : null) ?? list.iconKey, size: 38, imageSize: 26),
                   title: hit.text,
                   subtitle: hit.done ? L.s.doneInList(list.name) : (hit.sub ?? L.s.inList(list.name)),
                   onTap: () => open(list.id),
@@ -245,12 +260,23 @@ class _ListOverview extends ConsumerWidget {
 /// The create/edit sheet for a list. Same sheet either way — [list] set means
 /// editing — so the symbol behaves identically in both.
 ///
+/// [eventLink] files the new list against the appointment it was started from,
+/// so reopening that event shows the list instead of offering to create it a
+/// second time. Never passed when editing: a list belongs to the event it was
+/// made for, and nothing re-points it.
+///
 /// [initialName] opens a *create* sheet with the name already typed — what the
 /// event detail sheet hands over when a list is started from an appointment.
 /// It only seeds the field: the name stays editable, and because it differs
 /// from the empty `list?.name`, `suggestIcon` treats it as a typed name and
 /// picks the icon off it like any other.
-void openListSheet(BuildContext context, WidgetRef ref, {ShoppingList? list, String? initialName}) {
+void openListSheet(
+  BuildContext context,
+  WidgetRef ref, {
+  ShoppingList? list,
+  String? initialName,
+  EventLink? eventLink,
+}) {
   final nameController = TextEditingController(text: list?.name ?? initialName ?? '');
   final notifier = ref.read(listProvider.notifier);
   // Set once, up front: the segmented control lives on the provider (it is what
@@ -274,6 +300,9 @@ void openListSheet(BuildContext context, WidgetRef ref, {ShoppingList? list, Str
   showAppSheet(
     context: context,
     title: list == null ? L.s.newList : L.s.editList,
+    // A list with no name is not a list, so the check stays inert until there
+    // is one — see [showAppSheet]'s `requiredField`.
+    requiredField: nameController,
     heightFactor: 0.72,
     onSave: () async {
       final kind = ref.read(listProvider).newType == 'grocery' ? ListKind.grocery : ListKind.other;
@@ -286,7 +315,14 @@ void openListSheet(BuildContext context, WidgetRef ref, {ShoppingList? list, Str
         }
         return;
       }
-      if (await notifier.createList(name: nameController.text, kind: kind, iconKey: draft.picked)) {
+      if (await notifier.createList(
+        name: nameController.text,
+        kind: kind,
+        iconKey: draft.picked,
+        // Only ever on the create path: the list remembers which appointment it
+        // was started from, and the edit sheet has no say in it.
+        eventLink: eventLink,
+      )) {
         confirm(L.s.listCreated);
       }
     },
@@ -312,7 +348,6 @@ class _ListSheetBodyState extends ConsumerState<_ListSheetBody> {
   @override
   Widget build(BuildContext context) {
     final s = ref.watch(listProvider);
-    final accent = Theme.of(context).colorScheme.primary;
     final isGrocery = s.newType == 'grocery';
     final name = widget.nameController.text;
     // The live guess: recomputed on every keystroke, and only used while
@@ -340,28 +375,13 @@ class _ListSheetBodyState extends ConsumerState<_ListSheetBody> {
           padding: EdgeInsets.only(left: 2, bottom: 8),
           child: Text(L.s.whichKindOfList, style: AppText.microLabel),
         ),
-        // The track needs the hairline: `surfaceAlt` is within a percent of the
-        // sheet's own `screenBg` body on light, so the segmented control had no
-        // visible edge at all there and read as two loose labels, one of which
-        // happened to sit on a white pill. The border draws the control; the
-        // fill only separates the inactive half from the white thumb.
-        Container(
-          padding: const EdgeInsets.all(4),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceAlt,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: AppColors.hairline),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: _SegButton(label: L.s.groceries, icon: LucideIcons.clipboardList, active: isGrocery, accent: accent, onTap: () => ref.read(listProvider.notifier).setNewType('grocery')),
-              ),
-              Expanded(
-                child: _SegButton(label: L.s.otherKind, icon: LucideIcons.clipboardCheck, active: !isGrocery, accent: accent, onTap: () => ref.read(listProvider.notifier).setNewType('other')),
-              ),
-            ],
-          ),
+        SegmentedControl<String>(
+          value: isGrocery ? 'grocery' : 'other',
+          onChanged: ref.read(listProvider.notifier).setNewType,
+          options: [
+            SegmentedOption(value: 'grocery', label: L.s.groceries, icon: LucideIcons.clipboardList),
+            SegmentedOption(value: 'other', label: L.s.otherKind, icon: LucideIcons.clipboardCheck),
+          ],
         ),
         const SizedBox(height: 14),
         SectionCard(
@@ -370,6 +390,7 @@ class _ListSheetBodyState extends ConsumerState<_ListSheetBody> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
               child: TextField(
                 controller: widget.nameController,
+                textInputAction: TextInputAction.done,
                 style: AppText.inputTitle,
                 decoration: InputDecoration(border: InputBorder.none, hintText: L.s.listName, isDense: true),
                 // A picked icon is *not* cleared by typing on: overriding the
@@ -411,42 +432,6 @@ class _ListSheetBodyState extends ConsumerState<_ListSheetBody> {
   }
 }
 
-class _SegButton extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final bool active;
-  final Color accent;
-  final VoidCallback onTap;
-
-  const _SegButton({required this.label, required this.icon, required this.active, required this.accent, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: active ? AppColors.surface : Colors.transparent,
-          borderRadius: BorderRadius.circular(14),
-          boxShadow: active ? AppShadows.thumb : null,
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 15, color: active ? accent : AppColors.muted),
-            const SizedBox(width: 7),
-            Text(
-              label,
-              style: AppText.buttonSmall.copyWith(color: active ? accent : AppColors.muted),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 /// One list on the overview card. Carries no tap target of its own — the row is
 /// wrapped either by a [SwipeToEditDelete] or by a plain [GestureDetector], and
 /// a second detector inside would swallow the tap that closes an open swipe.
@@ -479,9 +464,30 @@ class _ListRow extends ConsumerWidget {
                   overflow: TextOverflow.ellipsis,
                   style: AppText.itemTitle,
                 ),
-                Text(
-                  meta,
-                  style: AppText.label.copyWith(color: metaColor),
+                // The subtitle line: where the list came from, then how much of
+                // it is left. In that order because the appointment is what the
+                // list *is* — "Wochenende Hamburg" — and "3 verbleibend" is how
+                // it is going; reading the second one first tells you a number
+                // before you know what it counts.
+                //
+                // The chip used to sit on the right of the row, past the
+                // visibility badge, where it was a glyph with no room for a
+                // name and read as a third status icon rather than as part of
+                // the list's own description.
+                Row(
+                  children: [
+                    if (list.eventLink case final link?) ...[
+                      // Flexible, so a long appointment name gives way to the
+                      // count beside it rather than pushing it off the row. The
+                      // count is a handful of characters and never yields.
+                      Flexible(child: EventLinkChip(link: link)),
+                      const SizedBox(width: 7),
+                    ],
+                    Text(
+                      meta,
+                      style: AppText.label.copyWith(color: metaColor),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -503,8 +509,9 @@ class _ListRow extends ConsumerWidget {
   }
 }
 
-/// The picture at the left of an article row — the grocery image, shop logo or
-/// symbol its name was matched to, or the generic glyph when nothing matched.
+/// The picture at the left of an article row on a **Lebensmittel** list — the
+/// grocery image its name was matched to, or the shopping-cart picture when
+/// nothing matched.
 ///
 /// The picture assets are full-colour art on transparency, drawn for a light
 /// background. On light that background is already there, so the picture sits
@@ -514,24 +521,18 @@ class _ListRow extends ConsumerWidget {
 /// disappears into the card. A Lucide symbol has no such problem: it is drawn
 /// in the theme's own ink, so it gets the ordinary tile from [IconTile].
 ///
-/// [grocery] is the article's own list saying it holds food. Nothing matched on
-/// such a list falls back to [generalGroceryAsset] rather than to the glyph, so
-/// an unrecognised article still looks like shopping — see there. A Sonstige
-/// list never shows a grocery photo at all and keeps the glyph.
+/// A Sonstige list has no article pictures at all — see [_ItemRow] — so this
+/// only ever draws on a list that holds food, and an article nothing matched
+/// falls back to [generalGroceryAsset] rather than to a symbol: on a shopping
+/// list even an unrecognised line still looks like shopping.
 class _ItemIcon extends StatelessWidget {
   final String? iconKey;
-  final Color accent;
-  final bool grocery;
 
-  const _ItemIcon({required this.iconKey, required this.accent, required this.grocery});
+  const _ItemIcon({required this.iconKey});
 
   @override
   Widget build(BuildContext context) {
-    final asset = resolveIcon(iconKey)?.asset ?? (grocery ? generalGroceryAsset : null);
-    if (asset == null) {
-      return IconTile(iconKey: iconKey, size: 42, imageSize: 20, glyphSize: 20, fallbackIcon: LucideIcons.clipboardCheck, glyphColor: accent);
-    }
-    final image = IconImage(asset: asset, size: 34);
+    final image = IconImage(asset: resolveIcon(iconKey)?.asset ?? generalGroceryAsset, size: 34);
     if (!AppColors.isDark) {
       return SizedBox(width: 42, height: 42, child: Center(child: image));
     }
@@ -890,11 +891,12 @@ bool _itemMatches(ShoppingListItem item, String query) {
 /// *cheese* offer the same chips. Tapping one files the article under its
 /// German name.
 ///
-/// [grocery] says which catalog gets the first look at what was typed. On a
-/// Sonstige list the article chips are dropped outright — "Bohrmaschine" is not
-/// a shopping article, and a row of food photos under it would be noise — but
-/// the icon preview stays, and there it can just as well come out as a symbol
-/// or a shop logo.
+/// [grocery] says whether either of them happens at all. On a Sonstige list
+/// the article chips are dropped outright — "Bohrmaschine" is not a shopping
+/// article, and a row of food photos under it would be noise — and so is the
+/// icon preview, because the row it is previewing carries no icon either. The
+/// empty circle stays where it is: it sits exactly where the article's own
+/// checkbox will, so the text lines up before and after the add.
 class _AddItemRow extends ConsumerStatefulWidget {
   final bool grocery;
 
@@ -931,7 +933,7 @@ class _AddItemRowState extends ConsumerState<_AddItemRow> {
 
   @override
   Widget build(BuildContext context) {
-    final preview = suggestIcon(_draft, subject: widget.grocery ? IconSubject.groceryArticle : IconSubject.article);
+    final preview = widget.grocery ? suggestIcon(_draft, subject: IconSubject.groceryArticle) : null;
     final suggestions = widget.grocery
         ? [for (final icon in groceryIconSuggestions(_draft)) IconChoice(kind: IconKind.grocery, key: icon.asset, label: icon.label)]
         : const <IconChoice>[];
@@ -1134,6 +1136,12 @@ class _ItemRowState extends ConsumerState<_ItemRow> {
     final attachments = ref.watch(listProvider).attachmentsFor(item);
     final photos = attachments.where((a) => a.isImage);
     final photo = photos.isEmpty ? null : photos.first;
+    // A lone photo is already on the row as its thumbnail, so its file name
+    // under the article would be a caption for a picture you can see —
+    // "IMG_4821.HEIC" says nothing about the item. A document has no thumbnail
+    // and its name is the only thing identifying it, and several attachments
+    // still need the line to say how many there are.
+    final showAttachments = attachments.length > 1 || (attachments.length == 1 && !attachments.first.isImage);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 15),
       child: Row(
@@ -1141,17 +1149,29 @@ class _ItemRowState extends ConsumerState<_ItemRow> {
           CheckOffButton(progress: strike, accent: accent, onTap: onCheckOff, size: 24),
           const SizedBox(width: 12),
           // An attached photo takes the icon's place: it *is* the picture of
-          // this item, and it says more than the generic grocery glyph it
-          // replaces. Rounded rather than round — a photo cropped to a circle
-          // loses its corners for nothing.
-          if (photo != null)
-            ClipRRect(
-              borderRadius: BorderRadius.circular(11),
-              child: Image.file(File(photo.path), width: 42, height: 42, fit: BoxFit.cover),
-            )
-          else
-            _ItemIcon(iconKey: item.iconKey, accent: accent, grocery: _isGroceryList(ref, item.listId)),
-          const SizedBox(width: 12),
+          // this item, and it says more than the grocery picture it replaces.
+          // Round, like the grocery picture's own tile and the check circle
+          // in front of it — the row reads as one line of circles, and a
+          // rounded square in the middle of it was the only corner in sight.
+          //
+          // On a Sonstige list there is nothing in that slot to begin with: a
+          // Bohrmaschine and a Termin beim Zahnarzt have no picture worth
+          // guessing at, and a row of near-identical fallback symbols reads as
+          // noise in front of the words that carry the meaning. A checkbox and
+          // the text are the whole row — but a photo the user attached
+          // themselves still shows, because that one they chose.
+          if (photo != null) ...[
+            ClipOval(
+              // The copy on this device while the session that picked it is
+              // still running, the signed URL from then on — see
+              // [PhotoThumbnail].
+              child: PhotoThumbnail(url: photo.url, filePath: photo.localPath, size: 42),
+            ),
+            const SizedBox(width: 12),
+          ] else if (_isGroceryList(ref, item.listId)) ...[
+            _ItemIcon(iconKey: item.iconKey),
+            const SizedBox(width: 12),
+          ],
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1212,7 +1232,7 @@ class _ItemRowState extends ConsumerState<_ItemRow> {
                       onPicked: (u) => ref.read(listProvider.notifier).setUnit(item, u),
                     ),
                   ),
-                if (attachments.isNotEmpty)
+                if (showAttachments)
                   Opacity(
                     opacity: 1 - 0.45 * strike,
                     child: _AttachmentsLine(attachments: attachments, accent: accent),
@@ -1412,7 +1432,8 @@ class _QuantityCircle extends StatelessWidget {
 
 /// What the item is carrying, under its name: the file's own name while
 /// there's only one, a count once there are several — a column of file names
-/// would drown out the item itself.
+/// would drown out the item itself. Not shown at all for a single photo, which
+/// the row is already showing rather than naming.
 class _AttachmentsLine extends StatelessWidget {
   final List<ItemAttachment> attachments;
   final Color accent;
@@ -1446,9 +1467,11 @@ class _AttachmentsLine extends StatelessWidget {
 /// Puts up the system picker and files whatever comes back under the item.
 /// Cancelling (or a device with no camera) simply returns nothing.
 Future<void> _attach(WidgetRef ref, ShoppingListItem item, AttachmentSource source) async {
-  final picked = await pickAttachment(source);
+  // Photographs are capped on their way in; a document from Dateien is left
+  // alone, because there is no such thing as a downscaled PDF.
+  final picked = await pickAttachment(source, maxDimension: itemPhotoMaxDimension);
   if (picked == null) return;
-  ref.read(listProvider.notifier).addAttachment(item.id, picked);
+  await ref.read(listProvider.notifier).addAttachment(item, picked);
 }
 
 /// Swiping an item row left reveals Delete, the same gesture the Kalender
@@ -1467,6 +1490,7 @@ Widget _swipeToDelete(WidgetRef ref, ShoppingListItem item, Widget row) {
 /// menu is something you're doing to the item, so spelling the verb out four
 /// times says nothing and makes the list harder to scan.
 List<AnchoredMenuItem> _itemMenu(WidgetRef ref, ShoppingListItem item) {
+  final attachments = ref.read(listProvider).attachmentsFor(item);
   return [
     AnchoredMenuItem(
       label: L.s.searchOnAmazon,
@@ -1478,6 +1502,17 @@ List<AnchoredMenuItem> _itemMenu(WidgetRef ref, ShoppingListItem item) {
     AnchoredMenuItem(label: L.s.photo, icon: LucideIcons.image, onSelected: () => _attach(ref, item, AttachmentSource.photos)),
     AnchoredMenuItem(label: L.s.camera, icon: LucideIcons.camera, onSelected: () => _attach(ref, item, AttachmentSource.camera)),
     AnchoredMenuItem(label: L.s.files, icon: LucideIcons.folder, onSelected: () => _attach(ref, item, AttachmentSource.files)),
+    // One row per attached file, because they are stored now and a file you
+    // cannot take off again is a file you think twice about putting on. Named
+    // by the file only when there are several — with one there is nothing to
+    // tell apart, and "IMG_4821.HEIC" says less than "Foto entfernen" does.
+    for (final attached in attachments)
+      AnchoredMenuItem(
+        label: attachments.length == 1 ? L.s.removePhoto : attached.name,
+        icon: LucideIcons.x,
+        destructive: true,
+        onSelected: () => ref.read(listProvider.notifier).removeAttachment(item, attached),
+      ),
     AnchoredMenuItem(
       label: L.s.delete,
       icon: LucideIcons.trash2,
@@ -1513,8 +1548,12 @@ class _DoneItemRow extends ConsumerWidget {
             children: [
               CheckOffButton(progress: strike, accent: accent, onTap: onUndo, size: 24),
               const SizedBox(width: 12),
-              _ItemIcon(iconKey: item.iconKey, accent: accent, grocery: _isGroceryList(ref, item.listId)),
-              const SizedBox(width: 12),
+              // Same rule as the open row: pictures on a Lebensmittel list,
+              // nothing on a Sonstige one.
+              if (_isGroceryList(ref, item.listId)) ...[
+                _ItemIcon(iconKey: item.iconKey),
+                const SizedBox(width: 12),
+              ],
               Expanded(
                 // Aligned, not stretched: the strike has to stop at the last
                 // glyph, and [Expanded] would hand the stack the whole row.

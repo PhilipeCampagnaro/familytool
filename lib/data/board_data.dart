@@ -1,4 +1,5 @@
 import '../l10n/l10n.dart';
+import '../models/homework.dart';
 import '../models/task.dart';
 
 /// Strips the time off a [DateTime] so two dates can be compared for "same
@@ -21,6 +22,16 @@ bool boardIsSameDay(DateTime a, DateTime b) =>
 /// 'Donnerstag, 13. Aug'. The weekday list is Sunday-first, hence the `% 7`.
 String boardLongDayName(DateTime d) => L.s.weekdayWithDateShort(d.weekday % 7, d.day, d.month);
 
+/// What the Board's create sheet is making.
+///
+/// The two are different objects rather than two settings of one — see
+/// `public.trackers` — and the sheet asks before anything else, because the
+/// answer changes what the rest of it means. A task is owed on a day and goes
+/// overdue when it is not done; a tracker is a rhythm, and a day it was not
+/// kept is a gap in a record rather than a row that follows the household
+/// around.
+enum BoardItemKind { task, tracker }
+
 /// The buckets the Board renders open tasks in, in the order it renders them.
 ///
 /// The Board used to *be* a day — a week strip picked one and its tasks hung
@@ -40,8 +51,16 @@ enum BoardSection { overdue, today, tomorrow, thisWeek, later, undated }
 /// the section is labelled "Diese Woche", and a Saturday that swept in the
 /// following Thursday would be lying. Late in the week the section is simply
 /// empty and everything falls through to [BoardSection.later].
-BoardSection boardSectionOf(BoardTask task, DateTime today) {
-  final due = task.dueDate;
+BoardSection boardSectionOf(BoardTask task, DateTime today) =>
+    boardSectionForDate(task.dueDate, today);
+
+/// The same bucketing, for anything with a due date rather than only a task.
+///
+/// School homework lands in these sections beside the household's own tasks,
+/// and it has to land in the *same* ones: "heute fällig" that quietly meant
+/// "heute fällig, unless the school set it" would be a worse lie than not
+/// showing homework at all.
+BoardSection boardSectionForDate(DateTime? due, DateTime today) {
   if (due == null) return BoardSection.undated;
 
   final day = boardDay(due);
@@ -56,6 +75,30 @@ BoardSection boardSectionOf(BoardTask task, DateTime today) {
   if (!day.isAfter(sunday)) return BoardSection.thisWeek;
 
   return BoardSection.later;
+}
+
+/// The homework in each bucket, soonest first inside it.
+///
+/// Homework the pupil has already ticked off **in Untis** is left out, the way
+/// a done task is: it belongs in neither the overdue pile nor today's list, and
+/// the tick is theirs rather than ours to make. Untis stays the one place that
+/// answers whether the Vokabeln are learnt.
+Map<BoardSection, List<Homework>> homeworkBySection(
+  List<Homework> homework,
+  DateTime today,
+) {
+  final out = <BoardSection, List<Homework>>{};
+  for (final h in homework) {
+    if (h.done) continue;
+    (out[boardSectionForDate(h.dueOn, today)] ??= []).add(h);
+  }
+  for (final list in out.values) {
+    list.sort((a, b) {
+      final byDue = a.dueOn.compareTo(b.dueOn);
+      return byDue != 0 ? byDue : a.label.compareTo(b.label);
+    });
+  }
+  return out;
 }
 
 /// One rendered section: the bucket, and the open tasks in it.

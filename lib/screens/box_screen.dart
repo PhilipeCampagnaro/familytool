@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -6,6 +8,7 @@ import '../models/box_item.dart';
 import '../state/auth_state.dart';
 import '../state/box_state.dart';
 import '../state/family_state.dart';
+import '../services/media_picker.dart';
 import '../state/sharing_state.dart';
 import '../theme/tokens.dart';
 import '../widgets/anchored_menu.dart';
@@ -182,6 +185,7 @@ class _BoxOverview extends ConsumerWidget {
                 SearchResultRow(
                   leading: IconTile(
                     iconKey: hit.iconKey,
+                    photoUrl: state.photoUrl(hit.photoPath),
                     size: 38,
                     imageSize: 24,
                     glyphSize: 18,
@@ -214,6 +218,7 @@ void openBoxSheet(BuildContext context, WidgetRef ref, {StorageBox? box}) {
   showAppSheet(
     context: context,
     title: box == null ? L.s.newBox : L.s.editBox,
+    requiredField: nameController,
     heightFactor: 0.64,
     onSave: () async {
       final notifier = ref.read(boxProvider.notifier);
@@ -226,7 +231,14 @@ void openBoxSheet(BuildContext context, WidgetRef ref, {StorageBox? box}) {
         }
         return;
       }
-      if (await notifier.createBox(name: nameController.text, place: placeController.text, iconKey: draft.picked)) {
+      if (await notifier.createBox(
+        name: nameController.text,
+        place: placeController.text,
+        iconKey: draft.picked,
+        // Held on the draft rather than uploaded on the tap: the object is
+        // filed under the box's id, and a box that doesn't exist has none.
+        photo: draft.photoFile == null ? null : File(draft.photoFile!),
+      )) {
         confirm(L.s.boxCreated);
       }
     },
@@ -250,6 +262,66 @@ class _BoxSheetBody extends ConsumerStatefulWidget {
 }
 
 class _BoxSheetBodyState extends ConsumerState<_BoxSheetBody> {
+  /// Where the fallback dropdown hangs when there is no system action sheet —
+  /// see [showPictureMenu].
+  final _pictureAnchor = GlobalKey();
+
+  bool _uploading = false;
+
+  /// The box being edited as the state currently holds it, or null while one is
+  /// being created. [_BoxSheetBody.box] is a snapshot from the moment the sheet
+  /// opened and goes stale the first time a picture is written.
+  StorageBox? get _liveBox {
+    final id = widget.box?.id;
+    return id == null ? null : ref.read(boxProvider).boxById(id);
+  }
+
+  /// The picture row's menu: a photo, one taken now, the symbol picker, or
+  /// away with it.
+  ///
+  /// **Two different write moments, and the box is what decides which.** An
+  /// existing box takes the picture straight away, exactly as the profile page
+  /// does — the user has just watched it appear in the row and does not expect
+  /// a Sichern to be what keeps it. A box being *created* has no id yet, and
+  /// the storage layout keys on that id, so its picture waits on the draft
+  /// until the insert comes back.
+  Future<void> _pictureMenu(String? iconKey, String name) async {
+    // From the state, not from `widget.box` — that is the box as it was when
+    // the sheet opened, and a picture taken a moment ago has already moved on
+    // without it.
+    final box = _liveBox;
+    final hasPhoto = widget.draft.photoFile != null || box?.photoPath != null;
+    final choice = await showPictureMenu(context, anchorKey: _pictureAnchor, hasPhoto: hasPhoto);
+    if (choice == null || !mounted) return;
+
+    switch (choice) {
+      case PictureChoice.symbol:
+        final picked = await showIconPicker(context, selected: iconKey, name: name, subject: IconSubject.box);
+        if (picked == null || !mounted) return;
+        // A symbol replaces a photo the same way a photo replaces a symbol —
+        // there is one picture, and this is the user choosing which.
+        setState(() {
+          widget.draft.picked = picked;
+          widget.draft.photoFile = null;
+        });
+        if (box?.photoPath != null) await ref.read(boxProvider.notifier).removeBoxPhoto(box!.id);
+      case PictureChoice.remove:
+        setState(() => widget.draft.photoFile = null);
+        if (box?.photoPath != null) await ref.read(boxProvider.notifier).removeBoxPhoto(box!.id);
+      case PictureChoice.photo || PictureChoice.camera:
+        final source = choice == PictureChoice.photo ? AttachmentSource.photos : AttachmentSource.camera;
+        final picked = await pickAttachment(source, maxDimension: itemPhotoMaxDimension);
+        if (picked == null || !picked.isImage || !mounted) return;
+        if (box == null) {
+          setState(() => widget.draft.photoFile = picked.path);
+          return;
+        }
+        setState(() => _uploading = true);
+        await ref.read(boxProvider.notifier).setBoxPhoto(box.id, File(picked.path));
+        if (mounted) setState(() => _uploading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final s = ref.watch(boxProvider);
@@ -270,6 +342,7 @@ class _BoxSheetBodyState extends ConsumerState<_BoxSheetBody> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
               child: TextField(
                 controller: widget.nameController,
+                textInputAction: TextInputAction.next,
                 style: AppText.inputTitle,
                 decoration: InputDecoration(border: InputBorder.none, hintText: L.s.boxName, isDense: true),
                 onChanged: (_) => setState(() {}),
@@ -279,13 +352,14 @@ class _BoxSheetBodyState extends ConsumerState<_BoxSheetBody> {
             IconFieldRow(
               iconKey: iconKey,
               // The sparkle means "the name chose this" — not true of the icon
-              // an edit sheet opens on.
+              // an edit sheet opens on, and never true of a photograph.
               suggested: widget.draft.picked == null && stored == null,
+              photoUrl: s.photoUrl(s.boxById(widget.box?.id ?? '')?.photoPath),
+              photoFile: widget.draft.photoFile,
               fallbackIcon: LucideIcons.box,
-              onTap: () async {
-                final picked = await showIconPicker(context, selected: iconKey, name: name, subject: IconSubject.box);
-                if (picked != null && mounted) setState(() => widget.draft.picked = picked);
-              },
+              anchorKey: _pictureAnchor,
+              uploading: _uploading,
+              onTap: () => _pictureMenu(iconKey, name),
             ),
             CardDivider(),
             Padding(
@@ -300,6 +374,7 @@ class _BoxSheetBodyState extends ConsumerState<_BoxSheetBody> {
                   Expanded(
                     child: TextField(
                       controller: widget.placeController,
+                      textInputAction: TextInputAction.done,
                       textAlign: TextAlign.right,
                       style: AppText.input,
                       decoration: InputDecoration(border: InputBorder.none, hintText: L.s.placeExample, isDense: true),
@@ -444,7 +519,7 @@ class _BoxDetail extends ConsumerWidget {
 /// The box's round icon badge — full size next to the name, small alongside the
 /// collapsed title in the header bar. Draws whatever the box's name produced
 /// (or was overridden to), falling back to the plain carton.
-class _BoxBadge extends StatelessWidget {
+class _BoxBadge extends ConsumerWidget {
   final StorageBox box;
   final double size;
   final double iconSize;
@@ -453,9 +528,13 @@ class _BoxBadge extends StatelessWidget {
   const _BoxBadge({required this.box, required this.size, required this.iconSize, required this.accent});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return IconTile(
       iconKey: box.iconKey,
+      // A photograph of the crate itself wins over the symbol its name chose —
+      // a shelf of cartons is told apart by what they look like, not by which
+      // of them the word "Keller" picked a warehouse glyph for.
+      photoUrl: ref.watch(boxProvider.select((s) => s.photoUrl(box.photoPath))),
       size: size,
       imageSize: iconSize * 1.5,
       glyphSize: iconSize,
@@ -484,6 +563,9 @@ class _ItemRow extends ConsumerWidget {
           children: [
             IconTile(
               iconKey: item.iconKey,
+              // The whole point of the feature: a symbol says "Werkzeug", a
+              // photograph says *which* drill.
+              photoUrl: ref.watch(boxProvider.select((s) => s.photoUrl(item.photoPath))),
               size: 44,
               imageSize: 28,
               glyphSize: 20,
@@ -591,10 +673,58 @@ class _ItemSheetBody extends ConsumerStatefulWidget {
 }
 
 class _ItemSheetBodyState extends ConsumerState<_ItemSheetBody> {
+  final _pictureAnchor = GlobalKey();
+
+  bool _uploading = false;
+
   @override
   void dispose() {
     widget.form.dispose();
     super.dispose();
+  }
+
+  /// The item as [state] holds it — [_ItemSheetBody.item] is the row as it was
+  /// when the sheet opened, and a photograph taken a moment ago has already
+  /// moved on without it.
+  ///
+  /// Takes the state rather than reading the provider so it can be used inside
+  /// a `select`, which is where the sheet needs it: the picture row has to
+  /// rebuild when the upload lands.
+  BoxItem _itemIn(BoxScreenState state) {
+    final item = widget.item;
+    for (final i in state.itemsFor(item.boxId)) {
+      if (i.id == item.id) return i;
+    }
+    return item;
+  }
+
+  /// The picture row's menu. Unlike the box sheet's, every branch here writes
+  /// straight away: an item is only ever *edited* from a sheet — it is created
+  /// by typing its name into the row at the bottom of the box — so there is
+  /// always a row to point at the object.
+  Future<void> _pictureMenu(String? iconKey, String name) async {
+    final item = _itemIn(ref.read(boxProvider));
+    final notifier = ref.read(boxProvider.notifier);
+    final choice = await showPictureMenu(context, anchorKey: _pictureAnchor, hasPhoto: item.photoPath != null);
+    if (choice == null || !mounted) return;
+
+    switch (choice) {
+      case PictureChoice.symbol:
+        final picked = await showIconPicker(context, selected: iconKey, name: name);
+        if (picked == null || !mounted) return;
+        setState(() => widget.form.draft.picked = picked);
+        // One picture per item: choosing a symbol is choosing it *instead*.
+        if (item.photoPath != null) await notifier.removeItemPhoto(item);
+      case PictureChoice.remove:
+        await notifier.removeItemPhoto(item);
+      case PictureChoice.photo || PictureChoice.camera:
+        final source = choice == PictureChoice.photo ? AttachmentSource.photos : AttachmentSource.camera;
+        final picked = await pickAttachment(source, maxDimension: itemPhotoMaxDimension);
+        if (picked == null || !picked.isImage || !mounted) return;
+        setState(() => _uploading = true);
+        await notifier.setItemPhoto(item, File(picked.path));
+        if (mounted) setState(() => _uploading = false);
+    }
   }
 
   @override
@@ -603,6 +733,7 @@ class _ItemSheetBodyState extends ConsumerState<_ItemSheetBody> {
     final nameController = widget.form.name;
     final name = nameController.text;
     final iconKey = widget.form.draft.picked ?? suggestIcon(name)?.key ?? item.iconKey;
+    final photoUrl = ref.watch(boxProvider.select((s) => s.photoUrl(_itemIn(s).photoPath)));
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -615,6 +746,7 @@ class _ItemSheetBodyState extends ConsumerState<_ItemSheetBody> {
                   Expanded(
                     child: TextField(
                       controller: nameController,
+                      textInputAction: TextInputAction.next,
                       style: AppText.inputTitle,
                       decoration: InputDecoration(border: InputBorder.none, hintText: L.s.itemName, isDense: true),
                       onChanged: (_) => setState(() {}),
@@ -634,11 +766,11 @@ class _ItemSheetBodyState extends ConsumerState<_ItemSheetBody> {
             IconFieldRow(
               iconKey: iconKey,
               suggested: widget.form.draft.picked == null,
+              photoUrl: photoUrl,
               fallbackIcon: LucideIcons.clipboardList,
-              onTap: () async {
-                final picked = await showIconPicker(context, selected: iconKey, name: name);
-                if (picked != null && mounted) setState(() => widget.form.draft.picked = picked);
-              },
+              anchorKey: _pictureAnchor,
+              uploading: _uploading,
+              onTap: () => _pictureMenu(iconKey, name),
             ),
             CardDivider(),
             Padding(
@@ -653,6 +785,10 @@ class _ItemSheetBodyState extends ConsumerState<_ItemSheetBody> {
                   Expanded(
                     child: TextField(
                       controller: widget.form.size,
+                      // Not `next`: the row after this one is the multi-line
+                      // note, and a return key that jumps into a field whose
+                      // own return key inserts a newline reads as a dead end.
+                      textInputAction: TextInputAction.done,
                       textAlign: TextAlign.right,
                       style: AppText.input,
                       decoration: InputDecoration(border: InputBorder.none, hintText: L.s.sizeExample, isDense: true),

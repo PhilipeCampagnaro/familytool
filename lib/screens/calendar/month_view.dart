@@ -29,13 +29,13 @@ class _MonthViewState extends ConsumerState<_MonthView> {
   // _buildHeader) — the part of the header that fades away as the grid
   // scrolls, leaving just the title (shrunk + centered) and the filter
   // dropdown that stands in for the chips + the add button. 16 top padding +
-  // 40 toggle row + 14 gap + 40 chip row + 16 bottom padding. Driven directly
+  // 40 toggle row + 14 gap + 44 chip row + 16 bottom padding. Driven directly
   // off `_scrollController.offset` (rather than a NestedScrollView sliver, as
   // the week view uses) since this scroll view already needs its own
   // controller for the "Heute" visibility check below, and a
   // `center:`-anchored CustomScrollView doesn't compose with
   // NestedScrollView's overlap-injection contract.
-  static const _extraHeaderHeight = 126.0;
+  static const _extraHeaderHeight = 130.0;
   double _headerT = 0.0;
 
   @override
@@ -211,14 +211,7 @@ class _MonthViewState extends ConsumerState<_MonthView> {
                   ),
                 ],
               ),
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: navContentInset(context, pill: 106, gap: 36),
-                child: Center(
-                  child: _JumpToTodayButton(visible: !_todayVisible, accent: accent, onTap: _jumpToToday),
-                ),
-              ),
+              _JumpToTodaySlot(visible: !_todayVisible, accent: accent, onTap: _jumpToToday),
             ],
           ),
         ),
@@ -251,9 +244,7 @@ class _MonthBlock extends ConsumerWidget {
     final sel = state.selected;
     final isSelectedMonth = sel.y == year && sel.m == month;
     final selDate = DateTime(sel.y, sel.m, sel.d);
-    final headingText = _isToday(sel.y, sel.m, sel.d)
-        ? L.s.todayWithDate(sel.d, sel.m)
-        : L.s.weekdayWithDate(selDate.weekday % 7, sel.d, sel.m);
+    final headingText = _dayHeading(selDate);
     final dayEvents = isSelectedMonth ? state.eventsFor(sel.y, sel.m, sel.d) : const <CalendarEvent>[];
 
     return Padding(
@@ -300,12 +291,32 @@ class _MonthBlock extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
-                        crossAxisAlignment: CrossAxisAlignment.baseline,
-                        textBaseline: TextBaseline.alphabetic,
                         children: [
-                          Flexible(child: Text(headingText, overflow: TextOverflow.ellipsis, style: AppText.itemTitle)),
-                          const SizedBox(width: 8),
-                          Text(L.s.eventCount(dayEvents.length), style: AppText.label),
+                          Expanded(
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.baseline,
+                              textBaseline: TextBaseline.alphabetic,
+                              children: [
+                                Flexible(child: Text(headingText, overflow: TextOverflow.ellipsis, style: AppText.itemTitle)),
+                                const SizedBox(width: 8),
+                                Text(L.s.eventCount(dayEvents.length), style: AppText.label),
+                              ],
+                            ),
+                          ),
+                          // A bare glyph, the way every other dismiss in the
+                          // app is drawn. It sits inside the card rather than
+                          // over its corner: the card is a cross-fade child,
+                          // and [AnimatedCrossFade] clips to that child, so
+                          // anything hanging off the edge loses the half that
+                          // hangs. The padding is the tap target, not spacing.
+                          GestureDetector(
+                            onTap: () => ref.read(calendarProvider.notifier).collapseMonthDetail(),
+                            behavior: HitTestBehavior.opaque,
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(12, 4, 2, 8),
+                              child: Icon(LucideIcons.x, size: 17, color: AppColors.muted),
+                            ),
+                          ),
                         ],
                       ),
                       if (isSelectedMonth && holidays[sel.d] != null)

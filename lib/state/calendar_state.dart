@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/calendar_data.dart';
 import '../data/repositories/calendar_repository.dart';
 import '../models/calendar_event.dart';
+import '../models/homework.dart';
 import 'auth_state.dart';
 import 'family_state.dart';
 import '../l10n/l10n.dart';
@@ -43,8 +44,30 @@ class CalendarScreenState {
   /// old `added`/`edits`/`deletedKeys` overlay maps: with a real backend the
   /// server holds the truth, so there is nothing to overlay on top of — the
   /// same move `ListNotifier` made.
+  /// Which chip in the filter row is lit, or null for "Alle".
+  ///
+  /// Tracked rather than derived from [calendarFilter], because filtering to a
+  /// person deliberately shows **more** than that person's own calendars: the
+  /// shared family ones come too, since a family dinner really is on Alice's
+  /// Thursday. Deriving "which chip is this" from the id set would then light
+  /// two chips at once — hers and the family's — and neither answer is the one
+  /// the row wants to give.
+  final String? filterGroupId;
+
   final List<CalendarSource> calendars;
   final Map<String, List<CalendarEvent>> eventsByDay;
+
+  /// Lesson `uid` -> the homework due in it, already indexed by the repository.
+  ///
+  /// Only the lessons that actually carry homework are in here, so the card's
+  /// lookup is a miss for almost every event and costs nothing. Homework whose
+  /// due date falls outside the fortnight the school publishes has no lesson to
+  /// attach to and is absent — it is still in [homework], which is what Board
+  /// reads.
+  final Map<String, List<Homework>> homeworkByEvent;
+
+  /// Every homework the household's school accounts carry, soonest first.
+  final List<Homework> homework;
 
   final bool loaded;
   final String? error;
@@ -63,8 +86,11 @@ class CalendarScreenState {
     CalSelectedDay? selected,
     this.monthDetailExpanded = false,
     this.calendarFilter,
+    this.filterGroupId,
     this.calendars = const [],
     this.eventsByDay = const {},
+    this.homeworkByEvent = const {},
+    this.homework = const [],
     this.loaded = false,
     this.error,
     this.fromCache = false,
@@ -85,8 +111,11 @@ class CalendarScreenState {
     bool? monthDetailExpanded,
     Set<String>? calendarFilter,
     bool clearCalendarFilter = false,
+    String? filterGroupId,
     List<CalendarSource>? calendars,
     Map<String, List<CalendarEvent>>? eventsByDay,
+    Map<String, List<Homework>>? homeworkByEvent,
+    List<Homework>? homework,
     bool? loaded,
     String? error,
     bool clearError = false,
@@ -101,8 +130,11 @@ class CalendarScreenState {
       selected: selected ?? this.selected,
       monthDetailExpanded: monthDetailExpanded ?? this.monthDetailExpanded,
       calendarFilter: clearCalendarFilter ? null : (calendarFilter ?? this.calendarFilter),
+      filterGroupId: clearCalendarFilter ? null : (filterGroupId ?? this.filterGroupId),
       calendars: calendars ?? this.calendars,
       eventsByDay: eventsByDay ?? this.eventsByDay,
+      homeworkByEvent: homeworkByEvent ?? this.homeworkByEvent,
+      homework: homework ?? this.homework,
       loaded: loaded ?? this.loaded,
       error: clearError ? null : (error ?? this.error),
       fromCache: fromCache ?? this.fromCache,
@@ -167,6 +199,37 @@ class CalendarScreenState {
     return [for (final e in all) if (filter.contains(e.calendarId)) e];
   }
 
+  /// The loaded event a list or a task points back at, or null.
+  ///
+  /// **Unfiltered on purpose.** A task hung off Ferdi's football training must
+  /// find it even while the chip row is narrowed to Mama, because the tap that
+  /// got here was on the task and had nothing to do with the filter — the
+  /// caller widens the filter afterwards so that the day behind the sheet
+  /// actually shows the event ([_openLinkedEvent]).
+  ///
+  /// [day] is the snapshot the link carries and is only a hint: it is checked
+  /// first because it is nearly always right, and the whole loaded window after
+  /// it because an appointment that has since been moved is exactly the case
+  /// where the snapshot is not. Null means "outside the fortnight we hold",
+  /// which is the ordinary answer for anything more than a few weeks out.
+  CalendarEvent? eventForLink({required String calendarId, required String uid, DateTime? day}) {
+    if (uid.isEmpty) return null;
+
+    bool matches(CalendarEvent e) => e.uid == uid && e.calendarId == calendarId;
+
+    if (day != null) {
+      for (final e in eventsByDay[key(day.year, day.month, day.day)] ?? const <CalendarEvent>[]) {
+        if (matches(e)) return e;
+      }
+    }
+    for (final events in eventsByDay.values) {
+      for (final e in events) {
+        if (matches(e)) return e;
+      }
+    }
+    return null;
+  }
+
   /// A value that changes whenever the filter does, for the widget keys that
   /// rebuild on it. A `Set` is identity-compared inside a [ValueKey], so the
   /// key would never notice a filter change; the ids are sorted so that two
@@ -188,17 +251,29 @@ class CalendarScreenState {
   /// three says it once. A Google account with a work and a private calendar
   /// gets the same treatment for the same reason.
   ///
-  /// Built from [activeSources], so a group only appears once something in it
-  /// has an event in the loaded window, and it names only the calendars that
-  /// do.
+  /// A group appears once **anything** in it has an event in the loaded window,
+  /// and then lists **all** of that account's calendars — not only the ones
+  /// with something in view. Building the list itself from the events instead
+  /// was wrong twice over: a Klausurplan with two dates and an Aufgaben with
+  /// none collapsed to a group of one, so the chip read "Klausurplan" rather
+  /// than the account, and the empty calendar could not be reached to be
+  /// unticked. An account's calendars are a property of the account, not of
+  /// what happens to fall in the fortnight on screen — a Klausurplan is empty
+  /// all summer and is still Alice's.
   List<CalendarGroup> get activeGroups {
+    final seen = <String>{};
+    for (final day in eventsByDay.values) {
+      for (final e in day) {
+        seen.add(e.calendarId);
+      }
+    }
+
     final out = <CalendarGroup>[];
     final byId = <String, int>{};
 
-    for (final src in activeSources) {
-      // A feed has no account, and a calendar whose connection contributes only
-      // this one has no group worth drawing: both stand alone under their own
-      // name, exactly as they did before there were groups.
+    for (final src in calendars) {
+      // A feed has no account: it stands alone under its own name, exactly as
+      // it did before there were groups.
       if (src.groupId.isEmpty) {
         out.add(CalendarGroup(id: src.id, name: src.name, calendars: [src]));
         continue;
@@ -216,11 +291,13 @@ class CalendarScreenState {
       }
     }
 
-    // A group of one is not a group: it says the account's name where the
-    // calendar's own is more useful, and it would offer a popup with a single
-    // row in it.
     return [
-      for (final g in out) g.calendars.length == 1 ? g.asSingle() : g,
+      for (final g in out)
+        if (g.calendars.any((c) => seen.contains(c.id)))
+          // A connection offering exactly one calendar is not a group: it says
+          // the account's name where the calendar's own is more useful, and it
+          // would offer a popup with a single row in it.
+          g.calendars.length == 1 ? g.asSingle() : g,
     ];
   }
 
@@ -323,17 +400,38 @@ class CalendarNotifier extends StateNotifier<CalendarScreenState> {
   /// [silent] keeps a failure quiet when there is already a cached calendar on
   /// screen — the user has their events, and a red banner over a working
   /// calendar would just be noise.
+  /// The read that is currently out, if there is one. See [refresh].
+  Future<CalendarSnapshot>? _inFlight;
+
   Future<void> refresh({bool silent = false}) async {
     try {
-      final snapshot = await _repo.fetch();
+      // Two callers asking at once get one read, not two. This is the cheapest
+      // possible guard and the only one that cannot be wrong: it never delays a
+      // refresh and never suppresses one, it only declines to start a second
+      // fan-out while the first is still in the air.
+      //
+      // Worth having because a `calendar-events` call is the most expensive
+      // thing the app can do — it goes out to Google, Outlook and every CalDAV
+      // server the household has connected, on a 90-second budget — so the
+      // usual cost of an accidental double call is not a wasted request but a
+      // doubled load on somebody's school server and on our own provider
+      // quota, which is shared across every user of the app. Kalender opening
+      // while the connections screen finishes a connect is the ordinary way to
+      // get two, and a provider rebuild loop is the alarming way.
+      final snapshot = await (_inFlight ??= _repo.fetch());
       if (!mounted) return;
       _apply(snapshot);
     } catch (_) {
       if (!mounted) return;
+      // Nothing is cleared here on purpose: whatever the cache put on screen
+      // stays there, and only the banner changes. That is the whole reason
+      // CalendarRepository._external throws rather than returning empty lists.
       state = state.copyWith(
         loaded: true,
         error: silent ? null : L.s.calendarLoadFailed,
       );
+    } finally {
+      _inFlight = null;
     }
   }
 
@@ -341,6 +439,8 @@ class CalendarNotifier extends StateNotifier<CalendarScreenState> {
     state = state.copyWith(
       calendars: snapshot.calendars,
       eventsByDay: snapshot.eventsByDay,
+      homeworkByEvent: snapshot.homeworkByEvent,
+      homework: snapshot.homework,
       loaded: true,
       fromCache: snapshot.fromCache,
       clearError: true,
@@ -366,8 +466,35 @@ class CalendarNotifier extends StateNotifier<CalendarScreenState> {
     );
   }
 
+  /// Close the month view's inline day card without moving the selection —
+  /// what its X does. Tapping the day again is still the other way out, but a
+  /// card several event rows tall pushes its own day number off screen, so
+  /// "tap the day again" stops being a visible option exactly when the card is
+  /// biggest.
+  void collapseMonthDetail() {
+    if (state.monthDetailExpanded) state = state.copyWith(monthDetailExpanded: false);
+  }
+
   /// Tapping a chip: show exactly this account's calendars, or go back to
   /// "Alle" when they are already the whole filter.
+  /// Filter to one person's chip — **plus the household's own calendars.**
+  ///
+  /// The union is the whole point. A family calendar is on everybody's day: if
+  /// tapping "Alice" hid the shared one, her Thursday would lose the dentist
+  /// and Oma's birthday, and the filter would be answering a question nobody
+  /// asked ("which calendars are filed under Alice") instead of the one they
+  /// did ("what has Alice got on"). The family chip itself is the other
+  /// direction — only the shared things, for "what are we all doing".
+  void filterToGroup(CalendarGroup group) {
+    final ids = {...group.ids};
+    if (!group.isFamily) {
+      for (final g in state.activeGroups) {
+        if (g.isFamily) ids.addAll(g.ids);
+      }
+    }
+    state = state.copyWith(calendarFilter: ids, filterGroupId: group.id);
+  }
+
   void setCalendarFilter(Set<String> calendarIds) {
     final current = state.calendarFilter;
     final same = current != null &&
@@ -392,11 +519,31 @@ class CalendarNotifier extends StateNotifier<CalendarScreenState> {
   /// calendar with no visible way out of it.
   void toggleCalendarInGroup(CalendarGroup group, String calendarId) {
     final current = state.calendarFilter;
-    final within = current == null ? <String>{} : current.intersection(group.ids);
-    final base = within.isEmpty ? {...group.ids} : within;
+    final Set<String> base;
+    if (current == null) {
+      // Nothing is filtered, so every one of this account's calendars is
+      // showing: start from all of them.
+      base = {...group.ids};
+    } else {
+      final within = current.intersection(group.ids);
+      // A filter pointing at *another* account is replaced by this one, since
+      // the popup refines within the chip it hangs off. An **empty** filter is
+      // not that: it is this account already emptied, and it has to stay empty
+      // so the next tick adds one calendar back rather than reading as "all of
+      // them except that one".
+      base = within.isEmpty && current.isNotEmpty ? {...group.ids} : {...within};
+    }
 
     if (!base.remove(calendarId)) base.add(calendarId);
-    setCalendarFilter(base);
+
+    // Set the filter directly rather than through [setCalendarFilter], whose
+    // empty case means "the chip was tapped off, show everything again".
+    // Emptying the last row here means the opposite — "none of Alice's, thanks"
+    // — and unticking a box must never tick the others back on. The way out is
+    // the "Alle" chip, which is always the first thing in the row, or ticking a
+    // row again; the chip row itself is built from unfiltered events, so it
+    // stays on screen with nothing selected.
+    state = state.copyWith(calendarFilter: base, filterGroupId: group.id);
   }
 
   /// "Alle" — clears any active calendar filter so every source shows again.
@@ -460,10 +607,26 @@ class CalendarNotifier extends StateNotifier<CalendarScreenState> {
   /// create fails nothing has been lost, whereas deleting first and then failing
   /// to create would lose the appointment outright. The remaining failure mode
   /// leaves a duplicate, which the user can see and remove.
-  Future<bool> saveEvent(CalendarEvent event, EventDraft draft) async {
+  /// [scope] only means anything on a repeating appointment, and the sheet only
+  /// asks for it there.
+  ///
+  /// **A whole series cannot move to another calendar, and says so.** A move is
+  /// a create on the far side followed by a delete on this one, and the create
+  /// would have no rule to carry: the app is shown expanded occurrences and
+  /// never the RRULE behind them, so "ganze Serie" plus a new calendar can only
+  /// produce one appointment over there and an entire term deleted over here.
+  /// Refusing is the honest answer; moving a single occurrence still works.
+  Future<bool> saveEvent(
+    CalendarEvent event,
+    EventDraft draft, {
+    EventScope scope = EventScope.single,
+  }) async {
     final clean = draft.copyWith(title: draft.title.trim());
     if (clean.title.isEmpty) return _failed(L.s.eventNeedsTitle);
     if (!canEdit(event)) return _failed(L.s.calendarNotEditable);
+    if (scope == EventScope.series && clean.calendarId != event.calendarId) {
+      return _failed(L.s.seriesCannotMoveCalendar);
+    }
 
     try {
       if (clean.calendarId == event.calendarId) {
@@ -472,8 +635,14 @@ class CalendarNotifier extends StateNotifier<CalendarScreenState> {
           calendarId: event.calendarId,
           uid: event.uid,
           draft: clean,
+          scope: scope,
+          seriesUid: event.seriesUid,
+          occurrence: event,
         );
       } else {
+        // Guarded above: only a single occurrence gets this far, so the delete
+        // takes an EXDATE or one instance and leaves the rest of the series
+        // where it is.
         await _write(clean);
         await _remove(event);
       }
@@ -486,12 +655,12 @@ class CalendarNotifier extends StateNotifier<CalendarScreenState> {
     }
   }
 
-  Future<bool> deleteEvent(CalendarEvent event) async {
+  Future<bool> deleteEvent(CalendarEvent event, {EventScope scope = EventScope.single}) async {
     if (!canEdit(event)) return _failed(L.s.calendarNotEditable);
     state = state.copyWith(clearOpenEvent: true);
 
     try {
-      await _remove(event);
+      await _remove(event, scope: scope);
       await refresh();
       return true;
     } catch (e) {
@@ -533,11 +702,14 @@ class CalendarNotifier extends StateNotifier<CalendarScreenState> {
     await _repo.writeExternal(action: 'create', calendarId: target.id, draft: draft);
   }
 
-  Future<void> _remove(CalendarEvent event) async {
+  Future<void> _remove(CalendarEvent event, {EventScope scope = EventScope.single}) async {
     await _repo.writeExternal(
       action: 'delete',
       calendarId: event.calendarId,
       uid: event.uid,
+      scope: scope,
+      seriesUid: event.seriesUid,
+      occurrence: event,
     );
   }
 
@@ -561,6 +733,27 @@ final calendarRepositoryProvider = Provider<CalendarRepository>((ref) => Calenda
 /// followed by a `calendar-events` call that fans out to Google, Outlook and
 /// every CalDAV server the household has connected. It is the most expensive
 /// rebuild in the app, triggered by the least related action.
+/// Every homework the household's school accounts carry.
+///
+/// Board reads this rather than owning it: homework arrives on the *calendar's*
+/// refresh, because it comes down the same WebUntis session as the timetable.
+/// A second fetch on the Board's own schedule would log into the school twice
+/// for one answer.
+final homeworkProvider = Provider<List<Homework>>(
+  (ref) => ref.watch(calendarProvider.select((s) => s.homework)),
+);
+
+/// Calendar id -> the person chip it belongs under, so Board can filter
+/// homework by the same faces Kalender does without knowing how a calendar is
+/// owned.
+final calendarOwnerProvider = Provider<Map<String, String>>((ref) {
+  final calendars = ref.watch(calendarProvider.select((s) => s.calendars));
+  return {
+    for (final c in calendars)
+      if (c.groupId.isNotEmpty) c.id: c.groupId,
+  };
+});
+
 final calendarProvider = StateNotifierProvider<CalendarNotifier, CalendarScreenState>((ref) {
   final userId = ref.watch(currentUserIdProvider);
   // Watched but not passed on: nothing in the notifier needs the household's id
