@@ -353,6 +353,14 @@ enumerable table would enumerate where Aporah's households live. Neither table g
 `authenticated`: a subscription is only ever created by `calendar-feed`, which first proved the
 feed answers with real dates.
 
+Everything a household decides about a feed is written on **its own `family_feeds` row**, never on
+the shared one: the name, the colour, and `owner_member_id` / `owner_label` — the same owner pair
+`calendars` carries, so a Schulferien feed can sit under the schoolchild it belongs to and the bins
+under whoever puts them out. Both null is the household, which is what every subscription starts
+as and what a feed used to be pinned to in code. The grants on this table are **column-level**, so
+a new column is invisible until it is named in a `grant`; the row's policies (read: the household,
+write: the household minus the kids) already decide who may touch it at all.
+
 **A school calendar's link is a credential we deliberately keep in the open.** IServ plugin feeds
 and WebUntis subscriptions have no username or password — the tokenised URL *is* the whole
 capability — and it lives in `calendar_connections.config.feeds`, which the household can read.

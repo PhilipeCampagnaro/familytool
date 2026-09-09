@@ -335,6 +335,12 @@ class _FamilyStepState extends ConsumerState<_FamilyStep> {
     // claiming a delivery that didn't happen.
     final sent = outcome.invite!.mailSent;
     showToast(context, sent ? L.s.invitedPerson(name.isNotEmpty ? name : email) : L.s.inviteCreatedTitle);
+    // **The keyboard goes down with the invitation that was sent.** Tapping the
+    // send button doesn't move the focus by itself, so without this the e-mail
+    // field still holds it after a successful send — and "Weiter" hides for as
+    // long as it does, leaving the step with no way forward but "Überspringen".
+    // A failure keeps the focus on purpose: the fix is usually one character.
+    FocusScope.of(context).unfocus();
     setState(() {
       _emailController.clear();
       _nameController.clear();
@@ -382,6 +388,10 @@ class _FamilyStepState extends ConsumerState<_FamilyStep> {
             // the user still needs goes away with it.
             action: _typing ? null : _StepButton(label: L.s.next, onTap: _goNext, enabled: !_hasUnsentEmail && !_sending),
             bodyBuilder: (context, bottomInset) => SingleChildScrollView(
+              // The second way back out of the keyboard, for the address that
+              // won't send and the field that was tapped by mistake: a drag on
+              // the body drops the focus, which brings "Weiter" back.
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               padding: EdgeInsets.fromLTRB(AppSpacing.screenPad, 4, AppSpacing.screenPad, bottomInset),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,

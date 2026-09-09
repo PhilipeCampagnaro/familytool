@@ -82,19 +82,25 @@ class AppPalette {
   final Color brandToom;
   final Color brandIkea;
 
-  /// Tint the non-iOS glass approximation draws, and the strength of its
-  /// specular highlight / rim. On dark the highlight has to come *way* down:
-  /// the same 45% white that reads as a soft sheen over a light backdrop reads
-  /// as a grey fog over a dark one.
+  /// Tint the Flutter-drawn glass approximation fills itself with, and the
+  /// strength of its specular highlight / rim. On dark the highlight has to
+  /// come *way* down: the same 45% white that reads as a soft sheen over a
+  /// light backdrop reads as a grey fog over a dark one.
+  ///
+  /// **A near-opaque tone of the surface, never a neutral veil.** It used to be
+  /// ink at 15% on light, on the theory that a translucent grey over whatever
+  /// is behind it is what glass does. It isn't: the real material lightens what
+  /// it covers, so a darkening veil turned every glass control into a grey disc
+  /// the moment the approximation was used — which on iOS is every time a menu
+  /// or a sheet opens over one (see `occludedByRoute`). Each caller had been
+  /// working around it by passing the nav pill's light tint by hand, so this is
+  /// now that tone, and there is nothing left to pass.
   final Color glassFallbackTint;
   final Color glassSpecular;
   final Color glassRim;
 
   /// The colour `FrostedHeaderBackground` washes a collapsing header with.
   final Color frost;
-
-  /// Fill behind the bottom nav pill's Flutter approximation (non-iOS).
-  final Color navPillTint;
 
   /// The near-opaque vibrant material an anchored menu is drawn on, plus its
   /// hairline separator. Deliberately *not* glass — see `anchored_menu.dart`.
@@ -173,7 +179,6 @@ class AppPalette {
     required this.glassSpecular,
     required this.glassRim,
     required this.frost,
-    required this.navPillTint,
     required this.menuSurface,
     required this.menuSeparator,
     required this.brandTile,
@@ -228,11 +233,10 @@ class AppPalette {
     brandDm: Color(0xFFE4051E),
     brandToom: Color(0xFF009036),
     brandIkea: Color(0xFFFFDB00),
-    glassFallbackTint: Color(0x26111418),
+    glassFallbackTint: Color(0xCCF3F4F7),
     glassSpecular: Color(0x73FFFFFF),
     glassRim: Color(0x8CFFFFFF),
     frost: Color(0xFFFFFFFF),
-    navPillTint: Color(0xCCF3F4F7),
     menuSurface: Color(0xFAFBFBFD),
     menuSeparator: Color(0x1F3C3C43),
     brandTile: Color(0xFFFFFFFF),
@@ -318,11 +322,10 @@ class AppPalette {
     brandDm: Color(0xFFF0334A),
     brandToom: Color(0xFF16B45A),
     brandIkea: Color(0xFFFFDB00),
-    glassFallbackTint: Color(0x40FFFFFF),
+    glassFallbackTint: Color(0xCC23262D),
     glassSpecular: Color(0x24FFFFFF),
     glassRim: Color(0x2EFFFFFF),
     frost: Color(0xFF14161B),
-    navPillTint: Color(0xCC23262D),
     menuSurface: Color(0xFA24272E),
     menuSeparator: Color(0x33FFFFFF),
     brandTile: Color(0xFFFFFFFF),
@@ -436,7 +439,6 @@ class AppColors {
   static Color get glassSpecular => _palette.glassSpecular;
   static Color get glassRim => _palette.glassRim;
   static Color get frost => _palette.frost;
-  static Color get navPillTint => _palette.navPillTint;
   static Color get menuSurface => _palette.menuSurface;
   static Color get menuSeparator => _palette.menuSeparator;
   static Color get brandTile => _palette.brandTile;

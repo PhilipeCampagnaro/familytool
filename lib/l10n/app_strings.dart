@@ -77,6 +77,13 @@ abstract class AppStrings {
   String get disconnect;
   String get reload;
 
+  /// The caret on a detail screen's name, which unfolds a name too long for one
+  /// line ([ExpandableTitle]). Spoken, not drawn — the control is a glyph, and
+  /// VoiceOver would otherwise announce the name with no hint that there is
+  /// more of it behind a tap.
+  String get showFullName;
+  String get hideFullName;
+
   /// The action on a delete confirmation, and what the chip says once the
   /// restore has come back. Shared by all four screens — a per-entity wording
   /// would only repeat the noun the same chip already named.
@@ -282,10 +289,25 @@ abstract class AppStrings {
   String get trackerLegendMissed;
   String get trackerLegendNotDue;
 
+  /// Names the seven-day strip: what it is *for*, not what it shows. "Letzte 7
+  /// Tage" would describe a picture; the household came here to correct a day.
+  String get trackerBackfillTitle;
+
   /// Says the squares can be tapped. Back-filling is the reason the chart is
   /// interactive at all, and an affordance nobody finds is one that isn't
   /// there.
   String get trackerBackfillHint;
+
+  /// The same news for the quarter grid, phrased so the two lines on the screen
+  /// are not the identical sentence twice. The strip covers the week people
+  /// actually forget in; the grid is where anything older is corrected.
+  String get trackerBackfillOlderHint;
+
+  /// What the chip says after a day was filled in or taken back. It names the
+  /// day, because the thing that was tapped is a small circle among seven and a
+  /// mis-tap is otherwise invisible — that is also why it carries an undo.
+  String trackerDayFilledIn(String day);
+  String trackerDayCleared(String day);
 
   /// The check-off row's label when today is not one of the rhythm's days —
   /// where a due day offers the circle. A Montag tracker on a Mittwoch is not
@@ -358,6 +380,8 @@ abstract class AppStrings {
   String get boxDeleteFailed;
   String get itemSaveFailed;
   String get itemDeleteFailed;
+  String get itemDeleted;
+  String get itemRestoreFailed;
   String get boxCreated;
   String get boxUpdated;
   String get boxDeleted;
@@ -470,6 +494,22 @@ abstract class AppStrings {
   String get createListFromEvent;
   String get createTaskFromEvent;
 
+  /// Heads the card those two rows sit in, so the sheet's two link cards are
+  /// told apart by a word as well as by the tile under it.
+  ///
+  /// Deliberately **not** a third "zum Termin": the rows under it already say
+  /// it twice, and the heading's whole job is to be the short thing you read
+  /// first. It is the verb to [linkedToEvent]'s participle — "Neu anlegen"
+  /// over the card that makes one, "Zum Termin angelegt" over the card of what
+  /// already exists.
+  String get createForEvent;
+
+  /// The right-hand word on those rows once the thing exists, which is what
+  /// greys them out — one list and one task per appointment, and the card above
+  /// is holding the one that was made. Without it the row is grey for no stated
+  /// reason, which reads as broken rather than as done.
+  String get alreadyCreated;
+
   /// Both directions of the link between an appointment and the lists and tasks
   /// hung off it.
   ///
@@ -553,6 +593,11 @@ abstract class AppStrings {
   String get actionNeeded;
   String get connected;
   String calendarCount(int count);
+  /// The sheet a connected calendar's row opens: its name, whose day it is,
+  /// and the way to take it away. Names the *calendar*, not an action, because
+  /// it is all three at once.
+  String get calendarSettings;
+
   String get renameCalendar;
   String get renameCalendarBody;
   String get householdOnly;
@@ -938,9 +983,11 @@ abstract class AppStrings {
   /// The "Familie" row, which is the one that could be misread as a person.
   String get assignCalendarFamilyHint;
 
-  /// The field for somebody with no account — a kindergarten child, most often.
+  /// The last row of the owner card: the field for somebody with no account, a
+  /// kindergarten child most often. It is the field's own hint now that the row
+  /// carries no heading, so it names the person rather than the typing —
+  /// "Andere Person", not "Name eingeben".
   String get assignCalendarNewPerson;
-  String get assignCalendarNewPersonHint;
 
   /// The line under the picker that says what it is not.
   String get assignCalendarNotVisibility;
@@ -963,4 +1010,33 @@ abstract class AppStrings {
   String get renameFamily;
   String get renameFamilyBody;
   String get familyRenameFailed;
+  // ------------------------------------------------ confirmation lab (Home) --
+  /// The Home tab has no design yet, so it carries the bench on which every
+  /// "that worked" surface can be put up side by side and made to agree. Every
+  /// string here is scaffolding and goes when Home gets its real content.
+  String get confirmLabBody;
+  String get confirmLabSheetsGroup;
+  String get confirmLabChipsGroup;
+
+  /// The stand-in subject the demos confirm — a shopping list with a name, so
+  /// the message line is doing the job it does in the app.
+  String get confirmLabSampleName;
+  String get confirmLabNameHint;
+
+  String get confirmLabFlow;
+  String get confirmLabFlowHint;
+  String get confirmLabBeat;
+  String get confirmLabBeatHint;
+  String get confirmLabCelebration;
+  String get confirmLabCelebrationHint;
+  String get confirmLabWaiting;
+  String get confirmLabWaitingHint;
+  String get confirmLabFullPage;
+  String get confirmLabFullPageHint;
+  String get confirmLabChipConfirm;
+  String get confirmLabChipConfirmHint;
+  String get confirmLabChipUndo;
+  String get confirmLabChipUndoHint;
+  String get confirmLabChipError;
+  String get confirmLabChipErrorHint;
 }

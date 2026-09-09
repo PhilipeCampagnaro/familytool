@@ -83,6 +83,13 @@ class StringsEn extends AppStrings {
   String get restored => 'Restored';
   @override
   String get reload => 'Reload';
+
+  @override
+  String get showFullName => 'Show full name';
+
+  @override
+  String get hideFullName => 'Collapse name';
+
   @override
   String get notes => 'Notes';
   @override
@@ -288,7 +295,15 @@ class StringsEn extends AppStrings {
   @override
   String get trackerLegendNotDue => 'not planned';
   @override
+  String get trackerBackfillTitle => 'Fill in';
+  @override
   String get trackerBackfillHint => 'Tap a day to fill it in afterwards.';
+  @override
+  String get trackerBackfillOlderHint => 'Older days can be tapped in the grid.';
+  @override
+  String trackerDayFilledIn(String day) => '$day filled in';
+  @override
+  String trackerDayCleared(String day) => '$day cleared';
   @override
   String get trackerNotDueToday => 'Not due today';
   @override
@@ -397,6 +412,10 @@ class StringsEn extends AppStrings {
   String get itemSaveFailed => 'The item couldn\'t be saved.';
   @override
   String get itemDeleteFailed => 'The item couldn\'t be deleted.';
+  @override
+  String get itemDeleted => 'Item deleted';
+  @override
+  String get itemRestoreFailed => 'The item couldn\'t be restored.';
   @override
   String get boxCreated => 'Box created';
   @override
@@ -566,6 +585,10 @@ class StringsEn extends AppStrings {
   @override
   String get createTaskFromEvent => 'Create a task for this event';
   @override
+  String get createForEvent => 'Create new';
+  @override
+  String get alreadyCreated => 'Already created';
+  @override
   String get linkedToEvent => 'Created for this event';
   @override
   String get linkedEventLabel => 'Event';
@@ -686,6 +709,8 @@ class StringsEn extends AppStrings {
   String get connected => 'Connected';
   @override
   String calendarCount(int count) => count == 1 ? '1 calendar' : '$count calendars';
+  @override
+  String get calendarSettings => 'Edit calendar';
   @override
   String get renameCalendar => 'Rename calendar';
   @override
@@ -1403,8 +1428,6 @@ class StringsEn extends AppStrings {
   @override
   String get assignCalendarNewPerson => 'Someone else';
   @override
-  String get assignCalendarNewPersonHint => 'Name, e.g. Mia';
-  @override
   String get assignCalendarNotVisibility => 'This does not change who can see the calendar — everyone in the household still can.';
   @override
   String get assignCalendarFailed => 'That assignment did not go through.';
@@ -1423,4 +1446,46 @@ class StringsEn extends AppStrings {
   String get renameFamilyBody => 'The name appears on the family chip in Calendar and Board.';
   @override
   String get familyRenameFailed => 'The name could not be changed.';
+  @override
+  String get confirmLabBody => 'Every shape the app says "that worked" in, side by side.';
+  @override
+  String get confirmLabSheetsGroup => 'Sheets and pages';
+  @override
+  String get confirmLabChipsGroup => 'Chips above the navigation';
+  @override
+  String get confirmLabSampleName => 'Weekly shop';
+  @override
+  String get confirmLabNameHint => 'What the list should be called.';
+  @override
+  String get confirmLabFlow => 'Create, the whole way';
+  @override
+  String get confirmLabFlowHint => 'Field, spinner, check — and the handle drains.';
+  @override
+  String get confirmLabBeat => 'The check alone';
+  @override
+  String get confirmLabBeatHint => 'Just the beat, 1.1 seconds.';
+  @override
+  String get confirmLabCelebration => 'Confetti with a card';
+  @override
+  String get confirmLabCelebrationHint => '🎉 instead of the check, content below, 3.2 seconds.';
+  @override
+  String get confirmLabWaiting => 'Waiting, with an action';
+  @override
+  String get confirmLabWaitingHint => 'Never leaves on its own — "Done" closes it.';
+  @override
+  String get confirmLabFullPage => 'Full page';
+  @override
+  String get confirmLabFullPageHint => 'Confetti, glow from the top edge, accent pill.';
+  @override
+  String get confirmLabChipConfirm => 'Confirmation';
+  @override
+  String get confirmLabChipConfirmHint => 'Green dot, 1.9 seconds.';
+  @override
+  String get confirmLabChipUndo => 'Delete with undo';
+  @override
+  String get confirmLabChipUndoHint => 'Stays 5 seconds, long enough to reach for it.';
+  @override
+  String get confirmLabChipError => 'Failure';
+  @override
+  String get confirmLabChipErrorHint => 'Red dot, no haptic, 4 seconds.';
 }

@@ -45,6 +45,13 @@ class ProfilePageState extends ConsumerState<ProfilePage> {
     // else sees, falling back to the local draft before the roster has loaded.
     final me = ref.read(familyProvider).me(ref.read(currentUserIdProvider));
     _nameController = TextEditingController(text: me?.name ?? ref.read(settingsProvider).name);
+    // Read here and held, because the save below happens in `dispose` and by
+    // then `ref` throws: Flutter marks the element defunct in `unmount()`
+    // *before* it calls `dispose()`, and Riverpod's `ref` refuses once the
+    // context is unmounted. A `late final` initialised at its declaration
+    // wouldn't help — it is lazy, so the read would still happen in `dispose`,
+    // which is exactly how the typed name used to be dropped on the way out.
+    _householdNotifier = ref.read(familyProvider.notifier);
   }
 
   /// Puts the picked photo up straight away and saves it behind that.
@@ -102,9 +109,9 @@ class ProfilePageState extends ConsumerState<ProfilePage> {
     super.dispose();
   }
 
-  /// Captured while the widget is still mounted: `dispose` must not touch
-  /// `ref`, and the save above deliberately outlives this page.
-  late final HouseholdNotifier _householdNotifier = ref.read(familyProvider.notifier);
+  /// Captured in `initState`, while the widget is still mounted: `dispose`
+  /// must not touch `ref`, and the save above deliberately outlives this page.
+  late final HouseholdNotifier _householdNotifier;
 
   @override
   Widget build(BuildContext context) {

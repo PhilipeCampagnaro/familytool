@@ -174,6 +174,23 @@ class DeletedList {
   const DeletedList({required this.list, required this.items, required this.attachments, required this.index});
 }
 
+/// One deleted article, held for as long as its chip is up.
+///
+/// The item side of [DeletedList], and much cheaper: the list it belonged to is
+/// still there, so there is no container to re-create and no object to copy —
+/// only the row, its attachment rows, and where in the list it sat.
+class DeletedListItem {
+  final ShoppingListItem item;
+  final List<ItemAttachment> attachments;
+
+  /// Its slot among its siblings, so undo puts it back where it was rather than
+  /// at the end. Its stored `position` says the same thing to the server; this
+  /// is what keeps the screen from re-ordering itself for a frame.
+  final int index;
+
+  const DeletedListItem({required this.item, required this.attachments, required this.index});
+}
+
 class ListNotifier extends StateNotifier<ListScreenState> {
   ListNotifier(this._repo, this._photos, this._userId, this._familyId) : super(const ListScreenState()) {
     if (_userId != null) load();
@@ -715,17 +732,70 @@ class ListNotifier extends StateNotifier<ListScreenState> {
 
   /// Drops a single item, from its row's menu or its swipe action. Keyed by the
   /// item's *own* list, not the open one: in "Alle Artikel" those differ.
-  Future<void> removeItem(ShoppingListItem item) async {
+  ///
+  /// Returns what it takes to put the article back, for the confirmation chip's
+  /// "Rückgängig" to hand to [restoreItem] — or null when there is nothing to
+  /// offer, which is a row still in flight or a delete the server refused.
+  Future<DeletedListItem?> removeItem(ShoppingListItem item) async {
     final previous = state.itemsByList;
+    final index = (previous[item.listId] ?? const <ShoppingListItem>[]).indexWhere((i) => i.id == item.id);
+    final attachments = state.attachmentsFor(item);
     _removeItemLocally(item.listId, item.id);
     state = state.copyWith(justMoved: '');
-    if (_isTemp(item.id)) return;
+    // A row that never reached the server has nothing to restore *to*: undo
+    // would insert an article the delete never removed.
+    if (_isTemp(item.id)) return null;
 
     try {
       await _repo.deleteItem(item.id);
+      // The rows went with it (`item_id … on delete cascade`), so the map has
+      // to let go of them too — only now that the delete has actually landed,
+      // since the branch below puts the article back on screen.
+      if (attachments.isNotEmpty && mounted) _putAttachments(item.id, const []);
+      return DeletedListItem(item: item, attachments: attachments, index: index < 0 ? 0 : index);
     } catch (_) {
-      if (!mounted) return;
+      if (!mounted) return null;
       state = state.copyWith(itemsByList: previous, error: L.s.itemDeleteFailed);
+      return null;
+    }
+  }
+
+  /// Puts one deleted article back — a re-insert under a new id, the same deal
+  /// as [restoreList] and for the same reason: the row is gone.
+  ///
+  /// The attached files are **not** copied the way a restored list's are. Those
+  /// objects are filed under the *list*, which is still there and still owns
+  /// them — deleting an article drops its `list_item_attachments` rows and
+  /// leaves the objects where they were — so undo only has to point new rows at
+  /// the same paths. Their signed URLs are carried over with them, since they
+  /// name the very same object.
+  Future<bool> restoreItem(DeletedListItem deleted) async {
+    try {
+      final saved = await _restoreItem(deleted.item.listId, deleted.item);
+      final files = <ItemAttachment>[];
+      for (final file in deleted.attachments) {
+        // Best-effort per file, like every other restore here: one attachment
+        // that won't come back must not cost the article.
+        try {
+          final row = await _repo.addAttachment(
+            itemId: saved.id,
+            storagePath: file.storagePath,
+            name: file.name,
+            isImage: file.isImage,
+          );
+          files.add(row.copyWith(url: file.url, localPath: file.localPath));
+        } catch (_) {}
+      }
+      if (!mounted) return false;
+
+      final items = [...state.itemsFor(deleted.item.listId)];
+      items.insert(deleted.index.clamp(0, items.length), saved);
+      _putItem(deleted.item.listId, items);
+      if (files.isNotEmpty) _putAttachments(saved.id, files);
+      return true;
+    } catch (_) {
+      _fail(L.s.itemRestoreFailed);
+      return false;
     }
   }
 

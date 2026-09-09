@@ -127,6 +127,22 @@ class DeletedBox {
   const DeletedBox({required this.box, required this.items, required this.index});
 }
 
+/// One deleted item, held for as long as its chip is up.
+///
+/// The item side of [DeletedBox], and much cheaper: the box it sat in is still
+/// there, so there is no container to re-create and no picture to copy — only
+/// the row and where on the shelf it was.
+class DeletedBoxItem {
+  final BoxItem item;
+
+  /// Its slot among its siblings, so undo puts it back where it was rather than
+  /// at the end. Its stored `position` says the same thing to the server; this
+  /// is what keeps the screen from re-ordering itself for a frame.
+  final int index;
+
+  const DeletedBoxItem({required this.item, required this.index});
+}
+
 class BoxNotifier extends StateNotifier<BoxScreenState> {
   BoxNotifier(this._repo, this._photos, this._userId, this._familyId) : super(const BoxScreenState()) {
     if (_userId != null) load();
@@ -663,16 +679,56 @@ class BoxNotifier extends StateNotifier<BoxScreenState> {
 
   /// Drops a single item, from its row's menu, its swipe action or the edit
   /// sheet's delete button.
-  Future<void> removeItem(BoxItem item) async {
+  ///
+  /// Returns what it takes to put the item back, for the confirmation chip's
+  /// "Rückgängig" to hand to [restoreItem] — or null when there is nothing to
+  /// offer, which is a row still in flight or a delete the server refused.
+  Future<DeletedBoxItem?> removeItem(BoxItem item) async {
     final previous = state.itemsByBox;
+    final index = (previous[item.boxId] ?? const <BoxItem>[]).indexWhere((i) => i.id == item.id);
     _removeItemLocally(item.boxId, item.id);
-    if (_isTemp(item.id)) return;
+    // A row that never reached the server has nothing to restore *to*: undo
+    // would insert an item the delete never removed.
+    if (_isTemp(item.id)) return null;
 
     try {
       await _repo.deleteItem(item.id);
+      return DeletedBoxItem(item: item, index: index < 0 ? 0 : index);
     } catch (_) {
-      if (!mounted) return;
+      if (!mounted) return null;
       state = state.copyWith(itemsByBox: previous, error: L.s.itemDeleteFailed);
+      return null;
+    }
+  }
+
+  /// Puts one deleted item back — a re-insert under a new id, the same deal as
+  /// [restoreBox] and for the same reason: the row is gone.
+  ///
+  /// Its photograph is **not** copied the way a restored box's are. That object
+  /// is filed under the *box*, which is still there and still owns it —
+  /// deleting an item leaves the object where it was — so undo only has to
+  /// point the new row at the same path, and the signed URL already in
+  /// `photoUrls` is keyed on that path and still stands.
+  Future<bool> restoreItem(DeletedBoxItem deleted) async {
+    final original = deleted.item;
+    try {
+      var saved = await _restoreItem(original.boxId, original);
+      if (original.photoPath case final path?) {
+        // Best-effort, like every other restore here: a picture that won't come
+        // back must not cost the item.
+        try {
+          saved = await _repo.setItemPhoto(saved.id, path);
+        } catch (_) {}
+      }
+      if (!mounted) return false;
+
+      final items = [...state.itemsFor(original.boxId)];
+      items.insert(deleted.index.clamp(0, items.length), saved);
+      _putItems(original.boxId, items);
+      return true;
+    } catch (_) {
+      _fail(L.s.itemRestoreFailed);
+      return false;
     }
   }
 

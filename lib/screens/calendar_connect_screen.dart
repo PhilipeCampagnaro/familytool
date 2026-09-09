@@ -15,7 +15,6 @@ import '../widgets/anchored_menu.dart';
 import '../widgets/app_sheet.dart';
 import '../widgets/avatar.dart';
 import '../widgets/confirmation.dart';
-import '../widgets/rename_sheet.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/error_note.dart';
 import '../widgets/glyph_tile.dart';
@@ -666,112 +665,16 @@ class _ConnectedRowState extends ConsumerState<_ConnectedRow> {
   ConnectedCalendar get _entry => widget.entry;
   CalendarConnection get _connection => _entry.connection;
 
-  Future<void> _rename() => showRenameSheet(
-    context: context,
-    icon: _connection.provider.icon,
-    title: L.s.renameCalendar,
-    headline: _entry.name,
-    message: L.s.renameCalendarBody,
-    initialName: _entry.name,
-    fieldHint: L.s.householdOnly,
-    busyLabel: L.s.savingEllipsis,
-    successLabel: L.s.nameChanged,
-    errorText: connectErrorText,
-    onConfirm: (name) {
-      final notifier = ref.read(calendarConnectionsProvider.notifier);
-      // A calendar's name lives on the connection that carries it, keyed by the
-      // provider's id; a row that *is* the connection renames the connection.
-      final externalId = _entry.externalId;
-      return externalId == null
-          ? notifier.rename(_connection, name)
-          : notifier.renameCalendar(_connection, externalId, name);
-    },
-  );
+  /// Everything this row can do, in the sheet that does it.
+  ///
+  /// Reached three ways — tapping the row, its three dots, and the swipe
+  /// action — because they were three ways to the same three things, and the
+  /// menu that used to stand between them was a list of words in front of the
+  /// controls it named. The dots stay as the mark that says a row has more
+  /// behind it; they simply open what the row opens.
+  Future<void> _open() => showCalendarDetailSheet(context: context, entry: _entry);
 
-  void _confirmRemove() {
-    // Removing one calendar of an account leaves the account connected, so it
-    // is a much smaller promise than disconnecting — and it must not be
-    // described with the sentence about deleting credentials. Taking the last
-    // one away *is* disconnecting, and says so.
-    final externalId = _entry.externalId;
-    final wholeConnection = _entry.isWholeConnection;
-
-    showDialog<void>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(
-          !wholeConnection
-              ? L.s.removeCalendarQuestion
-              : _connection.isFeed
-              ? L.s.removeCalendarQuestion
-              : L.s.disconnectQuestion,
-        ),
-        content: Text(
-          L.s.removeCalendarBody(_entry.name) +
-              (!wholeConnection
-                  ? L.s.accountStaysConnected
-                  : switch (_connection.provider.kind) {
-                      ConnectKind.oauth => L.s.accessRevokedToo,
-                      // A feed is shared with every other household that wants
-                      // the same Bundesland or street, so leaving it removes
-                      // nothing but this household's subscription.
-                      ConnectKind.feed => L.s.householdOnlyOthersKeep,
-                      ConnectKind.password => L.s.credentialsDeleted,
-                      // Nothing to revoke and no credential to delete: the link
-                      // was only ever a URL we held, and it keeps working in
-                      // the school platform for anyone who still has it.
-                      ConnectKind.link => L.s.linkStaysAtSchool,
-                      // The key is deleted here and stays valid at Untis, where
-                      // it was minted and where it can be re-issued — which is
-                      // also how you revoke it for good, and worth saying to
-                      // somebody disconnecting because they want it gone.
-                      ConnectKind.secret => L.s.untisKeyStaysValid,
-                    }),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: Text(L.s.cancel),
-          ),
-          TextButton(
-            onPressed: () {
-              final notifier = ref.read(calendarConnectionsProvider.notifier);
-              if (wholeConnection || externalId == null) {
-                notifier.disconnect(_connection);
-              } else {
-                notifier.removeCalendar(_connection, externalId);
-              }
-              Navigator.of(dialogContext).pop();
-            },
-            child: Text(L.s.remove, style: AppText.rowTitle.copyWith(color: AppColors.danger)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Ferien and Abfall are deliberately absent from this: a public feed is the
-  /// household's by definition — everyone's Bundesland, everyone's bin day —
-  /// and offering to file the rubbish collection under one child would be a
-  /// question with no right answer.
-  Future<void> _assign() => showCalendarOwnerSheet(
-    context: context,
-    connection: _connection,
-    externalId: _entry.externalId,
-    calendarName: _entry.name,
-  );
-
-  List<AnchoredMenuItem> get _menuItems => [
-    AnchoredMenuItem(label: L.s.rename, icon: AppIcons.pencilSimple, onSelected: _rename),
-    if (!_connection.isFeed)
-      AnchoredMenuItem(label: L.s.assignCalendar, icon: AppIcons.user, onSelected: _assign),
-    AnchoredMenuItem(
-      label: _connection.isFeed || !_entry.isWholeConnection ? L.s.remove : L.s.disconnect,
-      icon: AppIcons.linkBreak,
-      destructive: true,
-      onSelected: _confirmRemove,
-    ),
-  ];
+  void _confirmRemove() => showRemoveCalendarDialog(context: context, ref: ref, entry: _entry);
 
   @override
   Widget build(BuildContext context) {
@@ -783,7 +686,7 @@ class _ConnectedRowState extends ConsumerState<_ConnectedRow> {
         SwipeAction(
           icon: AppIcons.pencilSimple,
           color: Theme.of(context).colorScheme.primary,
-          onTap: _rename,
+          onTap: _open,
         ),
         SwipeAction(icon: AppIcons.trash, color: AppColors.danger, onTap: _confirmRemove),
       ],
@@ -799,6 +702,7 @@ class _ConnectedRowState extends ConsumerState<_ConnectedRow> {
               : refreshing
               ? L.s.refreshingEllipsis
               : lastSyncedLabel(_connection.lastSyncedAt),
+          onTap: _open,
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -807,7 +711,7 @@ class _ConnectedRowState extends ConsumerState<_ConnectedRow> {
               else
                 const _CheckBadge(),
               const SizedBox(width: 4),
-              RowMenuButton(items: _menuItems),
+              RowMoreButton(onTap: _open),
             ],
           ),
         ),
@@ -817,72 +721,380 @@ class _ConnectedRowState extends ConsumerState<_ConnectedRow> {
 }
 
 // ---------------------------------------------------------------------------
+// One calendar's own sheet
+// ---------------------------------------------------------------------------
+
+/// Everything a household can do to one connected calendar, in one place: what
+/// it is called, whose day it belongs to, and the way to take it away.
+///
+/// It replaces a row menu of three words, each of which opened a sheet of its
+/// own. Two of those things are one-line decisions and the third is a
+/// confirmation, so the menu was a stop on the way to somewhere rather than a
+/// choice worth making — and "umbenennen" and "zuordnen" are the kind of pair
+/// somebody does in the same sitting, which cost two round trips through the
+/// list.
+///
+/// The name saves on its own, the owner saves on its own, and neither waits for
+/// the other or for the sheet to close: they are separate columns written by
+/// separate statements, and a sheet that batched them would have to explain
+/// what "Sichern" meant when only one of them had been touched.
+Future<void> showCalendarDetailSheet({
+  required BuildContext context,
+  required ConnectedCalendar entry,
+}) {
+  return showAppSheet<void>(
+    context: context,
+    // Tall enough that the name field and the "andere Person" field both clear
+    // the keyboard: the sheet is anchored to the bottom of the screen, so a
+    // shorter one puts a field exactly where the keyboard comes up.
+    heightFactor: 0.92,
+    header: SheetActionHeader(
+      // The X and nothing else. Every control in here has already acted by the
+      // time you look away from it — the name on its own tick, the owner on the
+      // tap that picks it — so a check in the corner would be a second way to
+      // commit what is committed, and the first thing anybody would look for
+      // when they wanted to know whether their change had taken.
+      title: L.s.calendarSettings,
+      action: SheetHeaderAction.close,
+    ),
+    child: _CalendarDetailBody(entry: entry),
+  );
+}
+
+class _CalendarDetailBody extends ConsumerStatefulWidget {
+  final ConnectedCalendar entry;
+
+  const _CalendarDetailBody({required this.entry});
+
+  @override
+  ConsumerState<_CalendarDetailBody> createState() => _CalendarDetailBodyState();
+}
+
+class _CalendarDetailBodyState extends ConsumerState<_CalendarDetailBody> {
+  late final TextEditingController _name = TextEditingController(text: widget.entry.name);
+
+  bool _savingName = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _name.dispose();
+    super.dispose();
+  }
+
+  /// The row as the provider currently holds it, rather than the copy this
+  /// sheet was opened with.
+  ///
+  /// Every write here reloads the list underneath, so the entry handed in goes
+  /// stale the moment anything is saved — and the owner picker reads the
+  /// connection to decide which row wears the tick. Falls back to the original
+  /// for the frame after a removal, when there is no longer a row to find.
+  ConnectedCalendar get _entry {
+    for (final connection in ref.watch(calendarConnectionsProvider).connections) {
+      if (connection.id != widget.entry.connection.id) continue;
+      for (final entry in connection.entries) {
+        if (entry.key == widget.entry.key) return entry;
+      }
+    }
+    return widget.entry;
+  }
+
+  Future<void> _saveName() async {
+    final entry = _entry;
+    final name = _name.text.trim();
+    if (_savingName || name.isEmpty || name == entry.name) return;
+
+    FocusScope.of(context).unfocus();
+    setState(() {
+      _savingName = true;
+      _error = null;
+    });
+
+    try {
+      final notifier = ref.read(calendarConnectionsProvider.notifier);
+      // A calendar's name lives on the connection that carries it, keyed by the
+      // provider's id; a row that *is* the connection renames the connection.
+      final externalId = entry.externalId;
+      await (externalId == null
+          ? notifier.rename(entry.connection, name)
+          : notifier.renameCalendar(entry.connection, externalId, name));
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _error = connectErrorText(e));
+    } finally {
+      if (mounted) setState(() => _savingName = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final entry = _entry;
+    final connection = entry.connection;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // The card underneath looks exactly like the row that opened it, which
+        // is the point — and was also the problem: a row is something you read,
+        // so nobody thought to type in it. The heading is what says this one is
+        // a field, and it is the same mark the owner list below wears.
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 6),
+          child: Text(L.s.name, style: AppText.microLabel),
+        ),
+        SectionCard(
+          radius: AppRadii.card,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(15, 10, 7, 10),
+              child: Row(
+                children: [
+                  _ProviderTile(connection.provider),
+                  const SizedBox(width: 13),
+                  Expanded(
+                    child: TextField(
+                      controller: _name,
+                      enabled: !_savingName,
+                      textCapitalization: TextCapitalization.sentences,
+                      textInputAction: TextInputAction.done,
+                      style: AppText.rowTitle,
+                      decoration: InputDecoration(
+                        border: InputBorder.none,
+                        isDense: true,
+                        hintText: L.s.name,
+                      ),
+                      onSubmitted: (_) => _saveName(),
+                    ),
+                  ),
+                  _NameSaveButton(
+                    name: _name,
+                    current: entry.name,
+                    busy: _savingName,
+                    onTap: _saveName,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(4, 8, 4, 0),
+          child: Text(L.s.householdOnly, style: AppText.label.copyWith(fontSize: 12)),
+        ),
+        if (_error case final message?) ...[
+          const SizedBox(height: 12),
+          ErrorNote(message: message),
+        ],
+        const SizedBox(height: AppSpacing.blockGap),
+        _OwnerPicker(
+          connection: connection,
+          externalId: entry.externalId,
+          calendarName: entry.name,
+        ),
+        const SizedBox(height: AppSpacing.blockGap),
+        OutlinedSheetAction(
+          icon: AppIcons.linkBreak,
+          label: connection.isFeed || !entry.isWholeConnection ? L.s.removeCalendar : L.s.disconnect,
+          destructive: true,
+          onTap: () => showRemoveCalendarDialog(
+            context: context,
+            ref: ref,
+            entry: entry,
+            // The sheet is about a calendar that no longer exists once this
+            // lands, so it goes with it rather than sitting there offering to
+            // rename it.
+            onRemoved: () => Navigator.of(context).pop(),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// The tick beside the name field: shown only once the name has actually been
+/// changed, and holding its place with a spinner while the write is in flight.
+///
+/// It listens to the controller rather than being rebuilt with the sheet, so
+/// the button appears as the name is typed without the owner list below it
+/// rebuilding on every keystroke.
+class _NameSaveButton extends StatelessWidget {
+  final TextEditingController name;
+  final String current;
+  final bool busy;
+  final VoidCallback onTap;
+
+  const _NameSaveButton({
+    required this.name,
+    required this.current,
+    required this.busy,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 40,
+      height: 40,
+      child: busy
+          ? const Center(
+              child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)),
+            )
+          : ValueListenableBuilder<TextEditingValue>(
+              valueListenable: name,
+              builder: (context, value, _) {
+                final typed = value.text.trim();
+                if (typed.isEmpty || typed == current) return const SizedBox.shrink();
+                return GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: onTap,
+                  child: Center(
+                    child: AppIcon(
+                      AppIcons.check,
+                      size: 20,
+                      flat: true,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                );
+              },
+            ),
+    );
+  }
+}
+
+/// Taking one calendar away, or disconnecting the account it arrived on.
+///
+/// Removing one calendar of an account leaves the account connected, so it is a
+/// much smaller promise than disconnecting — and it must not be described with
+/// the sentence about deleting credentials. Taking the last one away *is*
+/// disconnecting, and says so.
+void showRemoveCalendarDialog({
+  required BuildContext context,
+  required WidgetRef ref,
+  required ConnectedCalendar entry,
+  VoidCallback? onRemoved,
+}) {
+  final connection = entry.connection;
+  final externalId = entry.externalId;
+  final wholeConnection = entry.isWholeConnection;
+
+  showDialog<void>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: Text(
+        !wholeConnection
+            ? L.s.removeCalendarQuestion
+            : connection.isFeed
+            ? L.s.removeCalendarQuestion
+            : L.s.disconnectQuestion,
+      ),
+      content: Text(
+        L.s.removeCalendarBody(entry.name) +
+            (!wholeConnection
+                ? L.s.accountStaysConnected
+                : switch (connection.provider.kind) {
+                    ConnectKind.oauth => L.s.accessRevokedToo,
+                    // A feed is shared with every other household that wants
+                    // the same Bundesland or street, so leaving it removes
+                    // nothing but this household's subscription.
+                    ConnectKind.feed => L.s.householdOnlyOthersKeep,
+                    ConnectKind.password => L.s.credentialsDeleted,
+                    // Nothing to revoke and no credential to delete: the link
+                    // was only ever a URL we held, and it keeps working in
+                    // the school platform for anyone who still has it.
+                    ConnectKind.link => L.s.linkStaysAtSchool,
+                    // The key is deleted here and stays valid at Untis, where
+                    // it was minted and where it can be re-issued — which is
+                    // also how you revoke it for good, and worth saying to
+                    // somebody disconnecting because they want it gone.
+                    ConnectKind.secret => L.s.untisKeyStaysValid,
+                  }),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(dialogContext).pop(),
+          child: Text(L.s.cancel),
+        ),
+        TextButton(
+          onPressed: () {
+            final notifier = ref.read(calendarConnectionsProvider.notifier);
+            if (wholeConnection || externalId == null) {
+              notifier.disconnect(connection);
+            } else {
+              notifier.removeCalendar(connection, externalId);
+            }
+            Navigator.of(dialogContext).pop();
+            onRemoved?.call();
+          },
+          child: Text(L.s.remove, style: AppText.rowTitle.copyWith(color: AppColors.danger)),
+        ),
+      ],
+    ),
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Who a calendar belongs to
 // ---------------------------------------------------------------------------
 
-/// The sheet behind "Zuordnen" on a connected calendar: the household, everyone
-/// in it, everyone already named on another calendar, and a field to type
-/// somebody new.
+/// The "Zuordnen" half of a calendar's sheet: the household, everyone in it,
+/// everyone already named on another calendar, and a field to type somebody
+/// new.
 ///
 /// **This is not a visibility picker, and must never become one.** Calendars in
 /// Aporah are never private and never shared outward — everybody in the
-/// household sees every one of them, before and after this sheet. What it sets
-/// is whose *day* the calendar counts as, which is the chip it appears under in
+/// household sees every one of them, before and after this. What it sets is
+/// whose *day* the calendar counts as, which is the chip it appears under in
 /// Kalender and on the Board. Two axes, exactly as `tasks.assignee_id` is
 /// separate from `tasks.visibility`; the old single `who` string conflated them
 /// and had to be taken back out.
 ///
-/// The free-text row is the point of the whole sheet. A household's calendars
+/// The free-text row is the point of the whole picker. A household's calendars
 /// belong to people, and the people they belong to are frequently not members:
 /// members join by e-mail invitation, and a four-year-old with a Kindergarten
 /// calendar has no e-mail address. Typing "Mia" gives her a chip; typing it
 /// again on the next calendar puts both under that same chip, because the group
 /// is keyed on the lower-cased name.
-Future<void> showCalendarOwnerSheet({
-  required BuildContext context,
-  required CalendarConnection connection,
-  required String? externalId,
-  required String calendarName,
-}) {
-  return showAppSheet<void>(
-    context: context,
-    // Tall enough that the "andere Person" field clears the keyboard: the sheet
-    // is anchored to the bottom, so a shorter one puts the field exactly where
-    // the keyboard comes up.
-    heightFactor: 0.8,
-    header: SheetActionHeader(
-      title: L.s.assignCalendar,
-      action: SheetHeaderAction.none,
-    ),
-    child: _OwnerSheetBody(
-      connection: connection,
-      externalId: externalId,
-      calendarName: calendarName,
-    ),
-  );
-}
-
-class _OwnerSheetBody extends ConsumerStatefulWidget {
+///
+/// **Ferien and Abfall are in this too.** They used to be left out, on the
+/// grounds that a public feed is the household's by definition. That is the
+/// common case rather than the only one: the Schulferien are the schoolchild's
+/// year in a house that also has a toddler, and the bins are whoever's job it
+/// is to put them out. The default is unchanged, and moving one back to
+/// "Familie" is one tap.
+///
+/// A pick writes and stays put — nothing closes, and the tick simply moves.
+/// Assigning a calendar is a decision somebody makes while also renaming it,
+/// and a picker that dismissed itself would take the rest of the sheet with it.
+class _OwnerPicker extends ConsumerStatefulWidget {
   final CalendarConnection connection;
   final String? externalId;
   final String calendarName;
 
-  const _OwnerSheetBody({
+  const _OwnerPicker({
     required this.connection,
     required this.externalId,
     required this.calendarName,
   });
 
   @override
-  ConsumerState<_OwnerSheetBody> createState() => _OwnerSheetBodyState();
+  ConsumerState<_OwnerPicker> createState() => _OwnerPickerState();
 }
 
-class _OwnerSheetBodyState extends ConsumerState<_OwnerSheetBody> {
+class _OwnerPickerState extends ConsumerState<_OwnerPicker> {
   final _newName = TextEditingController();
 
   /// The owner currently being written, so the row that was tapped can say so
   /// while `calendar-events` re-reads. Null when nothing is in flight.
   String? _saving;
+
+  /// The pick that has landed but not yet come back around.
+  ///
+  /// The write returns before the list underneath is re-read, so for those few
+  /// hundred milliseconds `connection.ownerOf` still names the old owner and
+  /// the tick would sit on the row nobody tapped. This holds the answer until
+  /// the reload agrees with it, at which point the two are the same string.
+  String? _picked;
 
   String? _error;
 
@@ -912,7 +1124,14 @@ class _OwnerSheetBodyState extends ConsumerState<_OwnerSheetBody> {
       return;
     }
 
-    if (mounted) Navigator.of(context).pop();
+    // Nothing is popped and nothing is confirmed: the tick moves to the row
+    // that was tapped, which is the whole report a one-field write needs.
+    if (mounted) {
+      setState(() {
+        _saving = null;
+        _picked = owner;
+      });
+    }
   }
 
   /// Everybody who already owns a calendar somewhere in this household but has
@@ -943,11 +1162,15 @@ class _OwnerSheetBodyState extends ConsumerState<_OwnerSheetBody> {
     final household = ref.watch(familyProvider).household;
     final members = ref.watch(householdMembersProvider);
     final connections = ref.watch(calendarConnectionsProvider).connections;
-    final current = widget.connection.ownerOf(widget.externalId);
+    final current = _picked ?? widget.connection.ownerOf(widget.externalId);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 6),
+          child: Text(L.s.assignCalendar, style: AppText.microLabel),
+        ),
         Padding(
           padding: const EdgeInsets.fromLTRB(4, 0, 4, 14),
           child: Text(
@@ -990,65 +1213,16 @@ class _OwnerSheetBodyState extends ConsumerState<_OwnerSheetBody> {
                 busy: _saving == 'person:$name',
                 onTap: () => _pick('person:$name'),
               ),
-          ]),
-        ),
-        const SizedBox(height: AppSpacing.blockGap),
-        Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 8),
-          child: Text(L.s.assignCalendarNewPerson, style: AppText.microLabel),
-        ),
-        SectionCard(
-          radius: AppRadii.card,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 6, 8, 6),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _newName,
-                      enabled: _saving == null,
-                      textCapitalization: TextCapitalization.words,
-                      style: AppText.searchInput,
-                      decoration: InputDecoration(
-                        border: InputBorder.none,
-                        hintText: L.s.assignCalendarNewPersonHint,
-                        isDense: true,
-                      ),
-                      onSubmitted: (value) {
-                        final name = value.trim();
-                        if (name.isNotEmpty) _pick('person:$name');
-                      },
-                    ),
-                  ),
-                  // Listens to the field rather than reading it in `build`, so
-                  // the button lights up as the name is typed without the whole
-                  // sheet rebuilding on every keystroke.
-                  ValueListenableBuilder<TextEditingValue>(
-                    valueListenable: _newName,
-                    builder: (context, value, _) {
-                      final name = value.text.trim();
-                      final ready = name.isNotEmpty && _saving == null;
-                      return GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: ready ? () => _pick('person:$name') : null,
-                        child: Padding(
-                          padding: const EdgeInsets.all(10),
-                          child: AppIcon(
-                            AppIcons.arrowRight,
-                            size: 20,
-                            color: ready
-                                ? Theme.of(context).colorScheme.primary
-                                : AppColors.inkTertiary,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ),
+            // Last row of the same card rather than a card of its own: typing a
+            // name is one more way of answering the one question the card asks,
+            // and a second card under it read as a second question. The plus
+            // where a face would be is what says the row adds somebody.
+            _NewPersonRow(
+              controller: _newName,
+              enabled: _saving == null,
+              onSubmit: (name) => _pick('person:$name'),
             ),
-          ],
+          ]),
         ),
         if (_error case final message?) ...[
           const SizedBox(height: 12),
@@ -1100,6 +1274,90 @@ class _OwnerSheetBodyState extends ConsumerState<_OwnerSheetBody> {
       initials: household?.initials ?? '?',
       fontSize: 14,
       imageUrl: household?.avatarUrl,
+    );
+  }
+}
+
+/// The row that adds somebody who is not in the list yet — a plus where the
+/// other rows wear a face, and the name typed straight into the row's own line.
+///
+/// It sits inside the card of people rather than under it. Naming a child with
+/// no account is the same answer as tapping one of the faces above, so a card
+/// of its own asked what looked like a second question; and the plus is what
+/// carries "add" now that there is no heading over it saying so.
+class _NewPersonRow extends StatelessWidget {
+  final TextEditingController controller;
+
+  /// False while another row's write is in flight, matching the rest of the
+  /// card: two owners picked at once is one of them silently losing.
+  final bool enabled;
+
+  final ValueChanged<String> onSubmit;
+
+  const _NewPersonRow({
+    required this.controller,
+    required this.enabled,
+    required this.onSubmit,
+  });
+
+  void _submit() {
+    final name = controller.text.trim();
+    if (enabled && name.isNotEmpty) onSubmit(name);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 6, 8, 6),
+      child: Row(
+        children: [
+          // The same 40pt circle the faces occupy, so the field's baseline sits
+          // on theirs and the card reads as one column of people.
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(color: AppColors.surfaceAlt, shape: BoxShape.circle),
+            child: Center(child: AppIcon(AppIcons.plus, size: 18, flat: true, color: AppColors.muted)),
+          ),
+          const SizedBox(width: 13),
+          Expanded(
+            child: TextField(
+              controller: controller,
+              enabled: enabled,
+              textCapitalization: TextCapitalization.words,
+              textInputAction: TextInputAction.done,
+              style: AppText.rowTitle,
+              decoration: InputDecoration(
+                border: InputBorder.none,
+                hintText: L.s.assignCalendarNewPerson,
+                isDense: true,
+              ),
+              onSubmitted: (_) => _submit(),
+            ),
+          ),
+          // Listens to the field rather than being rebuilt with the card, so
+          // the button lights up as the name is typed without the owner list
+          // above it rebuilding on every keystroke.
+          ValueListenableBuilder<TextEditingValue>(
+            valueListenable: controller,
+            builder: (context, value, _) {
+              final ready = enabled && value.text.trim().isNotEmpty;
+              return GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: ready ? _submit : null,
+                child: Padding(
+                  padding: const EdgeInsets.all(10),
+                  child: AppIcon(
+                    AppIcons.arrowRight,
+                    size: 20,
+                    color: ready ? Theme.of(context).colorScheme.primary : AppColors.inkTertiary,
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
     );
   }
 }

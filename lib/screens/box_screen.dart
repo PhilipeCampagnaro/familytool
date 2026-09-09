@@ -17,6 +17,7 @@ import '../widgets/bottom_nav.dart';
 import '../widgets/collapsing_header.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/error_note.dart';
+import '../widgets/expandable_title.dart';
 import '../widgets/glass.dart';
 import '../widgets/icon_picker.dart';
 import '../widgets/overview_screen.dart';
@@ -480,14 +481,9 @@ class _BoxDetail extends ConsumerWidget {
             children: [
               _BoxBadge(box: box, size: 44, iconSize: 20, accent: accent),
               const SizedBox(width: 13),
-              Expanded(
-                child: Text(
-                  box.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppText.detailTitle,
-                ),
-              ),
+              // Unfolds when the name is longer than the line, exactly as a
+              // list's does — see [ExpandableTitle].
+              Expanded(child: ExpandableTitle(text: box.name)),
             ],
           ),
         ],
@@ -544,6 +540,20 @@ class _BoxBadge extends ConsumerWidget {
   }
 }
 
+/// Takes an item off its box and offers it straight back.
+///
+/// No confirmation dialog in front of it, exactly as with a whole box: the chip
+/// *is* the confirmation, and it can put the item back — photograph and all,
+/// see [BoxNotifier.restoreItem]. Captured before the write, because the row it
+/// was tapped in is gone by the time the write returns.
+Future<void> _deleteItem(BuildContext context, WidgetRef ref, BoxItem item) async {
+  final confirm = confirmChipOf(context);
+  final notifier = ref.read(boxProvider.notifier);
+  if (await notifier.removeItem(item) case final deleted?) {
+    confirm(L.s.itemDeleted, undo: () => notifier.restoreItem(deleted));
+  }
+}
+
 class _ItemRow extends ConsumerWidget {
   final BoxItem item;
   final Color accent;
@@ -556,7 +566,7 @@ class _ItemRow extends ConsumerWidget {
     // cards and the Listen article rows use.
     return SwipeToEditDelete(
       onTap: () => _openItemSheet(context, ref, item),
-      onDelete: () => ref.read(boxProvider.notifier).removeItem(item),
+      onDelete: () => _deleteItem(context, ref, item),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 15),
         child: Row(
@@ -604,7 +614,7 @@ class _ItemRow extends ConsumerWidget {
                   label: L.s.delete,
                   icon: AppIcons.trash,
                   destructive: true,
-                  onSelected: () => ref.read(boxProvider.notifier).removeItem(item),
+                  onSelected: () => _deleteItem(context, ref, item),
                 ),
               ],
             ),
@@ -832,9 +842,15 @@ class _ItemSheetBodyState extends ConsumerState<_ItemSheetBody> {
         ),
         const SizedBox(height: 14),
         GestureDetector(
-          onTap: () {
+          onTap: () async {
+            // Taken before the pop, like the Board sheet's own delete row: the
+            // sheet is on its way out, and the chip has to outlive it.
+            final confirm = confirmChipOf(context);
+            final notifier = ref.read(boxProvider.notifier);
             Navigator.of(context).pop();
-            ref.read(boxProvider.notifier).removeItem(item);
+            if (await notifier.removeItem(item) case final deleted?) {
+              confirm(L.s.itemDeleted, undo: () => notifier.restoreItem(deleted));
+            }
           },
           child: Container(
             width: double.infinity,

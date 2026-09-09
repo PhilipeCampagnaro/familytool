@@ -118,9 +118,29 @@ class CalendarGroup {
   /// one group whose calendars also show up under everybody else.
   bool get isFamily => id == 'family';
 
-  /// True where the chip opens into a list — an account with more than one
-  /// calendar in the loaded window. The chevron and the popup hang off this.
-  bool get hasChoices => calendars.length > 1;
+  /// True where this chip stands for somebody: a household member
+  /// (`'member:<uuid>'`) or a name typed for a child with no account
+  /// (`'person:<name>'`).
+  ///
+  /// It is what keeps a person's name on their chip when they only have the
+  /// one calendar — see [asSingle].
+  bool get isPerson => id.startsWith('member:') || id.startsWith('person:');
+
+  /// True where the chip opens into a list — the chevron and the popup hang
+  /// off this. **Every chip, however few calendars it holds.**
+  ///
+  /// A chip says whose it is rather than what is behind it: a face, the
+  /// household, a feed's own name. So on its own it never tells you which
+  /// calendar somebody was assigned, and a list of one is how you find that
+  /// out — Papa's chip is his iCloud — which is worth a second tap even when
+  /// the popup has a single row in it. It used to be withheld from a chip
+  /// holding one calendar, and a household that had just assigned their only
+  /// calendar to somebody then had no way at all to see what was under that
+  /// face.
+  ///
+  /// It also makes the row one rule instead of two: the caret is on every
+  /// chip, so the second tap always does the same thing.
+  bool get opensList => calendars.isNotEmpty;
 
   /// The chip's dot. The first calendar's colour, which for a connected account
   /// is the provider's base hue — `calendar-events` shades the rest of the
@@ -136,7 +156,14 @@ class CalendarGroup {
   );
 
   /// The same group renamed after its only calendar — "Aufgaben" rather than
-  /// "IServ · Alice" when Alice has nothing else with an event in view.
+  /// "Schule" when that account contributes nothing else with an event in view.
+  ///
+  /// **Only for a group that is not a person.** Papa's iCloud is one calendar
+  /// and it is still Papa's: renaming his chip "iCloud" put a provider's name
+  /// under his face and made the one calendar somebody had just assigned to
+  /// themselves look like it had been ignored. A person's chip says the person
+  /// whether they own one calendar or six; the calendar's own name is what the
+  /// popup and Settings are for. See `CalendarScreenState.activeGroups`.
   CalendarGroup asSingle() =>
       CalendarGroup(id: id, name: calendars.first.name, calendars: calendars);
 }

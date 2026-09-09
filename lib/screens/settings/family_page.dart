@@ -16,6 +16,7 @@ import '../../widgets/rename_sheet.dart';
 import '../../widgets/settings_chrome.dart';
 import '../../l10n/l10n.dart';
 import '../../theme/app_icons.dart';
+import 'profile_page.dart';
 
 /// Who is in the household, and — for an admin — the controls to change that.
 /// Every control here is courtesy: `invite-member` checks the role itself and
@@ -475,50 +476,67 @@ class _MemberRow extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tone = AppTones.list[member.tone % AppTones.list.length];
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      child: Row(
-        children: [
-          Avatar(size: 40, bg: tone.bg, fg: tone.fg, initials: member.initials, fontSize: 13, imageUrl: member.avatarUrl),
-          const SizedBox(width: 13),
-          Expanded(
-            child: Row(
-              children: [
-                Flexible(child: Text(member.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.rowTitle)),
-                if (isMe) ...[
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(AppRadii.iconTile),
-                      border: Border.all(color: AppColors.hairline2),
+    // My own row is the way into my own profile: the name and the face on it
+    // are exactly what that page edits, so a row that showed them and did
+    // nothing was the list asking to be used and then refusing. Mine only —
+    // there is no page for somebody else's profile, and there shouldn't be.
+    // Their name and picture are theirs to change.
+    return GestureDetector(
+      onTap: !isMe
+          ? null
+          : () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => ProfilePage())),
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          children: [
+            Avatar(size: 40, bg: tone.bg, fg: tone.fg, initials: member.initials, fontSize: 13, imageUrl: member.avatarUrl),
+            const SizedBox(width: 13),
+            Expanded(
+              child: Row(
+                children: [
+                  Flexible(child: Text(member.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.rowTitle)),
+                  if (isMe) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(AppRadii.iconTile),
+                        border: Border.all(color: AppColors.hairline2),
+                      ),
+                      child: Text(L.s.youCaps, style: AppText.microLabel.copyWith(letterSpacing: 0.5)),
                     ),
-                    child: Text(L.s.youCaps, style: AppText.microLabel.copyWith(letterSpacing: 0.5)),
-                  ),
+                  ],
                 ],
-              ],
+              ),
             ),
-          ),
-          const SizedBox(width: 8),
-          // Nobody demotes or removes themselves here. `enforce_last_admin`
-          // would refuse it whenever they are the only admin, and when they
-          // aren't, leaving a household is a different action with different
-          // consequences than being removed from one.
-          if (isMe || !canManage)
-            Text(member.role.label, style: AppText.label)
-          else ...[
-            _RolePicker(
-              role: member.role,
-              onChanged: (r) => ref.read(familyProvider.notifier).setRole(member.userId, r),
-            ),
-            const SizedBox(width: 10),
-            GestureDetector(
-              onTap: () => _confirmRemove(context, ref),
-              behavior: HitTestBehavior.opaque,
-              child: AppIcon(AppIcons.trash, size: 18, color: AppColors.mutedLight),
-            ),
+            const SizedBox(width: 8),
+            // Nobody demotes or removes themselves here. `enforce_last_admin`
+            // would refuse it whenever they are the only admin, and when they
+            // aren't, leaving a household is a different action with different
+            // consequences than being removed from one.
+            if (isMe || !canManage)
+              Text(member.role.label, style: AppText.label)
+            else ...[
+              _RolePicker(
+                role: member.role,
+                onChanged: (r) => ref.read(familyProvider.notifier).setRole(member.userId, r),
+              ),
+              const SizedBox(width: 10),
+              GestureDetector(
+                onTap: () => _confirmRemove(context, ref),
+                behavior: HitTestBehavior.opaque,
+                child: AppIcon(AppIcons.trash, size: 18, color: AppColors.mutedLight),
+              ),
+            ],
+            // The chevron only where the tap is, same rule as the household
+            // row above: a row that looks tappable and isn't reads as broken.
+            if (isMe) ...[
+              const SizedBox(width: 8),
+              AppIcon(AppIcons.caretRight, size: 16, color: AppColors.mutedLight),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }

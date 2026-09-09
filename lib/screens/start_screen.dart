@@ -4,14 +4,19 @@ import '../state/auth_state.dart';
 import '../state/family_state.dart';
 import '../theme/tokens.dart';
 import '../widgets/avatar.dart';
+import 'confirmation_lab.dart';
 import 'settings_screen.dart';
 import '../l10n/l10n.dart';
 import '../theme/app_icons.dart';
+import '../widgets/bottom_nav.dart';
 
-/// The "Home" tab has no design yet in the handoff — placeholder except for
-/// the header's profile avatar, which is this app's entry point into
-/// Settings (mirrors the old web app's "tap your avatar on the dashboard"
-/// pattern; see CLAUDE.md's "Ported feature knowledge" -> Settings).
+/// The "Home" tab has no design yet in the handoff. Two things are on it: the
+/// header's profile avatar, which is this app's entry point into Settings
+/// (mirrors the old web app's "tap your avatar on the dashboard" pattern; see
+/// CLAUDE.md's "Ported feature knowledge" -> Settings), and — because the space
+/// is otherwise empty — the [ConfirmationLab], the bench every "that worked"
+/// surface is put up on side by side while they are being made to agree. The
+/// lab goes when Home gets its real content.
 class StartScreen extends ConsumerWidget {
   const StartScreen({super.key});
 
@@ -22,6 +27,9 @@ class StartScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.surface,
       body: SafeArea(
+        // The nav bar floats over the content, so the bottom inset is the
+        // scroll view's padding rather than the safe area's.
+        bottom: false,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(AppSpacing.screenPad, 8, AppSpacing.screenPad, 0),
           child: Column(
@@ -48,22 +56,13 @@ class StartScreen extends ConsumerWidget {
                   ),
                 ],
               ),
+              const SizedBox(height: 6),
+              Text(L.s.startNotDesigned, style: AppText.body.copyWith(color: AppColors.inkTertiary)),
+              const SizedBox(height: 24),
               Expanded(
-                child: Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 64,
-                        height: 64,
-                        decoration: BoxDecoration(color: AppColors.surfaceAlt, shape: BoxShape.circle),
-                        alignment: Alignment.center,
-                        child: AppIcon(AppIcons.house, size: 28, color: AppColors.muted),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(L.s.startNotDesigned, style: AppText.body.copyWith(color: AppColors.inkTertiary)),
-                    ],
-                  ),
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.only(bottom: navContentInset(context)),
+                  child: ConfirmationLab(),
                 ),
               ),
             ],

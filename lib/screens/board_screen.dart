@@ -11,6 +11,7 @@ import '../state/nav_state.dart';
 import '../state/sharing_state.dart';
 import '../state/family_state.dart';
 import '../theme/tokens.dart';
+import 'calendar_screen.dart';
 import '../widgets/app_sheet.dart';
 import '../widgets/avatar.dart';
 import '../widgets/bottom_nav.dart';
@@ -399,6 +400,11 @@ class BoardScreen extends ConsumerWidget {
   }) {
     final text = TextEditingController(text: task?.text ?? tracker?.text ?? '');
     final notes = TextEditingController(text: task?.meta ?? tracker?.meta ?? '');
+    // The name is what the save button waits for, so the sheet hands it the
+    // cursor: a new task opens with nothing in the one field it cannot do
+    // without, and the check is grey until there is. Held out here so the
+    // chrome's greyed check can point back at it — see [showAppSheet].
+    final textFocus = FocusNode();
     final editing = task != null || tracker != null;
     final notifier = ref.read(boardProvider.notifier);
     final trackerNotifier = ref.read(trackerProvider.notifier);
@@ -417,13 +423,17 @@ class BoardScreen extends ConsumerWidget {
     showAppSheet(
       context: context,
       // Neutral while the sheet can still become either kind — see
-      // [AppStrings.newEntry].
+      // [AppStrings.newEntry]. Opened from an appointment it cannot, so it says
+      // what it is making.
       title: tracker != null
           ? L.s.editTracker
           : task != null
           ? L.s.editTask
+          : eventLink != null
+          ? L.s.newTask
           : L.s.newEntry,
       requiredField: text,
+      requiredFocus: textFocus,
       onSave: () async {
         // The sheet is already gone by the time the write comes back (the
         // chrome pops it the moment save is tapped), so the chip lands on the
@@ -471,9 +481,15 @@ class BoardScreen extends ConsumerWidget {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Only while creating. The same switch on an edit sheet would read
-              // as an offer to convert the row, which is not on the table.
-              if (!editing) ...[
+              // Only while creating, and never from an appointment. The same
+              // switch on an edit sheet would read as an offer to convert the
+              // row, which is not on the table — and a **tracker started from an
+              // appointment is a contradiction**: an appointment is one moment,
+              // a tracker is a rhythm that owes no particular day and is never
+              // overdue. `public.trackers` carries none of the three event-link
+              // columns for that reason, so the choice could only ever have
+              // saved a tracker with the link quietly dropped.
+              if (!editing && eventLink == null) ...[
                 Padding(
                   padding: const EdgeInsets.only(left: 2, bottom: 8),
                   child: Text(L.s.whatToCreate, style: AppText.microLabel),
@@ -494,6 +510,10 @@ class BoardScreen extends ConsumerWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
                     child: TextField(
                       controller: text,
+                      focusNode: textFocus,
+                      // Only on a new one. An edit sheet opening with the
+                      // keyboard up covers the rows the user came to change.
+                      autofocus: !editing,
                       textCapitalization: TextCapitalization.sentences,
                       textInputAction: TextInputAction.next,
                       style: AppText.inputTitle,
@@ -531,6 +551,40 @@ class BoardScreen extends ConsumerWidget {
                     currentUserId: me,
                     onSelect: notifier.setAssignee,
                   ),
+                  // The appointment this task was made for, and the only place
+                  // the way back to it is a button. On the Board card the same
+                  // badge is a marker, because the row under it already opens
+                  // this sheet — see [EventLinkChip]. Read-only otherwise: the
+                  // link is set once, on create, and there is no unlink.
+                  if (task?.eventLink case final link?) ...[
+                    CardDivider(),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+                      child: Row(
+                        children: [
+                          Text(L.s.linkedEventLabel, style: AppText.rowTitle),
+                          const SizedBox(width: 12),
+                          // Right-aligned against the card edge like every other
+                          // value in this card, and flexible so a long
+                          // appointment name ellipsises instead of pushing the
+                          // label off the row.
+                          Expanded(
+                            child: Align(
+                              alignment: Alignment.centerRight,
+                              child: EventLinkChip(
+                                link: link,
+                                // Stacked on this sheet rather than replacing
+                                // it: closing the appointment lands back on the
+                                // task, and closing that lands back on Board —
+                                // see [showLinkedEventSheet].
+                                onOpen: () => showLinkedEventSheet(context, ref, link),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ],
               ),
               const SizedBox(height: 14),
@@ -1152,10 +1206,16 @@ class _TaskRow extends ConsumerWidget {
                           ),
                         ),
                       ],
-                      // The appointment this task was made for, and the way back
-                      // to it. Last in the row and flexible, so the faces and
-                      // the date — which are on every task — keep their width
-                      // and the name of the event is what gives way.
+                      // The appointment this task was made for. Last in the row
+                      // and flexible, so the faces and the date — which are on
+                      // every task — keep their width and the name of the event
+                      // is what gives way.
+                      //
+                      // A marker here, not a button: the row itself opens the
+                      // task, and a second target this close inside it made
+                      // "open the task" a coin toss between the task and
+                      // Kalender. The way back to the appointment is in the
+                      // task's own sheet — see [EventLinkChip].
                       if (task.eventLink case final link?) ...[
                         const SizedBox(width: 8),
                         Flexible(child: EventLinkChip(link: link)),

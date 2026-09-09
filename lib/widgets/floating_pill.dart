@@ -106,9 +106,8 @@ class _FloatingGlassPillState extends State<FloatingGlassPill> {
                 child: GlassSurface(
                   borderRadius: BorderRadius.circular(widget.onNavRow ? kCompactNavSize / 2 : 22),
                   // Same reasoning as _CalendarFilterButton: let the real
-                  // UIGlassEffect adapt on iOS, tint only the fallback so the
-                  // dark label stays legible off-iOS.
-                  fallbackTint: AppColors.navPillTint,
+                  // UIGlassEffect adapt on iOS, and let the Flutter drawing
+                  // take the default light material the dark label reads on.
                   blurSigma: 20,
                   boxShadow: AppShadows.floatingPill,
                   child: widget.onNavRow

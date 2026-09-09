@@ -37,23 +37,60 @@ A horizontal row of filter chips. The first chip is **"Alle"** — clears `calen
 the default showing every calendar. Don't remove this default; a user who wants "everything"
 shouldn't have to pick every source individually.
 
-**A chip is an *account*, not a calendar** (`CalendarGroup`, built by `state.activeGroups` from
-`CalendarSource.groupId`/`groupName`, which `calendar-events` sends as the connection's id and
-display name). One IServ account holding a child's Aufgaben, Klausurplan and Klassenkalender is a
-single "IServ · Alice" chip, not three chips saying the same two words; the same grouping stops a
-Google account with a work and a private calendar filling the row on its own. A public feed
-(Ferien, Abfall) has no account and stands alone, and so does a group that turns out to hold one
-calendar — `asSingle()` renames it after the calendar rather than the account.
+**"Alle" also carries the chevron, and its list is the only one that crosses accounts**
+(`_AllCalendarsChip` → `_AllCalendarsPickerRoute`). Every other chip is one person, so a filter
+built from the row was one person: two children at once, or a child's Klausurplan beside the
+family calendar, could not be expressed and the only way to see both was to give up and show
+everything. "Alle" is the chip that stands for nobody in particular, so the selection belonging to
+nobody in particular hangs off it. The panel lists every calendar under its account's caption,
+plus an "Alle" row at the top as the way back; `toggleCalendarAnywhere` adds to and removes from
+whatever is showing rather than replacing it, which is exactly what an account's own popup must
+not do. Ticking every calendar back on returns to `null` rather than to a hand-picked set holding
+all of them today, so an account connected tomorrow joins it instead of arriving hidden.
 
-A chip with more than one calendar behind it draws a **chevron** and opens
-`_CalendarPickerRoute`: tap the chip to show the whole account, tap it again or hit the chevron
+A hand-picked selection wears `filterGroupId == kPickedCalendarFilterId`, which is no group's id:
+it lights the "Alle" chip, and that chip **counts itself** (`L.s.calendarCount`) rather than
+keeping the word "Alle" over three hidden calendars. The collapsed stand-in prints the same count
+for the same reason — a set spanning two accounts has no one colour, so its single dot would claim
+a filter on that one calendar.
+
+**A chip is a *person*, not a calendar** (`CalendarGroup`, built by `state.activeGroups` from
+`CalendarSource.groupId`/`groupName`, which `calendar-events` resolves from the calendar's owner).
+One IServ account holding a child's Aufgaben, Klausurplan and Klassenkalender is a single "Alice"
+chip, not three chips saying the same two words; a parent's work and private Google calendars are
+one face rather than two rows. Everything the household shares, Ferien and Abfall included, sits
+under the family chip.
+
+`groupId` is `member:<uuid>`, `person:<name>` or `family`, and `CalendarGroup.isPerson` is the
+first two. A group holding a single calendar is renamed after that calendar by `asSingle()` —
+**except a person's**, who keeps their name however few calendars they own. Papa's iCloud is one
+calendar and it is still Papa's; a chip reading "iCloud" under his photograph is the account
+leaking back into a row that stopped being about accounts, and it is what a household sees
+immediately after assigning that calendar to themselves, so the assignment reads as having done
+nothing.
+
+The owner is read from `calendars.owner_member_id` / `owner_label`, and the member's *name* comes
+from `profiles` in a **second query**. `family_members.user_id` and `profiles.id` both reference
+`auth.users` and have no foreign key between them, so a PostgREST embed cannot join them and fails
+the whole select — quietly, since the client returns that error rather than raising it. When it
+did, the roster came back empty, no `member:` calendar could be put a name to, and every one of
+them fell back to the family chip. `HouseholdNotifier.load` splits the same read for the same
+reason.
+
+A chip that opens into a list draws a **chevron** and opens `_CalendarPickerRoute` — any group of
+more than one calendar, plus **every person, even one holding a single calendar**
+(`CalendarGroup.opensList`). A person's chip says the person, so on its own it never says which
+calendar is behind the face, and a list of one is how you find out. Tap the chip to show the whole
+account, tap it again or hit the chevron
 for a list with a checkbox per calendar. The popup **stays open** while rows are ticked —
 narrowing three calendars to two should be one gesture — so `_CalendarPickerSurface` is a
 `ConsumerWidget` that re-reads the filter it is changing. Its dot goes hollow while only some of
 the account is showing.
 
-`calendarFilter` is therefore a `Set<String>?`, and null is still "Alle": the empty set never
-occurs, because unticking the last calendar returns to "Alle" rather than to a blank month. Use
+`calendarFilter` is therefore a `Set<String>?`, and null is still "Alle". The empty set **does**
+occur — unticking the last row in either picker leaves it empty on purpose, since unticking a box
+must never tick the others back on; the way out is the "Alle" chip, or the "Alle" row at the top of
+the cross-account panel. Use
 `state.calendarFilterKey` in a `ValueKey` — a `Set` is identity-compared, so the key would never
 notice a filter change.
 
@@ -280,10 +317,19 @@ Three surfaces, one fact:
   Listen inside a calendar sheet with none of its gestures.
 - **Board and Listen** carry the return chip (`EventLinkChip`) on the row's **subtitle line**,
   ahead of the count or the date already there — it says what the container is *for*, which is read
-  before how it is going. It is its own tap target
-  inside a row that already has one — unlike the homework badge, it leads somewhere the row's own
-  tap never does. The cost is that a tap on it while the row is swiped open navigates instead of
-  closing the swipe. **Its label is never stored**: the appointment's name is read off the live
+  before how it is going. **On a row it is a marker, not a button**, exactly like the homework
+  badge: the row's own tap opens the task or the list, and a second target a few millimetres away
+  in the same line turned that tap into a coin toss — people aiming at the list landed in Kalender.
+  Give it an `onOpen` only where the chip is the only thing to tap: under the list's name in
+  the opened list, and as a field row in the task's own sheet. **`onOpen` shows the appointment, it
+  does not go to it** — `showLinkedEventSheet` stacks the event's own detail sheet over Board or
+  Listen, so closing it lands back on the row it was opened from. Switching tab instead worked and
+  lost people: the sheet closed onto a calendar nobody had asked for, two tabs from what they had
+  been reading, which is why `TabJump` no longer names Kalender as a destination at all. The sheet
+  is driven entirely by `openEvent`, so it needs nothing of Kalender to be on screen, and neither
+  the selected day nor the calendar filter is touched. An appointment outside the loaded fortnight
+  has nothing to show, so the chip stays a marker there rather than offering a dead tap.
+  **Its label is never stored**: the appointment's name is read off the live
   event through `eventForLink`, so a renamed appointment renames every badge, and a link pointing
   outside the loaded fortnight shows the date instead.
 

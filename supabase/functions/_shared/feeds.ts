@@ -54,6 +54,13 @@ export interface SubscribedFeed extends PublicFeed {
   displayName: string;
   displayColor: number;
   position: number;
+
+  /// Whose chip this feed sits under, from the household's own subscription —
+  /// both null for the family, which is what a subscription starts as. Never
+  /// read from `public_feeds`: the shared row belongs to every household on the
+  /// street, and only this one decided the bins are Papa's.
+  ownerMemberId: string | null;
+  ownerLabel: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -217,7 +224,7 @@ export async function subscribedFeeds(
   const { data } = await db
     .from("family_feeds")
     .select(
-      "display_name, color, position, " +
+      "display_name, color, position, owner_member_id, owner_label, " +
         "public_feeds!inner (id, kind, feed_key, name, color, config, events, synced_at)",
     )
     .eq("family_id", familyId)
@@ -230,6 +237,8 @@ export async function subscribedFeeds(
     display_name: string | null;
     color: number | null;
     position: number | null;
+    owner_member_id: string | null;
+    owner_label: string | null;
     public_feeds: PublicFeed | PublicFeed[] | null;
   }>;
 
@@ -246,6 +255,8 @@ export async function subscribedFeeds(
       displayName: row.display_name ?? feed.name,
       displayColor: row.color ?? feed.color,
       position: row.position ?? 0,
+      ownerMemberId: row.owner_member_id,
+      ownerLabel: row.owner_label,
     });
   }
   return out;

@@ -103,8 +103,18 @@ class _CollapsingHeaderScreenState extends State<CollapsingHeaderScreen> {
 
   /// [extra] is laid out unbounded (see [_buildHeader]) so it always takes its
   /// natural height; this reads that back and re-publishes the sliver's extent
-  /// to match. Runs after every frame so a change in the content — or in the
-  /// platform text scale — re-settles instead of clipping.
+  /// to match, so a change in the content — or in the platform text scale —
+  /// re-settles instead of clipping.
+  ///
+  /// It runs after every frame *this* widget builds, **and** whenever the block
+  /// changes size on its own — see the [SizeChangedLayoutNotifier] in
+  /// [_buildHeader]. The second one is not belt-and-braces: the block holds
+  /// widgets with state of their own ([ExpandableTitle], unfolding a name too
+  /// long for one line), and their `setState` rebuilds the block without ever
+  /// touching this element, so the post-frame callback below is not scheduled
+  /// and the header keeps a height the block has outgrown. That clipped the
+  /// second line of the name and the event chip under it — the block grew, the
+  /// window onto it did not.
   ///
   /// Zero is a legitimate measurement, not a "not laid out yet" one: a screen
   /// may drop its collapsing block entirely (Listen and Boxen do while their
@@ -224,7 +234,21 @@ class _CollapsingHeaderScreenState extends State<CollapsingHeaderScreen> {
                 opacity: visible,
                 child: Padding(
                   padding: widget.extraPadding,
-                  child: KeyedSubtree(key: _extraKey, child: widget.extra),
+                  // Fires when the block resizes itself, which the post-frame
+                  // callback in [build] cannot see — see [_measureExtra]. It
+                  // arrives during layout, so the re-measure is deferred to
+                  // after the frame rather than run here.
+                  child: NotificationListener<SizeChangedLayoutNotification>(
+                    onNotification: (_) {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (mounted) _measureExtra();
+                      });
+                      return true;
+                    },
+                    child: SizeChangedLayoutNotifier(
+                      child: KeyedSubtree(key: _extraKey, child: widget.extra),
+                    ),
+                  ),
                 ),
               ),
             ),

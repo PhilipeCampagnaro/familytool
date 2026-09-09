@@ -185,9 +185,12 @@ task:
   content, and on a task duplicates the `due_date` already there; without it the tap back has
   nowhere to go for an appointment outside the loaded fortnight. Set once, on create, from the
   event sheet's "Liste/Aufgabe zum Termin erstellen" — no edit path, no unlink, and undo re-creates
-  it with the link. Crossing tabs goes through `tabJumpProvider`
+  it with the link. The appointment's sheet reaches its lists and tasks through `tabJumpProvider`
   ([lib/state/nav_state.dart](lib/state/nav_state.dart)): the shell switches tab, the destination
-  screen opens the thing.
+  screen opens the thing. **The way back does not cross tabs** — the chip on a task or a list calls
+  `showLinkedEventSheet`, which stacks the event's own sheet over Board or Listen, so closing it
+  lands where the reader already was. On a *row* the chip is a marker with no tap at all: the row
+  itself opens the thing, and a second target beside it made that a coin toss.
 - Don't filter content by `family_id` in Dart. RLS already decides what "my lists" means, and a
   client-side family filter would hide exactly the rows a guest is meant to see. (Edge Functions
   are the exception and must filter — `service_role` bypasses RLS, so there the family filter *is*

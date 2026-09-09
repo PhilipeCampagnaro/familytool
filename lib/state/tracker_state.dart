@@ -321,18 +321,24 @@ class TrackerNotifier extends StateNotifier<TrackerState> {
   /// Optimistic, like every other check-off on the Board: the square darkens
   /// under the thumb and the write follows. A refused write puts the day back
   /// exactly as it was rather than leaving a tick the server never accepted.
-  Future<void> toggleCheck(Tracker tracker, DateTime day) async {
-    if (_isTemp(tracker.id)) return;
+  /// Returns whether the day was really written — the confirmation chip on the
+  /// detail screen is the reason it answers rather than returning `void`. A chip
+  /// saying "nachgetragen" over a write the server refused would be the app
+  /// lying about the record, which is the one thing a record must not do.
+  Future<bool> toggleCheck(Tracker tracker, DateTime day) async {
+    if (_isTemp(tracker.id)) return false;
     final at = boardDay(day);
     final was = state.isCheckedOn(tracker.id, at);
 
     _setCheck(tracker.id, at, !was);
     try {
       await _repo.setChecked(tracker.id, tracker.familyId, at, !was);
+      return true;
     } catch (_) {
-      if (!mounted) return;
+      if (!mounted) return false;
       _setCheck(tracker.id, at, was);
       _fail(L.s.trackerCheckFailed);
+      return false;
     }
   }
 

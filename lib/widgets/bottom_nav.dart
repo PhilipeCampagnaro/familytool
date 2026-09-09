@@ -156,9 +156,8 @@ class _CompactNavButtonState extends State<CompactNavButton> {
           child: GlassSurface(
             borderRadius: BorderRadius.circular(kCompactNavSize / 2),
             // Same bargain as the pill and the floating buttons: no forced
-            // tint, so iOS's real glass adapts, and a light fallback so the
-            // icon stays legible where it is drawn by Flutter.
-            fallbackTint: AppColors.navPillTint,
+            // tint, so iOS's real glass adapts and the Flutter drawing takes
+            // the default light material, where the icon stays legible.
             blurSigma: 24,
             boxShadow: AppShadows.navBar,
             child: SizedBox(
@@ -186,9 +185,8 @@ class AppBottomNav extends StatelessWidget {
       borderRadius: BorderRadius.circular(35),
       // No forced `tint`: it goes straight to `UIGlassEffect.tintColor` on
       // iOS, and a near-opaque one floods the material so the real glass
-      // renders as a flat grey pill. The Flutter-drawn fallback still needs a
-      // light colour for the dark labels to stay legible.
-      fallbackTint: AppColors.navPillTint,
+      // renders as a flat grey pill. The Flutter-drawn approximation takes the
+      // default light material, which the dark labels stay legible on.
       blurSigma: 24,
       boxShadow: AppShadows.navBar,
       child: Container(

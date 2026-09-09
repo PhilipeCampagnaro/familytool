@@ -443,3 +443,191 @@ class _ChartHeading extends StatelessWidget {
     );
   }
 }
+
+/// The last seven days, one circle each, big enough to hit.
+///
+/// The quarter grid above it can already be back-filled, but its squares are
+/// fifteen points wide in a field of a hundred: finding the right one is a
+/// guess, and the neighbouring day is a wrong write. This is the same action at
+/// a size a thumb can aim at, over the span people actually forget in — the
+/// evening they ticked nothing, the weekend they only remember on Monday.
+/// Anything older is what the grid is for.
+///
+/// It also carries **today's tick**, which is why there is no separate "Heute"
+/// row on the screen any more: today is simply the last circle, outlined the way
+/// the grid outlines it. Two controls writing the same day is one more than a
+/// household needs.
+///
+/// Unlike the grid this is drawn for **both kinds of rhythm**. A weekly count
+/// owes no particular day, so every day of its week is tappable here and none of
+/// them is ever "verpasst" — which is exactly [canToggleTrackerOn] and
+/// [trackerDayMark] answering as they already do, not a second rule.
+class TrackerRecentDays extends StatelessWidget {
+  final Tracker tracker;
+  final Set<DateTime> checkedDays;
+  final DateTime today;
+  final Color accent;
+  final ValueChanged<DateTime> onToggleDay;
+
+  /// A week, ending today. Long enough to cover an ordinary lapse, short enough
+  /// that seven circles still fit across a card at a real touch size.
+  static const days = 7;
+
+  const TrackerRecentDays({
+    super.key,
+    required this.tracker,
+    required this.checkedDays,
+    required this.today,
+    required this.accent,
+    required this.onToggleDay,
+  });
+
+  /// The circle aims for the width it is given and stops there — past it the
+  /// seven days start to read as buttons rather than as a week.
+  static const double _gapMin = 6;
+  static const double _maxDiameter = 44;
+
+  @override
+  Widget build(BuildContext context) {
+    final first = boardDaysAfter(today, -(days - 1));
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(L.s.trackerBackfillTitle, style: AppText.groupHeading),
+        const SizedBox(height: 12),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final size = (((constraints.maxWidth - (days - 1) * _gapMin) / days)
+                    .clamp(24.0, _maxDiameter))
+                .toDouble();
+            return Row(
+              // Spread rather than gapped: once the circle hits its ceiling the
+              // leftover width becomes air between the days, so the strip stays
+              // flush with the card on a wide screen.
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                for (var i = 0; i < days; i++)
+                  _DayChip(
+                    day: boardDaysAfter(first, i),
+                    tracker: tracker,
+                    checkedDays: checkedDays,
+                    today: today,
+                    accent: accent,
+                    size: size,
+                    onToggleDay: onToggleDay,
+                  ),
+              ],
+            );
+          },
+        ),
+        const SizedBox(height: 10),
+        Text(
+          L.s.trackerBackfillHint,
+          style: AppText.microLabel.copyWith(color: AppColors.mutedLight),
+        ),
+      ],
+    );
+  }
+}
+
+/// One day of the strip: its weekday letter, and its date in a circle that
+/// carries the state.
+///
+/// The four readings are [_DaySquare]'s, in the same colours — a day is not
+/// allowed to mean one thing in the grid and another six inches above it.
+class _DayChip extends StatelessWidget {
+  final DateTime day;
+  final Tracker tracker;
+  final Set<DateTime> checkedDays;
+  final DateTime today;
+  final Color accent;
+  final double size;
+  final ValueChanged<DateTime> onToggleDay;
+
+  const _DayChip({
+    required this.day,
+    required this.tracker,
+    required this.checkedDays,
+    required this.today,
+    required this.accent,
+    required this.size,
+    required this.onToggleDay,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final mark = trackerDayMark(tracker, checkedDays, day, today);
+    final tappable = canToggleTrackerOn(tracker, day, today);
+    final isToday = day == boardDay(today);
+
+    final circle = AnimatedContainer(
+      // The grid's 280ms, so a day filled in here and a day filled in there
+      // land with the same weight.
+      duration: const Duration(milliseconds: 280),
+      curve: Curves.easeOut,
+      width: size,
+      height: size,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: switch (mark) {
+          TrackerDayMark.kept => accent,
+          TrackerDayMark.missed => tint(accent, .82),
+          TrackerDayMark.notDue => AppColors.hairline,
+          // Before the tracker existed: no fill at all, the way the grid draws
+          // nothing there. The date stays, or the week would lose its shape.
+          TrackerDayMark.blank => Colors.transparent,
+        },
+        border: isToday ? Border.all(color: AppColors.ink, width: 1) : null,
+      ),
+      child: Text(
+        '${day.day}',
+        style: AppText.microLabel.copyWith(
+          fontWeight: FontWeight.w600,
+          color: switch (mark) {
+            TrackerDayMark.kept => Colors.white,
+            TrackerDayMark.missed => AppColors.ink,
+            _ => AppColors.mutedLight,
+          },
+        ),
+      ),
+    );
+
+    final labelled = Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          dayLetters[day.weekday - 1],
+          style: AppText.microLabel.copyWith(color: AppColors.mutedLight),
+        ),
+        const SizedBox(height: 6),
+        circle,
+      ],
+    );
+
+    // Seven days is few enough that every one of them is worth reading out,
+    // pressable or not — unlike the grid, where labelling all seven rows would
+    // mean stepping through months of squares to reach one.
+    final spoken = '${L.s.weekdayWithDateShort(day.weekday % 7, day.day, day.month)}: '
+        '${switch (mark) {
+      TrackerDayMark.kept => L.s.trackerLegendKept,
+      TrackerDayMark.missed => L.s.trackerLegendMissed,
+      _ => L.s.trackerLegendNotDue,
+    }}';
+
+    if (!tappable) {
+      return Semantics(label: spoken, excludeSemantics: true, child: labelled);
+    }
+    return Semantics(
+      button: true,
+      label: spoken,
+      excludeSemantics: true,
+      child: GestureDetector(
+        onTap: () => onToggleDay(day),
+        behavior: HitTestBehavior.opaque,
+        child: labelled,
+      ),
+    );
+  }
+}

@@ -54,7 +54,7 @@ class CalendarConnectionRepository {
       _db
           .from('family_feeds')
           .select(
-            'display_name, created_by, position, '
+            'display_name, created_by, position, owner_member_id, owner_label, '
             'public_feeds!inner (id, kind, feed_key, name, status, status_detail, synced_at)',
           )
           .order('position'),
@@ -214,12 +214,38 @@ class CalendarConnectionRepository {
     required String? externalId,
     required String owner,
   }) async {
+    if (connection.isFeed) return _setFeedOwner(connection, owner);
+
     await _db
         .from('calendar_connections')
         .update({
           'calendar_owners': {...connection.calendarOwners, externalId ?? '*': owner},
         })
         .eq('id', connection.id);
+  }
+
+  /// The same decision for a Ferien or Abfall subscription, which has no
+  /// connection row to hold a map.
+  ///
+  /// A feed is one calendar, so there is nothing to key on and the pair is
+  /// written straight out into its own columns — the shape `calendar-events`
+  /// copies onto `calendars` for everything else. It goes on **this
+  /// household's** `family_feeds` row and never on the shared `public_feeds`
+  /// one: the street reads that row too.
+  Future<void> _setFeedOwner(CalendarConnection connection, String owner) async {
+    final member = owner.startsWith('member:') ? owner.substring('member:'.length).trim() : '';
+    final label = owner.startsWith('person:') ? owner.substring('person:'.length).trim() : '';
+
+    await _db
+        .from('family_feeds')
+        .update({
+          'owner_member_id': member.isEmpty ? null : member,
+          // 60 characters is what the column's check constraint accepts, and
+          // the field this comes from is not limited — a pasted paragraph
+          // should file the calendar, not raise.
+          'owner_label': label.isEmpty ? null : label.substring(0, label.length.clamp(0, 60)),
+        })
+        .eq('feed_id', connection.id);
   }
 
   // -------------------------------------------------------------------------

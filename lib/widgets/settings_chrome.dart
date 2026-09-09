@@ -124,10 +124,7 @@ class CloseSettingsButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GlassIconButton(
-      icon: AppIcons.x,
-      onTap: () => Navigator.of(context).popUntil((r) => r.isFirst),
-    );
+    return GlassIconButton(icon: AppIcons.x, onTap: () => Navigator.of(context).popUntil((r) => r.isFirst));
   }
 }
 
@@ -162,13 +159,7 @@ class HeroCard extends StatelessWidget {
   /// needs to look editable.
   final Widget? leading;
 
-  const HeroCard({
-    super.key,
-    required this.icon,
-    required this.title,
-    required this.description,
-    this.leading,
-  });
+  const HeroCard({super.key, required this.icon, required this.title, required this.description, this.leading});
 
   @override
   Widget build(BuildContext context) {
@@ -214,6 +205,16 @@ class SettingsRow extends StatelessWidget {
   final Widget? trailing;
   final VoidCallback? onTap;
 
+  /// False greys the row out and takes its tap away — for an action that has
+  /// already been done rather than one that is unavailable for now.
+  ///
+  /// **Greyed rather than hidden**, the same rule the sheet's save button
+  /// follows: a row that disappears is a puzzle, a grey one is an answer. The
+  /// chevron goes with the tap, so the row stops looking like a destination as
+  /// well as ceasing to be one, and [value] is where the reason goes — a grey
+  /// row with nothing to say is the version people file bugs about.
+  final bool enabled;
+
   const SettingsRow({
     super.key,
     this.icon,
@@ -224,48 +225,59 @@ class SettingsRow extends StatelessWidget {
     this.accessory,
     this.trailing,
     this.onTap,
+    this.enabled = true,
   });
 
   @override
   Widget build(BuildContext context) {
+    // Held once: the chevron is drawn off the *effective* tap, so a disabled
+    // row loses the arrow along with the gesture.
+    final tap = enabled ? onTap : null;
+
     return GestureDetector(
-      onTap: onTap,
+      onTap: tap,
       behavior: HitTestBehavior.opaque,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 13),
-        child: Row(
-          children: [
-            // A row with neither an icon nor a custom leading (the language
-            // list) drops the slot entirely instead of indenting past an
-            // empty one.
-            if (leading case final leadingWidget?)
-              leadingWidget
-            else if (icon != null)
-              // A circle, not a squircle: the rows that carry a *logo* (the
-              // calendar providers, the family avatars) can only be round, and
-              // a settings list that mixes both shapes reads as two lists.
-              GlyphTile(icon: icon!),
-            if (leading != null || icon != null) const SizedBox(width: 13),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.rowTitle),
-                  if (subtitle != null) Text(subtitle!, style: AppText.label),
-                ],
+      child: Opacity(
+        // The whole row together — the tile, the title and the reason — so it
+        // recedes as one thing. Fading only the text would leave a fully
+        // saturated disc in front of a grey label.
+        opacity: enabled ? 1 : .45,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 13),
+          child: Row(
+            children: [
+              // A row with neither an icon nor a custom leading (the language
+              // list) drops the slot entirely instead of indenting past an
+              // empty one.
+              if (leading case final leadingWidget?)
+                leadingWidget
+              else if (icon != null)
+                // A circle, not a squircle: the rows that carry a *logo* (the
+                // calendar providers, the family avatars) can only be round, and
+                // a settings list that mixes both shapes reads as two lists.
+                GlyphTile(icon: icon!),
+              if (leading != null || icon != null) const SizedBox(width: 13),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.rowTitle),
+                    if (subtitle != null) Text(subtitle!, style: AppText.label),
+                  ],
+                ),
               ),
-            ),
-            if (trailing != null)
-              trailing!
-            else ...[
-              ?accessory,
-              if (value != null) Text(value!, style: AppText.label),
-              if (onTap != null) ...[
-                const SizedBox(width: 8),
-                AppIcon(AppIcons.caretRight, size: 16, color: AppColors.mutedLight),
+              if (trailing != null)
+                trailing!
+              else ...[
+                ?accessory,
+                if (value != null) Text(value!, style: AppText.label),
+                if (tap != null) ...[
+                  const SizedBox(width: 8),
+                  AppIcon(AppIcons.caretRight, size: 16, color: AppColors.mutedLight),
+                ],
               ],
             ],
-          ],
+          ),
         ),
       ),
     );
@@ -302,10 +314,7 @@ class FieldGroup extends StatelessWidget {
             const SizedBox(height: 4),
             Text(hint!, style: AppText.body.copyWith(color: AppColors.muted)),
           ],
-          if (child case final field?) ...[
-            const SizedBox(height: 12),
-            field,
-          ],
+          if (child case final field?) ...[const SizedBox(height: 12), field],
         ],
       ),
     );

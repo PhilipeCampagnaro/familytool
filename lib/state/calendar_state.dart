@@ -31,8 +31,9 @@ class CalendarScreenState {
   final bool monthDetailExpanded;
 
   /// The calendars being filtered to, by id. Null — not the empty set — is
-  /// "Alle", and the empty set never occurs: unticking the last calendar in the
-  /// filter menu returns to "Alle" rather than to a blank month.
+  /// "Alle". The empty set is its own thing and does occur: unticking the last
+  /// row in a picker leaves nothing showing on purpose, because unticking a box
+  /// must never tick the others back on. The way out is the "Alle" chip.
   ///
   /// A set rather than one id because a chip is now an *account*: one connected
   /// Google or IServ account contributes several calendars, and "Alice · IServ"
@@ -203,9 +204,10 @@ class CalendarScreenState {
   ///
   /// **Unfiltered on purpose.** A task hung off Ferdi's football training must
   /// find it even while the chip row is narrowed to Mama, because the tap that
-  /// got here was on the task and had nothing to do with the filter — the
-  /// caller widens the filter afterwards so that the day behind the sheet
-  /// actually shows the event ([_openLinkedEvent]).
+  /// got here was on the task and had nothing to do with the filter. Nothing is
+  /// widened afterwards either: `showLinkedEventSheet` stacks the sheet over
+  /// Board or Listen and leaves Kalender's own view exactly as its owner left
+  /// it.
   ///
   /// [day] is the snapshot the link carries and is only a hint: it is checked
   /// first because it is nearly always right, and the whole loaded window after
@@ -234,6 +236,16 @@ class CalendarScreenState {
   /// rebuild on it. A `Set` is identity-compared inside a [ValueKey], so the
   /// key would never notice a filter change; the ids are sorted so that two
   /// equal filters built in a different order still compare equal.
+  /// Every calendar id the chip row can actually reach — the union of
+  /// [activeGroups].
+  ///
+  /// The cross-account picker starts from this rather than from [calendars]:
+  /// a calendar with nothing in the loaded window has no row to tick, so
+  /// leaving it out of a hand-picked filter would hide it with no way back.
+  Set<String> get pickableCalendarIds => {
+        for (final g in activeGroups) ...g.ids,
+      };
+
   String get calendarFilterKey {
     final filter = calendarFilter;
     if (filter == null) return '';
@@ -297,7 +309,14 @@ class CalendarScreenState {
           // A connection offering exactly one calendar is not a group: it says
           // the account's name where the calendar's own is more useful, and it
           // would offer a popup with a single row in it.
-          g.calendars.length == 1 ? g.asSingle() : g,
+          //
+          // **A person is a group however few calendars they have.** The row is
+          // faces, and a chip reading "iCloud" under somebody's photograph is
+          // the account leaking back into a row that stopped being about
+          // accounts — worse, it is exactly what a household sees right after
+          // assigning their one calendar to themselves, so the assignment reads
+          // as having done nothing.
+          g.calendars.length == 1 && !g.isPerson ? g.asSingle() : g,
     ];
   }
 
@@ -359,6 +378,13 @@ class CalendarScreenState {
 /// and the network answer replaces it when it lands. Aporah's server holds no
 /// events from anybody's Google or iCloud account, so that cache is the only
 /// thing standing between the user and a spinner on every cold start.
+/// The [CalendarScreenState.filterGroupId] a hand-picked selection wears.
+///
+/// Not a real group id, and deliberately not one: it belongs to the "Alle"
+/// chip, which is the one chip in the row standing for no account — and so the
+/// only place a filter spanning two people can be built.
+const kPickedCalendarFilterId = '__picked__';
+
 class CalendarNotifier extends StateNotifier<CalendarScreenState> {
   CalendarNotifier(this._repo, {required bool signedIn})
       : super(CalendarScreenState(now: DateTime.now())) {
@@ -544,6 +570,38 @@ class CalendarNotifier extends StateNotifier<CalendarScreenState> {
     // row again; the chip row itself is built from unfiltered events, so it
     // stays on screen with nothing selected.
     state = state.copyWith(calendarFilter: base, filterGroupId: group.id);
+  }
+
+  /// Ticking a calendar in the "Alle" chip's picker — the one filter that is
+  /// allowed to span two accounts.
+  ///
+  /// An account's own popup refines *within* that account, because that is what
+  /// the chip it hangs off means. This one hangs off "Alle", which means nobody
+  /// in particular, so it adds to and removes from whatever is showing instead
+  /// of replacing it: Alice's Klausurplan plus the family calendar plus Papa's
+  /// work calendar is one selection here, and there is nowhere else in the app
+  /// it can be expressed.
+  void toggleCalendarAnywhere(String calendarId) {
+    final all = state.pickableCalendarIds;
+    final current = state.calendarFilter;
+    // No filter means every calendar is showing, so the first tick reads as
+    // "everything except that one" — the same starting point a chip's own
+    // popup takes, for the same reason.
+    final next = {...(current ?? all)};
+    if (!next.remove(calendarId)) next.add(calendarId);
+
+    // Everything ticked is "Alle" again, not a hand-picked set that happens to
+    // hold every calendar today: the chip should go back to saying "Alle", and
+    // an account connected tomorrow should join it rather than arrive hidden.
+    if (next.length == all.length && next.containsAll(all)) {
+      state = state.copyWith(clearCalendarFilter: true);
+      return;
+    }
+
+    // An emptied selection stays empty, exactly as it does inside an account's
+    // popup: unticking the last row must not tick every other one back on. The
+    // way out is the "Alle" row at the top of the same panel.
+    state = state.copyWith(calendarFilter: next, filterGroupId: kPickedCalendarFilterId);
   }
 
   /// "Alle" — clears any active calendar filter so every source shows again.

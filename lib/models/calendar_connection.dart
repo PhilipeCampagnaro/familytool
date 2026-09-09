@@ -422,6 +422,12 @@ class CalendarConnection {
       lastSyncedAt: synced == null ? null : DateTime.tryParse(synced)?.toLocal(),
       createdBy: map['created_by'] as String?,
       isFeed: true,
+      // A feed is one calendar, so its owner lives in a column pair on the
+      // subscription rather than in a map keyed by the provider's calendar ids
+      // — and [ownerOf] falls through to exactly this pair when the map is
+      // empty, which for a feed it always is.
+      ownerMemberId: map['owner_member_id'] as String?,
+      ownerLabel: map['owner_label'] as String?,
     );
   }
 }

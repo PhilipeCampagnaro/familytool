@@ -165,11 +165,14 @@ Deno.serve(async (req) => {
         is_read_only: true,
         position: feed.position,
         feed_kind: feed.kind,
-        // Ferien and Abfall belong to everybody, so they sit under the family
-        // chip rather than each taking a slot of their own in the row. They are
-        // still separate calendars inside it, tickable one at a time.
-        group_id: FAMILY_GROUP,
-        group_name: owners.familyName,
+        // Ferien and Abfall belong to everybody unless the household says
+        // otherwise, so they sit under the family chip by default rather than
+        // each taking a slot of their own in the row. They are still separate
+        // calendars inside it, tickable one at a time. A household that files
+        // the Schulferien under the child it belongs to, or the bins under
+        // whoever puts them out, gets exactly that instead — the subscription
+        // carries the same owner pair a connected calendar does.
+        ...groupFor(feed.ownerMemberId, feed.ownerLabel, owners),
       });
       for (const e of feed.events) events.push(toWire(feed.id, e));
     }
@@ -382,22 +385,41 @@ interface OwnerDirectory {
 
 /// One read of the roster per request, rather than one per calendar.
 ///
-/// A failure here is survivable and deliberately survived: without names every
-/// calendar falls back to the family chip, which is the row this app had before
-/// people were in it. Losing a household's calendars because a display name
-/// could not be read would be the wrong trade by a wide margin.
+/// **The roster and the profiles are two reads, not an embed.**
+/// `family_members.user_id` references `auth.users`, and so does `profiles.id`
+/// — there is no foreign key *between those two tables* for PostgREST to join
+/// across, so `profiles(display_name)` fails the entire select. It failed
+/// silently: the client hands the error back rather than raising it, the
+/// `catch` below never ran, and the empty roster meant no `member:` calendar
+/// could be put a name to. Every one of them landed on the family chip, which
+/// looked exactly like the feature not existing. `HouseholdNotifier.load`
+/// splits the same read for the same reason.
+///
+/// A failure here is still survivable and deliberately survived: without names
+/// every calendar falls back to the family chip, which is the row this app had
+/// before people were in it. Losing a household's calendars because a display
+/// name could not be read would be the wrong trade by a wide margin. It is
+/// logged now, though — a fallback nobody can see is a bug that hides.
 async function ownerDirectory(db: SupabaseClient, familyId: string): Promise<OwnerDirectory> {
   const fallback = { familyName: "Familie", members: new Map<string, string>() };
   try {
     const [family, members] = await Promise.all([
       db.from("families").select("name").eq("id", familyId).maybeSingle(),
-      db.from("family_members").select("user_id, profiles(display_name)").eq("family_id", familyId),
+      db.from("family_members").select("user_id").eq("family_id", familyId),
     ]);
 
+    if (members.error) console.error(`owner directory roster failed: ${members.error.message}`);
+
+    const ids = ((members.data ?? []) as Array<{ user_id: string }>).map((row) => row.user_id);
     const names = new Map<string, string>();
-    for (const row of (members.data ?? []) as Array<{ user_id: string; profiles?: { display_name?: string } | null }>) {
-      const name = row.profiles?.display_name?.trim();
-      if (name) names.set(row.user_id, name);
+
+    if (ids.length) {
+      const profiles = await db.from("profiles").select("id, display_name").in("id", ids);
+      if (profiles.error) console.error(`owner directory profiles failed: ${profiles.error.message}`);
+      for (const row of (profiles.data ?? []) as Array<{ id: string; display_name?: string | null }>) {
+        const name = row.display_name?.trim();
+        if (name) names.set(row.id, name);
+      }
     }
 
     return {

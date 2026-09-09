@@ -134,35 +134,35 @@ String _dayHeading(DateTime day) => _isToday(day.year, day.month, day.day)
     ? L.s.todayWithDate(day.day, day.month)
     : L.s.weekdayWithDate(day.weekday % 7, day.day, day.month);
 
-/// Lands a jump from Board or Listen on the appointment the link names.
+/// Opens an appointment's own detail sheet **over whatever screen the tap came
+/// from**, and answers whether there was one to open.
 ///
-/// Three steps, and the middle one is the non-obvious part: the day is selected
-/// so that closing the sheet leaves the user looking at the right day, the
-/// **calendar filter is widened** if it would have hidden the event — landing
-/// on an empty-looking day is worse than a chip row that briefly says "Alle" —
-/// and only then is the sheet opened.
+/// The chip on a task or a list used to switch tab and land on the day in
+/// Kalender. It worked, and it lost people: the sheet closed onto a calendar
+/// they had not asked for, two tabs from the list they had been reading, with
+/// no sense of how they got there. The sheet is the entire payload of that link
+/// anyway — it is driven by [CalendarScreenState.openEvent] and needs nothing
+/// of Kalender to be on screen — so it stacks over Board or Listen instead, and
+/// closing it puts the reader back exactly where they were.
 ///
-/// An event outside the loaded window selects the day and stops there. That is
-/// the honest answer: we do not hold the household's calendar, so an
-/// appointment eight months out simply is not here to open, and the day it is
-/// on is everything the link knows.
-void _openLinkedEvent(BuildContext context, WidgetRef ref, TabJump jump) {
-  final notifier = ref.read(calendarProvider.notifier);
-  final day = jump.day;
-  if (day != null) notifier.selectDay(day.year, day.month, day.day);
+/// Neither the selected day nor the calendar filter is touched, for the same
+/// reason: Kalender is not being shown, and quietly re-selecting its day or
+/// clearing its chips would rearrange a screen nobody is looking at.
+///
+/// False means the appointment is outside the fortnight Kalender holds and
+/// there is nothing to show — we do not store the household's calendar, so an
+/// appointment eight months out simply is not here. [EventLinkChip] asks the
+/// same question of its own state and stays a marker rather than offering a tap
+/// that would do nothing.
+bool showLinkedEventSheet(BuildContext context, WidgetRef ref, EventLink link) {
+  final event = ref
+      .read(calendarProvider)
+      .eventForLink(calendarId: link.calendarId, uid: link.uid, day: link.day);
+  if (event == null) return false;
 
-  final calendarId = jump.eventCalendarId;
-  final uid = jump.eventUid;
-  if (calendarId == null || uid == null) return;
-
-  final event = ref.read(calendarProvider).eventForLink(calendarId: calendarId, uid: uid, day: day);
-  if (event == null) return;
-
-  final filter = ref.read(calendarProvider).calendarFilter;
-  if (filter != null && !filter.contains(event.calendarId)) notifier.clearCalendarFilter();
-
-  notifier.openEvent(event, _dayHeading(event.startsAt));
+  ref.read(calendarProvider.notifier).openEvent(event, _dayHeading(event.startsAt));
   _showEventDetailSheet(context, ref);
+  return true;
 }
 
 bool _sameDay(CalSelectedDay s, int y, int m, int d) => s.y == y && s.m == m && s.d == d;
@@ -208,14 +208,6 @@ class CalendarScreen extends ConsumerWidget {
       if (message == null) return;
       showErrorSnack(context, message);
       ref.read(calendarProvider.notifier).clearError();
-    });
-
-    // Arriving from the calendar chip on a task or a list. The shell has already
-    // switched to this tab; what is left is the part only Kalender can do.
-    ref.listen<TabJump?>(tabJumpProvider, (_, jump) {
-      if (jump == null || jump.eventUid == null) return;
-      ref.read(tabJumpProvider.notifier).done();
-      _openLinkedEvent(context, ref, jump);
     });
 
     return Scaffold(
@@ -461,12 +453,7 @@ class _ToggleAndChipsRow extends ConsumerWidget {
             children: [
               Padding(
                 padding: const EdgeInsets.only(right: 8),
-                child: _CalendarChip(
-                  label: L.s.all,
-                  color: AppColors.muted,
-                  active: state.calendarFilter == null,
-                  onTap: () => ref.read(calendarProvider.notifier).clearCalendarFilter(),
-                ),
+                child: _AllCalendarsChip(state: state),
               ),
               for (final group in state.activeGroups)
                 Padding(
@@ -556,19 +543,29 @@ class _ViewToggleButton extends StatelessWidget {
 }
 
 /// A single calendar's filter chip in the shared header — same outline-ring
-/// (1.5px inset) as the day circles, but coloured per calendar source instead
-/// of the app accent. Shown above both week and month views; tapping the
-/// active chip again clears the filter (shows every calendar).
+/// (1.5px inset) as the day circles. Shown above both week and month views.
+///
+/// The ring and the fill are the **app accent**, never the calendar's own
+/// colour: which chip is selected is one piece of state for the whole row, and
+/// a selection that changed hue per chip read as a second colour code fighting
+/// the dot that is already saying which calendar this is.
 class _CalendarChip extends StatelessWidget {
   final String label;
   final Color color;
   final bool active;
   final VoidCallback onTap;
 
-  /// Opens the chip's calendar list. Null on a chip that has nothing to open —
-  /// "Alle", a public feed, an account with one calendar — and the chevron is
-  /// then not drawn at all, so a chip never promises a list it does not have.
-  final VoidCallback? onExpand;
+  /// Whether to draw the "there are calendars inside this one" caret. True on
+  /// every group chip, down to one holding a single calendar: the chip names a
+  /// person or the household, so the list is the only place that names the
+  /// calendar under them. True on "Alle" too, whose list is every calendar in
+  /// the row at once — see [_AllCalendarsChip].
+  ///
+  /// Not a tap target of its own. A caret that opened the list straight from an
+  /// unselected chip put one account's calendars on screen while another
+  /// account's chip was still the lit one; selecting is the first tap and
+  /// opening the second, both of them [onTap]. See [_CalendarGroupChip].
+  final bool hasList;
 
   /// True while some but not all of this account's calendars are showing. The
   /// dot goes hollow, which is the one piece of state the row can carry without
@@ -579,18 +576,24 @@ class _CalendarChip extends StatelessWidget {
   ///
   /// The row is people now, and a face is what makes six of them scannable
   /// where six names are not — a parent picks their child's chip out of the row
-  /// without reading it. Null on "Alle", which stands for nobody and keeps the
-  /// dot it always had.
+  /// without reading it. Null on "Alle", which stands for nobody.
   final Widget? face;
+
+  /// Drawn in place of the colour dot on a chip that stands for every calendar
+  /// at once. "Alle" used to wear a grey dot, and a dot is a promise that
+  /// there is a calendar of that colour — there is no "Alle" calendar, so the
+  /// grey was the one dot in the row naming nothing. Two people say it instead.
+  final IconData? glyph;
 
   const _CalendarChip({
     required this.label,
     required this.color,
     required this.active,
     required this.onTap,
-    this.onExpand,
+    this.hasList = false,
     this.partial = false,
     this.face,
+    this.glyph,
   });
 
   @override
@@ -601,18 +604,19 @@ class _CalendarChip extends StatelessWidget {
         padding: const EdgeInsets.all(1.5),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(27),
-          border: Border.all(color: active ? color : Colors.transparent, width: 1.5),
+          border: Border.all(color: active ? AppColors.accent : Colors.transparent, width: 1.5),
         ),
         child: Container(
           // A face sits close to the chip's edge the way an avatar does in a
-          // row; a bare colour dot needs the full inset or it reads as debris.
+          // row; a bare colour dot needs the full inset or it reads as debris,
+          // and a glyph sits between the two.
           padding: EdgeInsets.only(
-            left: face == null ? 14 : 5,
-            right: onExpand == null ? 14 : 8,
+            left: face != null ? 5 : (glyph != null ? 11 : 14),
+            right: hasList ? 8 : 14,
             top: face == null ? 8 : 5,
             bottom: face == null ? 8 : 5,
           ),
-          decoration: BoxDecoration(color: active ? tint(color, .82) : AppColors.surfaceAlt, borderRadius: BorderRadius.circular(24)),
+          decoration: BoxDecoration(color: active ? tint(AppColors.accent, .82) : AppColors.surfaceAlt, borderRadius: BorderRadius.circular(24)),
           alignment: Alignment.center,
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -623,6 +627,9 @@ class _CalendarChip extends StatelessWidget {
               if (face != null) ...[
                 face!,
                 const SizedBox(width: 7),
+              ] else if (glyph != null) ...[
+                AppIcon(glyph!, size: 17, color: active ? AppColors.accent : AppColors.muted),
+                const SizedBox(width: 6),
               ] else ...[
                 Container(
                   width: 8,
@@ -636,23 +643,18 @@ class _CalendarChip extends StatelessWidget {
                 const SizedBox(width: 7),
               ],
               Text(label, style: AppText.caption.copyWith(fontWeight: active ? FontWeight.w600 : FontWeight.w400, color: active ? AppColors.ink : AppColors.muted)),
-              if (onExpand != null) ...[
+              if (hasList) ...[
                 const SizedBox(width: 3),
-                // Its own gesture target, so the chevron opens the list while
-                // the rest of the chip still selects the whole account in one
-                // tap. `behavior: opaque` because the icon does not fill the
-                // 28pt box that makes it tappable.
-                GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: onExpand,
-                  child: SizedBox(
-                    width: 22,
-                    height: 22,
-                    child: AppIcon(
-                      AppIcons.caretDown,
-                      size: 14,
-                      color: active ? AppColors.ink : AppColors.muted,
-                    ),
+                // A mark rather than a control: the whole chip is one tap
+                // target, and what that tap does depends on whether this chip
+                // is the lit one.
+                SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: AppIcon(
+                    AppIcons.caretDown,
+                    size: 14,
+                    color: active ? AppColors.ink : AppColors.muted,
                   ),
                 ),
               ],
@@ -666,23 +668,45 @@ class _CalendarChip extends StatelessWidget {
 
 /// What a chip is called.
 ///
-/// Every group but the family answers with the name the wire sent, which is the
-/// household's own word for that calendar or that person.
+/// **Anybody the household knows by a row of its own is named from that row,
+/// not from the wire.** `calendar-events` does send a name — `ownerDirectory`
+/// reads `families.name` and `profiles.display_name` — but that copy is only as
+/// fresh as the last read, and it is written into the offline snapshot on the
+/// way past. So somebody who renamed themselves in Settings, or an admin who
+/// renamed the household, watched the chip keep the old name until something
+/// happened to trigger a full re-read of every connected account: seconds of
+/// network work, on somebody else's Google and iCloud, to learn a word the app
+/// was already holding. The face beside the name came out of [familyProvider]
+/// and changed at once, which made the stale half of the chip look like a bug
+/// rather than a delay — because it is one.
 ///
-/// The **family** chip is the exception, and reads the household's name out of
-/// [familyProvider] instead. `calendar-events` does send it — `ownerDirectory`
-/// reads `families.name` — but that copy is only as fresh as the last read, and
-/// it is written into the offline snapshot on the way past. So an admin who
-/// renamed the household in Settings watched the chip keep the old name until
-/// something happened to trigger a full re-read of every connected account,
-/// which is seconds of work to learn a word the app was already holding.
-///
-/// The wire's copy stays as the fallback for the moment before the household
-/// has loaded, which is the only time this can't answer.
+/// That leaves the wire naming exactly what only it knows: a calendar of the
+/// household's own, and a child with no account (`person:<Name>`), whose name
+/// is typed on the connection rather than kept in a profile. It is also the
+/// fallback for the moment before the household has loaded, which is the only
+/// time this can't answer.
 String _groupLabel(WidgetRef ref, CalendarGroup group) {
-  if (!group.isFamily) return group.name;
-  final name = ref.watch(familyProvider.select((s) => s.household?.name))?.trim();
-  return name == null || name.isEmpty ? group.name : name;
+  if (group.isFamily) {
+    final name = ref.watch(familyProvider.select((s) => s.household?.name))?.trim();
+    return name == null || name.isEmpty ? group.name : name;
+  }
+
+  final memberId = group.ownerMemberId;
+  if (memberId.isNotEmpty) {
+    // `select` rather than a bare watch, so a chip row doesn't rebuild every
+    // time an avatar URL is re-signed. Only this member's name is read.
+    final name = ref.watch(
+      familyProvider.select((s) {
+        for (final m in s.members) {
+          if (m.userId == memberId) return m.name;
+        }
+        return null;
+      }),
+    )?.trim();
+    if (name != null && name.isNotEmpty) return name;
+  }
+
+  return group.name;
 }
 
 /// The circle on a person's chip.
@@ -749,6 +773,81 @@ Widget _groupFace(WidgetRef ref, CalendarGroup group, {required bool partial}) {
   );
 }
 
+/// The "Alle" chip: tap to show everything, tap again to open the list and tick
+/// calendars across accounts.
+///
+/// It wears the same caret every account chip wears, and for a stronger reason.
+/// The rest of the row is one person each, so a filter built out of it is one
+/// person — two people, or one child's Klausurplan beside the family calendar,
+/// was expressible nowhere and the answer was to give up and show everything.
+/// This chip stands for nobody in particular, so the selection that belongs to
+/// nobody in particular hangs off it.
+///
+/// Stateful only to hold the [GlobalKey] the popup anchors to, exactly like
+/// [_CalendarGroupChip].
+class _AllCalendarsChip extends ConsumerStatefulWidget {
+  final CalendarScreenState state;
+
+  const _AllCalendarsChip({required this.state});
+
+  @override
+  ConsumerState<_AllCalendarsChip> createState() => _AllCalendarsChipState();
+}
+
+class _AllCalendarsChipState extends ConsumerState<_AllCalendarsChip> {
+  final _anchorKey = GlobalKey();
+
+  void _open() {
+    final box = _anchorKey.currentContext?.findRenderObject() as RenderBox?;
+    if (box == null) return;
+    Navigator.of(context).push(
+      _AllCalendarsPickerRoute(
+        anchor: box.localToGlobal(Offset.zero) & box.size,
+        // The route stays open while the rows are ticked: picking three
+        // calendars out of eight is one gesture, not three.
+        onToggle: (id) => ref.read(calendarProvider.notifier).toggleCalendarAnywhere(id),
+        onAll: () => ref.read(calendarProvider.notifier).clearCalendarFilter(),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = widget.state;
+    final filter = state.calendarFilter;
+    final picked = state.filterGroupId == kPickedCalendarFilterId;
+    // Lit while everything is showing *and* while a hand-picked set is, since
+    // that set is this chip's own. An account chip owns the filter otherwise.
+    final active = filter == null || picked;
+
+    return KeyedSubtree(
+      key: _anchorKey,
+      child: _CalendarChip(
+        // A chip reading "Alle" while three calendars are hidden would be
+        // lying, so a hand-picked selection counts itself instead.
+        label: picked ? L.s.calendarCount(filter?.length ?? 0) : L.s.all,
+        color: AppColors.muted,
+        active: active,
+        glyph: AppIcons.users,
+        // Unlike an account chip's, this list is never empty — the row itself
+        // only exists once there are calendars to name.
+        hasList: true,
+        // Same two-tap shape as every other chip: the first tap selects, the
+        // second opens what the caret has just promised. From an account chip
+        // that first tap is what clears the filter, which is what "Alle" has
+        // always meant.
+        onTap: () {
+          if (active) {
+            _open();
+          } else {
+            ref.read(calendarProvider.notifier).clearCalendarFilter();
+          }
+        },
+      ),
+    );
+  }
+}
+
 /// One account's chip: tap to show all of it, tap again — or hit the chevron —
 /// to open the list and tick individual calendars.
 ///
@@ -807,13 +906,15 @@ class _CalendarGroupChipState extends ConsumerState<_CalendarGroupChip> {
         active: active,
         partial: active && shown.length < group.calendars.length,
         face: _groupFace(ref, group, partial: active && shown.length < group.calendars.length),
-        onExpand: group.hasChoices ? _open : null,
+        hasList: group.opensList,
         // The second tap on an already-selected account opens the list rather
-        // than clearing the filter — which is what the chevron beside it has
+        // than clearing the filter — which is what the caret beside it has
         // just promised. Clearing is what the "Alle" chip is for, and it is
-        // always the first thing in the row.
+        // always the first thing in the row. The caret is part of the same tap
+        // target, so it never opens a list belonging to a chip that is not the
+        // lit one.
         onTap: () {
-          if (active && group.hasChoices) {
+          if (active && group.opensList) {
             _open();
           } else {
             ref.read(calendarProvider.notifier).filterToGroup(group);

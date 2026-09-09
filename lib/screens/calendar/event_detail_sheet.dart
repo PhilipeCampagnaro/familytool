@@ -299,21 +299,42 @@ void _showEventDetailSheet(BuildContext context, WidgetRef ref) {
             // about it, and hiding the card there would withhold the feature
             // from exactly the events people plan around.
             //
-            // Rows rather than a labelled block with a button in it: the sheet
-            // is already a column of single-purpose cards (Datum, Ort,
-            // Notizen), and an explanatory paragraph that never goes away is
-            // the tallest thing in a sheet you open dozens of times.
+            // Rows under a heading rather than a labelled block with a button
+            // in it: the sheet is already a column of single-purpose cards
+            // (Datum, Ort, Notizen), and an explanatory paragraph that never
+            // goes away is the tallest thing in a sheet you open dozens of
+            // times. The heading is one line and earns it — stacked straight
+            // under the card above, two cards of identical rows ran together
+            // into one list where half the rows made something and half opened
+            // something. It is there even when the card above is not, so the
+            // card is the same card either way.
             //
-            // Still offered when something is already linked, and on purpose: a
-            // weekend away wants a packing list *and* a shopping list, and the
-            // card above already answers "is there one?" — which was the only
-            // question the old unconditional pair could not answer.
+            // **One list and one task per appointment, and the row greys out
+            // once it exists.** The pair used to stay live, on the reasoning
+            // that a weekend away might want a packing list *and* a shopping
+            // list. In use that is not what the second tap meant: the card
+            // above already lists what was made, so a live "erstellen" row
+            // under it reads as "there isn't one yet" and the second list is
+            // somebody answering a question the sheet asked by mistake. Grey
+            // says the appointment is already provided for, and a household
+            // that wants a second list makes it in Listen, where a list is a
+            // list rather than an answer to this sheet.
+            //
+            // Greyed rather than hidden, and with the reason on the right —
+            // see [SettingsRow.enabled]. A row that vanishes takes the answer
+            // with it, and this row's whole job now is to say "done".
             const SizedBox(height: 12),
+            GroupLabel(L.s.createForEvent),
             SectionCard(
               children: dividedRows([
-                // The two tab icons, so the row says where it lands as well as
-                // what it does.
+                // The glyph each thing wears where it is made: Listen's own
+                // for a list, and the Board create sheet's "Aufgabe" segment
+                // for a task. The Board *tab* icon used to sit on the second
+                // row and said only which screen it landed on — next to a list
+                // that showed its own symbol it read as a stray grid.
                 SettingsRow(
+                  enabled: linkedLists.isEmpty,
+                  value: linkedLists.isEmpty ? null : L.s.alreadyCreated,
                   leading: _LinkTile(
                     iconKey: null,
                     fallbackIcon: AppIcons.listChecks,
@@ -332,9 +353,11 @@ void _showEventDetailSheet(BuildContext context, WidgetRef ref) {
                   ),
                 ),
                 SettingsRow(
+                  enabled: linkedTasks.isEmpty,
+                  value: linkedTasks.isEmpty ? null : L.s.alreadyCreated,
                   leading: _LinkTile(
                     iconKey: null,
-                    fallbackIcon: AppIcons.layout,
+                    fallbackIcon: AppIcons.checkCircle,
                     action: true,
                   ),
                   title: L.s.createTaskFromEvent,
@@ -876,10 +899,16 @@ class _HomeworkEntry extends StatelessWidget {
 /// glass lens the settings rows wore — that lens is gone, but the reason this
 /// row is a filled disc rather than a bare icon has not changed.)
 ///
-/// [action] is the one distinction the fill carries: **grey for a thing that
-/// exists, white for a row that makes one**. The two cards are otherwise the
-/// same five rows in the same shape, and "Liste zum Termin erstellen" is a very
-/// different tap from "Wochenende Hamburg".
+/// [action] carries the distinction twice over: **a thing that exists is an
+/// accent glyph on grey, a row that makes one is an ink glyph on white**. The
+/// two cards are otherwise the same five rows in the same shape, and "Liste zum
+/// Termin erstellen" is a very different tap from "Wochenende Hamburg".
+///
+/// The accent is the sheet's own — the colour on the location pin above these
+/// cards and on the [EventLinkChip] the linked list wears back on Listen — so
+/// the two ends of one link are the same blue wherever the household meets it.
+/// It reaches only a *glyph*: a shop logo or a photograph of the thing is
+/// drawn, not tinted, which is [IconTile]'s rule and not one to bend here.
 class _LinkTile extends StatelessWidget {
   final String? iconKey;
   final IconData fallbackIcon;
@@ -899,7 +928,7 @@ class _LinkTile extends StatelessWidget {
       // different sizes inside the same disc, and these rows carry both.
       glyphSize: 17,
       fallbackIcon: fallbackIcon,
-      glyphColor: AppColors.ink,
+      glyphColor: action ? AppColors.ink : Theme.of(context).colorScheme.primary,
       // `surface`, not `brandTile` — the white disc for artwork is white in both
       // palettes on purpose, and an ink glyph on it would vanish on dark.
       background: action ? AppColors.surface : null,
@@ -966,7 +995,11 @@ class _LinkedCard extends ConsumerWidget {
                 // accent glass lens: a card of five rows in two tile styles
                 // reads as two cards, and the thing that separates a list from a
                 // task here is the glyph, not the material behind it.
-                leading: _LinkTile(iconKey: null, fallbackIcon: AppIcons.layout),
+                //
+                // And the glyph is the check the Board create sheet puts on
+                // "Aufgabe", not the Board tab's grid — the row names one task,
+                // not the screen it lives on, and the grid read as a table.
+                leading: _LinkTile(iconKey: null, fallbackIcon: AppIcons.checkCircle),
                 title: task.text,
                 // The note, where there is one: a task called "Packen" with
                 // "Reisepass, Ladegerät" under it is the row that saves the trip

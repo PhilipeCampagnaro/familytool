@@ -80,6 +80,13 @@ class StringsDe extends AppStrings {
   String get restored => 'Wiederhergestellt';
   @override
   String get reload => 'Erneut laden';
+
+  @override
+  String get showFullName => 'Vollständigen Namen anzeigen';
+
+  @override
+  String get hideFullName => 'Namen einklappen';
+
   @override
   String get notes => 'Notizen';
   @override
@@ -289,7 +296,15 @@ class StringsDe extends AppStrings {
   @override
   String get trackerLegendNotDue => 'nicht geplant';
   @override
+  String get trackerBackfillTitle => 'Nachtragen';
+  @override
   String get trackerBackfillHint => 'Tippe einen Tag an, um ihn nachzutragen.';
+  @override
+  String get trackerBackfillOlderHint => 'Ältere Tage lassen sich direkt im Feld antippen.';
+  @override
+  String trackerDayFilledIn(String day) => '$day nachgetragen';
+  @override
+  String trackerDayCleared(String day) => '$day zurückgenommen';
   @override
   String get trackerNotDueToday => 'Heute nicht dran';
   @override
@@ -398,6 +413,10 @@ class StringsDe extends AppStrings {
   String get itemSaveFailed => 'Der Artikel konnte nicht gespeichert werden.';
   @override
   String get itemDeleteFailed => 'Der Artikel konnte nicht gelöscht werden.';
+  @override
+  String get itemDeleted => 'Artikel gelöscht';
+  @override
+  String get itemRestoreFailed => 'Der Artikel konnte nicht wiederhergestellt werden.';
   @override
   String get boxCreated => 'Box erstellt';
   @override
@@ -567,6 +586,10 @@ class StringsDe extends AppStrings {
   @override
   String get createTaskFromEvent => 'Aufgabe zum Termin erstellen';
   @override
+  String get createForEvent => 'Neu anlegen';
+  @override
+  String get alreadyCreated => 'Bereits erstellt';
+  @override
   String get linkedToEvent => 'Zum Termin angelegt';
   @override
   String get linkedEventLabel => 'Termin';
@@ -687,6 +710,8 @@ class StringsDe extends AppStrings {
   String get connected => 'Verbunden';
   @override
   String calendarCount(int count) => count == 1 ? '1 Kalender' : '$count Kalender';
+  @override
+  String get calendarSettings => 'Kalender bearbeiten';
   @override
   String get renameCalendar => 'Kalender umbenennen';
   @override
@@ -1398,8 +1423,6 @@ class StringsDe extends AppStrings {
   @override
   String get assignCalendarNewPerson => 'Andere Person';
   @override
-  String get assignCalendarNewPersonHint => 'Name, z. B. Mia';
-  @override
   String get assignCalendarNotVisibility => 'Das ändert nichts daran, wer den Kalender sieht — alle im Haushalt sehen ihn weiterhin.';
   @override
   String get assignCalendarFailed => 'Die Zuordnung hat gerade nicht geklappt.';
@@ -1418,4 +1441,46 @@ class StringsDe extends AppStrings {
   String get renameFamilyBody => 'Der Name steht auf dem Familien-Chip in Kalender und Board.';
   @override
   String get familyRenameFailed => 'Der Name konnte nicht geändert werden.';
+  @override
+  String get confirmLabBody => 'Jede Form, in der die App „hat geklappt“ sagt — zum Vergleichen und Angleichen.';
+  @override
+  String get confirmLabSheetsGroup => 'Sheets und Seiten';
+  @override
+  String get confirmLabChipsGroup => 'Chips über der Navigation';
+  @override
+  String get confirmLabSampleName => 'Wocheneinkauf';
+  @override
+  String get confirmLabNameHint => 'Wie die Liste heißen soll.';
+  @override
+  String get confirmLabFlow => 'Anlegen, ganzer Weg';
+  @override
+  String get confirmLabFlowHint => 'Feld, Spinner, Haken — und der Griff läuft ab.';
+  @override
+  String get confirmLabBeat => 'Nur der Haken';
+  @override
+  String get confirmLabBeatHint => 'Der Beat allein, 1,1 Sekunden.';
+  @override
+  String get confirmLabCelebration => 'Konfetti mit Karte';
+  @override
+  String get confirmLabCelebrationHint => '🎉 statt Haken, Inhalt darunter, 3,2 Sekunden.';
+  @override
+  String get confirmLabWaiting => 'Wartend, mit Aktion';
+  @override
+  String get confirmLabWaitingHint => 'Läuft nicht ab — „Fertig“ schließt.';
+  @override
+  String get confirmLabFullPage => 'Ganze Seite';
+  @override
+  String get confirmLabFullPageHint => 'Konfetti, Lichtschein von oben, Akzent-Pille.';
+  @override
+  String get confirmLabChipConfirm => 'Bestätigung';
+  @override
+  String get confirmLabChipConfirmHint => 'Grüner Punkt, 1,9 Sekunden.';
+  @override
+  String get confirmLabChipUndo => 'Löschen mit Rückgängig';
+  @override
+  String get confirmLabChipUndoHint => 'Bleibt 5 Sekunden, damit die Hand hinkommt.';
+  @override
+  String get confirmLabChipError => 'Fehler';
+  @override
+  String get confirmLabChipErrorHint => 'Roter Punkt, kein Haptik-Feedback, 4 Sekunden.';
 }

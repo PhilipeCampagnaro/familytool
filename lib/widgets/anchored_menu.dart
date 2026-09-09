@@ -314,12 +314,35 @@ class _RowMenuButtonState extends State<RowMenuButton> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return KeyedSubtree(
       key: _anchorKey,
+      child: RowMoreButton(
+        onTap: () => showAnchoredMenu(context: context, anchorKey: _anchorKey, items: widget.items, width: widget.menuWidth),
+      ),
+    );
+  }
+}
+
+/// The three dots themselves, for a row whose "more" is not a menu.
+///
+/// The connected-calendar rows open a sheet instead: everything you can do to a
+/// calendar is in it, so a menu in front of the sheet would be one tap and one
+/// list of the same three words for nothing. The dots stay, because they are
+/// what says a row has more behind it than the tap that opens it — but they
+/// hang off this rather than off [RowMenuButton], so both kinds of row wear the
+/// same mark at the same size and the geometry lives in one place.
+class RowMoreButton extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const RowMoreButton({super.key, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
       // Without this only the glyph itself takes the tap — a 15px icon is a
       // hard target, so the padding around it has to count too.
       behavior: HitTestBehavior.opaque,
-      onTap: () => showAnchoredMenu(context: context, anchorKey: _anchorKey, items: widget.items, width: widget.menuWidth),
+      onTap: onTap,
       child: SizedBox(
         width: 32,
         height: 36,

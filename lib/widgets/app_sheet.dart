@@ -1,8 +1,11 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import '../theme/tokens.dart';
 import 'glass.dart';
+import 'toast_chip.dart';
+import '../l10n/l10n.dart';
 import '../theme/app_icons.dart';
 
 /// Shared bottom-sheet chrome: grab handle, header, then a scrolling body on
@@ -19,8 +22,9 @@ Future<T?> showAppSheet<T>({
   String? title,
   Widget? header,
   required Widget child,
-  VoidCallback? onSave,
+  FutureOr<void> Function()? onSave,
   TextEditingController? requiredField,
+  FocusNode? requiredFocus,
   double heightFactor = 0.92,
   SheetCollapsingHeader? collapsingHeader,
 }) {
@@ -28,21 +32,50 @@ Future<T?> showAppSheet<T>({
     collapsingHeader != null || header != null || title != null,
     'showAppSheet needs a title (standard header), a custom header, or a collapsingHeader',
   );
-  return showModalBottomSheet<T>(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    barrierColor: AppColors.scrim,
-    builder: (ctx) => _AppSheetBody(
-      title: title,
-      header: header,
-      onSave: onSave,
-      requiredField: requiredField,
-      heightFactor: heightFactor,
-      collapsingHeader: collapsingHeader,
-      child: child,
+  final navigator = Navigator.of(context);
+  return navigator.push(
+    _AppSheetRoute<T>(
+      capturedThemes: InheritedTheme.capture(from: context, to: navigator.context),
+      barrierLabel: MaterialLocalizations.of(context).scrimLabel,
+      barrierOnTapHint: MaterialLocalizations.of(
+        context,
+      ).scrimOnTapHint(MaterialLocalizations.of(context).bottomSheetLabel),
+      builder: (ctx) => _AppSheetBody(
+        title: title,
+        header: header,
+        onSave: onSave,
+        requiredField: requiredField,
+        requiredFocus: requiredFocus,
+        heightFactor: heightFactor,
+        collapsingHeader: collapsingHeader,
+        child: child,
+      ),
     ),
   );
+}
+
+/// The route [showAppSheet] pushes, in place of `showModalBottomSheet`'s.
+///
+/// A subclass for one reason: [canTransitionTo] is what wires a route's
+/// `secondaryAnimation`, and it is the only place a sheet can say **what** is
+/// allowed to push it into the background (see [_CoveredSheet]). Left at the
+/// default `true`, a sheet would scale itself back under an anchored menu, a
+/// `showDatePicker` dialog or anything else that happens to be pushed over it
+/// — none of which is a card laid on top of it.
+class _AppSheetRoute<T> extends ModalBottomSheetRoute<T> {
+  _AppSheetRoute({
+    required super.builder,
+    required super.capturedThemes,
+    required super.barrierLabel,
+    required super.barrierOnTapHint,
+  }) : super(
+         isScrollControlled: true,
+         backgroundColor: Colors.transparent,
+         modalBarrierColor: AppColors.scrim,
+       );
+
+  @override
+  bool canTransitionTo(TransitionRoute<dynamic> nextRoute) => nextRoute is _AppSheetRoute;
 }
 
 /// Generic scroll-driven collapsing header for a pinned [SliverPersistentHeader]:
@@ -96,6 +129,127 @@ class SheetCollapsingHeader {
   const SheetCollapsingHeader({required this.expandedHeight, required this.collapsedHeight, required this.builder});
 }
 
+/// How far a covered sheet scales back, and how much of it is left showing
+/// above the sheet that covers it.
+///
+/// The scale is Apple's own number, measured off iOS 18 by Flutter for
+/// `CupertinoSheetRoute` (`_kSheetScaleFactor` in `cupertino/sheet.dart`): a
+/// background card ends up about 8% narrower. The peek is ours — a strip deep
+/// enough to show the 30pt shoulders and nothing else, so what is left of the
+/// sheet behind is unmistakably a card edge rather than content somebody might
+/// try to read or tap.
+const double _coveredScaleBack = 0.0835;
+const double _coveredPeek = 14;
+
+/// Every [showAppSheet] sheet currently on screen, in the order they were
+/// opened — so a covered sheet can find out how tall the one covering it is.
+///
+/// A plain module-level list rather than an inherited widget or a provider,
+/// because the two sheets are **sibling routes**: neither is an ancestor of the
+/// other, so there is no context to inherit through. Each entry is written by
+/// its own sheet during layout and read by the sheet below during the covering
+/// animation, which is the only time it matters.
+final List<_OpenSheet> _openSheets = <_OpenSheet>[];
+
+class _OpenSheet {
+  double height = 0;
+}
+
+/// A sheet pushed into the background by a second sheet laid over it.
+///
+/// Two sheets used to sit at the same width, the same 30pt radius and the same
+/// white, so a short sheet over a tall one read as two peers rather than as one
+/// on top of the other: the back sheet still showed a legible title, a live X
+/// and check and a second grab handle above the front one's header. The scrim
+/// alone can't fix that — it dims both the same amount.
+///
+/// So the back sheet **drops until only [_coveredPeek] of it clears the front
+/// sheet's top edge**, and scales toward its own top on the way down. What is
+/// left is a rounded shoulder slightly narrower than the sheet in front of it:
+/// the card-behind-a-card of a system sheet over a full-screen page, which is
+/// the stack iOS actually reads as a stack. Scaling alone was tried first,
+/// because that is literally what iOS does when a sheet covers a sheet — but
+/// iOS is doing it to two sheets of similar height, and ours are 0.92 and 0.58,
+/// so all it produced was the same tall sheet, slightly narrower, still showing
+/// its whole header.
+///
+/// [covered] is the route's `secondaryAnimation`, which runs 0 → 1 exactly
+/// while the sheet above slides in and reverses as it leaves, so this tracks a
+/// drag-to-dismiss of the front sheet rather than playing on its own. Only
+/// another [_AppSheetRoute] drives it; a menu or a dialog leaves it at 0.
+class _CoveredSheet extends StatefulWidget {
+  final Animation<double>? covered;
+
+  /// This sheet's own height, and how tall the one covering it is — null until
+  /// the covering sheet has laid itself out, which is a frame or two into the
+  /// animation.
+  final double height;
+  final double? Function() frontHeight;
+  final Widget child;
+
+  const _CoveredSheet({
+    required this.covered,
+    required this.height,
+    required this.frontHeight,
+    required this.child,
+  });
+
+  @override
+  State<_CoveredSheet> createState() => _CoveredSheetState();
+}
+
+class _CoveredSheetState extends State<_CoveredSheet> {
+  /// The last height the sheet above reported. Kept because that sheet leaves
+  /// the list the moment it is popped, while this one is still animating back
+  /// up — without it the drop would snap to zero halfway through the return.
+  double? _front;
+
+  @override
+  Widget build(BuildContext context) {
+    final animation = widget.covered;
+    if (animation == null) return widget.child;
+    return AnimatedBuilder(
+      animation: animation,
+      child: widget.child,
+      builder: (context, child) {
+        // The curve is read per frame instead of through a `CurvedAnimation`,
+        // which would have to be owned and disposed to keep from leaking its
+        // status listener. Same pair of curves the Cupertino sheet uses in
+        // each direction.
+        final curve = animation.status == AnimationStatus.reverse ? Curves.easeInToLinear : Curves.linearToEaseOut;
+        final t = curve.transform(animation.value.clamp(0.0, 1.0));
+        final front = widget.frontHeight() ?? _front;
+        if (front != null) _front = front;
+        // Both sheets are anchored to the bottom of the screen, so the gap
+        // between their top edges is just the difference in their heights.
+        // Negative when the sheet on top is the taller one — it covers this one
+        // completely, and there is nothing to move out of the way.
+        final drop = front == null ? 0.0 : math.max(0.0, widget.height - front - _coveredPeek);
+        // **The two transforms are built at rest as well**, identity, rather
+        // than short-circuited with `if (t == 0) return child`. That shortcut
+        // changed the *shape* of the tree the moment a second sheet began to
+        // cover this one: the builder's slot went from holding the sheet itself
+        // to holding a `Transform`, so Flutter unmounted the whole sheet and
+        // built it again underneath. Everything the covered sheet had handed
+        // out died with it — in particular the `WidgetRef` that the event
+        // sheet's rows close over, so tapping the check on a list started from
+        // an appointment threw "Cannot use ref after the widget was disposed"
+        // before a single byte reached Supabase. Only `filterQuality` is
+        // dropped at rest, which is a property change and keeps the element.
+        return Transform.translate(
+          offset: Offset(0, drop * t),
+          child: Transform.scale(
+            scale: 1 - _coveredScaleBack * t,
+            alignment: Alignment.topCenter,
+            filterQuality: t == 0 ? null : FilterQuality.medium,
+            child: child,
+          ),
+        );
+      },
+    );
+  }
+}
+
 /// Matches [GlassIconButton]'s default diameter — the sheet header's row height
 /// and the room its title has to keep clear on either side.
 const double _headerButtonSize = 40;
@@ -119,10 +273,21 @@ const double _sheetTopGap = 12;
 /// field where the user can see it.
 class _SaveButton extends StatelessWidget {
   final TextEditingController? requiredField;
+
+  /// The field [requiredField] belongs to, so a tap on the greyed check can put
+  /// the cursor in it. Without one the tap is inert, which is the failure this
+  /// button was reported for: the sheet looked filled in, the check did nothing
+  /// visible, and the tap read as a save.
+  final FocusNode? requiredFocus;
   final VoidCallback onSave;
   final IconData icon;
 
-  const _SaveButton({required this.requiredField, required this.onSave, this.icon = AppIcons.check});
+  const _SaveButton({
+    required this.requiredField,
+    required this.onSave,
+    this.requiredFocus,
+    this.icon = AppIcons.check,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -134,6 +299,10 @@ class _SaveButton extends StatelessWidget {
         icon: icon,
         onTap: onSave,
         enabled: value.text.trim().isNotEmpty,
+        // The keyboard coming up on the empty name is the whole answer: it says
+        // what is missing and puts the cursor there in one move, which no
+        // amount of greying does on its own.
+        onDisabledTap: () => requiredFocus?.requestFocus(),
       ),
     );
   }
@@ -142,8 +311,9 @@ class _SaveButton extends StatelessWidget {
 class _AppSheetBody extends StatefulWidget {
   final String? title;
   final Widget? header;
-  final VoidCallback? onSave;
+  final FutureOr<void> Function()? onSave;
   final TextEditingController? requiredField;
+  final FocusNode? requiredFocus;
   final Widget child;
   final double heightFactor;
   final SheetCollapsingHeader? collapsingHeader;
@@ -153,6 +323,7 @@ class _AppSheetBody extends StatefulWidget {
     required this.header,
     required this.onSave,
     required this.requiredField,
+    required this.requiredFocus,
     required this.child,
     required this.heightFactor,
     this.collapsingHeader,
@@ -167,10 +338,70 @@ class _AppSheetBodyState extends State<_AppSheetBody> {
   /// dismiss itself — see [SheetCountdown].
   final ValueNotifier<Duration?> _countdown = ValueNotifier(null);
 
+  /// This sheet's row in [_openSheets], for as long as it is on screen.
+  final _OpenSheet _entry = _OpenSheet();
+
+  @override
+  void initState() {
+    super.initState();
+    _openSheets.add(_entry);
+  }
+
   @override
   void dispose() {
+    _openSheets.remove(_entry);
     _countdown.dispose();
     super.dispose();
+  }
+
+  /// How tall the sheet immediately above this one is, or null if this is the
+  /// top one. Read by [_CoveredSheet] on each frame of the covering animation
+  /// rather than pushed, so nothing has to notify a route that has already
+  /// built this frame.
+  double? _frontSheetHeight() {
+    final i = _openSheets.indexOf(_entry);
+    if (i < 0 || i + 1 >= _openSheets.length) return null;
+    return _openSheets[i + 1].height;
+  }
+
+  /// Runs the caller's save and **makes a failure in it visible**.
+  ///
+  /// Every create sheet in the app hands this an `() async { … }`, and the
+  /// chrome pops the moment it is tapped — so the returned Future used to be
+  /// dropped on the floor. Anything that threw before the write started took
+  /// the write with it and produced *nothing*: no row, no confirmation, no
+  /// error. The sheet closing was the only feedback, and closing is what a
+  /// successful save looks like — which is how a create that never reached the
+  /// server (see [_CoveredSheet]) went unexplained for as long as it did. A
+  /// silent failure is worse than the bug behind it.
+  ///
+  /// [Future.sync] catches both halves — a throw before the first `await` and a
+  /// rejected Future after it — and the report goes to two places on purpose:
+  /// the chip is what the person in front of the app sees, and
+  /// [FlutterError.reportError] is what puts the stack in the console for
+  /// whoever is looking.
+  void _runSave() {
+    final save = widget.onSave;
+    if (save == null) return;
+    // Taken before the save runs and defensively, because the sheet is popped
+    // the instant this returns: after that there is no context to show anything
+    // from. If even this throws there is nothing left to report *with*, so the
+    // reporting falls back to the console rather than taking the save down.
+    ConfirmChip? chip;
+    try {
+      chip = confirmChipOf(context, kind: ToastKind.error);
+    } catch (_) {}
+    Future.sync(save).catchError((Object error, StackTrace stack) {
+      FlutterError.reportError(
+        FlutterErrorDetails(
+          exception: error,
+          stack: stack,
+          library: 'app_sheet',
+          context: ErrorDescription('while running a sheet\'s onSave'),
+        ),
+      );
+      chip?.call(L.s.changeSaveFailed);
+    });
   }
 
   /// Close / [title] / save row.
@@ -213,8 +444,9 @@ class _AppSheetBodyState extends State<_AppSheetBody> {
               alignment: Alignment.centerRight,
               child: _SaveButton(
                 requiredField: widget.requiredField,
+                requiredFocus: widget.requiredFocus,
                 onSave: () {
-                  widget.onSave?.call();
+                  _runSave();
                   Navigator.of(context).pop();
                 },
               ),
@@ -238,6 +470,13 @@ class _AppSheetBodyState extends State<_AppSheetBody> {
     // of it; and the sheet has to grow by what the keyboard took (the height
     // below), or an 0.92 sheet would be left showing about half of itself.
     final keyboard = MediaQuery.viewInsetsOf(context).bottom;
+
+    // Runs 0 → 1 while a second sheet is laid over this one — see
+    // [_CoveredSheet]. It is the same moment [occludedByRoute] reports to the
+    // native chrome, which is what makes scaling this safe: by the time it
+    // moves, every `UIGlassEffect` inside has already swapped itself for the
+    // Flutter approximation, so there is no platform view being transformed.
+    final covered = ModalRoute.of(context)?.secondaryAnimation;
 
     final grayBody = Container(
       // `width: double.infinity` is load-bearing: the enclosing Column centers
@@ -284,40 +523,53 @@ class _AppSheetBodyState extends State<_AppSheetBody> {
           final base = constraints.maxHeight * widget.heightFactor;
           final ceiling = constraints.maxHeight - topInset - _sheetTopGap;
           final height = math.max(base, math.min(ceiling, base + keyboard));
+          // Published for whatever sheet is underneath this one, which needs it
+          // to know how far to drop. A plain field write during layout: no
+          // listeners, so no route gets marked dirty after it has built.
+          _entry.height = height;
           return Align(
             alignment: Alignment.bottomCenter,
             child: SizedBox(
               height: height,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-                  boxShadow: AppShadows.sheet,
-                ),
-                child: Column(
-                  children: [
-                    _GrabHandle(countdown: _countdown),
-                    if (widget.collapsingHeader case final collapsing?)
-                      Expanded(
-                        child: NestedScrollView(
-                          headerSliverBuilder: (context, _) => [
-                            SliverPersistentHeader(
-                              pinned: true,
-                              delegate: CollapsingSliverHeaderDelegate(
-                                expandedHeight: collapsing.expandedHeight,
-                                collapsedHeight: collapsing.collapsedHeight,
-                                builder: collapsing.builder,
+              // Inside the [SizedBox], so the scale is anchored to the top of
+              // the *sheet* and the lift is a fraction of the sheet's own
+              // height — outside it, both would be measured against the whole
+              // screen the route covers.
+              child: _CoveredSheet(
+                covered: covered,
+                height: height,
+                frontHeight: _frontSheetHeight,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+                    boxShadow: AppShadows.sheet,
+                  ),
+                  child: Column(
+                    children: [
+                      _GrabHandle(countdown: _countdown),
+                      if (widget.collapsingHeader case final collapsing?)
+                        Expanded(
+                          child: NestedScrollView(
+                            headerSliverBuilder: (context, _) => [
+                              SliverPersistentHeader(
+                                pinned: true,
+                                delegate: CollapsingSliverHeaderDelegate(
+                                  expandedHeight: collapsing.expandedHeight,
+                                  collapsedHeight: collapsing.collapsedHeight,
+                                  builder: collapsing.builder,
+                                ),
                               ),
-                            ),
-                          ],
-                          body: Container(margin: const EdgeInsets.only(top: 14), child: grayBody),
-                        ),
-                      )
-                    else ...[
-                      widget.header ?? _defaultHeader(context),
-                      Expanded(child: Container(margin: const EdgeInsets.only(top: 14), child: grayBody)),
+                            ],
+                            body: Container(margin: const EdgeInsets.only(top: 14), child: grayBody),
+                          ),
+                        )
+                      else ...[
+                        widget.header ?? _defaultHeader(context),
+                        Expanded(child: Container(margin: const EdgeInsets.only(top: 14), child: grayBody)),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -453,15 +705,22 @@ enum SheetHeaderAction {
   /// that dismisses itself, and a X on it would race the dismissal for what the
   /// sheet pops with.
   none,
+
+  /// The X alone: a sheet whose controls each act the moment they are used, so
+  /// there is nothing to submit and the only thing left to say is "done". A
+  /// check beside them would be a second way to commit what is already
+  /// committed — see the connected calendar's sheet, where the name saves on
+  /// its own tick and the owner saves on the tap that picks it.
+  close,
 }
 
 /// The standard X / [title] / check header, for a sheet that submits **while it
 /// stays open** and then shows what came back: `showAppSheet`'s built-in header
 /// pops on the check, which is exactly what a sheet with a busy and a result
-/// state must not do. The X is offered in [SheetHeaderAction.confirm] only —
-/// once the sheet has acted there is nothing left to cancel, and the way out is
-/// whatever the result state decides (a beat that dismisses itself, the action
-/// under a [ConfirmationView]).
+/// state must not do. The X is offered in [SheetHeaderAction.confirm] and
+/// [SheetHeaderAction.close] — once a sheet has *acted*, there is nothing left
+/// to cancel and the way out is whatever the result state decides (a beat that
+/// dismisses itself, the action under a [ConfirmationView]).
 ///
 /// Pass it as [showAppSheet]'s `header`, rebuilt (a `ValueListenableBuilder`
 /// around it) as the phase changes. Shared by the calendar's connect-confirm
@@ -525,7 +784,7 @@ class SheetActionHeader extends StatelessWidget {
                 ),
               ),
             ),
-            if (action == SheetHeaderAction.confirm)
+            if (action == SheetHeaderAction.confirm || action == SheetHeaderAction.close)
               Align(
                 alignment: Alignment.centerLeft,
                 child: GlassIconButton(
@@ -548,7 +807,8 @@ class SheetActionHeader extends StatelessWidget {
                     child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
                   ),
                 ),
-                SheetHeaderAction.none => const SizedBox(width: _headerButtonSize, height: _headerButtonSize),
+                SheetHeaderAction.none ||
+                SheetHeaderAction.close => const SizedBox(width: _headerButtonSize, height: _headerButtonSize),
               },
             ),
           ],

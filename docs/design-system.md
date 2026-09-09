@@ -114,9 +114,27 @@ Apple "Liquid Glass": a real native `UIGlassEffect` on iOS via `native_glass_vie
 Flutter-drawn blur+tint approximation everywhere else.
 
 - **Leave `tint` null.** It's forwarded straight to `UIGlassEffect.tintColor`, and a near-opaque
-  one floods the material so it stops reading as glass at all. Use `fallbackTint` for the colour
-  the non-iOS approximation should draw (keep it light so dark-on-glass labels stay legible).
-  Reserve `tint` for a deliberate accent, e.g. the sheet's blue confirm button.
+  one floods the material so it stops reading as glass at all. Reserve `tint` for a deliberate
+  accent, e.g. the sheet's blue confirm button.
+- **The approximation is not just the Android look — it is what an iOS control wears while a menu
+  or a sheet covers it** (`occludedByRoute`), which happens several times a session. So the two
+  have to agree, and `AppColors.glassFallbackTint` is tuned for that: a near-opaque tone of the
+  *surface*, the same light material the nav pill draws. It used to be ink at 15%, on the theory
+  that glass is a translucent grey — it isn't, the real material lightens what it covers, and
+  every glass button in the app turned into a grey disc the moment a dropdown opened over it.
+  Leave `fallbackTint` off; it exists for a control that wants a *different* material off iOS, and
+  nothing currently does.
+- **A `tint` also turns the approximation's sheen down.** The white lift, the specular and the rim
+  are sized for a near-opaque *surface* tone, where they read as curvature. Over an opaque accent
+  they read as a wash, and a washed-out fill is how a disabled control is drawn — which is the
+  whole point of the accent-filled glass rule below. So an accent surface gets a 6% lift instead
+  of 30% and roughly a third of the highlight, matching what `UIGlassEffect` does with an opaque
+  `tintColor`. Without it every blue button in the app went pale for as long as a menu was open.
+- **The approximation's rim has to carry the surface's `borderRadius`.** `Border.all` on a
+  `BoxDecoration` with no radius is a rectangle, and the enclosing `ClipRRect` keeps only the four
+  points where it touches the curve — bright flecks at the sides of a circle, the flat top and
+  bottom of a capsule with nothing joining them. That is what made covered buttons look squared
+  off at the left and right.
 - **`forceFlutterApproximation: true`** for anything shown inside a scale/transform transition (a
   popup route) — platform views smear when Flutter transforms them.
 - The approximation's `Stack` needs `fit: StackFit.expand`. A childless `DecoratedBox` is a
@@ -254,6 +272,16 @@ fades away. `CollapsingScreenTitle` morphs the heading from large-left to small-
 `ScreenBodyPanel` is the rounded gray panel the body scrolls on; `HeaderBrandGlow` is the colored
 wash the detail screens put behind theirs.
 
+**The big name in a detail header is an `ExpandableTitle` (`expandable_title.dart`), not a `Text`.**
+Families write names that do not fit on one line, and both copies of the name — the big row and the
+pinned bar's collapsed one — ellipsize at the same word, so the end of it was unreadable anywhere on
+the screen. The widget measures the name at the width the row actually got, with the platform text
+scale, and only *then* draws a caret: a name that fits gets no control, because an affordance that
+expands nothing promises hidden content that isn't hidden. Tapping anywhere on the row unfolds it to
+at most four lines. Nothing else is needed to make the header grow — the `extra` block measures
+itself every frame (below), so the extra lines push the body down exactly as another row would.
+Listen, Boxen and the tracker screen all use it, and a new detail header should too.
+
 A Listen detail header takes that wash from the shop logo the list carries, and
 [lib/data/brand_colors.dart](../lib/data/brand_colors.dart) **reads it off the logo** — one decode
 per asset, cached, dominant hue by saturation-weighted hue bucket — rather than from a table. The
@@ -275,7 +303,12 @@ Non-obvious bits, each one a bug that shipped first:
   `estimatedExtraHeight` only covering frame one (the sliver must publish its extents before
   anything under it is laid out). Poppins comes from `google_fonts` at *runtime*, so a widget test
   measures a fallback font at ~1.0em line height against the device's ~1.4em — a constant tuned in
-  a test clips the bottom row on a real phone.
+  a test clips the bottom row on a real phone. **It re-measures on its own `build` and on a
+  `SizeChangedLayoutNotification` from the block, and it needs both**: a widget inside the block
+  with state of its own (`ExpandableTitle` unfolding a name) rebuilds the block without touching
+  the header's element, so the post-frame measurement is never scheduled and the header keeps a
+  height the block has outgrown. That is what clipped the second line of a name and the event chip
+  under it.
 - **`OverflowBox` + `ClipRect`, not a shrinking box.** The block keeps its natural height while its
   visible box shrinks, so rows slide up under the title and get clipped. Constrain it instead and
   the content re-flows on every scroll frame, then overflows.
@@ -402,11 +435,9 @@ Non-obvious bits, each one a bug that shipped first:
   aren't pressed against the round caps.
   - Segments are **44pt wide** in a 40pt-tall capsule — Apple's minimum target, and wider than the
     control is tall because two icons this close are otherwise easy to mis-hit.
-  - Same material arguments as the "Heute" pill: no forced `tint`, `fallbackTint:
-    AppColors.navPillTint`, and `AppShadows.floatingPill` rather than `glassButton`, whose lift is
-    sized for a 40pt circle and smudges under something ~100pt wide. Leaving `fallbackTint` off
-    hands the Flutter drawing `AppColors.glassFallbackTint`, a **dark** neutral — a grey slab with
-    a bright rim, which is not glass at any size.
+  - Same material arguments as the "Heute" pill: no forced `tint`, no `fallbackTint`, and
+    `AppShadows.floatingPill` rather than `glassButton`, whose lift is sized for a 40pt circle and
+    smudges under something ~100pt wide.
   - On the iOS Simulator this renders flat: a grey fill and a hard rim, with none of the
     refraction. That is the Simulator, not the code — judge any glass surface on a device. Kalender's header uses it for "verbinden" + "neuer
   Termin". Reach for it rather than two `GlassIconButton`s side by side, which read as one button
@@ -471,10 +502,43 @@ Non-obvious bits, each one a bug that shipped first:
     `MediaQueryData.fromView(View.of(context))`, read inside the `LayoutBuilder` so a rotation
     brings the new one with it. The same trap is waiting for anything else in a sheet that
     wants to know where the notch is — a `SafeArea` in there does nothing at the top edge.
+  - **A sheet covered by a second sheet drops in behind it, and only a sheet does that to it.**
+    The Board's create sheet is 0.92 tall and the due-date sheet it opens is 0.58, so the first
+    one used to stay in full view above the second: same width, same 30pt radius, same white, a
+    legible title and a second grab handle above the front sheet's header. Two peers, not a
+    stack. The back sheet now drops until only 14pt of it clears the front sheet's top edge, and
+    scales toward its own top by Apple's measured 8.35% on the way down, leaving a rounded
+    shoulder slightly narrower than the card in front. The scrim can't do this job — it dims both
+    sheets equally.
+    - **Scaling alone is not enough, even though that is literally what iOS does** when a sheet
+      covers a sheet (`_kSheetScaleFactor` in `cupertino/sheet.dart`). It shipped for one build
+      and was worse: iOS applies it to two sheets of similar height, ours are 0.92 and 0.58, so
+      an 8% inset left the same tall sheet showing its whole header. The drop is the part that
+      makes it a stack, and it is what iOS itself does to a full-screen page covered by a sheet.
+    - **The two sheets are sibling routes**, so neither can inherit the other's height through a
+      context. `_openSheets` is a module-level list each sheet writes its own height into during
+      layout, read by the sheet below on each frame of the covering animation. Read rather than
+      pushed on purpose: a notifier would mark a route dirty that had already built that frame.
+    - This is why `showAppSheet` pushes its own `_AppSheetRoute` instead of calling
+      `showModalBottomSheet`. `canTransitionTo` is the only place a route can say *what* may push
+      it into the background, and it is what wires `secondaryAnimation` at all. Left at its
+      default `true`, a sheet would drop away under an anchored menu, a `showDatePicker` dialog
+      or anything else pushed over it — the due-date sheet opens both.
+    - Safe to transform because the same moment stands the native chrome down (`occludedByRoute`,
+      above): by the time the sheet moves, every `UIGlassEffect` inside it has already swapped
+      itself for the Flutter approximation, so nothing being moved is a platform view.
+    - It rides `secondaryAnimation` rather than playing its own animation, so dragging the front
+      sheet down brings the one behind back up under the finger.
 - `SheetActionHeader` (`app_sheet.dart`) — the same X/title/check row for a sheet that **submits
   while it stays open**: `SheetHeaderAction.confirm` → `.busy` (spinner, and the X withdrawn — the
-  request wouldn't be cancelled by closing) → `.none` (the sheet has become a confirmation; the X
-  is the only way out). `showAppSheet`'s built-in header pops on the check, which such a sheet
+  request wouldn't be cancelled by closing) → `.none` (bare title: the sheet has become a
+  confirmation that dismisses itself, and an X would race it for what the sheet pops with).
+  `.close` is the fourth and belongs to a different kind of sheet entirely — one whose controls
+  each act as they are used, so there is nothing to submit and the X is the only thing in the bar
+  (the connected calendar's sheet: the name saves on its own tick, the owner on the tap that picks
+  it). Don't put a check on one of those; it would be a second way to commit what is already
+  committed, and the first thing somebody looks for when they want to know whether it took.
+  `showAppSheet`'s built-in header pops on the check, which such a sheet
   must not do, so pass this as `header` wrapped in a `ValueListenableBuilder` on the phase. Used
   by `showRenameSheet`, `showCalendarConnectSheet` and Settings' invite sheet
   (`settings/family_page.dart`) — a fourth sheet with a request in flight belongs here rather than
@@ -661,6 +725,13 @@ Non-obvious bits, each one a bug that shipped first:
   left full-colour: a menu row is a label, and a lone colour logo is then the one thing shouting
   on a monochrome list. Labels are bare nouns ("Foto", not "Foto hinzufügen") — every row is
   something you're doing to the item, so repeating the verb says nothing.
+- `RowMoreButton` (`anchored_menu.dart`) — the three dots on their own, for a row whose "more" is
+  not a menu. `RowMenuButton` is this plus an anchored menu, so both wear the same mark at the same
+  size. The connected-calendar rows in Kalender's settings use the bare one: tapping the row opens
+  a sheet holding everything you can do to that calendar (rename, assign, disconnect), and a menu
+  listing those three words in front of it was a stop on the way rather than a choice. The dots
+  stay because they are what says a row has more behind it than the tap; they simply open what the
+  row opens.
 - `GlassMenuButton` (`anchored_menu.dart`) — [RowMenuButton]'s counterpart for a *screen header*:
   the glass "..." in a detail screen's title row (Listen and Boxen both use it for Bearbeiten /
   Löschen), opening the same anchored menu. A separate widget rather than a flag, since
@@ -762,29 +833,44 @@ Non-obvious bits, each one a bug that shipped first:
   sites. **Success and failure differ by the disc's colour and glyph and by nothing else**; they
   used to be two unrelated objects (a hugging white pill vs. a full-width grey bar) for what is one
   event with two outcomes. Do not give a new outcome its own shape.
-  - Shown for the twelve actions whose result isn't self-evident on screen — create / update /
-    delete of a list, a box, a task, an appointment. Not for adding an article to an open list: the
+  - Shown for every create / update / delete of a list, a box, a task, a tracker, an appointment
+    **and of one article inside a list or a box**. Not for adding an article to an open list: the
     row appears under the finger, and a chip on every mutation is one the user stops reading.
   - `confirmChipOf` is a *capture*, not a `show…(context, …)` call, and that is the point: half the
     callers are deletions that unmount the widget they were tapped in (the row, the row menu, the
-    whole detail view), so the messenger and the nav-bar inset have to be taken **before** the
-    write and the returned callback invoked after. A `context.mounted` guard would drop exactly the
+    whole detail view), so the overlay and the nav-bar inset have to be taken **before** the write
+    and the returned callback invoked after. A `context.mounted` guard would drop exactly the
     confirmations that matter most.
   - A chip only appears on a `true` from the notifier, which is why the create/update calls return
-    `Future<bool>` and the two container deletes return `Future<DeletedList?>` / `Future<DeletedBox?>`
-    (see the undo note below). A failed write gets the error chip and no confirmation — never both.
-  - **`clipBehavior: Clip.none` on the `SnackBar` is load-bearing.** It clips its child to its own
-    barely-rounded shape by default, which cut the capsule's drop shadow off along four straight
-    edges — the rectangular smudge the chip shipped with — and would crop the native glass view
-    too. The bar itself is transparent with `elevation: 0`; it is only the carrier, so the capsule
-    can hug its text instead of spanning the display.
+    `Future<bool>` and every delete returns its snapshot-or-null — `Future<DeletedList?>`,
+    `Future<DeletedBox?>`, `Future<DeletedListItem?>`, `Future<DeletedBoxItem?>` (see the undo note
+    below). A failed write gets the error chip and no confirmation — never both.
+  - **It lives in the root `Overlay`, not in the `ScaffoldMessenger`.** A `SnackBar` is a slot in
+    the `Scaffold`, and the `Scaffold` belongs to the shell route — so any sheet on top of it
+    covers the chip and dims what is left behind its scrim. "Liste zum Termin erstellen" was
+    exactly that: the create sheet pops, the event sheet is still up, and the confirmation was
+    drawn where nobody could see it. An entry in the root overlay outranks every route, which is
+    also what lets a delete *inside* a sheet offer its undo. `_ToastLayer` owns the entrance, the
+    dwell timer and the fade back out; `_ToastHandle` is what an outsider can do to a chip (take it
+    down), and a second chip dismisses the first rather than stacking on it.
+  - The chip's own position is computed rather than delegated: `max(viewInsets.bottom,
+    viewPadding.bottom) + navContentInset(…)`, which is what the `Scaffold` used to do for a
+    floating snack bar — above the keyboard while one is up, clear of the home indicator when it
+    isn't.
 - **Undo lives on the delete chip, and it is a re-insert.** `restoreList` / `restoreBox` /
-  `restoreTask` / `restoreEvent` recreate what was deleted from the snapshot the delete handed
-  back — items, done state, audience and position included. The **ids do not come back**: a
-  `share_links` row handed to somebody outside the household pointed at the old one and stays dead,
-  which is the honest price of an undo that isn't a soft-delete column. `restoreEvent` is the cheap
-  one — `_write(EventDraft.of(event))` already routes an own event to `public.events` and a
-  provider's back out through `calendar-write`.
+  `restoreTask` / `restoreEvent` / `restoreItem` (one on each of the list and box notifiers)
+  recreate what was deleted from the snapshot the delete handed back — items, done state, audience
+  and position included. The **ids do not come back**: a `share_links` row handed to somebody
+  outside the household pointed at the old one and stays dead, which is the honest price of an undo
+  that isn't a soft-delete column. `restoreEvent` is the cheap one — `_write(EventDraft.of(event))`
+  already routes an own event to `public.events` and a provider's back out through
+  `calendar-write`.
+  - **The item restores copy nothing.** A deleted *container* has to copy its pictures, because
+    every object is filed under the container's id and the restore gets a new one. A deleted
+    article or box item leaves its list or box standing, so the objects are still where they were
+    and still owned by something that can read them: undo only re-points fresh
+    `list_item_attachments` rows / a fresh `photo_path` at the same paths, and the signed URLs
+    already in hand still name the same object.
 - `CheckOffRow` / `CheckOffArrival` / `CheckOffButton` / `StrikeThrough` (`check_off.dart`) — the
   abhaken animation shared by Board and Listen; see the animation conventions below before wiring
   a fourth screen into it.

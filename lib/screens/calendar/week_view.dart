@@ -711,7 +711,11 @@ class _EventCard extends StatelessWidget {
                         _Chip(
                           bg: AppColors.surfaceAlt,
                           child: Row(children: [
-                            AppIcon(AppIcons.layout, size: 12, color: AppColors.inkSecondary),
+                            // The check the Board create sheet puts on
+                            // "Aufgabe", not the Board tab's grid: the chip
+                            // counts tasks, and a grid beside a clipboard read
+                            // as a table rather than as a to-do.
+                            AppIcon(AppIcons.checkCircle, size: 12, color: AppColors.inkSecondary),
                             const SizedBox(width: 5),
                             Text(
                               L.s.linkedTaskCount(linkedTasks),

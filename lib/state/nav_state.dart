@@ -56,18 +56,20 @@ final navBarProvider = StateNotifierProvider<NavBarNotifier, NavBarState>((ref) 
 /// — there is no `go_router` and no named route to address one with (see
 /// CLAUDE.md), so an index *is* the address. It was a private constant in
 /// `main.dart` while Kalender's collapsing nav bar was the only thing that
-/// needed to know one; a task that points back at its appointment needs a name
-/// for the tab it is pointing at.
+/// needed to know one; a link that opens a list or a task in another tab needs
+/// a name for the tab it is pointing at.
 const int calendarTabIndex = 1;
 const int listsTabIndex = 2;
 const int boardTabIndex = 3;
 
 /// One tab asking the shell to show another, and telling it what to open there.
 ///
-/// This is what makes a link a link rather than a badge: tapping the calendar
-/// icon on a task has to leave Board, land on Kalender, and arrive at the day
-/// the appointment is on. Only the shell can do the first part and only Kalender
-/// can do the last, so the request travels between them as state.
+/// It carries the two directions that really do change tab: an appointment's
+/// sheet offering the list or the task hung off it. **Kalender is not one of
+/// them.** The chip pointing the other way — from a task or a list back to the
+/// appointment — opens the event's sheet where the reader already is, because
+/// switching tab for it left people on a calendar they had not asked for; see
+/// `showLinkedEventSheet`.
 ///
 /// **Consumed once.** [seq] increments on every request so that asking for the
 /// same destination twice still fires — without it, opening a list, going back
@@ -83,25 +85,9 @@ class TabJump {
   /// Board: the task whose sheet to open.
   final String? taskId;
 
-  /// Kalender: the day to select, and the event to open there if it happens to
-  /// be in the loaded window. The day is what always works — the event may be
-  /// months out, where nothing is loaded and landing on the date is the honest
-  /// best answer.
-  final DateTime? day;
-  final String? eventCalendarId;
-  final String? eventUid;
-
   final int seq;
 
-  const TabJump({
-    required this.tab,
-    required this.seq,
-    this.listId,
-    this.taskId,
-    this.day,
-    this.eventCalendarId,
-    this.eventUid,
-  });
+  const TabJump({required this.tab, required this.seq, this.listId, this.taskId});
 }
 
 class TabJumpNotifier extends StateNotifier<TabJump?> {
@@ -112,9 +98,6 @@ class TabJumpNotifier extends StateNotifier<TabJump?> {
   void toList(String listId) => state = TabJump(tab: listsTabIndex, seq: ++_seq, listId: listId);
 
   void toTask(String taskId) => state = TabJump(tab: boardTabIndex, seq: ++_seq, taskId: taskId);
-
-  void toEvent({required String calendarId, required String uid, DateTime? day}) => state =
-      TabJump(tab: calendarTabIndex, seq: ++_seq, day: day, eventCalendarId: calendarId, eventUid: uid);
 
   /// Called by whichever screen acted on it. The shell does the tab switch and
   /// leaves the payload alone, so a screen that is mid-transition still finds

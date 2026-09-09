@@ -19,6 +19,7 @@ import '../state/list_state.dart';
 import '../state/nav_state.dart';
 import '../state/sharing_state.dart';
 import '../theme/tokens.dart';
+import 'calendar_screen.dart';
 import '../widgets/anchored_menu.dart';
 import '../widgets/app_sheet.dart';
 import '../widgets/avatar.dart';
@@ -27,6 +28,7 @@ import '../widgets/check_off.dart';
 import '../widgets/collapsing_header.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/error_note.dart';
+import '../widgets/expandable_title.dart';
 import '../widgets/event_link_chip.dart';
 import '../widgets/floating_pill.dart';
 import '../widgets/glass.dart';
@@ -278,6 +280,23 @@ void openListSheet(
   EventLink? eventLink,
 }) {
   final nameController = TextEditingController(text: list?.name ?? initialName ?? '');
+  // What the greyed check points at when the name is still empty — see
+  // [showAppSheet].
+  final nameFocus = FocusNode();
+  // **A suggested name arrives selected, so typing replaces it.** A list
+  // started from an appointment opens carrying the event's name, which is a
+  // good name and the reason the row is worth a tap — but it is a *suggestion*,
+  // and a suggestion you have to clear by hand is a decision already made for
+  // you. Selected, one keystroke is enough to overwrite it and the check alone
+  // is enough to keep it. It also means the name can be changed without
+  // tapping into the field, which is what people reported not working.
+  //
+  // Only for a name we suggested. Editing a list puts the cursor at the end of
+  // the name the household chose: select-all there is one stray keystroke away
+  // from wiping it.
+  if (list == null && (initialName?.trim().isNotEmpty ?? false)) {
+    nameController.selection = TextSelection(baseOffset: 0, extentOffset: nameController.text.length);
+  }
   final notifier = ref.read(listProvider.notifier);
   // Set once, up front: the segmented control lives on the provider (it is what
   // `newType` is for), and an edit sheet has to open on the list's own kind.
@@ -303,6 +322,7 @@ void openListSheet(
     // A list with no name is not a list, so the check stays inert until there
     // is one — see [showAppSheet]'s `requiredField`.
     requiredField: nameController,
+    requiredFocus: nameFocus,
     heightFactor: 0.72,
     onSave: () async {
       final kind = ref.read(listProvider).newType == 'grocery' ? ListKind.grocery : ListKind.other;
@@ -326,19 +346,25 @@ void openListSheet(
         confirm(L.s.listCreated);
       }
     },
-    child: _ListSheetBody(nameController: nameController, draft: draft, list: list),
+    child: _ListSheetBody(nameController: nameController, nameFocus: nameFocus, draft: draft, list: list),
   );
 }
 
 class _ListSheetBody extends ConsumerStatefulWidget {
   final TextEditingController nameController;
+  final FocusNode nameFocus;
   final IconDraft draft;
 
   /// The list being edited, or null when creating one — the sheet needs its
   /// stored icon and its old name to tell "not touched yet" from "renamed".
   final ShoppingList? list;
 
-  const _ListSheetBody({required this.nameController, required this.draft, this.list});
+  const _ListSheetBody({
+    required this.nameController,
+    required this.nameFocus,
+    required this.draft,
+    this.list,
+  });
 
   @override
   ConsumerState<_ListSheetBody> createState() => _ListSheetBodyState();
@@ -390,6 +416,15 @@ class _ListSheetBodyState extends ConsumerState<_ListSheetBody> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
               child: TextField(
                 controller: widget.nameController,
+                focusNode: widget.nameFocus,
+                // Every new list, whether or not it came with a suggested name
+                // — the name is the first and often only thing to fill in, and
+                // a suggested one is selected (above) so the keyboard is the
+                // way to replace it rather than noise over a finished field.
+                // An edit sheet keeps the keyboard down: it opens onto the
+                // icon and the "Für wen?" rows, which are what people come to
+                // change.
+                autofocus: widget.list == null,
                 textInputAction: TextInputAction.done,
                 style: AppText.inputTitle,
                 decoration: InputDecoration(border: InputBorder.none, hintText: L.s.listName, isDense: true),
@@ -480,6 +515,11 @@ class _ListRow extends ConsumerWidget {
                       // Flexible, so a long appointment name gives way to the
                       // count beside it rather than pushing it off the row. The
                       // count is a handful of characters and never yields.
+                      //
+                      // A marker here, not a button — the row already opens the
+                      // list, and two targets this close in one line meant a tap
+                      // meant for the list left the tab. The link back is inside
+                      // the list, under its name — see [EventLinkChip].
                       Flexible(child: EventLinkChip(link: link)),
                       const SizedBox(width: 7),
                     ],
@@ -639,11 +679,40 @@ class _ListDetail extends ConsumerWidget {
                   IconTile(iconKey: open.iconKey, size: 44, imageSize: 30),
                   const SizedBox(width: 13),
                   Expanded(
-                    child: Text(
-                      open.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppText.detailTitle,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Unfolds when the name is longer than the line — see
+                        // [ExpandableTitle]. The bar's collapsed copy of the
+                        // name still ellipsizes, which is what a nav bar is
+                        // for; this is the place the whole name can be read.
+                        ExpandableTitle(text: open.name),
+                        // The way back to the appointment this list was made
+                        // for, as the name's **subtitle** — the same slot the
+                        // tracker screen puts its streak in, and the reason it
+                        // is inside this Column rather than under the whole
+                        // header row. It says what the list is *for*, which is
+                        // part of the name rather than a second thing in the
+                        // header, and a line's gap below the row put it far
+                        // enough away to read as one. Held to the name it
+                        // belongs to, it also follows an unfolded name down
+                        // instead of being left behind by it.
+                        //
+                        // The same badge on the overview row is inert, because
+                        // the row's own tap opens the list and the two targets
+                        // sat a few millimetres apart; here it has a line to
+                        // itself and is the only thing on it.
+                        if (open.eventLink case final link?) ...[
+                          const SizedBox(height: 4),
+                          EventLinkChip(
+                            link: link,
+                            // The appointment's own sheet, over this list rather
+                            // than instead of it — see [showLinkedEventSheet].
+                            onOpen: () => showLinkedEventSheet(context, ref, link),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
                 ],
@@ -670,7 +739,7 @@ class _ListDetail extends ConsumerWidget {
                             builder: (context, strike, checkOff) => Column(
                               children: [
                                 CardDivider(),
-                                _swipeToDelete(ref, openItems[i], _ItemRow(item: openItems[i], accent: accent, strike: strike, onCheckOff: checkOff)),
+                                _swipeToDelete(context, ref, openItems[i], _ItemRow(item: openItems[i], accent: accent, strike: strike, onCheckOff: checkOff)),
                               ],
                             ),
                           ),
@@ -718,7 +787,7 @@ class _ListDetail extends ConsumerWidget {
                                         builder: (context, strike, checkOff) => Column(
                                           children: [
                                             if (i > 0) CardDivider(),
-                                            _swipeToDelete(ref, its[i], _ItemRow(item: its[i], accent: accent, strike: strike, onCheckOff: checkOff)),
+                                            _swipeToDelete(context, ref, its[i], _ItemRow(item: its[i], accent: accent, strike: strike, onCheckOff: checkOff)),
                                           ],
                                         ),
                                       ),
@@ -1286,7 +1355,7 @@ class _ItemRowState extends ConsumerState<_ItemRow> {
           // off, on the way to the "Erledigt" section.
           Opacity(
             opacity: 1 - 0.45 * strike,
-            child: RowMenuButton(items: _itemMenu(ref, item)),
+            child: RowMenuButton(items: _itemMenu(context, ref, item)),
           ),
         ],
       ),
@@ -1477,11 +1546,25 @@ Future<void> _attach(WidgetRef ref, ShoppingListItem item, AttachmentSource sour
 /// Swiping an item row left reveals Delete, the same gesture the Kalender
 /// event cards and the Boxen item rows use. No `onTap`: the article's own text
 /// and its check circle carry the handlers here.
-Widget _swipeToDelete(WidgetRef ref, ShoppingListItem item, Widget row) {
+Widget _swipeToDelete(BuildContext context, WidgetRef ref, ShoppingListItem item, Widget row) {
   return SwipeToEditDelete(
-    onDelete: () => ref.read(listProvider.notifier).removeItem(item),
+    onDelete: () => _deleteItem(context, ref, item),
     child: row,
   );
+}
+
+/// Takes an article off its list and offers it straight back.
+///
+/// No confirmation dialog in front of it, exactly as with a whole list: the
+/// chip *is* the confirmation, and it can put the article back — attachments
+/// and all, see [ListNotifier.restoreItem]. Captured before the write, because
+/// the row it was tapped in is gone by the time the write returns.
+Future<void> _deleteItem(BuildContext context, WidgetRef ref, ShoppingListItem item) async {
+  final confirm = confirmChipOf(context);
+  final notifier = ref.read(listProvider.notifier);
+  if (await notifier.removeItem(item) case final deleted?) {
+    confirm(L.s.itemDeleted, undo: () => notifier.restoreItem(deleted));
+  }
 }
 
 /// The row menu shared by an open item and a checked-off one.
@@ -1489,7 +1572,7 @@ Widget _swipeToDelete(WidgetRef ref, ShoppingListItem item, Widget row) {
 /// Labels are the bare noun — "Foto", not "Foto hinzufügen". Every row of a
 /// menu is something you're doing to the item, so spelling the verb out four
 /// times says nothing and makes the list harder to scan.
-List<AnchoredMenuItem> _itemMenu(WidgetRef ref, ShoppingListItem item) {
+List<AnchoredMenuItem> _itemMenu(BuildContext context, WidgetRef ref, ShoppingListItem item) {
   final attachments = ref.read(listProvider).attachmentsFor(item);
   return [
     AnchoredMenuItem(
@@ -1517,7 +1600,7 @@ List<AnchoredMenuItem> _itemMenu(WidgetRef ref, ShoppingListItem item) {
       label: L.s.delete,
       icon: AppIcons.trash,
       destructive: true,
-      onSelected: () => ref.read(listProvider.notifier).removeItem(item),
+      onSelected: () => _deleteItem(context, ref, item),
     ),
   ];
 }
@@ -1573,7 +1656,7 @@ class _DoneItemRow extends ConsumerWidget {
               ),
               Opacity(
                 opacity: strike,
-                child: RowMenuButton(items: _itemMenu(ref, item)),
+                child: RowMenuButton(items: _itemMenu(context, ref, item)),
               ),
             ],
           ),

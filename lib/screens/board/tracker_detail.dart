@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/board_data.dart';
-import '../../data/tracker_data.dart';
 import '../../models/tracker.dart';
 import '../../models/who.dart';
 import '../../state/family_state.dart';
@@ -13,8 +12,8 @@ import '../../widgets/anchored_menu.dart';
 import '../../widgets/app_sheet.dart';
 import '../../widgets/avatar.dart';
 import '../../widgets/bottom_nav.dart';
-import '../../widgets/check_off.dart';
 import '../../widgets/collapsing_header.dart';
+import '../../widgets/expandable_title.dart';
 import '../../widgets/glass.dart';
 import '../../widgets/icon_picker.dart';
 import '../../widgets/toast_chip.dart';
@@ -118,12 +117,9 @@ class TrackerDetailView extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      tracker.text,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppText.detailTitle,
-                    ),
+                    // Unfolds when the name is longer than the line, exactly as
+                    // a list's and a box's do — see [ExpandableTitle].
+                    ExpandableTitle(text: tracker.text),
                     const SizedBox(height: 3),
                     Text(
                       // The streak, and nothing else that could be mistaken for
@@ -162,13 +158,14 @@ class TrackerDetailView extends ConsumerWidget {
                           today: today,
                           accent: accent,
                           title: L.s.trackerHistory,
-                          onToggleDay: (day) => notifier.toggleCheck(tracker, day),
+                          onToggleDay: (day) =>
+                              _backfill(context, notifier, tracker, day, today, checks),
                         ),
                         const SizedBox(height: 14),
                         TrackerChartLegend(accent: accent),
                         const SizedBox(height: 8),
                         Text(
-                          L.s.trackerBackfillHint,
+                          L.s.trackerBackfillOlderHint,
                           style: AppText.microLabel.copyWith(color: AppColors.mutedLight),
                         ),
                       ] else
@@ -186,8 +183,22 @@ class TrackerDetailView extends ConsumerWidget {
             ),
             const SizedBox(height: 18),
             SectionCard(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                  child: TrackerRecentDays(
+                    tracker: tracker,
+                    checkedDays: checks,
+                    today: today,
+                    accent: accent,
+                    onToggleDay: (day) => _backfill(context, notifier, tracker, day, today, checks),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 18),
+            SectionCard(
               children: dividedRows([
-                _TodayRow(tracker: tracker, today: today, accent: accent, checked: checks.contains(today)),
                 _FactRow(label: L.s.trackerRhythm, value: scheduleSummary(tracker.schedule)),
                 _AssigneeRow(tracker: tracker),
                 _FactRow(
@@ -204,47 +215,40 @@ class TrackerDetailView extends ConsumerWidget {
   }
 }
 
-/// Today, and the tick for it.
+/// Ticks a day, and says which one it was.
 ///
-/// It is here as well as in the chart because the chart's today is one small
-/// square in a corner of a quarter's history — findable once you know it is
-/// pressable, and not the thing somebody opening this screen in the evening is
-/// looking for. A weekly-count tracker has no day squares at all, so this is
-/// its only way to tick anything from here.
-class _TodayRow extends ConsumerWidget {
-  final Tracker tracker;
-  final DateTime today;
-  final Color accent;
-  final bool checked;
+/// The chip is the whole point: a back-fill is a tap on one small circle among
+/// seven, or one square among a hundred, and a mis-tap that silently writes the
+/// neighbouring day would leave a record quietly wrong. Naming the day makes it
+/// visible, and the undo makes it cheap — tapping the same day again would do
+/// the same job, but only once you have worked out which day you actually hit.
+///
+/// **Today is excepted.** Ticking today is not filling anything in, the circle
+/// changes under the thumb where the eye already is, and a chip on every evening
+/// check-off would be noise the Board's own row does not make either.
+Future<void> _backfill(
+  BuildContext context,
+  TrackerNotifier notifier,
+  Tracker tracker,
+  DateTime day,
+  DateTime today,
+  Set<DateTime> checks,
+) async {
+  final at = boardDay(day);
+  if (at == boardDay(today)) {
+    await notifier.toggleCheck(tracker, at);
+    return;
+  }
 
-  const _TodayRow({required this.tracker, required this.today, required this.accent, required this.checked});
+  // Taken before the write, like every other confirmation in the app.
+  final confirm = confirmChipOf(context);
+  final was = checks.contains(at);
+  final label = L.s.weekdayWithDateShort(at.weekday % 7, at.day, at.month);
 
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    // A Montag tracker on a Mittwoch is not behind on anything, and an empty
-    // circle beside "Heute" would say it was.
-    final due = canToggleTrackerOn(tracker, today, today);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-      child: Row(
-        children: [
-          Expanded(child: Text(L.s.today, style: AppText.rowTitle)),
-          if (!due)
-            Text(L.s.trackerNotDueToday, style: AppText.label)
-          else
-            CheckOffButton(
-              progress: checked ? 1 : 0,
-              accent: accent,
-              // Ticking and un-ticking are the same tap, exactly as on the
-              // Board's row: nothing moves, so a mis-tap is undone by tapping
-              // again rather than by hunting for it somewhere else.
-              onTap: () => ref.read(trackerProvider.notifier).toggleCheck(tracker, today),
-              size: 26,
-              filled: true,
-            ),
-        ],
-      ),
+  if (await notifier.toggleCheck(tracker, at)) {
+    confirm(
+      was ? L.s.trackerDayCleared(label) : L.s.trackerDayFilledIn(label),
+      undo: () => notifier.toggleCheck(tracker, at),
     );
   }
 }

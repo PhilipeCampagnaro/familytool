@@ -19,9 +19,9 @@ class GlassSurface extends StatelessWidget {
   final BorderRadius borderRadius;
 
   /// Null means "no forced tint" on iOS — the real glass's own adaptive
-  /// appearance applies. The Flutter-approximation fallback (non-iOS) always
-  /// needs a concrete color to draw, so it substitutes [fallbackTint], or a
-  /// neutral default if that's null too.
+  /// appearance applies. The Flutter-drawn approximation always needs a
+  /// concrete color, so it substitutes [fallbackTint], or
+  /// [AppColors.glassFallbackTint] if that's null too.
   ///
   /// Prefer null here: a forced tint is passed straight to `UIGlassEffect`'s
   /// `tintColor`. Only pass a colour for a deliberate accent — and for the
@@ -31,8 +31,13 @@ class GlassSurface extends StatelessWidget {
 
   /// Tint for the Flutter-drawn approximation only, ignored on iOS. Lets a
   /// control keep the real glass's adaptive appearance on iOS (`tint: null`)
-  /// while still drawing a legible light material everywhere else — the
-  /// neutral default is dark, which would swallow dark-on-glass labels.
+  /// while drawing a *different* material everywhere else.
+  ///
+  /// **Almost nothing needs this.** The default, [AppColors.glassFallbackTint],
+  /// is the light material every control here wants, and the approximation is
+  /// not only the Android look: on iOS it is what a control wears for as long
+  /// as a menu or a sheet covers it (see [occludedByRoute]), so whatever this
+  /// resolves to is a face the button shows on device, several times a session.
   final Color? fallbackTint;
   final double blurSigma;
   final List<BoxShadow>? boxShadow;
@@ -75,7 +80,12 @@ class GlassSurface extends StatelessWidget {
             Positioned.fill(
               child: useNativeGlass
                   ? NativeGlassView(tint: tint, interactive: interactive)
-                  : _FlutterGlassApproximation(tint: tint ?? fallbackTint ?? AppColors.glassFallbackTint, blurSigma: blurSigma),
+                  : _FlutterGlassApproximation(
+                      tint: tint ?? fallbackTint ?? AppColors.glassFallbackTint,
+                      blurSigma: blurSigma,
+                      borderRadius: borderRadius,
+                      accent: tint != null,
+                    ),
             ),
             child,
           ],
@@ -89,7 +99,44 @@ class _FlutterGlassApproximation extends StatelessWidget {
   final Color tint;
   final double blurSigma;
 
-  const _FlutterGlassApproximation({required this.tint, required this.blurSigma});
+  /// The surface's own shape. The rim **has to** follow it: a `Border.all` on a
+  /// `BoxDecoration` with no `borderRadius` is a *rectangle*, and the enclosing
+  /// `ClipRRect` then throws away everything but the four points where that
+  /// rectangle touches the curve — a bright fleck at each side of a circular
+  /// button, and on a capsule the whole flat top and bottom with nothing
+  /// joining them. Which is what made a covered control look like it had gone
+  /// square at the left and right edges.
+  final BorderRadius borderRadius;
+
+  /// Whether [tint] is a deliberate accent ([GlassSurface.tint]) rather than
+  /// the neutral material.
+  ///
+  /// The white lift, the specular and the rim are all sized for a near-opaque
+  /// tone of the *surface*, where they read as curvature. Over an opaque accent
+  /// they read as a wash: 30% white across the top of a blue pill under a 45%
+  /// white highlight is the pale, milky blue the accent-filled glass rule
+  /// above [GlassConfirmButton] exists to keep off the screen, because a
+  /// washed-out fill is how a disabled control is drawn. The real
+  /// `UIGlassEffect` holds an opaque `tintColor` at full chroma and adds only a
+  /// faint sheen over it, so on an accent this does the same — otherwise every
+  /// blue button in the app turned pale for as long as a menu was open over it.
+  final bool accent;
+
+  const _FlutterGlassApproximation({
+    required this.tint,
+    required this.blurSigma,
+    required this.borderRadius,
+    required this.accent,
+  });
+
+  /// How far the top of the fill is lifted toward white. Dark already sits on
+  /// a dark backdrop, so a 30% lift there turns the panel into a grey slab;
+  /// an accent has even less room, being a colour rather than a neutral.
+  double get _lift => accent ? 0.06 : (AppColors.isDark ? 0.10 : 0.3);
+
+  /// The specular and the rim, dimmed to a sheen on an accent.
+  Color _sheen(Color color, {required double factor}) =>
+      accent ? color.withValues(alpha: color.a * factor) : color;
 
   @override
   Widget build(BuildContext context) {
@@ -106,15 +153,16 @@ class _FlutterGlassApproximation extends StatelessWidget {
         children: [
           DecoratedBox(
             decoration: BoxDecoration(
+              borderRadius: borderRadius,
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                // Lightening toward the top is what sells the curvature. It
-                // has to be far gentler on dark: the backdrop is already dark,
-                // so a 30% white lift turns the panel into a grey slab.
-                colors: [Color.lerp(tint, Colors.white, AppColors.isDark ? 0.10 : 0.3)!, tint],
+                // Lightening toward the top is what sells the curvature —
+                // see [_lift] for why an accent and a dark palette each get
+                // far less of it than a light neutral does.
+                colors: [Color.lerp(tint, Colors.white, _lift)!, tint],
               ),
-              border: Border.all(color: AppColors.glassRim, width: 1),
+              border: Border.all(color: _sheen(AppColors.glassRim, factor: 0.4), width: 1),
             ),
           ),
           IgnorePointer(
@@ -123,7 +171,10 @@ class _FlutterGlassApproximation extends StatelessWidget {
                 gradient: RadialGradient(
                   center: const Alignment(-0.6, -0.8),
                   radius: 1.2,
-                  colors: [AppColors.glassSpecular, AppColors.glassSpecular.withValues(alpha: 0)],
+                  colors: [
+                    _sheen(AppColors.glassSpecular, factor: 0.3),
+                    AppColors.glassSpecular.withValues(alpha: 0),
+                  ],
                 ),
               ),
             ),
@@ -438,11 +489,7 @@ class _GlassIconGroupState extends State<GlassIconGroup> {
       borderRadius: BorderRadius.circular(widget.size / 2),
       // Same material arguments as the "Heute" pill, which is the shape this
       // is meant to match: no forced `tint`, so iOS's real `UIGlassEffect`
-      // adapts, and a *light* fallback for everywhere the Flutter drawing is
-      // used. Without the fallback it takes `AppColors.glassFallbackTint`,
-      // which is a dark neutral — a grey slab with a bright rim, which is not
-      // glass at any size.
-      fallbackTint: AppColors.navPillTint,
+      // adapts and the Flutter drawing takes the default light material.
       blurSigma: 20,
       // Not `glassButton`: that lift is sized for a 40pt circle and reads as a
       // dark smudge under something this wide. See [AppShadows.floatingPill].
@@ -541,12 +588,24 @@ class GlassConfirmButton extends StatelessWidget {
   /// the worst of the three outcomes.
   final bool enabled;
 
+  /// What a tap on the *disabled* button does instead of nothing.
+  ///
+  /// Swallowing it outright is what the [enabled] note above describes, and it
+  /// is right about the save: a confirm that closes the sheet and creates
+  /// nothing is the worst outcome. But a tap that produces no reaction at all
+  /// is indistinguishable from a save that worked — people tap the check, the
+  /// sheet looks the same, and they leave believing they filed something. So
+  /// the tap is still not a save; it is an answer to "why not", and the sheet
+  /// hands over one that points at the empty field.
+  final VoidCallback? onDisabledTap;
+
   const GlassConfirmButton({
     super.key,
     required this.onTap,
     this.icon = AppIcons.check,
     this.size = 40,
     this.enabled = true,
+    this.onDisabledTap,
   });
 
   @override
@@ -555,7 +614,7 @@ class GlassConfirmButton extends StatelessWidget {
     final tint = enabled ? accent : AppColors.mutedLight;
     return GlassIconButton(
       icon: icon,
-      onTap: enabled ? onTap : () {},
+      onTap: enabled ? onTap : (onDisabledTap ?? () {}),
       size: size,
       tint: tint,
       fallbackTint: tint,
