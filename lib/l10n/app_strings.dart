@@ -584,6 +584,18 @@ abstract class AppStrings {
   String get eventSaveFailed;
   String get calendarNotEditable;
   String get eventDeleteFailed;
+  /// The pending chip's line while a create is still in flight. Two phases,
+  /// because the wait has two: `calendar-write` goes out to Google, Outlook or
+  /// the CalDAV server, and then `calendar-events` re-reads every connected
+  /// calendar — the app stores no events, so the new one cannot appear until
+  /// that second call brings it back.
+  ///
+  /// The named form is what the user sees; [eventBeingCreated] only covers the
+  /// case where the calendar has gone from under the draft.
+  String eventBeingCreatedIn(String calendar);
+  String get eventBeingCreated;
+  String get calendarsUpdating;
+
   String get eventCreated;
   String get eventUpdated;
   String get eventDeleted;
@@ -1100,4 +1112,6 @@ abstract class AppStrings {
   String get confirmLabChipUndoHint;
   String get confirmLabChipError;
   String get confirmLabChipErrorHint;
+  String get confirmLabChipPending;
+  String get confirmLabChipPendingHint;
 }

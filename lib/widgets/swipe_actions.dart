@@ -29,6 +29,13 @@ class SwipeAction {
 /// [child] has to be opaque: it slides *over* the actions, so a transparent row
 /// (one relying on its [SectionCard] for a background) shows them through it —
 /// wrap it in a `ColoredBox` where the surrounding card provides the fill.
+///
+/// **Every row in a list needs a key identifying the thing it shows.** How far
+/// the row is open lives in this [State], and a [State] belongs to a *position*
+/// in the child list, not to the row's content: delete the third of five rows
+/// and the fourth slides up into the third's element, inheriting an open swipe
+/// nobody made on it. [SwipeToEditDelete] takes an `identity` and does this for
+/// its callers; a direct caller passes `key:` itself.
 class SwipeActionsRow extends StatefulWidget {
   final List<SwipeAction> actions;
   final Widget child;
@@ -163,8 +170,17 @@ class SwipeToEditDelete extends StatelessWidget {
   final VoidCallback onDelete;
   final Widget child;
 
+  /// What this row is a row *of* — the list, box, item or task id. It becomes
+  /// the key of the [SwipeActionsRow] inside, which is what stops the open
+  /// swipe from being inherited by whichever row moves up into this position
+  /// when this one is deleted. Required, because the row it happens to is the
+  /// one directly under the one somebody just swiped, and it looks exactly like
+  /// the app arming a delete they did not ask for.
+  final Object identity;
+
   const SwipeToEditDelete({
     super.key,
+    required this.identity,
     required this.onDelete,
     required this.child,
     this.onTap,
@@ -174,6 +190,7 @@ class SwipeToEditDelete extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SwipeActionsRow(
+      key: ValueKey(identity),
       onTap: onTap,
       actions: [
         if (onEdit != null)

@@ -205,10 +205,22 @@ What does work, all verified the same way:
 | `insert into list_items … returning` | ✅ (its policy asks about the *parent*) |
 
 So a repository creates a container by generating the uuid on the device (`newUuidV4()` in
-`list_repository.dart` — `id` carries no policy, `gen_random_uuid()` is only a column default),
-inserting without a representation, and reading the row back in a second statement. The read-back
-earns its round trip: it is what proves the creator can actually see what they just made. Child
-rows and every update keep `.select()`.
+`list_repository.dart` — `id` carries no policy, `gen_random_uuid()` is only a column default) and
+inserting without a representation. Child rows and every update keep `.select()`.
+
+**There is no read-back, and the notifier does not wait to draw the row.** There used to be a
+second `select` on a fresh snapshot — it works, per the table above — but it cost a full round trip
+on the one action the user is watching, and it fetched `created_at` / `updated_at` that no screen
+reads. It was also not the proof it looked like: an empty result threw out of `.single()` and the
+caller reported "Speichern fehlgeschlagen" for a row that had landed. The insert policy is what
+decides whether the write is allowed.
+
+Because the id is the client's, the notifier can put the container on screen *before* the insert
+answers and still let the next tap navigate into it — an article typed straight away carries a
+`list_id` that is about to exist. `list_state.dart` and `box_state.dart` do that, the way
+`board_state.dart` already did for tasks; a failed write takes the row back off and leaves the
+detail view. On a phone this is the difference between the list appearing as the sheet closes and
+appearing two round trips later, which is long enough that people tap Sichern again.
 
 ## Linking a list or a task to an appointment
 
@@ -556,26 +568,40 @@ Not yet done, and all of it is dashboard-only — the MCP has no tool for any of
 - **Function secrets:** `RESEND_API_KEY`, `APORAH_MAIL_FROM`, `APORAH_WEB_URL`. Without them
   `sendMail` reports `sent: false` rather than lying, and the invite UI falls back to
   "Link kopieren" — the raw token is returned once for exactly this reason.
-- Leaked-password protection, OTP expiry ≤ 1 h, minimum password length.
+- Leaked-password protection, OTP expiry ≤ 1 h, minimum password length. The
+  HaveIBeenPwned check behind the first one is gated behind the Pro plan, so it lands with
+  that upgrade rather than now.
 - Redirect allowlist: `aporah://login-callback`, `aporah://invite/*`, `aporah://share/*`.
 - Storage buckets.
 
-**One accepted warning class.** The advisor flags 17 policy helpers (`my_family_id`,
-`can_read_list`, …) as callable by signed-in users at `/rest/v1/rpc/<name>`. They need `EXECUTE`
-for `authenticated` or RLS cannot evaluate them, so revoking is not an option. Each only answers
-about the caller's own access, which bounds the disclosure to an existence oracle on ids the caller
-already holds. The proper fix is relocating them to a schema PostgREST does not expose — that
-requires rewriting every body, since `LANGUAGE sql` bodies are stored as text and their
-`public.`-qualified calls would not follow the move. Worth doing before launch.
+**The 17 policy helpers no longer warn.** They were an accepted warning class for as long as they
+sat in `public`, where PostgREST published each one at `/rest/v1/rpc/<name>`; moving them to
+`private` (above) took the whole class off the advisor. Nothing was revoked to achieve it —
+`authenticated` still holds `EXECUTE`, because a policy expression is evaluated as the querying
+role and revoking would take every policy in the database down with it.
 
-**The advisor baseline**, so a real regression is visible against it. Security: 0 ERROR, the 17
-WARN above, and 1 INFO — `rls_enabled_no_policy` on `calendar_connection_secrets`, which is the
-design working, not a gap: RLS on, no policy for anyone, every privilege revoked. Performance:
-0 ERROR, 0 WARN, and INFO only — 19 `unindexed_foreign_keys` and a handful of `unused_index`.
+**The advisor baseline**, so a real regression is visible against it. Re-checked 2026-09-10.
+Security: 0 ERROR; 1 WARN, leaked-password protection, the dashboard toggle listed above; 1 INFO,
+`rls_enabled_no_policy` on `calendar_connection_secrets`, which is the design working rather than
+a gap. That one was verified against the live database rather than assumed: RLS on, zero policies,
+and the table's ACL names `postgres` and `service_role` only, so `anon` and `authenticated` are
+refused with `42501` before row security is ever consulted. No view and no function in `public` or
+`private` references the table, so there is no `security definer` path to it either, and every
+value in it is sealed besides.
 
-The 19th unindexed FK is `calendars_connection_same_family (connection_id, family_check_id)`;
-`calendars_connection_idx` covers only the leading column, exactly like the four `*_shares`
-composite FKs already on that list. Left as is for now — it is a decision to take with real data,
+**Don't clear that INFO with a `using (false)` policy.** It changes nothing about access and gives
+the table an access story that somebody could later widen; zero policies plus zero grants is the
+stronger and more legible shape. Moving the table to `private` is not worth it either: the Edge
+Functions reach it over PostgREST, which does not serve `private`, so it would cost a
+`security definer` wrapper in `public` — new surface — to remove nothing but the table's name from
+the schema cache.
+
+Performance: 0 ERROR, 0 WARN, and INFO only — 27 `unindexed_foreign_keys` and 25 `unused_index`.
+
+The unindexed-FK count rose from 19 to 27 when the trackers tables landed, and the new entries are
+the same shape as the old ones. `calendars_connection_same_family (connection_id, family_check_id)`
+is covered by `calendars_connection_idx` on its leading column only, exactly like the `*_shares`
+composite FKs beside it. Left as is for now — it is a decision to take with real data,
 not an oversight. The `unused_index` entries move around on their own: they come from
 `pg_stat_user_indexes`, so an index drops off the list the moment anything touches it.
 

@@ -27,10 +27,80 @@ class _CalendarFilterButton extends ConsumerWidget {
     return AppColors.muted;
   }
 
+  /// The same list twice over: the system's own menu where there is one, the
+  /// panel below where there isn't — see [showNativeMenu]. The rows are built
+  /// once here and handed to whichever draws them, so the two cannot drift.
+  ///
+  /// What the crossing costs is the indent: UIKit's menu has no margin for a
+  /// calendar listed *under* its account, so an account and its calendars share
+  /// a section instead — a hairline above the group rather than a step into it.
+  /// What it keeps is everything the row means: the calendar's own colour as a
+  /// dot, the tick on the filter in force, and a to-do row that toggles the
+  /// overlay **without closing the menu**, which is the one row here that is
+  /// not an answer to "which calendars".
   Future<void> _openMenu(BuildContext context, WidgetRef ref) async {
     final button = context.findRenderObject() as RenderBox;
     final anchor = button.localToGlobal(Offset.zero) & button.size;
-    final selected = await pushDropdownRoute(context, _FilterMenuRoute(anchor: anchor, state: state));
+
+    final rows = <NativeMenuOption>[
+      NativeMenuOption(
+        L.s.all,
+        // Two people rather than a dot, for the same reason the panel draws
+        // them: a dot stands for a calendar of that colour, and there is no
+        // "Alle" calendar for it to stand for.
+        symbol: 'person.2',
+        selected: state.calendarFilter == null,
+      ),
+    ];
+    final values = <Set<String>?>[const {}];
+    var section = 0;
+    for (final group in state.activeGroups) {
+      section++;
+      rows.add(NativeMenuOption(
+        _groupLabel(ref, group),
+        color: group.color,
+        selected: _isWholeFilter(state, group.ids),
+        section: section,
+      ));
+      values.add(group.ids);
+      if (group.opensList) {
+        for (final src in group.calendars) {
+          rows.add(NativeMenuOption(
+            src.name,
+            color: src.color,
+            selected: _isWholeFilter(state, {src.id}),
+            section: section,
+          ));
+          values.add({src.id});
+        }
+      }
+    }
+    section++;
+    rows.add(NativeMenuOption(
+      L.s.todosChip,
+      symbol: 'checkmark.circle',
+      selected: ref.read(calendarProvider).showTasks,
+      section: section,
+      keepsOpen: true,
+    ));
+    values.add(null);
+
+    final picked = await showNativeMenu(
+      options: rows,
+      anchor: anchor,
+      cancelLabel: L.s.cancel,
+      dark: AppColors.isDark,
+      onKeptOpen: (_) => ref.read(calendarProvider.notifier).toggleTasks(),
+    );
+    if (picked == nativeMenuCancelled) return;
+
+    Set<String>? selected;
+    if (picked != null) {
+      selected = values[picked];
+    } else {
+      if (!context.mounted) return;
+      selected = await pushDropdownRoute(context, _FilterMenuRoute(anchor: anchor, state: state));
+    }
     if (selected == null) return;
     if (selected.isEmpty) {
       ref.read(calendarProvider.notifier).clearCalendarFilter();

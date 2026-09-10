@@ -224,6 +224,7 @@ class BoardScreen extends ConsumerWidget {
                                     // would swallow the tap that closes an open
                                     // swipe.
                                     builder: (context, strike, checkOff) => SwipeToEditDelete(
+                                      identity: task.id,
                                       onTap: () => _openTaskSheet(context, ref, task: task),
                                       onEdit: () => _openTaskSheet(context, ref, task: task),
                                       onDelete: () => _deleteTask(context, ref, task),
@@ -281,6 +282,7 @@ class BoardScreen extends ConsumerWidget {
                                 // worth editing about a task that is finished. It
                                 // throws one away without clearing the lot.
                                 builder: (context, strike, undo) => SwipeToEditDelete(
+                                  identity: task.id,
                                   onTap: undo,
                                   onDelete: () => _deleteTask(context, ref, task),
                                   child: _DoneRow(task: task, accent: accent, strike: strike, onUndo: undo),
@@ -845,6 +847,7 @@ class _TrackerCard extends ConsumerWidget {
     final expanded = state.showAll || due.isEmpty;
 
     Widget row(Tracker tracker, {required bool dueToday}) => SwipeToEditDelete(
+      identity: tracker.id,
       // The row opens the tracker's own screen; editing stays on the swipe,
       // where the Board's other rows keep it. Tapping used to open the edit
       // sheet, which answered a question nobody had — the thing you want after

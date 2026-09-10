@@ -560,9 +560,21 @@ Non-obvious bits, each one a bug that shipped first:
   invited, onboarding finished); **do not hand-build a fourth**. Three axes:
   - `dismissAfter` — a duration makes it a **beat** that plays and leaves via `onDone` (the
     connect, the invite); null makes it a **screen** that waits with an action at its foot
-    (onboarding).
-  - `mark` — `check` is the accent disc and its expanding ring, the everyday result.
-    `celebration` is 🎉, falling confetti and the full `screenTitle`, for the moments that happen
+    (onboarding). Every check beat passes the shared `confirmationBeat` (2.5s) rather than a
+    number of its own: the mark spends ~620ms drawing itself, so at the 1.1s this used to be, the
+    sheet began leaving as the check landed and the line under it was read off a moving card. The
+    celebration keeps its own 3.2s — its confetti has to reach the floor.
+  - `mark` — `check` is the accent ring with the check **drawn** inside it (`_DrawnCheckPainter`,
+    ~620ms: the circle closes from twelve o'clock, the tick is put down along its own path with
+    `PathMetric.extractPath`, the two overlapping so it reads as one gesture) — the everyday
+    result. Outlined on an 8% wash of the accent rather than a filled disc: the disc was *already
+    finished* when the sheet opened, so the only motion left was a halo expanding around something
+    that never happened. One size (`_markSize`, 76pt, in a box of exactly that) on every surface;
+    the 78pt disc used to sit in a 130pt box to leave room for that halo, which was 52pt of empty
+    height in a sheet that is mostly white space. There is no `icon` override any more — the check
+    is a path, not a glyph.
+    `celebration` is 🎉 (which keeps the ease-out-back pop the drawn check gave up), falling
+    confetti and the full `screenTitle`, for the moments that happen
     once per family: the household set up, somebody invited into it. **Confetti on every write is
     confetti nobody sees** — a new caller needs a reason to be a celebration.
   - `action` — `sheetAction` (the bordered `OutlinedSheetAction` a sheet ends with) or
@@ -571,7 +583,8 @@ Non-obvious bits, each one a bug that shipped first:
   It is a sheet/screen *body*, not a sheet: a flow that already has one swaps its body for this
   (`AnimatedSwitcher`, 220ms) so the sheet that acted becomes the sheet that confirms, with no
   second modal stacked on the first. `showConfirmationSheet` is only for a result that came from
-  somewhere other than a sheet. The confetti is 26 rounded rects on one controller in a
+  somewhere other than a sheet, and asks for `heightFactor: 0.44` — a sheet is a fixed fraction of
+  the screen whatever is in it, so that number *is* the confirmation's height. The confetti is 26 rounded rects on one controller in a
   `CustomPainter`, coloured from `AppTones` — one pass, no package, no loop.
 - **`CelebrationGlow` (`confirmation.dart`) — the party light behind a `celebration`.** Three
   radial washes off the top edge in 🎉's *own* colours, read off the rendered glyph by
@@ -621,7 +634,7 @@ Non-obvious bits, each one a bug that shipped first:
   it saved. A whole sheet rather than an `AlertDialog` with a `TextField` because renaming is a
   *save*, and every save in this app is a check in a sheet header. `onConfirm(name)` runs while the
   sheet stays open (the X goes away — the request wouldn't be cancelled by closing), then a short
-  `ConfirmationView` beat (~1.1s) before it pops `true`; throwing keeps it open with the message
+  `ConfirmationView` beat (`confirmationBeat`, 2.5s) before it pops `true`; throwing keeps it open with the message
   under the field so the typing isn't lost. It used to be the shared last step of all six connect
   flows, which is why it looks like one — those now have that step inside their own sheet. It
   takes an `icon` **or** a `leading` widget: a subject that has a face of its own puts that face at
@@ -716,8 +729,11 @@ Non-obvious bits, each one a bug that shipped first:
   full height and painted nothing. Same failure as the sheet title vanishing between the two
   header buttons (`app_sheet.dart`), and it fails the same way: silently, on device only, with
   correct layout. The tell is a card whose height is right and whose contents aren't there.
-- `showAnchoredMenu` / `RowMenuButton` (`anchored_menu.dart`) — the UIKit-style dropdown a row's
-  trailing "..." opens (Listen and Boxen item rows). Deliberately **not** a `GlassSurface`: UIKit
+- `showAnchoredMenu` / `RowMenuButton` (`anchored_menu.dart`) — the menu a row's trailing "..."
+  opens (Listen and Boxen item rows), and the one door every menu in the app goes through. **On
+  iOS it is UIKit's own `UIMenu`**, so give each `AnchoredMenuItem` a `symbol:` (an SF Symbol name)
+  beside its Phosphor `icon:`; the panel below is what the rest of the world gets, and what iOS
+  falls back to before 17.4. Deliberately **not** a `GlassSurface`: UIKit
   menus are a near-opaque vibrant material, and glass lets the content underneath read through the
   rows. The panel is **opaque and carries no `BackdropFilter`** — it had one, and inside a sheet it
   read back the wrong backdrop on device: the card and the native glass buttons behind the menu
@@ -804,11 +820,11 @@ Non-obvious bits, each one a bug that shipped first:
     rows.
   - `showPictureMenu` is the menu behind `PhotoFieldRow` and `FamilyAvatarButton`: Foto / Kamera,
     plus a destructive Foto entfernen once there is one. No "Symbol wählen" — that row is why the
-    box sheet needed splitting, and each of the two rows' taps now knows its own answer. **It is a `showNativeMenu` first and the
-    dropdown only as a fallback**, because it opens from inside a sheet whose header carries native
-    glass buttons — see the platform-view note further up. Both hang off the row's own `GlobalKey`,
-    so the choice grows out of the row either way; it was a bottom-of-the-screen `UIAlertController`
-    until the anchored `UIMenu` replaced it. `IconDraft.photoFile` is the pending
+    box sheet needed splitting, and each of the two rows' taps now knows its own answer. It is one `showAnchoredMenu` call, which on
+    iOS is the system's own menu — this is the sheet-internal case that forced that, since its
+    header carries native glass buttons (see the platform-view note further up). It hangs off the
+    row's own `GlobalKey`, so the choice grows out of the row either way; it was a
+    bottom-of-the-screen `UIAlertController` until the anchored `UIMenu` replaced it. `IconDraft.photoFile` is the pending
     half: every picture is written the moment it is chosen, exactly as a profile picture is, except
     a *new* box's, which has no id for the object to be filed under until the insert comes back.
 - `SwipeActionsRow` / `SwipeAction` (`swipe_actions.dart`) — iOS swipe-left row actions, shared by
@@ -870,10 +886,12 @@ Non-obvious bits, each one a bug that shipped first:
   the next frame to fix it, so an inline note with "Erneut laden" that stays put. Takes German copy
   written for the user — the notifier translates, never the widget.
 - **The toast chip (`toast_chip.dart`) — one component for every transient outcome.** A
-  liquid-glass capsule floating clear of the nav bar: coloured disc, one line, and on a delete an
-  "Rückgängig". `confirmChipOf` for a write that landed, `showToast(…, kind: ToastKind.error)` for
+  liquid-glass capsule floating clear of the nav bar: a coloured **ring** with the check or the X
+  inside it, one line, and on a delete an "Rückgängig". Outlined on a 12% wash of its own colour
+  rather than a filled disc with a white glyph — the confirmation sheet draws an outlined mark, and
+  a solid dot beside it read as a second system. `confirmChipOf` for a write that landed, `showToast(…, kind: ToastKind.error)` for
   one that didn't — `showErrorSnack` is now a one-line delegate to the latter and keeps its ~8 call
-  sites. **Success and failure differ by the disc's colour and glyph and by nothing else**; they
+  sites. **Success and failure differ by the ring's colour and glyph and by nothing else**; they
   used to be two unrelated objects (a hugging white pill vs. a full-width grey bar) for what is one
   event with two outcomes. Do not give a new outcome its own shape.
   - Shown for every create / update / delete of a list, a box, a task, a tracker, an appointment
@@ -884,6 +902,31 @@ Non-obvious bits, each one a bug that shipped first:
     whole detail view), so the overlay and the nav-bar inset have to be taken **before** the write
     and the returned callback invoked after. A `context.mounted` guard would drop exactly the
     confirmations that matter most.
+  - **A third state, `ToastKind.pending`, for a write the user would otherwise watch nothing
+    happen during.** It carries a spinner where the ring goes, has **no dwell timer**, and stays up
+    until the caller settles it — `showPendingChip(context, …)` hands back a `PendingChip` with
+    `step` (rewrite the line, keep spinning), `done` / `failed` (swap the mark, start the fade) and
+    `dismiss`. The capsule is never rebuilt across those: only its contents change, cross-faded,
+    with an `AnimatedSize` around them so the glass grows into the new width. Swapping the *widget*
+    would tear down `GlassSurface` and build a second one, and on iOS that is a platform view —
+    two of them dissolving in the same place is a flicker, not a transition.
+    - **Only for a write that is genuinely slow, and only where its stages are honest.** Creating
+      an appointment is the case it was built for: `calendar-write` goes out to Google, Outlook or
+      a school's CalDAV server, and then `calendar-events` re-reads every connected calendar,
+      because the app stores no events and the new one cannot appear until a proxied read brings it
+      back. So the chip names the calendar being written, then says the calendars are being
+      refreshed. A container create is now instant on screen (see the backend doc) and must not get
+      one — a spinner over a row that is already there is theatre.
+    - The stages are the client's own round trips and nothing finer. An event goes into **one**
+      calendar, the one the sheet picked; the refresh's fan-out to every provider happens inside
+      the Edge Function, in parallel, and comes back as a single answer. Do not write copy that
+      counts calendars off — there is no per-calendar progress to report, and inventing one would
+      describe a thing the app does not do.
+    - On failure the calendar screen's `ref.listen` on `state.error` already puts an error chip up,
+      so the pending chip is `dismiss`ed rather than turned red. Two chips saying the same thing is
+      one too many.
+    - `confirmation_lab.dart` has a row that fakes both stages, because otherwise the only way to
+      review the animation is to create appointments in somebody's real calendar.
   - A chip only appears on a `true` from the notifier, which is why the create/update calls return
     `Future<bool>` and every delete returns its snapshot-or-null — `Future<DeletedList?>`,
     `Future<DeletedBox?>`, `Future<DeletedListItem?>`, `Future<DeletedBoxItem?>` (see the undo note
@@ -896,6 +939,11 @@ Non-obvious bits, each one a bug that shipped first:
     also what lets a delete *inside* a sheet offer its undo. `_ToastLayer` owns the entrance, the
     dwell timer and the fade back out; `_ToastHandle` is what an outsider can do to a chip (take it
     down), and a second chip dismisses the first rather than stacking on it.
+  - **It is also the one text in the app with no `Material` over it**, and Flutter's fallback for
+    that case is its debug style — yellow, double-underlined. The chip's `AppText.buttonSmall` sets
+    size, weight and colour but not `decoration`, so the underline came through under the message
+    and under "Rückgängig". `_ToastLayer` declares a `DefaultTextStyle` with
+    `decoration: TextDecoration.none` around the whole entry; don't patch a new one at the `Text`.
   - The chip's own position is computed rather than delegated: `max(viewInsets.bottom,
     viewPadding.bottom) + navContentInset(…)`, which is what the `Scaffold` used to do for a
     floating snack bar — above the keyboard while one is up, clear of the home indicator when it

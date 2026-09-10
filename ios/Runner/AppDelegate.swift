@@ -89,6 +89,9 @@ import UIKit
       channel.setMethodCallHandler { [nativeMenu] call, result in
         nativeMenu.handle(call, result: result)
       }
+      // Handed the channel too, not just the calls: a menu row that keeps the
+      // menu open has to report itself while its own request is still waiting.
+      nativeMenu.channel = channel
       menuChannel = channel
     }
   }

@@ -107,6 +107,16 @@ survives the header scrolling away. It's overlaid in
 sideways, and fades in over the last 40% of the collapse (`_TitleRow._leadingOpacity`). Keep the
 two views' behaviour identical here.
 
+**On iOS the list is UIKit's own menu, not that panel.** `_openMenu` builds the rows once and
+hands them to `showNativeMenu` (`lib/services/native_menu.dart`); `_FilterMenuRoute` below is what
+everything else gets, and what iOS gets before 17.4. Three things carry across that the rows would
+be meaningless without: each calendar's colour as a filled dot (UIKit takes an SF Symbol or an
+image, and there is no symbol for "green"), the tick on the filter in force, and a "To-dos" row
+that toggles the overlay **without closing the menu** (`keepsOpen`, i.e. `.keepsMenuPresented`) —
+it flips its own checkmark natively, because the presented menu is a snapshot UIKit never re-asks
+for. What is lost is the indent: a UIKit menu has no margin, so an account and its calendars share
+a *section* — a hairline above the group — rather than a step into it.
+
 The menu panel (`_FilterMenuSurface`) is deliberately **not** a `GlassSurface` — UIKit's own
 menus are a near-opaque vibrant material, not liquid glass, and a glass panel let the month grid
 read straight through the rows.
@@ -176,6 +186,7 @@ The detail box's header count stays `eventCount`, since it says "N Termine".
 
 The toggle survives the header collapsing: `_FilterMenuSurface` carries the same row at the bottom,
 behind the same rule, and it toggles in place rather than popping the route (`_FilterMenuRow.onTap`).
+The system menu keeps that promise with `keepsOpen` — see above.
 
 Session state, like `isWeek` and `calendarFilter` — nothing on this screen is persisted, and one
 flag surviving a restart while the filter beside it did not would read as a bug.

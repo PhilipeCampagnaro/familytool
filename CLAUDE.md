@@ -176,7 +176,11 @@ task:
   [docs/backend.md](docs/backend.md) **before** writing another one: `insert … returning` is
   rejected on `lists`/`boxes`/`tasks`/`calendars` (the SELECT policy is a `stable` function that
   cannot see the row being inserted), so `.insert(…).select()` does not work there — every
-  container is inserted with a client-side uuid and read back in a second statement.
+  container is inserted with a **client-side uuid** and no read-back at all. **Because the id is
+  the client's, a new container goes on screen before the insert answers** and the next tap can
+  navigate into it; the write reconciles or rolls the row back off. A read-back would only fetch
+  `created_at`/`updated_at`, which nothing draws, at the cost of a round trip on the one action
+  the user is watching.
 - **A picture of the thing beats a symbol of it, and it is stored.** A box and a box item each
   carry one photograph (`photo_path`) that *replaces* the `icon_asset` symbol wherever it is drawn;
   a list article keeps its list of attachments. Both live in private Storage buckets keyed on
@@ -291,19 +295,36 @@ task:
   `ios/Runner/NativeMenu.swift`). **The iOS
   deployment target is 13.0** — new system API needs an `if #available` guard and a fallback, not a
   raised target.
-- **A menu opened from inside a sheet that holds native glass buttons has to be a native one.**
-  `showAnchoredMenu` is still the app's menu everywhere else, but Flutter content composited after
-  a platform view can be dropped whole on device: inside the event-detail sheet the route menu
-  opened, swallowed the taps behind it and never painted. `showNativeMenu` is the way out there —
-  it returns `null` where there is no system menu to put up (everything but iOS and, on iOS,
-  before 17.4), which is the caller's cue to fall back to the dropdown. **It is a `UIMenu` beside
-  the tap, not a sheet at the bottom of the screen**: the `UIAlertController` this started as was
-  right about the layer and wrong about the shape — you pressed a row halfway up a sheet and the
-  answer appeared at the far end of the display. Both paths take the same anchor rect, so the app's
-  dropdown and UIKit's bubble are one gesture drawn by two hands. There is no public call that
-  simply shows a menu: it hangs off a transparent `UIButton` whose primary action *is* the menu,
-  fired with `performPrimaryAction()` (iOS 17.4), and the action sheet stays as the fallback below
-  that and for a menu that was asked for and never appeared.
+- **Every menu in the app is the system's own where the system has one.** `showAnchoredMenu` is
+  still the one function every "..." goes through, but it now asks `showNativeMenu` first and only
+  paints its own panel when that answers `null` — everything but iOS, and on iOS before 17.4. Both
+  take the same anchor rect, so the app's dropdown and UIKit's bubble are one gesture drawn by two
+  hands. **It is a `UIMenu` beside the tap, not a sheet at the bottom of the screen**: the
+  `UIAlertController` this started as was right about the layer and wrong about the shape — you
+  pressed a row halfway up a sheet and the answer appeared at the far end of the display. What
+  crossing over costs is the icons: a `UIMenu` takes SF Symbols, so a row carries a
+  `symbol:` beside its Phosphor `icon:`, and Amazon's mark — an SVG — can't come at all. Validate
+  a symbol name against the runtime's own list before using one; `arrow.triangle.turn.up.right.circle`
+  is not in iOS 26 and rendered as no glyph at all.
+  **The layer is the reason this exists, and it is still the reason.** Flutter content composited
+  after a platform view can be dropped whole on device: inside the event-detail sheet the route
+  menu opened, swallowed the taps behind it and never painted. UIKit presents its own above
+  everything.
+  **`null` means "there was no menu to put up", and nothing else may answer with
+  it.** It is the one word that sends a caller off to draw the app's own panel,
+  so a menu that was superseded, abandoned or dismissed answers `cancelled`
+  instead — a superseding `show` that answered `nil` put the old dropdown on
+  screen *underneath* the system menu that replaced it, which is what "sometimes
+  both open" was. Dart drops a second request inside 500ms for the same reason.
+  There is no public call that simply shows a menu: it hangs off a transparent `UIButton` whose
+  primary action *is* the menu, fired with `performPrimaryAction()` (iOS 17.4). **A plain
+  `UIControl` will not do** — a control offers its menu on a *touch-down* of the user's own, and
+  there is no finger here, so it presented nothing and reported a cancel. The action sheet stays as
+  the fallback below 17.4 and for a menu that was asked for and never appeared.
+  A row may also carry a colour instead of a symbol (a filled dot, for a calendar), sit in a
+  numbered `section` (a hairline above it — UIKit has no indent), or `keepsOpen` and toggle without
+  closing, which is what Kalender's filter menu needs; the last of those reports itself over the
+  channel while the request goes on waiting.
 
 ## Verifying changes
 

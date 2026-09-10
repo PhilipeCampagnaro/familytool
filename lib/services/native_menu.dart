@@ -42,7 +42,35 @@ class NativeMenuOption {
   /// of choices is the one in force.
   final bool selected;
 
-  const NativeMenuOption(this.label, {this.symbol, this.destructive = false, this.selected = false});
+  /// A filled dot in this colour instead of a [symbol] — a calendar's colour is
+  /// data rather than an icon, and there is no SF Symbol for "green".
+  final Color? color;
+
+  /// The caption over this row's section, taken from the first row of it — an
+  /// inline submenu's title, which is the only header a `UIMenu` has.
+  final String? sectionTitle;
+
+  /// Rows sharing a number are drawn as one group, with a hairline above it.
+  /// UIKit has no indent, so a calendar sits in its account's group rather than
+  /// under its name.
+  final int section;
+
+  /// Leaves the menu up when this row is picked, for a row that toggles
+  /// something rather than answering the question. It reports itself through
+  /// `onKeptOpen` and flips its own checkmark; the menu goes on waiting for a
+  /// real answer.
+  final bool keepsOpen;
+
+  const NativeMenuOption(
+    this.label, {
+    this.symbol,
+    this.destructive = false,
+    this.selected = false,
+    this.color,
+    this.section = 0,
+    this.sectionTitle,
+    this.keepsOpen = false,
+  });
 }
 
 /// The rect [anchorKey]'s widget occupies on screen, or null if it has not been
@@ -68,13 +96,39 @@ Future<int?> showNativeMenu({
   Rect? anchor,
   String? title,
   String? message,
+  void Function(int index)? onKeptOpen,
 }) async {
   if (kIsWeb || defaultTargetPlatform != TargetPlatform.iOS || options.isEmpty) return null;
+  // A tap that lands while the last one's menu is still coming up is the same
+  // tap twice. Answered as a cancel, never as `null`: `null` would send this
+  // caller off to draw the app's own dropdown under the system menu the first
+  // tap is already opening — two menus for one gesture.
+  //
+  // A window rather than a flag held for as long as the menu is up: two taps a
+  // second apart are two gestures, and the native side handles that properly by
+  // cancelling the first menu. A flag would also have to be cleared by
+  // something, and the one thing worse than two menus is none, forever.
+  final now = DateTime.now();
+  if (_lastRequest != null && now.difference(_lastRequest!) < _doubleTapWindow) {
+    return nativeMenuCancelled;
+  }
+  _lastRequest = now;
+  _installKeptOpenHandler();
+  _onKeptOpen = onKeptOpen;
   try {
     return await _channel.invokeMethod<int>('show', {
       'options': [
         for (final o in options)
-          {'label': o.label, 'symbol': o.symbol, 'destructive': o.destructive, 'selected': o.selected},
+          {
+            'label': o.label,
+            'symbol': o.symbol,
+            'destructive': o.destructive,
+            'selected': o.selected,
+            'section': o.section,
+            'sectionTitle': o.sectionTitle,
+            'keepsOpen': o.keepsOpen,
+            if (o.color != null) 'color': o.color!.toARGB32(),
+          },
       ],
       'cancel': cancelLabel,
       'dark': dark,
@@ -87,5 +141,44 @@ Future<int?> showNativeMenu({
     return null;
   } on MissingPluginException {
     return null;
+  } finally {
+    _onKeptOpen = null;
   }
+}
+
+/// When the last menu was asked for, and how close behind it a second request
+/// is treated as the same tap arriving twice.
+DateTime? _lastRequest;
+const _doubleTapWindow = Duration(milliseconds: 500);
+
+/// Re-draws the menu that is up with a fresh checkmark per row, for a menu
+/// whose rows [NativeMenuOption.keepsOpen] — one tick can move the others, and
+/// the presented menu is a snapshot UIKit never re-asks for. Same order and
+/// length as the options it was opened with; a mismatch is ignored rather than
+/// half-applied. A no-op where there is no such menu.
+Future<void> updateNativeMenuSelection(List<bool> selected) async {
+  if (kIsWeb || defaultTargetPlatform != TargetPlatform.iOS) return;
+  try {
+    await _channel.invokeMethod<void>('update', {'selected': selected});
+  } on PlatformException {
+    // Nothing to update is not a failure worth reporting to a menu row.
+  } on MissingPluginException {
+    // Same.
+  }
+}
+
+/// The open menu's [showNativeMenu.onKeptOpen], if it has such a row. One menu
+/// is up at a time, so one callback is all there is to keep.
+void Function(int index)? _onKeptOpen;
+bool _keptOpenHandlerInstalled = false;
+
+void _installKeptOpenHandler() {
+  if (_keptOpenHandlerInstalled) return;
+  _keptOpenHandlerInstalled = true;
+  _channel.setMethodCallHandler((call) async {
+    if (call.method != 'keptOpen') return null;
+    final index = (call.arguments as Map?)?['index'] as int?;
+    if (index != null) _onKeptOpen?.call(index);
+    return null;
+  });
 }

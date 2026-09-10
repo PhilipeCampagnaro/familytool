@@ -651,12 +651,26 @@ class CalendarNotifier extends StateNotifier<CalendarScreenState> {
 
   /// Creates the event. Returns false and records a German message on failure,
   /// so the sheet can stay open with what the user typed still in it.
-  Future<bool> createEvent(EventDraft draft) async {
+  ///
+  /// [onProgress] is called with a line of copy each time the wait moves on,
+  /// for the pending chip the sheet leaves behind. **There are exactly two
+  /// stages and they are the two round trips**, which is also why this is the
+  /// slowest write in the app: `calendar-write` puts the appointment in Google,
+  /// Outlook or the CalDAV server, and then `calendar-events` re-reads every
+  /// connected calendar, because the app stores no events of its own and the
+  /// new one cannot appear until a proxied read brings it back.
+  ///
+  /// It is **one** calendar being written — the one the sheet picked. The
+  /// second stage names no calendar because the fan-out to the providers
+  /// happens inside the Edge Function, in parallel, and the client is handed
+  /// one answer for all of them.
+  Future<bool> createEvent(EventDraft draft, {void Function(String message)? onProgress}) async {
     final clean = draft.copyWith(title: draft.title.trim());
     if (clean.title.isEmpty) return _failed(L.s.eventNeedsTitle);
 
     try {
       await _write(clean);
+      onProgress?.call(L.s.calendarsUpdating);
       await refresh();
       return true;
     } catch (e) {

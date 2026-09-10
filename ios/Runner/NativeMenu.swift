@@ -49,7 +49,31 @@ final class NativeMenu: NSObject {
   /// The transparent view the menu hangs off, for as long as it is up.
   private var anchorView: UIView?
 
+  /// The channel this was registered on, so a row that *keeps the menu up* can
+  /// be reported while the request it belongs to is still open. Set by
+  /// AppDelegate; a `FlutterResult` answers once, and one of these rows is a
+  /// toggle the user may flip twice before picking anything.
+  weak var channel: FlutterMethodChannel?
+
+  /// The menu currently on screen, kept so a `keepsOpen` row can be re-drawn
+  /// with its checkmark flipped without closing anything.
+  private var liveOptions: [[String: Any]] = []
+  private var liveStates: [Bool] = []
+  private var liveTitle: String?
+
   func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+    // A menu that stays open while it is being ticked has to be re-drawn from
+    // the state its own taps changed: one row's tap can move every other row's
+    // checkmark (untick a calendar while "Alle" is on, and every *other*
+    // calendar becomes explicitly ticked), and UIKit never re-asks for a menu
+    // it has already presented.
+    if call.method == "update" {
+      if #available(iOS 17.4, *), let selected = (call.arguments as? [String: Any])?["selected"] as? [Bool] {
+        redraw(with: selected)
+      }
+      result(nil)
+      return
+    }
     guard call.method == "show",
           let args = call.arguments as? [String: Any],
           let options = args["options"] as? [[String: Any]],
@@ -58,14 +82,19 @@ final class NativeMenu: NSObject {
       result(FlutterMethodNotImplemented)
       return
     }
-    guard let host = topViewController, let container = host.view else {
-      result(nil)
-      return
-    }
-    // One menu at a time: a second request finishes the first as a cancel and
-    // takes its anchor with it rather than leaving a transparent control lying
-    // over the row.
-    finish(nil)
+    // One menu at a time: a second request finishes the first **as a cancel**
+    // and takes its anchor with it, rather than leaving a transparent control
+    // lying over the row. Cancel and not `nil`, which is a different sentence
+    // entirely — `nil` tells Dart there was no system menu to put up, so a
+    // superseded caller would answer a tap that has already been answered by
+    // painting its own dropdown *underneath the menu that superseded it*. Two
+    // taps in quick succession put both on screen at once, which is exactly
+    // what it looked like.
+    //
+    // Retired rather than ripped out: a menu on screen is animated out of a
+    // preview of the very view it hangs off, so taking that view away while it
+    // is up is fatal — see [MenuAnchorButton.retire].
+    finish(NativeMenu.cancelled)
     tearDownAnchor()
     // Aporah's dark mode is its own switch in Settings, not the device's — same
     // contract as the glass views, tab bar and switch: Dart says which one the
@@ -74,10 +103,10 @@ final class NativeMenu: NSObject {
     let title = args["title"] as? String
 
     pending = result
-    if #available(iOS 17.4, *), let rect = NativeMenu.rect(args["anchor"]) {
-      presentMenu(options: options, title: title, style: style, at: rect, in: container, host: host, args: args)
+    if #available(iOS 17.4, *), let rect = NativeMenu.rect(args["anchor"]), let container = flutterView {
+      presentMenu(options: options, title: title, style: style, at: rect, in: container, args: args)
     } else {
-      presentSheet(options: options, args: args, style: style, host: host)
+      presentSheet(options: options, args: args, style: style)
     }
   }
 
@@ -96,29 +125,18 @@ final class NativeMenu: NSObject {
     style: UIUserInterfaceStyle,
     at rect: CGRect,
     in container: UIView,
-    host: UIViewController,
     args: [String: Any]
   ) {
-    let actions: [UIMenuElement] = options.enumerated().map { index, option in
-      var attributes: UIMenuElement.Attributes = []
-      if option["destructive"] as? Bool == true { attributes.insert(.destructive) }
-      return UIAction(
-        title: option["label"] as? String ?? "",
-        image: (option["symbol"] as? String).flatMap { UIImage(systemName: $0) },
-        attributes: attributes,
-        state: (option["selected"] as? Bool == true) ? .on : .off
-      ) { [weak self] _ in
-        // Answered here rather than on dismissal: the closing animation runs
-        // either side of this and Dart has a photo library to put up. Tearing
-        // the anchor down is left to the end of that animation, so it still has
-        // the control it is animating out of.
-        self?.finish(index)
-      }
-    }
-    let menu = UIMenu(title: title ?? "", children: actions)
+    liveOptions = options
+    liveStates = options.map { $0["selected"] as? Bool == true }
+    liveTitle = title
+    let menu = buildMenu()
 
     // A control of the anchor's own size, so the bubble grows out of the row
-    // that was tapped rather than out of a point.
+    // that was tapped rather than out of a point. It goes in the Flutter view,
+    // whose coordinates the rect is already in — **not** in the window above it,
+    // which looks like the safer place and is not: a menu asked to present from
+    // a bare window subview never came up at all, and the sheet took over.
     let anchor = MenuAnchorButton(frame: rect)
     anchor.backgroundColor = .clear
     anchor.overrideUserInterfaceStyle = style
@@ -127,13 +145,22 @@ final class NativeMenu: NSObject {
     // *does* — which is what `performPrimaryAction()` then does.
     anchor.showsMenuAsPrimaryAction = true
     anchor.menu = menu
-    anchor.onEnd = { [weak self] in
+    anchor.onEnd = { [weak self, weak anchor] in
       // One hop after the animation, so an action handler landing on the same
       // turn as the dismissal has already answered — `finish` is a no-op once
       // it has.
       DispatchQueue.main.async {
-        self?.tearDownAnchor()
-        self?.finish(NativeMenu.cancelled)
+        // **Only if this is still the menu that is up.** A closing menu reports
+        // itself when its animation ends, which is a good half-second after a
+        // second tap has already replaced it — or after the grace below gave up
+        // and put the sheet there instead. Without this the *late* menu tore
+        // down the *live* one's anchor and answered its caller: you tapped a
+        // chip, the menu opened, and about a second later it closed by itself.
+        guard let self, let anchor, self.anchorView === anchor else { return }
+        // The anchor has already taken itself out of the hierarchy; this is
+        // only letting go of it.
+        self.anchorView = nil
+        self.finish(NativeMenu.cancelled)
       }
     }
     container.addSubview(anchor)
@@ -145,9 +172,113 @@ final class NativeMenu: NSObject {
     DispatchQueue.main.asyncAfter(deadline: .now() + NativeMenu.presentationGrace) { [weak self, weak anchor] in
       guard let self, let anchor, self.anchorView === anchor, self.pending != nil, !anchor.didDisplayMenu
       else { return }
+      // Retiring is what marks it: a menu still on its way up when we gave up
+      // on it arrives, finds its anchor retired and closes itself rather than
+      // landing over the sheet that replaced it.
       self.tearDownAnchor()
-      self.presentSheet(options: options, args: args, style: style, host: host)
+      self.presentSheet(options: options, args: args, style: style)
     }
+  }
+
+  /// The menu as it stands, built from [liveOptions] and the checkmarks in
+  /// [liveStates] — called again, unchanged, every time a `keepsOpen` row flips
+  /// one of those.
+  ///
+  /// Rows carrying the same `section` are wrapped in an inline submenu, which
+  /// is how UIKit draws a group: a hairline above it, no indent. That is the
+  /// one thing the app's own panel says that this cannot — a calendar listed
+  /// *under* its account — so an account and its calendars share a section
+  /// rather than a margin.
+  @available(iOS 17.4, *)
+  private func buildMenu() -> UIMenu {
+    var sections: [[UIMenuElement]] = []
+    var sectionKeys: [Int] = []
+    var sectionTitles: [String] = []
+    for (index, option) in liveOptions.enumerated() {
+      let key = option["section"] as? Int ?? 0
+      let action = self.action(for: option, at: index)
+      if sectionKeys.last == key {
+        sections[sections.count - 1].append(action)
+      } else {
+        sections.append([action])
+        sectionKeys.append(key)
+        // The caption the app's own panel prints over an account's calendars.
+        // An inline submenu draws its title as that header, which is the only
+        // place a UIMenu has for one.
+        sectionTitles.append(option["sectionTitle"] as? String ?? "")
+      }
+    }
+    if sections.count <= 1, sectionTitles.first?.isEmpty != false {
+      return UIMenu(title: liveTitle ?? "", children: sections.first ?? [])
+    }
+    return UIMenu(
+      title: liveTitle ?? "",
+      children: sections.enumerated().map {
+        UIMenu(title: sectionTitles[$0.offset], options: .displayInline, children: $0.element)
+      }
+    )
+  }
+
+  /// Puts [selected] on the menu that is up, if one still is.
+  @available(iOS 17.4, *)
+  private func redraw(with selected: [Bool]) {
+    guard selected.count == liveOptions.count, let anchor = anchorView as? MenuAnchorButton else { return }
+    liveStates = selected
+    let menu = buildMenu()
+    anchor.menu = menu
+    anchor.contextMenuInteraction?.updateVisibleMenu { _ in menu }
+  }
+
+  @available(iOS 17.4, *)
+  private func action(for option: [String: Any], at index: Int) -> UIAction {
+    var attributes: UIMenuElement.Attributes = []
+    if option["destructive"] as? Bool == true { attributes.insert(.destructive) }
+    let keepsOpen = option["keepsOpen"] as? Bool == true
+    if keepsOpen { attributes.insert(.keepsMenuPresented) }
+    return UIAction(
+      title: option["label"] as? String ?? "",
+      image: NativeMenu.image(for: option),
+      attributes: attributes,
+      state: liveStates.indices.contains(index) && liveStates[index] ? .on : .off
+    ) { [weak self] _ in
+      guard let self else { return }
+      guard keepsOpen else {
+        // Answered here rather than on dismissal: the closing animation runs
+        // either side of this and Dart has a photo library to put up. Tearing
+        // the anchor down is left to the end of that animation, so it still has
+        // the control it is animating out of.
+        self.finish(index)
+        return
+      }
+      // A row that stays: the tick is flipped here rather than waiting for Dart
+      // to answer, because the menu on screen is a snapshot — UIKit will not
+      // re-ask for it — and a toggle that doesn't visibly toggle reads as a
+      // dead row.
+      self.liveStates[index].toggle()
+      let menu = self.buildMenu()
+      if let anchor = self.anchorView as? MenuAnchorButton {
+        anchor.menu = menu
+        anchor.contextMenuInteraction?.updateVisibleMenu { _ in menu }
+      }
+      self.channel?.invokeMethod("keptOpen", arguments: ["index": index])
+    }
+  }
+
+  /// A row's glyph: an SF Symbol by name, or a filled dot in a colour Dart
+  /// sends as ARGB — a calendar's colour is data, not an icon, and there is no
+  /// symbol for "green".
+  private static func image(for option: [String: Any]) -> UIImage? {
+    if let argb = option["color"] as? Int {
+      let color = UIColor(
+        red: CGFloat((argb >> 16) & 0xFF) / 255,
+        green: CGFloat((argb >> 8) & 0xFF) / 255,
+        blue: CGFloat(argb & 0xFF) / 255,
+        alpha: CGFloat((argb >> 24) & 0xFF) / 255
+      )
+      return UIImage(systemName: "circle.fill", withConfiguration: UIImage.SymbolConfiguration(scale: .small))?
+        .withTintColor(color, renderingMode: .alwaysOriginal)
+    }
+    return (option["symbol"] as? String).flatMap { UIImage(systemName: $0) }
   }
 
   /// The anchor's rect in Flutter's global coordinates, which are points in the
@@ -163,12 +294,20 @@ final class NativeMenu: NSObject {
 
   // MARK: - The fallback sheet
 
+  /// The controller to present from is read **here**, not when the request came
+  /// in: a menu that was up at that moment is a presented controller itself,
+  /// and a sheet put up inside it would go out with it.
   private func presentSheet(
     options: [[String: Any]],
     args: [String: Any],
-    style: UIUserInterfaceStyle,
-    host: UIViewController
+    style: UIUserInterfaceStyle
   ) {
+    guard let host = topViewController else {
+      // Nothing to present from is the one thing `nil` means: Dart draws its
+      // own panel instead.
+      finish(nil)
+      return
+    }
     let sheet = UIAlertController(
       title: args["title"] as? String,
       message: args["message"] as? String,
@@ -202,18 +341,46 @@ final class NativeMenu: NSObject {
 
   // MARK: - Plumbing
 
-  /// The controller to present from: the key window's root, walked down past
-  /// anything Flutter already has up (a sheet is a Flutter route, but a
-  /// `showModalBottomSheet` from a plugin would be a real one).
-  private var topViewController: UIViewController? {
+  private var keyWindow: UIWindow? {
     let windows = UIApplication.shared.connectedScenes
       .compactMap { $0 as? UIWindowScene }
       .flatMap { $0.windows }
-    var controller = (windows.first { $0.isKeyWindow } ?? windows.first)?.rootViewController
+    return windows.first { $0.isKeyWindow } ?? windows.first
+  }
+
+  /// The controller to present the **sheet** from: the key window's root,
+  /// walked down past anything already up (a Flutter sheet is a route, but a
+  /// photo picker is a real controller).
+  private var topViewController: UIViewController? {
+    var controller = keyWindow?.rootViewController
     while let presented = controller?.presentedViewController {
       controller = presented
     }
     return controller
+  }
+
+  /// The view the **anchor** hangs in: Flutter's own, and never whatever
+  /// happens to be presented over it.
+  ///
+  /// [topViewController] was doing this job and is wrong for it twice over. The
+  /// rect Dart sends is in Flutter's coordinates, so any other view puts the
+  /// menu somewhere else on screen — and a menu that is already up is itself a
+  /// presented view controller, so a second menu was being hung inside the
+  /// first one's presentation. Sometimes that view was not in a window yet and
+  /// UIKit killed the app on the spot
+  /// (`BUG_IN_CLIENT_OF_TARGETED_PREVIEW__VIEW_IS_NOT_IN_A_WINDOW`); the rest
+  /// of the time the new menu opened and then went out with the old one's
+  /// dismissal a moment later, which is the "it closes by itself" this was
+  /// reported as.
+  ///
+  /// Nil while there is no window to present into, which is a `nil` to Dart and
+  /// so a fall back to the app's own dropdown.
+  private var flutterView: UIView? {
+    guard let root = keyWindow?.rootViewController else { return nil }
+    let flutter = root as? FlutterViewController
+      ?? root.children.compactMap { $0 as? FlutterViewController }.first
+    guard let view = (flutter ?? root).viewIfLoaded, view.window != nil else { return nil }
+    return view
   }
 
   private func finish(_ value: Any?) {
@@ -221,8 +388,14 @@ final class NativeMenu: NSObject {
     pending = nil
   }
 
+  /// Lets go of the anchor. The view itself leaves when it is safe for it to —
+  /// see [MenuAnchorButton.retire].
   private func tearDownAnchor() {
-    anchorView?.removeFromSuperview()
+    if #available(iOS 17.4, *), let anchor = anchorView as? MenuAnchorButton {
+      anchor.retire()
+    } else {
+      anchorView?.removeFromSuperview()
+    }
     anchorView = nil
   }
 }
@@ -248,12 +421,53 @@ extension NativeMenu: UIAdaptivePresentationControllerDelegate {
 /// empty snapshot is what the menu grows out of.
 @available(iOS 17.4, *)
 private final class MenuAnchorButton: UIButton {
-  /// Run when the menu has finished closing, however it closed.
+  /// Run when the menu has finished closing, however it closed — unless this
+  /// anchor was retired first, in which case nobody is waiting on it any more.
   var onEnd: (() -> Void)?
 
   /// Whether the menu ever came up, which is what [NativeMenu] waits on before
   /// deciding to fall back to the sheet.
   private(set) var didDisplayMenu = false
+
+  /// Whether the menu is on screen right now, which decides whether this view
+  /// may be taken out of the hierarchy.
+  private var menuIsUp = false
+
+  /// No longer the live anchor: a second tap has replaced it, or the grace
+  /// period gave up on it and put the sheet up instead.
+  private var retired = false
+
+  /// Stand down, and take the menu with you.
+  ///
+  /// **Not `removeFromSuperview`.** UIKit animates a menu out of a targeted
+  /// preview of the view it hangs off and asserts that the view is still in a
+  /// window, so pulling the anchor out from under a menu that is up aborts the
+  /// app. The menu is dismissed instead and the view goes when the animation
+  /// has finished. A menu that has not appeared yet is left to arrive, see that
+  /// this anchor is retired, and close itself.
+  func retire() {
+    retired = true
+    onEnd = nil
+    guard !menuIsUp else {
+      contextMenuInteraction?.dismissMenu()
+      return
+    }
+    // Nothing on screen to wait for — but a presentation may still be on its
+    // way, and it would assert against a view that had already left. Well past
+    // any of that is soon enough for a transparent view that answers no touch.
+    DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
+      guard let self, !self.menuIsUp else { return }
+      self.removeFromSuperview()
+    }
+  }
+
+  /// Never the answer to a touch. It is a stand-in for a Flutter row, laid over
+  /// that row, and a button that took the tap would both swallow the row
+  /// underneath it and — being a button whose primary action *is* its menu, on
+  /// touch-down — put a second menu up from an anchor on its way out.
+  override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+    didDisplayMenu || retired ? nil : super.hitTest(point, with: event)
+  }
 
   override func contextMenuInteraction(
     _ interaction: UIContextMenuInteraction,
@@ -262,6 +476,8 @@ private final class MenuAnchorButton: UIButton {
   ) {
     super.contextMenuInteraction(interaction, willDisplayMenuFor: configuration, animator: animator)
     didDisplayMenu = true
+    menuIsUp = true
+    if retired { interaction.dismissMenu() }
   }
 
   override func contextMenuInteraction(
@@ -270,10 +486,16 @@ private final class MenuAnchorButton: UIButton {
     animator: UIContextMenuInteractionAnimating?
   ) {
     super.contextMenuInteraction(interaction, willEndFor: configuration, animator: animator)
+    menuIsUp = false
+    let ended = { [weak self] in
+      guard let self else { return }
+      self.removeFromSuperview()
+      self.onEnd?()
+    }
     if let animator {
-      animator.addCompletion { [onEnd] in onEnd?() }
+      animator.addCompletion(ended)
     } else {
-      onEnd?()
+      ended()
     }
   }
 }

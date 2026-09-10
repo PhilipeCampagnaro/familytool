@@ -2374,7 +2374,7 @@ class _ConnectBody extends StatelessWidget {
                 // What was just connected, under its new name — the calendars
                 // where there were several to name, the one name otherwise.
                 message: flow.connectedSummary,
-                dismissAfter: const Duration(milliseconds: 1100),
+                dismissAfter: confirmationBeat,
                 onDone: () => Navigator.of(context).pop(),
               ),
             },

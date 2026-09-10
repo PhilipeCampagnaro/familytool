@@ -80,16 +80,18 @@ class BoardRepository {
     DateTime? dueDate,
     DueTime? dueTime,
     required String text,
+    String? id,
     String? meta,
     String? assigneeId,
     ItemVisibility visibility = ItemVisibility.family,
     Set<String> sharedWith = const {},
     EventLink? eventLink,
   }) async {
-    final id = newUuidV4();
+    final taskId = id ?? newUuidV4();
     final ownerId = _uid;
+    final members = _effectiveShares(visibility, sharedWith, ownerId);
     final draft = BoardTask(
-      id: id,
+      id: taskId,
       familyId: familyId,
       dueDate: dueDate,
       dueTime: dueTime,
@@ -98,19 +100,21 @@ class BoardRepository {
       assigneeId: assigneeId,
       ownerId: ownerId,
       visibility: visibility,
+      sharedWith: members.toList(),
+      // Only so the row the caller already put on screen keeps sorting where it
+      // is; every other timestamp on the model comes from the server.
+      createdAt: DateTime.now(),
       // Only ever on the insert. There is no edit path for it: a task belongs
       // to the appointment it was made from, and re-pointing it at another one
       // is not a thing anybody has asked to do.
       eventLink: eventLink,
     );
 
-    await _db.from('tasks').insert({...draft.toMap(forInsert: true), 'id': id});
+    await _db.from('tasks').insert({...draft.toMap(forInsert: true), 'id': taskId});
 
-    final members = _effectiveShares(visibility, sharedWith, ownerId);
-    if (members.isNotEmpty) await _writeShares(id, familyId, members);
+    if (members.isNotEmpty) await _writeShares(taskId, familyId, members);
 
-    final row = await _db.from('tasks').select(_columns).eq('id', id).single();
-    return BoardTask.fromMap(row, sharedWith: members.toList());
+    return draft;
   }
 
   Future<BoardTask> updateTask(

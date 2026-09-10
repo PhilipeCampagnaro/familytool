@@ -560,6 +560,10 @@ class _EventAgendaRow extends ConsumerWidget {
                 // or removing an event doesn't always require opening the full
                 // detail sheet first.
                 child: SwipeActionsRow(
+                  // Keyed on the event, so a deleted row takes its open swipe
+                  // with it instead of handing it to whichever appointment
+                  // moves up into its place in the agenda.
+                  key: ValueKey(event.id),
                   borderRadius: BorderRadius.circular(compact ? 16 : 20),
                   onTap: () {
                     ref.read(calendarProvider.notifier).openEvent(event, headingText);

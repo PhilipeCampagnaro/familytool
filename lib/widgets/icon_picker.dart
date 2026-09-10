@@ -4,7 +4,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 
 import '../data/icon_suggestions.dart';
-import '../services/native_menu.dart';
 import '../theme/tokens.dart';
 import 'anchored_menu.dart';
 import 'app_sheet.dart';
@@ -800,16 +799,16 @@ enum PictureChoice {
 
 /// The menu behind the picture row on a create/edit sheet.
 ///
-/// **The system's own menu first, the app's dropdown only as a fallback**, and
-/// that is not a style choice. This opens from *inside* a [showAppSheet], whose
-/// header carries native glass buttons, and Flutter content composited after a
-/// platform view can be dropped whole on device — the failure that already ate
-/// the Kalender event sheet's route menu, which opened, swallowed the taps
-/// behind it and never painted. UIKit presents its own menu, so there is no
-/// Flutter layer left to lose. [showNativeMenu] returns null where there is no
-/// system menu to put up (everything but iOS), which is the cue to use the
-/// dropdown — and both hang off [anchorKey], so the choice appears beside the
-/// row either way.
+/// One of the menus that made [showAnchoredMenu] learn UIKit's: it opens from
+/// *inside* a [showAppSheet], whose header carries native glass buttons, and
+/// Flutter content composited after a platform view can be dropped whole on
+/// device — the failure that already ate the Kalender event sheet's route menu,
+/// which opened, swallowed the taps behind it and never painted. On iOS the
+/// system presents this one, so there is no Flutter layer left to lose.
+///
+/// A completer rather than a return value because a menu answers by running the
+/// picked row's callback. `showAnchoredMenu` waits for the menu to close first,
+/// so a menu dismissed without a choice simply leaves the completer alone.
 ///
 /// [hasPhoto] adds the destructive "Foto entfernen" — there is nothing to
 /// remove until there is.
@@ -823,37 +822,6 @@ Future<PictureChoice?> showPictureMenu(
     PictureChoice.camera,
     if (hasPhoto) PictureChoice.remove,
   ];
-  String label(PictureChoice c) => switch (c) {
-    PictureChoice.photo => L.s.photo,
-    PictureChoice.camera => L.s.camera,
-    PictureChoice.remove => L.s.removePhoto,
-  };
-
-  final picked = await showNativeMenu(
-    anchor: anchorRectOf(anchorKey),
-    options: [
-      for (final c in choices)
-        NativeMenuOption(
-          label(c),
-          symbol: switch (c) {
-            PictureChoice.photo => 'photo.on.rectangle',
-            PictureChoice.camera => 'camera',
-            PictureChoice.remove => 'trash',
-          },
-          destructive: c == PictureChoice.remove,
-        ),
-    ],
-    cancelLabel: L.s.cancel,
-    dark: AppColors.isDark,
-  );
-  if (picked == nativeMenuCancelled) return null;
-  if (picked != null) return choices[picked];
-  if (!context.mounted) return null;
-
-  // No system menu here — the dropdown, and a completer to give it the same
-  // shape as the branch above. `showAnchoredMenu` awaits its route before it
-  // calls `onSelected`, so a menu dismissed without a choice simply leaves the
-  // completer alone.
   final completer = Completer<PictureChoice?>();
   await showAnchoredMenu(
     context: context,
@@ -861,11 +829,20 @@ Future<PictureChoice?> showPictureMenu(
     items: [
       for (final c in choices)
         AnchoredMenuItem(
-          label: label(c),
+          label: switch (c) {
+            PictureChoice.photo => L.s.photo,
+            PictureChoice.camera => L.s.camera,
+            PictureChoice.remove => L.s.removePhoto,
+          },
           icon: switch (c) {
             PictureChoice.photo => AppIcons.image,
             PictureChoice.camera => AppIcons.camera,
             PictureChoice.remove => AppIcons.trash,
+          },
+          symbol: switch (c) {
+            PictureChoice.photo => 'photo.on.rectangle',
+            PictureChoice.camera => 'camera',
+            PictureChoice.remove => 'trash',
           },
           destructive: c == PictureChoice.remove,
           onSelected: () => completer.complete(c),

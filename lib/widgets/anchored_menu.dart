@@ -4,6 +4,7 @@ import '../theme/tokens.dart';
 import 'bottom_nav.dart';
 import 'glass.dart';
 import 'native_occlusion.dart';
+import '../services/native_menu.dart';
 import '../l10n/l10n.dart';
 import '../theme/app_icons.dart';
 
@@ -21,6 +22,19 @@ class AnchoredMenuItem {
   /// monochrome list.
   final String? svgAsset;
 
+  /// An **SF Symbol** name for the row's glyph *when the system draws the
+  /// menu* — UIKit's menu takes UIKit's icons, and [icon]/[svgAsset] are
+  /// Flutter's. A row without one simply has no glyph there, which is why the
+  /// brand marks give none: `assets/merchants/` is a folder of SVGs and a
+  /// `UIMenu` has nowhere to put one.
+  final String? symbol;
+
+  /// Puts a checkmark on the row — the system's way of showing which of a set
+  /// of choices is the one in force. The panel Flutter draws has no such
+  /// state, so a caller that wants the tick in both places also passes
+  /// [icon] `AppIcons.check`.
+  final bool selected;
+
   /// Draws the row in [AppColors.danger] — iOS's destructive menu action.
   final bool destructive;
 
@@ -32,31 +46,74 @@ class AnchoredMenuItem {
     required this.label,
     this.icon,
     this.svgAsset,
+    this.symbol,
+    this.selected = false,
     this.destructive = false,
     required this.onSelected,
   }) : assert((icon == null) != (svgAsset == null), 'A menu row carries either an icon or an svgAsset');
 }
 
-/// Opens a UIKit-style dropdown anchored to whatever [anchorKey] is attached
-/// to — a row's "..." button, a header control — and runs the picked item's
+/// Opens a menu anchored to whatever [anchorKey] is attached to — a row's
+/// "..." button, a header control, a chip — and runs the picked item's
 /// [AnchoredMenuItem.onSelected] once it has closed.
 ///
-/// Same route/animation shape as the Kalender filter menu (`calendar_screen.dart`):
-/// a custom [PopupRoute] that lays the finished panel out beside its anchor and
-/// scales it out of the nearest corner, rather than `showMenu` — that grows the
-/// panel's height while staggering each item's fade, which over dense content
-/// reads as a smeared, half-drawn slab.
+/// **The system draws it where the system has one to draw.** Every "..." in
+/// the app comes through here, so this is the one place that decides: iOS gets
+/// its own `UIMenu`, the glass bubble that grows out of the control, and
+/// everything else gets the panel below. Same anchor rect either way, so the
+/// two are one gesture drawn by two hands — see [showNativeMenu], which answers
+/// null exactly when there is no system menu to be had.
+///
+/// What UIKit's costs: the rows carry SF Symbols rather than the app's Phosphor
+/// glyphs ([AnchoredMenuItem.symbol]), and a brand mark can't come along at
+/// all. What it buys is the material, the animation and the placement of the
+/// menu the phone puts under every other app's controls.
+///
+/// The panel Flutter draws keeps the same route/animation shape as the Kalender
+/// filter menu: a custom [PopupRoute] that lays the finished panel out beside
+/// its anchor and scales it out of the nearest corner, rather than `showMenu` —
+/// that grows the panel's height while staggering each item's fade, which over
+/// dense content reads as a smeared, half-drawn slab.
+///
+/// [title] is the small grey caption UIKit puts above the rows; the panel has
+/// no place for one and ignores it.
 Future<void> showAnchoredMenu({
   required BuildContext context,
   required GlobalKey anchorKey,
   required List<AnchoredMenuItem> items,
   double width = AnchoredMenuSurface.defaultWidth,
+  String? title,
 }) async {
   final box = anchorKey.currentContext?.findRenderObject() as RenderBox?;
   if (box == null || !box.hasSize) return;
   final anchor = box.localToGlobal(Offset.zero) & box.size;
-  final picked = await pushDropdownRoute(context, _AnchoredMenuRoute(anchor: anchor, items: items, width: width));
-  picked?.onSelected();
+
+  final picked = await showNativeMenu(
+    anchor: anchor,
+    title: title,
+    options: [
+      for (final item in items)
+        NativeMenuOption(
+          item.label,
+          symbol: item.symbol,
+          destructive: item.destructive,
+          selected: item.selected,
+        ),
+    ],
+    cancelLabel: L.s.cancel,
+    dark: AppColors.isDark,
+  );
+  // A menu the user backed out of is answered, not unanswered: falling through
+  // to the panel here would reopen as a second menu the tap it just closed.
+  if (picked == nativeMenuCancelled) return;
+  if (picked != null) {
+    items[picked].onSelected();
+    return;
+  }
+
+  if (!context.mounted) return;
+  final chosen = await pushDropdownRoute(context, _AnchoredMenuRoute(anchor: anchor, items: items, width: width));
+  chosen?.onSelected();
 }
 
 class _AnchoredMenuRoute extends PopupRoute<AnchoredMenuItem> with DropdownRoute<AnchoredMenuItem> {

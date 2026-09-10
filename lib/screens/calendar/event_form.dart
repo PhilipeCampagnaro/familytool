@@ -15,8 +15,28 @@ void _openNewEventSheet(BuildContext context, WidgetRef ref) {
       // The chip is the only sign a write to a *connected* calendar went out —
       // the event itself only shows up once the next `calendar-events` read
       // brings it back from the provider.
-      final confirm = confirmChipOf(context);
-      if (await notifier.createEvent(form.result())) confirm(L.s.eventCreated);
+      //
+      // And that takes **seconds**, not a moment: the write goes out to Google,
+      // Outlook or a school's CalDAV server and the read then goes out to all
+      // of them again. A confirmation that only appears at the end of that
+      // leaves the sheet closing onto a calendar with nothing new in it, which
+      // reads as a save that silently failed. So the chip goes up *now*, with a
+      // spinner, and says which calendar the appointment is going into; the
+      // notifier moves it on to the refresh, and the spinner becomes the tick.
+      final draft = form.result();
+      final calendar = ref.read(calendarProvider).sourceById(draft.calendarId)?.name;
+      final chip = showPendingChip(
+        context,
+        calendar == null ? L.s.eventBeingCreated : L.s.eventBeingCreatedIn(calendar),
+      );
+      if (await notifier.createEvent(draft, onProgress: chip.step)) {
+        chip.done(L.s.eventCreated);
+      } else {
+        // Taken down rather than turned red: the screen already listens on
+        // `state.error` and puts the failure up itself, and two chips saying
+        // the same thing is one too many.
+        chip.dismiss();
+      }
     },
     child: _EventFormBody(form: form),
   );

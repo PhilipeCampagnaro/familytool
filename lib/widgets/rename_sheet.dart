@@ -203,7 +203,7 @@ class _RenameBody extends StatelessWidget {
                 key: const ValueKey('success'),
                 headline: successLabel,
                 message: flow.name.text.trim().isEmpty ? null : flow.name.text.trim(),
-                dismissAfter: const Duration(milliseconds: 1100),
+                dismissAfter: confirmationBeat,
                 onDone: () => Navigator.of(context).pop(true),
               )
             : _EditingBody(

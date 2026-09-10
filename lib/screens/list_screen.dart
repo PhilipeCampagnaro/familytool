@@ -10,7 +10,6 @@ import '../models/attachment.dart';
 import '../models/event_link.dart';
 import '../models/grocery_unit.dart';
 import '../models/shopping_list.dart';
-import '../services/native_menu.dart';
 import '../services/external_links.dart';
 import '../services/media_picker.dart';
 import '../state/auth_state.dart';
@@ -177,6 +176,7 @@ class _ListOverview extends ConsumerWidget {
             )
           else
             SwipeToEditDelete(
+              identity: list.id,
               onTap: () => ref.read(listProvider.notifier).open(list.id),
               onEdit: () => openListSheet(context, ref, list: list),
               onDelete: () async {
@@ -643,7 +643,7 @@ class _ListDetail extends ConsumerWidget {
                 ? const SizedBox(width: 40)
                 : GlassMenuButton(
                     items: [
-                      AnchoredMenuItem(label: L.s.edit, icon: AppIcons.pencilSimple, onSelected: () => openListSheet(context, ref, list: open)),
+                      AnchoredMenuItem(label: L.s.edit, icon: AppIcons.pencilSimple, symbol: 'pencil', onSelected: () => openListSheet(context, ref, list: open)),
                       // Its own action, never part of "Für wen?" — see
                       // [showShareSheet]. Absent for kids and for a guest looking
                       // at somebody else's list, both of whom the database refuses.
@@ -651,6 +651,7 @@ class _ListDetail extends ConsumerWidget {
                         AnchoredMenuItem(
                           label: L.s.share,
                           icon: AppIcons.userPlus,
+                          symbol: 'person.badge.plus',
                           onSelected: () => showShareSheet(
                             context,
                             kind: ShareableKind.list,
@@ -661,6 +662,7 @@ class _ListDetail extends ConsumerWidget {
                       AnchoredMenuItem(
                         label: L.s.delete,
                         icon: AppIcons.trash,
+                        symbol: 'trash',
                         destructive: true,
                         onSelected: () async {
                           // Captured before the write: this row lives in the detail
@@ -1436,37 +1438,26 @@ class _UnitButton extends StatefulWidget {
 class _UnitButtonState extends State<_UnitButton> {
   final _anchorKey = GlobalKey();
 
-  /// The system's own menu first — ten choices is more than the app's dropdown
-  /// wants to be, and UIKit's already knows how to scroll them, with the
-  /// checkmark on the unit in force that the fallback has to draw itself. It
-  /// answers null off iOS, which is the cue to fall back to the anchored menu;
-  /// both hang off [_anchorKey], so the list opens beside the chip either way.
+  /// Ten choices is more than the app's own panel wants to be, which is one
+  /// more reason this menu is glad to be UIKit's where UIKit has one: the
+  /// system list already knows how to scroll and to tick the unit in force.
   Future<void> _pick() async {
     final units = GroceryUnit.values;
     String? keyOf(GroceryUnit unit) => unit == GroceryUnit.piece ? null : unit.key;
     final active = widget.current ?? GroceryUnit.piece.key;
 
-    final picked = await showNativeMenu(
-      anchor: anchorRectOf(_anchorKey),
-      options: [
-        for (final unit in units) NativeMenuOption(unit.label, selected: unit.key == active),
-      ],
-      cancelLabel: L.s.cancel,
-      dark: AppColors.isDark,
-      title: L.s.unit,
-    );
-    if (picked != null) {
-      if (picked != nativeMenuCancelled) widget.onPicked(keyOf(units[picked]));
-      return;
-    }
-    if (!mounted) return;
     await showAnchoredMenu(
       context: context,
       anchorKey: _anchorKey,
+      title: L.s.unit,
       items: [
         for (final unit in units)
           AnchoredMenuItem(
             label: unit.label,
+            // The tick is UIKit's own where UIKit draws the menu, and a glyph
+            // in the icon column where the app draws it — the panel has no
+            // separate place for state.
+            selected: unit.key == active,
             icon: unit.key == active ? AppIcons.check : AppIcons.circle,
             onSelected: () => widget.onPicked(keyOf(unit)),
           ),
@@ -1752,6 +1743,7 @@ Future<void> _removeLink(BuildContext context, WidgetRef ref, ShoppingListItem i
 /// and its check circle carry the handlers here.
 Widget _swipeToDelete(BuildContext context, WidgetRef ref, ShoppingListItem item, Widget row) {
   return SwipeToEditDelete(
+    identity: item.id,
     onDelete: () => _deleteItem(context, ref, item),
     child: row,
   );
@@ -1782,6 +1774,11 @@ List<AnchoredMenuItem> _itemMenu(BuildContext context, WidgetRef ref, ShoppingLi
     AnchoredMenuItem(
       label: L.s.searchOnAmazon,
       svgAsset: 'assets/merchants/amazon-simple.svg',
+      // The one row whose glyph can't survive the crossing: UIKit's menu takes
+      // SF Symbols, and Amazon's mark is an SVG in `assets/merchants/`. The
+      // label already says whose shop it is, so the system row shows what the
+      // row *does* instead.
+      symbol: 'magnifyingglass',
       onSelected: () => openExternalUrl(amazonSearchUrl(item.text)),
     ),
     // Beside it because both rows are about the web: one goes looking for the
@@ -1789,6 +1786,7 @@ List<AnchoredMenuItem> _itemMenu(BuildContext context, WidgetRef ref, ShoppingLi
     AnchoredMenuItem(
       label: L.s.itemLink,
       icon: AppIcons.link,
+      symbol: 'link',
       onSelected: () => _editLink(context, ref, item),
     ),
     // The two system pickers, straight through to UIKit — see
@@ -1796,8 +1794,8 @@ List<AnchoredMenuItem> _itemMenu(BuildContext context, WidgetRef ref, ShoppingLi
     // shopping list wants beside it is a picture of the thing, and the
     // document picker offered a PDF that would then sit under the name as a
     // caption nobody can open from the row.
-    AnchoredMenuItem(label: L.s.photo, icon: AppIcons.image, onSelected: () => _attach(ref, item, AttachmentSource.photos)),
-    AnchoredMenuItem(label: L.s.camera, icon: AppIcons.camera, onSelected: () => _attach(ref, item, AttachmentSource.camera)),
+    AnchoredMenuItem(label: L.s.photo, icon: AppIcons.image, symbol: 'photo.on.rectangle', onSelected: () => _attach(ref, item, AttachmentSource.photos)),
+    AnchoredMenuItem(label: L.s.camera, icon: AppIcons.camera, symbol: 'camera', onSelected: () => _attach(ref, item, AttachmentSource.camera)),
     // One row per attached file, because they are stored now and a file you
     // cannot take off again is a file you think twice about putting on. Named
     // by the file only when there are several — with one there is nothing to
@@ -1806,6 +1804,7 @@ List<AnchoredMenuItem> _itemMenu(BuildContext context, WidgetRef ref, ShoppingLi
       AnchoredMenuItem(
         label: attachments.length == 1 ? L.s.removePhoto : attached.name,
         icon: AppIcons.x,
+        symbol: 'xmark',
         destructive: true,
         onSelected: () => ref.read(listProvider.notifier).removeAttachment(item, attached),
       ),
@@ -1813,12 +1812,14 @@ List<AnchoredMenuItem> _itemMenu(BuildContext context, WidgetRef ref, ShoppingLi
       AnchoredMenuItem(
         label: L.s.removeItemLink,
         icon: AppIcons.linkBreak,
+        symbol: 'xmark',
         destructive: true,
         onSelected: () => _removeLink(context, ref, item),
       ),
     AnchoredMenuItem(
       label: L.s.delete,
       icon: AppIcons.trash,
+      symbol: 'trash',
       destructive: true,
       onSelected: () => _deleteItem(context, ref, item),
     ),

@@ -209,10 +209,19 @@ class ListRepository {
   /// against the live database; the same holds for `boxes`, `tasks` and
   /// `calendars`, so the repositories that follow this one need the same shape.
   ///
-  /// Hence: client-side id, insert, then read the row back in a *separate*
-  /// statement — which has a fresh snapshot and succeeds. The read-back is not
-  /// bookkeeping either; it is what proves the creator can actually see what
-  /// they just made, including after a `private` or `custom` choice.
+  /// Hence: **the client brings the id and the row it just built.** There is no
+  /// read-back. There used to be one — a second `select` on a fresh snapshot,
+  /// which does succeed — and it cost a full round trip on the one action the
+  /// user is watching, to fetch `created_at` and `updated_at` that no screen
+  /// reads. On a slow mobile connection that trip was seconds, and the list
+  /// appeared long enough after the sheet closed that people retapped. Every
+  /// column the app draws was already in hand before the insert went out.
+  ///
+  /// What the read-back really bought was proof that the creator can see what
+  /// they made. It never was proof: a `select` that came back empty threw
+  /// `PostgrestException` from `.single()` and the caller reported "save
+  /// failed" for a row that had landed perfectly well. The insert policy is
+  /// what decides whether the write is allowed, and it is checked either way.
   ///
   /// The share rows are a third statement, because supabase-dart cannot open a
   /// transaction. A failed share write leaves a `custom` list with nobody on it,
@@ -221,34 +230,35 @@ class ListRepository {
     required String familyId,
     required String name,
     required ListKind kind,
+    String? id,
     String? iconKey,
     ListVisibility visibility = ListVisibility.family,
     Set<String> sharedWith = const {},
     int position = 0,
     EventLink? eventLink,
   }) async {
-    final id = newUuidV4();
+    final listId = id ?? newUuidV4();
     final ownerId = _uid;
+    final members = _effectiveShares(visibility, sharedWith, ownerId);
     final draft = ShoppingList(
-      id: id,
+      id: listId,
       name: name,
       iconKey: iconKey,
       kind: kind,
       familyId: familyId,
       ownerId: ownerId,
       visibility: visibility,
+      sharedWith: members.toList(),
       position: position,
       // Only ever on the insert — see [BoardRepository.createTask].
       eventLink: eventLink,
     );
 
-    await _db.from('lists').insert({...draft.toMap(forInsert: true), 'id': id});
+    await _db.from('lists').insert({...draft.toMap(forInsert: true), 'id': listId});
 
-    final members = _effectiveShares(visibility, sharedWith, ownerId);
-    if (members.isNotEmpty) await _writeShares(id, familyId, members);
+    if (members.isNotEmpty) await _writeShares(listId, familyId, members);
 
-    final row = await _db.from('lists').select(_listColumns).eq('id', id).single();
-    return ShoppingList.fromMap(row, sharedWith: members.toList());
+    return draft;
   }
 
   /// Renames / re-symbols / re-kinds a list, and rewrites its share rows.

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/icon_suggestions.dart';
 import '../data/repositories/box_repository.dart';
+import '../data/repositories/list_repository.dart' show newUuidV4;
 import '../data/repositories/photo_repository.dart';
 import '../models/box_item.dart';
 import '../models/visibility.dart';
@@ -246,12 +247,15 @@ class BoxNotifier extends StateNotifier<BoxScreenState> {
   /// symbol — "Keller" a warehouse, "Weihnachtsdeko" a fir, "Werkzeug" a
   /// hammer — so a shelf of boxes is scannable by picture.
   ///
-  /// Not optimistic, unlike [addItem]: a box is a container the very next tap
-  /// navigates into, and navigating into a row with no server id yet would mean
-  /// every item typed there had nowhere to go.
+  /// On screen first and on the server after, under the **real** id — the same
+  /// trade `list_state.dart` explains at length. A box is a container the very
+  /// next tap navigates into, but the id is minted here rather than by the
+  /// server (`insert … returning` cannot pass the SELECT policy), so an item
+  /// typed straight away already has a `box_id` that is about to exist.
   ///
   /// True only when the row really landed on the server — the screen's
-  /// confirmation chip hangs off that, exactly as it does in `list_state.dart`.
+  /// confirmation chip hangs off that, exactly as it does in `list_state.dart`,
+  /// and a failed write takes the optimistic row back off.
   Future<bool> createBox({required String name, required String place, String? iconKey, File? photo}) async {
     final trimmed = name.trim();
     if (trimmed.isEmpty) return false;
@@ -261,20 +265,46 @@ class BoxNotifier extends StateNotifier<BoxScreenState> {
       return false;
     }
 
+    final id = newUuidV4();
+    final icon = iconKey ?? suggestIcon(trimmed, subject: IconSubject.box)?.key;
+    final visibility = state.newVisibility;
+    final sharedWith = {...state.newSharedWith};
+    final optimistic = StorageBox(
+      id: id,
+      name: trimmed,
+      place: place.trim(),
+      iconKey: icon,
+      familyId: familyId,
+      ownerId: _userId ?? '',
+      visibility: visibility,
+      // `family` and `private` have no member list — see `list_state.dart`.
+      sharedWith: visibility == ItemVisibility.custom ? sharedWith.toList() : const [],
+      position: state.boxes.length,
+    );
+    state = state.copyWith(
+      boxes: [...state.boxes, optimistic],
+      itemsByBox: {...state.itemsByBox, id: const []},
+    );
+
     try {
       final saved = await _repo.createBox(
+        id: id,
         familyId: familyId,
         name: trimmed,
         place: place.trim(),
-        iconKey: iconKey ?? suggestIcon(trimmed, subject: IconSubject.box)?.key,
-        visibility: state.newVisibility,
-        sharedWith: state.newSharedWith,
-        position: state.boxes.length,
+        iconKey: icon,
+        visibility: visibility,
+        sharedWith: sharedWith,
+        position: optimistic.position,
       );
       if (!mounted) return false;
+      // Appended rather than replaced when it is gone — see `list_state.dart`:
+      // a [load] that finished mid-flight cannot see the row being inserted, so
+      // it sweeps the optimistic one away.
+      final present = state.boxes.any((b) => b.id == id);
       state = state.copyWith(
-        boxes: [...state.boxes, saved],
-        itemsByBox: {...state.itemsByBox, saved.id: const []},
+        boxes: present ? [for (final b in state.boxes) b.id == id ? saved : b] : [...state.boxes, saved],
+        itemsByBox: {...state.itemsByBox, id: state.itemsByBox[id] ?? const []},
       );
       // Only now: the object is filed under the box's id and the storage policy
       // asks whether that box may be written, so there has to *be* one first.
@@ -283,6 +313,16 @@ class BoxNotifier extends StateNotifier<BoxScreenState> {
       if (photo != null) await setBoxPhoto(saved.id, photo);
       return true;
     } catch (_) {
+      if (!mounted) return false;
+      final items = Map<String, List<BoxItem>>.from(state.itemsByBox)..remove(id);
+      state = state.copyWith(
+        boxes: state.boxes.where((b) => b.id != id).toList(),
+        itemsByBox: items,
+        // The user may already be inside the box that failed to land; putting
+        // them back on the shelf beats a detail view of nothing.
+        isDetail: state.openId == id ? false : state.isDetail,
+        openId: state.openId == id ? '' : state.openId,
+      );
       _fail(L.s.boxSaveFailed);
       return false;
     }

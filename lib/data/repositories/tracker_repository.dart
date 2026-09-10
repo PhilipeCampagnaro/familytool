@@ -89,6 +89,7 @@ class TrackerRepository {
     required String familyId,
     required String text,
     required TrackerSchedule schedule,
+    String? id,
     String? meta,
     String? iconKey,
     String? assigneeId,
@@ -96,10 +97,11 @@ class TrackerRepository {
     ItemVisibility visibility = ItemVisibility.family,
     Set<String> sharedWith = const {},
   }) async {
-    final id = newUuidV4();
+    final trackerId = id ?? newUuidV4();
     final ownerId = _uid;
+    final members = _effectiveShares(visibility, sharedWith, ownerId);
     final draft = Tracker(
-      id: id,
+      id: trackerId,
       familyId: familyId,
       text: text,
       meta: meta,
@@ -111,15 +113,14 @@ class TrackerRepository {
       startsOn: startsOn ?? boardDay(DateTime.now()),
       ownerId: ownerId,
       visibility: visibility,
+      sharedWith: members.toList(),
     );
 
-    await _db.from('trackers').insert({...draft.toMap(forInsert: true), 'id': id});
+    await _db.from('trackers').insert({...draft.toMap(forInsert: true), 'id': trackerId});
 
-    final members = _effectiveShares(visibility, sharedWith, ownerId);
-    if (members.isNotEmpty) await _writeShares(id, familyId, members);
+    if (members.isNotEmpty) await _writeShares(trackerId, familyId, members);
 
-    final row = await _db.from('trackers').select(_columns).eq('id', id).single();
-    return Tracker.fromMap(row, sharedWith: members.toList());
+    return draft;
   }
 
   Future<Tracker> updateTracker(

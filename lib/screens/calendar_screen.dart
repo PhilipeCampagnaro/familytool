@@ -13,9 +13,9 @@ import '../models/shopping_list.dart';
 import '../models/task.dart';
 import '../models/who.dart';
 import '../models/weather.dart';
-import '../services/native_menu.dart';
 import '../services/external_links.dart';
 import '../services/map_snapshot.dart';
+import '../services/native_menu.dart';
 import '../state/board_state.dart';
 import '../state/calendar_state.dart';
 import '../state/family_state.dart';
@@ -934,17 +934,84 @@ class _AllCalendarsChip extends ConsumerStatefulWidget {
 class _AllCalendarsChipState extends ConsumerState<_AllCalendarsChip> {
   final _anchorKey = GlobalKey();
 
-  void _open() {
+  /// Every account's calendars at once, ticked one by one. The system's menu
+  /// where there is one, the app's panel below — and this is the pair where
+  /// the two are furthest apart in machinery and closest in behaviour: the
+  /// rows **keep the menu open** (`keepsOpen` / `.keepsMenuPresented`) exactly
+  /// as the route stays up, because picking three calendars out of eight is one
+  /// gesture, not three. A tick here moves the others — untick one while "Alle"
+  /// is lit and every remaining calendar becomes explicitly ticked — so each
+  /// tap pushes the whole set back with [updateNativeMenuSelection] rather than
+  /// trusting the row that was tapped to be the only one that changed.
+  Future<void> _open() async {
     final box = _anchorKey.currentContext?.findRenderObject() as RenderBox?;
     if (box == null) return;
+    final anchor = box.localToGlobal(Offset.zero) & box.size;
+    final notifier = ref.read(calendarProvider.notifier);
+
+    // Index 0 is "Alle", which owns no calendar; every other row is one.
+    final ids = <String?>[null];
+    List<bool> statesOf() {
+      final filter = ref.read(calendarProvider).calendarFilter;
+      return [
+        for (final id in ids) filter == null || (id != null && filter.contains(id)),
+      ];
+    }
+
+    final options = <NativeMenuOption>[
+      NativeMenuOption(
+        L.s.all,
+        symbol: 'person.2',
+        selected: ref.read(calendarProvider).calendarFilter == null,
+        keepsOpen: true,
+      ),
+    ];
+    var section = 0;
+    for (final group in ref.read(calendarProvider).activeGroups) {
+      section++;
+      final title = _groupLabel(ref, group);
+      final filter = ref.read(calendarProvider).calendarFilter;
+      for (final src in group.calendars) {
+        ids.add(src.id);
+        options.add(NativeMenuOption(
+          src.name,
+          color: src.color,
+          section: section,
+          sectionTitle: title,
+          selected: filter == null || filter.contains(src.id),
+          keepsOpen: true,
+        ));
+      }
+    }
+
+    final picked = await showNativeMenu(
+      anchor: anchor,
+      options: options,
+      cancelLabel: L.s.cancel,
+      dark: AppColors.isDark,
+      onKeptOpen: (index) {
+        final id = ids[index];
+        if (id == null) {
+          notifier.clearCalendarFilter();
+        } else {
+          notifier.toggleCalendarAnywhere(id);
+        }
+        updateNativeMenuSelection(statesOf());
+      },
+    );
+    // Every row keeps the menu up, so the only answer a system menu gives here
+    // is "closed" — anything but null means it was the one that ran.
+    if (picked != null) return;
+    if (!mounted) return;
+
     pushDropdownRoute(
       context,
       _AllCalendarsPickerRoute(
-        anchor: box.localToGlobal(Offset.zero) & box.size,
+        anchor: anchor,
         // The route stays open while the rows are ticked: picking three
         // calendars out of eight is one gesture, not three.
-        onToggle: (id) => ref.read(calendarProvider.notifier).toggleCalendarAnywhere(id),
-        onAll: () => ref.read(calendarProvider.notifier).clearCalendarFilter(),
+        onToggle: (id) => notifier.toggleCalendarAnywhere(id),
+        onAll: () => notifier.clearCalendarFilter(),
       ),
     );
   }
@@ -1011,19 +1078,58 @@ class _CalendarGroupChipState extends ConsumerState<_CalendarGroupChip> {
     return filter == null ? widget.group.ids : filter.intersection(widget.group.ids);
   }
 
-  void _open() {
+  /// This account's calendars, ticked one by one — the same two-hands split as
+  /// [_AllCalendarsChipState._open], and the same reason the rows keep the menu
+  /// open: "show two of these three" is one trip.
+  Future<void> _open() async {
     final box = _anchorKey.currentContext?.findRenderObject() as RenderBox?;
     if (box == null) return;
+    final anchor = box.localToGlobal(Offset.zero) & box.size;
+    final group = widget.group;
+    final notifier = ref.read(calendarProvider.notifier);
+
+    // Read off the provider rather than [_shown], which reads the state this
+    // widget was *built* with: a tick is pushed back to the open menu on the
+    // same turn it happened, a frame before any rebuild, so the widget's own
+    // copy is still the one from before the tap.
+    List<bool> statesOf() {
+      final filter = ref.read(calendarProvider).calendarFilter;
+      final shown = filter == null ? group.ids : filter.intersection(group.ids);
+      return [for (final src in group.calendars) shown.contains(src.id)];
+    }
+
+    final states = statesOf();
+    final picked = await showNativeMenu(
+      anchor: anchor,
+      // The account's name over its calendars, as the panel prints it.
+      title: _groupLabel(ref, group),
+      options: [
+        for (var i = 0; i < group.calendars.length; i++)
+          NativeMenuOption(
+            group.calendars[i].name,
+            color: group.calendars[i].color,
+            selected: states[i],
+            keepsOpen: true,
+          ),
+      ],
+      cancelLabel: L.s.cancel,
+      dark: AppColors.isDark,
+      onKeptOpen: (index) {
+        notifier.toggleCalendarInGroup(group, group.calendars[index].id);
+        updateNativeMenuSelection(statesOf());
+      },
+    );
+    if (picked != null) return;
+    if (!mounted) return;
+
     pushDropdownRoute(
       context,
       _CalendarPickerRoute(
-        anchor: box.localToGlobal(Offset.zero) & box.size,
-        group: widget.group,
+        anchor: anchor,
+        group: group,
         // The route stays open while the rows are ticked — a popup that closed
         // on the first tap would make "show two of these three" two trips.
-        onToggle: (id) => ref
-            .read(calendarProvider.notifier)
-            .toggleCalendarInGroup(widget.group, id),
+        onToggle: (id) => notifier.toggleCalendarInGroup(group, id),
       ),
     );
   }

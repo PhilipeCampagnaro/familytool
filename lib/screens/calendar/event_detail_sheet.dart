@@ -510,42 +510,19 @@ class _EventLocationCardState extends State<_EventLocationCard> {
   /// not Apple Maps as a third: this is the household's *usual* navigation app,
   /// and the system share sheet is not what a two-item choice should feel like.
   ///
-  /// The **system's own** menu, not the app's [showAnchoredMenu] dropdown every
-  /// other menu uses. This one opens from inside a sheet that carries native
-  /// glass buttons, and there a Flutter-painted menu is composited after a
-  /// platform view: on device it opened, took the taps behind it, and never
-  /// appeared — the same layer-dropping trap that ate this sheet's title when
-  /// it still had a frosted header. UIKit puts its own menu above everything,
-  /// so there is no layer left to lose. Both hang off [_rowAnchor], so the
-  /// choice grows out of the row that was tapped either way; off iOS there is
-  /// nothing to present and the dropdown is still the fallback.
+  /// This is the menu that forced [showAnchoredMenu] to learn UIKit's. It opens
+  /// from inside a sheet carrying native glass buttons, and there a
+  /// Flutter-painted panel is composited after a platform view: on device it
+  /// opened, took the taps behind it and never appeared — the same
+  /// layer-dropping trap that ate this sheet's title when it still had a
+  /// frosted header. So on iOS the system presents it above everything, and
+  /// there is no layer left to lose.
   Future<void> _openRouteMenu() async {
     const apps = NavigationApp.values;
-    final picked = await showNativeMenu(
-      title: _query,
-      anchor: anchorRectOf(_rowAnchor),
-      options: [
-        for (final app in apps)
-          NativeMenuOption(
-            app.label,
-            symbol: switch (app) {
-              NavigationApp.waze => 'arrow.triangle.turn.up.right.circle',
-              NavigationApp.googleMaps => 'map',
-            },
-          ),
-      ],
-      cancelLabel: L.s.cancel,
-      dark: AppColors.isDark,
-    );
-    if (picked == nativeMenuCancelled) return;
-    if (picked != null) {
-      await openNavigation(apps[picked], query: _query, latitude: _map?.latitude, longitude: _map?.longitude);
-      return;
-    }
-    if (!mounted) return;
-    showAnchoredMenu(
+    await showAnchoredMenu(
       context: context,
       anchorKey: _rowAnchor,
+      title: _query,
       items: [
         for (final app in apps)
           AnchoredMenuItem(
@@ -553,6 +530,10 @@ class _EventLocationCardState extends State<_EventLocationCard> {
             icon: switch (app) {
               NavigationApp.waze => AppIcons.navigationArrow,
               NavigationApp.googleMaps => AppIcons.mapTrifold,
+            },
+            symbol: switch (app) {
+              NavigationApp.waze => 'location.fill',
+              NavigationApp.googleMaps => 'map',
             },
             onSelected: () => openNavigation(
               app,

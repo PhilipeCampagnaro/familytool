@@ -331,12 +331,23 @@ class ListNotifier extends StateNotifier<ListScreenState> {
   /// the shop logos, the symbol set and the grocery catalog, so "Rewe" arrives
   /// with the REWE logo and "Geburtstag" with a cake.
   ///
-  /// Not optimistic, unlike [addItem]: a list is a container that the very next
-  /// tap navigates into, and navigating into a row with no server id yet would
-  /// mean every article typed there had nowhere to go.
+  /// On screen first and on the server after, like [addItem] — but under the
+  /// **real** id rather than a `tmp:` one, which is what used to rule that out.
+  /// A list is a container the very next tap navigates into, and a row with no
+  /// server id yet would give every article typed there nowhere to go. The id
+  /// was never the server's to give, though: `lists` is inserted with a
+  /// client-side uuid because `insert … returning` cannot pass the SELECT
+  /// policy (see [ListRepository.createList]), so the id the row will have is
+  /// known here, before the write goes out. Navigating in works, and an article
+  /// typed straight away carries a `list_id` that is about to exist.
+  ///
+  /// This is the difference between a list appearing when the sheet closes and
+  /// a list appearing a network round trip later — which on a phone was long
+  /// enough that people tapped "Sichern" a second time.
+  ///
   /// True only when the row really landed on the server — the screen shows its
   /// confirmation chip off that, so a failed write gets the error snack and no
-  /// chip rather than both.
+  /// chip rather than both, and takes the optimistic row back off.
   Future<bool> createList({
     required String name,
     required ListKind kind,
@@ -355,24 +366,64 @@ class ListNotifier extends StateNotifier<ListScreenState> {
     // for the rows inside it — see [suggestIcon]. This is the icon that is
     // actually stored, so it has to agree with the preview the sheet showed.
     final icon = iconKey ?? suggestIcon(trimmed, subject: IconSubject.list)?.key;
+    final id = newUuidV4();
+    final visibility = state.newVisibility;
+    final sharedWith = {...state.newSharedWith};
+    final optimistic = ShoppingList(
+      id: id,
+      name: trimmed,
+      iconKey: icon,
+      kind: kind,
+      familyId: familyId,
+      ownerId: _userId ?? '',
+      visibility: visibility,
+      // `family` and `private` have no member list — the repository drops one
+      // before it writes, so showing one here would be a badge that changes
+      // when the answer comes back.
+      sharedWith: visibility == ListVisibility.custom ? sharedWith.toList() : const [],
+      position: state.lists.length,
+      eventLink: eventLink,
+    );
+    state = state.copyWith(
+      lists: [...state.lists, optimistic],
+      itemsByList: {...state.itemsByList, id: const []},
+    );
+
     try {
       final saved = await _repo.createList(
+        id: id,
         familyId: familyId,
         name: trimmed,
         kind: kind,
         iconKey: icon,
-        visibility: state.newVisibility,
-        sharedWith: state.newSharedWith,
-        position: state.lists.length,
+        visibility: visibility,
+        sharedWith: sharedWith,
+        position: optimistic.position,
         eventLink: eventLink,
       );
       if (!mounted) return false;
+      // Appended rather than replaced when it is gone: a [load] that finished
+      // mid-flight rebuilds `lists` from the server, which cannot yet see the
+      // row being inserted, so the optimistic one is swept away. Swapping it in
+      // place would then quietly drop the list the user just made.
+      final present = state.lists.any((l) => l.id == id);
       state = state.copyWith(
-        lists: [...state.lists, saved],
-        itemsByList: {...state.itemsByList, saved.id: const []},
+        lists: present ? [for (final l in state.lists) l.id == id ? saved : l] : [...state.lists, saved],
+        itemsByList: {...state.itemsByList, id: state.itemsByList[id] ?? const []},
       );
       return true;
     } catch (_) {
+      if (!mounted) return false;
+      final items = Map<String, List<ShoppingListItem>>.from(state.itemsByList)..remove(id);
+      state = state.copyWith(
+        lists: state.lists.where((l) => l.id != id).toList(),
+        itemsByList: items,
+        // The write failed under the user, who may already be inside the list
+        // typing into it. Leaving them on a detail view of a row that no longer
+        // exists is worse than putting them back on the shelf.
+        isDetail: state.openId == id ? false : state.isDetail,
+        openId: state.openId == id ? summaryListId : state.openId,
+      );
       _fail(L.s.listSaveFailed);
       return false;
     }

@@ -10,10 +10,10 @@ import 'glass.dart';
 import '../theme/app_icons.dart';
 
 /// The app's transient feedback pill, in the **one** shape both halves of it
-/// share: a liquid-glass capsule floating clear of the nav bar, a coloured disc
+/// share: a liquid-glass capsule floating clear of the nav bar, a coloured ring
 /// on the left, one line of copy, and — on a delete — the undo action.
 ///
-/// Success and failure differ by the disc's colour and glyph and by nothing
+/// Success and failure differ by the ring's colour and glyph and by nothing
 /// else. They used to be two different objects (a hugging white pill vs. a
 /// full-width grey bar with a red glyph), which read as two unrelated systems
 /// for what is the same event: "the write you just made either landed or it
@@ -24,7 +24,14 @@ import '../theme/app_icons.dart';
 /// that. The chip's own two words — "Rückgängig" and "Wiederhergestellt" —
 /// belong to the widget and are read here, the same way [ErrorNote] reads
 /// "Erneut laden".
-enum ToastKind { confirm, error }
+///
+/// [pending] is the odd one out and the reason the chip can now change while it
+/// is up: it says a write is *in flight*, so it carries a spinner instead of a
+/// mark and no timer at all. It leaves when the caller says it does — by
+/// settling into a [confirm] or an [error] in the same capsule, which is what
+/// makes the tick read as the answer to the spinner rather than as a second,
+/// unrelated chip.
+enum ToastKind { confirm, error, pending }
 
 /// What "Rückgängig" runs. False means the restore failed, and nothing further
 /// is shown here — the notifier has already put the reason on `state.error`,
@@ -66,6 +73,98 @@ void showToast(BuildContext context, String message, {ToastKind kind = ToastKind
     null,
   );
 }
+
+/// One line of chip, with everything the capsule draws.
+///
+/// A record rather than a built widget: swapping the *widget* would tear down
+/// [GlassSurface] and build a second one, and on iOS that is a platform view —
+/// two of them cross-fading in the same place is a flicker, not a transition.
+/// The capsule stays put and only its contents change.
+class _ToastContent {
+  final String message;
+  final ToastKind kind;
+  final UndoRestore? undo;
+  final VoidCallback? onUndo;
+
+  const _ToastContent(this.message, this.kind, {this.undo, this.onUndo});
+}
+
+/// A chip that is on screen **now**, with the write it describes still running.
+///
+/// Handed back by [showPendingChip] so a long write can say where it has got
+/// to. Every method is safe once the chip is gone, and safe when there was no
+/// overlay to put one in — a missing confirmation must never take the write
+/// down with it.
+class PendingChip {
+  PendingChip._(this._handle, this._overlay, this._bottomInset);
+
+  final _ToastHandle _handle;
+  final OverlayState? _overlay;
+  final double _bottomInset;
+
+  /// Rewrites the line without taking the chip down or restarting anything —
+  /// the spinner keeps turning through it. For a write that runs in stages the
+  /// user can name.
+  void step(String message) => _handle.swap(_ToastContent(message, ToastKind.pending));
+
+  /// The write landed: the spinner becomes a tick, the line becomes the past
+  /// tense, and the capsule starts the fade-out an ordinary confirmation gets.
+  void done(String message) {
+    if (!_handle.swap(_ToastContent(message, ToastKind.confirm), stay: _confirmStay)) {
+      // Nothing up any more — the chip was displaced by another one, or never
+      // got an overlay. The confirmation is still owed, so show a fresh one.
+      _show(_overlay, _bottomInset, message, ToastKind.confirm, null);
+      return;
+    }
+    HapticFeedback.lightImpact();
+  }
+
+  /// Same swap, the other answer.
+  void failed(String message) {
+    if (!_handle.swap(_ToastContent(message, ToastKind.error), stay: _errorStay)) {
+      _show(_overlay, _bottomInset, message, ToastKind.error, null);
+    }
+  }
+
+  /// Takes it down with nothing in its place — for a write that ended without
+  /// anything worth saying, such as one the user cancelled.
+  void dismiss() => _handle.dismiss();
+}
+
+/// Puts a chip up and leaves it up. See [PendingChip].
+///
+/// Captures the overlay before the write starts, exactly as [confirmChipOf]
+/// does and for the same reason: the sheet that started it is usually gone by
+/// the time there is anything to report.
+PendingChip showPendingChip(BuildContext context, String message) {
+  final overlay = Overlay.maybeOf(context, rootOverlay: true);
+  final bottomInset = navContentInset(context, pill: 108, gap: 22);
+
+  _current?.dismiss();
+  final handle = _ToastHandle();
+  _current = handle;
+
+  if (overlay != null && overlay.mounted) {
+    handle.insert(
+      overlay,
+      (context) => _ToastLayer(
+        key: handle.key,
+        bottomInset: bottomInset,
+        // No timer: a spinner that times out would leave the user certain the
+        // write had finished, at the one moment it demonstrably hasn't.
+        stay: null,
+        onGone: handle.remove,
+        content: _ToastContent(message, ToastKind.pending),
+      ),
+    );
+  }
+  return PendingChip._(handle, overlay, bottomInset);
+}
+
+/// How long a settled chip stays. Kept beside [_show]'s own figures so the two
+/// ways of getting a confirmation on screen agree.
+const _confirmStay = Duration(milliseconds: 1900);
+const _errorStay = Duration(milliseconds: 4000);
 
 /// The chip that is currently up, if any. Showing a second one takes the first
 /// down rather than stacking them — two capsules in the same place would cover
@@ -110,9 +209,11 @@ void _show(OverlayState? overlay, double bottomInset, String message, ToastKind 
       bottomInset: bottomInset,
       // Long enough to read the failure and to reach for "Rückgängig";
       // a bare confirmation is gone before it can become clutter.
-      stay: Duration(milliseconds: undo != null ? 5000 : (kind == ToastKind.error ? 4000 : 1900)),
+      stay: undo != null
+          ? const Duration(milliseconds: 5000)
+          : (kind == ToastKind.error ? _errorStay : _confirmStay),
       onGone: handle.remove,
-      child: _ToastChip(message: message, kind: kind, undo: undo, onUndo: undo == null ? null : onUndo),
+      content: _ToastContent(message, kind, undo: undo, onUndo: undo == null ? null : onUndo),
     ),
   );
 }
@@ -143,6 +244,18 @@ class _ToastHandle {
     layer.hide();
   }
 
+  /// Changes what the capsule says without taking it down, optionally starting
+  /// the fade-out timer it has been doing without.
+  ///
+  /// False when there was nothing to change — no overlay, or the chip has
+  /// already left or been displaced by a newer one. The caller decides what
+  /// that means; a confirmation still owed puts up a fresh chip instead.
+  bool swap(_ToastContent content, {Duration? stay}) {
+    final layer = key.currentState;
+    if (layer == null) return false;
+    return layer.swap(content, stay: stay);
+  }
+
   void remove() {
     _entry?.remove();
     _entry = null;
@@ -157,16 +270,20 @@ class _ToastHandle {
 /// the strip and everything either side of it stays tappable.
 class _ToastLayer extends StatefulWidget {
   final double bottomInset;
-  final Duration stay;
+
+  /// How long it stays before fading out, or **null** for a chip that waits to
+  /// be told — which is what [ToastKind.pending] is.
+  final Duration? stay;
+
   final VoidCallback onGone;
-  final Widget child;
+  final _ToastContent content;
 
   const _ToastLayer({
     super.key,
     required this.bottomInset,
     required this.stay,
     required this.onGone,
-    required this.child,
+    required this.content,
   });
 
   @override
@@ -187,11 +304,28 @@ class _ToastLayerState extends State<_ToastLayer> with SingleTickerProviderState
   Timer? _timer;
   bool _leaving = false;
 
+  /// What the capsule currently says. Held in the State rather than read off
+  /// the widget because a pending chip changes it while the same overlay entry
+  /// stays on screen.
+  late _ToastContent _content = widget.content;
+
   @override
   void initState() {
     super.initState();
     _controller.forward();
-    _timer = Timer(widget.stay, hide);
+    final stay = widget.stay;
+    if (stay != null) _timer = Timer(stay, hide);
+  }
+
+  /// See [_ToastHandle.swap]. False once the chip is on its way out — there is
+  /// nothing left to rewrite, and reviving it mid-fade would look like a second
+  /// chip appearing.
+  bool swap(_ToastContent content, {Duration? stay}) {
+    if (_leaving || !mounted) return false;
+    setState(() => _content = content);
+    _timer?.cancel();
+    _timer = stay == null ? null : Timer(stay, hide);
+    return true;
   }
 
   /// Runs the entrance backwards and hands the entry back to be removed. Safe
@@ -233,7 +367,28 @@ class _ToastLayerState extends State<_ToastLayer> with SingleTickerProviderState
           child: Semantics(
             liveRegion: true,
             container: true,
-            child: Center(child: widget.child),
+            // **The chip is the one text in the app with no [Material] over
+            // it.** A raw overlay entry has none, and Flutter's fallback for
+            // that case is its debug style: yellow, double-underlined. The
+            // chip's own styles set the size, weight and colour but not the
+            // decoration, so the underline came through under the message, the
+            // undo and every word either carried. Declared once here rather
+            // than on each [Text], so anything the chip grows later inherits
+            // it too.
+            child: DefaultTextStyle(
+              style: AppText.buttonSmall.copyWith(decoration: TextDecoration.none),
+              // The capsule hugs its text, and a pending chip's text changes
+              // under it — "Termin wird in Familie angelegt" is not the width
+              // of "Termin erstellt". Animated so the glass grows and shrinks
+              // into place instead of stepping between two sizes.
+              child: Center(
+                child: AnimatedSize(
+                  duration: const Duration(milliseconds: 220),
+                  curve: Curves.easeOutCubic,
+                  child: _ToastChip(content: _content),
+                ),
+              ),
+            ),
           ),
         ),
       ),
@@ -242,16 +397,18 @@ class _ToastLayerState extends State<_ToastLayer> with SingleTickerProviderState
 }
 
 class _ToastChip extends StatelessWidget {
-  final String message;
-  final ToastKind kind;
-  final UndoRestore? undo;
-  final VoidCallback? onUndo;
+  final _ToastContent content;
 
-  const _ToastChip({required this.message, required this.kind, this.undo, this.onUndo});
+  const _ToastChip({required this.content});
+
+  String get message => content.message;
+  ToastKind get kind => content.kind;
+  UndoRestore? get undo => content.undo;
 
   @override
   Widget build(BuildContext context) {
     final accent = Theme.of(context).colorScheme.primary;
+    final mark = kind == ToastKind.error ? AppColors.danger : AppColors.success;
     return GlassSurface(
       // A capsule, like every other floating glass control — it's also what the
       // native effect view renders anyway (`cornerConfiguration = .capsule()`).
@@ -272,21 +429,46 @@ class _ToastChip extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // A filled disc rather than a bare glyph: at this size the icon
-            // alone gets lost against the material, and the colour reads before
-            // the text does. Colour and glyph are the *only* thing that
-            // separates a confirmation from a failure.
-            Container(
+            // A ring rather than a bare glyph: at this size the icon alone
+            // gets lost against the material, and the colour reads before the
+            // text does. Outlined rather than filled, on a wash of its own
+            // colour — the same mark the confirmation sheet draws, so the
+            // capsule and the sheet are recognisably one family instead of a
+            // solid dot and a drawn circle saying the same thing two ways.
+            // Colour and glyph are the *only* thing that separates a
+            // confirmation from a failure.
+            //
+            // While the write is still out there the slot holds a spinner
+            // instead — the same 20 points, so the capsule doesn't jump when
+            // the answer arrives and the tick takes the turning ring's place.
+            // Cross-faded rather than swapped outright, which is what makes
+            // the two read as one chip answering itself.
+            SizedBox(
               width: 20,
               height: 20,
-              decoration: BoxDecoration(
-                color: kind == ToastKind.confirm ? AppColors.success : AppColors.danger,
-                shape: BoxShape.circle,
-              ),
-              child: AppIcon(
-                kind == ToastKind.confirm ? AppIcons.check : AppIcons.x,
-                size: 13,
-                color: Colors.white,
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
+                child: kind == ToastKind.pending
+                    ? SizedBox(
+                        key: const ValueKey('pending'),
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 1.8, color: accent),
+                      )
+                    : Container(
+                        key: ValueKey(kind),
+                        decoration: BoxDecoration(
+                          color: mark.withValues(alpha: 0.12),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: mark, width: 1.5),
+                        ),
+                        alignment: Alignment.center,
+                        child: AppIcon(
+                          kind == ToastKind.confirm ? AppIcons.check : AppIcons.x,
+                          size: 11,
+                          color: mark,
+                        ),
+                      ),
               ),
             ),
             const SizedBox(width: 9),
@@ -300,7 +482,7 @@ class _ToastChip extends StatelessWidget {
               const SizedBox(width: 4),
               GestureDetector(
                 behavior: HitTestBehavior.opaque,
-                onTap: onUndo,
+                onTap: content.onUndo,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   child: Text(L.s.undo, style: AppText.buttonSmall.copyWith(color: accent)),

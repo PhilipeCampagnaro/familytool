@@ -107,36 +107,38 @@ class BoxRepository {
   /// starting snapshot — in which the row being inserted does not exist — and
   /// `insert … returning` comes back as `42501 new row violates row-level
   /// security policy`, a visibility problem wearing a permission problem's
-  /// error. Hence the client-side id and the separate read-back.
+  /// error. Hence the client-side id — and, as there, no read-back: the draft
+  /// already holds every column the shelf draws.
   Future<StorageBox> createBox({
     required String familyId,
     required String name,
+    String? id,
     String place = '',
     String? iconKey,
     ItemVisibility visibility = ItemVisibility.family,
     Set<String> sharedWith = const {},
     int position = 0,
   }) async {
-    final id = newUuidV4();
+    final boxId = id ?? newUuidV4();
     final ownerId = _uid;
+    final members = _effectiveShares(visibility, sharedWith, ownerId);
     final draft = StorageBox(
-      id: id,
+      id: boxId,
       name: name,
       place: place,
       iconKey: iconKey,
       familyId: familyId,
       ownerId: ownerId,
       visibility: visibility,
+      sharedWith: members.toList(),
       position: position,
     );
 
-    await _db.from('boxes').insert({...draft.toMap(forInsert: true), 'id': id});
+    await _db.from('boxes').insert({...draft.toMap(forInsert: true), 'id': boxId});
 
-    final members = _effectiveShares(visibility, sharedWith, ownerId);
-    if (members.isNotEmpty) await _writeShares(id, familyId, members);
+    if (members.isNotEmpty) await _writeShares(boxId, familyId, members);
 
-    final row = await _db.from('boxes').select(_boxColumns).eq('id', id).single();
-    return StorageBox.fromMap(row, sharedWith: members.toList());
+    return draft;
   }
 
   /// Renames / re-symbols / moves a box, and rewrites its share rows.

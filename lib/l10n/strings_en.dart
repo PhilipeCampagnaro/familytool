@@ -673,6 +673,12 @@ class StringsEn extends AppStrings {
   @override
   String get eventDeleteFailed => 'The event couldn\'t be deleted.';
   @override
+  String eventBeingCreatedIn(String calendar) => 'Adding event to $calendar …';
+  @override
+  String get eventBeingCreated => 'Adding event …';
+  @override
+  String get calendarsUpdating => 'Updating calendars …';
+  @override
   String get eventCreated => 'Event created';
   @override
   String get eventUpdated => 'Event updated';
@@ -1492,4 +1498,8 @@ class StringsEn extends AppStrings {
   String get confirmLabChipError => 'Failure';
   @override
   String get confirmLabChipErrorHint => 'Red dot, no haptic, 4 seconds.';
+  @override
+  String get confirmLabChipPending => 'In flight';
+  @override
+  String get confirmLabChipPendingHint => 'Spinner, no timer, settles into the tick.';
 }

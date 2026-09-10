@@ -676,6 +676,12 @@ class StringsDe extends AppStrings {
   @override
   String get eventDeleteFailed => 'Der Termin konnte nicht gelöscht werden.';
   @override
+  String eventBeingCreatedIn(String calendar) => 'Termin wird in $calendar angelegt …';
+  @override
+  String get eventBeingCreated => 'Termin wird angelegt …';
+  @override
+  String get calendarsUpdating => 'Kalender werden aktualisiert …';
+  @override
   String get eventCreated => 'Termin erstellt';
   @override
   String get eventUpdated => 'Termin aktualisiert';
@@ -1500,4 +1506,8 @@ class StringsDe extends AppStrings {
   String get confirmLabChipError => 'Fehler';
   @override
   String get confirmLabChipErrorHint => 'Roter Punkt, kein Haptik-Feedback, 4 Sekunden.';
+  @override
+  String get confirmLabChipPending => 'Läuft noch';
+  @override
+  String get confirmLabChipPendingHint => 'Spinner, kein Timer, wird danach zum Haken.';
 }

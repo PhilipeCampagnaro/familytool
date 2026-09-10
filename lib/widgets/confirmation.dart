@@ -18,8 +18,8 @@ const celebrationEmoji = '🎉';
 
 /// The mark a confirmation opens with.
 enum ConfirmationMark {
-  /// The accent disc and its expanding ring — the everyday "that worked", for
-  /// something the family will do again next week.
+  /// The accent ring and the check drawn inside it — the everyday "that
+  /// worked", for something the family will do again next week.
   check,
 
   /// 🎉 and falling confetti, for the handful of moments that only happen once:
@@ -27,6 +27,21 @@ enum ConfirmationMark {
   /// confetti on every write is confetti nobody sees.
   celebration,
 }
+
+/// How long a [ConfirmationMark.check] beat stays up before it takes its sheet
+/// with it. The mark takes ~620ms to draw itself, and at the 1.1s this used to
+/// be, the sheet started leaving as the check was landing — so the one thing
+/// the confirmation says was read over a moving card. This leaves a clear
+/// second and a half of finished mark to read it in, without turning a
+/// confirmation into something you wait out. A [ConfirmationMark.celebration]
+/// passes its own, longer span: its confetti has to reach the floor.
+const confirmationBeat = Duration(milliseconds: 2500);
+
+/// The drawn check's box, and the pen it is drawn with. One size: the mark is
+/// the same object on a beat, on a sheet and on a full page, and a mark that
+/// changed size between them would read as a different mark.
+const double _markSize = 76;
+const double _markStroke = 4;
 
 /// How the way out is drawn: the bordered [OutlinedSheetAction] a sheet ends
 /// with, or the accent glass pill a **full screen** ends with — a filled pill
@@ -68,9 +83,6 @@ class ConfirmationView extends StatefulWidget {
 
   final ConfirmationMark mark;
 
-  /// Only read for [ConfirmationMark.check].
-  final IconData icon;
-
   /// Non-null makes this a beat that plays and leaves; null makes it a screen
   /// that waits. Measured from the moment it appears.
   final Duration? dismissAfter;
@@ -90,7 +102,6 @@ class ConfirmationView extends StatefulWidget {
     this.message,
     this.content = const [],
     this.mark = ConfirmationMark.check,
-    this.icon = AppIcons.check,
     this.dismissAfter,
     this.onDone,
     this.action = ConfirmationAction.sheetAction,
@@ -101,22 +112,33 @@ class ConfirmationView extends StatefulWidget {
   State<ConfirmationView> createState() => _ConfirmationViewState();
 }
 
-/// The intro: the ring pops out from under the mark rather than the mark
-/// bouncing, which keeps the motion in the same ease-out language as the rest
-/// of the app.
+/// The intro: the ring closes and the check is drawn inside it, one stroke
+/// after the other, in the same ease-out language as the rest of the app.
+///
+/// The whole thing is over in ~620ms because the shortest surface it plays on
+/// is a 1.1s beat — the mark has to finish being drawn well before the sheet
+/// starts leaving, or the user sees half a check slide off the screen.
 class _ConfirmationViewState extends State<ConfirmationView> with SingleTickerProviderStateMixin {
   late final AnimationController _controller = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 660),
+    duration: const Duration(milliseconds: 680),
   )..forward();
 
+  /// Only the emoji bounces in; a mark that is *being drawn* must not also be
+  /// growing, or the stroke lands somewhere other than where it started.
   late final CurvedAnimation _pop = CurvedAnimation(
     parent: _controller,
     curve: const Interval(0, 0.5, curve: Curves.easeOutBack),
   );
   late final CurvedAnimation _ring = CurvedAnimation(
     parent: _controller,
-    curve: const Interval(0.17, 0.92, curve: Curves.easeOutCubic),
+    curve: const Interval(0, 0.6, curve: Curves.easeOutCubic),
+  );
+  /// Starts before the ring has closed, the way a hand would: the two strokes
+  /// overlap, so it reads as one gesture rather than two animations queued up.
+  late final CurvedAnimation _tick = CurvedAnimation(
+    parent: _controller,
+    curve: const Interval(0.34, 0.9, curve: Curves.easeOutCubic),
   );
   late final CurvedAnimation _text = CurvedAnimation(
     parent: _controller,
@@ -165,57 +187,42 @@ class _ConfirmationViewState extends State<ConfirmationView> with SingleTickerPr
     _dismiss?.cancel();
     _pop.dispose();
     _ring.dispose();
+    _tick.dispose();
     _text.dispose();
     _controller.dispose();
     super.dispose();
   }
 
   Widget _mark(Color accent) {
-    return SizedBox(
-      width: 130,
-      height: 130,
-      child: AnimatedBuilder(
-        animation: _controller,
-        builder: (context, _) => Stack(
-          alignment: Alignment.center,
-          children: [
-            // No ring behind the emoji: the confetti is already the motion
-            // around it, and two expanding things read as a glitch.
-            if (widget.mark == ConfirmationMark.check)
-              Opacity(
-                opacity: (1 - _ring.value).clamp(0.0, 1.0) * 0.35,
-                child: Container(
-                  width: 78 + 52 * _ring.value,
-                  height: 78 + 52 * _ring.value,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: accent, width: 2),
-                  ),
-                ),
-              ),
-            Transform.scale(
-              scale: _pop.value,
-              child: switch (widget.mark) {
-                ConfirmationMark.check => Container(
-                  width: 78,
-                  height: 78,
-                  decoration: BoxDecoration(
-                    color: accent,
-                    shape: BoxShape.circle,
-                    boxShadow: AppShadows.accentGlass(accent),
-                  ),
-                  alignment: Alignment.center,
-                  child: AppIcon(widget.icon, size: 38, color: Colors.white),
-                ),
-                // The emoji itself, at the disc's size — the party popper is
-                // the illustration, so it doesn't need a plate under it.
-                ConfirmationMark.celebration => const Text(celebrationEmoji, style: TextStyle(fontSize: 68)),
-              },
-            ),
-          ],
+    return switch (widget.mark) {
+      // Sized to the drawing and nothing else. It used to be a 130pt box
+      // holding a 78pt disc, because a ring expanded out of it and needed the
+      // room; the ring is the mark now, so the empty half of that box was pure
+      // height in a sheet that is mostly white space already.
+      ConfirmationMark.check => SizedBox(
+        width: _markSize,
+        height: _markSize,
+        child: AnimatedBuilder(
+          animation: _controller,
+          builder: (context, _) => CustomPaint(
+            painter: _DrawnCheckPainter(ring: _ring.value, tick: _tick.value, color: accent),
+          ),
         ),
       ),
-    );
+      // The emoji itself, at close to the ring's size — the party popper is
+      // the illustration, so it doesn't need a plate under it, and it keeps
+      // the bounce the drawn check gave up.
+      ConfirmationMark.celebration => SizedBox(
+        width: 96,
+        height: 96,
+        child: Center(
+          child: ScaleTransition(
+            scale: _pop,
+            child: const Text(celebrationEmoji, style: TextStyle(fontSize: 68)),
+          ),
+        ),
+      ),
+    };
   }
 
   @override
@@ -226,9 +233,9 @@ class _ConfirmationViewState extends State<ConfirmationView> with SingleTickerPr
     final body = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SizedBox(height: waits ? 8 : 30),
+        SizedBox(height: waits ? 8 : 20),
         Center(child: _mark(accent)),
-        const SizedBox(height: 22),
+        const SizedBox(height: 18),
         FadeTransition(
           opacity: _text,
           child: Column(
@@ -275,7 +282,7 @@ class _ConfirmationViewState extends State<ConfirmationView> with SingleTickerPr
             ],
           ),
         ),
-        SizedBox(height: waits ? 8 : 30),
+        SizedBox(height: waits ? 8 : 20),
       ],
     );
 
@@ -290,6 +297,74 @@ class _ConfirmationViewState extends State<ConfirmationView> with SingleTickerPr
       ],
     );
   }
+}
+
+/// The everyday mark, **drawn rather than stamped**: the ring closes from
+/// twelve o'clock and the check is put down inside it, one stroke, left to
+/// right. It is the gesture Apple Pay and PayPal end on, and it is doing a job
+/// the old mark wasn't — a filled disc with a glyph in it is *already there*
+/// when the sheet opens, so the only motion left was a halo expanding around
+/// something that never happened. Here the mark is the event.
+///
+/// Outlined, in the accent, on a wash of the same colour at 8%: enough body to
+/// hold the middle of a white sheet without going back to a solid disc, and it
+/// survives the dark palette unchanged because both are the one colour.
+///
+/// A [CustomPainter] rather than [AppIcon]: the check has to be a *path* with a
+/// length to walk along, and a font glyph has neither.
+class _DrawnCheckPainter extends CustomPainter {
+  /// 0 → 1 as the circle closes.
+  final double ring;
+
+  /// 0 → 1 as the check is drawn along its own length.
+  final double tick;
+
+  final Color color;
+
+  const _DrawnCheckPainter({required this.ring, required this.tick, required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = (Offset.zero & size).center;
+    // Inset by half the pen, or the ring is drawn half outside its own box.
+    final radius = (math.min(size.width, size.height) - _markStroke) / 2;
+
+    canvas.drawCircle(center, radius, Paint()..color = color.withValues(alpha: 0.08 * ring));
+
+    final pen = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = _markStroke
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    if (ring > 0) {
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius),
+        -math.pi / 2,
+        math.pi * 2 * ring,
+        false,
+        pen,
+      );
+    }
+
+    if (tick <= 0) return;
+    // The check in fractions of the ring's own diameter, so the two stay in
+    // proportion if the mark is ever resized.
+    final d = radius * 2;
+    final origin = center - Offset(radius, radius);
+    final path = Path()
+      ..moveTo(origin.dx + d * 0.27, origin.dy + d * 0.51)
+      ..lineTo(origin.dx + d * 0.43, origin.dy + d * 0.68)
+      ..lineTo(origin.dx + d * 0.75, origin.dy + d * 0.33);
+    // One contour, so one metric: the length to walk is the whole check.
+    final metric = path.computeMetrics().first;
+    canvas.drawPath(metric.extractPath(0, metric.length * tick), pen);
+  }
+
+  @override
+  bool shouldRepaint(covariant _DrawnCheckPainter old) =>
+      old.ring != ring || old.tick != tick || old.color != color;
 }
 
 /// The light a [ConfirmationMark.celebration] spills in from the top edge, in
@@ -391,20 +466,22 @@ Future<void> showConfirmationSheet({
   String? message,
   List<Widget> content = const [],
   ConfirmationMark mark = ConfirmationMark.check,
-  IconData icon = AppIcons.check,
   Duration? dismissAfter,
   String? doneLabel,
 }) {
   return showAppSheet<void>(
     context: context,
     header: SheetPickerHeader(title: title),
-    heightFactor: 0.6,
+    // A sheet is a fixed fraction of the screen whatever is in it, so this is
+    // the confirmation's height: a mark, two lines and the room to breathe
+    // around them. At 0.6 the card came up past half the display with the
+    // bottom third of it empty.
+    heightFactor: 0.44,
     child: ConfirmationView(
       headline: headline,
       message: message,
       content: content,
       mark: mark,
-      icon: icon,
       dismissAfter: dismissAfter,
       doneLabel: doneLabel,
     ),

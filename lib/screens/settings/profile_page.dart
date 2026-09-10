@@ -79,17 +79,20 @@ class ProfilePageState extends ConsumerState<ProfilePage> {
         AnchoredMenuItem(
           label: L.s.photo,
           icon: AppIcons.image,
+          symbol: 'photo.on.rectangle',
           onSelected: () => _pickAvatar(AttachmentSource.photos),
         ),
         AnchoredMenuItem(
           label: L.s.camera,
           icon: AppIcons.camera,
+          symbol: 'camera',
           onSelected: () => _pickAvatar(AttachmentSource.camera),
         ),
         if (me?.avatarPath != null || _uploading != null)
           AnchoredMenuItem(
             label: L.s.removePhoto,
             icon: AppIcons.trash,
+            symbol: 'trash',
             destructive: true,
             onSelected: () {
               setState(() => _uploading = null);

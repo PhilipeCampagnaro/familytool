@@ -85,10 +85,11 @@ class TrackerDetailView extends ConsumerWidget {
         // and a rhythm a household keeps is not a thing to hand to an outsider.
         trailing: GlassMenuButton(
           items: [
-            AnchoredMenuItem(label: L.s.edit, icon: AppIcons.pencilSimple, onSelected: onEdit),
+            AnchoredMenuItem(label: L.s.edit, icon: AppIcons.pencilSimple, symbol: 'pencil', onSelected: onEdit),
             AnchoredMenuItem(
               label: L.s.delete,
               icon: AppIcons.trash,
+              symbol: 'trash',
               destructive: true,
               onSelected: () async {
                 // Captured before the write: this menu lives on the screen the

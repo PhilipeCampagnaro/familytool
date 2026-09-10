@@ -47,14 +47,14 @@ class ConfirmationLab extends StatelessWidget {
   }
 
   /// The same beat with nothing in front of it — for judging the mark, the
-  /// ring and the 1.1 seconds on their own.
+  /// drawing and [confirmationBeat] on their own.
   void _beat(BuildContext context) {
     showConfirmationSheet(
       context: context,
       title: L.s.newList,
       headline: L.s.listCreated,
       message: L.s.confirmLabSampleName,
-      dismissAfter: const Duration(milliseconds: 1100),
+      dismissAfter: confirmationBeat,
     );
   }
 
@@ -167,6 +167,22 @@ class ConfirmationLab extends StatelessWidget {
               title: L.s.confirmLabChipError,
               subtitle: L.s.confirmLabChipErrorHint,
               onTap: () => showToast(context, L.s.somethingWentWrong, kind: ToastKind.error),
+            ),
+            SettingsRow(
+              icon: AppIcons.clock,
+              title: L.s.confirmLabChipPending,
+              subtitle: L.s.confirmLabChipPendingHint,
+              // The one chip state that is otherwise only visible during a real
+              // write to Google — two seconds of spinner, a line that changes
+              // under it, then the tick. Faked here because the alternative is
+              // reviewing it by creating appointments in somebody's calendar.
+              onTap: () async {
+                final chip = showPendingChip(context, L.s.eventBeingCreatedIn('Familie'));
+                await Future<void>.delayed(const Duration(milliseconds: 1200));
+                chip.step(L.s.calendarsUpdating);
+                await Future<void>.delayed(const Duration(milliseconds: 1200));
+                chip.done(L.s.eventCreated);
+              },
             ),
           ]),
         ),

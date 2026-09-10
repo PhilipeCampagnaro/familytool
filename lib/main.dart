@@ -15,9 +15,11 @@ import 'state/auth_state.dart';
 import 'state/family_state.dart';
 import 'state/nav_state.dart';
 import 'state/settings_state.dart';
+import 'theme/app_icons.dart';
 import 'theme/app_theme.dart';
 import 'theme/tokens.dart';
 import 'widgets/bottom_nav.dart';
+import 'widgets/empty_state.dart';
 import 'widgets/native_tab_bar.dart';
 
 Future<void> main() async {
@@ -131,9 +133,54 @@ class _RootGate extends ConsumerWidget {
 
     final family = ref.watch(familyProvider);
     if (!family.loaded) return Scaffold(backgroundColor: AppColors.surface);
+    if (family.household == null) return _NoHousehold();
 
     if (family.household?.onboardingDone == false) return OnboardingScreen();
     return AppShell();
+  }
+}
+
+/// The last gate's failure, which until now had nowhere to appear.
+///
+/// `FamilyState` has carried an `error` for this all along and nothing drew
+/// it, so a household that did not come back fell through to the shell and
+/// rendered a plausible-looking empty family — the one thing
+/// `HouseholdNotifier` says in its own comments that it refuses to do. Now it
+/// says so instead, and offers the only move that helps.
+///
+/// Reloading invalidates the provider rather than calling `load()` again: a
+/// fresh notifier starts from `loaded: false`, so the gate goes back to its
+/// bare surface for the length of one attempt and this screen returns if that
+/// attempt fails too. Calling `load()` would leave the failure on screen with
+/// nothing visibly happening behind it.
+class _NoHousehold extends ConsumerWidget {
+  const _NoHousehold();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final error = ref.watch(familyProvider.select((s) => s.error));
+    return Scaffold(
+      backgroundColor: AppColors.surface,
+      body: SafeArea(
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              EmptyState(
+                icon: AppIcons.warning,
+                message: error ?? L.s.householdLoadFailed,
+                verticalPadding: 0,
+              ),
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: () => ref.invalidate(familyProvider),
+                child: Text(L.s.reload),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 

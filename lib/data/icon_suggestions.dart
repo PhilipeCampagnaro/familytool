@@ -4,8 +4,9 @@
 /// It is a pure function over three local catalogs, in this order:
 ///
 /// 1. **A shop logo** (`assets/merchants/`, named by `merchant_logos.dart`).
-///    A logo beats everything else: typing *Rewe* means the shop, not the
-///    generic cart, and a household names half its lists after a store.
+///    For a *list*, a logo beats everything else: typing *Rewe* means the shop,
+///    not the generic cart, and a household names half its lists after a store.
+///    An article never takes one — see [IconSubject].
 /// 2. **A Lucide symbol** ([symbolGroups] below) — the topics a household
 ///    actually names things after: Geburtstag, Baumarkt, Umzug, Keller.
 /// 3. **A grocery picture** (`assets/grocery/`, via [matchGroceryIcon]) —
@@ -52,7 +53,10 @@ const symbolIconPrefix = 'lucide:';
 ///   box look like the one thing in it.
 /// * A **[list]** is a container too, but one a household routinely names after
 ///   a shop ("Rewe", "dm"), so the logos stay and only the article photos go.
-/// * An **[article]** is a single thing, so it may be a single picture. On a
+/// * An **[article]** is a single thing, so it may be a single picture — but
+///   never a shop logo. A logo names a *place you go*, which is what a list is
+///   for; a line on that list is the thing you bring home, so "Rewe" typed as
+///   an article is a word the shop happens to share and not the shop. On a
 ///   Lebensmittel list it is a food name outright — [groceryArticle] hands the
 ///   photo catalog the first look, ahead of the symbols.
 ///
@@ -72,8 +76,9 @@ enum IconSubject {
   /// A box.
   box;
 
-  /// Shop logos are for what you buy and where — never for a box.
-  bool get allowsMerchants => this != IconSubject.box;
+  /// Shop logos say *where* — so they belong to a list, and to nothing else.
+  /// Neither a box nor a single article is a place.
+  bool get allowsMerchants => this == IconSubject.list;
 
   /// A photograph of one article only ever stands for one article.
   bool get allowsGroceries => this == IconSubject.article || this == IconSubject.groceryArticle;
@@ -453,15 +458,17 @@ IconChoice? suggestIcon(String text, {IconSubject subject = IconSubject.article}
   // A food name outright, so the photos come before the symbols and are allowed
   // their loosest matches.
   if (subject == IconSubject.groceryArticle) {
-    return _match(_merchantIndex, text) ?? _groceryChoice(text, strict: false) ?? _match(_symbolIndex, text);
+    return _groceryChoice(text, strict: false) ?? _match(_symbolIndex, text);
   }
 
   // The *whole* line only, not its words: "Rewe Einkauf" is the shop, and
   // splitting here would hand it to the cart before the logos get a look.
   final exact = _best(_symbolIndex, foldItemText(text), 0);
   if (exact != null) return exact;
-  final merchant = _match(_merchantIndex, text);
-  if (merchant != null) return merchant;
+  if (subject.allowsMerchants) {
+    final merchant = _match(_merchantIndex, text);
+    if (merchant != null) return merchant;
+  }
   return _match(_symbolIndex, text) ?? (subject.allowsGroceries ? _groceryChoice(text, strict: true) : null);
 }
 

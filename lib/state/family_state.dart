@@ -345,6 +345,18 @@ class HouseholdNotifier extends StateNotifier<FamilyState> {
 
   final String? _userId;
 
+  /// How long the gate waits for the household before it gives up and says so.
+  ///
+  /// Without it a backend that takes the connection and never answers leaves
+  /// `loaded` false for good, and `_RootGate` goes on painting the bare
+  /// surface it shows while it is still deciding — a white screen with no
+  /// message and nothing to press. That is exactly what an auth service
+  /// answering 504 to the token refresh produces, because the Supabase client
+  /// then aborts every query behind it rather than failing one: a load that
+  /// neither returns nor throws. A failure the user can see and can press
+  /// again is the least bad of the three.
+  static const _deadline = Duration(seconds: 20);
+
   Future<void> load() async {
     final uid = _userId;
     if (uid == null) {
@@ -352,113 +364,126 @@ class HouseholdNotifier extends StateNotifier<FamilyState> {
       return;
     }
 
+    String? familyId;
     try {
-      final db = AporahSupabase.client;
-
-      // Which household am I in, and as what?
-      final membership = await db
-          .from('family_members')
-          .select('family_id, role')
-          .eq('user_id', uid)
-          .maybeSingle();
-
-      if (membership == null) {
-        // Should be unreachable: handle_new_user gives every user a household
-        // in the same transaction as the user row. If it ever happens, say so
-        // rather than rendering a plausible-looking empty family.
-        state = FamilyState(
-          loaded: true,
-          error: L.s.noHouseholdForAccount,
-        );
-        return;
-      }
-
-      final familyId = membership['family_id'] as String;
-
-      // Neither of these knows about the other, so they go together. This chain
-      // is what every screen waits behind — nothing else loads until the
-      // household has answered — so a round trip saved here is a round trip
-      // saved on all four tabs at once.
-      final head = await Future.wait<Object?>([
-        db.from('families').select('id, name, address, onboarding_done, avatar_url').eq('id', familyId).maybeSingle(),
-        db.from('family_members').select('user_id, role').eq('family_id', familyId),
-      ]);
-      final familyRow = head[0] as Map<String, dynamic>?;
-      final memberRows = head[1]! as List<dynamic>;
-
-      // family_members.user_id references auth.users, not profiles, so there
-      // is no foreign key for PostgREST to embed across — the profiles come as
-      // their own query.
-      final ids = [for (final r in memberRows) r['user_id'] as String];
-      final profileRows = ids.isEmpty
-          ? const <Map<String, dynamic>>[]
-          : await db
-                .from('profiles')
-                .select('id, display_name, initials, tone, avatar_url')
-                .inFilter('id', ids);
-
-      final profiles = {for (final p in profileRows) p['id'] as String: p};
-      final familyAvatarPath = familyRow?['avatar_url'] as String?;
-
-      final members = <HouseholdMember>[
-        for (final r in memberRows)
-          () {
-            final id = r['user_id'] as String;
-            final p = profiles[id];
-            return HouseholdMember(
-              userId: id,
-              name: (p?['display_name'] as String?) ?? L.s.unknown,
-              initials: (p?['initials'] as String?) ?? '?',
-              tone: (p?['tone'] as num?)?.toInt() ?? 0,
-              avatarPath: p?['avatar_url'] as String?,
-              role: _roleFrom(r['role'] as String),
-            );
-          }(),
-      ];
-
-      // Me first, then the rest by name — the roster is rendered as an avatar
-      // row and "you" belongs at its head.
-      members.sort((a, b) {
-        if (a.userId == uid) return -1;
-        if (b.userId == uid) return 1;
-        return a.name.toLowerCase().compareTo(b.name.toLowerCase());
-      });
-
-      if (!mounted) return;
-      // **Published here, with two things still missing on purpose.** This is
-      // the gate `_RootGate` is waiting on, and behind it are the four screens'
-      // own loads — so anything that can arrive a moment later must not be in
-      // front of it. The faces come back from a signing round trip and the
-      // pending invitations from a query only an admin can even run; a circle
-      // shows its initials until its picture lands, which is exactly what it
-      // shows for good for a member who has no picture.
-      state = FamilyState(
-        household: familyRow == null
-            ? null
-            : Household(
-                id: familyRow['id'] as String,
-                name: familyRow['name'] as String,
-                address: familyRow['address'] as String?,
-                onboardingDone: familyRow['onboarding_done'] as bool? ?? false,
-                avatarPath: familyAvatarPath,
-              ),
-        members: members,
-        loaded: true,
-      );
-
-      // Deliberately inside its own guard: the household is already on screen
-      // by now, and a face that would not sign must not turn a load that
-      // worked into "Haushalt konnte nicht geladen werden".
-      try {
-        await _loadFacesAndInvites(familyId);
-      } catch (_) {}
+      familyId = await _household(uid).timeout(_deadline);
     } catch (_) {
       if (!mounted) return;
       state = state.copyWith(
         loaded: true,
         error: L.s.householdLoadFailed,
       );
+      return;
     }
+    if (familyId == null || !mounted) return;
+
+    // Deliberately outside the deadline above: the household is already on
+    // screen by now, and a face that would not sign must not turn a load that
+    // worked into "Haushalt konnte nicht geladen werden".
+    try {
+      await _loadFacesAndInvites(familyId);
+    } catch (_) {}
+  }
+
+  /// The part of the load the gate waits behind, and the only part the
+  /// deadline covers. Answers the family id when it published a household,
+  /// and null when it published something else and there is nothing to follow
+  /// up on.
+  Future<String?> _household(String uid) async {
+    final db = AporahSupabase.client;
+
+    // Which household am I in, and as what?
+    final membership = await db
+        .from('family_members')
+        .select('family_id, role')
+        .eq('user_id', uid)
+        .maybeSingle();
+
+    if (membership == null) {
+      // Should be unreachable: handle_new_user gives every user a household
+      // in the same transaction as the user row. If it ever happens, say so
+      // rather than rendering a plausible-looking empty family.
+      state = FamilyState(
+        loaded: true,
+        error: L.s.noHouseholdForAccount,
+      );
+      return null;
+    }
+
+    final familyId = membership['family_id'] as String;
+
+    // Neither of these knows about the other, so they go together. This chain
+    // is what every screen waits behind — nothing else loads until the
+    // household has answered — so a round trip saved here is a round trip
+    // saved on all four tabs at once.
+    final head = await Future.wait<Object?>([
+      db.from('families').select('id, name, address, onboarding_done, avatar_url').eq('id', familyId).maybeSingle(),
+      db.from('family_members').select('user_id, role').eq('family_id', familyId),
+    ]);
+    final familyRow = head[0] as Map<String, dynamic>?;
+    final memberRows = head[1]! as List<dynamic>;
+
+    // family_members.user_id references auth.users, not profiles, so there
+    // is no foreign key for PostgREST to embed across — the profiles come as
+    // their own query.
+    final ids = [for (final r in memberRows) r['user_id'] as String];
+    final profileRows = ids.isEmpty
+        ? const <Map<String, dynamic>>[]
+        : await db
+              .from('profiles')
+              .select('id, display_name, initials, tone, avatar_url')
+              .inFilter('id', ids);
+
+    final profiles = {for (final p in profileRows) p['id'] as String: p};
+    final familyAvatarPath = familyRow?['avatar_url'] as String?;
+
+    final members = <HouseholdMember>[
+      for (final r in memberRows)
+        () {
+          final id = r['user_id'] as String;
+          final p = profiles[id];
+          return HouseholdMember(
+            userId: id,
+            name: (p?['display_name'] as String?) ?? L.s.unknown,
+            initials: (p?['initials'] as String?) ?? '?',
+            tone: (p?['tone'] as num?)?.toInt() ?? 0,
+            avatarPath: p?['avatar_url'] as String?,
+            role: _roleFrom(r['role'] as String),
+          );
+        }(),
+    ];
+
+    // Me first, then the rest by name — the roster is rendered as an avatar
+    // row and "you" belongs at its head.
+    members.sort((a, b) {
+      if (a.userId == uid) return -1;
+      if (b.userId == uid) return 1;
+      return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+    });
+
+    if (!mounted) return null;
+    // **Published here, with two things still missing on purpose.** This is
+    // the gate `_RootGate` is waiting on, and behind it are the four screens'
+    // own loads — so anything that can arrive a moment later must not be in
+    // front of it. The faces come back from a signing round trip and the
+    // pending invitations from a query only an admin can even run; a circle
+    // shows its initials until its picture lands, which is exactly what it
+    // shows for good for a member who has no picture.
+    state = FamilyState(
+      household: familyRow == null
+          ? null
+          : Household(
+              id: familyRow['id'] as String,
+              name: familyRow['name'] as String,
+              address: familyRow['address'] as String?,
+              onboardingDone: familyRow['onboarding_done'] as bool? ?? false,
+              avatarPath: familyAvatarPath,
+            ),
+      members: members,
+      loaded: true,
+    );
+
+    return familyId;
   }
 
   /// The two things the household can be rendered without: the signed avatar

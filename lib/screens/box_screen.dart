@@ -101,6 +101,7 @@ class _BoxOverview extends ConsumerWidget {
                   ...dividedRows([
                     for (final box in state.boxes)
                       SwipeToEditDelete(
+                        identity: box.id,
                         onTap: () => ref.read(boxProvider.notifier).open(box.id),
                         onEdit: () => openBoxSheet(context, ref, box: box),
                         onDelete: () async {
@@ -448,11 +449,12 @@ class _BoxDetail extends ConsumerWidget {
         leading: GlassIconButton(icon: AppIcons.caretLeft, onTap: () => ref.read(boxProvider.notifier).back()),
         trailing: GlassMenuButton(
           items: [
-            AnchoredMenuItem(label: L.s.edit, icon: AppIcons.pencilSimple, onSelected: () => openBoxSheet(context, ref, box: box)),
+            AnchoredMenuItem(label: L.s.edit, icon: AppIcons.pencilSimple, symbol: 'pencil', onSelected: () => openBoxSheet(context, ref, box: box)),
             if (ref.watch(canShareExternallyProvider) && !state.guestBoxIds.contains(box.id))
               AnchoredMenuItem(
                 label: L.s.share,
                 icon: AppIcons.userPlus,
+                symbol: 'person.badge.plus',
                 onSelected: () => showShareSheet(
                   context,
                   kind: ShareableKind.box,
@@ -463,6 +465,7 @@ class _BoxDetail extends ConsumerWidget {
             AnchoredMenuItem(
               label: L.s.delete,
               icon: AppIcons.trash,
+              symbol: 'trash',
               destructive: true,
               onSelected: () async {
                 // Captured before the write: this menu lives in the detail
@@ -620,6 +623,7 @@ class _ItemRow extends ConsumerWidget {
     // Swiping the row left reveals Delete, the same gesture the Kalender event
     // cards and the Listen article rows use.
     return SwipeToEditDelete(
+      identity: item.id,
       onTap: () => _openItemSheet(context, ref, item: item),
       onDelete: () => _deleteItem(context, ref, item),
       child: Padding(
@@ -658,11 +662,13 @@ class _ItemRow extends ConsumerWidget {
                 AnchoredMenuItem(
                   label: L.s.edit,
                   icon: AppIcons.pencilSimple,
+                  symbol: 'pencil',
                   onSelected: () => _openItemSheet(context, ref, item: item),
                 ),
                 AnchoredMenuItem(
                   label: L.s.delete,
                   icon: AppIcons.trash,
+                  symbol: 'trash',
                   destructive: true,
                   onSelected: () => _deleteItem(context, ref, item),
                 ),
