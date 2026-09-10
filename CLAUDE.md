@@ -92,6 +92,15 @@ task:
   produce an own calendar by omission. The `external_uid`/`external_href`/`external_etag` columns
   are gone too, so no code path can quietly start materialising a provider. Don't add one — for a
   German family app, holding no doctor's appointments is a feature.
+- **The one exception is a calendar handed over as a file, and it is not a hole in the rule.** A
+  waste vendor outside `abfall.ts` publishes `abfuhr2027.ics` as a download and nothing to
+  subscribe to, so there is no server to proxy to and the bytes are kept — sealed in
+  `calendar_connection_secrets.feed_files`, re-parsed on every refresh, never materialised into a
+  row. The file is a *source* we happen to hold, exactly as a feed URL is a source we fetch; what
+  is still refused is a calendar of our own that the app writes events into. A file is
+  `is_read_only`, unshareable, and matched on its file name so that re-uploading next year's
+  replaces last year's rather than sitting beside it. Offered on the `ical` tile only, and off iOS
+  there is no picker so there is no upload.
 - **There is exactly one write route, and it leaves the building.** `calendar-write` creates,
   updates and deletes events straight in Google, Outlook or the CalDAV server, addressed by
   `CalendarEvent.uid` (the provider's own id, carried on the wire); the change comes back on the
@@ -124,9 +133,22 @@ task:
   school-wide `+public` feed of several hundred events about every class but theirs. The user
   creates a tokenised ICS link in the school platform and pastes one per calendar (there is no API
   to mint or list them), and one account holds a list of them — `auth_type = 'public'`,
-  `is_read_only`, URLs in `config.feeds`, added and removed only by `calendar-link`. WebUntis works
-  identically and shares the mechanism. **Don't reinstate CalDAV as IServ's main route** — it is
-  still reachable from a row at the bottom of the page, and it still finds nothing a family wants.
+  `is_read_only`, added and removed only by `calendar-link`. **A pasted link is a credential and is
+  sealed like one** — `config.feeds` holds `[{id, name, host, added_at}]` and the URLs live
+  encrypted in `calendar_connection_secrets.feed_urls`, opened server-side for the length of one
+  fetch. The `id` is an opaque uuid, which is what `calendars.external_id`, `selected_calendars`
+  and `calendar_names` carry; don't put the URL back into any of them. **WebUntis is connected the
+  same way** — "Kalender publizieren" mints `…/WebUntis/Ical.do?school=…&id=…&token=…` — and
+  **`ical` is that mechanism with the vendor taken out**, for any feed a household can already
+  subscribe to — and the one tile that also takes a **file**, for the calendar that is published as
+  a download. The three differ only in the tile and the instructions. **Don't reinstate CalDAV
+  as IServ's main route** — still reachable from a row at the bottom of its page, and it still
+  finds nothing a family wants. **And don't bring back WebUntis's app secret.** It was the QR-code
+  route, it is deleted (function, shared module, `auth_type = 'secret'`, `app_secret`, the QR
+  scanner and its Swift side), and it went because it was TOTP seed material for the pupil's whole
+  WebUntis account where a feed URL is one timetable. It took Entfall/Vertretung as lesson status,
+  the whole school year rather than the feed's twelve weeks, and **Hausaufgaben, which the Board
+  no longer shows**, with it. That is the trade; it was made deliberately.
   Read the school-calendar section of [docs/ported-features.md](docs/ported-features.md) before
   touching any of it, in particular the `TZID="+02:00"` trap. Abfall's six German waste-vendor families live in
   `supabase/functions/_shared/abfall.ts`; see the Abfall section of
@@ -176,7 +198,7 @@ task:
 - **A list or a task can point at an event, and the pointer carries no event in it.** Three columns
   on `lists`/`tasks` — `event_calendar_id`, `event_uid`, `event_starts_at` — read as
   [lib/models/event_link.dart](lib/models/event_link.dart). The reference is the
-  `(calendar, provider uid)` pair `untis_homework.event_uid` already uses, because **we store no
+  `(calendar, provider uid)` pair the providers themselves guarantee, because **we store no
   events to hold a foreign key to**; there is no FK for that reason and one more, that the id is a
   `calendars.id` for a connected calendar and a `public_feeds.id` for Ferien/Abfall. **No
   `event_title`** — the appointment's name would be a copy of somebody's calendar sitting in our
@@ -235,9 +257,11 @@ task:
   so a bare `Icon` renders half of it, which looks thin and hollow rather than broken. Both
   codepoints are named in [lib/theme/app_icons.dart](lib/theme/app_icons.dart) and both must be
   `const`, or `--tree-shake-icons` fails the release build. **A glyph that names a thing is
-  duotone; a glyph that *is* a control is flat, and flat means the set's Regular weight from a
+  duotone; a glyph that *is* a control is flat, and flat means the set's Bold weight from a
   second vendored font** — not the duotone minus its under-layer, which for a caret is a hollow
-  triangle rather than a chevron. Pass `flat: true`, which the glass buttons,
+  triangle rather than a chevron, and not Regular, whose line is lighter than the Lucide it
+  replaced and reads as faint on a 19px glass button. Every Phosphor weight shares one codepoint
+  per glyph, so `_flatFamily` picks the weight for all of them at once. Pass `flat: true`, which the glass buttons,
   the segmented control, the check-off, the swipe actions and the nav pill already do for their
   callers. Fourteen bare marks (`check`, `x`, `plus`, `minus`, the three-dot menu, the arrows and
   the carets) are flat everywhere regardless, because Phosphor gives them a placeholder box or a

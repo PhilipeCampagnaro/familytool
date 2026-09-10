@@ -4,8 +4,8 @@
 /// keeps no calendar of its own — every event is proxied from the connected
 /// account or the shared feed on each read — so a link cannot be a foreign key
 /// to a row. It is the pair the provider itself guarantees: the calendar, and
-/// the event's own [uid]. `Homework.eventUid` already names a lesson the same
-/// way, and this is deliberately the same mechanism rather than a second one.
+/// the event's own [uid] — the one pair a provider guarantees across a refresh
+/// that stores nothing.
 ///
 /// **It carries no title, on purpose.** The appointment's name is content out
 /// of somebody's calendar, and writing it onto a `lists` row to label a badge

@@ -259,19 +259,33 @@ class CalendarConnectionRepository {
   /// `X-WR-CALNAME`, IServ's plugin feeds do not — and how many events are in
   /// it, which is the one number that tells the user they pasted the right one
   /// of their four IServ links.
-  Future<({String? name, int events})> checkCalendarLink({
+  /// [ics] is the other way in: the contents of a `.ics` file the household
+  /// picked, for a calendar that is published as a download and not as a link.
+  /// Exactly one of [url] and [ics] is sent, and everything after this point —
+  /// the check, the sealing, the parse on every refresh — is the same road.
+  Future<({String? name, int events, DateTime? coversTo})> checkCalendarLink({
     required CalendarProvider provider,
-    required String url,
+    String? url,
+    String? ics,
   }) async {
     final body = await _invoke('calendar-link', {
       'action': 'check',
       'provider': provider.wire,
-      'url': url.trim(),
+      if (ics != null) 'ics': ics else 'url': url?.trim() ?? '',
     });
     return (
       name: body['name'] as String?,
       events: (body['events'] as num?)?.toInt() ?? 0,
+      coversTo: _dateOrNull(body['covers_to']),
     );
+  }
+
+  /// The last day an uploaded calendar has an event on, which is the one thing
+  /// a snapshot has to say about itself. Null for a link, which keeps itself
+  /// current and has no such day.
+  static DateTime? _dateOrNull(Object? value) {
+    if (value is! String || value.isEmpty) return null;
+    return DateTime.tryParse(value);
   }
 
   /// Adds one calendar link — to a new account when [connectionId] is null, and
@@ -281,17 +295,25 @@ class CalendarConnectionRepository {
   /// read when a new one is created; it is what makes two children at the same
   /// school two connections rather than one, and what the chip in Kalender ends
   /// up saying.
+  ///
+  /// [ics] replaces [url] for an uploaded file. Re-uploading a file the account
+  /// already holds under the same name **replaces** it rather than adding a
+  /// second calendar — which is how a household keeps a downloaded Abfuhrplan
+  /// current when next year's comes out.
   Future<({String? connectionId, String? externalId})> addCalendarLink({
     required CalendarProvider provider,
-    required String url,
     required String name,
+    String? url,
+    String? ics,
+    String? fileName,
     String? account,
     String? connectionId,
   }) async {
     final body = await _invoke('calendar-link', {
       'action': 'add',
       'provider': provider.wire,
-      'url': url.trim(),
+      if (ics != null) 'ics': ics else 'url': url?.trim() ?? '',
+      'file_name': ?fileName,
       'name': name.trim(),
       if (account != null && account.trim().isNotEmpty) 'account': account.trim(),
       'connection_id': ?connectionId,
@@ -318,111 +340,6 @@ class CalendarConnectionRepository {
       'connection_id': connectionId,
       'external_id': externalId,
     });
-  }
-
-  // -------------------------------------------------------------------------
-  // Connect — WebUntis, by the pupil's app secret
-  // -------------------------------------------------------------------------
-
-  /// The four fields behind a WebUntis connection, however they were obtained.
-  ///
-  /// [qr] is the whole `untis://setschool?...` payload off the QR code and is
-  /// enough on its own; the other four are what the same dialog prints in plain
-  /// text underneath it, for a household that cannot scan. The server takes
-  /// either and normalises both to the same thing, so nothing here has to parse
-  /// a scan result.
-  ///
-  /// The key is a TOTP seed, not a password: it grants read access to that one
-  /// pupil's own timetable and is revoked from the page that made it.
-  Future<({String student, String school, int lessons})> checkUntis({
-    String? qr,
-    String? server,
-    String? school,
-    String? user,
-    String? secret,
-  }) async {
-    final body = await _invoke('calendar-untis', _untisBody(
-      action: 'check',
-      qr: qr,
-      server: server,
-      school: school,
-      user: user,
-      secret: secret,
-    ));
-    return (
-      student: body['student'] as String? ?? '',
-      school: body['school'] as String? ?? '',
-      lessons: (body['lessons'] as num?)?.toInt() ?? 0,
-    );
-  }
-
-  /// Stores the connection, having proved the key works one more time.
-  ///
-  /// One call does the lot — the credential, the single calendar and its name —
-  /// because none of the three is a column a client may write, and because for
-  /// this provider they are one decision: a pupil has exactly one timetable, so
-  /// there is nothing to pick between checking and naming.
-  /// [pupil] is the **child**, not the calendar: "Alice". The function makes
-  /// "Stundenplan Alice" out of it and files the connection under them, which
-  /// is what puts their face in the filter rows rather than a fourth calendar
-  /// name nobody can group by.
-  ///
-  /// [memberId] is that child's user id where they are a member of the
-  /// household. Usually null — members join by e-mail invitation, and most
-  /// schoolchildren have no account — and the connection then carries the name
-  /// alone, which is enough for a chip.
-  Future<({String? connectionId, String? externalId})> connectUntis({
-    required String pupil,
-    String? memberId,
-    String? qr,
-    String? server,
-    String? school,
-    String? user,
-    String? secret,
-  }) async {
-    final body = await _invoke('calendar-untis', _untisBody(
-      action: 'add',
-      qr: qr,
-      server: server,
-      school: school,
-      user: user,
-      secret: secret,
-      pupil: pupil,
-      memberId: memberId,
-    ));
-    return (
-      connectionId: body['connection_id'] as String?,
-      externalId: body['external_id'] as String?,
-    );
-  }
-
-  /// The scanned payload wins where there is one: it carries all four fields
-  /// exactly as Untis wrote them, where the typed ones have been through a
-  /// person reading a screen.
-  Map<String, dynamic> _untisBody({
-    required String action,
-    String? qr,
-    String? server,
-    String? school,
-    String? user,
-    String? secret,
-    String? pupil,
-    String? memberId,
-  }) {
-    final scanned = qr?.trim() ?? '';
-    return {
-      'action': action,
-      if (pupil != null) 'pupil': pupil.trim(),
-      if (memberId != null && memberId.isNotEmpty) 'member_id': memberId,
-      if (scanned.isNotEmpty)
-        'qr': scanned
-      else ...{
-        'server': server?.trim() ?? '',
-        'school': school?.trim() ?? '',
-        'user': user?.trim() ?? '',
-        'secret': secret?.trim() ?? '',
-      },
-    };
   }
 
   // -------------------------------------------------------------------------

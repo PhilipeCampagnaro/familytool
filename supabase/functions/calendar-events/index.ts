@@ -31,12 +31,11 @@ import { membershipOf, type Provider, type RemoteCalendar, setStatus, syncWindow
 import {
   type Connection,
   listRemoteCalendars,
-  readConnectionHomework,
   readRemoteEvents,
   ReconnectRequired,
 } from "../_shared/providers.ts";
 import { subscribedFeeds } from "../_shared/feeds.ts";
-import { redact } from "../_shared/ics_feed.ts";
+import { migrateLegacyFeeds, redact } from "../_shared/ics_feed.ts";
 
 /// What the Flutter side reads. Snake_case because it lands in the same
 /// CalendarSource.fromMap / CalendarEvent.fromMap the PostgREST rows do — one
@@ -82,35 +81,6 @@ interface WireCalendar {
   owner_member_id?: string;
 }
 
-/// One homework, alongside the events rather than among them.
-///
-/// **Homework is not an event and must never become one.** A due date is not an
-/// appointment: it has no time, it does not occupy the day, and twenty of them
-/// in a week grid would bury the lessons they belong to. What the app does with
-/// these is decorate the lesson named by [event_uid] and fill a list on Board —
-/// both of which are views of the same fact, neither of which is a calendar
-/// entry.
-interface WireHomework {
-  /// Stable across refreshes: the calendar plus Untis's own homework id.
-  id: string;
-  calendar_id: string;
-
-  /// The lesson it is due in, as that event's `uid` — or null when the due date
-  /// falls outside the fortnight most schools publish, which is roughly half of
-  /// them at any moment. A null is a homework with no lesson on screen to
-  /// decorate, not a failed match.
-  event_uid: string | null;
-
-  subject: string | null;
-  teacher: string | null;
-  /// `YYYY-MM-DD`. A date, with no time and no zone — see UntisHomework.
-  due_on: string;
-  text: string;
-  remark: string | null;
-  /// Ticked off by the pupil in Untis. Read-only, always.
-  completed: boolean;
-}
-
 interface WireEvent {
   id: string;
   calendar_id: string;
@@ -150,7 +120,6 @@ Deno.serve(async (req) => {
 
   const calendars: WireCalendar[] = [];
   const events: WireEvent[] = [];
-  const homework: WireHomework[] = [];
   const errors: Array<{ connection_id: string; error: string }> = [];
 
   // ---- Public feeds: Ferien, Abfall -----------------------------------------
@@ -193,10 +162,9 @@ Deno.serve(async (req) => {
 
   for (const connection of (connections ?? []) as unknown as Connection[]) {
     try {
-      const { calendars: cals, events: evts, homework: hw } = await readConnection(db, connection, owners);
+      const { calendars: cals, events: evts } = await readConnection(db, connection, owners);
       calendars.push(...cals);
       events.push(...evts);
-      homework.push(...hw);
     } catch (e) {
       const reconnect = e instanceof ReconnectRequired;
       // The message is rendered in the app, so it is German and says what to do
@@ -217,15 +185,23 @@ Deno.serve(async (req) => {
     }
   }
 
-  return json({ calendars, events, homework, errors });
+  return json({ calendars, events, errors });
 });
 
 async function readConnection(
   db: SupabaseClient,
   connection: Connection,
   owners: OwnerDirectory,
-): Promise<{ calendars: WireCalendar[]; events: WireEvent[]; homework: WireHomework[] }> {
+): Promise<{ calendars: WireCalendar[]; events: WireEvent[] }> {
   const window = syncWindow();
+
+  // Before anything reads `config.feeds`: a connection made before the feed
+  // URLs were sealed still carries them in plain text there. This moves them
+  // into `calendar_connection_secrets` and rewires the ids that pointed at
+  // them, once, on the first read after the deploy. Every other connection
+  // returns from it untouched.
+  connection = await migrateLegacyFeeds(db, connection);
+
   const remote = await listRemoteCalendars(db, connection);
 
   // null = the user has not opened the checklist yet, so read everything. An
@@ -279,28 +255,7 @@ async function readConnection(
     .update({ status: "active", status_detail: null, last_synced_at: new Date().toISOString() })
     .eq("id", connection.id);
 
-  // After the calendars, and hung off the first of them: homework belongs to
-  // the account's one timetable, and reading it is pointless if that calendar
-  // did not come back. Non-fatal by construction — see readConnectionHomework.
-  const homework: WireHomework[] = [];
-  if (calendars.length) {
-    const timetable = calendars[0].id;
-    for (const h of await readConnectionHomework(db, connection, window)) {
-      homework.push({
-        id: `${timetable}:hw:${h.id}`,
-        calendar_id: timetable,
-        event_uid: h.eventUid,
-        subject: h.subject,
-        teacher: h.teacher,
-        due_on: h.dueOn,
-        text: h.text.slice(0, MAX_NOTES),
-        remark: h.remark ? h.remark.slice(0, 300) : null,
-        completed: h.completed,
-      });
-    }
-  }
-
-  return { calendars, events, homework };
+  return { calendars, events };
 }
 
 /// A proxied event has no database row and therefore no id, but the Flutter side
@@ -470,6 +425,14 @@ const PROVIDER_COLOR: Record<Provider, number> = {
   icloud: 0xff8e8e93,
   iserv: 0xff2e7d32,
   webuntis: 0xffe8590c,
+  // A pasted feed has no brand to borrow a hue from, so it takes the app's own
+  // indigo. Deliberately not a grey: it is a calendar the household chose, not
+  // a lesser one.
+  ical: 0xff5b5bd6,
+  // Both brands' own: GMX's orange-red, WEB.DE's yellow darkened enough to
+  // carry white text on a chip.
+  gmx: 0xffd6421a,
+  webde: 0xffb38600,
 };
 
 /// A calendar's default colour: the provider's, shifted a little per position

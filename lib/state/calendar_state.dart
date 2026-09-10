@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/calendar_data.dart';
 import '../data/repositories/calendar_repository.dart';
 import '../models/calendar_event.dart';
-import '../models/homework.dart';
 import 'auth_state.dart';
 import 'family_state.dart';
 import '../l10n/l10n.dart';
@@ -58,18 +57,6 @@ class CalendarScreenState {
   final List<CalendarSource> calendars;
   final Map<String, List<CalendarEvent>> eventsByDay;
 
-  /// Lesson `uid` -> the homework due in it, already indexed by the repository.
-  ///
-  /// Only the lessons that actually carry homework are in here, so the card's
-  /// lookup is a miss for almost every event and costs nothing. Homework whose
-  /// due date falls outside the fortnight the school publishes has no lesson to
-  /// attach to and is absent — it is still in [homework], which is what Board
-  /// reads.
-  final Map<String, List<Homework>> homeworkByEvent;
-
-  /// Every homework the household's school accounts carry, soonest first.
-  final List<Homework> homework;
-
   final bool loaded;
   final String? error;
 
@@ -90,8 +77,6 @@ class CalendarScreenState {
     this.filterGroupId,
     this.calendars = const [],
     this.eventsByDay = const {},
-    this.homeworkByEvent = const {},
-    this.homework = const [],
     this.loaded = false,
     this.error,
     this.fromCache = false,
@@ -115,8 +100,6 @@ class CalendarScreenState {
     String? filterGroupId,
     List<CalendarSource>? calendars,
     Map<String, List<CalendarEvent>>? eventsByDay,
-    Map<String, List<Homework>>? homeworkByEvent,
-    List<Homework>? homework,
     bool? loaded,
     String? error,
     bool clearError = false,
@@ -134,8 +117,6 @@ class CalendarScreenState {
       filterGroupId: clearCalendarFilter ? null : (filterGroupId ?? this.filterGroupId),
       calendars: calendars ?? this.calendars,
       eventsByDay: eventsByDay ?? this.eventsByDay,
-      homeworkByEvent: homeworkByEvent ?? this.homeworkByEvent,
-      homework: homework ?? this.homework,
       loaded: loaded ?? this.loaded,
       error: clearError ? null : (error ?? this.error),
       fromCache: fromCache ?? this.fromCache,
@@ -465,8 +446,6 @@ class CalendarNotifier extends StateNotifier<CalendarScreenState> {
     state = state.copyWith(
       calendars: snapshot.calendars,
       eventsByDay: snapshot.eventsByDay,
-      homeworkByEvent: snapshot.homeworkByEvent,
-      homework: snapshot.homework,
       loaded: true,
       fromCache: snapshot.fromCache,
       clearError: true,
@@ -791,19 +770,8 @@ final calendarRepositoryProvider = Provider<CalendarRepository>((ref) => Calenda
 /// followed by a `calendar-events` call that fans out to Google, Outlook and
 /// every CalDAV server the household has connected. It is the most expensive
 /// rebuild in the app, triggered by the least related action.
-/// Every homework the household's school accounts carry.
-///
-/// Board reads this rather than owning it: homework arrives on the *calendar's*
-/// refresh, because it comes down the same WebUntis session as the timetable.
-/// A second fetch on the Board's own schedule would log into the school twice
-/// for one answer.
-final homeworkProvider = Provider<List<Homework>>(
-  (ref) => ref.watch(calendarProvider.select((s) => s.homework)),
-);
-
-/// Calendar id -> the person chip it belongs under, so Board can filter
-/// homework by the same faces Kalender does without knowing how a calendar is
-/// owned.
+/// Calendar id -> the person chip it belongs under, so a screen can group by
+/// the same faces Kalender does without knowing how a calendar is owned.
 final calendarOwnerProvider = Provider<Map<String, String>>((ref) {
   final calendars = ref.watch(calendarProvider.select((s) => s.calendars));
   return {

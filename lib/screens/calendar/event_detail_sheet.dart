@@ -178,7 +178,6 @@ void _showEventDetailSheet(BuildContext context, WidgetRef ref) {
         final accent = Theme.of(context).colorScheme.primary;
         if (e == null) return const SizedBox.shrink();
         final weather = _weatherFor(ref, e);
-        final homework = _homeworkFor(ref, e);
         final linkedLists = _linkedListsFor(ref, e);
         final linkedTasks = _linkedTasksFor(ref, e);
 
@@ -242,15 +241,6 @@ void _showEventDetailSheet(BuildContext context, WidgetRef ref) {
                 ],
               ),
             ),
-            // Above the room and the notes, because on a lesson it is the thing
-            // the sheet was opened to find out. Absent entirely for every event
-            // that is not a school lesson with work due in it, which is almost
-            // all of them — an empty "Hausaufgaben" card on a dentist
-            // appointment would be a permanent puzzle.
-            if (homework.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              _HomeworkCard(homework: homework),
-            ],
             // A card for a place the event doesn't have is an empty row over a
             // map of nowhere — a Ferien block has no location and shouldn't
             // pretend to.
@@ -800,92 +790,6 @@ void _confirmDeleteEvent(BuildContext context, WidgetRef ref, CalendarEvent even
       );
     },
   );
-}
-
-/// The homework due in the lesson this sheet is showing.
-///
-/// **The payoff for the badge on the card.** The badge says *that* something is
-/// due; this says what — "S.17/5", or a materials list with an emoji per line —
-/// which is the question the sheet was opened to answer, and it answers it
-/// without leaving Kalender for Board.
-///
-/// Read-only, and pointedly so: [Homework.done] is the pupil's own tick in
-/// Untis, shown here and never written. A checkbox in this card would give the
-/// household two answers to whether the Vokabeln are learnt.
-class _HomeworkCard extends StatelessWidget {
-  final List<Homework> homework;
-
-  const _HomeworkCard({required this.homework});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: AppShadows.card,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(children: [
-            AppIcon(AppIcons.bookOpenText, size: 15, color: AppColors.muted),
-            const SizedBox(width: 9),
-            Text(
-              L.s.homeworkCount(homework.length),
-              style: AppText.microLabel.copyWith(letterSpacing: 0.3),
-            ),
-          ]),
-          for (final h in homework) ...[
-            const SizedBox(height: 11),
-            _HomeworkEntry(homework: h),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-/// One homework inside [_HomeworkCard].
-class _HomeworkEntry extends StatelessWidget {
-  final Homework homework;
-
-  const _HomeworkEntry({required this.homework});
-
-  @override
-  Widget build(BuildContext context) {
-    // Ticked off in Untis: greyed and struck through rather than hidden. A
-    // parent looking at Wednesday's Deutsch wants to see that the Arbeitsblatt
-    // exists *and* that it is done — dropping it would read as no homework set.
-    final ink = homework.done ? AppColors.doneInk : AppColors.ink;
-
-    // The teacher is the homework payload's own — full name plus Kürzel,
-    // "Meyer (MYE)" — which is nicer than the Kürzel the timetable carries.
-    final meta = [
-      if (homework.done) L.s.homeworkDone,
-      if (homework.teacher.isNotEmpty) '${L.s.homeworkSetBy} ${homework.teacher}',
-      if (homework.remark.isNotEmpty) homework.remark,
-    ].join(' · ');
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          homework.text,
-          style: AppText.body.copyWith(
-            color: ink,
-            decoration: homework.done ? TextDecoration.lineThrough : null,
-            decorationColor: AppColors.doneInk,
-          ),
-        ),
-        if (meta.isNotEmpty) ...[
-          const SizedBox(height: 3),
-          Text(meta, style: AppText.caption.copyWith(color: AppColors.inkTertiary)),
-        ],
-      ],
-    );
-  }
 }
 
 /// The disc in front of every row of the sheet's two link cards.

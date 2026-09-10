@@ -556,7 +556,6 @@ class _EventAgendaRow extends ConsumerWidget {
                     event: event,
                     compact: compact,
                     weather: _weatherFor(ref, event),
-                    homework: _homeworkFor(ref, event),
                     linkedLists: _linkedListsFor(ref, event).length,
                     linkedTasks: _linkedTasksFor(ref, event).length,
                   ),
@@ -582,11 +581,6 @@ class _EventCard extends StatelessWidget {
   final CalendarEvent event;
   final bool compact;
 
-  /// The homework due in this lesson, or empty for every other event in the
-  /// app. Resolved by the row like the forecast is — the card renders what it
-  /// is handed and looks nothing up.
-  final List<Homework> homework;
-
   /// Resolved by the row, which has the `ref` — the card stays a pure render of
   /// what it is handed. Null when there is no forecast for this event, which is
   /// the common case for anything in the past.
@@ -605,7 +599,6 @@ class _EventCard extends StatelessWidget {
     required this.event,
     this.compact = false,
     this.weather,
-    this.homework = const [],
     this.linkedLists = 0,
     this.linkedTasks = 0,
   });
@@ -661,28 +654,11 @@ class _EventCard extends StatelessWidget {
                       ])),
                       const SizedBox(width: 7),
                       _Chip(bg: AppColors.surfaceAlt, child:Text(event.durationLabel, style: AppText.microLabel)),
-                      // Homework due in this lesson. A marker, not a button —
-                      // the card is already one tap target and the detail sheet
-                      // behind it is where the homework can actually be read.
-                      // An icon small enough to fit here is far too small to
-                      // aim at inside a card this size.
-                      if (homework.isNotEmpty) ...[
-                        const SizedBox(width: 7),
-                        _Chip(
-                          bg: tint(AppColors.accent, .86),
-                          child: Row(children: [
-                            AppIcon(AppIcons.bookOpenText, size: 12, color: AppColors.accent),
-                            const SizedBox(width: 5),
-                            Text(
-                              L.s.homeworkCount(homework.length),
-                              style: AppText.microLabel.copyWith(color: AppColors.accent),
-                            ),
-                          ]),
-                        ),
-                      ],
-                      // The lists and tasks hung off this appointment, in the
-                      // same shape and for the same reason as the homework chip
-                      // beside them: a marker, not a button. It carries the tab's
+                      // The lists and tasks hung off this appointment: a
+                      // marker, not a button — the card is already one tap
+                      // target and the detail sheet behind it is where they can
+                      // actually be read. An icon small enough to fit here is
+                      // far too small to aim at inside a card this size. It carries the tab's
                       // own icon so the row says *where* the thing is without a
                       // word — which is the whole job of a 12pt glyph on a card
                       // you read at arm's length while getting three people out

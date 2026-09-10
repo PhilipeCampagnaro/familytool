@@ -1,13 +1,14 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/repositories/calendar_connection_repository.dart';
 import '../models/calendar_connection.dart';
 import '../models/who.dart';
-import '../services/code_scanner.dart';
 import '../services/external_links.dart';
+import '../services/media_picker.dart';
 import '../state/calendar_connections_state.dart';
 import '../state/family_state.dart';
 import '../theme/tokens.dart';
@@ -41,14 +42,38 @@ import '../theme/app_icons.dart';
 class CalendarConnectionsPage extends ConsumerWidget {
   const CalendarConnectionsPage({super.key});
 
-  static const _order = [
-    CalendarProvider.abfall,
-    CalendarProvider.ferien,
+  /// The accounts: something the household signs in to, or pastes its own link
+  /// out of. Every one of them belongs to somebody.
+  static const _accounts = [
     CalendarProvider.google,
     CalendarProvider.outlook,
     CalendarProvider.icloud,
+    // The two mailboxes a German household is most likely to already have, and
+    // one system between them. Above the school providers because they are a
+    // family's own calendar rather than one child's.
+    CalendarProvider.gmx,
+    CalendarProvider.webde,
     CalendarProvider.iserv,
     CalendarProvider.webuntis,
+  ];
+
+  /// The calendars that are simply out there: no login, nothing personal, and
+  /// nothing that can expire. An address or a Bundesland is the whole setup.
+  ///
+  /// Their own group rather than the top of one long list, which is where they
+  /// used to sit for a reason that has expired — they were the two providers
+  /// testable before anything was registered with Google or Microsoft. Ten rows
+  /// in one card read as a wall, and these three answer a different question
+  /// from the seven above them: not "which of my accounts", but "what else is
+  /// worth having in there".
+  static const _publicFeeds = [
+    CalendarProvider.abfall,
+    CalendarProvider.ferien,
+    // Last, and after the two named schools on the list above on purpose: a
+    // household looking for IServ must not have to recognise their school
+    // calendar in the word "iCal", and a household with something else must not
+    // conclude we do not do it.
+    CalendarProvider.ical,
   ];
 
   @override
@@ -56,6 +81,17 @@ class CalendarConnectionsPage extends ConsumerWidget {
     final state = ref.watch(calendarConnectionsProvider);
     final notifier = ref.read(calendarConnectionsProvider.notifier);
     final isKid = ref.watch(myRoleProvider) == FamilyRole.kid;
+
+    // One row, whichever of the two groups it lands in: they differ in what
+    // they are, not in how they are read or opened.
+    SettingsRow providerRow(CalendarProvider provider) => SettingsRow(
+      leading: _ProviderTile(provider),
+      title: provider.label,
+      subtitle: provider.blurb,
+      accessory: _ProviderStatus(state.of(provider)),
+      onTap: () =>
+          Navigator.of(context).push(MaterialPageRoute(builder: (_) => _ProviderPage(provider))),
+    );
 
     return SettingsDetailPage(
       icon: AppIcons.calendarDots,
@@ -101,22 +137,19 @@ class CalendarConnectionsPage extends ConsumerWidget {
           ),
           const SizedBox(height: AppSpacing.blockGap),
           SettingsNote(L.s.connectCalendarsAdminNote),
-        ] else
+        ] else ...[
+          GroupLabel(L.s.calendarAccountsGroup),
           SectionCard(
             radius: AppRadii.card,
-            children: dividedRows(inset: true, [
-              for (final provider in _order)
-                SettingsRow(
-                  leading: _ProviderTile(provider),
-                  title: provider.label,
-                  subtitle: provider.blurb,
-                  accessory: _ProviderStatus(state.of(provider)),
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => _ProviderPage(provider)),
-                  ),
-                ),
-            ]),
+            children: dividedRows(inset: true, [for (final p in _accounts) providerRow(p)]),
           ),
+          const SizedBox(height: AppSpacing.blockGap),
+          GroupLabel(L.s.noAccountGroup),
+          SectionCard(
+            radius: AppRadii.card,
+            children: dividedRows(inset: true, [for (final p in _publicFeeds) providerRow(p)]),
+          ),
+        ],
 
         // No "Alle Kalender aktualisieren" anywhere in here: opening Kalender
         // already calls `calendar-events`, which is the same read — it goes out
@@ -221,17 +254,6 @@ class _ProviderPageState extends ConsumerState<_ProviderPage> with WidgetsBindin
     showCalendarConnectSheet(context, ref, _provider, useCaldavLogin: true);
   }
 
-  /// The pasted link, for the one provider whose main route is a scan.
-  ///
-  /// Reached only from the note at the bottom, because it is the lesser of the
-  /// two: "Kalender publizieren" hands out a flat ICS feed, so a lesson that was
-  /// cancelled arrives looking exactly like a lesson that was not. It exists for
-  /// the school that has turned Untis Mobile access off, where there is no QR
-  /// code to show.
-  void _openLinkSheet() {
-    showCalendarConnectSheet(context, ref, _provider, useLinkFallback: true);
-  }
-
   Future<void> _start() async {
     if (!_isOAuth) {
       _openSheet();
@@ -252,8 +274,8 @@ class _ProviderPageState extends ConsumerState<_ProviderPage> with WidgetsBindin
       if (url == null) {
         setState(() {
           _opening = false;
-          _error = ref.read(calendarConnectionsProvider).error ??
-              L.s.providerNotSetUp(_provider.label);
+          _error =
+              ref.read(calendarConnectionsProvider).error ?? L.s.providerNotSetUp(_provider.label);
         });
         return;
       }
@@ -427,19 +449,6 @@ class _ProviderPageState extends ConsumerState<_ProviderPage> with WidgetsBindin
               ),
             ]),
           ),
-        ] else if (_provider.hasLinkFallback) ...[
-          const SizedBox(height: AppSpacing.blockGap),
-          SectionCard(
-            radius: AppRadii.card,
-            children: dividedRows(inset: true, [
-              SettingsRow(
-                icon: AppIcons.link,
-                title: L.s.connectWithLink,
-                subtitle: L.s.connectWithLinkBody,
-                onTap: _openLinkSheet,
-              ),
-            ]),
-          ),
         ],
       ],
     );
@@ -469,20 +478,6 @@ String connectErrorText(Object error) {
   return L.s.somethingWentWrong;
 }
 
-/// The pupil's own name out of what WebUntis calls them, for the suggested
-/// calendar name.
-///
-/// The **last** word, not the first: Untis writes `displayName` surname-first —
-/// "Boff Campagnaro Alice" is Alice, with two surnames — which is the German
-/// school convention and what a live account shows. A school that has
-/// configured it the other way round gets the surname suggested instead, which
-/// is odd rather than wrong, and the field it lands in is a text field the
-/// parent is already looking at.
-String _pupilShortName(String displayName) {
-  final parts = displayName.split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
-  return parts.isEmpty ? displayName : parts.last;
-}
-
 CalendarConnection? _byId(List<CalendarConnection> connections, String id) {
   for (final connection in connections) {
     if (connection.id == id) return connection;
@@ -490,32 +485,69 @@ CalendarConnection? _byId(List<CalendarConnection> connections, String id) {
   return null;
 }
 
-/// The circular logo tile, matching the family avatars in size and border.
+/// The provider's logo, or its glyph where no logo is shipped, in the 34pt
+/// square every settings row reserves for its leading.
+///
+/// **No disc around it**, for the reason [GlyphTile] gives for losing its glass
+/// lens: these are app icons that already carry their own shape and colour, and
+/// a bordered circle around one only left 24pt for the drawing and cropped the
+/// wordmarks to whatever survived the oval. The artwork gets the whole square
+/// now, and `contain` so nothing is cut.
+///
+/// **Almost nothing is clipped.** Every logo but one is drawn as its owner drew
+/// it: the shaped app icons (Outlook, iCloud, GMX, WEB.DE) carry their own
+/// corner in the file, and rounding one of those a second time takes a bite out
+/// of the artwork. WebUntis is the exception — it ships as a hard-edged orange
+/// square, and beside four icons with a soft corner that one square read as the
+/// odd one out. It gets the same shallow corner they draw, and nothing more:
+/// this is matching the row, not restyling a brand.
+///
+/// **The three with no vendor keep the bare [GlyphTile]** the rest of Settings
+/// uses. A rounded plate behind them was tried, to make them read as app icons
+/// beside the six logos, and it made the page busier rather than tidier: the
+/// glyph is already the thing, and the plate was a second box inside a row that
+/// is a box already.
 class _ProviderTile extends StatelessWidget {
   final CalendarProvider provider;
   const _ProviderTile(this.provider);
 
+  static const double _size = 34;
+
+  /// The corner the shaped logos are drawn with, as a share of the tile — not a
+  /// design token, because it is measured off GMX's and WEB.DE's artwork rather
+  /// than chosen. Well under the iOS icon's own 22%: the point is to take the
+  /// hard edge off, not to turn the square into a squircle.
+  static const double _cornerRatio = 0.16;
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 34,
-      height: 34,
-      decoration: BoxDecoration(
-        color: AppColors.brandTile,
-        shape: BoxShape.circle,
-        border: Border.all(color: AppColors.hairline),
-      ),
-      alignment: Alignment.center,
-      child: provider.asset != null
-          ? ClipOval(child: Image.asset(provider.asset!, width: 24, height: 24, fit: BoxFit.cover))
-          : AppIcon(provider.icon, size: 17, color: AppColors.inkSecondary),
-    );
+    final asset = provider.asset;
+    if (asset == null) return GlyphTile(icon: provider.icon, size: _size);
+
+    final image = Image.asset(asset, width: _size, height: _size, fit: BoxFit.contain);
+    if (provider != CalendarProvider.webuntis) return image;
+
+    return ClipRRect(borderRadius: BorderRadius.circular(_size * _cornerRatio), child: image);
   }
 }
 
 /// What a provider row says about itself: nothing at all when there is nothing
-/// connected, a count when there is more than one, and the warning when the
-/// sync function has flagged one of them.
+/// connected, a tick when there is, the number beside the tick when there is
+/// more than one, and the warning when the sync function has flagged one of
+/// them.
+///
+/// **The tick carries the word.** This used to spell "Verbunden" or "3
+/// Kalender" out in full, which on a row that already has a logo, a provider
+/// name and a sentence of blurb was a fourth thing competing for the width —
+/// and the German label is long enough to push the blurb into a second line.
+/// A tick beside the provider it belongs to says connected on its own, and the
+/// count is the only part of that sentence a reader can't infer. The sentence
+/// itself is not lost: it stays on the badge as its semantics label, so
+/// VoiceOver still reads "3 Kalender" rather than "3".
+///
+/// The warning keeps its words. It is the one state that asks for something,
+/// it is rare enough not to cost the layout anything, and a lone red triangle
+/// would leave the reader to guess what it wants.
 class _ProviderStatus extends StatelessWidget {
   final List<CalendarConnection> connections;
   const _ProviderStatus(this.connections);
@@ -531,29 +563,39 @@ class _ProviderStatus extends StatelessWidget {
     // is two rows on the page this badge introduces, so a badge counting
     // accounts would promise one and open on two.
     final count = connections.fold(0, (total, c) => total + c.entries.length);
-    final label = attention
+    final spoken = attention
         ? L.s.actionNeeded
         : count == 1
         ? L.s.connected
         : L.s.calendarCount(count);
+    // Shown: the warning's sentence, or the count once there is more than one
+    // calendar to count. One calendar is just the tick.
+    final shown = attention
+        ? spoken
+        : count > 1
+        ? '$count'
+        : null;
 
-    return Container(
-      margin: const EdgeInsets.only(left: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(AppRadii.chip),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          AppIcon(attention ? AppIcons.warning : AppIcons.check, size: 12, color: color),
-          const SizedBox(width: 5),
-          Text(
-            label,
-            style: AppText.microLabel.copyWith(color: color, letterSpacing: 0.1),
-          ),
-        ],
+    return Semantics(
+      label: spoken,
+      excludeSemantics: true,
+      child: Container(
+        margin: const EdgeInsets.only(left: 8),
+        padding: EdgeInsets.symmetric(horizontal: shown == null ? 6 : 8, vertical: 5),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.10),
+          borderRadius: BorderRadius.circular(AppRadii.chip),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AppIcon(attention ? AppIcons.warning : AppIcons.check, size: 12, color: color),
+            if (shown != null) ...[
+              const SizedBox(width: 4),
+              Text(shown, style: AppText.microLabel.copyWith(color: color, letterSpacing: 0.1)),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -568,7 +610,10 @@ class _CheckBadge extends StatelessWidget {
     return Container(
       width: 22,
       height: 22,
-      decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary, shape: BoxShape.circle),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.primary,
+        shape: BoxShape.circle,
+      ),
       alignment: Alignment.center,
       child: const AppIcon(AppIcons.check, size: 13, color: Colors.white),
     );
@@ -605,7 +650,6 @@ Future<void> showCalendarConnectSheet(
   List<RemoteCalendar> calendars = const [],
   String? addToConnectionId,
   bool useCaldavLogin = false,
-  bool useLinkFallback = false,
 }) async {
   final flow = _ConnectFlow(
     provider: provider,
@@ -614,14 +658,10 @@ Future<void> showCalendarConnectSheet(
     // What the CalDAV login gets back is an id; the row it names is in state,
     // which is the page's to read, not the flow's.
     findConnection: (id) => _byId(ref.read(calendarConnectionsProvider).connections, id),
-    // Read once, when the sheet opens: the roster is only consulted to see
-    // whether the child being connected already has an account here.
-    members: ref.read(householdMembersProvider),
     connection: connection,
     calendars: calendars,
     addToConnectionId: addToConnectionId,
     useCaldavLogin: useCaldavLogin,
-    useLinkFallback: useLinkFallback,
   );
 
   await showAppSheet<void>(
@@ -894,7 +934,9 @@ class _CalendarDetailBodyState extends ConsumerState<_CalendarDetailBody> {
         const SizedBox(height: AppSpacing.blockGap),
         OutlinedSheetAction(
           icon: AppIcons.linkBreak,
-          label: connection.isFeed || !entry.isWholeConnection ? L.s.removeCalendar : L.s.disconnect,
+          label: connection.isFeed || !entry.isWholeConnection
+              ? L.s.removeCalendar
+              : L.s.disconnect,
           destructive: true,
           onTap: () => showRemoveCalendarDialog(
             context: context,
@@ -937,7 +979,11 @@ class _NameSaveButton extends StatelessWidget {
       height: 40,
       child: busy
           ? const Center(
-              child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)),
+              child: SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
             )
           : ValueListenableBuilder<TextEditingValue>(
               valueListenable: name,
@@ -999,22 +1045,24 @@ void showRemoveCalendarDialog({
                     // nothing but this household's subscription.
                     ConnectKind.feed => L.s.householdOnlyOthersKeep,
                     ConnectKind.password => L.s.credentialsDeleted,
-                    // Nothing to revoke and no credential to delete: the link
-                    // was only ever a URL we held, and it keeps working in
-                    // the school platform for anyone who still has it.
-                    ConnectKind.link => L.s.linkStaysAtSchool,
-                    // The key is deleted here and stays valid at Untis, where
-                    // it was minted and where it can be re-issued — which is
-                    // also how you revoke it for good, and worth saying to
-                    // somebody disconnecting because they want it gone.
-                    ConnectKind.secret => L.s.untisKeyStaysValid,
+                    // Nothing to revoke: the link was only ever a URL we
+                    // held — sealed, but ours to delete and no more — and it
+                    // keeps working at the source for anyone who still has it.
+                    //
+                    // Unless this account was not made by pasting one. Both
+                    // link providers keep an older route at the bottom of
+                    // their page, and a connection made through one of those
+                    // has a real credential to delete: IServ's CalDAV login,
+                    // which is still reachable from the bottom of its page.
+                    // `isLinked` is the connection's own `auth_type`, so it
+                    // answers for the row in front of the user rather than for
+                    // the provider.
+                    ConnectKind.link =>
+                      connection.isLinked ? L.s.linkStaysAtSchool : L.s.credentialsDeleted,
                   }),
       ),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.of(dialogContext).pop(),
-          child: Text(L.s.cancel),
-        ),
+        TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: Text(L.s.cancel)),
         TextButton(
           onPressed: () {
             final notifier = ref.read(calendarConnectionsProvider.notifier);
@@ -1135,7 +1183,7 @@ class _OwnerPickerState extends ConsumerState<_OwnerPicker> {
   }
 
   /// Everybody who already owns a calendar somewhere in this household but has
-  /// no account — the child a WebUntis key was scanned for, the toddler whose
+  /// no account — the child a school calendar was connected for, the toddler whose
   /// Kindergarten calendar was assigned last week.
   ///
   /// Case-insensitively deduplicated, and keeping the capitalisation it was
@@ -1152,8 +1200,7 @@ class _OwnerPickerState extends ConsumerState<_OwnerPicker> {
         if (label.isNotEmpty) seen.putIfAbsent(label.toLowerCase(), () => label);
       }
     }
-    final names = seen.values.toList()
-      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    final names = seen.values.toList()..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
     return names;
   }
 
@@ -1231,10 +1278,7 @@ class _OwnerPickerState extends ConsumerState<_OwnerPicker> {
         const SizedBox(height: 12),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4),
-          child: Text(
-            L.s.assignCalendarNotVisibility,
-            style: AppText.label.copyWith(fontSize: 12),
-          ),
+          child: Text(L.s.assignCalendarNotVisibility, style: AppText.label.copyWith(fontSize: 12)),
         ),
       ],
     );
@@ -1294,11 +1338,7 @@ class _NewPersonRow extends StatelessWidget {
 
   final ValueChanged<String> onSubmit;
 
-  const _NewPersonRow({
-    required this.controller,
-    required this.enabled,
-    required this.onSubmit,
-  });
+  const _NewPersonRow({required this.controller, required this.enabled, required this.onSubmit});
 
   void _submit() {
     final name = controller.text.trim();
@@ -1317,7 +1357,9 @@ class _NewPersonRow extends StatelessWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(color: AppColors.surfaceAlt, shape: BoxShape.circle),
-            child: Center(child: AppIcon(AppIcons.plus, size: 18, flat: true, color: AppColors.muted)),
+            child: Center(
+              child: AppIcon(AppIcons.plus, size: 18, flat: true, color: AppColors.muted),
+            ),
           ),
           const SizedBox(width: 13),
           Expanded(
@@ -1437,14 +1479,9 @@ enum _Step {
   /// iCloud: the login, checked before the flow moves on.
   login,
 
-  /// IServ and WebUntis: the calendar link, pasted from the school platform and
-  /// fetched before the flow moves on.
+  /// IServ, WebUntis and any other published feed: the calendar link, pasted
+  /// from wherever it was created and fetched before the flow moves on.
   link,
-
-  /// WebUntis: the app secret, scanned off the QR code in the pupil's profile
-  /// or typed from the four lines printed under it. Checked by logging in
-  /// before the flow moves on, exactly as the link is fetched.
-  untis,
 
   /// Ferien: one of the sixteen Bundesländer.
   region,
@@ -1488,12 +1525,10 @@ class _ConnectFlow extends ChangeNotifier {
     required this.notifier,
     required this.repository,
     required this.findConnection,
-    this.members = const [],
     this.connection,
     this.calendars = const [],
     this.addToConnectionId,
     this.useCaldavLogin = false,
-    this.useLinkFallback = false,
   }) {
     // Everything the account offers, all ticked. Starting from "all" rather
     // than "none" matches what the connection already means the moment it
@@ -1511,21 +1546,6 @@ class _ConnectFlow extends ChangeNotifier {
 
   /// The household, for matching the child a school account belongs to against
   /// somebody who already has a face here.
-  final List<FamilyMember> members;
-
-  /// The member whose name is [label], or null.
-  ///
-  /// A plain case-insensitive match on the display name, which is the whole
-  /// check on purpose: with an account the child's homework and their chores
-  /// end up on one face, and without one the name alone still makes a chip. A
-  /// household where two people are both called Alex gets no match rather than
-  /// the wrong one — the first of the two would have been a coin toss.
-  String? memberIdFor(String label) {
-    final needle = label.trim().toLowerCase();
-    if (needle.isEmpty) return null;
-    final hits = [for (final m in members) if (m.name.trim().toLowerCase() == needle) m.id];
-    return hits.length == 1 ? hits.first : null;
-  }
 
   /// The account, once there is one: made by the consent screen before this
   /// sheet opened, or by the login step inside it. Stays null for the two
@@ -1557,44 +1577,24 @@ class _ConnectFlow extends ChangeNotifier {
   /// from.
   final bool useCaldavLogin;
 
-  /// WebUntis's second route: the pasted link, reached from the note at the
-  /// bottom of its page. Turns this flow back into the link flow IServ uses —
-  /// same step, same function, same shape — for the school that has switched
-  /// Untis Mobile access off and therefore has no QR code to show.
-  final bool useLinkFallback;
-
-  // -- untis (WebUntis app secret)
-
-  /// The whole `untis://setschool?...` payload, once something has been
-  /// scanned. Kept verbatim rather than split into the four fields: the server
-  /// parses either, and handing on exactly what Untis wrote is one fewer place
-  /// for a transcription to go wrong.
-  String? scannedQr;
-
-  final untisServer = TextEditingController();
-  final untisSchool = TextEditingController();
-  final untisUser = TextEditingController();
-  final untisKey = TextEditingController();
-
-  /// True once the user has asked for the form — because they tapped "Stattdessen
-  /// abtippen", or because the scan could not happen at all. The scan is the
-  /// front door and the form is behind it, so that a household that can scan
-  /// never reads four field labels first.
-  bool typingByHand = false;
-
-  /// Who the key turned out to belong to, from the check. Shown on the naming
-  /// step, because "Boff Campagnaro Alice · 60 Stunden" is what tells a parent
-  /// they scanned the right child's code.
-  String? probedStudent;
-  String? probedSchool;
-  int probedLessons = 0;
-
   /// What the fetched feed said about itself: the name it carries, if any, and
   /// how many events are in it. Shown on the naming step, because "37 Termine
   /// gefunden" is what tells somebody they pasted the right one of their four
   /// IServ links.
   String? probedName;
   int probedEvents = 0;
+
+  /// The contents of an uploaded `.ics` file, once it has been read off the
+  /// device and proved to be a calendar, and the name it was picked under.
+  ///
+  /// Null on every other route. When it is set, [linkUrl] is empty and the
+  /// submit sends the file instead — the two are the same question answered two
+  /// ways, never both at once.
+  String? pickedIcs;
+  String? pickedFileName;
+
+  /// How far an uploaded file reaches. Null for a link, which has no such day.
+  DateTime? probedCoversTo;
 
   // -- region (Ferien)
   String? region;
@@ -1638,19 +1638,28 @@ class _ConnectFlow extends ChangeNotifier {
 
   bool get isFerien => provider == CalendarProvider.ferien;
   bool get isAbfall => provider == CalendarProvider.abfall;
-  /// True on the pasted-link flow, however it was reached: IServ's own, and
-  /// WebUntis's when the fallback note was tapped. Everything downstream — the
-  /// account name, the naming step, the submit — is the same conversation.
-  bool get isLink =>
-      (provider.kind == ConnectKind.link && !useCaldavLogin) ||
-      (provider.kind == ConnectKind.secret && useLinkFallback);
 
-  /// True on the WebUntis app-secret flow, which is the front door for it.
-  bool get isUntis => provider.kind == ConnectKind.secret && !useLinkFallback;
+  /// True on the pasted-link flow, which is now the front door for IServ,
+  /// WebUntis and the generic iCal tile alike. Everything downstream — the
+  /// account name, the naming step, the submit — is the same conversation.
+  bool get isLink => provider.kind == ConnectKind.link && !useCaldavLogin;
 
   /// True while this flow is making a *new* account rather than adding a
   /// calendar to one — the only case that has to ask whose it is.
   bool get needsAccountName => isLink && addToConnectionId == null;
+
+  /// Whether this step offers the file route at all.
+  ///
+  /// The vendorless tile only: IServ and WebUntis both mint subscription links,
+  /// and a school timetable frozen on the day it was exported is worse than no
+  /// school timetable. And iOS only, for the same reason there is no photo off
+  /// iOS — the picker is a `UIDocumentPickerViewController` behind a method
+  /// channel, and there is nothing behind it anywhere else.
+  bool get canUploadFile =>
+      provider == CalendarProvider.ical &&
+      isLink &&
+      !kIsWeb &&
+      defaultTargetPlatform == TargetPlatform.iOS;
 
   /// The steps this flow walks, in order.
   ///
@@ -1666,7 +1675,6 @@ class _ConnectFlow extends ChangeNotifier {
       ConnectKind.oauth => const <_Step>[],
       ConnectKind.password => const [_Step.login],
       ConnectKind.link => useCaldavLogin ? const [_Step.login] : const [_Step.link],
-      ConnectKind.secret => useLinkFallback ? const [_Step.link] : const [_Step.untis],
       ConnectKind.feed => isFerien ? const [_Step.region] : const [_Step.address],
     },
     if (_needsDetails) _Step.details,
@@ -1695,7 +1703,9 @@ class _ConnectFlow extends ChangeNotifier {
       final found = coverage;
       final at = address;
       if (found == null) return at?.label ?? provider.label;
-      if (!found.supported) return found.town.isNotEmpty ? found.town : (at?.town ?? provider.label);
+      if (!found.supported) {
+        return found.town.isNotEmpty ? found.town : (at?.town ?? provider.label);
+      }
       return found.street == null ? found.town : '${found.street}, ${found.town}';
     }
     if (isLink) {
@@ -1703,19 +1713,12 @@ class _ConnectFlow extends ChangeNotifier {
       if (typed.isNotEmpty) return '${provider.label} · $typed';
       return findConnection(addToConnectionId ?? '')?.displayName ?? provider.label;
     }
-    // Nobody is asked whose account this is: the key says, and the check has
-    // read it back off WebUntis by the time this line is shown.
-    if (isUntis) {
-      final pupil = probedStudent?.trim() ?? '';
-      return pupil.isEmpty ? provider.label : '${provider.label} · $pupil';
-    }
     return connection?.displayName ?? provider.label;
   }
 
   /// The line under it: what connecting this will actually do.
   String get intro {
     if (isLink) return L.s.linkedCalendarsNote;
-    if (isUntis) return L.s.untisConnectedNote;
     if (isFerien) {
       final code = region;
       return code == null ? '' : L.s.holidaysSelectedBody(bundeslaender[code]!);
@@ -1778,8 +1781,6 @@ class _ConnectFlow extends ChangeNotifier {
         await _login(context);
       case _Step.link:
         await _checkLink(context);
-      case _Step.untis:
-        await _checkUntis(context);
       case _Step.region:
         if (region == null) {
           _fail(L.s.pickABundesland);
@@ -1851,21 +1852,27 @@ class _ConnectFlow extends ChangeNotifier {
     _suggested = fresh;
   }
 
+  /// The picked file's name without its extension, tidied enough to be a
+  /// calendar name: "Abfuhrkalender_2027.ics" becomes "Abfuhrkalender 2027".
+  String _fileNameSuggestion() {
+    final raw = pickedFileName;
+    if (raw == null) return '';
+    final stem = raw.contains('.') ? raw.substring(0, raw.lastIndexOf('.')) : raw;
+    return stem.replaceAll(RegExp(r'[_-]+'), ' ').trim();
+  }
+
   String _nameSuggestion() {
     // What the feed calls itself, where it says. WebUntis sets X-WR-CALNAME;
     // IServ's plugin feeds do not, so this is usually empty and the user names
     // the calendar — which is the honest outcome, since only they know whether
     // this link is the Klausurplan or the Aufgaben.
-    if (isLink) return probedName?.trim() ?? '';
-    // The pupil's own name, which WebUntis gave us and nobody had to type:
-    // "Stundenplan Alice" is what a household with two children needs the
-    // filter to say.
-    // The **child's** name, not the calendar's. WebUntis already told us who
-    // the key belongs to, so this is usually right without anybody typing: the
-    // calendar name and the person chip both come out of this one word.
-    if (isUntis) {
-      final pupil = probedStudent?.trim() ?? '';
-      return pupil.isEmpty ? '' : _pupilShortName(pupil);
+    if (isLink) {
+      final said = probedName?.trim() ?? '';
+      // A downloaded waste calendar rarely carries X-WR-CALNAME, but the file
+      // it came in is called something like "abfuhr2027.ics" — closer to a name
+      // than an empty field, and the user can still type over it.
+      if (said.isEmpty) return _fileNameSuggestion();
+      return said;
     }
     // "Schulferien Niedersachsen" is both the heading and the name.
     if (isFerien) return headline;
@@ -2046,6 +2053,13 @@ class _ConnectFlow extends ChangeNotifier {
     FocusScope.of(context).unfocus();
     final url = linkUrl.text.trim();
     if (url.isEmpty) {
+      // A file chosen on this step already answered the question the field
+      // asks, and was checked when it was chosen. The chevron must not tell
+      // somebody who has just picked one that they forgot to paste a link.
+      if (pickedIcs != null) {
+        _advance();
+        return;
+      }
       _fail(L.s.pasteLinkHere);
       return;
     }
@@ -2058,8 +2072,13 @@ class _ConnectFlow extends ChangeNotifier {
       final probe = await notifier.checkCalendarLink(provider: provider, url: url);
       if (_disposed) return;
       busy = false;
+      // A link typed after a file was picked replaces it. Only one of the two
+      // is ever sent, and the last thing the user did is the one they meant.
+      pickedIcs = null;
+      pickedFileName = null;
       probedName = probe.name;
       probedEvents = probe.events;
+      probedCoversTo = probe.coversTo;
       _advance();
     } catch (e) {
       if (_disposed) return;
@@ -2068,94 +2087,52 @@ class _ConnectFlow extends ChangeNotifier {
     }
   }
 
-  // -- untis -------------------------------------------------------------------
-
-  /// Opens the camera, and treats every way it can fail as "then type it in":
-  /// the form is one tap away on this same step, so a refused permission is a
-  /// sentence above it rather than a dead end.
-  Future<void> scan() async {
-    if (busy) return;
-    final result = await scanCode(
-      cancelLabel: L.s.cancel,
-      dark: AppColors.palette.isDark,
-      title: L.s.scanUntisCode,
-      hint: L.s.untisFieldsHint,
-    );
-    if (_disposed) return;
-
-    switch (result.outcome) {
-      case ScanOutcome.cancelled:
-        // They know they backed out. Saying so would be the app talking to
-        // itself.
-        return;
-      case ScanOutcome.denied:
-        typingByHand = true;
-        _fail(L.s.cameraDenied);
-      case ScanOutcome.unavailable:
-        typingByHand = true;
-        _fail(L.s.cameraNotAvailable);
-      case ScanOutcome.scanned:
-        final payload = result.value ?? '';
-        // Rejected here rather than at the server for the one mis-scan that is
-        // worth its own sentence: a QR code that is simply some other app's.
-        if (!payload.trimLeft().toLowerCase().startsWith('untis://')) {
-          _fail(L.s.notAnUntisCode);
-          return;
-        }
-        scannedQr = payload;
-        error = null;
-        _notify();
-    }
-  }
-
-  /// Reverting a scan: back to the form, with the four fields empty.
-  void clearScan() {
-    scannedQr = null;
-    typingByHand = true;
-    error = null;
-    _notify();
-  }
-
-  /// The key is checked *here*, on the step that asked for it — the same rule
-  /// the password and the pasted link follow. A revoked key, a school that has
-  /// switched mobile access off, a mistyped Schlüssel: all of them belong under
-  /// the field, not on the step after it.
+  /// The other way onto the same step: pick a `.ics` file, read it off the
+  /// device, and prove it is a calendar before going anywhere.
   ///
-  /// This is also the whole "connect" for WebUntis. Logging in and reading a
-  /// fortnight of lessons is the only thing "verbunden" can honestly mean, and
-  /// it is what fills in whose timetable this turned out to be.
-  Future<void> _checkUntis(BuildContext context) async {
+  /// It ends on `_advance()` rather than on a "Datei gewählt" row and a second
+  /// tap, because picking the file *is* the answer — there is nothing else to
+  /// say on this step once one has been chosen, and the check has already run.
+  Future<void> pickFile(BuildContext context) async {
+    if (busy) return;
     FocusScope.of(context).unfocus();
 
-    final qr = scannedQr?.trim() ?? '';
-    if (qr.isEmpty &&
-        [untisServer, untisSchool, untisUser, untisKey].any((c) => c.text.trim().isEmpty)) {
-      typingByHand = true;
-      _fail(L.s.untisFieldsMissing);
+    final file = await pickAttachment(AttachmentSource.files);
+    if (file == null || _disposed) return;
+
+    // Reading also deletes the picker's copy: from here the calendar exists as
+    // a sealed row on the server, and a spare plaintext one in our sandbox is
+    // nothing but a liability.
+    final text = await readPickedText(file);
+    if (_disposed) return;
+    if (text == null || text.trim().isEmpty) {
+      _fail(L.s.calendarFileUnreadable);
       return;
     }
 
+    // The name goes up before the check rather than after it, so the row says
+    // which file is being checked and the busy line underneath says "Datei"
+    // rather than "Link". It comes back off again if the check fails, which is
+    // the state the step was in before the picker opened.
     busy = true;
     error = null;
+    pickedFileName = file.name;
     _notify();
 
     try {
-      final probe = await notifier.checkUntis(
-        qr: qr.isEmpty ? null : qr,
-        server: untisServer.text,
-        school: untisSchool.text,
-        user: untisUser.text,
-        secret: untisKey.text,
-      );
+      final probe = await notifier.checkCalendarLink(provider: provider, ics: text);
       if (_disposed) return;
       busy = false;
-      probedStudent = probe.student;
-      probedSchool = probe.school;
-      probedLessons = probe.lessons;
+      pickedIcs = text;
+      linkUrl.clear();
+      probedName = probe.name;
+      probedEvents = probe.events;
+      probedCoversTo = probe.coversTo;
       _advance();
     } catch (e) {
       if (_disposed) return;
       busy = false;
+      pickedFileName = null;
       _fail(connectErrorText(e));
     }
   }
@@ -2244,15 +2221,6 @@ class _ConnectFlow extends ChangeNotifier {
         return;
       }
     }
-    // No account name to ask for — WebUntis told us whose key it is — but the
-    // child's name is what the calendar is named after and what both filter
-    // rows are built from, so it cannot be blank.
-    if (isUntis && label.isEmpty) {
-      busy = false;
-      _fail(L.s.untisPupilMissing);
-      return;
-    }
-
     try {
       if (isFerien) {
         await notifier.connectFerien(region!, displayName: label);
@@ -2269,29 +2237,15 @@ class _ConnectFlow extends ChangeNotifier {
           label: address!.label,
           displayName: label,
         );
-      } else if (isUntis) {
-        // One call again, and for the same reason: the sealed key, the one
-        // timetable and its name are a single decision, and not one of the
-        // three is a column a client may write.
-        await notifier.connectUntis(
-          pupil: label,
-          // The child as a household member where the name matches one — their
-          // timetable then lands on the same face as their chores, instead of
-          // beside it under a second chip with the same name on it.
-          memberId: memberIdFor(label),
-          qr: scannedQr,
-          server: untisServer.text,
-          school: untisSchool.text,
-          user: untisUser.text,
-          secret: untisKey.text,
-        );
       } else if (isLink) {
         // One call does the lot: the function stores the link, ticks it and
         // names it, because all three are the same decision and none of the
         // three is a column a client may write.
         await notifier.addCalendarLink(
           provider: provider,
-          url: linkUrl.text.trim(),
+          url: pickedIcs == null ? linkUrl.text.trim() : null,
+          ics: pickedIcs,
+          fileName: pickedFileName,
           name: label,
           account: account.text.trim(),
           connectionId: addToConnectionId,
@@ -2334,10 +2288,6 @@ class _ConnectFlow extends ChangeNotifier {
     query.dispose();
     icsUrl.dispose();
     linkUrl.dispose();
-    untisServer.dispose();
-    untisSchool.dispose();
-    untisUser.dispose();
-    untisKey.dispose();
     account.dispose();
     for (final controller in calendarNames.values) {
       controller.dispose();
@@ -2410,7 +2360,6 @@ class _ConnectBody extends StatelessWidget {
             child: switch (flow.step) {
               _Step.login => _LoginStep(key: const ValueKey('login'), flow: flow),
               _Step.link => _LinkStep(key: const ValueKey('link'), flow: flow),
-              _Step.untis => _UntisStep(key: const ValueKey('untis'), flow: flow),
               _Step.region => _RegionStep(key: const ValueKey('region'), flow: flow),
               _Step.address => _AddressStep(key: const ValueKey('address'), flow: flow),
               _Step.details => _DetailsStep(key: const ValueKey('details'), flow: flow),
@@ -2514,6 +2463,18 @@ class _LinkStep extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // The generic tile has no steps, because there is no one
+                  // place to send somebody — the link comes from whatever
+                  // published it. A sentence about what kind of link is wanted
+                  // is the honest replacement for a menu path we cannot know.
+                  if (steps.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: Text(
+                        L.s.icalLinkNote,
+                        style: AppText.body.copyWith(color: AppColors.muted),
+                      ),
+                    ),
                   for (final (index, line) in steps.indexed) ...[
                     if (index > 0) const SizedBox(height: 10),
                     _LinkHowToRow(number: index + 1, text: line),
@@ -2551,10 +2512,34 @@ class _LinkStep extends StatelessWidget {
                 ),
               ),
             ),
+            // The other way in, for a calendar that is published as a download
+            // and not as a subscription — which is most German waste vendors
+            // outside the six the app resolves by address, and plenty of
+            // Vereine. Under the field rather than beside it: pasting a link is
+            // still the better answer whenever there is one, because a link
+            // stays current and a file does not.
+            if (flow.canUploadFile) ...[
+              Padding(
+                padding: const EdgeInsets.only(left: 16),
+                child: Divider(height: 0.5, thickness: 0.5, color: AppColors.hairline),
+              ),
+              SettingsRow(
+                icon: AppIcons.fileText,
+                title: L.s.uploadCalendarFile,
+                subtitle: flow.pickedFileName == null
+                    ? L.s.uploadCalendarFileHint
+                    : L.s.calendarFileChosen(flow.pickedFileName!),
+                enabled: !flow.busy,
+                onTap: () => flow.pickFile(context),
+              ),
+            ],
           ],
         ),
         _StepError(flow.error),
-        if (flow.busy) _StepBusyRow(L.s.checkingLinkEllipsis),
+        if (flow.busy)
+          _StepBusyRow(
+            flow.pickedFileName == null ? L.s.checkingLinkEllipsis : L.s.checkingFileEllipsis,
+          ),
       ],
     );
   }
@@ -2600,200 +2585,6 @@ class _LinkHowToRow extends StatelessWidget {
   }
 }
 
-/// WebUntis's first step: scan the code, or type what is printed under it.
-///
-/// The scan is the whole screen's proposal and the form sits behind one tap,
-/// rather than the two being offered side by side. A household that can hold a
-/// phone up to a laptop is done in four seconds, and showing them four field
-/// labels first makes the easy path look like the hard one. The form is one row
-/// away, and every way the camera can fail lands them on it with a sentence
-/// saying why.
-class _UntisStep extends StatelessWidget {
-  final _ConnectFlow flow;
-
-  const _UntisStep({super.key, required this.flow});
-
-  @override
-  Widget build(BuildContext context) {
-    final steps = flow.provider.secretSteps;
-    final scanned = flow.scannedQr != null;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        SectionCard(
-          radius: AppRadii.card,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  for (final (index, line) in steps.indexed) ...[
-                    if (index > 0) const SizedBox(height: 10),
-                    _LinkHowToRow(number: index + 1, text: line),
-                  ],
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(left: 16),
-              child: Divider(height: 0.5, thickness: 0.5, color: AppColors.hairline),
-            ),
-            if (scanned)
-              // What was scanned, in the one word off the payload that means
-              // anything to a person — the school. Tapping it scans again,
-              // which is what somebody who held up the wrong child's code
-              // wants and the only thing they could want here.
-              SettingsRow(
-                icon: AppIcons.checkCircle,
-                title: L.s.codeScanned,
-                subtitle: _scannedSchool(flow.scannedQr!) ?? L.s.scanAgain,
-                onTap: flow.busy ? () {} : flow.scan,
-              )
-            else
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      L.s.scanUntisCodeBody,
-                      style: AppText.body.copyWith(color: AppColors.muted),
-                    ),
-                    const SizedBox(height: 14),
-                    AccentAction(
-                      icon: AppIcons.qrCode,
-                      label: L.s.scanUntisCode,
-                      onTap: flow.busy ? () {} : flow.scan,
-                    ),
-                  ],
-                ),
-              ),
-          ],
-        ),
-        // The form: asked for, or arrived at because the camera could not be
-        // used. Never shown next to a scan that has already succeeded — the two
-        // would be answering the same question twice.
-        if (!scanned) ...[
-          const SizedBox(height: AppSpacing.blockGap),
-          if (flow.typingByHand)
-            SectionCard(
-              radius: AppRadii.card,
-              children: dividedRows(inset: true, [
-                _UntisField(
-                  flow: flow,
-                  label: L.s.untisServerField,
-                  hint: L.s.untisFieldsHint,
-                  controller: flow.untisServer,
-                  placeholder: 'schule.webuntis.com',
-                  keyboardType: TextInputType.url,
-                ),
-                _UntisField(
-                  flow: flow,
-                  label: L.s.untisSchoolField,
-                  controller: flow.untisSchool,
-                  placeholder: 'kgs-musterstadt',
-                ),
-                _UntisField(
-                  flow: flow,
-                  label: L.s.untisUserField,
-                  controller: flow.untisUser,
-                  placeholder: '2026042111083880',
-                ),
-                _UntisField(
-                  flow: flow,
-                  label: L.s.untisKeyField,
-                  controller: flow.untisKey,
-                  placeholder: 'N777WOCPNMHOYS4R',
-                  last: true,
-                ),
-              ]),
-            )
-          else
-            SectionCard(
-              radius: AppRadii.card,
-              children: dividedRows(inset: true, [
-                SettingsRow(
-                  icon: AppIcons.keyboard,
-                  title: L.s.enterManually,
-                  subtitle: L.s.untisFieldsHint,
-                  onTap: () {
-                    flow.typingByHand = true;
-                    flow.refreshHeadline();
-                  },
-                ),
-              ]),
-            ),
-        ],
-        _StepError(flow.error),
-        if (flow.busy) _StepBusyRow(L.s.checkingAccessEllipsis),
-      ],
-    );
-  }
-
-  /// The `school=` out of a scanned payload, for the confirmation row. Display
-  /// only — the server parses the payload itself, and a null here costs nothing
-  /// but a slightly duller subtitle.
-  static String? _scannedSchool(String payload) {
-    final at = payload.indexOf('?');
-    if (at < 0) return null;
-    final school = Uri.splitQueryString(payload.substring(at + 1))['school']?.trim();
-    return school == null || school.isEmpty ? null : school;
-  }
-}
-
-/// One of the four lines printed under the QR code.
-///
-/// Autocorrect and suggestions off on all of them: three are identifiers and
-/// the fourth is a base32 key, and a keyboard that helpfully capitalises the
-/// first letter of "kgs-musterstadt" costs somebody ten minutes.
-class _UntisField extends StatelessWidget {
-  final _ConnectFlow flow;
-  final String label;
-  final String? hint;
-  final TextEditingController controller;
-  final String placeholder;
-  final TextInputType? keyboardType;
-  final bool last;
-
-  const _UntisField({
-    required this.flow,
-    required this.label,
-    required this.controller,
-    required this.placeholder,
-    this.hint,
-    this.keyboardType,
-    this.last = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return FieldGroup(
-      label: label,
-      hint: hint,
-      child: FieldBox(
-        child: TextField(
-          controller: controller,
-          enabled: !flow.busy,
-          keyboardType: keyboardType,
-          autocorrect: false,
-          enableSuggestions: false,
-          textCapitalization: TextCapitalization.none,
-          textInputAction: last ? TextInputAction.done : TextInputAction.next,
-          style: AppText.searchInput,
-          decoration: InputDecoration(
-            border: InputBorder.none,
-            hintText: placeholder,
-            isDense: true,
-          ),
-          onSubmitted: last ? (_) => flow.next(context) : null,
-        ),
-      ),
-    );
-  }
-}
-
 class _LoginStep extends StatelessWidget {
   final _ConnectFlow flow;
 
@@ -2801,7 +2592,8 @@ class _LoginStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isIserv = flow.provider == CalendarProvider.iserv;
+    final provider = flow.provider;
+    final appPassword = provider.appPasswordUrl;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -2809,7 +2601,7 @@ class _LoginStep extends StatelessWidget {
         SectionCard(
           radius: AppRadii.card,
           children: dividedRows(inset: true, [
-            if (isIserv)
+            if (provider.needsServerField)
               FieldGroup(
                 label: L.s.school,
                 hint: L.s.schoolAddressHint,
@@ -2828,16 +2620,18 @@ class _LoginStep extends StatelessWidget {
                 ),
               ),
             FieldGroup(
-              label: isIserv ? L.s.username : L.s.appleId,
+              label: provider.loginUserLabel,
               child: FieldBox(
                 child: TextField(
                   controller: flow.user,
-                  keyboardType: isIserv ? TextInputType.text : TextInputType.emailAddress,
+                  keyboardType: provider.needsServerField
+                      ? TextInputType.text
+                      : TextInputType.emailAddress,
                   autocorrect: false,
                   style: AppText.searchInput,
                   decoration: InputDecoration(
                     border: InputBorder.none,
-                    hintText: isIserv ? 'vorname.nachname' : L.s.icloudEmailHint,
+                    hintText: provider.loginUserHint,
                     isDense: true,
                   ),
                 ),
@@ -2845,9 +2639,9 @@ class _LoginStep extends StatelessWidget {
             ),
             FieldGroup(
               label: L.s.password,
-              // The one thing an iCloud user has to be told, said where it is
-              // needed instead of in a paragraph at the top of the page.
-              hint: isIserv ? null : L.s.appPasswordHint,
+              // The one thing an iCloud or GMX user has to be told, said where
+              // it is needed instead of in a paragraph at the top of the page.
+              hint: provider.loginPasswordNote,
               child: FieldBox(
                 child: TextField(
                   controller: flow.password,
@@ -2858,18 +2652,18 @@ class _LoginStep extends StatelessWidget {
                   style: AppText.searchInput,
                   decoration: InputDecoration(
                     border: InputBorder.none,
-                    hintText: isIserv ? L.s.iservPassword : 'xxxx-xxxx-xxxx-xxxx',
+                    hintText: provider.loginPasswordHint,
                     isDense: true,
                   ),
                   onSubmitted: (_) => flow.next(context),
                 ),
               ),
             ),
-            if (!isIserv)
+            if (appPassword != null)
               SettingsRow(
                 icon: AppIcons.arrowSquareOut,
                 title: L.s.createAppPassword,
-                onTap: () => openExternalUrl('https://appleid.apple.com/account/manage'),
+                onTap: () => openExternalUrl(appPassword),
               ),
           ]),
         ),
@@ -3023,19 +2817,7 @@ class _NameStep extends StatelessWidget {
         const SizedBox(height: 14),
         Text(flow.intro, style: AppText.body.copyWith(color: AppColors.muted)),
         const SizedBox(height: 18),
-        if (flow.isLink) ...[
-          _LinkFoundNote(flow: flow),
-          const SizedBox(height: 14),
-        ],
-        // The same reassurance, counting lessons: "60 Stunden in den nächsten
-        // zwei Wochen" under the pupil's own name is what confirms the right
-        // child's code was held up. A timetable that is legitimately empty —
-        // the holidays — reads as working, for the same reason an empty
-        // Klausurplan does.
-        if (flow.isUntis) ...[
-          _UntisFoundNote(flow: flow),
-          const SizedBox(height: 14),
-        ],
+        if (flow.isLink) ...[_LinkFoundNote(flow: flow), const SizedBox(height: 14)],
         SectionCard(
           radius: AppRadii.card,
           children: dividedRows(
@@ -3083,16 +2865,8 @@ class _NameStep extends StatelessWidget {
                         ),
                       ),
                     FieldGroup(
-                      label: flow.isLink
-                          ? L.s.linkedCalendarName
-                          : flow.isUntis
-                          ? L.s.untisPupilName
-                          : L.s.name,
-                      hint: flow.isLink
-                          ? L.s.linkedCalendarNameHint
-                          : flow.isUntis
-                          ? L.s.untisPupilNameHint
-                          : L.s.calendarNameInAporah,
+                      label: flow.isLink ? L.s.linkedCalendarName : L.s.name,
+                      hint: flow.isLink ? L.s.linkedCalendarNameHint : L.s.calendarNameInAporah,
                       child: FieldBox(
                         child: TextField(
                           controller: flow.name,
@@ -3143,43 +2917,29 @@ class _LinkFoundNote extends StatelessWidget {
         AppIcon(none ? AppIcons.info : AppIcons.checkCircle, size: 16, color: color),
         const SizedBox(width: 8),
         Expanded(
-          child: Text(
-            none ? L.s.noEventsAtLinkYet : L.s.eventsFoundAtLink(flow.probedEvents),
-            style: AppText.caption.copyWith(color: color),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// What the WebUntis key turned out to reach, over the naming step.
-///
-/// The count answers the question a parent actually has at this moment — is
-/// this the right child? — together with the headline above it, which is the
-/// name Untis gave back rather than one anybody typed. An empty fortnight is
-/// reported as working: a timetable is legitimately empty over the holidays,
-/// and calling that a failure would send somebody back to WebUntis to fix a key
-/// that is already right.
-class _UntisFoundNote extends StatelessWidget {
-  final _ConnectFlow flow;
-
-  const _UntisFoundNote({required this.flow});
-
-  @override
-  Widget build(BuildContext context) {
-    final none = flow.probedLessons == 0;
-    final color = none ? AppColors.muted : Theme.of(context).colorScheme.primary;
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        AppIcon(none ? AppIcons.info : AppIcons.checkCircle, size: 16, color: color),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            none ? L.s.noLessonsYet : L.s.lessonsFound(flow.probedLessons),
-            style: AppText.caption.copyWith(color: color),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                none ? L.s.noEventsAtLinkYet : L.s.eventsFoundAtLink(flow.probedEvents),
+                style: AppText.caption.copyWith(color: color),
+              ),
+              // An uploaded file needs one sentence a link never does: it is a
+              // snapshot, and it stops. Said here, where the household is
+              // deciding to keep it, rather than discovered next January when
+              // the bin calendar quietly runs out of Wednesdays.
+              if (flow.pickedIcs != null) ...[
+                const SizedBox(height: 4),
+                Text(
+                  [
+                    if (flow.probedCoversTo != null)
+                      L.s.calendarFileCoversTo(L.s.longDate(flow.probedCoversTo!)),
+                    L.s.calendarFileNote,
+                  ].join(' '),
+                  style: AppText.caption.copyWith(color: AppColors.muted),
+                ),
+              ],
+            ],
           ),
         ),
       ],
@@ -3324,8 +3084,7 @@ class _RegionStep extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final connected = {
-      for (final c in ref.watch(calendarConnectionsProvider).of(CalendarProvider.ferien))
-        c.account,
+      for (final c in ref.watch(calendarConnectionsProvider).of(CalendarProvider.ferien)) c.account,
     };
 
     return Column(
@@ -3558,7 +3317,9 @@ class _BusyRow extends StatelessWidget {
         children: [
           const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
           const SizedBox(width: 12),
-          Expanded(child: Text(label, style: AppText.body.copyWith(color: AppColors.muted))),
+          Expanded(
+            child: Text(label, style: AppText.body.copyWith(color: AppColors.muted)),
+          ),
         ],
       ),
     );
@@ -3598,10 +3359,7 @@ class _Chip extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppRadii.iconTile),
           border: Border.all(color: selected ? accent : AppColors.hairline2),
         ),
-        child: Text(
-          label,
-          style: AppText.body.copyWith(color: selected ? accent : AppColors.ink),
-        ),
+        child: Text(label, style: AppText.body.copyWith(color: selected ? accent : AppColors.ink)),
       ),
     );
   }

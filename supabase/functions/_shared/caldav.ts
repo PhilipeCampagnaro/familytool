@@ -39,8 +39,17 @@ export interface ParsedEvent {
 
 const USER_AGENT = "Aporah/1.0 (CalDAV)";
 
+/// The providers whose server address we know, so the user never types one.
+///
+/// GMX and WEB.DE are the same server under two brands — 1&1 Mail & Media runs
+/// both, and both answer RFC 6764 discovery: `/.well-known/caldav` redirects
+/// (307, so the PROPFIND method survives) to the account root, and the endpoint
+/// offers Basic auth. Everything after that is the chain [discover] already
+/// walks for iCloud.
 const PROVIDER_BASE: Record<string, string> = {
   icloud: "https://caldav.icloud.com",
+  gmx: "https://caldav.gmx.net",
+  webde: "https://caldav.web.de",
 };
 
 const PROP_PRINCIPAL =
@@ -1040,6 +1049,24 @@ export function parseIcs(ics: string, from: Date, to: Date): Omit<ParsedEvent, "
         const build = (start: any, end: any, item: any): Omit<ParsedEvent, "href" | "etag"> | null => {
           const startDate = start?.toJSDate?.();
           if (!startDate) return null;
+
+          // `STATUS:CANCELLED` means the thing is off — a called-off fixture, a
+          // lesson that is not happening, a meeting withdrawn. RFC 5545 keeps
+          // the VEVENT in the feed so that subscribers learn it was cancelled
+          // rather than merely losing sight of it, which is the right thing for
+          // a client holding a stored copy and the wrong thing for us: we
+          // re-read the whole feed every refresh and store nothing, so an event
+          // we drop is simply gone from the grid, which is what "cancelled"
+          // should look like. Rendering it as an ordinary appointment is the
+          // one outcome that misleads.
+          //
+          // Read off the occurrence's own component, so a series where a single
+          // date is cancelled by an override loses that date and keeps the rest.
+          // WebUntis, as it happens, leaves cancelled lessons out of its iCal
+          // feed altogether; IServ and generic feeds do not, and neither does
+          // Google when an invitation is withdrawn.
+          const status = item?.component?.getFirstPropertyValue?.("status");
+          if (typeof status === "string" && status.toUpperCase() === "CANCELLED") return null;
 
           let endDate: Date | null = null;
           try {

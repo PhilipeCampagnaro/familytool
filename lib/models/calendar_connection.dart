@@ -2,12 +2,21 @@ import 'package:flutter/widgets.dart';
 import '../l10n/l10n.dart';
 import '../theme/app_icons.dart';
 
-/// The seven calendar sources, spelled exactly as `calendar_connections.provider`
+/// The ten calendar sources, spelled exactly as `calendar_connections.provider`
 /// and `calendars.provider` store them.
 ///
 /// `outlook` — not `microsoft`. The old web app carried both spellings and
 /// needed an `isMicrosoft()` helper in five files to keep them agreeing.
-enum CalendarProvider { google, outlook, icloud, iserv, webuntis, ferien, abfall }
+///
+/// `ical` is the one without a company behind it: any published ICS link. It
+/// shares every line of machinery with the two school providers — the tile
+/// exists so that a household with a Verein's fixture list is not told this app
+/// only does Google, Outlook and school.
+/// `gmx` and `webde` are one system with two brands: 1&1 Mail & Media runs both
+/// mailboxes on the same CalDAV server, so they share every line of code and
+/// differ in a base URL, a name and a colour. They are here because Google and
+/// Apple are not where a German family's calendar necessarily lives.
+enum CalendarProvider { google, outlook, icloud, gmx, webde, iserv, webuntis, ical, ferien, abfall }
 
 CalendarProvider? providerFromWire(String value) {
   for (final p in CalendarProvider.values) {
@@ -24,8 +33,14 @@ enum ConnectKind {
   /// iCloud: an app-specific password typed into the app.
   password,
 
-  /// IServ and WebUntis: a calendar link the user creates in the school
-  /// platform and pastes here. No credential at all.
+  /// IServ, WebUntis and any other published feed: a calendar link the user
+  /// creates at the source and pastes here.
+  ///
+  /// "No credential" is how this reads and not what it is — the token in the
+  /// URL is the whole capability, which is why it is sealed exactly like a
+  /// password (see `calendar_connection_secrets.feed_urls`). What is true is
+  /// that there is no login, nothing to expire, and nothing we hold that could
+  /// be replayed against the user's account rather than against one calendar.
   ///
   /// This is how school calendars actually work, as opposed to how they look
   /// like they should. IServ's plugin calendars — Aufgaben, Klausuren,
@@ -33,26 +48,12 @@ enum ConnectKind {
   /// so a login enumerates the pupil's own empty calendar and the school-wide
   /// `+public` feed and nothing else worth reading. The link the user creates
   /// under Kalender → Einstellungen → Plugins returns exactly the right events.
+  /// WebUntis's "Kalender publizieren" mints the same shape of thing.
   ///
   /// There is no API to mint or list those links, so one is pasted per
   /// calendar — which is why a link connection holds several and why the setup
   /// sheet can be re-entered to add another.
   link,
-
-  /// WebUntis: the app secret out of the pupil's own profile, scanned off a QR
-  /// code or typed from the four lines printed under it.
-  ///
-  /// Not a password, and that is the whole point. Freigaben → "Zugriff über
-  /// Untis Mobile" → Zugangsdaten anzeigen mints a base32 key that Untis Mobile
-  /// itself authenticates with — a TOTP is computed from it per request — so
-  /// nothing we store can be replayed, the key is revoked from the page that
-  /// made it without touching the account, and it keeps working on accounts
-  /// with 2FA, where a password login is refused outright.
-  ///
-  /// It also brings back more than the link can: the timetable arrives as
-  /// lessons with subject, teacher, room and a status, so Entfall and
-  /// Vertretung are visible rather than looking like ordinary lessons.
-  secret,
 
   /// Ferien and Abfall: public feeds, nothing to authenticate with.
   feed,
@@ -65,8 +66,11 @@ extension CalendarProviderMeta on CalendarProvider {
     CalendarProvider.google => 'Google',
     CalendarProvider.outlook => 'Outlook',
     CalendarProvider.icloud => 'iCloud',
+    CalendarProvider.gmx => 'GMX',
+    CalendarProvider.webde => 'WEB.DE',
     CalendarProvider.iserv => 'IServ',
     CalendarProvider.webuntis => 'WebUntis',
+    CalendarProvider.ical => L.s.providerIcalLabel,
     CalendarProvider.ferien => L.s.providerHolidaysLabel,
     CalendarProvider.abfall => L.s.providerWasteLabel,
   };
@@ -75,17 +79,23 @@ extension CalendarProviderMeta on CalendarProvider {
     CalendarProvider.google => L.s.providerGoogleDesc,
     CalendarProvider.outlook => L.s.providerOutlookDesc,
     CalendarProvider.icloud => L.s.providerIcloudDesc,
+    CalendarProvider.gmx => L.s.providerGmxDesc,
+    CalendarProvider.webde => L.s.providerWebdeDesc,
     CalendarProvider.iserv => L.s.providerIservDesc,
     CalendarProvider.webuntis => L.s.providerWebuntisDesc,
+    CalendarProvider.ical => L.s.providerIcalDesc,
     CalendarProvider.ferien => L.s.providerHolidaysDesc,
     CalendarProvider.abfall => L.s.providerWasteDesc,
   };
 
   ConnectKind get kind => switch (this) {
     CalendarProvider.google || CalendarProvider.outlook => ConnectKind.oauth,
-    CalendarProvider.icloud => ConnectKind.password,
-    CalendarProvider.iserv => ConnectKind.link,
-    CalendarProvider.webuntis => ConnectKind.secret,
+    CalendarProvider.icloud ||
+    CalendarProvider.gmx ||
+    CalendarProvider.webde => ConnectKind.password,
+    CalendarProvider.iserv ||
+    CalendarProvider.webuntis ||
+    CalendarProvider.ical => ConnectKind.link,
     CalendarProvider.ferien || CalendarProvider.abfall => ConnectKind.feed,
   };
 
@@ -99,47 +109,97 @@ extension CalendarProviderMeta on CalendarProvider {
   /// as the first. WebUntis has no CalDAV at all.
   bool get hasCaldavFallback => this == CalendarProvider.iserv;
 
-  /// WebUntis's second route: "Kalender publizieren" mints a tokenised ICS link
-  /// the same way IServ's plugins do, and it stays reachable from the bottom of
-  /// the page for a school that has turned mobile access off — the one case
-  /// where there is no QR code to show. It brings back a flat feed rather than
-  /// lessons, which is why it is the fallback and not the button.
-  bool get hasLinkFallback => this == CalendarProvider.webuntis;
-
   /// Where the user goes to create the link, in their own words. Rendered as
   /// the numbered steps on the paste screen.
   List<String> get linkSteps => switch (this) {
     CalendarProvider.iserv => L.s.iservLinkSteps,
     CalendarProvider.webuntis => L.s.webuntisLinkSteps,
+    // No steps for the generic one, on purpose: there is no single place to
+    // send somebody. The paste screen falls back to a sentence about what kind
+    // of link is wanted, which is all that can honestly be said.
     _ => const [],
   };
 
-  /// Where the pupil finds the QR code, in their own words. The same dialog
-  /// prints the four fields as text, which is what the manual form asks for —
-  /// so one set of steps serves both halves of the screen.
-  List<String> get secretSteps =>
-      this == CalendarProvider.webuntis ? L.s.webuntisSecretSteps : const [];
-
-  /// The logo shipped in `assets/calendar_providers/`, or null for the two
-  /// providers that are a public feed rather than a company.
+  /// The logo shipped in `assets/calendar_providers/`, or null for the three
+  /// providers that are a feed or a link rather than a company.
   String? get asset => switch (this) {
     CalendarProvider.google => 'assets/calendar_providers/google_calendar.png',
     CalendarProvider.outlook => 'assets/calendar_providers/outlook.png',
     CalendarProvider.icloud => 'assets/calendar_providers/icloud_calendar.png',
     CalendarProvider.iserv => 'assets/calendar_providers/iserv.jpg',
-    // No WebUntis logo is shipped: it is a trademark we have no licence to
-    // bundle, and the two feed providers already establish that an icon tile is
-    // a perfectly good row leading. Drop a PNG in and add it here if that ever
-    // changes.
-    CalendarProvider.webuntis ||
-    CalendarProvider.ferien ||
-    CalendarProvider.abfall => null,
+    CalendarProvider.webuntis => 'assets/calendar_providers/webuntis.png',
+    CalendarProvider.gmx => 'assets/calendar_providers/gmx.png',
+    CalendarProvider.webde => 'assets/calendar_providers/webde.png',
+    CalendarProvider.ical || CalendarProvider.ferien || CalendarProvider.abfall => null,
   };
+
+  // -- the login step ---------------------------------------------------------
+  //
+  // Four providers connect by typing something in, and they disagree about
+  // every field: what the username is called, what it looks like, whether the
+  // password is the account's own, and where an application one is made. That
+  // used to be an `isIserv` boolean in the step's build method, which worked
+  // for two and would have needed a second boolean for each one after. It is
+  // metadata here instead, so the step renders one shape and adding a CalDAV
+  // provider is a line per question rather than a condition per field.
+
+  /// What the account is called on the login step — "Apple-ID", "Benutzername",
+  /// "E-Mail-Adresse".
+  String get loginUserLabel => switch (this) {
+    CalendarProvider.iserv => L.s.username,
+    CalendarProvider.gmx || CalendarProvider.webde => L.s.emailAddress,
+    _ => L.s.appleId,
+  };
+
+  /// The greyed example in the username field. A brand's own domain, because
+  /// the one thing people get wrong here is typing the local part alone.
+  String get loginUserHint => switch (this) {
+    CalendarProvider.iserv => 'vorname.nachname',
+    CalendarProvider.gmx => 'name@gmx.net',
+    CalendarProvider.webde => 'name@web.de',
+    _ => L.s.icloudEmailHint,
+  };
+
+  /// The sentence under the password field, or null where the account's own
+  /// password is what is wanted.
+  String? get loginPasswordNote => switch (this) {
+    CalendarProvider.iserv => null,
+    CalendarProvider.gmx || CalendarProvider.webde => L.s.oneAndOneAppPasswordHint,
+    _ => L.s.appPasswordHint,
+  };
+
+  String get loginPasswordHint => switch (this) {
+    CalendarProvider.iserv => L.s.iservPassword,
+    // Apple's app passwords have a shape worth showing; 1&1's do not, so the
+    // field says what to type rather than pretending to a format.
+    CalendarProvider.gmx || CalendarProvider.webde => L.s.appPasswordPlaceholder,
+    _ => 'xxxx-xxxx-xxxx-xxxx',
+  };
+
+  /// Where the household goes to mint an application-specific password, or null
+  /// for a provider that has none.
+  ///
+  /// GMX and WEB.DE both file it under Zwei-Faktor-Authentifizierung, so the
+  /// link is to the instructions rather than to a settings page that only
+  /// exists once 2FA is on.
+  String? get appPasswordUrl => switch (this) {
+    CalendarProvider.icloud => 'https://appleid.apple.com/account/manage',
+    CalendarProvider.gmx =>
+      'https://hilfe.gmx.net/sicherheit/2fa/anwendungsspezifisches-passwort.html',
+    CalendarProvider.webde =>
+      'https://hilfe.web.de/sicherheit/2fa/anwendungsspezifisches-passwort.html',
+    _ => null,
+  };
+
+  /// Whether the login step asks for a server address. IServ alone: every other
+  /// provider's is known and is in the CalDAV base-URL table server-side.
+  bool get needsServerField => this == CalendarProvider.iserv;
 
   IconData get icon => switch (this) {
     CalendarProvider.ferien => AppIcons.graduationCap,
     CalendarProvider.abfall => AppIcons.recycle,
     CalendarProvider.webuntis => AppIcons.clock,
+    CalendarProvider.ical => AppIcons.calendar,
     _ => AppIcons.calendarDots,
   };
 }
@@ -173,10 +233,20 @@ class RemoteCalendar {
   /// Kita's calendar far more often than it wants to write to it.
   final bool readOnly;
 
+  /// The last day an uploaded calendar file has an event on. Null for every
+  /// calendar that is fetched rather than held — a link, an account, a public
+  /// feed — because those keep themselves current and have no such day.
+  ///
+  /// It is the one honest thing a snapshot can say about itself: the household
+  /// handed us a file, and on this date it stops. Without it the calendar
+  /// simply goes quiet and nothing on screen explains why.
+  final DateTime? coversTo;
+
   const RemoteCalendar({
     required this.externalId,
     required this.name,
     this.readOnly = false,
+    this.coversTo,
   });
 
   static RemoteCalendar? fromMap(Map<String, dynamic> map) {
@@ -187,6 +257,10 @@ class RemoteCalendar {
       externalId: id,
       name: name == null || name.isEmpty ? id : name,
       readOnly: map['read_only'] == true,
+      coversTo: switch (map['covers_to']) {
+        final String date when date.isNotEmpty => DateTime.tryParse(date),
+        _ => null,
+      },
     );
   }
 }
@@ -359,7 +433,10 @@ class CalendarConnection {
 
   static List<String>? _selectedFrom(Object? raw) {
     if (raw is! List) return null;
-    return [for (final id in raw) if (id is String && id.isNotEmpty) id];
+    return [
+      for (final id in raw)
+        if (id is String && id.isNotEmpty) id,
+    ];
   }
 
   static Map<String, String> _namesFrom(Object? raw) {
@@ -448,11 +525,7 @@ class ConnectedCalendar {
 
   final String name;
 
-  const ConnectedCalendar({
-    required this.connection,
-    required this.name,
-    this.externalId,
-  });
+  const ConnectedCalendar({required this.connection, required this.name, this.externalId});
 
   /// Unique across the list — a connection id alone repeats once an account
   /// contributes more than one row.
@@ -563,9 +636,7 @@ class AbfallCoverage {
     town: map['town'] as String? ?? '',
     street: map['street'] as String?,
     houseNumbers: _houseNumbers(map['hausNrList']),
-    config: map['config'] is Map
-        ? Map<String, dynamic>.from(map['config'] as Map)
-        : null,
+    config: map['config'] is Map ? Map<String, dynamic>.from(map['config'] as Map) : null,
   );
 
   /// Both halves of a house number are load-bearing: `nr` is what the chip says
@@ -649,5 +720,4 @@ String? bundeslandCodeFor(String? state) {
   return best;
 }
 
-String _foldBundesland(String value) =>
-    value.toLowerCase().replaceAll(RegExp(r'[^a-zäöüß]'), '');
+String _foldBundesland(String value) => value.toLowerCase().replaceAll(RegExp(r'[^a-zäöüß]'), '');

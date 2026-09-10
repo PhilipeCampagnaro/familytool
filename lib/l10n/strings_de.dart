@@ -16,19 +16,48 @@ class StringsDe extends AppStrings {
   // ---------------------------------------------------------------- dates --
   @override
   List<String> get monthNames => const [
-        '', 'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
-        'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember',
-      ];
+    '',
+    'Januar',
+    'Februar',
+    'März',
+    'April',
+    'Mai',
+    'Juni',
+    'Juli',
+    'August',
+    'September',
+    'Oktober',
+    'November',
+    'Dezember',
+  ];
   @override
   List<String> get monthShort => const [
-        '', 'Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun',
-        'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez',
-      ];
+    '',
+    'Jan',
+    'Feb',
+    'Mär',
+    'Apr',
+    'Mai',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Okt',
+    'Nov',
+    'Dez',
+  ];
   @override
   List<String> get weekdayShort => const ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
   @override
-  List<String> get weekdayLong =>
-      const ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+  List<String> get weekdayLong => const [
+    'Sonntag',
+    'Montag',
+    'Dienstag',
+    'Mittwoch',
+    'Donnerstag',
+    'Freitag',
+    'Samstag',
+  ];
   @override
   List<String> get dayLetters => const ['M', 'D', 'M', 'D', 'F', 'S', 'S'];
 
@@ -136,8 +165,6 @@ class StringsDe extends AppStrings {
   String get titleLabel => 'Titel';
   @override
   String get role => 'Rolle';
-  @override
-  String get emailAddress => 'E-Mail-Adresse';
   @override
   String get nameOptional => 'Name (optional)';
   @override
@@ -266,8 +293,7 @@ class StringsDe extends AppStrings {
   @override
   String get howOften => 'Wie oft?';
   @override
-  String timesPerWeekValue(int times) =>
-      times == 1 ? 'Einmal pro Woche' : '$times-mal pro Woche';
+  String timesPerWeekValue(int times) => times == 1 ? 'Einmal pro Woche' : '$times-mal pro Woche';
   @override
   String get timesPerWeekExplainer =>
       'Es zählt die Woche, nicht der Tag. Nichts ist an einem bestimmten Tag fällig — gezählt wird, wenn die Woche am Sonntag zu Ende ist.';
@@ -681,12 +707,15 @@ class StringsDe extends AppStrings {
   @override
   String get connectCalendars => 'Kalender verbinden';
   @override
+  String get calendarAccountsGroup => 'Konten';
+  @override
+  String get noAccountGroup => 'Ohne Konto';
+  @override
   String get connectCalendarsIntro =>
       'Sieh die Termine deiner Familie in der App — Schule, Abfallabfuhr und '
       'private Kalender an einem Ort.';
   @override
-  String get connectCalendarsAdminNote =>
-      'Kalender verbindet ein Erwachsener im Haushalt.';
+  String get connectCalendarsAdminNote => 'Kalender verbindet ein Erwachsener im Haushalt.';
   @override
   String get noCalendarsConnected => 'Noch kein Kalender verbunden.';
   @override
@@ -758,8 +787,7 @@ class StringsDe extends AppStrings {
   @override
   String signInWithProvider(String provider) => 'Mit $provider anmelden';
   @override
-  String get comeBackWhenDone =>
-      'Komm zurück, sobald du im Browser fertig bist.';
+  String get comeBackWhenDone => 'Komm zurück, sobald du im Browser fertig bist.';
   @override
   String get connectedDot => 'Verbunden.';
   @override
@@ -803,6 +831,14 @@ class StringsDe extends AppStrings {
   String get appleId => 'Apple-ID';
   @override
   String get icloudEmailHint => 'name@icloud.com';
+  @override
+  String get emailAddress => 'E-Mail-Adresse';
+  @override
+  String get oneAndOneAppPasswordHint =>
+      'Am besten ein anwendungsspezifisches Passwort — das gilt nur für den '
+      'Kalender und lässt sich einzeln widerrufen.';
+  @override
+  String get appPasswordPlaceholder => 'Anwendungsspezifisches Passwort';
   @override
   String get iservPassword => 'IServ-Passwort';
   @override
@@ -853,9 +889,36 @@ class StringsDe extends AppStrings {
   @override
   List<String> get webuntisLinkSteps => const [
     'In WebUntis anmelden und oben auf den eigenen Namen tippen.',
-    'Unter „Freigaben" auf „Kalender publizieren".',
+    'Unter „Freigaben" auf „Kalender publizieren" — oder im Stundenplan über '
+        'die drei Punkte auf „iCal-Abo verwalten", Format „Standard", '
+        '„Link erstellen".',
     'Den erzeugten iCal-Link kopieren und hier einsetzen.',
   ];
+  @override
+  String get icalLinkNote =>
+      'Jeder Kalender, den man abonnieren kann: Verein, Kita, Arbeit. Gesucht ist '
+      'die Abo-Adresse (ICS), nicht die Webseite des Kalenders.';
+  @override
+  String get uploadCalendarFile => 'Kalenderdatei hochladen';
+  @override
+  String get uploadCalendarFileHint =>
+      'Wenn es keinen Link gibt, sondern nur eine .ics-Datei zum Herunterladen.';
+  @override
+  String get calendarFileNote =>
+      'Eine Datei ist eine Momentaufnahme: Sie enthält genau die Termine, die '
+      'beim Hochladen darin standen. Kommt eine neue heraus, ladet ihr sie hier '
+      'einfach wieder hoch.';
+  @override
+  String get checkingFileEllipsis => 'Datei wird geprüft …';
+  @override
+  String get calendarFileUnreadable =>
+      'Die Datei ließ sich nicht lesen. Bitte wähle eine .ics-Datei.';
+  @override
+  String calendarFileCoversTo(String date) => 'Die Termine reichen bis zum $date.';
+  @override
+  String calendarFileChosen(String name) => '$name ausgewählt';
+  @override
+  String longDate(DateTime at) => '${at.day}. ${monthNames[at.month]} ${at.year}';
   @override
   String get pasteCalendarLink => 'Kalender-Link';
   @override
@@ -864,8 +927,7 @@ class StringsDe extends AppStrings {
   @override
   String get whoseCalendar => 'Für wen ist dieser Zugang?';
   @override
-  String get whoseCalendarHint =>
-      'Steht später auf dem Filter im Kalender, z. B. „IServ · Alice".';
+  String get whoseCalendarHint => 'Steht später auf dem Filter im Kalender, z. B. „IServ · Alice".';
   @override
   String get whoseCalendarPlaceholder => 'Name des Kindes';
   @override
@@ -904,73 +966,7 @@ class StringsDe extends AppStrings {
   @override
   String get noEventsAtLinkYet =>
       'Der Link funktioniert, enthält aber gerade keine Termine. Das ist in den Ferien normal.';
-  @override
-  List<String> get webuntisSecretSteps => const [
-    'Dein Kind meldet sich in WebUntis an und tippt oben auf seinen Namen.',
-    'Unter „Freigaben" bei „Zugriff über Untis Mobile" auf „Anzeigen".',
-    'Den QR-Code hier scannen – oder die vier Zeilen darunter abtippen.',
-  ];
-  @override
-  String get scanUntisCode => 'QR-Code scannen';
-  @override
-  String get scanUntisCodeBody =>
-      'Wir holen damit den Stundenplan direkt aus WebUntis – mit Vertretung und '
-      'Entfall. Das Passwort deines Kindes braucht es dafür nicht.';
-  @override
-  String get scanAgain => 'Neu scannen';
-  @override
-  String get codeScanned => 'QR-Code gescannt';
-  @override
-  String get enterManually => 'Stattdessen abtippen';
-  @override
-  String get untisServerField => 'Url';
-  @override
-  String get untisSchoolField => 'Schule';
-  @override
-  String get untisUserField => 'Benutzer';
-  @override
-  String get untisKeyField => 'Schlüssel';
-  @override
-  String get untisFieldsHint => 'Genau so, wie es unter dem QR-Code steht.';
-  @override
-  String get untisFieldsMissing => 'Bitte Url, Schule, Benutzer und Schlüssel eintragen.';
-  @override
-  String get checkingAccessEllipsis => 'Zugang wird geprüft …';
-  @override
-  String get cameraNotAvailable =>
-      'Auf diesem Gerät lässt sich nichts scannen. Tipp die vier Zeilen unter dem QR-Code ab.';
-  @override
-  String get cameraDenied =>
-      'Aporah darf nicht auf die Kamera. Das lässt sich in den Einstellungen ändern – '
-      'oder tipp die vier Zeilen unter dem QR-Code ab.';
-  @override
-  String get notAnUntisCode => 'Das ist kein WebUntis-Code. Ist es der aus „Zugriff über Untis Mobile"?';
-  @override
-  String get untisCalendarName => 'Name des Stundenplans';
-  @override
-  String untisCalendarNameSuggestion(String pupil) => 'Stundenplan $pupil';
-  @override
-  String get untisCalendarNameHint => 'Steht später auf dem Filter im Kalender.';
-  @override
-  String get untisConnectedNote =>
-      'Aporah liest den Stundenplan nur – und immer frisch, samt Vertretung und Entfall. '
-      'Geändert wird er weiterhin in der Schule.';
-  @override
-  String lessonsFound(int count) =>
-      count == 1 ? '1 Stunde in den nächsten zwei Wochen' : '$count Stunden in den nächsten zwei Wochen';
-  @override
-  String get noLessonsYet =>
-      'Der Zugang funktioniert, es steht aber gerade kein Unterricht an. In den Ferien ist das normal.';
-  @override
-  String get connectWithLink => 'Stattdessen einen Kalender-Link einsetzen';
-  @override
-  String get connectWithLinkBody =>
-      'Nötig, wenn eure Schule den Zugriff über Untis Mobile abgeschaltet hat. '
-      'Der Link zeigt den Stundenplan, aber keine Vertretung.';
-  @override
-  String get untisKeyStaysValid =>
-      ' Der Zugangsschlüssel wird bei uns gelöscht. In WebUntis bleibt er gültig — '
-      'dort lässt er sich unter „Freigaben" neu vergeben.';
+
   @override
   String get calendarLinkIcs => 'Kalender-Link (ICS)';
   @override
@@ -1017,6 +1013,8 @@ class StringsDe extends AppStrings {
 
   // -------------------------------------------------------- provider meta --
   @override
+  String get providerIcalLabel => 'Anderer Kalender';
+  @override
   String get providerHolidaysLabel => 'Ferien';
   @override
   String get providerWasteLabel => 'Abfall';
@@ -1027,9 +1025,16 @@ class StringsDe extends AppStrings {
   @override
   String get providerIcloudDesc => 'iCloud mit einem app-spezifischen Passwort verbinden.';
   @override
+  String get providerGmxDesc => 'Den GMX Kalender verbinden — Termine gehen auch zurück.';
+  @override
+  String get providerWebdeDesc => 'Den WEB.DE Kalender verbinden — Termine gehen auch zurück.';
+  @override
   String get providerIservDesc => 'Aufgaben, Klausuren und Klassenkalender aus IServ.';
   @override
-  String get providerWebuntisDesc => 'Den Stundenplan aus WebUntis anzeigen.';
+  String get providerWebuntisDesc =>
+      'Den Stundenplan aus WebUntis anzeigen — über den iCal-Link aus dem Profil.';
+  @override
+  String get providerIcalDesc => 'Jeden abonnierbaren Kalender einsetzen — Verein, Kita, Arbeit.';
   @override
   String get providerHolidaysDesc => 'Schulferien deines Bundeslands anzeigen.';
   @override
@@ -1395,35 +1400,20 @@ class StringsDe extends AppStrings {
   @override
   String get inviteRevokeFailed => 'Die Einladung konnte nicht zurückgezogen werden.';
 
-  // --------------------------------------------------------------- homework --
-  @override
-  String get homework => 'Hausaufgabe';
-  @override
-  String homeworkCount(int count) => count == 1 ? 'Hausaufgabe' : '$count Hausaufgaben';
-  @override
-  String get homeworkDue => 'Fällig';
-  @override
-  String get homeworkDone => 'Erledigt';
-  @override
-  String get homeworkSetBy => 'Aufgegeben von';
-
-  @override
-  String get untisPupilName => 'Wessen Stundenplan ist das?';
-  @override
-  String get untisPupilNameHint => 'Der Name erscheint als Filter in Kalender und Board.';
-  @override
-  String get untisPupilMissing => 'Zu wem gehört dieser Stundenplan?';
+  // --------------------------------------------------- calendar ownership --
 
   @override
   String get assignCalendar => 'Zuordnen';
   @override
-  String assignCalendarBody(String calendar) => 'Zu wem gehört „$calendar“? Der Kalender erscheint dann unter dieser Person in Kalender und Board.';
+  String assignCalendarBody(String calendar) =>
+      'Zu wem gehört „$calendar“? Der Kalender erscheint dann unter dieser Person in Kalender und Board.';
   @override
   String get assignCalendarFamilyHint => 'Gehört allen im Haushalt';
   @override
   String get assignCalendarNewPerson => 'Andere Person';
   @override
-  String get assignCalendarNotVisibility => 'Das ändert nichts daran, wer den Kalender sieht — alle im Haushalt sehen ihn weiterhin.';
+  String get assignCalendarNotVisibility =>
+      'Das ändert nichts daran, wer den Kalender sieht — alle im Haushalt sehen ihn weiterhin.';
   @override
   String get assignCalendarFailed => 'Die Zuordnung hat gerade nicht geklappt.';
   @override
@@ -1442,7 +1432,8 @@ class StringsDe extends AppStrings {
   @override
   String get familyRenameFailed => 'Der Name konnte nicht geändert werden.';
   @override
-  String get confirmLabBody => 'Jede Form, in der die App „hat geklappt“ sagt — zum Vergleichen und Angleichen.';
+  String get confirmLabBody =>
+      'Jede Form, in der die App „hat geklappt“ sagt — zum Vergleichen und Angleichen.';
   @override
   String get confirmLabSheetsGroup => 'Sheets und Seiten';
   @override

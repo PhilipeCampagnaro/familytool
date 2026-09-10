@@ -1,5 +1,4 @@
 import '../l10n/l10n.dart';
-import '../models/homework.dart';
 import '../models/task.dart';
 
 /// Strips the time off a [DateTime] so two dates can be compared for "same
@@ -55,11 +54,6 @@ BoardSection boardSectionOf(BoardTask task, DateTime today) =>
     boardSectionForDate(task.dueDate, today);
 
 /// The same bucketing, for anything with a due date rather than only a task.
-///
-/// School homework lands in these sections beside the household's own tasks,
-/// and it has to land in the *same* ones: "heute fällig" that quietly meant
-/// "heute fällig, unless the school set it" would be a worse lie than not
-/// showing homework at all.
 BoardSection boardSectionForDate(DateTime? due, DateTime today) {
   if (due == null) return BoardSection.undated;
 
@@ -75,30 +69,6 @@ BoardSection boardSectionForDate(DateTime? due, DateTime today) {
   if (!day.isAfter(sunday)) return BoardSection.thisWeek;
 
   return BoardSection.later;
-}
-
-/// The homework in each bucket, soonest first inside it.
-///
-/// Homework the pupil has already ticked off **in Untis** is left out, the way
-/// a done task is: it belongs in neither the overdue pile nor today's list, and
-/// the tick is theirs rather than ours to make. Untis stays the one place that
-/// answers whether the Vokabeln are learnt.
-Map<BoardSection, List<Homework>> homeworkBySection(
-  List<Homework> homework,
-  DateTime today,
-) {
-  final out = <BoardSection, List<Homework>>{};
-  for (final h in homework) {
-    if (h.done) continue;
-    (out[boardSectionForDate(h.dueOn, today)] ??= []).add(h);
-  }
-  for (final list in out.values) {
-    list.sort((a, b) {
-      final byDue = a.dueOn.compareTo(b.dueOn);
-      return byDue != 0 ? byDue : a.label.compareTo(b.label);
-    });
-  }
-  return out;
 }
 
 /// One rendered section: the bucket, and the open tasks in it.

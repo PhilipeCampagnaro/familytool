@@ -22,16 +22,13 @@ import {
   type SyncedEvent,
 } from "./calendar.ts";
 import { collections, readEvents } from "./caldav.ts";
-import { feedsOf, readFeedEvents } from "./ics_feed.ts";
 import {
-  login as untisLogin,
-  normaliseConfig as normaliseUntis,
-  readHomework as untisHomework,
-  readTimetable,
-  UNTIS_TIMETABLE,
-  type UntisConfig,
-  type UntisHomework,
-} from "./untis.ts";
+  feedFileOf,
+  feedsOf,
+  feedUrlOf,
+  readFeedEvents,
+  readFeedFileEvents,
+} from "./ics_feed.ts";
 import { fetchWithTimeout } from "./net.ts";
 
 /// Signals "the user has to do something" as opposed to "this failed, try
@@ -98,18 +95,24 @@ export async function listRemoteCalendars(
       const token = await accessToken(db, connection);
       return await listOutlook(token);
     }
-    case "webuntis":
-      // Two routes, told apart by `auth_type` exactly as IServ's are. 'secret'
-      // is the app-secret login, where a pupil has one timetable and there is
-      // nothing to enumerate; 'public' is the pasted-link kind.
-      if (connection.auth_type === "secret") return untisTimetable(connection);
+    case "ical":
+      // Nothing to enumerate and no credential to check: a pasted feed is one
+      // calendar, and the connection holds however many the user pasted.
       return linkedFeeds(connection);
+    case "webuntis":
+      // One route: the iCal subscription the pupil publishes under Freigaben.
+      // There was a second, over the app secret behind the QR code, and it is
+      // gone — see the school-calendar section of docs/ported-features.md.
+      return linkedFeeds(connection);
+    case "gmx":
+    case "webde":
     case "icloud":
     case "iserv": {
       // An IServ connection is one of two quite different things, and
       // `auth_type` is what tells them apart: 'public' is the pasted-link kind,
       // which has no credential and nothing to discover, and 'caldav' is the
-      // older login kind that still enumerates collections.
+      // older login kind that still enumerates collections. GMX and WEB.DE know
+      // only the login kind, but the check costs nothing and keeps one arm.
       if (connection.auth_type === "public") return linkedFeeds(connection);
 
       const { user, password, home } = await caldavCredentials(db, connection);
@@ -123,33 +126,76 @@ export async function listRemoteCalendars(
   }
 }
 
-/// The one calendar a WebUntis login offers.
-///
-/// A constant rather than a listing, because a pupil has exactly one timetable:
-/// asking Untis what calendars this account has would be a round trip whose
-/// answer we already know. The household's own name for it wins where it has
-/// given one — `calendar-untis` writes that at connect time, so it is set from
-/// the first sync onwards.
-function untisTimetable(connection: Connection): RemoteCalendar[] {
-  return [{
-    externalId: UNTIS_TIMETABLE,
-    name: connection.calendar_names?.[UNTIS_TIMETABLE]?.trim() || "Stundenplan",
-    readOnly: true,
-  }];
-}
-
 /// The pasted feeds on a link connection, as sub-calendars.
 ///
-/// The URL is the `externalId`, so a feed the user removes in Settings stops
-/// being listed here, `calendar-events` finds it missing from the wanted set,
-/// and its `calendars` row is deleted by the stale sweep that already runs —
-/// no extra removal path.
+/// The feed's opaque id is the `externalId`, so a feed the user removes in
+/// Settings stops being listed here, `calendar-events` finds it missing from
+/// the wanted set, and its `calendars` row is deleted by the stale sweep that
+/// already runs — no extra removal path.
+///
+/// It used to be the URL itself, which put a tokenised bearer credential into
+/// `calendars.external_id`, `selected_calendars` and `calendar_names` — two of
+/// them client-readable. The URL now lives sealed in
+/// `calendar_connection_secrets.feed_urls` and is opened only by [feedUrl],
+/// one line before the fetch.
 function linkedFeeds(connection: Connection): RemoteCalendar[] {
   return feedsOf(connection.config).map((f) => ({
-    externalId: f.url,
+    externalId: f.id,
     name: f.name,
     readOnly: true,
+    // Only an uploaded file has one, and only an uploaded file needs one: a
+    // link keeps itself current, a snapshot stops on a particular day and the
+    // household deserves to be told which.
+    coversTo: f.covers_to ?? null,
   }));
+}
+
+/// Opens one feed's URL for the length of a fetch.
+///
+/// A missing or unopenable envelope — sealed under a key since dropped from
+/// CALENDAR_SECRET_KEY_RETIRED, or simply absent — is a ReconnectRequired
+/// rather than an error: the fix is the user pasting the link again, and that
+/// is precisely what the reconnect_required banner asks for.
+async function feedUrl(
+  db: SupabaseClient,
+  connection: Connection,
+  externalId: string,
+): Promise<string> {
+  const url = await feedUrlOf(db, connection.id, externalId);
+  if (!url) throw new ReconnectRequired("no usable feed url");
+  return url;
+}
+
+/// Reads one feed on a link connection, whichever way it got there.
+///
+/// The fork is on `config.feeds[].kind` rather than on which sealed map happens
+/// to hold the id: a URL feed whose envelope will not open is a
+/// ReconnectRequired — the banner that asks the user to paste the link again —
+/// and looking would turn it into "an uploaded file with no bytes", which asks
+/// for the wrong thing.
+///
+/// The two branches differ in exactly one line, and deliberately no more. An
+/// uploaded file is parsed on every read, in the same window, by the same
+/// parser, and yields the same read-only events with no href and no etag —
+/// because it is a source we happen to hold rather than a calendar we keep.
+async function readLinkedFeed(
+  db: SupabaseClient,
+  connection: Connection,
+  externalId: string,
+  window: { from: Date; to: Date },
+): Promise<SyncedEvent[]> {
+  const feed = feedsOf(connection.config).find((f) => f.id === externalId);
+
+  if (feed?.kind === "file") {
+    const ics = await feedFileOf(db, connection.id, externalId);
+    // Nothing to re-fetch and nothing the user can paste: the file itself is
+    // gone or was sealed under a key that has since been dropped. Reconnect is
+    // still the right ask — on this route it means uploading the file again.
+    if (!ics) throw new ReconnectRequired("no usable feed file");
+    return readFeedFileEvents(ics, window);
+  }
+
+  return await readFeedEvents(await feedUrl(db, connection, externalId), window);
 }
 
 export async function accessToken(db: SupabaseClient, connection: Connection): Promise<string> {
@@ -170,67 +216,6 @@ export async function caldavCredentials(db: SupabaseClient, connection: Connecti
   if (!password || !home) throw new ReconnectRequired("no usable CalDAV credentials");
 
   return { user: connection.external_account, password, home };
-}
-
-/// The four fields a WebUntis read needs, from `config` plus the sealed secret.
-///
-/// A key that will not unseal — written under a rotated CALENDAR_SECRET_KEY, or
-/// simply absent — is a ReconnectRequired rather than an error, because the fix
-/// is the user showing us the QR code again and that is precisely what the
-/// reconnect_required status asks for.
-export async function untisCredentials(
-  db: SupabaseClient,
-  connection: Connection,
-): Promise<UntisConfig> {
-  const { data } = await db
-    .from("calendar_connection_secrets")
-    .select("app_secret")
-    .eq("connection_id", connection.id)
-    .maybeSingle();
-
-  const secret = await open(data?.app_secret);
-  const config = secret
-    ? normaliseUntis({
-      server: connection.config.server as string | undefined,
-      school: connection.config.school as string | undefined,
-      // The login is the second half of `external_account` — school/user — and
-      // is read from there rather than duplicated into config.
-      user: connection.external_account.split("/").slice(1).join("/"),
-      secret,
-    })
-    : null;
-
-  if (!config) throw new ReconnectRequired("no usable WebUntis credentials");
-  return config;
-}
-
-/// The homework a connection carries, or nothing at all.
-///
-/// Only WebUntis has any, and only over the app secret — a pasted ICS link is
-/// flat text with no such thing in it. Everything else answers `[]` so the
-/// caller can ask every connection without knowing which is which.
-///
-/// **Never allowed to fail a refresh.** Homework is an extra on top of the
-/// timetable, and a school that has the module switched off, or switches it off
-/// mid-term, must not cost the family their lessons. The error is logged and
-/// the calendars come back regardless.
-export async function readConnectionHomework(
-  db: SupabaseClient,
-  connection: Connection,
-  window: { from: Date; to: Date },
-): Promise<UntisHomework[]> {
-  if (connection.provider !== "webuntis" || connection.auth_type !== "secret") return [];
-
-  try {
-    // A second login rather than the one `readRemoteEvents` just made: sessions
-    // are not passed between provider calls, and a WebUntis login is one round
-    // trip against a fortnight of timetable that has to be fetched anyway.
-    const config = await untisCredentials(db, connection);
-    return await untisHomework(config, await untisLogin(config), window);
-  } catch (e) {
-    console.error(`homework failed for ${connection.id}: ${(e as Error).message}`);
-    return [];
-  }
 }
 
 async function listGoogle(token: string): Promise<RemoteCalendar[]> {
@@ -316,24 +301,19 @@ export async function readRemoteEvents(
       return await readGoogle(await accessToken(db, connection), calendar.externalId, window);
     case "outlook":
       return await readOutlook(await accessToken(db, connection), calendar.externalId, window);
-    case "webuntis": {
-      if (connection.auth_type !== "secret") {
-        return await readFeedEvents(calendar.externalId, window);
-      }
-      // One login per refresh. Untis sessions expire after ~10 minutes idle and
-      // there is nothing to keep between reads, so the TOTP is computed fresh
-      // rather than a cookie stored — which also means a revoked key stops
-      // working at the next refresh instead of whenever a cached session ran
-      // out.
-      const config = await untisCredentials(db, connection);
-      return await readTimetable(config, await untisLogin(config), window);
-    }
+    case "ical":
+      return await readLinkedFeed(db, connection, calendar.externalId, window);
+    case "webuntis":
+      return await readLinkedFeed(db, connection, calendar.externalId, window);
+    case "gmx":
+    case "webde":
     case "icloud":
     case "iserv": {
-      // Same fork as the listing above: a link connection's externalId *is* the
-      // feed URL, so reading it is one GET and no credential.
+      // Same fork as the listing above: a link connection reads with one GET
+      // and no credential beyond the URL itself, which is unsealed here and
+      // nowhere else.
       if (connection.auth_type === "public") {
-        return await readFeedEvents(calendar.externalId, window);
+        return await readLinkedFeed(db, connection, calendar.externalId, window);
       }
 
       const { user, password } = await caldavCredentials(db, connection);

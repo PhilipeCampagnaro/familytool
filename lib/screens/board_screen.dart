@@ -30,7 +30,6 @@ import 'board/due_date_sheet.dart';
 import 'board/schedule_sheet.dart';
 import 'board/tracker_detail.dart';
 import 'board/tracker_strip.dart';
-import '../models/homework.dart';
 import '../state/calendar_state.dart';
 import '../state/tracker_state.dart';
 import '../l10n/l10n.dart';
@@ -123,16 +122,9 @@ class BoardScreen extends ConsumerWidget {
     final groups = state.groupsOn(today);
     final done = state.doneTasks;
 
-    // Homework comes down with the calendar's refresh — same WebUntis session
-    // as the timetable — so the Board reads it rather than fetching it.
-    final homework = _visibleHomework(ref, state.personFilter);
-    final homeworkSections = homeworkBySection(homework, today);
-    // Every section that has something in it, in the enum's own order, so a
-    // section holding only homework still gets a heading and one holding only
-    // tasks is unchanged.
     final sections = [
       for (final section in BoardSection.values)
-        if (groups.any((g) => g.section == section) || homeworkSections[section]?.isNotEmpty == true) section,
+        if (groups.any((g) => g.section == section)) section,
     ];
     List<BoardTask> tasksIn(BoardSection section) {
       for (final g in groups) {
@@ -197,14 +189,10 @@ class BoardScreen extends ConsumerWidget {
                       _EmptyBoard(onAdd: () => _openNewTaskSheet(context, ref))
                     else
                       for (final section in sections) ...[
-                        // The heading counts both kinds. A section that says
-                        // "3" and lists three things is the only version of
-                        // this that survives a household where two of the three
-                        // came from school.
                         _SectionHeading(
                           title: _sectionTitle(section),
                           overdue: section == BoardSection.overdue,
-                          count: tasksIn(section).length + (homeworkSections[section]?.length ?? 0),
+                          count: tasksIn(section).length,
                         ),
                         if (tasksIn(section).isNotEmpty)
                           SectionCard(
@@ -250,26 +238,6 @@ class BoardScreen extends ConsumerWidget {
                                 ),
                             ]),
                           ),
-                        // Homework in its own card under the household's own
-                        // tasks, not mixed into theirs. Every row above can be
-                        // ticked, swiped, edited and deleted; not one row below
-                        // can be any of those, because it belongs to the school.
-                        // Two cards say that without a word of explanation,
-                        // where one card would have half its rows quietly
-                        // ignoring the gestures the other half answers.
-                        if (homeworkSections[section] case final due?) ...[
-                          if (tasksIn(section).isNotEmpty) const SizedBox(height: 10),
-                          SectionCard(
-                            children: dividedRows([
-                              for (final h in due)
-                                _HomeworkRow(
-                                  homework: h,
-                                  showDate: _sectionSpansDays(section),
-                                  overdue: section == BoardSection.overdue,
-                                ),
-                            ]),
-                          ),
-                        ],
                         const SizedBox(height: 18),
                       ],
                     if (done.isNotEmpty) ...[
@@ -731,10 +699,8 @@ class _TodayHeader extends ConsumerWidget {
       children: [
         const SizedBox(height: 12),
         // Faces first, above the tracker: it is the control, and the grid
-        // behind it is a report. The row appears only once a school account is
-        // connected — a household with no homework has nothing here it could
-        // not already see, and an empty filter row above every Board would be
-        // one more thing to explain.
+        // behind it is a report. It appears only where there is more than one
+        // person to choose between — see [_PersonFilterRow].
         const _PersonFilterRow(),
         // Named rather than left to explain itself — it has no axis, no numbers
         // and nothing to tap. The caption is drawn inside the grid's first row
@@ -1615,102 +1581,18 @@ class _DueDateField extends StatelessWidget {
   }
 }
 
-/// The homework the person chip lets through.
-///
-/// Two different ways of belonging to somebody meet here. A task is filtered by
-/// its **assignee**, because that is the axis that already answers "who does
-/// it"; a homework has no assignee and never will — it is the school's row, not
-/// ours — so it is filtered by the **calendar it came in on**, whose owner is
-/// the same person. The chip is one face either way, which is the point.
-List<Homework> _visibleHomework(WidgetRef ref, String? personFilter) {
-  final homework = ref.watch(homeworkProvider);
-  if (personFilter == null || homework.isEmpty) return homework;
-
-  // The family chip is the shared things — Ferien, Abfall, the household
-  // calendar — and nobody's homework is shared, so it shows none.
-  final owners = ref.watch(calendarOwnerProvider);
-  return [
-    for (final h in homework)
-      if (owners[h.calendarId] == personFilter) h,
-  ];
-}
-
-/// One homework on the Board.
-///
-/// **Deliberately not a [_TaskRow].** It carries no check-off circle, no swipe
-/// actions and no menu, because none of those would do anything: the row
-/// belongs to WebUntis, and the only tick that counts is the one the pupil
-/// makes in Untis itself. A row that looked tickable and silently was not would
-/// be worse than one that plainly is not.
-class _HomeworkRow extends StatelessWidget {
-  final Homework homework;
-
-  /// Whether the section heading already names the day. Same rule as a task
-  /// row: "Heute" over a row stamped "Mi, 10. Sept" says it twice.
-  final bool showDate;
-  final bool overdue;
-
-  const _HomeworkRow({required this.homework, this.showDate = false, this.overdue = false});
-
-  @override
-  Widget build(BuildContext context) {
-    final subject = homework.label;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // The subject where a task has its check-off circle, at the same
-          // width, so the two cards line up down the page rather than reading
-          // as two different lists that happen to be stacked.
-          Container(
-            width: 34,
-            padding: const EdgeInsets.symmetric(vertical: 3),
-            alignment: Alignment.centerLeft,
-            child: Text(
-              subject.length > 3 ? subject.substring(0, 3) : subject,
-              style: AppText.microLabel.copyWith(color: AppColors.accent, fontWeight: FontWeight.w600),
-            ),
-          ),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // One line. Untis homework runs to whole paragraphs — one is a
-                // materials list with an emoji per line — and the Board is a
-                // list of what has to happen, not the place to read it. The
-                // whole text is on the lesson in Kalender.
-                Text(homework.summary, maxLines: 2, overflow: TextOverflow.ellipsis, style: AppText.itemTitle),
-                const SizedBox(height: 3),
-                Text(
-                  [
-                    if (showDate) boardLongDayName(homework.dueOn),
-                    if (homework.teacher.isNotEmpty) homework.teacher,
-                  ].join(' · '),
-                  style: AppText.caption.copyWith(color: overdue ? AppColors.danger : AppColors.inkTertiary),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 /// Board's filter row: one face per person, plus the household.
 ///
 /// **The same people, in the same order, as Kalender's chip row**, keyed on the
 /// same `'member:'` / `'person:'` / `'family'` identifiers — so a household
 /// learns the row once and it means the same thing on both tabs. Filtering to
-/// Alice here shows her homework and the chores assigned to her; filtering to
-/// her over in Kalender shows her lessons and the family's shared calendars.
+/// Alice here shows the chores assigned to her and the rhythms she keeps;
+/// filtering to her over in Kalender shows her lessons and the family's shared
+/// calendars.
 ///
-/// Only rendered when there is homework to filter, which is the honest
-/// threshold: without a school account every chip but "Alle" would narrow a
-/// Board to the tasks assigned to one person, which is a feature this row was
-/// not asked for and would land on every household unannounced.
+/// Rendered only where there is more than one person to choose between, which
+/// is the honest threshold: a single chip beside "Alle" narrows nothing, and a
+/// row that cannot change the screen is one more thing to explain.
 ///
 /// Scrolls horizontally. Four children plus two parents plus the family is
 /// seven chips, and this app is built for exactly that household.
@@ -1719,30 +1601,23 @@ class _PersonFilterRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final homework = ref.watch(homeworkProvider);
-    if (homework.isEmpty) return const SizedBox.shrink();
-
     final selected = ref.watch(boardProvider.select((s) => s.personFilter));
     final notifier = ref.read(boardProvider.notifier);
     final members = ref.watch(householdMembersProvider);
-    final owners = ref.watch(calendarOwnerProvider);
 
     // Everybody with an account, then anybody who only exists as the owner of a
-    // school calendar — a child with no login, which is most of them. The
-    // second list is built from the homework actually on the Board, so a
-    // household never gets a chip for somebody with nothing behind it.
+    // calendar — a child with no login, which is most of them. Read off the
+    // calendars themselves rather than off any content they carry, so a chip
+    // stands for a person the household has actually named.
     final people = <({String id, String name})>[for (final m in members) (id: 'member:${m.id}', name: m.name)];
     final calendars = ref.watch(calendarProvider.select((s) => s.calendars));
     final seen = {for (final p in people) p.id};
-    for (final h in homework) {
-      final group = owners[h.calendarId];
-      if (group == null || group == 'family' || !seen.add(group)) continue;
-      for (final c in calendars) {
-        if (c.id != h.calendarId) continue;
-        people.add((id: group, name: c.groupName));
-        break;
-      }
+    for (final c in calendars) {
+      if (c.groupId.isEmpty || c.groupId == 'family' || !seen.add(c.groupId)) continue;
+      people.add((id: c.groupId, name: c.groupName));
     }
+
+    if (people.length < 2) return const SizedBox.shrink();
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
@@ -1797,7 +1672,7 @@ Widget _personFace(WidgetRef ref, String groupId, String name) {
 
 /// One chip in [_PersonFilterRow]. Shaped like Kalender's so the two rows read
 /// as the same control; it has no chevron, because a person on the Board has
-/// nothing to open into — their tasks and their homework are already the whole
+/// nothing to open into — their tasks and their rhythms are already the whole
 /// answer.
 class _PersonChip extends StatelessWidget {
   final String label;

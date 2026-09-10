@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import '../models/picked_file.dart';
@@ -64,5 +67,37 @@ Future<PickedFile?> pickAttachment(AttachmentSource source, {int? maxDimension})
     return null;
   } on MissingPluginException {
     return null;
+  }
+}
+
+/// Reads a picked text file and then removes the copy the picker made.
+///
+/// Two encodings, because German waste vendors and Vereine publish `.ics` files
+/// written by anything: UTF-8 is what an iCalendar file is supposed to be, and
+/// a file that is not valid UTF-8 is almost always Latin-1 with umlauts in it.
+/// Guessing wrong there costs a calendar whose every umlaut is a replacement
+/// character, so the fallback is worth the four lines.
+///
+/// The copy goes because it is the only unencrypted copy of the household's
+/// calendar anywhere on the device once the upload has been sealed server-side,
+/// and nothing in the app ever wants to read it again.
+Future<String?> readPickedText(PickedFile picked) async {
+  final file = File(picked.path);
+  try {
+    final bytes = await file.readAsBytes();
+    try {
+      return utf8.decode(bytes);
+    } on FormatException {
+      return latin1.decode(bytes, allowInvalid: true);
+    }
+  } on FileSystemException {
+    return null;
+  } finally {
+    try {
+      await file.delete();
+    } on FileSystemException {
+      // A file we could not delete is a stray copy in our own sandbox, not a
+      // failed upload — the caller has the text and must not be told otherwise.
+    }
   }
 }

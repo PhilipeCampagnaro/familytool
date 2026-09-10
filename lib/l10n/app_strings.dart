@@ -109,7 +109,6 @@ abstract class AppStrings {
   String get size;
   String get titleLabel;
   String get role;
-  String get emailAddress;
   String get nameOptional;
   String get password;
   String get calendar;
@@ -521,8 +520,8 @@ abstract class AppStrings {
   String get linkedToEvent;
   String get linkedEventLabel;
 
-  /// Bare "Erledigt" — the app had it only as `homeworkDone` and as part of a
-  /// count, and a linked task's row needs the plain word.
+  /// Bare "Erledigt". The app had the word only inside a longer phrase, and a
+  /// linked task's row needs it on its own.
   String get doneLabel;
   String get openInCalendar;
   String linkedListCount(int count);
@@ -577,6 +576,16 @@ abstract class AppStrings {
 
   // ------------------------------------------------------- calendar setup --
   String get connectCalendars;
+
+  /// The two groups the provider list is split into: the accounts a household
+  /// signs in to or pastes a link from, and the calendars that need no account
+  /// at all — the Bundesland's Ferien, the street's Abfuhr, a published link.
+  ///
+  /// Not "öffentlich": the vendorless tile takes any calendar link, and a
+  /// Verein's tokenised one is no more public than a mailbox. What is true of
+  /// all three is that there is nothing to sign in to.
+  String get calendarAccountsGroup;
+  String get noAccountGroup;
   String get connectCalendarsIntro;
   String get connectCalendarsAdminNote;
   String get noCalendarsConnected;
@@ -593,6 +602,7 @@ abstract class AppStrings {
   String get actionNeeded;
   String get connected;
   String calendarCount(int count);
+
   /// The sheet a connected calendar's row opens: its name, whose day it is,
   /// and the way to take it away. Names the *calendar*, not an action, because
   /// it is all three at once.
@@ -644,6 +654,16 @@ abstract class AppStrings {
   String get username;
   String get appleId;
   String get icloudEmailHint;
+
+  // -- GMX and WEB.DE
+  //
+  // One system, two brands: 1&1 Mail & Media runs both on the same CalDAV
+  // server. The copy differs only in the name, and the password note is the one
+  // sentence that matters — an application password is revocable on its own and
+  // opens a calendar, where the account password opens the whole mailbox.
+  String get emailAddress;
+  String get oneAndOneAppPasswordHint;
+  String get appPasswordPlaceholder;
   String get iservPassword;
   String get checkingEllipsis;
   String get connect;
@@ -660,15 +680,51 @@ abstract class AppStrings {
   String noVendorForTown(String town);
   String get checkingLinkEllipsis;
 
-  // -- school calendars connected by a pasted link (IServ, WebUntis)
+  // -- calendars connected by a pasted link (IServ, WebUntis, any iCal feed)
   //
-  // The link is created in the school platform and copied over by hand: neither
-  // IServ nor WebUntis offers a way to list or mint one from outside, so these
-  // strings walk the user through where to click. They name real menu items in
-  // a German school platform, so the English side translates the sentence and
-  // keeps the menu path recognisable.
+  // The link is created wherever the calendar lives and copied over by hand:
+  // neither IServ nor WebUntis offers a way to list or mint one from outside,
+  // so these strings walk the user through where to click. They name real menu
+  // items in a German school platform, so the English side translates the
+  // sentence and keeps the menu path recognisable. The generic tile has no menu
+  // path and gets [icalLinkNote] instead.
   List<String> get iservLinkSteps;
   List<String> get webuntisLinkSteps;
+
+  /// Shown in place of the numbered steps on the generic iCal tile, which has
+  /// no menu path to name — the link comes from whatever published it.
+  String get icalLinkNote;
+
+  // -- a calendar handed over as a file rather than as a link
+  //
+  // The case these exist for is a German waste vendor outside the six in
+  // `abfall.ts`: it publishes `abfuhr2027.ics` as a download and offers nothing
+  // to subscribe to, so the household has the calendar and no link. Same for a
+  // Verein that mails the fixture list round.
+  //
+  // The copy has one job beyond naming the button, and it is [calendarFileNote]
+  // and [calendarFileCoversTo]: a file is a snapshot and stops on a particular
+  // day, where a link keeps itself current. Saying so at the moment of choosing
+  // is the difference between a calendar that quietly goes empty next January
+  // and one the household knows to replace.
+  String get uploadCalendarFile;
+  String get uploadCalendarFileHint;
+  String get calendarFileNote;
+  String get checkingFileEllipsis;
+  String get calendarFileUnreadable;
+
+  /// "Die Datei reicht bis zum 31. Dezember 2026." — over the naming step, and
+  /// again under the calendar's row in Settings.
+  String calendarFileCoversTo(String date);
+
+  /// What was picked, on the step it was picked from: "abfuhr2027.ics".
+  String calendarFileChosen(String name);
+
+  /// A full date in this language's own order — "31. Dezember 2026" against
+  /// "December 31, 2026". Here rather than in a formatter beside [formatTime]
+  /// because the order *is* the translation, and a shared function would have
+  /// to ask the language which way round it goes anyway.
+  String longDate(DateTime at);
   String get pasteCalendarLink;
   String get pasteCalendarLinkHint;
   String get whoseCalendar;
@@ -688,40 +744,6 @@ abstract class AppStrings {
   String get linkedCalendarsNote;
   String eventsFoundAtLink(int count);
   String get noEventsAtLinkYet;
-
-  // -- WebUntis connected by the pupil's app secret
-  //
-  // The QR code under Profil → Freigaben → "Zugriff über Untis Mobile" carries
-  // the school, the login and a base32 key, and prints all four as text beneath
-  // itself — so the same dialog serves the scan and the typing. The field
-  // labels below deliberately match the words on that dialog ("Url", "Schule",
-  // "Benutzer", "Schlüssel"), because somebody copying them across is reading
-  // one screen and filling in the other.
-  List<String> get webuntisSecretSteps;
-  String get scanUntisCode;
-  String get scanUntisCodeBody;
-  String get scanAgain;
-  String get codeScanned;
-  String get enterManually;
-  String get untisServerField;
-  String get untisSchoolField;
-  String get untisUserField;
-  String get untisKeyField;
-  String get untisFieldsHint;
-  String get untisFieldsMissing;
-  String get checkingAccessEllipsis;
-  String get cameraNotAvailable;
-  String get cameraDenied;
-  String get notAnUntisCode;
-  String get untisCalendarName;
-  String untisCalendarNameSuggestion(String pupil);
-  String get untisCalendarNameHint;
-  String get untisConnectedNote;
-  String lessonsFound(int count);
-  String get noLessonsYet;
-  String get connectWithLink;
-  String get connectWithLinkBody;
-  String get untisKeyStaysValid;
 
   String get calendarLinkIcs;
   String get calendarLinkHint;
@@ -746,13 +768,17 @@ abstract class AppStrings {
 
   // --------------------------------------------------------- provider meta --
   /// The other four provider names are brands and stay as they are.
+  String get providerIcalLabel;
   String get providerHolidaysLabel;
   String get providerWasteLabel;
   String get providerGoogleDesc;
   String get providerOutlookDesc;
   String get providerIcloudDesc;
+  String get providerGmxDesc;
+  String get providerWebdeDesc;
   String get providerIservDesc;
   String get providerWebuntisDesc;
+  String get providerIcalDesc;
   String get providerHolidaysDesc;
   String get providerWasteDesc;
 
@@ -952,23 +978,7 @@ abstract class AppStrings {
   String get memberRemoveFailed;
   String get inviteRevokeFailed;
 
-  // --------------------------------------------------------------- homework --
-  String get homework;
-  /// The badge on a lesson card. Singular carries no number: "Hausaufgabe" on
-  /// its own is shorter and reads better than "1 Hausaufgabe".
-  String homeworkCount(int count);
-  String get homeworkDue;
-  String get homeworkDone;
-  String get homeworkSetBy;
-
-  /// Asked when a WebUntis account is connected. The **child**, not the
-  /// calendar: the calendar's name falls out of it and so do the person chips.
-  String get untisPupilName;
-  String get untisPupilNameHint;
-
-  /// The WebUntis step asks whose timetable it is, so an empty field is a
-  /// missing *person* rather than a missing calendar name.
-  String get untisPupilMissing;
+  // --------------------------------------------------- calendar ownership --
 
   /// Settings → a connected calendar → "Zuordnen": whose calendar this is, i.e.
   /// which person's chip it appears under.

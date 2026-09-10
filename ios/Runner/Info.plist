@@ -12,7 +12,7 @@
 	     PHPickerViewController and the file picker UIDocumentPickerViewController,
 	     both of which run out of process and hand over just what was picked. -->
 	<key>NSCameraUsageDescription</key>
-	<string>Damit du ein Foto direkt zu einem Artikel aufnehmen und den QR-Code aus WebUntis scannen kannst.</string>
+	<string>Damit du ein Foto direkt zu einem Artikel aufnehmen kannst.</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>

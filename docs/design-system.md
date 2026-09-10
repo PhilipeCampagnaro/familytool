@@ -172,12 +172,20 @@ mass; the glyph only has to say which button it is.
 That is `AppIcon.flat`, and it is set **inside the control widgets**, not by their callers, so a
 button is flat wherever it is used and nobody has to remember.
 
-**Flat means Phosphor's Regular weight**, from a second vendored font, not the duotone with its
+**Flat means Phosphor's Bold weight**, from a second vendored font, not the duotone with its
 under-layer switched off. Those are not the same drawing. The duotone `caret-right` is a hollow
-*triangle*; the regular one is the thin *chevron* a disclosure row wants. `arrow-right` differs the
-same way, and the duotone `check` is shrunk to fit inside its placeholder box, so used alone it
-comes out visibly small. Most glyphs *are* identical across the two weights, but "most" is not
-something a button should depend on, so `_regular` maps every glyph to its regular twin.
+*triangle*; the single-weight one is the *chevron* a disclosure row wants. `arrow-right` differs
+the same way, and the duotone `check` is shrunk to fit inside its placeholder box, so used alone it
+comes out visibly small. Most glyphs *are* identical across the two, but "most" is not something a
+button should depend on, so `_flat` maps every glyph to its single-weight twin.
+
+Bold rather than Regular because Phosphor's Regular is a lighter line than the Lucide it replaced
+— Lucide draws at 2px on a 24px grid and Phosphor Regular below that — and these glyphs are drawn
+at 15–22px, where that difference reads as a button whose icon has gone faint rather than as a
+lighter style. Apple does not draw a bar button's symbol at a text weight either. **Every Phosphor
+weight shares one codepoint per glyph**, so the weight is chosen in exactly one place: the
+`_flatFamily` constant and the matching `pubspec.yaml` font entry. Changing those two lines moves
+all 164 flat glyphs, and the `_flat` table never has to be touched.
 
 **By glyph.** Fourteen bare marks are flat everywhere regardless — `check`, `x`, `plus`, `minus`,
 `dotsThreeVertical`, four arrows and five carets — because Phosphor has no honest duotone for
@@ -185,7 +193,7 @@ them. A mark has only itself, so the set gives it either a placeholder rounded r
 its bounding box (which read as a check *inside a box* on the sheet's confirm button) or a solid
 copy of itself with only the outline on top (which turned every disclosure chevron into a hollow
 triangle). They have no entry in `_underLayers`, and the absence *is* the mechanism — it routes
-them down the same path as a control, so they come out of the Regular font. Do not add one. Note this is a judgement and not a rule a script can apply: `laptop`, `monitor`, `signOut`,
+them down the same path as a control, so they come out of the flat font. Do not add one. Note this is a judgement and not a rule a script can apply: `laptop`, `monitor`, `signOut`,
 `batteryCharging`, `gasPump`, `headphones`, `iceCream` and `recycle` all have rounded-rect
 under-layers too, and in each of those the rectangle is a screen, a door, a battery body.
 

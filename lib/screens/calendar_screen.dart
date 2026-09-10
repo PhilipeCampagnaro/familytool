@@ -9,7 +9,6 @@ import '../data/calendar_data.dart';
 import '../data/german_holidays.dart';
 import '../models/calendar_event.dart';
 import '../models/event_link.dart';
-import '../models/homework.dart';
 import '../models/shopping_list.dart';
 import '../models/task.dart';
 import '../models/weather.dart';
@@ -60,18 +59,6 @@ part 'calendar/event_detail_sheet.dart';
 WeatherReading? _weatherFor(WidgetRef ref, CalendarEvent event) {
   final sel = ref.watch(calendarProvider.select((s) => s.selected));
   return ref.watch(weatherProvider).forEvent(event, DateTime(sel.y, sel.m, sel.d));
-}
-
-/// The homework due in this lesson, for the badge on its card and the card in
-/// its sheet.
-///
-/// Keyed on the event's provider `uid` rather than on its id: the id carries the
-/// start time, and a lesson Untis moves keeps its uid while its id changes. The
-/// map holds only lessons that actually carry homework, so this misses for
-/// almost every event in the app and costs nothing when it does.
-List<Homework> _homeworkFor(WidgetRef ref, CalendarEvent event) {
-  if (event.uid.isEmpty) return const [];
-  return ref.watch(calendarProvider.select((s) => s.homeworkByEvent))[event.uid] ?? const [];
 }
 
 /// The reference a list or a task keeps when it is made from this appointment.

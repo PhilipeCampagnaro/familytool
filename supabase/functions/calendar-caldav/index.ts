@@ -1,10 +1,21 @@
-/// Connect an iCloud or IServ account over CalDAV.
+/// Connect an iCloud, GMX, WEB.DE or IServ account over CalDAV.
 ///
 ///   POST { provider, server?, username, password }
 ///     -> { connection_id, calendars: [{ external_id, name, read_only }] }
 ///
 /// There is no redirect dance here — the user types an app-specific password
-/// (iCloud) or their school password (IServ) and it goes straight to the server.
+/// (iCloud, and GMX/WEB.DE whenever the account has two-factor authentication
+/// on) or their school password (IServ) and it goes straight to the server.
+///
+/// **We hold that password, and there is no way not to.** CalDAV authenticates
+/// every single request with it, so unlike Google and Outlook there is no token
+/// to exchange it for and nothing shorter-lived to keep instead. What we do
+/// about that is store it the way every other credential here is stored: sealed
+/// with AES-256-GCM under CALENDAR_SECRET_KEY, in a table with no policy and
+/// every privilege revoked from `authenticated`, and opened only inside a
+/// function for the length of one request. And we ask for an application
+/// password wherever the provider mints them, because that one is revocable on
+/// its own and unlocks a calendar rather than an entire mailbox.
 /// That is precisely why this is a function and not a client insert: the
 /// password must never be written by a client that could also read it back, and
 /// it must be proven to work before we store it.
@@ -21,7 +32,17 @@ import { seal } from "../_shared/secrets.ts";
 import { assertPublicUrl, membershipOf, type Provider } from "../_shared/calendar.ts";
 import { baseUrl, collections, discover } from "../_shared/caldav.ts";
 
-const LABELS: Record<string, string> = { icloud: "iCloud", iserv: "IServ" };
+const LABELS: Record<string, string> = {
+  icloud: "iCloud",
+  iserv: "IServ",
+  gmx: "GMX",
+  webde: "WEB.DE",
+};
+
+/// The providers this function will connect. Widened from a pair of literal
+/// comparisons so that adding a CalDAV provider is a line here rather than a
+/// condition that has to stay in step with [LABELS].
+const CALDAV_PROVIDERS: Provider[] = ["icloud", "iserv", "gmx", "webde"];
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -40,7 +61,7 @@ Deno.serve(async (req) => {
   const username = body.username?.trim();
   const password = body.password ?? "";
 
-  if (provider !== "icloud" && provider !== "iserv") return fail("Unbekannter Anbieter.");
+  if (!CALDAV_PROVIDERS.includes(provider)) return fail("Unbekannter Anbieter.");
   if (!username || !password) return fail("Bitte Benutzername und Passwort angeben.");
   if (provider === "iserv" && !body.server?.trim()) {
     return fail("Bitte die Adresse der Schule angeben.");
@@ -111,7 +132,10 @@ Deno.serve(async (req) => {
         ? { home_url: home, server_url: baseUrl(provider, server) }
         : { home_url: home },
       // A school calendar is somebody else's system of record. Writing to it is
-      // not a feature we are missing; it is one we refuse.
+      // not a feature we are missing; it is one we refuse. GMX and WEB.DE are
+      // the household's own calendars and take writes like iCloud does, which
+      // is the whole point of connecting them by login rather than by feed: an
+      // appointment made in Aporah reaches the other parent's phone.
       is_read_only: provider === "iserv",
       status: "active",
       status_detail: null,

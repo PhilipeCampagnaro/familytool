@@ -43,6 +43,7 @@ import {
   storeTokens,
 } from "../_shared/calendar.ts";
 import { type Connection, listRemoteCalendars } from "../_shared/providers.ts";
+import { migrateLegacyFeeds } from "../_shared/ics_feed.ts";
 
 const OAUTH_PROVIDERS: Provider[] = ["google", "outlook"];
 const STATE_TTL_MS = 10 * 60 * 1000;
@@ -303,12 +304,18 @@ async function handleCalendars(req: Request, uid: string): Promise<Response> {
   if (!connection) return fail("Verbindung nicht gefunden.", 404);
 
   try {
-    const calendars = await listRemoteCalendars(db, connection as unknown as Connection);
+    // A link connection made before the feed URLs were sealed still lists them
+    // in `config`, and `feedsOf` refuses to read that shape — so without this
+    // the picker would come back empty rather than wrong. Every other kind of
+    // connection returns from it untouched.
+    const ready = await migrateLegacyFeeds(db, connection as unknown as Connection);
+    const calendars = await listRemoteCalendars(db, ready);
     return json({
       calendars: calendars.map((c) => ({
         external_id: c.externalId,
         name: c.name,
         read_only: c.readOnly,
+        covers_to: c.coversTo ?? null,
       })),
     });
   } catch (e) {

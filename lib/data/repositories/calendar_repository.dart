@@ -1,7 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../models/calendar_event.dart';
-import '../../models/homework.dart';
 import '../../services/calendar_cache.dart';
 import '../../services/supabase.dart';
 import '../../l10n/l10n.dart';
@@ -16,14 +15,6 @@ class CalendarSnapshot {
   /// expansion happens once here rather than in every view.
   final Map<String, List<CalendarEvent>> eventsByDay;
 
-  /// Every homework the household's school accounts carry, in due-date order.
-  ///
-  /// A flat list rather than another day map: unlike an event, a homework is
-  /// shown on the lesson it is *due in* and in a list on Board, never as an
-  /// entry on the days it spans. [homeworkByEvent] is the index the calendar
-  /// actually reads.
-  final List<Homework> homework;
-
   /// True when this came off the device cache rather than the network, so the
   /// screen can say "Stand von …" instead of implying it is live.
   final bool fromCache;
@@ -31,24 +22,8 @@ class CalendarSnapshot {
   const CalendarSnapshot({
     required this.calendars,
     required this.eventsByDay,
-    this.homework = const [],
     this.fromCache = false,
   });
-
-  /// Lesson `uid` -> the homework due in it. Only the homework that matched a
-  /// lesson appears here, so a lookup miss is the ordinary "nothing due in this
-  /// period" rather than a gap.
-  ///
-  /// A list per lesson, not one: two teachers can set work due in the same
-  /// period, and a single Religion lesson in the probe carried two.
-  Map<String, List<Homework>> get homeworkByEvent {
-    final out = <String, List<Homework>>{};
-    for (final h in homework) {
-      if (h.eventUid.isEmpty) continue;
-      (out[h.eventUid] ??= []).add(h);
-    }
-    return out;
-  }
 
   static const empty = CalendarSnapshot(calendars: [], eventsByDay: {});
 }
@@ -98,10 +73,6 @@ class CalendarRepository {
         _rows(raw['calendars']),
         _rows(raw['events']),
         _names(_rows(raw['profiles'])),
-        // Absent from a cache written before homework existed, which is every
-        // cache on every device the first time this ships. An empty list is the
-        // right answer there — the refresh already on its way fills it in.
-        homeworkRows: _rows(raw['homework']),
         fromCache: true,
       );
     } catch (_) {
@@ -122,22 +93,15 @@ class CalendarRepository {
     final external = results[0] as ({
       List<Map<String, dynamic>> calendars,
       List<Map<String, dynamic>> events,
-      List<Map<String, dynamic>> homework,
     });
     final profiles = results[1] as List<Map<String, dynamic>>;
 
     await _cache.write({
       'calendars': external.calendars,
       'events': external.events,
-      'homework': external.homework,
       'profiles': profiles,
     });
-    return _assemble(
-      external.calendars,
-      external.events,
-      _names(profiles),
-      homeworkRows: external.homework,
-    );
+    return _assemble(external.calendars, external.events, _names(profiles));
   }
 
   /// Connected accounts and public feeds, proxied — **every calendar there is.**
@@ -165,18 +129,11 @@ class CalendarRepository {
   Future<({
     List<Map<String, dynamic>> calendars,
     List<Map<String, dynamic>> events,
-    List<Map<String, dynamic>> homework,
   })> _external() async {
     final res = await _db.functions.invoke('calendar-events', body: const {});
     final data = res.data;
     if (data is! Map) throw const CalendarReadException();
-    return (
-      calendars: _rows(data['calendars']),
-      events: _rows(data['events']),
-      // Absent until the function that sends it is deployed, and absent for
-      // ever in a household with no school account. Neither is an error.
-      homework: _rows(data['homework']),
-    );
+    return (calendars: _rows(data['calendars']), events: _rows(data['events']));
   }
 
   Future<List<Map<String, dynamic>>> _profiles() async {
@@ -212,7 +169,6 @@ class CalendarRepository {
     List<Map<String, dynamic>> calendarRows,
     List<Map<String, dynamic>> eventRows,
     Map<String?, ({String name, String initials, int tone})> names, {
-    List<Map<String, dynamic>> homeworkRows = const [],
     bool fromCache = false,
   }) {
     final calendars = [for (final row in calendarRows) CalendarSource.fromMap(row)];
@@ -252,22 +208,9 @@ class CalendarRepository {
       });
     }
 
-    // Homework, in the order Board reads it: soonest first, and a homework the
-    // pupil has already ticked off in Untis sinks below one that is still open
-    // on the same day.
-    final homework = <Homework>[
-      for (final row in homeworkRows)
-        if (byId.containsKey(row['calendar_id'] as String?)) ?Homework.fromMap(row),
-    ]..sort((a, b) {
-      if (a.done != b.done) return a.done ? 1 : -1;
-      final byDue = a.dueOn.compareTo(b.dueOn);
-      return byDue != 0 ? byDue : a.label.compareTo(b.label);
-    });
-
     return CalendarSnapshot(
       calendars: calendars,
       eventsByDay: eventsByDay,
-      homework: homework,
       fromCache: fromCache,
     );
   }

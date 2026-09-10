@@ -470,17 +470,55 @@ no login. Three things to know before promising it: it is per student and only t
 on (the button does not appear in admin or secretary profiles), Untis notes that student
 subscriptions may need to be ordered and can carry a hosting charge, and a full Stundenplan is
 6-8 events per school day — well over a thousand a year — so it wants its own calendar rather
-than to be mixed in. Untis's own JSON-RPC endpoint is not a route worth taking: it needs the
-student's real password, where the iCal link needs nothing. **The URL format is documented but
-has not been checked against a live instance** — the IServ one has.
+than to be mixed in. Newer WebUntis builds put the same thing behind the timetable's three-dot
+menu as "iCal-Abo verwalten" → format "Standard" → "Link erstellen", so the connect steps name
+both paths. **The URL format is documented but has not been checked against a live instance** —
+the IServ one has.
+
+**This is now WebUntis's only route.** There was a second one, over the app secret behind the QR
+code in Profil → Freigaben → "Zugriff über Untis Mobile", and it is deleted: the `calendar-untis`
+function, `_shared/untis.ts`, the `auth_type = 'secret'` value, the `app_secret` column, the QR
+scanner service and its Swift side, and the homework feature that hung off it (20260910101500).
+
+The reason is proportion rather than function: a feed URL is a capability on one pupil's
+timetable, revocable from the page that minted it; the app secret is TOTP seed material for that
+pupil's WebUntis account, and this is an app whose users are children. Removing it also retires a
+DSGVO question instead of answering it.
+
+What it cost, so that nobody re-adds it without knowing what they are buying back —
+
+| | iCal link (kept) | App secret (deleted) |
+| --- | --- | --- |
+| Entfall / Vertretung | **absent** — Untis strips cancelled lessons from the feed deliberately, after they broke Google Calendar | was present, as lesson status |
+| Horizon | ~1 week back, ~12 weeks forward | was the school year |
+| Hausaufgaben | none | was the source of the Board's homework rows |
+| What we hold | one sealed feed URL | a sealed TOTP seed for the account |
+
+**Hausaufgaben are gone from the app**, not merely from WebUntis: nothing else produced them, so
+`Homework`, `homeworkProvider`, the Board's homework card, the week view's badge and the event
+sheet's homework card went with the route. Board's person-filter row survived — it used to be
+gated on there being homework to filter, and now narrows the tasks and the trackers, which every
+household has, so it is gated on there being more than one person instead.
+
+**`ical` is the same mechanism with the vendor removed.** Any published ICS link — a Verein's
+fixtures, a Kita's closing days, a shared work calendar. It is a provider value and a tile and
+nothing else: the same `calendar-link`, the same sealing, the same read path. IServ and WebUntis
+keep their own tiles because finding the link is the whole difficulty for a parent, and a set of
+numbered steps naming real menu items is the only part that cannot be generic. `webcal://` is
+rewritten to `https://` on the way in, because that is what half the "subscribe" buttons on the
+web put on the clipboard.
 
 How it is built:
 
 - `_shared/ics_feed.ts` fetches, redacts and parses a feed; `calendar-link` is the Edge Function
-  that validates a pasted URL and stores it. The feeds live in
-  `calendar_connections.config.feeds` as `[{url, name, host, added_at}]`, with `auth_type =
+  that validates a pasted URL and stores it. A connection lists its feeds in
+  `calendar_connections.config.feeds` as `[{id, name, host, added_at}]`, with `auth_type =
   'public'` and `is_read_only = true` — a pairing the original migration's check constraint
-  (`auth_type <> 'public' or is_read_only`) already required.
+  (`auth_type <> 'public' or is_read_only`) already required. **The URLs are not there.** Each one
+  is an AES-256-GCM envelope in `calendar_connection_secrets.feed_urls` under the feed's `id`,
+  opened by `feedUrlOf` one line before the fetch and never held longer than the request. See the
+  school-calendar paragraph in [backend.md](backend.md) for why, and 20260910070000 for how the
+  feeds that predate it were moved without asking anybody to reconnect.
 - **`config` holds a bearer token, so the client cannot read it.** It once could: the original
   `grant select on public.calendar_connections` was table-wide, and the trade was defended as "the
   only people who can read it are the members already looking at the events it returns". That is
@@ -489,10 +527,14 @@ How it is built:
   of those, and on a school connection one member's read returns *every* sibling's feed. 20260909101500
   replaced the grant with a column list that omits `config`. Adding a feed was always a
   `service_role` act behind a fetch that proved it answers; now reading one is too.
-- Each feed URL is a `RemoteCalendar.externalId`, so `selected_calendars`, `calendar_names`, the
-  picker, the naming step and the stale sweep in `calendar-events` all work unchanged. Removing a
-  feed goes through the function (`action: 'remove'`), because `config` is not client-writable;
-  deselecting alone would leave the link stored.
+- Each feed's opaque `id` is a `RemoteCalendar.externalId`, so `selected_calendars`,
+  `calendar_names`, the picker, the naming step and the stale sweep in `calendar-events` all work
+  unchanged. It used to be the URL, which is how a bearer token ended up in three
+  household-readable columns; a uuid rather than a hash of the URL, so the column cannot answer
+  "is this family subscribed to *that* feed?" for someone who guesses one. Removing a feed goes
+  through the function (`action: 'remove'`), because `config` is not client-writable; deselecting
+  alone would leave the link stored — and removal now deletes the sealed URL too, so dropping a
+  link destroys the credential rather than orphaning it.
 - `external_account` is `<host>/<slug of the account name>`, which is what makes two children at
   one school two connections rather than an upsert collision.
 - **One dead link must not take an account down.** `calendar-events` reads each calendar in its
@@ -578,6 +620,16 @@ runtime:
   bin schedule of a village 400 km away, and it looked entirely plausible on the calendar: real
   Restmüll and Biotonne dates, all of them wrong. Substring matches now have to land on a word
   boundary (`townMatches`/`containsWord`), which still accepts "Gießen" in "Landkreis Gießen".
+
+**The address that is not covered has two answers, and neither is a sixth vendor.** The Abfall
+flow's own fallback is a pasted ICS link, which is what a vendor with a "Kalender abonnieren"
+button gives you. The other is on the `ical` tile: **upload the `.ics` file**, for the many
+municipalities whose site offers a download and nothing else. That route seals the file's bytes
+rather than a URL (`calendar_connection_secrets.feed_files`), re-parses them on every refresh, and
+matches a re-upload on the file name so next year's plan replaces this year's — see the feed
+section of [backend.md](backend.md). Uploading is iOS-only, because the picker is a
+`UIDocumentPickerViewController` behind `aporah/media` and there is nothing behind it elsewhere.
+Neither fallback is a reason not to add the vendor family properly when one turns up often.
 
 Verified end to end against the live vendor APIs, one address per family plus an uncovered one
 (`geocode → resolveAddress → readAbfallEvents`): Aachen/regioit 313 events, Waiblingen/awido 131,

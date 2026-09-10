@@ -213,8 +213,7 @@ Three things about it are load-bearing:
 
 - **The reference is `(calendar, provider uid)`, not a foreign key.** There is nothing to point at:
   every event is proxied from the connected account or the shared feed on each read and none is
-  stored. `untis_homework.event_uid` names a lesson exactly this way already, and reusing the
-  mechanism is deliberate.
+  stored. It is the one pair a provider guarantees across a refresh.
 - **`event_calendar_id` has no FK either**, because the id is a `public.calendars.id` for a
   connected calendar and a `public.public_feeds.id` for Ferien and Abfall — two tables, on purpose.
   An FK to `calendars` alone would reject the packing list somebody hangs off a Schulferien block.
@@ -252,8 +251,8 @@ supabase-js cannot open a transaction; those functions take a user id and so are
 writes, protected by triggers.
 
 Six more cover the calendar layer: `calendar-connect` (OAuth start/callback/disconnect — the only
-function that must run with `verify_jwt = false`), `calendar-caldav` (iCloud, and IServ's secondary
-login), `calendar-link` (school calendars connected by a pasted link — IServ plugin feeds and
+function that must run with `verify_jwt = false`), `calendar-caldav` (iCloud, GMX, WEB.DE, and
+IServ's secondary login), `calendar-link` (school calendars connected by a pasted link — IServ plugin feeds and
 WebUntis), `calendar-events` (reads every connected account and subscribed feed), `calendar-write`
 (creates, updates and deletes an event in a connected account) and `calendar-feed` (creates or joins
 a public feed). They exist because a provider credential must be captured, stored and used somewhere the
@@ -361,15 +360,74 @@ as and what a feed used to be pinned to in code. The grants on this table are **
 a new column is invisible until it is named in a `grant`; the row's policies (read: the household,
 write: the household minus the kids) already decide who may touch it at all.
 
-**A school calendar's link is a credential we deliberately keep in the open.** IServ plugin feeds
-and WebUntis subscriptions have no username or password — the tokenised URL *is* the whole
-capability — and it lives in `calendar_connections.config.feeds`, which the household can read.
-The reasoning, since it runs against the rule two paragraphs down: the people who can read that
-column are exactly the household members already looking at the events it returns, `authenticated`
-holds no `UPDATE` grant on `config`, so a member can read a link and never introduce one, and the
-worst case is a class's exam dates rather than a standing capability on somebody's Google account.
-Adding one is a `service_role` act in `calendar-link`, which fetches the URL first — an unchecked
-URL written straight to `config` would be an outbound request this server then makes on a schedule.
+**A school calendar's link is a credential, and is stored like every other one.** IServ plugin
+feeds and WebUntis subscriptions have no username or password — the tokenised URL *is* the whole
+capability — so it is sealed under `CALENDAR_SECRET_KEY` and kept in
+`calendar_connection_secrets.feed_urls`, one AES-256-GCM envelope per feed, keyed by the feed's
+opaque id. What stays in `calendar_connections.config.feeds` is `[{id, name, host, added_at}]`,
+and a check constraint refuses a `url` key there at all.
+
+It was not always so. The URL sat in `config` in plain text, and the trade was written down twice:
+"the only people who can read it are the household members already looking at the events it
+returns". Two things were wrong with that. The smaller one is that the argument was already
+rejected next door — 20260908155018 revoked every grant on `calendars` for the same reason, and
+20260909101500 took `config` off the client's select list — so it survived only where nobody
+re-read it. The larger one is that closing grants was never the whole job: the feed's id was the
+URL, so the token was also sitting in `calendars.external_id` and in `selected_calendars` and
+`calendar_names`, and those last two are **granted `SELECT` and `UPDATE` to `authenticated`**. Any
+member could read every sibling's school feed out of the connection row with one PostgREST call,
+the `kid` role included. 20260910070000 moved the URL and made the id a uuid; 20260910071500
+removes anything the backfill did not reach and adds the constraint.
+
+Adding a feed is still a `service_role` act in `calendar-link`, which fetches the URL first — an
+unchecked URL written straight to `config` would be an outbound request this server then makes on
+a schedule.
+
+**A calendar can also arrive as a file, and that is the one place this app holds calendar bytes.**
+A German waste vendor outside the six families in `_shared/abfall.ts` typically publishes
+`abfuhr2027.ics` as a *download* and offers nothing to subscribe to; so does many a Verein. There
+is no server on the other end to proxy to, so the file itself is kept — sealed, in
+`calendar_connection_secrets.feed_files`, shaped exactly like `feed_urls` and opened for the length
+of one parse. `config.feeds` says which of the two a feed is, in `kind`; an entry with no `kind` is
+a URL feed, which is every entry written before 20260910120000.
+
+Everything else about the arrangement survives, and the distinction is worth keeping straight. The
+file is the **source**, not a cache of one: `calendar-events` re-parses it on every refresh and
+writes no VEVENT to any row, so `public.events` is still empty and unreachable and there is still
+no in-app calendar. It is `auth_type = 'public'` with `is_read_only`, so `calendar-write` has
+nothing to target. It is not externally shareable, because `shareable_kind` names no calendar. And
+it is encrypted for the reason the URLs are, only more so: a tokenised link is a pointer at a
+calendar, and the file *is* the calendar.
+
+Two behaviours follow from a file being a snapshot. A re-upload is matched on the **file name** and
+replaces the bytes in place, keeping the feed's id, its name, its tick and its owner — which is how
+a household moves to next year's Abfuhrplan without acquiring a second calendar with the same
+title. And `covers_to` on the entry records the last event in the file, so the connect flow can say
+how far it reaches; that is the only warning a household gets before a snapshot runs dry, and the
+obvious next move is for `calendar-events` to put an expired one into `status_detail`, which is
+client-readable where `config` is not.
+
+Uploads are offered on the vendorless `ical` tile only. IServ and WebUntis both mint subscription
+links, and a timetable frozen on its export date is worse than no timetable — `calendar-link`
+refuses `ics` for any other provider.
+
+**GMX and WEB.DE are one CalDAV provider wearing two brands.** Both are 1&1 Mail & Media, both run
+the same server (`caldav.gmx.net` / `caldav.web.de`, path `/begenda/dav/<address>/calendar`), and
+both answer RFC 6764 discovery — `/.well-known/caldav` redirects with a 307, which preserves the
+PROPFIND method, and the endpoint offers Basic auth. So they are two rows in `PROVIDER_BASE` and
+share every line of `discover` / `collections` / `writeCalDav` with iCloud. No OAuth registration,
+no vendor approval, no typed-in server address. They are **writable**, unlike everything connected
+by a link: an appointment made in Aporah reaches the household's real GMX calendar and therefore
+the other parent's phone, which is the whole reason to connect an account instead of subscribing to
+a feed.
+
+Connecting one means **holding the user's password**, and there is no version of CalDAV where it
+does not: every request authenticates with it, so there is no token to exchange it for. It goes
+where iCloud's and IServ's already go — `calendar_connection_secrets.caldav_password`, sealed
+AES-256-GCM under `CALENDAR_SECRET_KEY`. What the app does about it beyond that is ask for an
+*application-specific* password, which both brands mint under Sicherheit →
+Zwei-Faktor-Authentifizierung: it is revocable on its own, and it is the difference between holding
+a key to a calendar and a key to somebody's mailbox.
 
 **Provider credentials are stored twice-protected.** `calendar_connection_secrets` has no policy at
 all and every privilege revoked from `authenticated`, *and* every value in it is an AES-256-GCM

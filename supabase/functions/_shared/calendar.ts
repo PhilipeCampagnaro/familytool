@@ -13,7 +13,23 @@ import { fetchWithTimeout } from "./net.ts";
 /// Only the four **personal** accounts. Ferien and Abfall used to be listed here
 /// as connections too; they are public feeds shared by every household now and
 /// live in `feeds.ts`, keyed by Bundesland or address rather than by family.
-export type Provider = "google" | "outlook" | "icloud" | "iserv" | "webuntis";
+/// `ical` is the generic one: any published ICS feed the user can paste a link
+/// to, with no vendor behind it. It shares every line of machinery with the
+/// school feeds — the difference is only that IServ and WebUntis get a named
+/// tile and step-by-step instructions, because "where do I find the link" is
+/// the whole of the difficulty for a parent.
+export type Provider =
+  | "google"
+  | "outlook"
+  | "icloud"
+  | "iserv"
+  | "webuntis"
+  | "ical"
+  // GMX and WEB.DE are one system with two brands: both are 1&1 Mail &
+  // Media and both answer on the same CalDAV server, so they are two
+  // entries in a base-URL table and share every line of code below.
+  | "gmx"
+  | "webde";
 
 export interface OAuthConfig {
   label: string;
@@ -100,6 +116,13 @@ export interface RemoteCalendar {
   externalId: string;
   name: string;
   readOnly: boolean;
+
+  /// The last event in an uploaded calendar file, ISO date. Only a file feed
+  /// sets it, and it is here rather than in `config` because `config` is
+  /// unreadable from the client — this list is how the settings screen learns
+  /// anything about a calendar, and "läuft bis 31.12.2026" is the one thing a
+  /// snapshot has to say about itself that a link never does.
+  coversTo?: string | null;
 }
 
 // ---------------------------------------------------------------------------

@@ -121,19 +121,24 @@ flutter:
     #
     # The one font is all the package was really worth here: a duotone glyph is
     # two codepoints in this file, drawn on top of each other, which
-    # `lib/theme/app_icons.dart` does in a dozen lines. Only the Duotone weight
-    # is vendored, out of the six.
+    # `lib/theme/app_icons.dart` does in a dozen lines. Two of the six weights
+    # are vendored: Duotone for a glyph that names a thing, Bold for one that is
+    # a control.
     - family: PhosphorDuotone
       fonts:
         - asset: assets/icons/Phosphor-Duotone.ttf
-    # The same set's Regular weight, for every icon drawn flat — a control's
+    # The same set's Bold weight, for every icon drawn flat — a control's
     # glyph, and the fourteen bare marks. Not the duotone with its under-layer
     # switched off: Phosphor draws several icons differently in the two weights,
-    # and `caret-right` is a hollow triangle in one and a thin chevron in the
-    # other. See `_regular` in lib/theme/app_icons.dart.
-    - family: PhosphorRegular
+    # and `caret-right` is a hollow triangle in one and a chevron in the other.
+    # Bold rather than Regular because Phosphor's Regular is a lighter line than
+    # the Lucide it replaced, and at a 19px button glyph that reads as faint.
+    # Every Phosphor weight uses the same codepoint per glyph, so this line is
+    # the only thing that picks the weight. See `_flat` in
+    # lib/theme/app_icons.dart.
+    - family: PhosphorBold
       fonts:
-        - asset: assets/icons/Phosphor-Regular.ttf
+        - asset: assets/icons/Phosphor-Bold.ttf
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

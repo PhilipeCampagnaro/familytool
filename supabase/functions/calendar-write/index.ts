@@ -372,6 +372,8 @@ function write(
       return writeGoogle(db, connection, externalId, action, uid, draft, target);
     case "outlook":
       return writeOutlook(db, connection, externalId, action, uid, draft, target);
+    case "gmx":
+    case "webde":
     case "icloud":
     case "iserv":
       // A link-connected school calendar is a one-way ICS feed with no
@@ -386,6 +388,11 @@ function write(
       return writeCalDav(db, connection, externalId, action, uid, draft, target);
     case "webuntis":
       throw new Error("webuntis is not writable");
+    case "ical":
+      // A subscribed feed is somebody else's publication. Same guard as the
+      // link case above: every one is written `is_read_only`, so this is the
+      // exhaustive-switch arm rather than a reachable path.
+      throw new Error("ical feed is not writable");
   }
 }
 

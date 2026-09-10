@@ -147,10 +147,14 @@ class CalendarConnectionsNotifier extends StateNotifier<CalendarConnectionsState
 
   /// Checks a pasted school-calendar link. Touches no state: this is the
   /// setup sheet asking whether the link works before it offers to keep it.
-  Future<({String? name, int events})> checkCalendarLink({
+  ///
+  /// [ics] is the same question for a picked file: is this a calendar, what
+  /// does it call itself, and how far does it run.
+  Future<({String? name, int events, DateTime? coversTo})> checkCalendarLink({
     required CalendarProvider provider,
-    required String url,
-  }) => _repo.checkCalendarLink(provider: provider, url: url);
+    String? url,
+    String? ics,
+  }) => _repo.checkCalendarLink(provider: provider, url: url, ics: ics);
 
   /// Adds one pasted calendar — to a new account, or to one that exists.
   ///
@@ -159,14 +163,18 @@ class CalendarConnectionsNotifier extends StateNotifier<CalendarConnectionsState
   /// the function just made.
   Future<String?> addCalendarLink({
     required CalendarProvider provider,
-    required String url,
     required String name,
+    String? url,
+    String? ics,
+    String? fileName,
     String? account,
     String? connectionId,
   }) async {
     final result = await _repo.addCalendarLink(
       provider: provider,
       url: url,
+      ics: ics,
+      fileName: fileName,
       name: name,
       account: account,
       connectionId: connectionId,
@@ -174,42 +182,6 @@ class CalendarConnectionsNotifier extends StateNotifier<CalendarConnectionsState
     // No `displayName` to apply: the account was named on the way in, and the
     // calendar's own name went with the link. So this only re-reads and kicks
     // off the first fetch.
-    return _afterConnect(result.connectionId);
-  }
-
-  /// Checks a scanned or typed WebUntis key. Touches no state, for the same
-  /// reason [checkCalendarLink] does not: the sheet is asking whether these
-  /// credentials work before it offers to keep them.
-  Future<({String student, String school, int lessons})> checkUntis({
-    String? qr,
-    String? server,
-    String? school,
-    String? user,
-    String? secret,
-  }) => _repo.checkUntis(qr: qr, server: server, school: school, user: user, secret: secret);
-
-  /// Stores a WebUntis connection: the key, its one timetable, and the name the
-  /// household gave it, in a single call.
-  Future<String?> connectUntis({
-    required String pupil,
-    String? memberId,
-    String? qr,
-    String? server,
-    String? school,
-    String? user,
-    String? secret,
-  }) async {
-    final result = await _repo.connectUntis(
-      pupil: pupil,
-      memberId: memberId,
-      qr: qr,
-      server: server,
-      school: school,
-      user: user,
-      secret: secret,
-    );
-    // No `displayName` to apply — the account is named after the pupil the key
-    // turned out to belong to, which is better than anything we could ask for.
     return _afterConnect(result.connectionId);
   }
 

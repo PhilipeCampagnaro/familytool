@@ -62,7 +62,7 @@ class BoardState {
   /// The same identifiers Kalender's chips use — `'member:<uuid>'`,
   /// `'person:<name>'`, `'family'` — so one row of faces means the same thing
   /// on both screens and a household learns it once. Filtering to Alice shows
-  /// her homework *and* the chores assigned to her, which is the question
+  /// the chores assigned to her and the rhythms she keeps, which is the question
   /// somebody actually has at seven in the morning.
   final String? personFilter;
 
@@ -123,10 +123,9 @@ class BoardState {
   /// A chip standing for a household member narrows to what is **assigned** to
   /// them — `assigneeId`, which is the axis that already answers "who does it".
   /// The family chip and a chip for somebody with no account have no assignee to
-  /// match, so they narrow the homework and leave the household's own tasks
-  /// alone: a chore nobody has been given is everybody's, and hiding it under
-  /// every filter would make the Board look empty at exactly the moment
-  /// somebody was looking for something to do.
+  /// match, so they leave the task list alone: a chore nobody has been given is
+  /// everybody's, and hiding it under every filter would make the Board look
+  /// empty at exactly the moment somebody was looking for something to do.
   List<BoardTask> get visibleTasks {
     final filter = personFilter;
     if (filter == null || !filter.startsWith('member:')) return tasks;
