@@ -159,6 +159,23 @@ abstract class AppStrings {
   String get dueNextWeek;
   String get duePickDate;
 
+  /// The optional hour on a to-do, at the bottom of the due-date sheet and as
+  /// its own row in the task sheet. Most to-dos never get one — it is for the
+  /// school run and the bin, not for "Geschenk kaufen" — which is why it is the
+  /// last thing the sheet asks and never a required answer.
+  String get dueTimeLabel;
+
+  /// The row that takes the hour away again. Not "Keine Uhrzeit" as an *answer*
+  /// the way [sectionUndated] is one: no hour is simply the absence of one, so
+  /// the row only appears once there is something to remove.
+  String get dueNoTime;
+
+  /// Why the hour row is greyed out. An hour with no day names nothing, and the
+  /// database refuses the pair outright (`tasks_due_time_needs_date`) — so the
+  /// row says what to do rather than letting somebody pick a time that could
+  /// not be saved.
+  String get dueTimeNeedsDate;
+
   String get theTask;
   String get deleteTask;
   String get assigneeLabel;
@@ -187,7 +204,7 @@ abstract class AppStrings {
 
   /// The create sheet's first question, above the segmented control. Both
   /// answers are nouns for a thing, not verbs for an act: the user is choosing
-  /// what to make, and "Aufgabe" against "Tracker" is the whole distinction.
+  /// what to make, and "To-do" against "Tracker" is the whole distinction.
   String get whatToCreate;
 
   /// The create sheet's title while it can still become either kind. Short on
@@ -365,6 +382,7 @@ abstract class AppStrings {
   String get theBox;
   String get boxLabel;
   String get tapAboveToAddFirst;
+  String get newItem;
   String get editItem;
   String get itemName;
   String get sizeExample;
@@ -381,6 +399,7 @@ abstract class AppStrings {
   String get itemDeleteFailed;
   String get itemDeleted;
   String get itemRestoreFailed;
+  String get itemCreated;
   String get boxCreated;
   String get boxUpdated;
   String get boxDeleted;
@@ -411,7 +430,19 @@ abstract class AppStrings {
   String get searchOnAmazon;
   String get photo;
   String get camera;
-  String get files;
+
+  /// The shop page an article is about — the row in the item menu, the title of
+  /// its sheet, the hint in the field and the note under it. A link is *set* in
+  /// the sheet and taken off again with [removeItemLink]: an empty field leaves
+  /// the sheet's check greyed rather than counting as a removal, so a cleared
+  /// field can't quietly throw the link away. [itemLinkInvalid] is what a
+  /// string that is no web address gets.
+  String get itemLink;
+  String get removeItemLink;
+  String get itemLinkMessage;
+  String get itemLinkHint;
+  String get itemLinkSaved;
+  String get itemLinkInvalid;
   String get listsLoadFailed;
   String get listSaveFailed;
   String get listDeleteFailed;
@@ -425,6 +456,21 @@ abstract class AppStrings {
   // ------------------------------------------------------------- calendar --
   String get calendarTitle;
   String get all;
+
+  /// The filter row's last chip, the one that lays the Board's to-dos over the
+  /// calendar. Plural where every other chip in that row is a name, because it
+  /// stands for a whole kind of thing rather than for somebody.
+  ///
+  /// The same word in both languages: "To-do" is what the Board calls one
+  /// ([kindTask]), in German as much as in English, and a chip reading
+  /// "Aufgaben" over rows that say "To-do" would be two names for one thing.
+  String get todosChip;
+
+  /// The rail beside a to-do in the agenda, where an appointment prints its
+  /// clock time. A due date is a day and carries no time, so there is nothing to
+  /// print there — and "Ganztägig" would be a lie of a different kind, since the
+  /// to-do does not occupy the day, it is merely owed by the end of it.
+  String get dueRailLabel;
   String get newEvent;
   String get editEvent;
   String get startsAt;
@@ -487,7 +533,7 @@ abstract class AppStrings {
   String get eventLabel;
 
   /// The two rows of the event sheet's "hang something off this appointment"
-  /// card. They name the *destination* tab ("Liste", "Aufgabe"), not the verb,
+  /// card. They name the *destination* tab ("Liste", "To-do"), not the verb,
   /// because the row already reads as an action and the question the user has
   /// is which of the two screens it lands on.
   String get createListFromEvent;
@@ -831,6 +877,11 @@ abstract class AppStrings {
   String get symbol;
   String get change;
   String get chooseSymbol;
+
+  /// The empty photo row on a box / box-item sheet. It says "upload" rather
+  /// than "Foto" because the row with a picture on it is the one called
+  /// "Foto" — this one is the invitation, not the thing.
+  String get uploadImage;
 
   /// A box, a box item or a list article can carry a photograph instead of a
   /// symbol — see `data/repositories/photo_repository.dart`. Both failures are

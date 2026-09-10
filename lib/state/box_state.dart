@@ -580,12 +580,32 @@ class BoxNotifier extends StateNotifier<BoxScreenState> {
   /// Files a typed item under the open box, on screen first and on the server
   /// after. No grocery-first bias here: a box holds a drill far more often than
   /// it holds milk.
-  Future<void> addItem(String name, {String? iconKey}) async {
+  ///
+  /// Answers the row as the server stored it, which is what the add row waits
+  /// for before it opens the item sheet: the optimistic copy carries a
+  /// [_tempId] and [editItem] refuses to write to one, so a sheet opened on it
+  /// would save nothing. Null means the item never landed.
+  /// Files a new item, with everything its sheet collected.
+  ///
+  /// [photo] is the picture the user picked while the item did not exist yet,
+  /// and it is uploaded *after* the insert for the same reason [createBox]'s is:
+  /// the object is filed under the box's id and the storage policy asks whether
+  /// that box may be written, but the `photo_path` column belongs to a row that
+  /// has to exist first. A picture that fails to upload leaves the item behind
+  /// rather than failing the save — the item is what the user asked for.
+  Future<BoxItem?> addItem(
+    String name, {
+    String? iconKey,
+    String? size,
+    int qty = 1,
+    String? note,
+    File? photo,
+  }) async {
     final trimmed = name.trim();
-    if (trimmed.isEmpty) return;
+    if (trimmed.isEmpty) return null;
 
     final boxId = state.openId;
-    if (boxId.isEmpty) return;
+    if (boxId.isEmpty) return null;
 
     final current = state.itemsFor(boxId);
     final position = current.isEmpty ? 0 : current.map((i) => i.position).reduce((a, b) => a > b ? a : b) + 1;
@@ -595,6 +615,9 @@ class BoxNotifier extends StateNotifier<BoxScreenState> {
       id: _tempId(),
       boxId: boxId,
       name: trimmed,
+      size: _orNull(size),
+      qty: qty,
+      note: _orNull(note),
       iconKey: icon,
       createdBy: _userId,
       position: position,
@@ -602,15 +625,26 @@ class BoxNotifier extends StateNotifier<BoxScreenState> {
     _putItems(boxId, [...current, optimistic]);
 
     try {
-      final saved = await _repo.addItem(boxId: boxId, name: trimmed, iconKey: icon, position: position);
-      if (!mounted) return;
+      final saved = await _repo.addItem(
+        boxId: boxId,
+        name: trimmed,
+        size: _orNull(size),
+        qty: qty,
+        note: _orNull(note),
+        iconKey: icon,
+        position: position,
+      );
+      if (!mounted) return null;
       // Reconcile in place: the row keeps its slot and swaps its id for the real
       // uuid, so an edit landing right after the insert has something to write to.
       _patchItem(boxId, optimistic.id, (_) => saved);
+      if (photo != null) await setItemPhoto(saved, photo);
+      return saved;
     } catch (_) {
-      if (!mounted) return;
+      if (!mounted) return null;
       _removeItemLocally(boxId, optimistic.id);
       _fail(L.s.itemSaveFailed);
+      return null;
     }
   }
 

@@ -10,12 +10,37 @@ class EventDots extends StatelessWidget {
   final int overflowCount;
   final double dotSize;
 
-  const EventDots({super.key, required this.colors, required this.overflowCount, this.dotSize = 8});
+  /// Draws an empty ring ahead of the dots: this day still owes a to-do.
+  ///
+  /// **A ring rather than another dot, and deliberately colourless.** Every
+  /// filled dot in this row is a *calendar* of that colour, so a to-do drawn as
+  /// one would claim to be a calendar the household hasn't got. The ring is the
+  /// unticked circle the agenda card and the Board row already use for the same
+  /// thing, shrunk to the size of a dot — it reads as an empty checkbox, which
+  /// is what it is.
+  ///
+  /// First in the row, so a day carrying both starts with the thing that needs
+  /// doing rather than ending with it.
+  final bool todo;
+
+  /// The ring's colour — the calendar's accent at the call sites that pass
+  /// [todo]. Ignored otherwise.
+  final Color? todoColor;
+
+  const EventDots({
+    super.key,
+    required this.colors,
+    required this.overflowCount,
+    this.dotSize = 8,
+    this.todo = false,
+    this.todoColor,
+  });
 
   @override
   Widget build(BuildContext context) {
     const overlap = 0.5;
-    final total = colors.length + (overflowCount > 0 ? 1 : 0);
+    final lead = todo ? 1 : 0;
+    final total = lead + colors.length + (overflowCount > 0 ? 1 : 0);
     if (total == 0) return const SizedBox.shrink();
     final step = dotSize - overlap;
     final width = dotSize + step * (total - 1);
@@ -24,9 +49,23 @@ class EventDots extends StatelessWidget {
       height: dotSize,
       child: Stack(
         children: [
+          if (todo)
+            Positioned(
+              left: 0,
+              child: Container(
+                width: dotSize,
+                height: dotSize,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  // Thick enough to read as a ring at 8px and thin enough to
+                  // leave a hole — below about 1.6 it fills in on a 2x screen.
+                  border: Border.all(color: todoColor ?? AppColors.ink, width: 1.8),
+                ),
+              ),
+            ),
           for (var i = 0; i < colors.length; i++)
             Positioned(
-              left: step * i,
+              left: step * (lead + i),
               child: Container(
                 width: dotSize,
                 height: dotSize,
@@ -35,7 +74,7 @@ class EventDots extends StatelessWidget {
             ),
           if (overflowCount > 0)
             Positioned(
-              left: step * colors.length,
+              left: step * (lead + colors.length),
               child: Container(
                 width: dotSize,
                 height: dotSize,

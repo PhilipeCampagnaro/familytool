@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 
 import '../data/icon_suggestions.dart';
-import '../services/action_sheet.dart';
+import '../services/native_menu.dart';
 import '../theme/tokens.dart';
 import 'anchored_menu.dart';
 import 'app_sheet.dart';
@@ -39,14 +39,35 @@ class IconDraft {
   IconDraft(this.picked, {this.photoFile});
 }
 
-/// The round icon in front of a list, a box or a row.
+/// The icon in front of a list, a box or a row.
 ///
-/// Three cases, and the difference between them is not decoration: a shop logo
-/// or a grocery picture is **full-colour art drawn for a light background**, so
-/// it gets the white [AppPalette.brandTile] disc in both palettes (same rule as
-/// the calendar provider marks — several go unreadable on a dark circle). A
-/// Lucide glyph is line art that takes the theme's own colour, so it sits on
-/// the ordinary [AppPalette.surfaceAlt] fill.
+/// Three cases, and the difference between them is not decoration.
+///
+/// **A symbol glyph** is line art that takes the theme's own colour, so it sits
+/// on the ordinary [AppPalette.surfaceAlt] disc — the disc is what gives a
+/// hairline mark somewhere to be.
+///
+/// **A grocery picture is drawn bare**, at nearly the full width of the slot.
+/// It is a photograph on nothing — a Paprika, a Milchtüte — and it arrives
+/// already sized and centred, so a disc around it only costs the inset. On dark
+/// it keeps the white [AppPalette.brandTile] under it, because the art is drawn
+/// for white paper; that is the rule the grocery rows in Listen follow too.
+///
+/// **A shop logo gets a white disc**, and it is the disc that is doing the work,
+/// not the picture. Brand marks share no shape: REWE is a full-bleed red square,
+/// IKEA a wide wordmark, ALDI a tall one. Drawn bare they normalise to
+/// *nothing* — the square fills its slot edge to edge while the wordmark shrinks
+/// to a sliver of it, and the column reads as unrelated coloured rectangles. The
+/// disc is what gives every one of them the same footprint: white ground in both
+/// palettes (these logos are printed for paper), a hairline edge, a fixed inset,
+/// and a clip, so a full-bleed mark ends at the circle instead of squaring off
+/// inside it.
+///
+/// The inset is a shade under the square that fits inside a circle (0.707 of
+/// its width), which is what a round frame costs a wide mark: it is smaller
+/// than a squircle would allow, and round is the shape the app is built out of.
+///
+/// A caller that names its own [background] is asking for the disc and gets it.
 class IconTile extends StatelessWidget {
   final String? iconKey;
   final double size;
@@ -115,6 +136,35 @@ class IconTile extends StatelessWidget {
     final choice = resolveIcon(iconKey);
     final asset = choice?.asset;
     final hasPhoto = photoFile != null || photoUrl != null;
+    if (asset != null && !hasPhoto && background == null) {
+      // A brand mark in its chip — see the class doc. The inset is what a logo
+      // is normally given on a white card, and the clip is for the full-bleed
+      // ones, which end at the chip's corners instead of squaring them off.
+      if (choice?.kind == IconKind.merchant) {
+        return Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            color: AppColors.brandTile,
+            shape: BoxShape.circle,
+            border: border ? Border.all(color: AppColors.hairline) : null,
+          ),
+          clipBehavior: Clip.antiAlias,
+          alignment: Alignment.center,
+          padding: EdgeInsets.all(size * 0.14),
+          child: IconImage(asset: asset, size: size * 0.72),
+        );
+      }
+      // A grocery picture, bare — but not on dark, where the white disc below
+      // is what keeps art drawn for paper visible.
+      if (!AppColors.isDark) {
+        return SizedBox(
+          width: size,
+          height: size,
+          child: Center(child: IconImage(asset: asset, size: size * 0.88)),
+        );
+      }
+    }
     return Container(
       width: size,
       height: size,
@@ -239,6 +289,16 @@ class IconImage extends StatelessWidget {
 /// normally is. "Symbol" survives as the fallback for the seconds before the
 /// typed name has matched anything, when there is no icon to name yet.
 ///
+/// **The row is about the symbol and nothing else**, even on a sheet that also
+/// carries a photograph. "Ändern" goes straight into [showIconPicker] rather
+/// than into a menu that asks symbol-or-photo first: two of that menu's four
+/// rows were about a picture, so the commonest tap on the sheet — correct the
+/// guessed symbol — cost an extra choice every time. The photograph is
+/// [PhotoFieldRow]'s, on its own row underneath, and the symbol stays visible
+/// while there is one: it is what the thing goes back to when the picture is
+/// removed, and a tile showing the photo twice in adjacent rows says the same
+/// thing twice while hiding the fallback.
+///
 /// [suggested] marks the icon as one the *name* produced rather than one the
 /// user picked — the sparkle after the name says so, which is what makes the
 /// automatic match legible instead of magic.
@@ -248,33 +308,74 @@ class IconFieldRow extends StatelessWidget {
   final IconData fallbackIcon;
   final VoidCallback onTap;
 
-  /// A photograph standing in for the symbol — see [IconTile.photoUrl]. When it
-  /// is set the row names it "Foto" and drops the sparkle: the picture is the
-  /// user's own, so there is no automatic match left to explain.
-  final String? photoUrl;
-
-  /// A picture that has not been uploaded yet — see [IconTile.photoFile]. This
-  /// is what a *new* box's photo is until the box exists to hang it on.
-  final String? photoFile;
-
-  /// Where the fallback dropdown hangs when there is no system action sheet to
-  /// put up — see [showPictureMenu]. Only needed by a row whose [onTap] opens
-  /// one.
-  final GlobalKey? anchorKey;
-
-  /// Marks the row as busy while a picture is on its way up, so a slow upload
-  /// is a spinner rather than a row that looks like it ignored the tap.
-  final bool uploading;
-
   const IconFieldRow({
     super.key,
     required this.iconKey,
     required this.onTap,
     this.suggested = false,
     this.fallbackIcon = AppIcons.listChecks,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = Theme.of(context).colorScheme.primary;
+    final label = resolveIcon(iconKey)?.label;
+    return _PictureFieldRow(
+      onTap: onTap,
+      leading: IconTile(
+        iconKey: iconKey,
+        size: 32,
+        imageSize: 22,
+        fallbackIcon: fallbackIcon,
+        glyphColor: accent,
+        border: false,
+      ),
+      label: label ?? L.s.symbol,
+      trailing: L.s.change,
+      badge: suggested && label != null ? AppIcon(AppIcons.sparkle, size: 13, color: accent) : null,
+    );
+  }
+}
+
+/// The photograph row, directly under [IconFieldRow] on the box and box-item
+/// sheets: "Bild hochladen" while there is none, the picture and "Ändern" once
+/// there is.
+///
+/// **One picture, and it stands in for the symbol** — that is the whole rule,
+/// and it is the storage column's shape rather than a limit imposed here:
+/// `boxes.photo_path` and `box_items.photo_path` hold one path, so a second
+/// photograph of the same drill replaces the first. A list *article* is the
+/// other case and keeps its attachment list, because a receipt and a manual
+/// are not two attempts at the same picture.
+///
+/// The tap puts up [showPictureMenu] — Mediathek, Kamera, and "Foto entfernen"
+/// once there is one to remove. Two system pickers cannot be collapsed into a
+/// single tap, but the menu now asks one question instead of two.
+class PhotoFieldRow extends StatelessWidget {
+  /// A signed URL for a stored photograph — see [IconTile.photoUrl].
+  final String? photoUrl;
+
+  /// A picture that has not been uploaded yet — see [IconTile.photoFile]. This
+  /// is what a *new* box's or item's photo is until the row exists to hang it
+  /// on.
+  final String? photoFile;
+
+  /// Where the fallback dropdown hangs when there is no system action sheet to
+  /// put up — see [showPictureMenu].
+  final GlobalKey anchorKey;
+
+  /// Marks the row as busy while a picture is on its way up, so a slow upload
+  /// is a spinner rather than a row that looks like it ignored the tap.
+  final bool uploading;
+
+  final VoidCallback onTap;
+
+  const PhotoFieldRow({
+    super.key,
+    required this.anchorKey,
+    required this.onTap,
     this.photoUrl,
     this.photoFile,
-    this.anchorKey,
     this.uploading = false,
   });
 
@@ -282,64 +383,97 @@ class IconFieldRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final accent = Theme.of(context).colorScheme.primary;
     final hasPhoto = photoFile != null || photoUrl != null;
-    final label = hasPhoto ? L.s.photo : resolveIcon(iconKey)?.label;
+    return _PictureFieldRow(
+      anchorKey: anchorKey,
+      onTap: uploading ? null : onTap,
+      leading: uploading
+          ? SizedBox(
+              width: 32,
+              height: 32,
+              child: Center(
+                child: SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: accent),
+                ),
+              ),
+            )
+          : Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(color: AppColors.surfaceAlt, shape: BoxShape.circle),
+              alignment: Alignment.center,
+              clipBehavior: hasPhoto ? Clip.antiAlias : Clip.none,
+              child: hasPhoto
+                  ? PhotoThumbnail(url: photoUrl, filePath: photoFile, size: 32)
+                  : AppIcon(AppIcons.image, size: 17, color: accent),
+            ),
+      // Named "Foto" only once there is one: the empty row is an invitation,
+      // and a row reading "Foto" with no photograph on it is a label for
+      // something that isn't there.
+      label: hasPhoto ? L.s.photo : L.s.uploadImage,
+      trailing: hasPhoto ? L.s.change : null,
+    );
+  }
+}
+
+/// The shape both picture rows share: a 32pt tile, a label that ellipsises
+/// before it pushes anything off the row, and a chevron with an optional word
+/// in front of it.
+class _PictureFieldRow extends StatelessWidget {
+  final Widget leading;
+  final String label;
+  final String? trailing;
+  final Widget? badge;
+  final GlobalKey? anchorKey;
+  final VoidCallback? onTap;
+
+  const _PictureFieldRow({
+    required this.leading,
+    required this.label,
+    this.trailing,
+    this.badge,
+    this.anchorKey,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return GestureDetector(
       key: anchorKey,
       behavior: HitTestBehavior.opaque,
-      onTap: uploading ? null : onTap,
+      onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
-            if (uploading)
-              SizedBox(
-                width: 32,
-                height: 32,
-                child: Center(
-                  child: SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: accent),
-                  ),
-                ),
-              )
-            else
-              IconTile(
-                iconKey: iconKey,
-                size: 32,
-                imageSize: 22,
-                photoUrl: photoUrl,
-                photoFile: photoFile,
-                fallbackIcon: fallbackIcon,
-                glyphColor: accent,
-                border: false,
-              ),
+            leading,
             const SizedBox(width: 11),
-            // The name takes all the room the action leaves, so a long one
-            // ellipsises instead of pushing "Ändern" off the row.
             Expanded(
               child: Row(
                 children: [
                   Flexible(
                     child: Text(
-                      label ?? L.s.symbol,
+                      label,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: AppText.rowTitle,
                     ),
                   ),
-                  if (suggested && !hasPhoto && label != null) ...[
+                  if (badge != null) ...[
                     const SizedBox(width: 6),
-                    AppIcon(AppIcons.sparkle, size: 13, color: accent),
+                    badge!,
                   ],
                 ],
               ),
             ),
-            const SizedBox(width: 12),
-            Text(
-              L.s.change,
-              style: AppText.buttonSmall.copyWith(color: AppColors.muted),
-            ),
+            if (trailing != null) ...[
+              const SizedBox(width: 12),
+              Text(
+                trailing!,
+                style: AppText.buttonSmall.copyWith(color: AppColors.muted),
+              ),
+            ],
             const SizedBox(width: 4),
             AppIcon(AppIcons.caretRight, size: 16, color: AppColors.mutedLight),
           ],
@@ -647,6 +781,12 @@ class _IconRow extends StatelessWidget {
 
 
 /// What a picture row's menu can produce.
+///
+/// **No symbol row.** It used to have one, and that is what made the box
+/// sheet's "Ändern" a two-step job: the menu asked which *kind* of picture
+/// before it asked anything useful, on a row whose commonest use is correcting
+/// the guessed symbol. Symbols are [IconFieldRow]'s and photographs are
+/// [PhotoFieldRow]'s, so each row's tap already knows the answer.
 enum PictureChoice {
   /// The photo library.
   photo,
@@ -654,59 +794,63 @@ enum PictureChoice {
   /// Take one now.
   camera,
 
-  /// Fall back to [showIconPicker] — a symbol, a shop logo or a grocery
-  /// picture, whichever the subject allows.
-  symbol,
-
   /// Back to the symbol the name chose, and the object deleted.
   remove,
 }
 
 /// The menu behind the picture row on a create/edit sheet.
 ///
-/// **The system's own sheet first, the app's dropdown only as a fallback**, and
+/// **The system's own menu first, the app's dropdown only as a fallback**, and
 /// that is not a style choice. This opens from *inside* a [showAppSheet], whose
 /// header carries native glass buttons, and Flutter content composited after a
 /// platform view can be dropped whole on device — the failure that already ate
 /// the Kalender event sheet's route menu, which opened, swallowed the taps
-/// behind it and never painted. `UIAlertController` is presented by UIKit, so
-/// there is no Flutter layer left to lose. [showNativeActionSheet] returns null
-/// where there is no system sheet to put up (everything but iOS), which is the
-/// cue to use the dropdown.
+/// behind it and never painted. UIKit presents its own menu, so there is no
+/// Flutter layer left to lose. [showNativeMenu] returns null where there is no
+/// system menu to put up (everything but iOS), which is the cue to use the
+/// dropdown — and both hang off [anchorKey], so the choice appears beside the
+/// row either way.
 ///
 /// [hasPhoto] adds the destructive "Foto entfernen" — there is nothing to
-/// remove until there is. [includeSymbol] is false for a subject that has no
-/// symbol to fall back to: the household's own picture is a photograph or its
-/// initials, and there is no icon set behind it to pick from.
+/// remove until there is.
 Future<PictureChoice?> showPictureMenu(
   BuildContext context, {
   required GlobalKey anchorKey,
   required bool hasPhoto,
-  bool includeSymbol = true,
 }) async {
   final choices = [
     PictureChoice.photo,
     PictureChoice.camera,
-    if (includeSymbol) PictureChoice.symbol,
     if (hasPhoto) PictureChoice.remove,
   ];
   String label(PictureChoice c) => switch (c) {
     PictureChoice.photo => L.s.photo,
     PictureChoice.camera => L.s.camera,
-    PictureChoice.symbol => L.s.chooseSymbol,
     PictureChoice.remove => L.s.removePhoto,
   };
 
-  final picked = await showNativeActionSheet(
-    options: [for (final c in choices) label(c)],
+  final picked = await showNativeMenu(
+    anchor: anchorRectOf(anchorKey),
+    options: [
+      for (final c in choices)
+        NativeMenuOption(
+          label(c),
+          symbol: switch (c) {
+            PictureChoice.photo => 'photo.on.rectangle',
+            PictureChoice.camera => 'camera',
+            PictureChoice.remove => 'trash',
+          },
+          destructive: c == PictureChoice.remove,
+        ),
+    ],
     cancelLabel: L.s.cancel,
     dark: AppColors.isDark,
   );
-  if (picked == actionSheetCancelled) return null;
+  if (picked == nativeMenuCancelled) return null;
   if (picked != null) return choices[picked];
   if (!context.mounted) return null;
 
-  // No system sheet here — the dropdown, and a completer to give it the same
+  // No system menu here — the dropdown, and a completer to give it the same
   // shape as the branch above. `showAnchoredMenu` awaits its route before it
   // calls `onSelected`, so a menu dismissed without a choice simply leaves the
   // completer alone.
@@ -721,7 +865,6 @@ Future<PictureChoice?> showPictureMenu(
           icon: switch (c) {
             PictureChoice.photo => AppIcons.image,
             PictureChoice.camera => AppIcons.camera,
-            PictureChoice.symbol => AppIcons.shapes,
             PictureChoice.remove => AppIcons.trash,
           },
           destructive: c == PictureChoice.remove,

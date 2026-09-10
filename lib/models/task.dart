@@ -3,6 +3,51 @@ import 'visibility.dart';
 
 DateTime? _timeFrom(Object? value) => value == null ? null : DateTime.tryParse(value as String)?.toLocal();
 
+/// The hour a to-do is owed by, when it names one.
+///
+/// **A wall clock, not an instant** — the pair `(due_date, due_time)` is a local
+/// reading the way "Donnerstag um acht" is, and neither half carries a zone. A
+/// `DateTime` here would have to invent one, and a household that travels would
+/// watch its week move; see the migration beside `tasks.due_time`.
+///
+/// Plain Dart rather than Flutter's `TimeOfDay`, so the models stay free of
+/// `material.dart` the way the rest of `lib/models/` is. The one place the two
+/// meet is the picker, which converts at its own edge.
+class DueTime implements Comparable<DueTime> {
+  final int hour;
+  final int minute;
+
+  const DueTime(this.hour, this.minute);
+
+  /// Postgres hands a `time` back as `HH:MM:SS`, and sometimes with a fractional
+  /// part. Anything past the minute is dropped: the picker cannot produce it and
+  /// nothing in the app would show it.
+  static DueTime? parse(String? value) {
+    if (value == null) return null;
+    final parts = value.split(':');
+    if (parts.length < 2) return null;
+    final h = int.tryParse(parts[0]);
+    final m = int.tryParse(parts[1]);
+    if (h == null || m == null) return null;
+    return DueTime(h, m);
+  }
+
+  /// `HH:MM` — what a Postgres `time` column takes.
+  String toSql() => '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
+
+  /// Minutes since midnight, which is what sorting a day by it comes down to.
+  int get minutes => hour * 60 + minute;
+
+  @override
+  int compareTo(DueTime other) => minutes.compareTo(other.minutes);
+
+  @override
+  bool operator ==(Object other) => other is DueTime && other.hour == hour && other.minute == minute;
+
+  @override
+  int get hashCode => Object.hash(hour, minute);
+}
+
 /// One Board task — a `public.tasks` row.
 ///
 /// Two things changed when this stopped being seed data, and both are the point
@@ -27,6 +72,18 @@ class BoardTask {
   /// Datum" is a section like any other, and it is where a new task starts.
   /// Anything reading this has to answer for the null — see [boardSectionOf].
   final DateTime? dueDate;
+
+  /// The hour it is owed by, or null — which is most to-dos. Only ever set
+  /// alongside a [dueDate]; the database refuses the other combination
+  /// (`tasks_due_time_needs_date`), because an hour with no day names nothing.
+  ///
+  /// **It does not decide when the to-do is overdue.** That stays a question
+  /// about the day — [boardSectionOf] never reads this. A row moving into
+  /// "Überfällig" at 09:01 of the day it was planned for would nag inside the
+  /// one section people open the app to see. What the hour does is place the
+  /// to-do among the appointments in the Kalender agenda, which is the only
+  /// screen that has a position to give it.
+  final DueTime? dueTime;
 
   final String text;
   final String? meta;
@@ -62,6 +119,7 @@ class BoardTask {
     required this.id,
     required this.familyId,
     this.dueDate,
+    this.dueTime,
     required this.text,
     required this.ownerId,
     this.meta,
@@ -84,6 +142,7 @@ class BoardTask {
         final String value => parseDueDate(value),
         _ => null,
       },
+      dueTime: DueTime.parse(map['due_time'] as String?),
       text: map['text'] as String,
       meta: map['meta'] as String?,
       assigneeId: map['assignee_id'] as String?,
@@ -103,6 +162,9 @@ class BoardTask {
   /// `enforce_container_ownership` rejects them from anyone but the owner.
   Map<String, dynamic> toMap({bool forInsert = false}) => {
     'due_date': dueDate == null ? null : formatDueDate(dueDate!),
+    // Written together with the date, so clearing the date clears the hour in
+    // the same statement rather than tripping the check constraint.
+    'due_time': dueDate == null ? null : dueTime?.toSql(),
     'text': text,
     'meta': meta,
     'assignee_id': assigneeId,
@@ -118,6 +180,8 @@ class BoardTask {
   BoardTask copyWith({
     DateTime? dueDate,
     bool clearDueDate = false,
+    DueTime? dueTime,
+    bool clearDueTime = false,
     String? text,
     String? meta,
     bool clearMeta = false,
@@ -135,6 +199,9 @@ class BoardTask {
     id: id,
     familyId: familyId,
     dueDate: clearDueDate ? null : (dueDate ?? this.dueDate),
+    // A to-do that loses its day loses its hour with it — the pair is what
+    // means something, and the database says so too.
+    dueTime: clearDueDate || clearDueTime ? null : (dueTime ?? this.dueTime),
     text: text ?? this.text,
     meta: clearMeta ? null : (meta ?? this.meta),
     assigneeId: clearAssignee ? null : (assigneeId ?? this.assigneeId),

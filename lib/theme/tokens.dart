@@ -91,8 +91,8 @@ class AppPalette {
   /// ink at 15% on light, on the theory that a translucent grey over whatever
   /// is behind it is what glass does. It isn't: the real material lightens what
   /// it covers, so a darkening veil turned every glass control into a grey disc
-  /// the moment the approximation was used — which on iOS is every time a menu
-  /// or a sheet opens over one (see `occludedByRoute`). Each caller had been
+  /// the moment the approximation was used — which on iOS is every time a sheet
+  /// or a full screen opens over one (see `occludedByRoute`). Each caller had been
   /// working around it by passing the nav pill's light tint by hand, so this is
   /// now that tone, and there is nothing left to pass.
   final Color glassFallbackTint;

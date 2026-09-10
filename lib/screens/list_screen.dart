@@ -10,7 +10,7 @@ import '../models/attachment.dart';
 import '../models/event_link.dart';
 import '../models/grocery_unit.dart';
 import '../models/shopping_list.dart';
-import '../services/action_sheet.dart';
+import '../services/native_menu.dart';
 import '../services/external_links.dart';
 import '../services/media_picker.dart';
 import '../state/auth_state.dart';
@@ -568,17 +568,23 @@ class _ListRow extends ConsumerWidget {
 class _ItemIcon extends StatelessWidget {
   final String? iconKey;
 
-  const _ItemIcon({required this.iconKey});
+  /// The slot the picture is centred in. 42 on an article's own row; the add
+  /// line draws it at the size of the check circle it stands in for.
+  final double size;
+
+  final double? imageSize;
+
+  const _ItemIcon({super.key, required this.iconKey, this.size = 42, this.imageSize});
 
   @override
   Widget build(BuildContext context) {
-    final image = IconImage(asset: resolveIcon(iconKey)?.asset ?? generalGroceryAsset, size: 34);
+    final image = IconImage(asset: resolveIcon(iconKey)?.asset ?? generalGroceryAsset, size: imageSize ?? size * 0.81);
     if (!AppColors.isDark) {
-      return SizedBox(width: 42, height: 42, child: Center(child: image));
+      return SizedBox(width: size, height: size, child: Center(child: image));
     }
     return Container(
-      width: 42,
-      height: 42,
+      width: size,
+      height: size,
       decoration: BoxDecoration(color: AppColors.brandTile, shape: BoxShape.circle),
       alignment: Alignment.center,
       child: ClipOval(child: image),
@@ -954,18 +960,25 @@ bool _itemMatches(ShoppingListItem item, String query) {
 /// The "Artikel hinzufügen" line, with the catalogs behind it.
 ///
 /// Two things happen as you type, both out of `data/icon_suggestions.dart`: the
-/// circle on the left turns into the icon the article is about to get, and — on
-/// a Lebensmittel list — a row of article suggestions grows under the field.
+/// circle on the left turns into the picture the article is about to get, and —
+/// on a Lebensmittel list — a row of article suggestions grows under the field.
 /// Both answer German and English, with or without umlauts: *Käse*, *kaese* and
 /// *cheese* offer the same chips. Tapping one files the article under its
 /// German name.
 ///
-/// [grocery] says whether either of them happens at all. On a Sonstige list
-/// the article chips are dropped outright — "Bohrmaschine" is not a shopping
+/// **One leading slot, not two.** The picture briefly had a 42px slot of its
+/// own next to the circle, so that the add line was laid out as the row it was
+/// about to become and committing moved nothing. It moved something worse: the
+/// line's text started some 50px in from the left while every row above it
+/// began at the checkbox, and an add line that reads as indented reads as
+/// belonging to something. There is nothing to check off on this line and no
+/// article yet either, so the circle carries both and the words stay where the
+/// eye already is.
+///
+/// [grocery] says whether either of them happens at all. On a Sonstige list the
+/// article chips are dropped outright — "Bohrmaschine" is not a shopping
 /// article, and a row of food photos under it would be noise — and so is the
-/// icon preview, because the row it is previewing carries no icon either. The
-/// empty circle stays where it is: it sits exactly where the article's own
-/// checkbox will, so the text lines up before and after the add.
+/// preview, because the row it is previewing carries no picture either.
 class _AddItemRow extends ConsumerStatefulWidget {
   final bool grocery;
 
@@ -1012,18 +1025,37 @@ class _AddItemRowState extends ConsumerState<_AddItemRow> {
           padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 13),
           child: Row(
             children: [
-              // The matched icon takes the empty circle's place the moment the
-              // text says what the article is — the same picture the row will
-              // carry once it's in the list, so the match is visible before you
-              // commit to it.
+              // One slot, not two. The empty check circle is what an add line
+              // starts as, and the picture the typed word chose takes its place
+              // — crossfading in it rather than beside it, the way the circle
+              // itself would fill.
+              //
+              // It used to hold a second 42px slot open for the picture, in the
+              // place an article's own occupies. That kept the words still
+              // while the picture changed with every keystroke, but it started
+              // the line's text a good 50px in from the left while the rows
+              // above it began at the checkbox — the add line read as indented
+              // rather than as the next row. There is nothing to check off yet
+              // and no article yet either, so the one circle carries both.
               SizedBox(
                 width: 24,
                 height: 24,
                 child: AnimatedSwitcher(
                   duration: const Duration(milliseconds: 160),
                   child: preview == null
-                      ? AppIcon(AppIcons.circle, key: ValueKey('empty'), size: 24, color: AppColors.idleRing)
-                      : IconTile(key: ValueKey(preview.key), iconKey: preview.key, size: 24, imageSize: 24),
+                      ? AppIcon(AppIcons.circle, key: const ValueKey('empty'), size: 24, color: AppColors.idleRing)
+                      // Drawn over the slot rather than inside it: the circle is
+                      // 24 because a checkbox is, and a photograph of a Paprika
+                      // shrunk to a checkbox is a smudge. The slot keeps its
+                      // width so the words don't move, and the picture spills
+                      // symmetrically into the padding either side of it —
+                      // close to the 42 it will be drawn at once the article is
+                      // in the list.
+                      : OverflowBox(
+                          maxWidth: 36,
+                          maxHeight: 36,
+                          child: _ItemIcon(key: ValueKey(preview.key), iconKey: preview.key, size: 36, imageSize: 36),
+                        ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -1230,11 +1262,24 @@ class _ItemRowState extends ConsumerState<_ItemRow> {
           // the text are the whole row — but a photo the user attached
           // themselves still shows, because that one they chose.
           if (photo != null) ...[
-            ClipOval(
-              // The copy on this device while the session that picked it is
-              // still running, the signed URL from then on — see
-              // [PhotoThumbnail].
-              child: PhotoThumbnail(url: photo.url, filePath: photo.localPath, size: 42),
+            // Centred in the same 42 slot the grocery picture gets, but drawn
+            // at the size that picture is drawn at rather than filling the
+            // slot edge to edge. A photograph is opaque to its own border
+            // while a PNG of rice is a small drawing inside a lot of empty
+            // space, so the two at the same nominal size read as two
+            // different sizes — the photo as the loudest thing on the screen,
+            // the article beside it as an afterthought.
+            SizedBox(
+              width: 42,
+              height: 42,
+              child: Center(
+                child: ClipOval(
+                  // The copy on this device while the session that picked it
+                  // is still running, the signed URL from then on — see
+                  // [PhotoThumbnail].
+                  child: PhotoThumbnail(url: photo.url, filePath: photo.localPath, size: 34),
+                ),
+              ),
             ),
             const SizedBox(width: 12),
           ] else if (_isGroceryList(ref, item.listId)) ...[
@@ -1305,6 +1350,11 @@ class _ItemRowState extends ConsumerState<_ItemRow> {
                   Opacity(
                     opacity: 1 - 0.45 * strike,
                     child: _AttachmentsLine(attachments: attachments, accent: accent),
+                  ),
+                if (item.linkUrl case final url?)
+                  Opacity(
+                    opacity: 1 - 0.45 * strike,
+                    child: _LinkLine(url: url, accent: accent),
                   ),
               ],
             ),
@@ -1386,26 +1436,30 @@ class _UnitButton extends StatefulWidget {
 class _UnitButtonState extends State<_UnitButton> {
   final _anchorKey = GlobalKey();
 
-  /// The system's own sheet first — ten choices is more than the app's dropdown
-  /// wants to be, and UIKit's already knows how to scroll them. It answers null
-  /// off iOS, which is the cue to fall back to the anchored menu, and that is
-  /// what [_anchorKey] is for.
+  /// The system's own menu first — ten choices is more than the app's dropdown
+  /// wants to be, and UIKit's already knows how to scroll them, with the
+  /// checkmark on the unit in force that the fallback has to draw itself. It
+  /// answers null off iOS, which is the cue to fall back to the anchored menu;
+  /// both hang off [_anchorKey], so the list opens beside the chip either way.
   Future<void> _pick() async {
     final units = GroceryUnit.values;
     String? keyOf(GroceryUnit unit) => unit == GroceryUnit.piece ? null : unit.key;
+    final active = widget.current ?? GroceryUnit.piece.key;
 
-    final picked = await showNativeActionSheet(
-      options: [for (final unit in units) unit.label],
+    final picked = await showNativeMenu(
+      anchor: anchorRectOf(_anchorKey),
+      options: [
+        for (final unit in units) NativeMenuOption(unit.label, selected: unit.key == active),
+      ],
       cancelLabel: L.s.cancel,
       dark: AppColors.isDark,
       title: L.s.unit,
     );
     if (picked != null) {
-      if (picked != actionSheetCancelled) widget.onPicked(keyOf(units[picked]));
+      if (picked != nativeMenuCancelled) widget.onPicked(keyOf(units[picked]));
       return;
     }
     if (!mounted) return;
-    final active = widget.current ?? GroceryUnit.piece.key;
     await showAnchoredMenu(
       context: context,
       anchorKey: _anchorKey,
@@ -1533,6 +1587,50 @@ class _AttachmentsLine extends StatelessWidget {
   }
 }
 
+/// The shop page an article points at, under its name — a link glyph and the
+/// bare host, and a tap opens it outside the app.
+///
+/// The host rather than the URL: a product link is sixty characters of tracking
+/// parameters, and "amazon.de" says everything a shopping list needs to say
+/// about where the tap leads. It is the one thing under the name that is a
+/// target of its own — the attachments line beside it is a caption, while this
+/// is the whole point of having stored a link.
+class _LinkLine extends StatelessWidget {
+  final String url;
+  final Color accent;
+
+  const _LinkLine({required this.url, required this.accent});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => openExternalUrl(url),
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        // A little taller than the attachments line it sits under, because this
+        // one is aimed at: eleven points of glyph and a domain is a thin thing
+        // to hit, and the padding is the target.
+        padding: const EdgeInsets.only(top: 3, bottom: 3, right: 6),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AppIcon(AppIcons.link, size: 11, color: accent, flat: true),
+            const SizedBox(width: 4),
+            Flexible(
+              child: Text(
+                urlLabel(url),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppText.microLabel.copyWith(color: accent),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 /// Puts up the system picker and files whatever comes back under the item.
 /// Cancelling (or a device with no camera) simply returns nothing.
 Future<void> _attach(WidgetRef ref, ShoppingListItem item, AttachmentSource source) async {
@@ -1541,6 +1639,112 @@ Future<void> _attach(WidgetRef ref, ShoppingListItem item, AttachmentSource sour
   final picked = await pickAttachment(source, maxDimension: itemPhotoMaxDimension);
   if (picked == null) return;
   await ref.read(listProvider.notifier).addAttachment(item, picked);
+}
+
+/// Pastes the page this article is about onto it — the product at the shop the
+/// family agreed on, which is the thing you cannot find again from the word
+/// "Bohrmaschine" a week later.
+///
+/// A sheet rather than a fourth inline field: a URL is pasted, not typed
+/// alongside the name and the count, and it is set once and then only tapped.
+/// The app's ordinary create-sheet chrome, so the check is greyed while the
+/// field is empty and a save that cannot be made a URL says so on the chip —
+/// clearing the field is **not** how a link is removed, or a mis-tap in a sheet
+/// somebody opened to *read* the URL would throw it away. The menu's own
+/// "Link entfernen" is for that.
+void _editLink(BuildContext context, WidgetRef ref, ShoppingListItem item) {
+  final controller = TextEditingController(text: item.linkUrl ?? '');
+  final focus = FocusNode();
+  final notifier = ref.read(listProvider.notifier);
+  showAppSheet(
+    context: context,
+    title: L.s.itemLink,
+    // One field and two lines of explanation — the tall sheet the list editor
+    // needs would be mostly empty here.
+    heightFactor: 0.6,
+    requiredField: controller,
+    requiredFocus: focus,
+    onSave: () async {
+      // Taken before the write, as everywhere else here: the sheet is popped
+      // the moment the check is tapped, so the chip belongs to the screen
+      // behind it.
+      final confirm = confirmChipOf(context);
+      final fail = confirmChipOf(context, kind: ToastKind.error);
+      final url = normalizeExternalUrl(controller.text);
+      if (url == null) {
+        fail(L.s.itemLinkInvalid);
+        return;
+      }
+      if (await notifier.setLink(item, url)) {
+        confirm(L.s.itemLinkSaved);
+      } else {
+        fail(L.s.changeSaveFailed);
+      }
+    },
+    child: _LinkSheetBody(controller: controller, focus: focus, name: item.text),
+  );
+}
+
+/// One field, and the sentence that says what it is for.
+class _LinkSheetBody extends StatelessWidget {
+  final TextEditingController controller;
+  final FocusNode focus;
+
+  /// The article being pointed somewhere, over the field — the sheet is opened
+  /// from a row menu, so without it there is nothing on screen saying which
+  /// article this is about.
+  final String name;
+
+  const _LinkSheetBody({required this.controller, required this.focus, required this.name});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 2, bottom: 8),
+          child: Text(name, style: AppText.microLabel),
+        ),
+        SectionCard(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+              child: TextField(
+                controller: controller,
+                focusNode: focus,
+                // The sheet exists to receive a paste, so the keyboard is up on
+                // arrival — and it is the URL one, with capitalisation off:
+                // "Https://Amazon.de" is what the sentence-case default makes
+                // of a pasted link the moment it is edited.
+                autofocus: true,
+                keyboardType: TextInputType.url,
+                textCapitalization: TextCapitalization.none,
+                autocorrect: false,
+                textInputAction: TextInputAction.done,
+                style: AppText.inputTitle,
+                decoration: InputDecoration(border: InputBorder.none, hintText: L.s.itemLinkHint, isDense: true),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 2),
+          child: Text(L.s.itemLinkMessage, style: AppText.body.copyWith(color: AppColors.muted)),
+        ),
+      ],
+    );
+  }
+}
+
+/// Takes the link off again. No confirmation in front of it — it is one line of
+/// text that the sheet can put back — but a failure has nowhere else to show,
+/// so this is the caller [ListNotifier.setLink] hands its `false` to.
+Future<void> _removeLink(BuildContext context, WidgetRef ref, ShoppingListItem item) async {
+  if (await ref.read(listProvider.notifier).setLink(item, null)) return;
+  if (!context.mounted) return;
+  showErrorSnack(context, L.s.changeSaveFailed);
 }
 
 /// Swiping an item row left reveals Delete, the same gesture the Kalender
@@ -1580,11 +1784,20 @@ List<AnchoredMenuItem> _itemMenu(BuildContext context, WidgetRef ref, ShoppingLi
       svgAsset: 'assets/merchants/amazon-simple.svg',
       onSelected: () => openExternalUrl(amazonSearchUrl(item.text)),
     ),
-    // The three system pickers, straight through to UIKit — see
-    // lib/services/media_picker.dart.
+    // Beside it because both rows are about the web: one goes looking for the
+    // product, the other records the one that was already found.
+    AnchoredMenuItem(
+      label: L.s.itemLink,
+      icon: AppIcons.link,
+      onSelected: () => _editLink(context, ref, item),
+    ),
+    // The two system pickers, straight through to UIKit — see
+    // lib/services/media_picker.dart. No Files row: what an article on a
+    // shopping list wants beside it is a picture of the thing, and the
+    // document picker offered a PDF that would then sit under the name as a
+    // caption nobody can open from the row.
     AnchoredMenuItem(label: L.s.photo, icon: AppIcons.image, onSelected: () => _attach(ref, item, AttachmentSource.photos)),
     AnchoredMenuItem(label: L.s.camera, icon: AppIcons.camera, onSelected: () => _attach(ref, item, AttachmentSource.camera)),
-    AnchoredMenuItem(label: L.s.files, icon: AppIcons.folder, onSelected: () => _attach(ref, item, AttachmentSource.files)),
     // One row per attached file, because they are stored now and a file you
     // cannot take off again is a file you think twice about putting on. Named
     // by the file only when there are several — with one there is nothing to
@@ -1595,6 +1808,13 @@ List<AnchoredMenuItem> _itemMenu(BuildContext context, WidgetRef ref, ShoppingLi
         icon: AppIcons.x,
         destructive: true,
         onSelected: () => ref.read(listProvider.notifier).removeAttachment(item, attached),
+      ),
+    if (item.linkUrl != null)
+      AnchoredMenuItem(
+        label: L.s.removeItemLink,
+        icon: AppIcons.linkBreak,
+        destructive: true,
+        onSelected: () => _removeLink(context, ref, item),
       ),
     AnchoredMenuItem(
       label: L.s.delete,

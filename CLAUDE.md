@@ -33,7 +33,7 @@ task:
   `ConsumerWidget`s; read with `ref.watch`, mutate via
   `ref.read(xProvider.notifier).someMethod()`. Use this pattern for anything new rather than
   introducing another state-management approach.
-- **The Board holds two different objects, and the create sheet asks which.** A **Aufgabe** is
+- **The Board holds two different objects, and the create sheet asks which.** A **To-do** is
   one-off: it has a due date or none, it goes Überfällig when it is missed, and finishing it takes
   it off the list. A **Tracker** is a rhythm the household keeps — daily, on chosen weekdays, or a
   number of days per week — and it is **never overdue**: a day it was not kept is a gap in the
@@ -185,7 +185,11 @@ task:
   ([lib/data/repositories/photo_repository.dart](lib/data/repositories/photo_repository.dart)) is
   the only file that knows about Storage, and the object layout (`<container_id>/<uuid>.<ext>`) *is*
   the access rule — read the picture-buckets section of [docs/backend.md](docs/backend.md) before
-  changing it. Off iOS there is no picker, so there is no photo.
+  changing it. Off iOS there is no picker, so there is no photo. **The shop page an article points
+  at is a column beside all that** — `list_items.link_url`, one `http(s)` URL, set from the item
+  menu and opened by the device. Not a row in `list_item_attachments`: that table is a storage
+  object all the way down, and a link has none. **Nothing ever fetches it**, so there is no
+  preview, no scraped title and nobody outside learning what the household is shopping for.
 - **Three independent axes, never one string.** `assignee_id` is *who does it*; `visibility` +
   the `*_shares` rows are *who in the household may see it*
   ([lib/models/visibility.dart](lib/models/visibility.dart), one enum for all three containers);
@@ -206,7 +210,7 @@ task:
   Kalender isn't holding it. `event_starts_at` is the one thing kept, is a date rather than
   content, and on a task duplicates the `due_date` already there; without it the tap back has
   nowhere to go for an appointment outside the loaded fortnight. Set once, on create, from the
-  event sheet's "Liste/Aufgabe zum Termin erstellen" — no edit path, no unlink, and undo re-creates
+  event sheet's "Liste/To-do zum Termin erstellen" — no edit path, no unlink, and undo re-creates
   it with the link. The appointment's sheet reaches its lists and tasks through `tabJumpProvider`
   ([lib/state/nav_state.dart](lib/state/nav_state.dart)): the shell switches tab, the destination
   screen opens the thing. **The way back does not cross tabs** — the chip on a task or a list calls
@@ -282,16 +286,24 @@ task:
   renders a still map of it with MapKit (`aporah/map`, `ios/Runner/MapSnapshot.swift`) — **the map
   in the event sheet is the device's own, not a tile service**, so no key and no household address
   on the wire, and `openNavigation` in `external_links.dart` hands the route to Waze or Google
-  Maps by trying their URL scheme and falling back to their website; `action_sheet.dart` puts up a
-  system `UIAlertController` (`aporah/action_sheet`, `ios/Runner/ActionSheet.swift`). **The iOS
+  Maps by trying their URL scheme and falling back to their website; `native_menu.dart` puts up
+  the system's own menu beside the control that opened it (`aporah/menu`,
+  `ios/Runner/NativeMenu.swift`). **The iOS
   deployment target is 13.0** — new system API needs an `if #available` guard and a fallback, not a
   raised target.
 - **A menu opened from inside a sheet that holds native glass buttons has to be a native one.**
   `showAnchoredMenu` is still the app's menu everywhere else, but Flutter content composited after
   a platform view can be dropped whole on device: inside the event-detail sheet the route menu
-  opened, swallowed the taps behind it and never painted. `showNativeActionSheet` is the way out
-  there — it returns `null` where there is no system sheet to put up (everything but iOS), which is
-  the caller's cue to fall back to the dropdown.
+  opened, swallowed the taps behind it and never painted. `showNativeMenu` is the way out there —
+  it returns `null` where there is no system menu to put up (everything but iOS and, on iOS,
+  before 17.4), which is the caller's cue to fall back to the dropdown. **It is a `UIMenu` beside
+  the tap, not a sheet at the bottom of the screen**: the `UIAlertController` this started as was
+  right about the layer and wrong about the shape — you pressed a row halfway up a sheet and the
+  answer appeared at the far end of the display. Both paths take the same anchor rect, so the app's
+  dropdown and UIKit's bubble are one gesture drawn by two hands. There is no public call that
+  simply shows a menu: it hangs off a transparent `UIButton` whose primary action *is* the menu,
+  fired with `performPrimaryAction()` (iOS 17.4), and the action sheet stays as the fallback below
+  that and for a menu that was asked for and never appeared.
 
 ## Verifying changes
 

@@ -36,8 +36,9 @@ class GlassSurface extends StatelessWidget {
   /// **Almost nothing needs this.** The default, [AppColors.glassFallbackTint],
   /// is the light material every control here wants, and the approximation is
   /// not only the Android look: on iOS it is what a control wears for as long
-  /// as a menu or a sheet covers it (see [occludedByRoute]), so whatever this
-  /// resolves to is a face the button shows on device, several times a session.
+  /// as a sheet or a full screen covers it (see [occludedByRoute]), so whatever
+  /// this resolves to is a face the button shows on device, several times a
+  /// session.
   final Color? fallbackTint;
   final double blurSigma;
   final List<BoxShadow>? boxShadow;
@@ -119,7 +120,8 @@ class _FlutterGlassApproximation extends StatelessWidget {
   /// washed-out fill is how a disabled control is drawn. The real
   /// `UIGlassEffect` holds an opaque `tintColor` at full chroma and adds only a
   /// faint sheen over it, so on an accent this does the same — otherwise every
-  /// blue button in the app turned pale for as long as a menu was open over it.
+  /// blue button in the app turned pale for as long as a sheet was open over
+  /// it.
   final bool accent;
 
   const _FlutterGlassApproximation({
@@ -625,7 +627,7 @@ class GlassConfirmButton extends StatelessWidget {
 }
 
 /// The labelled accent pill — the primary action of a sheet or an empty state
-/// ("Bearbeiten", "Termin hinzufügen", "Aufgabe hinzufügen"). Same opaque-accent
+/// ("Bearbeiten", "Termin hinzufügen", "To-do hinzufügen"). Same opaque-accent
 /// rule as [GlassConfirmButton]; see the note above it.
 ///
 /// Real glass, not a coloured `Container`: Board and Kalender each had their own

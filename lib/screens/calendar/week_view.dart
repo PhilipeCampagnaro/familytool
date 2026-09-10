@@ -243,6 +243,13 @@ class _WeekViewState extends ConsumerState<_WeekView> {
     final sel = state.selected;
     final selDate = DateTime(sel.y, sel.m, sel.d);
     final events = state.eventsFor(sel.y, sel.m, sel.d);
+    // Only while the chip is lit — and unfiltered by the calendar row, which is
+    // the whole point of it standing apart from those chips. See
+    // [CalendarScreenState.showTasks].
+    final todos = state.showTasks ? _todosDueOn(ref, sel.y, sel.m, sel.d) : const <BoardTask>[];
+    // One list, in reading order — a to-do that names an hour sits at that hour
+    // among the appointments. See [_agendaEntries].
+    final entries = _agendaEntries(events, todos);
     final headingText = _dayHeading(selDate);
     // The header names whatever month the strip is actually showing, not the
     // selected day's — see _stripAnchor.
@@ -286,7 +293,10 @@ class _WeekViewState extends ConsumerState<_WeekView> {
                 ),
               ),
               child: KeyedSubtree(
-                key: ValueKey('${sel.y}-${sel.m}-${sel.d}-${state.calendarFilterKey}'),
+                // The to-do toggle joins the key, so turning the chip on
+                // crossfades the day the way changing the filter does rather
+                // than having rows appear under the reader's thumb.
+                key: ValueKey('${sel.y}-${sel.m}-${sel.d}-${state.calendarFilterKey}-${state.showTasks}'),
                 // The Feiertag sits above the agenda rather than in it — it is
                 // something about the day, not an appointment on it. A day off
                 // with nothing planned is still worth saying, so it shows over
@@ -300,7 +310,9 @@ class _WeekViewState extends ConsumerState<_WeekView> {
                         child: _HolidayChip(holiday: holiday, accent: accent),
                       ),
                     Expanded(
-                      child: events.isEmpty
+                      // A day with only to-dos on it is not an empty day, so
+                      // the empty state waits for both to be empty.
+                      child: events.isEmpty && todos.isEmpty
                           ? Padding(
                               padding: EdgeInsets.only(bottom: navContentInset(context)),
                               child: Center(
@@ -317,13 +329,21 @@ class _WeekViewState extends ConsumerState<_WeekView> {
                           : ListView(
                               padding: EdgeInsets.only(bottom: navContentInset(context)),
                               children: [
-                                for (var i = 0; i < events.length; i++)
-                                  _EventAgendaRow(
-                                    event: events[i],
-                                    isFirst: i == 0,
-                                    headingText: headingText,
-                                    accent: accent,
-                                  ),
+                                for (var i = 0; i < entries.length; i++)
+                                  if (entries[i] case final BoardTask task)
+                                    _TodoAgendaRow(
+                                      key: ValueKey(task.id),
+                                      task: task,
+                                      isFirst: i == 0,
+                                      accent: accent,
+                                    )
+                                  else if (entries[i] case final CalendarEvent event)
+                                    _EventAgendaRow(
+                                      event: event,
+                                      isFirst: i == 0,
+                                      headingText: headingText,
+                                      accent: accent,
+                                    ),
                               ],
                             ),
                     ),
@@ -418,6 +438,11 @@ class _DayStripCell extends ConsumerWidget {
     final colors = state.dayColors(date.year, date.month, date.day);
     final dots = colors.take(3).toList();
     final overflowCount = colors.length - 3;
+    // Only while the overlay is on. A ring on a day whose to-do the agenda is
+    // not showing points at nothing, and the reader has no way to find out what
+    // it meant.
+    final hasTodo = state.showTasks &&
+        ref.watch(openTodoDaysProvider).contains(CalendarScreenState.key(date.year, date.month, date.day));
 
     return GestureDetector(
       onTap: () => ref.read(calendarProvider.notifier).selectDay(date.year, date.month, date.day),
@@ -432,7 +457,14 @@ class _DayStripCell extends ConsumerWidget {
               children: [
                 SizedBox(
                   height: 8,
-                  child: Center(child: EventDots(colors: dots, overflowCount: overflowCount)),
+                  child: Center(
+                    child: EventDots(
+                      colors: dots,
+                      overflowCount: overflowCount,
+                      todo: hasTodo,
+                      todoColor: accent,
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 14),
                 DaySelectorCircle(day: date.day, selected: isSel, today: today, highlight: highlight, accent: accent),
@@ -569,6 +601,208 @@ class _EventAgendaRow extends ConsumerWidget {
   }
 }
 
+/// One to-do's row in the agenda — the rail on the left, its card on the right.
+///
+/// Deliberately the same rail as [_EventAgendaRow] so the day stays one column
+/// with one line running down it, and deliberately a different card, so no row
+/// of it can be mistaken for an appointment. The rail says [AppStrings.dueRailLabel]
+/// where an event says a clock time: a due date carries no time, and "Ganztägig"
+/// would claim the to-do occupies the day rather than merely being owed by the
+/// end of it.
+///
+/// The dot follows *done*, not the clock. An event's dot fills as the day passes
+/// it; a to-do's fills when somebody ticks it, which is the only thing about a
+/// to-do that a calendar can honestly show as having happened.
+class _TodoAgendaRow extends ConsumerWidget {
+  final BoardTask task;
+  final bool isFirst;
+  final Color accent;
+  final bool compact;
+
+  const _TodoAgendaRow({super.key, required this.task, required this.isFirst, required this.accent, this.compact = false});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final rail = AppColors.hairline2;
+    final done = task.done;
+    final at = task.dueTime;
+    const railAnim = Duration(milliseconds: 320);
+    const railCurve = Curves.easeOutCubic;
+
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SizedBox(
+            width: _EventAgendaRow._railWidth,
+            child: Column(
+              children: [
+                AnimatedContainer(duration: railAnim, curve: railCurve, width: 2, height: 10, color: isFirst ? Colors.transparent : (done ? accent : rail)),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 2),
+                  child: AnimatedDefaultTextStyle(
+                    duration: railAnim,
+                    curve: railCurve,
+                    style: AppText.groupHeading.copyWith(
+                      letterSpacing: -0.3,
+                      color: done ? AppColors.muted : AppColors.inkTertiary,
+                    ),
+                    // The hour where the to-do names one — it is then sorted
+                    // in among the appointments and the rail has to say why it
+                    // is there — and "Fällig" where it does not.
+                    //
+                    // Same treatment as the event rail's: the rail is sized for
+                    // a clock time, and any word longer than one shrinks to the
+                    // single line it has rather than hyphenating.
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        at == null ? L.s.dueRailLabel : formatTimeOfDay(at.hour, at.minute),
+                        maxLines: 1,
+                        softWrap: false,
+                      ),
+                    ),
+                  ),
+                ),
+                AnimatedContainer(
+                  duration: railAnim,
+                  curve: railCurve,
+                  width: 10,
+                  height: 10,
+                  decoration: BoxDecoration(color: done ? accent : AppColors.surface, shape: BoxShape.circle, border: Border.all(color: done ? accent : rail, width: 2.5)),
+                ),
+                Expanded(child: AnimatedContainer(duration: railAnim, curve: railCurve, width: 2, color: done ? accent : rail)),
+              ],
+            ),
+          ),
+          const SizedBox(width: 9),
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.only(bottom: compact ? 10 : 14),
+              // **No swipe actions, unlike the event card beside it.** There
+              // the swipe reveals Bearbeiten and Löschen because the card's own
+              // tap opens a *detail* sheet and editing is a second thing. A
+              // to-do has no detail sheet — its tap already opens the editor —
+              // so a swipe could only offer the same sheet a second way.
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => openTaskSheet(context, ref, task: task),
+                // **Not [CheckOffRow].** That plays the strike and then
+                // collapses the row to nothing, because on the Board a ticked
+                // to-do leaves the open list and travels to "Erledigt". Here it
+                // stays exactly where it is — a day whose to-dos all vanished as
+                // they were done would end up reading like a day that never had
+                // any. So the strike is driven off the row's own state instead,
+                // and animates because the value it is given changes.
+                child: TweenAnimationBuilder<double>(
+                  tween: Tween<double>(end: done ? 1 : 0),
+                  duration: const Duration(milliseconds: 260),
+                  curve: Curves.easeOut,
+                  builder: (context, strike, _) => _TodoCard(
+                    task: task,
+                    accent: accent,
+                    compact: compact,
+                    strike: strike,
+                    onCheckOff: () => ref.read(boardProvider.notifier).toggle(task),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// One to-do's card in the agenda.
+///
+/// **It carries the check, and that is what keeps it from reading as an
+/// appointment.** No event card in the agenda has one, so the circle at the
+/// right-hand end is the whole signal — no coloured fill, no second label
+/// saying "To-do", nothing that would make the day a two-tone list.
+///
+/// The check is also the one place this breaks the rule the event card's link
+/// chips follow. Those are markers because a 12pt glyph is too small to aim at;
+/// this is the Board's own 26pt button, the same size and in the same corner as
+/// on the Board itself. A to-do you can see and cannot tick is the calendar
+/// showing you your day and making you leave it to change anything.
+class _TodoCard extends ConsumerWidget {
+  final BoardTask task;
+  final Color accent;
+  final bool compact;
+
+  /// 0 → 1 as the row is checked off, 1 → 0 as it is undone. Drives the strike
+  /// and the ink at once, so the text fades to the done colour as the line
+  /// crosses it.
+  final double strike;
+  final VoidCallback onCheckOff;
+
+  const _TodoCard({required this.task, required this.accent, required this.compact, required this.strike, required this.onCheckOff});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final who = whoBadge(
+      assigneeId: task.assigneeId,
+      visibility: task.visibility,
+      sharedWith: task.sharedWith,
+      members: ref.watch(householdMembersProvider),
+    );
+    final note = task.meta?.trim() ?? '';
+
+    return Container(
+      padding: EdgeInsets.fromLTRB(16, compact ? 12 : 14, 14, compact ? 12 : 14),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(compact ? 16 : 20),
+        boxShadow: AppShadows.card,
+      ),
+      child: Row(
+        children: [
+          // The face first, where an event card starts with its title. Whose
+          // to-do it is, is the question a household asks of one of these
+          // before it asks what it says.
+          Semantics(
+            label: who.label,
+            excludeSemantics: true,
+            child: WhoAvatars(who: who, size: 26, fontSize: 10.5),
+          ),
+          const SizedBox(width: 11),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                StrikeThrough(
+                  progress: strike,
+                  color: AppColors.doneInk,
+                  child: Text(
+                    task.text,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppText.itemTitle.copyWith(color: Color.lerp(AppColors.ink, AppColors.doneInk, strike)),
+                  ),
+                ),
+                // Skipped whole rather than rendered empty — an empty `Text`
+                // still takes a line, which is what put a gap under the title of
+                // a note-less card.
+                if (!compact && note.isNotEmpty) ...[
+                  const SizedBox(height: 3),
+                  Opacity(
+                    opacity: 1 - 0.45 * strike,
+                    child: Text(note, maxLines: 2, overflow: TextOverflow.ellipsis, style: AppText.label),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          CheckOffButton(progress: strike, accent: accent, onTap: onCheckOff, size: 26, filled: true),
+        ],
+      ),
+    );
+  }
+}
+
 /// One event's card in the agenda.
 ///
 /// **Every card is white.** The live event used to be filled with the accent
@@ -688,7 +922,7 @@ class _EventCard extends StatelessWidget {
                           bg: AppColors.surfaceAlt,
                           child: Row(children: [
                             // The check the Board create sheet puts on
-                            // "Aufgabe", not the Board tab's grid: the chip
+                            // "To-do", not the Board tab's grid: the chip
                             // counts tasks, and a grid beside a clipboard read
                             // as a table rather than as a to-do.
                             AppIcon(AppIcons.checkCircle, size: 12, color: AppColors.inkSecondary),

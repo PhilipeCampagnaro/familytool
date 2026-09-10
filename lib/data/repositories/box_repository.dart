@@ -53,28 +53,27 @@ class BoxRepository {
   // Read
   // -------------------------------------------------------------------------
 
+  /// The shelf, in two waits rather than four.
+  ///
+  /// The boxes come first because their ids are what the rest is narrowed to;
+  /// the three reads after them know nothing about each other, so they go
+  /// together rather than one behind the next.
   Future<BoxSnapshot> fetchAll() async {
     final boxRows = await _db.from('boxes').select(_boxColumns).order('position').order('created_at');
     if (boxRows.isEmpty) return BoxSnapshot.empty;
 
     final ids = [for (final r in boxRows) r['id'] as String];
 
-    final shareRows = await _db.from('box_shares').select('box_id, user_id').inFilter('box_id', ids);
-
-    final itemRows = await _db
-        .from('box_items')
-        .select(_itemColumns)
-        .inFilter('box_id', ids)
-        .order('position')
-        .order('created_at');
-
-    // Own grants only — `guest_access_select` also returns the guests *on* my
-    // household's boxes, which are somebody else's grants.
-    final grantRows = await _db
-        .from('guest_access')
-        .select('resource_id')
-        .eq('resource_kind', 'box')
-        .eq('user_id', _uid);
+    final results = await Future.wait([
+      _db.from('box_shares').select('box_id, user_id').inFilter('box_id', ids),
+      _db.from('box_items').select(_itemColumns).inFilter('box_id', ids).order('position').order('created_at'),
+      // Own grants only — `guest_access_select` also returns the guests *on* my
+      // household's boxes, which are somebody else's grants.
+      _db.from('guest_access').select('resource_id').eq('resource_kind', 'box').eq('user_id', _uid),
+    ]);
+    final shareRows = results[0];
+    final itemRows = results[1];
+    final grantRows = results[2];
 
     final sharedWith = <String, List<String>>{};
     for (final r in shareRows) {
@@ -211,6 +210,9 @@ class BoxRepository {
   Future<BoxItem> addItem({
     required String boxId,
     required String name,
+    String? size,
+    int qty = 1,
+    String? note,
     String? iconKey,
     required int position,
   }) async {
@@ -218,6 +220,9 @@ class BoxRepository {
       id: '',
       boxId: boxId,
       name: name,
+      size: size,
+      qty: qty,
+      note: note,
       iconKey: iconKey,
       createdBy: _uid,
       position: position,

@@ -54,6 +54,25 @@ class CalendarScreenState {
   /// the row wants to give.
   final String? filterGroupId;
 
+  /// Whether the Board's to-dos are laid over the calendar.
+  ///
+  /// **Additive, unlike every other chip in that row.** The rest of the row
+  /// narrows: picking a person hides the other people. This one adds a second
+  /// kind of thing on top of whatever is already showing, which is why its chip
+  /// stands apart from the faces and why it is not part of [calendarFilter].
+  ///
+  /// **And it is deliberately not narrowed by that filter.** A calendar group
+  /// is a person's *calendars*; a to-do's [BoardTask.assigneeId] is who is meant
+  /// to do it. They are near enough to look like the same question and far
+  /// enough apart to answer it differently, so filtering to Papa and losing the
+  /// to-do he is not assigned to would be the row quietly changing what it
+  /// means. Every to-do the reader may see is either shown or not.
+  ///
+  /// Session state, like [isWeek] and [calendarFilter] — nothing on this screen
+  /// is persisted, and one flag that survived a restart while the filter beside
+  /// it did not would read as a bug.
+  final bool showTasks;
+
   final List<CalendarSource> calendars;
   final Map<String, List<CalendarEvent>> eventsByDay;
 
@@ -75,6 +94,7 @@ class CalendarScreenState {
     this.monthDetailExpanded = false,
     this.calendarFilter,
     this.filterGroupId,
+    this.showTasks = false,
     this.calendars = const [],
     this.eventsByDay = const {},
     this.loaded = false,
@@ -98,6 +118,7 @@ class CalendarScreenState {
     Set<String>? calendarFilter,
     bool clearCalendarFilter = false,
     String? filterGroupId,
+    bool? showTasks,
     List<CalendarSource>? calendars,
     Map<String, List<CalendarEvent>>? eventsByDay,
     bool? loaded,
@@ -115,6 +136,7 @@ class CalendarScreenState {
       monthDetailExpanded: monthDetailExpanded ?? this.monthDetailExpanded,
       calendarFilter: clearCalendarFilter ? null : (calendarFilter ?? this.calendarFilter),
       filterGroupId: clearCalendarFilter ? null : (filterGroupId ?? this.filterGroupId),
+      showTasks: showTasks ?? this.showTasks,
       calendars: calendars ?? this.calendars,
       eventsByDay: eventsByDay ?? this.eventsByDay,
       loaded: loaded ?? this.loaded,
@@ -459,6 +481,10 @@ class CalendarNotifier extends StateNotifier<CalendarScreenState> {
     final t = calToday();
     selectDay(t.year, t.month, t.day);
   }
+
+  /// The to-do chip. Additive, so it neither reads nor clears
+  /// [CalendarScreenState.calendarFilter] — see [CalendarScreenState.showTasks].
+  void toggleTasks() => state = state.copyWith(showTasks: !state.showTasks);
 
   void setWeekView() => state = state.copyWith(isWeek: true);
   void setMonthView() => state = state.copyWith(isWeek: false);

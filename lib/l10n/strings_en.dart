@@ -207,9 +207,9 @@ class StringsEn extends AppStrings {
   @override
   String doneCountSeparator(int count) => 'Done · $count';
   @override
-  String get newTask => 'New task';
+  String get newTask => 'New to-do';
   @override
-  String get editTask => 'Edit task';
+  String get editTask => 'Edit to-do';
   @override
   String get taskPlaceholder => 'What needs doing?';
   @override
@@ -235,9 +235,15 @@ class StringsEn extends AppStrings {
   @override
   String get duePickDate => 'Pick a date …';
   @override
-  String get theTask => 'the task';
+  String get dueTimeLabel => 'Time';
   @override
-  String get deleteTask => 'Delete task';
+  String get dueNoTime => 'No time';
+  @override
+  String get dueTimeNeedsDate => 'Pick a date first';
+  @override
+  String get theTask => 'the to-do';
+  @override
+  String get deleteTask => 'Delete to-do';
   @override
   String get assigneeLabel => 'Assigned to';
   @override
@@ -352,31 +358,31 @@ class StringsEn extends AppStrings {
   @override
   String get trackerDeleted => 'Tracker deleted';
   @override
-  String get noOpenTasks => 'No open tasks';
+  String get noOpenTasks => 'No open to-dos';
   @override
-  String get addTask => 'Add task';
+  String get addTask => 'Add to-do';
   @override
-  String get tasksLoadFailed => 'Tasks couldn\'t be loaded.';
+  String get tasksLoadFailed => 'To-dos couldn\'t be loaded.';
   @override
-  String get taskSaveFailed => 'The task couldn\'t be saved.';
+  String get taskSaveFailed => 'The to-do couldn\'t be saved.';
   @override
   String get changeSaveFailed => 'The change couldn\'t be saved.';
   @override
   String get saveFailed => 'Couldn\'t be saved.';
   @override
-  String get someDoneTasksNotDeleted => 'Not all completed tasks could be deleted.';
+  String get someDoneTasksNotDeleted => 'Not all completed to-dos could be deleted.';
   @override
-  String get doneTasksDeleteFailed => 'The completed tasks couldn\'t be deleted.';
+  String get doneTasksDeleteFailed => 'The completed to-dos couldn\'t be deleted.';
   @override
-  String get taskDeleteFailed => 'The task couldn\'t be deleted.';
+  String get taskDeleteFailed => 'The to-do couldn\'t be deleted.';
   @override
-  String get taskCreated => 'Task created';
+  String get taskCreated => 'To-do created';
   @override
-  String get taskUpdated => 'Task updated';
+  String get taskUpdated => 'To-do updated';
   @override
-  String get taskDeleted => 'Task deleted';
+  String get taskDeleted => 'To-do deleted';
   @override
-  String get taskRestoreFailed => 'The task couldn\'t be restored.';
+  String get taskRestoreFailed => 'The to-do couldn\'t be restored.';
 
   // ------------------------------------------------------------------ box --
   @override
@@ -410,6 +416,8 @@ class StringsEn extends AppStrings {
   @override
   String get tapAboveToAddFirst => 'Tap above to add the first item';
   @override
+  String get newItem => 'New item';
+  @override
   String get editItem => 'Edit item';
   @override
   String get itemName => 'Item name';
@@ -441,6 +449,8 @@ class StringsEn extends AppStrings {
   String get itemDeleted => 'Item deleted';
   @override
   String get itemRestoreFailed => 'The item couldn\'t be restored.';
+  @override
+  String get itemCreated => 'Item created';
   @override
   String get boxCreated => 'Box created';
   @override
@@ -500,7 +510,17 @@ class StringsEn extends AppStrings {
   @override
   String get camera => 'Camera';
   @override
-  String get files => 'Files';
+  String get itemLink => 'Link';
+  @override
+  String get removeItemLink => 'Remove link';
+  @override
+  String get itemLinkMessage => 'The page this article can be bought on. Tapping the link opens it in the browser.';
+  @override
+  String get itemLinkHint => 'e.g. amazon.co.uk/dp/B0C…';
+  @override
+  String get itemLinkSaved => 'Link saved';
+  @override
+  String get itemLinkInvalid => 'That doesn\'t look like a web address.';
   @override
   String get listsLoadFailed => 'Lists couldn\'t be loaded.';
   @override
@@ -571,6 +591,10 @@ class StringsEn extends AppStrings {
   @override
   String get noEventsThisDay => 'No events on this day';
   @override
+  String get todosChip => 'To-dos';
+  @override
+  String get dueRailLabel => 'Due';
+  @override
   String get addEvent => 'Add event';
   @override
   String get eventsPerCalendar => 'Events per calendar';
@@ -607,7 +631,7 @@ class StringsEn extends AppStrings {
   @override
   String get createListFromEvent => 'Create a list for this event';
   @override
-  String get createTaskFromEvent => 'Create a task for this event';
+  String get createTaskFromEvent => 'Create a to-do for this event';
   @override
   String get createForEvent => 'Create new';
   @override
@@ -623,7 +647,7 @@ class StringsEn extends AppStrings {
   @override
   String linkedListCount(int count) => count == 1 ? '1 list' : '$count lists';
   @override
-  String linkedTaskCount(int count) => count == 1 ? '1 task' : '$count tasks';
+  String linkedTaskCount(int count) => count == 1 ? '1 to-do' : '$count to-dos';
   @override
   String get route => 'Route';
   @override
@@ -1126,6 +1150,8 @@ class StringsEn extends AppStrings {
   @override
   String get chooseSymbol => 'Choose a symbol';
   @override
+  String get uploadImage => 'Upload an image';
+  @override
   String get searchSymbolOrShop => 'Search symbols or shops';
   @override
   String get matches => 'Matches';
@@ -1186,7 +1212,7 @@ class StringsEn extends AppStrings {
       'Who belongs to your household. Only admins can invite people and change roles.';
   @override
   String get nobodyInHouseholdYet =>
-      'Nobody in the household yet.\nInvite somebody to share lists, tasks and events.';
+      'Nobody in the household yet.\nInvite somebody to share lists, to-dos and events.';
   @override
   String get inviteMember => 'Invite member';
   @override

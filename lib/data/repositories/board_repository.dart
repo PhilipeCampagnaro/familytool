@@ -18,7 +18,7 @@ class BoardRepository {
   final SupabaseClient _db;
 
   static const _columns =
-      'id, family_id, due_date, text, meta, assignee_id, done, done_by, done_at, owner_id, visibility, '
+      'id, family_id, due_date, due_time, text, meta, assignee_id, done, done_by, done_at, owner_id, visibility, '
       'event_calendar_id, event_uid, event_starts_at, created_at, updated_at';
 
   String get _uid {
@@ -78,6 +78,7 @@ class BoardRepository {
   Future<BoardTask> createTask({
     required String familyId,
     DateTime? dueDate,
+    DueTime? dueTime,
     required String text,
     String? meta,
     String? assigneeId,
@@ -91,6 +92,7 @@ class BoardRepository {
       id: id,
       familyId: familyId,
       dueDate: dueDate,
+      dueTime: dueTime,
       text: text,
       meta: meta,
       assigneeId: assigneeId,
@@ -117,6 +119,8 @@ class BoardRepository {
     String? meta,
     DateTime? dueDate,
     bool clearDueDate = false,
+    DueTime? dueTime,
+    bool clearDueTime = false,
     String? assigneeId,
     bool clearAssignee = false,
     ItemVisibility? visibility,
@@ -130,6 +134,10 @@ class BoardRepository {
       // Without [clearDueDate] a null `dueDate` could only ever mean the first,
       // and "Kein Datum" in the sheet would silently do nothing.
       if (clearDueDate) 'due_date': null else if (dueDate != null) 'due_date': formatDueDate(dueDate),
+      // Same three states, and one extra rule: losing the day loses the hour in
+      // the same patch. `tasks_due_time_needs_date` would reject the row
+      // otherwise, and an hour left behind on a dateless to-do names nothing.
+      if (clearDueDate || clearDueTime) 'due_time': null else if (dueTime != null) 'due_time': dueTime.toSql(),
       if (visibility != null && visibility != task.visibility) 'visibility': visibility.name,
     };
 

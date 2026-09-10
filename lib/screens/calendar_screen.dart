@@ -11,8 +11,9 @@ import '../models/calendar_event.dart';
 import '../models/event_link.dart';
 import '../models/shopping_list.dart';
 import '../models/task.dart';
+import '../models/who.dart';
 import '../models/weather.dart';
-import '../services/action_sheet.dart';
+import '../services/native_menu.dart';
 import '../services/external_links.dart';
 import '../services/map_snapshot.dart';
 import '../state/board_state.dart';
@@ -27,12 +28,14 @@ import '../widgets/anchored_menu.dart';
 import '../widgets/app_sheet.dart';
 import '../widgets/avatar.dart';
 import '../widgets/bottom_nav.dart';
+import '../widgets/check_off.dart';
 import '../widgets/day_circle.dart';
 import '../widgets/error_note.dart';
 import '../widgets/event_dots.dart';
 import '../widgets/floating_pill.dart';
 import '../widgets/glass.dart';
 import '../widgets/icon_picker.dart';
+import '../widgets/native_occlusion.dart';
 import '../widgets/native_switch.dart';
 import '../widgets/settings_chrome.dart';
 import '../widgets/swipe_actions.dart';
@@ -108,6 +111,93 @@ List<BoardTask> _linkedTasksFor(WidgetRef ref, CalendarEvent event) {
     for (final t in tasks)
       if (t.eventLink?.namesEvent(calendarId: event.calendarId, uid: event.uid) ?? false) t,
   ];
+}
+
+/// The Board's to-dos owed on one day — what the "To-dos" chip lays over the
+/// agenda.
+///
+/// **Only a dated to-do, and only on its own day.** The Board shows an overdue
+/// row under "Heute", because on the Board a missed to-do is today's problem
+/// rather than history. A calendar cannot borrow that: last Tuesday's row drawn
+/// on today is the calendar saying the day is something it is not, and the day
+/// it *was* owed would then show nothing at all. So it stays on its date, past
+/// or not, and the Board goes on being the screen that chases it.
+///
+/// A ticked to-do stays. A day whose to-dos were all done reading exactly like
+/// a day that never had any is the calendar losing the thing worth seeing.
+///
+/// **Trackers are not here and cannot be.** A rhythm is never owed on a date —
+/// `trackers` carries a rule, not a deadline — so there is no day to draw one
+/// on. See the tracker note in CLAUDE.md.
+///
+/// Narrowed to `tasks` the same way [_linkedTasksFor] is, and over `tasks`
+/// rather than `visibleTasks` for the same reason: Board's person chip is about
+/// Board, and it must not reach across into Kalender's own row of chips.
+List<BoardTask> _todosDueOn(WidgetRef ref, int y, int m, int d) {
+  final tasks = ref.watch(boardProvider.select((s) => s.tasks));
+  final open = <BoardTask>[];
+  final done = <BoardTask>[];
+  for (final t in tasks) {
+    final due = t.dueDate;
+    if (due == null || due.year != y || due.month != m || due.day != d) continue;
+    (t.done ? done : open).add(t);
+  }
+  // Done last, so the day reads as what is still owed followed by what is not.
+  // Only the untimed ones keep this order — see [_agendaEntries], which sorts
+  // the ones carrying an hour into the day's own stream instead.
+  return [...open, ...done];
+}
+
+/// The day in reading order, events and to-dos together.
+///
+/// Entries are a [CalendarEvent] or a [BoardTask]; the rows tell them apart.
+/// A heterogeneous list rather than two lists drawn one after the other,
+/// because **a to-do that names an hour belongs at that hour** — sitting above
+/// the day in a block of its own, the 08:00 school run reads as something
+/// happening before the 07:30 train.
+///
+/// Three bands, in this order:
+///
+/// 1. **All-day events.** Context for the day rather than appointments in it —
+///    Ferien, the bin — which is why the repository already sorts them to the
+///    front.
+/// 2. **To-dos with no hour.** Owed by the end of the day and not at a point in
+///    it, so there is no slot to put them in; above the clock is the honest
+///    place. This is most of them.
+/// 3. **Everything with a time**, events and to-dos merged by the clock.
+///
+/// An event wins a tie, because the agenda is a calendar first: at 14:00 the
+/// appointment is the fixed thing and the to-do is what has to fit around it.
+List<Object> _agendaEntries(List<CalendarEvent> events, List<BoardTask> todos) {
+  final timed = <(int, int, Object)>[];
+  final head = <Object>[];
+  final untimed = <Object>[];
+
+  for (final e in events) {
+    if (e.allDay) {
+      head.add(e);
+    } else {
+      timed.add((e.startsAt.hour * 60 + e.startsAt.minute, 0, e));
+    }
+  }
+  for (final t in todos) {
+    final at = t.dueTime;
+    if (at == null) {
+      untimed.add(t);
+    } else {
+      timed.add((at.minutes, 1, t));
+    }
+  }
+
+  // The second element is the tie-break, so a 14:00 appointment precedes a to-do
+  // owed by 14:00. `sort` is not stable in Dart, hence carrying it explicitly
+  // rather than relying on insertion order.
+  timed.sort((a, b) {
+    final byClock = a.$1.compareTo(b.$1);
+    return byClock != 0 ? byClock : a.$2.compareTo(b.$2);
+  });
+
+  return [...head, ...untimed, for (final entry in timed) entry.$3];
 }
 
 /// "Heute · 14. Sep" / "Montag · 14. Sep" — the line over a day's agenda, and
@@ -437,6 +527,12 @@ class _ToggleAndChipsRow extends ConsumerWidget {
           child: ListView(
             key: calendarChipRowKey,
             scrollDirection: Axis.horizontal,
+            // The last chip carries no gap of its own, so scrolled to the end
+            // its selection ring lands exactly on the viewport's clip and the
+            // rounded stroke gets shaved. Three points is the ring — 1.5 of
+            // border plus its 1.5 inset — so this is slack for the one thing
+            // that reaches past a chip's fill, not a margin.
+            padding: const EdgeInsets.only(right: 3),
             children: [
               Padding(
                 padding: const EdgeInsets.only(right: 8),
@@ -447,6 +543,13 @@ class _ToggleAndChipsRow extends ConsumerWidget {
                   padding: const EdgeInsets.only(right: 8),
                   child: _CalendarGroupChip(state: state, group: group),
                 ),
+              // Last, and behind a rule. Every chip before it is a face that
+              // narrows the row to one person; this one adds a second kind of
+              // thing on top of them all. Sitting in among the faces it would
+              // read as another person, and its first tap would look like it
+              // had hidden everybody.
+              const _ChipRowDivider(),
+              _TodosChip(state: state),
             ],
           ),
         ),
@@ -536,6 +639,53 @@ class _ViewToggleButton extends StatelessWidget {
 /// colour: which chip is selected is one piece of state for the whole row, and
 /// a selection that changed hue per chip read as a second colour code fighting
 /// the dot that is already saying which calendar this is.
+/// The hairline between the person chips and the to-do toggle.
+///
+/// The one mark in the row that says the chip after it answers a different
+/// question. Inset top and bottom so it reads as a separator rather than as a
+/// very thin chip of its own.
+class _ChipRowDivider extends StatelessWidget {
+  const _ChipRowDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 8, top: 10, bottom: 10),
+      child: Container(width: 1, color: AppColors.hairline2),
+    );
+  }
+}
+
+/// "To-dos" — lays the Board's dated to-dos over the agenda.
+///
+/// **A toggle wearing a filter chip's clothes**, which is the one thing to be
+/// careful about here. It borrows [_CalendarChip] so the row stays one row, but
+/// it neither joins nor clears `calendarFilter`: tapping it turns to-dos on and
+/// tapping it again turns them off, and whichever person is selected stays
+/// selected throughout. The rule before it is what carries that difference —
+/// see [_ChipRowDivider].
+///
+/// It carries the check the Board's create sheet puts on "To-do", not the Board
+/// tab's grid: the chip stands for the things, not for the screen they live on.
+class _TodosChip extends ConsumerWidget {
+  final CalendarScreenState state;
+
+  const _TodosChip({required this.state});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return _CalendarChip(
+      label: L.s.todosChip,
+      // Never drawn: a glyph is given, so the dot the colour would paint is not
+      // built. Passed because the shell asks for one.
+      color: AppColors.muted,
+      active: state.showTasks,
+      glyph: AppIcons.checkCircle,
+      onTap: () => ref.read(calendarProvider.notifier).toggleTasks(),
+    );
+  }
+}
+
 class _CalendarChip extends StatelessWidget {
   final String label;
   final Color color;
@@ -787,7 +937,8 @@ class _AllCalendarsChipState extends ConsumerState<_AllCalendarsChip> {
   void _open() {
     final box = _anchorKey.currentContext?.findRenderObject() as RenderBox?;
     if (box == null) return;
-    Navigator.of(context).push(
+    pushDropdownRoute(
+      context,
       _AllCalendarsPickerRoute(
         anchor: box.localToGlobal(Offset.zero) & box.size,
         // The route stays open while the rows are ticked: picking three
@@ -863,7 +1014,8 @@ class _CalendarGroupChipState extends ConsumerState<_CalendarGroupChip> {
   void _open() {
     final box = _anchorKey.currentContext?.findRenderObject() as RenderBox?;
     if (box == null) return;
-    Navigator.of(context).push(
+    pushDropdownRoute(
+      context,
       _CalendarPickerRoute(
         anchor: box.localToGlobal(Offset.zero) & box.size,
         group: widget.group,

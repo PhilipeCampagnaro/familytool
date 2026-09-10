@@ -8,10 +8,10 @@ import UIKit
   private var linksChannel: FlutterMethodChannel?
   private var mediaChannel: FlutterMethodChannel?
   private var mapChannel: FlutterMethodChannel?
-  private var actionSheetChannel: FlutterMethodChannel?
+  private var menuChannel: FlutterMethodChannel?
   private let mediaPicker = MediaPicker()
   private let mapSnapshot = MapSnapshot()
-  private let actionSheet = ActionSheet()
+  private let nativeMenu = NativeMenu()
 
   override func application(
     _ application: UIApplication,
@@ -82,14 +82,14 @@ import UIKit
       }
       mapChannel = channel
     }
-    // The system action sheet the event sheet's "Route" choice is put up with —
-    // see ActionSheet.swift and lib/services/action_sheet.dart.
-    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "AporahActionSheet") {
-      let channel = FlutterMethodChannel(name: "aporah/action_sheet", binaryMessenger: registrar.messenger())
-      channel.setMethodCallHandler { [actionSheet] call, result in
-        actionSheet.handle(call, result: result)
+    // The system's own anchored menu, for the choices offered from inside a
+    // sheet — see NativeMenu.swift and lib/services/native_menu.dart.
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "AporahMenu") {
+      let channel = FlutterMethodChannel(name: "aporah/menu", binaryMessenger: registrar.messenger())
+      channel.setMethodCallHandler { [nativeMenu] call, result in
+        nativeMenu.handle(call, result: result)
       }
-      actionSheetChannel = channel
+      menuChannel = channel
     }
   }
 }

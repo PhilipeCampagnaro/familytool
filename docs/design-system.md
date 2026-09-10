@@ -244,8 +244,9 @@ The event sheet's two link cards pass `leading:` with an `IconTile` instead (`_L
 
 Inside those cards the fill carries one distinction — grey `surfaceAlt` for something that exists,
 white `surface` for a row that creates one — via `IconTile.background`. That override exists for
-this case only: the automatic choice (white disc for artwork, grey for a glyph) is about
-legibility, and overriding it elsewhere is how a shop logo ends up unreadable on dark. Note it is
+this case only: the automatic choice (no disc at all for artwork in light, a white one on dark, grey
+for a glyph) is about legibility, and overriding it elsewhere is how a shop logo ends up unreadable
+on dark. Naming a `background` also opts that tile back into having a disc in light. Note it is
 `surface` and not `brandTile`: `brandTile` is white in *both* palettes so that logos stay readable,
 and an ink glyph on it would disappear on dark.
 
@@ -339,7 +340,7 @@ Non-obvious bits, each one a bug that shipped first:
 
 - **`SegmentedControl` (`segmented_control.dart`)** — the app's two-or-three-way switch, at the top
   of the Listen sheet ("Welche Art von Liste?") and the Board sheet ("Was möchtest du anlegen?" —
-  Aufgabe or Tracker). It lived as a private `_SegButton` inside `list_screen.dart` until the Board
+  To-do or Tracker). It lived as a private `_SegButton` inside `list_screen.dart` until the Board
   needed the same question asked the same way.
   - **The track needs its hairline.** `surfaceAlt` is within a percent of the sheet's own
     `screenBg` body on light, so without the border the control has no visible edge at all and
@@ -629,8 +630,8 @@ Non-obvious bits, each one a bug that shipped first:
   the tone derived from its id, plus the camera badge an admin taps to change it. Drawn in two
   places that both edit it: the leading slot of the family-name row, and the rename sheet that row
   opens (which used to show a house glyph — a family is people, and the face it already had was one
-  tap away without being drawn). Its menu goes through `showPictureMenu(includeSymbol: false)`, so
-  it is the system's own action sheet first and the dropdown only as a fallback — which is what
+  tap away without being drawn). Its menu goes through `showPictureMenu`, so
+  it is the system's own anchored menu first and the dropdown only as a fallback — which is what
   makes it safe to open from inside a sheet whose header carries native glass buttons. `ringColor`
   is what the badge is ringed against: the card's surface on the page, `AppColors.screenBg` in the
   sheet.
@@ -744,16 +745,36 @@ Non-obvious bits, each one a bug that shipped first:
   the glass "..." in a detail screen's title row (Listen and Boxen both use it for Bearbeiten /
   Löschen), opening the same anchored menu. A separate widget rather than a flag, since
   `RowMenuButton` is a bare 15px glyph sized for a list row.
-- `IconTile` / `IconFieldRow` / `showIconPicker` / `IconDraft` (`icon_picker.dart`) — the one place
+- `IconTile` / `IconFieldRow` / `PhotoFieldRow` / `showIconPicker` / `IconDraft` (`icon_picker.dart`) — the one place
   a list/box/item icon is **drawn** and the one place it is **chosen**. Both sides speak the same
   `iconKey` string from `data/icon_suggestions.dart`: an `assets/` path or `lucide:<name>` — a
   key format frozen by the rows already in the database, not a statement about which icon set the
   app draws (that is Phosphor Duotone; see `lib/theme/app_icons.dart`).
-  - `IconTile` splits on *what kind of art it is*, not on taste: a shop logo or grocery picture is
-    full-colour art drawn for a light background, so it gets the white `brandTile` disc in both
-    palettes; a symbol glyph is line art in the theme's own ink, so it sits on `surfaceAlt`. Its
-    `IconImage` bounds the decode with `cacheWidth` — the picker puts 160 full-size logo PNGs on
-    screen at once.
+  - `IconTile` splits three ways on *what kind of art it is*, not on taste. **A symbol glyph** is
+    line art in the theme's own ink and sits on the `surfaceAlt` disc, which is what gives a
+    hairline mark somewhere to be. **A grocery picture is drawn bare** at `size * 0.88`, since it
+    arrives already sized and centred on nothing — except on dark, where it keeps the white
+    `brandTile` under it because the art is drawn for paper (the same rule `_ItemIcon` in
+    `list_screen.dart` follows). **A shop logo gets a white disc**: `brandTile` ground in
+    both palettes, hairline edge, `size * 0.14` inset, clipped. That is not
+    decoration — brand marks share no shape (REWE is a full-bleed square, IKEA a wide wordmark), so
+    fitted straight into a slot they normalise to nothing: the square fills it while the wordmark
+    shrinks to a sliver, and the row reads as unrelated coloured rectangles. The chip is what gives
+    them one footprint. Its `IconImage` bounds the decode with `cacheWidth` — the picker puts 160
+    full-size logo PNGs on screen at once.
+  - **A symbol that names a thing is drawn in ink, never in the accent, and `glyphColor` is
+    therefore left alone.** The app has one accent and it already carries a meaning — a check-off
+    circle, a done count, an attachment line, an empty state's call to action — so colouring a box
+    or list icon with it says "this is a control" about the one part of the row that isn't, and
+    reads as a per-tab brand colour the rest of the app doesn't have. Box's badge and its search
+    hits used to pass `glyphColor: accent` while Listen passed nothing; Listen was right. The one
+    surviving exception is the event sheet's two link cards, where the colour is telling the card
+    of *things* apart from the card of *actions*.
+  - **An item inside a box is drawn bare** (`_ItemIcon` in `box_screen.dart`): the glyph in
+    `inkSecondary` inside an empty hairline ring, no fill. The filled disc is what the box's own
+    badge above it wears, and repeating that down every row made a shelf of things read as a shelf
+    of boxes. A photograph still gets the filled disc — it has to be cropped to something — and so
+    does full-colour art on dark, for the legibility reason above.
   - `showIconPicker` is a `showAppSheet` with a **custom header**: X + title, no save check, since
     tapping an icon *is* the save. It browses the curated symbol groups + the shops, and searches
     across those plus the ~2000 grocery pictures (which are search-only — a browsable grid of them
@@ -771,10 +792,23 @@ Non-obvious bits, each one a bug that shipped first:
     brand-new box's picture has before there is a box to hang it on. Every failure — expired link,
     no signal, object swept up elsewhere — lands on the muted placeholder, never on Flutter's grey
     exception box.
-  - `showPictureMenu` is the menu behind a picture row: Foto / Kamera / Symbol wählen, plus a
-    destructive Foto entfernen once there is one. **It is a `showNativeActionSheet` first and the
+  - `PhotoFieldRow` is the photograph's **own row**, directly under `IconFieldRow` on the box and
+    box-item sheets, and the split is the point. "Ändern" on the symbol row goes straight into
+    `showIconPicker`; the row underneath reads "Bild hochladen" until there is a picture and
+    "Foto · Ändern" after. They used to be one row behind one menu whose four entries asked
+    *which kind of picture* before anything useful, which taxed the commonest tap on the sheet —
+    correcting the guessed symbol — with a choice every time. Because they are now two rows over
+    two independent columns, picking a symbol no longer deletes the photograph: the symbol is
+    what the thing falls back to when the picture is removed. The symbol row therefore keeps
+    showing the *symbol* while a photo is set, rather than previewing the photo twice in adjacent
+    rows.
+  - `showPictureMenu` is the menu behind `PhotoFieldRow` and `FamilyAvatarButton`: Foto / Kamera,
+    plus a destructive Foto entfernen once there is one. No "Symbol wählen" — that row is why the
+    box sheet needed splitting, and each of the two rows' taps now knows its own answer. **It is a `showNativeMenu` first and the
     dropdown only as a fallback**, because it opens from inside a sheet whose header carries native
-    glass buttons — see the platform-view note further up. `IconDraft.photoFile` is the pending
+    glass buttons — see the platform-view note further up. Both hang off the row's own `GlobalKey`,
+    so the choice grows out of the row either way; it was a bottom-of-the-screen `UIAlertController`
+    until the anchored `UIMenu` replaced it. `IconDraft.photoFile` is the pending
     half: every picture is written the moment it is chosen, exactly as a profile picture is, except
     a *new* box's, which has no id for the object to be filed under until the insert comes back.
 - `SwipeActionsRow` / `SwipeAction` (`swipe_actions.dart`) — iOS swipe-left row actions, shared by
@@ -791,7 +825,8 @@ Non-obvious bits, each one a bug that shipped first:
   Kalender's week strip and month grid. Board used to have a week strip of its own and no longer
   does: a task's date is a property of the task, so the Board is a grouped list with nothing to
   select.
-- `EventDots` (`event_dots.dart`) — small overlapping source-color dots under a day cell.
+- `EventDots` (`event_dots.dart`) — small overlapping source-color dots under a day cell, plus an
+  optional leading ring (`todo`) for a day that still owes a to-do.
 - `Avatar`, `WhoPicker` — person avatar chip and the "Alle / Nur ich / <person>" picker on
   new-item sheets. `WhoPicker` is the **assignment** axis (a single `who` string) and is what
   Board/Box/Kalender still use.

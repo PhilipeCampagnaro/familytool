@@ -76,17 +76,15 @@ class _FamilyAvatarButtonState extends ConsumerState<FamilyAvatarButton> {
     if (!ok) setState(() => _uploading = null);
   }
 
-  /// The app's one picture menu, minus the symbol row — a family has a
-  /// photograph or its initials, and no third thing to pick. It puts up the
-  /// system's own sheet first and falls back to the dropdown, which is what
-  /// lets this widget be opened from inside a sheet whose header carries
-  /// native glass buttons.
+  /// The app's one picture menu — a family has a photograph or its initials,
+  /// and no third thing to pick. It puts up the system's own sheet first and
+  /// falls back to the dropdown, which is what lets this widget be opened from
+  /// inside a sheet whose header carries native glass buttons.
   Future<void> _menu(Household household) async {
     final choice = await showPictureMenu(
       context,
       anchorKey: _avatarKey,
       hasPhoto: household.avatarPath != null || _uploading != null,
-      includeSymbol: false,
     );
     if (choice == null || !mounted) return;
     switch (choice) {
@@ -97,9 +95,6 @@ class _FamilyAvatarButtonState extends ConsumerState<FamilyAvatarButton> {
       case PictureChoice.remove:
         setState(() => _uploading = null);
         ref.read(familyProvider.notifier).removeFamilyAvatar();
-      // Never offered: `includeSymbol: false` leaves it out of the menu.
-      case PictureChoice.symbol:
-        break;
     }
   }
 

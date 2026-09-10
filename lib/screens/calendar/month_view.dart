@@ -246,6 +246,15 @@ class _MonthBlock extends ConsumerWidget {
     final selDate = DateTime(sel.y, sel.m, sel.d);
     final headingText = _dayHeading(selDate);
     final dayEvents = isSelectedMonth ? state.eventsFor(sel.y, sel.m, sel.d) : const <CalendarEvent>[];
+    // The same overlay the week agenda draws, in the same order — the detail box
+    // is that agenda, compact. The grid above it stays untouched: its dots are
+    // calendars, and a day counting to-dos among them would be the Board's own
+    // day grid mistake made a second time (see CLAUDE.md).
+    final dayTodos = isSelectedMonth && state.showTasks
+        ? _todosDueOn(ref, sel.y, sel.m, sel.d)
+        : const <BoardTask>[];
+    // The same reading order the week agenda uses — see [_agendaEntries].
+    final dayEntries = _agendaEntries(dayEvents, dayTodos);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(AppSpacing.screenPad, 20, AppSpacing.screenPad, 0),
@@ -325,7 +334,7 @@ class _MonthBlock extends ConsumerWidget {
                           child: _HolidayChip(holiday: holidays[sel.d]!, accent: accent),
                         ),
                       const SizedBox(height: 10),
-                      if (dayEvents.isEmpty)
+                      if (dayEvents.isEmpty && dayTodos.isEmpty)
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           child: Column(
@@ -337,14 +346,23 @@ class _MonthBlock extends ConsumerWidget {
                           ),
                         )
                       else
-                        for (var i = 0; i < dayEvents.length; i++)
-                          _EventAgendaRow(
-                            event: dayEvents[i],
-                            isFirst: i == 0,
-                            headingText: headingText,
-                            accent: accent,
-                            compact: true,
-                          ),
+                        for (var i = 0; i < dayEntries.length; i++)
+                          if (dayEntries[i] case final BoardTask task)
+                            _TodoAgendaRow(
+                              key: ValueKey(task.id),
+                              task: task,
+                              isFirst: i == 0,
+                              accent: accent,
+                              compact: true,
+                            )
+                          else if (dayEntries[i] case final CalendarEvent event)
+                            _EventAgendaRow(
+                              event: event,
+                              isFirst: i == 0,
+                              headingText: headingText,
+                              accent: accent,
+                              compact: true,
+                            ),
                     ],
                   ),
                 ),
@@ -387,6 +405,10 @@ class _MonthCell extends ConsumerWidget {
     final colors = state.dayColors(year, month, n);
     final dots = colors.take(3).toList();
     final overflowCount = colors.length - 3;
+    // Same rule as the week strip's: the ring only appears while the "To-dos"
+    // chip is lit, so it always points at something the day can actually show.
+    final hasTodo = state.showTasks &&
+        ref.watch(openTodoDaysProvider).contains(CalendarScreenState.key(year, month, n));
 
     return GestureDetector(
       onTap: () => ref.read(calendarProvider.notifier).selectDay(year, month, n),
@@ -409,7 +431,14 @@ class _MonthCell extends ConsumerWidget {
             const SizedBox(height: 3),
             SizedBox(
               height: 8,
-              child: Center(child: EventDots(colors: dots, overflowCount: overflowCount)),
+              child: Center(
+                child: EventDots(
+                  colors: dots,
+                  overflowCount: overflowCount,
+                  todo: hasTodo,
+                  todoColor: accent,
+                ),
+              ),
             ),
           ],
         ),

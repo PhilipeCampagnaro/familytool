@@ -52,6 +52,11 @@ class BoardState {
   /// happened to be on, which meant the sheet could not ask the question at all.
   final DateTime? newDueDate;
 
+  /// The draft's hour, or null — which is most to-dos. Only ever set beside
+  /// [newDueDate]: the picker cannot offer a time before a day is chosen, and
+  /// clearing the day clears this with it.
+  final DueTime? newDueTime;
+
   /// Task the user just checked off or undid, or `''` — lets the section it
   /// landed in animate that one row in (see `CheckOffArrival`) and leave the
   /// rest at rest. Pass `''` to clear it.
@@ -79,6 +84,7 @@ class BoardState {
     this.newSharedWith = const {},
     this.newAssigneeId,
     this.newDueDate,
+    this.newDueTime,
     this.justMoved = '',
     this.loading = true,
     this.error,
@@ -93,6 +99,8 @@ class BoardState {
     bool clearAssignee = false,
     DateTime? newDueDate,
     bool clearDueDate = false,
+    DueTime? newDueTime,
+    bool clearDueTime = false,
     String? justMoved,
     String? personFilter,
     bool clearPersonFilter = false,
@@ -108,6 +116,7 @@ class BoardState {
       newSharedWith: newSharedWith ?? this.newSharedWith,
       newAssigneeId: clearAssignee ? null : (newAssigneeId ?? this.newAssigneeId),
       newDueDate: clearDueDate ? null : (newDueDate ?? this.newDueDate),
+      newDueTime: clearDueDate || clearDueTime ? null : (newDueTime ?? this.newDueTime),
       justMoved: justMoved ?? this.justMoved,
       loading: loading ?? this.loading,
       error: clearError ? null : (error ?? this.error),
@@ -156,6 +165,28 @@ class BoardState {
 
   bool get isEmpty => tasks.isEmpty;
 }
+
+/// The days that still owe something — `'y-m-d'` keys, for Kalender's day cells.
+///
+/// Derived once and shared, rather than every cell in a month grid running its
+/// own scan: a month block builds 42 of them, and a set lookup per cell against
+/// one subscription is the cheap half of that trade.
+///
+/// **Open to-dos only.** The mark on a day is a scan for what still needs
+/// doing, and a day whose to-dos are all ticked needs nothing. Nothing is lost
+/// by dropping it: open the day and the finished row is still there in the
+/// agenda, struck through where it always was.
+///
+/// Narrowed to `tasks` the same way the agenda's lookups are, and over `tasks`
+/// rather than `visibleTasks` — Board's person chip is about Board.
+final openTodoDaysProvider = Provider<Set<String>>((ref) {
+  final tasks = ref.watch(boardProvider.select((s) => s.tasks));
+  return {
+    for (final t in tasks)
+      if (!t.done)
+        if (t.dueDate case final due?) '${due.year}-${due.month}-${due.day}',
+  };
+});
 
 class BoardNotifier extends StateNotifier<BoardState> {
   BoardNotifier(this._repo, this._userId, this._familyId) : super(const BoardState()) {
@@ -214,12 +245,18 @@ class BoardNotifier extends StateNotifier<BoardState> {
   // Navigation and sheet drafts
   // ---------------------------------------------------------------------------
 
-  /// The draft's due date. `null` clears it — "Kein Datum" in the picker, and
-  /// the state every new task starts in.
-  void setDueDate(DateTime? day) {
+  /// The draft's due date and hour. `null` for the day clears both — "Kein
+  /// Datum" in the picker, and the state every new task starts in — because an
+  /// hour with no day names nothing and the database refuses it outright.
+  ///
+  /// The two arrive together because the sheet asks them together: its time row
+  /// only opens once a day is chosen.
+  void setDueDate(DateTime? day, {DueTime? time}) {
     state = state.copyWith(
       newDueDate: day == null ? null : boardDay(day),
       clearDueDate: day == null,
+      newDueTime: day == null ? null : time,
+      clearDueTime: time == null,
     );
   }
 
@@ -259,6 +296,9 @@ class BoardNotifier extends StateNotifier<BoardState> {
     visibility: task?.visibility,
     sharedWith: task?.sharedWith,
     dueDate: task == null ? initialDue : task.dueDate,
+    // A new task made from a section header or an appointment takes the day and
+    // no hour: the day is what was implied, the hour never was.
+    dueTime: task?.dueTime,
   );
 
   /// The same, for a tracker. It answers three of the sheet's four questions
@@ -285,6 +325,7 @@ class BoardNotifier extends StateNotifier<BoardState> {
     ItemVisibility? visibility,
     List<String>? sharedWith,
     DateTime? dueDate,
+    DueTime? dueTime,
   }) {
     final owner = (ownerId ?? '').isEmpty ? null : ownerId;
     final assignee = assigneeId ?? owner ?? _userId;
@@ -319,10 +360,12 @@ class BoardNotifier extends StateNotifier<BoardState> {
     }
 
     final due = state.newDueDate;
+    final dueTime = state.newDueTime;
     final optimistic = BoardTask(
       id: _tempId(),
       familyId: familyId,
       dueDate: due,
+      dueTime: dueTime,
       text: trimmed,
       meta: meta,
       assigneeId: state.newAssigneeId,
@@ -340,6 +383,7 @@ class BoardNotifier extends StateNotifier<BoardState> {
       final saved = await _repo.createTask(
         familyId: familyId,
         dueDate: due,
+        dueTime: dueTime,
         text: trimmed,
         meta: meta,
         assigneeId: state.newAssigneeId,
@@ -371,6 +415,7 @@ class BoardNotifier extends StateNotifier<BoardState> {
     final newText = text.trim().isEmpty ? task.text : text.trim();
     final newMeta = meta?.trim();
     final newDue = state.newDueDate;
+    final newDueTime = state.newDueTime;
 
     _patchTask(
       task.id,
@@ -380,6 +425,8 @@ class BoardNotifier extends StateNotifier<BoardState> {
         clearMeta: newMeta == null || newMeta.isEmpty,
         dueDate: newDue,
         clearDueDate: newDue == null,
+        dueTime: newDueTime,
+        clearDueTime: newDueTime == null,
         assigneeId: state.newAssigneeId,
         clearAssignee: state.newAssigneeId == null,
         visibility: state.newVisibility,
@@ -393,6 +440,8 @@ class BoardNotifier extends StateNotifier<BoardState> {
         meta: (newMeta == null || newMeta.isEmpty) ? null : newMeta,
         dueDate: newDue,
         clearDueDate: newDue == null,
+        dueTime: newDueTime,
+        clearDueTime: newDueTime == null,
         assigneeId: state.newAssigneeId,
         clearAssignee: state.newAssigneeId == null,
         visibility: state.newVisibility,

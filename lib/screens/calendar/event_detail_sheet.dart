@@ -15,7 +15,7 @@ part of '../calendar_screen.dart';
 /// that already reads as finished. Editing moved into the header beside the
 /// title, and deleting moved *inside* the edit sheet ([_openEditEventSheet]),
 /// where the rest of the destructive actions in the app already are (the task
-/// sheet's "Aufgabe löschen"). Looking at an appointment and changing one are
+/// sheet's "To-do löschen"). Looking at an appointment and changing one are
 /// now two different sheets with two different sets of buttons, which is the
 /// distinction the old footer blurred.
 ///
@@ -318,7 +318,7 @@ void _showEventDetailSheet(BuildContext context, WidgetRef ref) {
             SectionCard(
               children: dividedRows([
                 // The glyph each thing wears where it is made: Listen's own
-                // for a list, and the Board create sheet's "Aufgabe" segment
+                // for a list, and the Board create sheet's "To-do" segment
                 // for a task. The Board *tab* icon used to sit on the second
                 // row and said only which screen it landed on — next to a list
                 // that showed its own symbol it read as a stray grid.
@@ -510,23 +510,34 @@ class _EventLocationCardState extends State<_EventLocationCard> {
   /// not Apple Maps as a third: this is the household's *usual* navigation app,
   /// and the system share sheet is not what a two-item choice should feel like.
   ///
-  /// The **system** action sheet, not the app's own [showAnchoredMenu] dropdown
-  /// every other menu uses. This one opens from inside a sheet that carries
-  /// native glass buttons, and there a Flutter-painted menu is composited after
-  /// a platform view: on device it opened, took the taps behind it, and never
+  /// The **system's own** menu, not the app's [showAnchoredMenu] dropdown every
+  /// other menu uses. This one opens from inside a sheet that carries native
+  /// glass buttons, and there a Flutter-painted menu is composited after a
+  /// platform view: on device it opened, took the taps behind it, and never
   /// appeared — the same layer-dropping trap that ate this sheet's title when
-  /// it still had a frosted header. UIKit puts its own sheet above everything,
-  /// so there is no layer left to lose. Off iOS there is nothing to present and
-  /// the dropdown is still the fallback.
+  /// it still had a frosted header. UIKit puts its own menu above everything,
+  /// so there is no layer left to lose. Both hang off [_rowAnchor], so the
+  /// choice grows out of the row that was tapped either way; off iOS there is
+  /// nothing to present and the dropdown is still the fallback.
   Future<void> _openRouteMenu() async {
     const apps = NavigationApp.values;
-    final picked = await showNativeActionSheet(
+    final picked = await showNativeMenu(
       title: _query,
-      options: [for (final app in apps) app.label],
+      anchor: anchorRectOf(_rowAnchor),
+      options: [
+        for (final app in apps)
+          NativeMenuOption(
+            app.label,
+            symbol: switch (app) {
+              NavigationApp.waze => 'arrow.triangle.turn.up.right.circle',
+              NavigationApp.googleMaps => 'map',
+            },
+          ),
+      ],
       cancelLabel: L.s.cancel,
       dark: AppColors.isDark,
     );
-    if (picked == actionSheetCancelled) return;
+    if (picked == nativeMenuCancelled) return;
     if (picked != null) {
       await openNavigation(apps[picked], query: _query, latitude: _map?.latitude, longitude: _map?.longitude);
       return;
@@ -901,7 +912,7 @@ class _LinkedCard extends ConsumerWidget {
                 // task here is the glyph, not the material behind it.
                 //
                 // And the glyph is the check the Board create sheet puts on
-                // "Aufgabe", not the Board tab's grid — the row names one task,
+                // "To-do", not the Board tab's grid — the row names one task,
                 // not the screen it lives on, and the grid read as a table.
                 leading: _LinkTile(iconKey: null, fallbackIcon: AppIcons.checkCircle),
                 title: task.text,

@@ -30,7 +30,7 @@ class _CalendarFilterButton extends ConsumerWidget {
   Future<void> _openMenu(BuildContext context, WidgetRef ref) async {
     final button = context.findRenderObject() as RenderBox;
     final anchor = button.localToGlobal(Offset.zero) & button.size;
-    final selected = await Navigator.of(context).push(_FilterMenuRoute(anchor: anchor, state: state));
+    final selected = await pushDropdownRoute(context, _FilterMenuRoute(anchor: anchor, state: state));
     if (selected == null) return;
     if (selected.isEmpty) {
       ref.read(calendarProvider.notifier).clearCalendarFilter();
@@ -94,7 +94,7 @@ class _CalendarFilterButton extends ConsumerWidget {
 /// overlapping the grid rather than a menu. This instead lays the finished
 /// panel out under the button and scales + fades it out of its anchor corner,
 /// the way a UIKit menu opens.
-class _FilterMenuRoute extends PopupRoute<Set<String>> {
+class _FilterMenuRoute extends PopupRoute<Set<String>> with DropdownRoute<Set<String>> {
   /// The filter button's rect in global coordinates.
   final Rect anchor;
   final CalendarScreenState state;
@@ -222,6 +222,26 @@ class _FilterMenuSurface extends ConsumerWidget {
                           indent: true,
                         ),
                   ],
+                  // Last, and behind a rule — the same place and the same
+                  // reason as the chip row's own to-do chip. Without it the
+                  // toggle would be reachable only while the header is open,
+                  // which is the half of the screen a reader is *not* on once
+                  // they have scrolled into a day.
+                  Padding(
+                    padding: EdgeInsets.only(left: 16),
+                    child: Divider(height: 0.5, thickness: 0.5, color: AppColors.menuSeparator),
+                  ),
+                  _FilterMenuRow(
+                    label: L.s.todosChip,
+                    color: AppColors.muted,
+                    // Watched rather than read off the `state` this panel was
+                    // built with: the row stays on screen while it is tapped, so
+                    // it has to notice its own tick appearing.
+                    active: ref.watch(calendarProvider.select((s) => s.showTasks)),
+                    value: const {},
+                    glyph: AppIcons.checkCircle,
+                    onTap: () => ref.read(calendarProvider.notifier).toggleTasks(),
+                  ),
                 ],
               ),
             ),
@@ -253,6 +273,13 @@ class _FilterMenuRow extends StatelessWidget {
   /// calendar at once. Same reason as the chip's — see [_CalendarChip.glyph].
   final IconData? glyph;
 
+  /// Given only by the to-do row, which toggles an overlay instead of picking a
+  /// filter. Every other row answers the route with the calendars it stands for
+  /// and the menu closes; that one has no calendars to answer with, and closing
+  /// on it would be the menu treating "also show to-dos" as "show these
+  /// calendars and nothing else".
+  final VoidCallback? onTap;
+
   const _FilterMenuRow({
     required this.label,
     required this.color,
@@ -260,12 +287,13 @@ class _FilterMenuRow extends StatelessWidget {
     required this.value,
     this.indent = false,
     this.glyph,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: () => Navigator.of(context).pop(value),
+      onTap: onTap ?? () => Navigator.of(context).pop(value),
       child: Padding(
         padding: EdgeInsets.only(left: indent ? 32 : 16, right: 16, top: indent ? 10 : 13, bottom: indent ? 10 : 13),
         child: Row(
@@ -317,7 +345,7 @@ class _FilterMenuRow extends StatelessWidget {
 /// the reason recorded there: UIKit's own menus are a near-opaque vibrant
 /// material, and real glass over the month grid let the day numbers read
 /// straight through the rows.
-class _CalendarPickerRoute extends PopupRoute<void> {
+class _CalendarPickerRoute extends PopupRoute<void> with DropdownRoute<void> {
   /// The chip's rect in global coordinates.
   final Rect anchor;
   final CalendarGroup group;
@@ -529,7 +557,7 @@ class _CalendarPickerRow extends StatelessWidget {
 /// selection out of six calendars is one gesture, not six round trips — and it
 /// borrows [_FilterMenuSurface]'s near-opaque material for the reason recorded
 /// there.
-class _AllCalendarsPickerRoute extends PopupRoute<void> {
+class _AllCalendarsPickerRoute extends PopupRoute<void> with DropdownRoute<void> {
   /// The chip's rect in global coordinates.
   final Rect anchor;
   final void Function(String calendarId) onToggle;

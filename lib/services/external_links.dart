@@ -22,6 +22,39 @@ Future<bool> openExternalUrl(String url) async {
   }
 }
 
+/// What a pasted link turns into before it is stored, or `null` when there is
+/// no URL in there at all.
+///
+/// People paste `amazon.de/dp/B0…` and `www.rewe.de/…` as often as they paste a
+/// full URL, so a missing scheme is filled in with `https` rather than refused
+/// — the alternative is an error message about something the app can plainly
+/// work out. What is refused is anything without a dotted host and anything
+/// whose scheme we would not hand to the device: `javascript:` and `file:` are
+/// not links to a shop, and `list_items_link_url_shape` would reject them on
+/// arrival anyway.
+String? normalizeExternalUrl(String input) {
+  final text = input.trim();
+  if (text.isEmpty) return null;
+
+  final withScheme = text.contains('://') ? text : 'https://$text';
+  final uri = Uri.tryParse(withScheme);
+  if (uri == null) return null;
+  if (uri.scheme != 'http' && uri.scheme != 'https') return null;
+  // A host with no dot is a typo or a hostname on somebody's LAN; either way it
+  // is not the shop page this field is for.
+  if (!uri.host.contains('.')) return null;
+  return uri.toString();
+}
+
+/// The short name a link is shown under — its host without `www.`, e.g.
+/// `amazon.de`. Never the whole URL: a product URL is sixty characters of
+/// tracking parameters and says less about where it leads than the domain does.
+String urlLabel(String url) {
+  final host = Uri.tryParse(url)?.host ?? '';
+  if (host.isEmpty) return url;
+  return host.startsWith('www.') ? host.substring(4) : host;
+}
+
 /// Amazon's search URL for [query] — the German store, matching the app's
 /// German copy and the merchants the Listen screen already ships icons for.
 String amazonSearchUrl(String query) => 'https://www.amazon.de/s?k=${Uri.encodeQueryComponent(query)}';

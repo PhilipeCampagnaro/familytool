@@ -466,7 +466,7 @@ class _EventFormBodyState extends ConsumerState<_EventFormBody> {
           ],
         ),
         // The foot of the sheet, the same place and the same widget as the task
-        // sheet's "Aufgabe löschen". Here rather than beside "Bearbeiten" on the
+        // sheet's "To-do löschen". Here rather than beside "Bearbeiten" on the
         // detail sheet, because deleting is something done *to* the event and
         // this is the sheet you are already in to change it — and it takes the
         // one destructive control in the calendar out of the sheet people open

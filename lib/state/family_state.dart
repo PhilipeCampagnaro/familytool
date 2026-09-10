@@ -375,16 +375,16 @@ class HouseholdNotifier extends StateNotifier<FamilyState> {
 
       final familyId = membership['family_id'] as String;
 
-      final familyRow = await db
-          .from('families')
-          .select('id, name, address, onboarding_done, avatar_url')
-          .eq('id', familyId)
-          .maybeSingle();
-
-      final memberRows = await db
-          .from('family_members')
-          .select('user_id, role')
-          .eq('family_id', familyId);
+      // Neither of these knows about the other, so they go together. This chain
+      // is what every screen waits behind — nothing else loads until the
+      // household has answered — so a round trip saved here is a round trip
+      // saved on all four tabs at once.
+      final head = await Future.wait<Object?>([
+        db.from('families').select('id, name, address, onboarding_done, avatar_url').eq('id', familyId).maybeSingle(),
+        db.from('family_members').select('user_id, role').eq('family_id', familyId),
+      ]);
+      final familyRow = head[0] as Map<String, dynamic>?;
+      final memberRows = head[1]! as List<dynamic>;
 
       // family_members.user_id references auth.users, not profiles, so there
       // is no foreign key for PostgREST to embed across — the profiles come as
@@ -398,30 +398,19 @@ class HouseholdNotifier extends StateNotifier<FamilyState> {
                 .inFilter('id', ids);
 
       final profiles = {for (final p in profileRows) p['id'] as String: p};
-
-      // The household's own picture rides in the same batch as the faces: one
-      // request for the whole roster including the family, re-signed on every
-      // load exactly as the members' are.
       final familyAvatarPath = familyRow?['avatar_url'] as String?;
-      final signed = await signAvatarUrls([
-        for (final p in profileRows)
-          if (p['avatar_url'] is String) p['avatar_url'] as String,
-        ?familyAvatarPath,
-      ]);
 
       final members = <HouseholdMember>[
         for (final r in memberRows)
           () {
             final id = r['user_id'] as String;
             final p = profiles[id];
-            final avatarPath = p?['avatar_url'] as String?;
             return HouseholdMember(
               userId: id,
               name: (p?['display_name'] as String?) ?? L.s.unknown,
               initials: (p?['initials'] as String?) ?? '?',
               tone: (p?['tone'] as num?)?.toInt() ?? 0,
-              avatarPath: avatarPath,
-              avatarUrl: avatarPath == null ? null : signed[avatarPath],
+              avatarPath: p?['avatar_url'] as String?,
               role: _roleFrom(r['role'] as String),
             );
           }(),
@@ -435,32 +424,14 @@ class HouseholdNotifier extends StateNotifier<FamilyState> {
         return a.name.toLowerCase().compareTo(b.name.toLowerCase());
       });
 
-      // Admin-only by policy, so this comes back empty for everyone else
-      // rather than being filtered here. A failure is not fatal — a member who
-      // cannot read invites still has a household to render.
-      var invites = const <PendingInvite>[];
-      try {
-        final inviteRows = await db
-            .from('family_invites')
-            .select('id, email, name, role, expires_at')
-            .eq('family_id', familyId)
-            .eq('status', 'pending')
-            .order('created_at');
-        invites = [
-          for (final r in inviteRows)
-            PendingInvite(
-              id: r['id'] as String,
-              email: r['email'] as String,
-              name: (r['name'] as String?) ?? '',
-              role: _roleFrom(r['role'] as String),
-              expiresAt: DateTime.tryParse((r['expires_at'] as String?) ?? '')?.toLocal(),
-            ),
-        ];
-      } catch (_) {
-        // Not an admin, or the read failed. Either way: no pending section.
-      }
-
       if (!mounted) return;
+      // **Published here, with two things still missing on purpose.** This is
+      // the gate `_RootGate` is waiting on, and behind it are the four screens'
+      // own loads — so anything that can arrive a moment later must not be in
+      // front of it. The faces come back from a signing round trip and the
+      // pending invitations from a query only an admin can even run; a circle
+      // shows its initials until its picture lands, which is exactly what it
+      // shows for good for a member who has no picture.
       state = FamilyState(
         household: familyRow == null
             ? null
@@ -470,18 +441,85 @@ class HouseholdNotifier extends StateNotifier<FamilyState> {
                 address: familyRow['address'] as String?,
                 onboardingDone: familyRow['onboarding_done'] as bool? ?? false,
                 avatarPath: familyAvatarPath,
-                avatarUrl: familyAvatarPath == null ? null : signed[familyAvatarPath],
               ),
         members: members,
-        invites: invites,
         loaded: true,
       );
+
+      // Deliberately inside its own guard: the household is already on screen
+      // by now, and a face that would not sign must not turn a load that
+      // worked into "Haushalt konnte nicht geladen werden".
+      try {
+        await _loadFacesAndInvites(familyId);
+      } catch (_) {}
     } catch (_) {
       if (!mounted) return;
       state = state.copyWith(
         loaded: true,
         error: L.s.householdLoadFailed,
       );
+    }
+  }
+
+  /// The two things the household can be rendered without: the signed avatar
+  /// URLs and the pending invitations.
+  ///
+  /// Run together and after the state is published, so neither is in front of
+  /// the gate every screen waits behind. Neither can fail loudly — a signing
+  /// failure costs a face and leaves the initials, and the invites query is
+  /// admin-only by policy, so for everybody else it comes back empty or refused
+  /// and there is simply no pending section.
+  Future<void> _loadFacesAndInvites(String familyId) async {
+    final household = state.household;
+    final paths = <String>[
+      for (final m in state.members) ?m.avatarPath,
+      ?household?.avatarPath,
+    ];
+
+    final results = await Future.wait<Object>([
+      paths.isEmpty ? Future.value(const <String, String>{}) : signAvatarUrls(paths),
+      _pendingInvites(familyId),
+    ]);
+    final signed = results[0] as Map<String, String>;
+    final invites = results[1] as List<PendingInvite>;
+
+    if (!mounted) return;
+    if (signed.isEmpty && invites.isEmpty) return;
+    state = state.copyWith(
+      household: household == null || household.avatarPath == null
+          ? null
+          : household.copyWith(avatarUrl: signed[household.avatarPath]),
+      members: [
+        for (final m in state.members)
+          m.avatarPath == null ? m : m.copyWith(avatarUrl: signed[m.avatarPath]),
+      ],
+      invites: invites,
+    );
+  }
+
+  /// Admin-only by policy, so this comes back empty for everyone else rather
+  /// than being filtered here. A failure is not fatal — a member who cannot
+  /// read invites still has a household to render.
+  Future<List<PendingInvite>> _pendingInvites(String familyId) async {
+    try {
+      final rows = await AporahSupabase.client
+          .from('family_invites')
+          .select('id, email, name, role, expires_at')
+          .eq('family_id', familyId)
+          .eq('status', 'pending')
+          .order('created_at');
+      return [
+        for (final r in rows)
+          PendingInvite(
+            id: r['id'] as String,
+            email: r['email'] as String,
+            name: (r['name'] as String?) ?? '',
+            role: _roleFrom(r['role'] as String),
+            expiresAt: DateTime.tryParse((r['expires_at'] as String?) ?? '')?.toLocal(),
+          ),
+      ];
+    } catch (_) {
+      return const [];
     }
   }
 

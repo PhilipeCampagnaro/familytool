@@ -31,18 +31,27 @@ out loud: *"Zugewiesen an Lea — für alle sichtbar."* The backend splits it in
 External sharing is deliberately **not** part of the "Für wen?" picker. Mixing outsiders into the
 family avatar row would make a mis-tap leak family data; it gets its own "Teilen" sheet.
 
-## Board: Aufgaben and Tracker are two tables
+## Board: To-dos and Tracker are two tables
 
 `public.tasks` is the one-off to-do it always was. `public.trackers` is the rhythm beside it, and
 the split exists because the two behave differently in the one place a household notices:
 
-| | Aufgabe | Tracker |
+| | To-do | Tracker |
 |---|---|---|
-| Termin | `due_date`, or none | a rule: `schedule` + `weekdays` / `target` |
+| Termin | `due_date` (+ optional `due_time`), or none | a rule: `schedule` + `weekdays` / `target` |
 | Verpasst | Überfällig, and it stays | a gap in the record, and nothing else |
 | Erledigt | off the list | recorded, and back on the next scheduled day |
 | Verlauf | none | `public.tracker_checks`, one row per day kept |
 | Extern teilbar | yes | **no** — `shareable_kind` names no value for it |
+
+**`due_time` is an hour, not a deadline.** It is a nullable `time without time zone` beside
+`due_date`, which stays a `date`: the pair is a local wall-clock reading, so a to-do due Donnerstag
+um acht is due then wherever the phone is. `tasks_due_time_needs_date` refuses an hour with no day.
+It does **not** decide when a to-do goes Überfällig — that is still a question about the day
+(`boardSectionOf` never reads it), because a board that moved a row into Überfällig at 09:01 of the
+day it was planned for would nag inside the one section people open the app to see. What the hour
+does is place the to-do among the appointments in the Kalender agenda; see the to-do overlay
+section of [kalender.md](kalender.md).
 
 `tracker_schedule` is `('daily','weekdays','weekly_count')`, and `weekdays` against `weekly_count`
 is not two spellings of one idea. A `weekdays` tracker makes the **day** the unit and can say
@@ -116,7 +125,7 @@ Child rows (`list_items`, `box_items`, `events`, attachments) never restate any 
 |---|:--:|:--:|:--:|:--:|
 | Mitglied einladen / Rolle ändern / entfernen | ✅ | ❌ | ❌ | ❌ |
 | Haushalt umbenennen, Adresse ändern | ✅ | ❌ | ❌ | ❌ |
-| Liste / Box / Aufgabe / Kalender anlegen | ✅ | ✅ | ✅ | ❌ |
+| Liste / Box / To-do / Kalender anlegen | ✅ | ✅ | ✅ | ❌ |
 | Einträge anlegen / abhaken | ✅ | ✅ | ✅ | ✅ wenn `can_edit` |
 | Eigene Einträge bearbeiten/löschen | ✅ | ✅ | ✅ | ✅ |
 | Fremde Einträge löschen | ✅ | ❌ | ❌ | ❌ |
@@ -591,6 +600,8 @@ See the migration list for what exists:
 | `…101000_calendar_connections` | Kalender-Verbindungen + verschlüsselte Secrets |
 | `…20260805174643_avatar_pictures` | `avatars` Storage-Bucket + Policies |
 | `…20260909170000_item_photos` | `boxes.photo_path`, `box_items.photo_path`, `box-photos` + `list-attachments` Buckets |
+| `…20260910111610_fix_item_photo_storage_policies` | `objects.name` statt `boxes.name` in den sechs Storage-Policies — beide Buckets waren dicht |
+| `…20260910112624_item_link` | `list_items.link_url` — die Produktseite, auf die ein Artikel zeigt |
 
 Still to build: Realtime, the web landing page for share links, and the finance module.
 
@@ -641,6 +652,17 @@ name on every write. What is worth reading before touching them is the part that
 - **The subquery joins through the table on text, never casting the path segment to uuid.** A cast
   raises on a malformed object name, and an object nobody may read has to fail closed rather than
   error the whole listing. Same reason `avatars_read_visible_profiles` does it.
+- **Inside that subquery the column is `objects.name`, qualified — always.** This is the bug that
+  kept both buckets shut for a day. `…20260909170000_item_photos` wrote
+  `where b.id::text = (storage.foldername(name))[1]`, and in a subquery over `public.boxes` the
+  bare `name` is **`boxes.name`**: the predicate asked whether a box's uuid equalled the first path
+  segment of the box's own name ("Keller"), which is false for every row there will ever be.
+  Postgres resolved it silently, so all six policies were syntactically fine and semantically
+  closed — nothing could be uploaded to either bucket and nothing could be read back, and the
+  only symptom was "Foto konnte nicht hochgeladen werden". Fixed in
+  `…20260910111610_fix_item_photo_storage_policies`. A storage policy that joins another table
+  must write `storage.foldername(objects.name)`, the way `avatars_read_visible_profiles` always
+  did.
 - **Undo copies, it does not re-key.** Restoring a deleted box or list re-inserts under a fresh
   uuid, so the old `photo_path` names an object no container owns any more. `PhotoRepository.copyTo`
   puts a copy under the new id and the row is pointed at that; the original is left as litter.
@@ -650,6 +672,26 @@ name on every write. What is worth reading before touching them is the part that
   now.** Until this migration the Listen attach menu wrote to a `Map` on `ListState` and the photos
   died with the process. They are stored, signed and shared with the household now; anything still
   saying otherwise is out of date.
+- **What loads before the screen, and what arrives after.** The household read is the gate every
+  screen waits behind (`HouseholdNotifier.load`), so it holds exactly three round trips —
+  membership, then `families` and the roster together, then the profiles — and publishes. The
+  **signed avatar URLs and the pending invitations come after** it, and Listen and Boxen do the
+  same with their pictures: one read for the containers, then their shares/items/grants together,
+  then the attachment rows and their signed URLs once the articles are already on screen. Photos
+  are what makes this worth writing down — every picture in the app costs a *second* round trip to
+  sign a private object, and a signing call on the critical path is a screen that stays blank to
+  show a thumbnail a moment earlier. **Put a new picture behind the rows it decorates**, and let
+  the circle show its initials or its symbol in the meantime.
+- **A link is a column, not an attachment row.** `list_items.link_url` holds the shop page an
+  article is about — the one thing the attach menu was missing, and the thing a family most often
+  agrees on before somebody goes shopping. It is deliberately not a row in
+  `list_item_attachments`: every path through that table signs, copies or deletes a storage object,
+  so a row with no object would be a row whose `storage_path` lies. One link per article rather
+  than a list, for the same reason a box has one photograph. **Nothing server-side ever fetches
+  it** — no preview, no title, no picture scraped off it; it goes to `UIApplication.open` and no
+  further, so no third party learns what a household is shopping for.
+  `list_items_link_url_shape` is the only validation: an `http(s)` scheme and a sane length, with
+  the client normalising a pasted `amazon.de/…` to `https://` before it gets here.
 - **Orphans are accepted.** Deleting a box or a list leaves its objects behind (undo needs them),
   and nothing sweeps them up. They are unreachable — the read policy has no row left to match — so
   the cost is bytes, not exposure. A cleanup job is a backend task nobody has needed yet.

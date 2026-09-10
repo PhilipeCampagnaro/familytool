@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../data/article_quantity.dart';
 import '../data/icon_suggestions.dart';
 import '../data/repositories/list_repository.dart';
 import '../data/repositories/photo_repository.dart';
@@ -224,23 +225,42 @@ class ListNotifier extends StateNotifier<ListScreenState> {
         lists: snapshot.lists,
         itemsByList: snapshot.itemsByList,
         guestListIds: snapshot.guestListIds,
-        // Replaced wholesale, not merged: the server is the source of truth for
-        // what is attached, and a stale entry here would draw a thumbnail for a
-        // file somebody else has already removed.
-        attachments: snapshot.attachmentsByItem,
         loading: false,
         // A list can vanish between two launches (deleted on another device,
         // or a share revoked) while its detail view is the one being restored.
         openId: _resolveOpenId(state.openId, snapshot),
       );
-      // After the rows: a signing round trip must not hold the articles back,
-      // and an attachment whose URL hasn't arrived yet is still named on its
-      // row.
-      await _signAttachments();
+      // After the rows, and that is the whole point: the attachments are two
+      // more round trips (the rows, then the signing) that the articles used to
+      // wait behind. An article whose photo hasn't arrived yet still says what
+      // to buy.
+      await _loadAttachments();
     } catch (_) {
       if (!mounted) return;
       state = state.copyWith(loading: false, error: L.s.listsLoadFailed);
     }
+  }
+
+  /// The files hanging off the articles now on screen, and their signed URLs.
+  ///
+  /// Never throws and never blanks anything: a failure here costs thumbnails,
+  /// not the list. Replaced wholesale rather than merged — the server is the
+  /// source of truth for what is attached, and a stale entry here would draw a
+  /// thumbnail for a file somebody else has already removed.
+  Future<void> _loadAttachments() async {
+    final itemIds = [for (final items in state.itemsByList.values) for (final i in items) i.id];
+    if (itemIds.isEmpty) {
+      if (state.attachments.isNotEmpty) state = state.copyWith(attachments: const {});
+      return;
+    }
+    try {
+      final byItem = await _repo.fetchAttachments(itemIds);
+      if (!mounted) return;
+      state = state.copyWith(attachments: byItem);
+    } catch (_) {
+      return;
+    }
+    await _signAttachments();
   }
 
   /// Signs every attached object in one round trip. Never throws: a failure
@@ -551,6 +571,7 @@ class ListNotifier extends StateNotifier<ListScreenState> {
       sub: item.sub,
       unit: item.unit,
       iconKey: item.iconKey,
+      linkUrl: item.linkUrl,
       assigneeId: item.assigneeId,
       position: item.position,
     );
@@ -569,6 +590,12 @@ class ListNotifier extends StateNotifier<ListScreenState> {
   /// text is matched against the catalogs, so "Milch 2 Liter" arrives with the
   /// milk picture, "Bohrmaschine" on a Sonstige list with a drill, and anything
   /// unrecognised simply arrives without one.
+  ///
+  /// A count typed into the name is moved into the quantity circle where it
+  /// belongs — "Reis x3" is one Reis, three times — under the narrow rules in
+  /// [parseArticleQuantity], which leaves the line alone whenever it isn't sure.
+  /// A unit read out of the text beats [unit] from the add row's chip: it is
+  /// the more specific of the two and it is the one just typed.
   Future<void> addItem(String text, {String? iconKey, String? unit}) async {
     final trimmed = text.trim();
     if (trimmed.isEmpty) return;
@@ -576,16 +603,21 @@ class ListNotifier extends StateNotifier<ListScreenState> {
     final targetId = _targetListId();
     if (targetId == null) return;
 
+    final grocery = _isGrocery(targetId);
+    final article = parseArticleQuantity(trimmed, grocery: grocery);
+    final newUnit = article.unit ?? unit;
+
     final current = state.itemsFor(targetId);
     // Newest first, and one below the lowest sibling so the server agrees.
     final position = current.isEmpty ? 0 : current.map((i) => i.position).reduce((a, b) => a < b ? a : b) - 1;
-    final icon = iconKey ?? suggestIcon(trimmed, subject: _isGrocery(targetId) ? IconSubject.groceryArticle : IconSubject.article)?.key;
+    final icon = iconKey ?? suggestIcon(article.text, subject: grocery ? IconSubject.groceryArticle : IconSubject.article)?.key;
 
     final optimistic = ShoppingListItem(
       id: _tempId(),
       listId: targetId,
-      text: trimmed,
-      unit: unit,
+      text: article.text,
+      sub: article.amount,
+      unit: newUnit,
       iconKey: icon,
       createdBy: _userId,
       position: position,
@@ -593,7 +625,14 @@ class ListNotifier extends StateNotifier<ListScreenState> {
     _putItem(targetId, [optimistic, ...state.itemsByList[targetId] ?? const []]);
 
     try {
-      final saved = await _repo.addItem(listId: targetId, text: trimmed, unit: unit, iconKey: icon, position: position);
+      final saved = await _repo.addItem(
+        listId: targetId,
+        text: article.text,
+        sub: article.amount,
+        unit: newUnit,
+        iconKey: icon,
+        position: position,
+      );
       if (!mounted) return;
       // Reconcile in place: the row keeps its slot and swaps its id for the
       // real uuid, so a tick landing right after the insert has something to
@@ -668,6 +707,35 @@ class ListNotifier extends StateNotifier<ListScreenState> {
       if (!mounted) return;
       _patchItem(item.listId, item.id, (_) => item);
       _fail(L.s.changeSaveFailed);
+    }
+  }
+
+  /// Puts the shop page an article is about on it, or takes it off with
+  /// `null`.
+  ///
+  /// Its own write beside [setUnit] and for the same reason: the URL is pasted
+  /// into a sheet, the name and the count are typed into the row, and neither
+  /// edit has any business restating the other.
+  ///
+  /// Reports by **returning false** rather than through [_fail], which is the
+  /// one write here that does: setting a link happens inside a sheet that is
+  /// still up when the answer comes back, and a message under the field is
+  /// worth more there than a snack behind it. The caller that has no sheet —
+  /// the menu's "Link entfernen" — snacks it itself.
+  Future<bool> setLink(ShoppingListItem item, String? url) async {
+    if (_isTemp(item.id)) return false;
+    if (url == item.linkUrl) return true;
+
+    _patchItem(item.listId, item.id, (i) => i.copyWith(linkUrl: url, clearLinkUrl: url == null));
+
+    try {
+      final saved = await _repo.setLink(item.id, url);
+      if (!mounted) return true;
+      _replaceItem(item.listId, item.id, saved);
+      return true;
+    } catch (_) {
+      if (mounted) _patchItem(item.listId, item.id, (_) => item);
+      return false;
     }
   }
 

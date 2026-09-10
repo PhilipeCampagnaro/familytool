@@ -205,9 +205,9 @@ class StringsDe extends AppStrings {
   @override
   String doneCountSeparator(int count) => 'Erledigt · $count';
   @override
-  String get newTask => 'Neue Aufgabe';
+  String get newTask => 'Neues To-do';
   @override
-  String get editTask => 'Aufgabe bearbeiten';
+  String get editTask => 'To-do bearbeiten';
   @override
   String get taskPlaceholder => 'Was ist zu tun?';
   @override
@@ -233,9 +233,15 @@ class StringsDe extends AppStrings {
   @override
   String get duePickDate => 'Datum wählen …';
   @override
-  String get theTask => 'die Aufgabe';
+  String get dueTimeLabel => 'Uhrzeit';
   @override
-  String get deleteTask => 'Aufgabe löschen';
+  String get dueNoTime => 'Keine Uhrzeit';
+  @override
+  String get dueTimeNeedsDate => 'Zuerst ein Datum wählen';
+  @override
+  String get theTask => 'das To-do';
+  @override
+  String get deleteTask => 'To-do löschen';
   @override
   String get assigneeLabel => 'Zuständig';
   @override
@@ -259,7 +265,7 @@ class StringsDe extends AppStrings {
   @override
   String get newEntry => 'Neu';
   @override
-  String get kindTask => 'Aufgabe';
+  String get kindTask => 'To-do';
   // Das englische Wort, wie schon bei [trackerTitle]: im Deutschen genauso
   // gebräuchlich, und "Gewohnheit" klingt nach Ratgeber statt nach Haushalt.
   @override
@@ -354,31 +360,31 @@ class StringsDe extends AppStrings {
   @override
   String get trackerDeleted => 'Tracker gelöscht';
   @override
-  String get noOpenTasks => 'Keine offenen Aufgaben';
+  String get noOpenTasks => 'Keine offenen To-dos';
   @override
-  String get addTask => 'Aufgabe hinzufügen';
+  String get addTask => 'To-do hinzufügen';
   @override
-  String get tasksLoadFailed => 'Aufgaben konnten nicht geladen werden.';
+  String get tasksLoadFailed => 'To-dos konnten nicht geladen werden.';
   @override
-  String get taskSaveFailed => 'Die Aufgabe konnte nicht gespeichert werden.';
+  String get taskSaveFailed => 'Das To-do konnte nicht gespeichert werden.';
   @override
   String get changeSaveFailed => 'Die Änderung konnte nicht gespeichert werden.';
   @override
   String get saveFailed => 'Konnte nicht gespeichert werden.';
   @override
-  String get someDoneTasksNotDeleted => 'Nicht alle erledigten Aufgaben konnten gelöscht werden.';
+  String get someDoneTasksNotDeleted => 'Nicht alle erledigten To-dos konnten gelöscht werden.';
   @override
-  String get doneTasksDeleteFailed => 'Die erledigten Aufgaben konnten nicht gelöscht werden.';
+  String get doneTasksDeleteFailed => 'Die erledigten To-dos konnten nicht gelöscht werden.';
   @override
-  String get taskDeleteFailed => 'Die Aufgabe konnte nicht gelöscht werden.';
+  String get taskDeleteFailed => 'Das To-do konnte nicht gelöscht werden.';
   @override
-  String get taskCreated => 'Aufgabe erstellt';
+  String get taskCreated => 'To-do erstellt';
   @override
-  String get taskUpdated => 'Aufgabe aktualisiert';
+  String get taskUpdated => 'To-do aktualisiert';
   @override
-  String get taskDeleted => 'Aufgabe gelöscht';
+  String get taskDeleted => 'To-do gelöscht';
   @override
-  String get taskRestoreFailed => 'Die Aufgabe konnte nicht wiederhergestellt werden.';
+  String get taskRestoreFailed => 'Das To-do konnte nicht wiederhergestellt werden.';
 
   // ------------------------------------------------------------------ box --
   @override
@@ -412,6 +418,8 @@ class StringsDe extends AppStrings {
   @override
   String get tapAboveToAddFirst => 'Oben tippen, um das erste Element hinzuzufügen';
   @override
+  String get newItem => 'Neuer Artikel';
+  @override
   String get editItem => 'Artikel bearbeiten';
   @override
   String get itemName => 'Artikelname';
@@ -443,6 +451,8 @@ class StringsDe extends AppStrings {
   String get itemDeleted => 'Artikel gelöscht';
   @override
   String get itemRestoreFailed => 'Der Artikel konnte nicht wiederhergestellt werden.';
+  @override
+  String get itemCreated => 'Artikel erstellt';
   @override
   String get boxCreated => 'Box erstellt';
   @override
@@ -502,7 +512,17 @@ class StringsDe extends AppStrings {
   @override
   String get camera => 'Kamera';
   @override
-  String get files => 'Dateien';
+  String get itemLink => 'Link';
+  @override
+  String get removeItemLink => 'Link entfernen';
+  @override
+  String get itemLinkMessage => 'Die Seite, auf der es diesen Artikel gibt. Ein Tipp auf den Link öffnet sie im Browser.';
+  @override
+  String get itemLinkHint => 'z. B. amazon.de/dp/B0C…';
+  @override
+  String get itemLinkSaved => 'Link gespeichert';
+  @override
+  String get itemLinkInvalid => 'Das sieht nicht nach einer Web-Adresse aus.';
   @override
   String get listsLoadFailed => 'Listen konnten nicht geladen werden.';
   @override
@@ -574,6 +594,10 @@ class StringsDe extends AppStrings {
   @override
   String get noEventsThisDay => 'Keine Termine an diesem Tag';
   @override
+  String get todosChip => 'To-dos';
+  @override
+  String get dueRailLabel => 'Fällig';
+  @override
   String get addEvent => 'Termin hinzufügen';
   @override
   String get eventsPerCalendar => 'Termine je Kalender';
@@ -610,7 +634,7 @@ class StringsDe extends AppStrings {
   @override
   String get createListFromEvent => 'Liste zum Termin erstellen';
   @override
-  String get createTaskFromEvent => 'Aufgabe zum Termin erstellen';
+  String get createTaskFromEvent => 'To-do zum Termin erstellen';
   @override
   String get createForEvent => 'Neu anlegen';
   @override
@@ -626,7 +650,7 @@ class StringsDe extends AppStrings {
   @override
   String linkedListCount(int count) => count == 1 ? '1 Liste' : '$count Listen';
   @override
-  String linkedTaskCount(int count) => count == 1 ? '1 Aufgabe' : '$count Aufgaben';
+  String linkedTaskCount(int count) => count == 1 ? '1 To-do' : '$count To-dos';
   @override
   String get route => 'Route';
   @override
@@ -1133,6 +1157,8 @@ class StringsDe extends AppStrings {
   @override
   String get chooseSymbol => 'Symbol wählen';
   @override
+  String get uploadImage => 'Bild hochladen';
+  @override
   String get searchSymbolOrShop => 'Symbol oder Geschäft suchen';
   @override
   String get matches => 'Treffer';
@@ -1193,7 +1219,7 @@ class StringsDe extends AppStrings {
       'Wer zu eurem Haushalt gehört. Einladen und Rollen ändern können nur Admins.';
   @override
   String get nobodyInHouseholdYet =>
-      'Noch niemand im Haushalt.\nLade jemanden ein, um Listen, Aufgaben und Termine zu teilen.';
+      'Noch niemand im Haushalt.\nLade jemanden ein, um Listen, To-dos und Termine zu teilen.';
   @override
   String get inviteMember => 'Mitglied einladen';
   @override

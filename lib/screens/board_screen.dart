@@ -38,7 +38,7 @@ import '../theme/app_icons.dart';
 /// Opens Board's create-task sheet from outside Board.
 ///
 /// The sheet itself is [BoardScreen._openTaskSheet] and stays private — this is
-/// the one door into it, for the event detail sheet's "Aufgabe zum Termin".
+/// the one door into it, for the event detail sheet's "To-do zum Termin".
 /// The text is not prefilled: a task hung off an appointment wants the
 /// appointment's *date*, not its title. Prefilling the text with "Wochenende
 /// Hamburg" would produce a task that says what the event beside it already
@@ -49,8 +49,13 @@ import '../theme/app_icons.dart';
 /// at the appointment afterwards, on both screens. They are separate on purpose
 /// — the date is a day, the link is one specific event, and two tasks due the
 /// same Thursday are exactly the case the link disambiguates.
-void openTaskSheet(BuildContext context, WidgetRef ref, {DateTime? initialDue, EventLink? eventLink}) =>
-    BoardScreen._openTaskSheet(context, ref, initialDue: initialDue, eventLink: eventLink);
+///
+/// Pass [task] to open an existing one instead of creating. That is what a to-do
+/// tapped in the Kalender agenda does: the sheet stacks over the calendar rather
+/// than switching tab, so closing it lands the reader back on the day they were
+/// reading — the same rule [EventLinkChip] follows in the other direction.
+void openTaskSheet(BuildContext context, WidgetRef ref, {BoardTask? task, DateTime? initialDue, EventLink? eventLink}) =>
+    BoardScreen._openTaskSheet(context, ref, task: task, initialDue: initialDue, eventLink: eventLink);
 
 /// Label colour of a checked-off task — the strike-through fades the open row's
 /// text to it, so landing in "Erledigt" isn't a colour jump.
@@ -507,7 +512,11 @@ class BoardScreen extends ConsumerWidget {
                   if (isTracker)
                     _RhythmField(value: ref.watch(trackerProvider).newSchedule, onChanged: trackerNotifier.setSchedule)
                   else
-                    _DueDateField(value: state.newDueDate, onChanged: notifier.setDueDate),
+                    _DueDateField(
+                      value: state.newDueDate,
+                      time: state.newDueTime,
+                      onChanged: (day, time) => notifier.setDueDate(day, time: time),
+                    ),
                   CardDivider(),
                   // "Wer macht das?" as a field row rather than a second avatar
                   // strip: stacked under "Für wen?" the two avatar pickers read
@@ -646,7 +655,7 @@ class BoardScreen extends ConsumerWidget {
   void _openNewTaskSheet(BuildContext context, WidgetRef ref) => _openTaskSheet(context, ref);
 
   /// Deletes a task from its row's swipe action, with the same undo chip the
-  /// sheet's "Aufgabe löschen" puts up. There is no confirmation dialog in front
+  /// sheet's "To-do löschen" puts up. There is no confirmation dialog in front
   /// of it on purpose: the chip is the confirmation, and it can put the task
   /// back — see [BoardNotifier.restoreTask] for what survives the round trip.
   static Future<void> _deleteTask(BuildContext context, WidgetRef ref, BoardTask task) async {
@@ -1096,6 +1105,18 @@ class _TaskRow extends ConsumerWidget {
       members: ref.watch(householdMembersProvider),
     );
     final due = task.dueDate;
+    final time = task.dueTime;
+    // Built once rather than three conditional widgets in the row: the day
+    // alone, the hour alone, or both — and nothing at all on an undated to-do
+    // under a heading that already names its day.
+    final dayPart = showDate && due != null ? L.s.dayMonthShort(due.day, due.month) : null;
+    final timePart = time == null ? null : formatTimeOfDay(time.hour, time.minute);
+    final dueLabel = switch ((dayPart, timePart)) {
+      (final day?, final at?) => '$day · $at',
+      (final day?, null) => day,
+      (null, final at?) => at,
+      _ => null,
+    };
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
       child: Row(
@@ -1162,10 +1183,15 @@ class _TaskRow extends ConsumerWidget {
                           members: ref.watch(householdMembersProvider),
                           padding: const EdgeInsets.only(left: 6),
                         ),
-                      if (showDate && due != null) ...[
+                      // The day where the heading doesn't already say it, and
+                      // the hour whenever there is one. The hour is *not*
+                      // conditioned on [showDate]: under "Heute" the day is
+                      // already known and "08:00" is the whole of what the row
+                      // still has to say.
+                      if (dueLabel != null) ...[
                         const SizedBox(width: 8),
                         Text(
-                          L.s.dayMonthShort(due.day, due.month),
+                          dueLabel,
                           style: AppText.label.copyWith(
                             color: overdue ? AppColors.danger : AppColors.muted,
                             fontWeight: overdue ? FontWeight.w500 : null,
@@ -1535,16 +1561,20 @@ class _RhythmField extends StatelessWidget {
 
 class _DueDateField extends StatelessWidget {
   final DateTime? value;
-  final ValueChanged<DateTime?> onChanged;
+  final DueTime? time;
 
-  const _DueDateField({required this.value, required this.onChanged});
+  /// Both halves at once, because the sheet answers them together and the pair
+  /// is what means something — see [BoardTask.dueTime].
+  final void Function(DateTime? day, DueTime? time) onChanged;
+
+  const _DueDateField({required this.value, required this.time, required this.onChanged});
 
   Future<void> _pick(BuildContext context) async {
-    final choice = await showDueDateSheet(context, current: value);
+    final choice = await showDueDateSheet(context, current: value, currentTime: time);
     // Null means the sheet was dismissed — a *choice* of no date arrives as
     // `DueDateChoice(null)`, which is why the wrapper exists.
     if (choice == null) return;
-    onChanged(choice.day);
+    onChanged(choice.day, choice.time);
   }
 
   @override
@@ -1561,7 +1591,15 @@ class _DueDateField extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                due == null ? L.s.dueNone : boardLongDayName(due),
+                // The hour rides on the same line rather than taking a row of
+                // its own: "Donnerstag · 08:00" is one answer to one question,
+                // and a second field row saying "Uhrzeit" would suggest a to-do
+                // can have an hour without a day.
+                due == null
+                    ? L.s.dueNone
+                    : (time == null
+                        ? boardLongDayName(due)
+                        : '${boardLongDayName(due)} · ${formatTimeOfDay(time!.hour, time!.minute)}'),
                 textAlign: TextAlign.right,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,

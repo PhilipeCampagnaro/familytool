@@ -111,6 +111,75 @@ The menu panel (`_FilterMenuSurface`) is deliberately **not** a `GlassSurface` �
 menus are a near-opaque vibrant material, not liquid glass, and a glass panel let the month grid
 read straight through the rows.
 
+## The to-do overlay ("To-dos" chip)
+
+The last chip in the filter row lays the Board's dated to-dos over the agenda.
+`CalendarScreenState.showTasks` + `CalendarNotifier.toggleTasks`; `_todosDueOn` in
+`calendar_screen.dart` picks the rows, `_TodoAgendaRow`/`_TodoCard` in `week_view.dart` draw them,
+and both views use them (the month view in its day detail box, `compact: true`).
+
+**It is the one chip in that row that adds instead of narrowing**, so it sits behind a hairline
+(`_ChipRowDivider`) at the end of the row and never touches `calendarFilter`. Don't fold it into
+the filter: tapping a person hides the other people, and one chip in the row doing the opposite
+without a mark to say so reads as a bug.
+
+**It is deliberately not narrowed by the calendar filter either.** A calendar group is a person's
+*calendars*; a to-do's `assignee_id` is who is meant to do it. Filtering to Papa and silently
+dropping the to-do he is not assigned to would make the row mean something different depending on
+which other chip is lit. Every to-do the reader may see is either shown or not.
+
+**Only dated to-dos, only on their own day, and never a tracker.** The Board files an overdue row
+under "Heute" because there a missed to-do is today's problem; a calendar cannot borrow that
+without drawing last Tuesday on today *and* leaving Tuesday empty. A tracker has no due date at
+all — `trackers` holds a rule, not a deadline — so there is no day to put one on.
+
+A ticked to-do **stays on its day**, muted and struck through. That is also why the card does not
+use `CheckOffRow`: that widget collapses the row away after the strike, which is right on the
+Board (the row travels to "Erledigt") and wrong here. The strike is driven off `task.done` through
+a `TweenAnimationBuilder` instead.
+
+`_agendaEntries` puts the day in reading order as one heterogeneous list — a `CalendarEvent` or a
+`BoardTask` per entry — in three bands: all-day events (context for the day, not appointments in
+it), then to-dos with **no** hour, then everything with a clock time, events and to-dos merged. An
+event wins a tie, because the agenda is a calendar first. The rail's line runs on through the whole
+column, `isFirst` is simply the first entry, and the empty state waits for events *and* to-dos to be
+empty.
+
+An untimed to-do is owed by the end of the day rather than at a point in it, which is why it sits
+above the clock instead of being given a slot. One that names an hour (`tasks.due_time`, optional —
+see [backend.md](backend.md)) is sorted in at that hour and its rail prints the time instead of
+"Fällig". Left in a block at the top, an 08:00 school run read as happening before the 07:30 train.
+
+The card carries the Board's own 26pt `CheckOffButton`, which is both the thing that keeps it from
+reading as an appointment and the one deliberate exception to "a card is one tap target" — a to-do
+you can see and cannot tick sends the reader two tabs away to change one thing. Tapping the card
+opens the Board's edit sheet **over Kalender** via `openTaskSheet(context, ref, task: …)`, so
+closing it lands back on the day; it does not cross tabs.
+
+**A day that still owes something wears a ring**, in the week strip and the month grid alike:
+`EventDots.todo` draws an empty accent circle ahead of the colour dots, and `openTodoDaysProvider`
+(beside `boardProvider`) is the shared set of `'y-m-d'` keys behind it. A ring rather than another
+dot because every filled dot in that row is a *calendar* of that colour — a to-do drawn as one
+would claim to be a calendar the household hasn't got. It is the unticked circle the agenda card
+and the Board row already use, shrunk to the size of a dot.
+
+Two rules on it. It shows **only while the chip is lit**, so it never points at something the day
+would not show; and it counts **open** to-dos only, because the mark is a scan for what still needs
+doing and a day whose to-dos are all ticked needs nothing. The finished row is still in the agenda
+when the day is opened.
+
+This is not the Board day-grid mistake CLAUDE.md warns about. That was about *counting* to-dos into
+a strip that measures trackers, which made a one-off read as a habit. This says only that a day has
+something on it, which is what every other mark in the grid says.
+
+The detail box's header count stays `eventCount`, since it says "N Termine".
+
+The toggle survives the header collapsing: `_FilterMenuSurface` carries the same row at the bottom,
+behind the same rule, and it toggles in place rather than popping the route (`_FilterMenuRow.onTap`).
+
+Session state, like `isWeek` and `calendarFilter` — nothing on this screen is persisted, and one
+flag surviving a restart while the filter beside it did not would read as a bug.
+
 ## Header actions
 
 The right of `_TitleRow` is a single `GlassIconGroup` (`glass.dart`) holding **two** segments:
@@ -179,7 +248,8 @@ minus an hour, and `inDays` calls that 41.
 `calendarId`, so four appointments in one Google calendar drew a single dot and a full day read as
 an empty one. Both cells (`_DayStripCell`, `_MonthCell`) `take(3)` and hand the remainder to
 `EventDots.overflowCount`, which turns the fourth slot into a gray "+" badge — so the row can't
-grow past four dots' width however busy the day is.
+grow past four dots' width however busy the day is. The to-do ring rides ahead of them and is not
+part of that budget; see the to-do overlay section above.
 
 ## The two day-off washes — Feiertag and Ferien
 
@@ -302,7 +372,7 @@ card back when something sets a reminder, and give it the same empty rule as the
 
 ## Lists and tasks hung off an appointment
 
-The sheet's "Liste zum Termin erstellen" / "Aufgabe zum Termin erstellen" rows now file the new
+The sheet's "Liste zum Termin erstellen" / "To-do zum Termin erstellen" rows now file the new
 container against the event (`EventLink`, see [backend.md](backend.md)), and a `_LinkedCard` above
 them shows what is already there. Before, the sheet offered to create the list it had just been
 used to create, and the only place that knew about it was the Listen tab.
@@ -411,7 +481,7 @@ Ferien, Abfall and read-only provider calendars are somebody else's to change, s
 then just a close button and a label.
 
 "Löschen" lives at the **foot of the edit sheet** (`OutlinedSheetAction`, the same widget and the
-same place as the task sheet's "Aufgabe löschen"), not beside the pencil. One destructive control,
+same place as the task sheet's "To-do löschen"), not beside the pencil. One destructive control,
 one sheet behind the deliberate act of opening the editor, and the sheet people open dozens of
 times a week to read a time off has none.
 

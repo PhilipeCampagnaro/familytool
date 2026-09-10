@@ -105,10 +105,24 @@ List<BoardGroup> boardGroups(List<BoardTask> tasks, DateTime today) {
 /// Undated tasks sort among themselves by creation alone — they are all equally
 /// "whenever", and inventing an order between them would only make the list
 /// jump around.
+///
+/// On the same day the hour decides, where there is one. A to-do with no hour
+/// comes first: it is owed by the end of the day, so anything pinned to a
+/// moment inside that day happens within it rather than after it.
 int _byDueThenCreated(BoardTask a, BoardTask b) {
   final aDue = a.dueDate;
   final bDue = b.dueDate;
   if (aDue != null && bDue != null && aDue != bDue) return aDue.compareTo(bDue);
+  if (aDue != null && bDue != null) {
+    final aAt = a.dueTime;
+    final bAt = b.dueTime;
+    if (aAt != null || bAt != null) {
+      if (aAt == null) return -1;
+      if (bAt == null) return 1;
+      final byClock = aAt.compareTo(bAt);
+      if (byClock != 0) return byClock;
+    }
+  }
   final aMade = a.createdAt;
   final bMade = b.createdAt;
   if (aMade == null || bMade == null) return 0;

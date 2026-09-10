@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../theme/tokens.dart';
 import 'bottom_nav.dart';
 import 'glass.dart';
+import 'native_occlusion.dart';
 import '../l10n/l10n.dart';
 import '../theme/app_icons.dart';
 
@@ -54,11 +55,11 @@ Future<void> showAnchoredMenu({
   final box = anchorKey.currentContext?.findRenderObject() as RenderBox?;
   if (box == null || !box.hasSize) return;
   final anchor = box.localToGlobal(Offset.zero) & box.size;
-  final picked = await Navigator.of(context).push(_AnchoredMenuRoute(anchor: anchor, items: items, width: width));
+  final picked = await pushDropdownRoute(context, _AnchoredMenuRoute(anchor: anchor, items: items, width: width));
   picked?.onSelected();
 }
 
-class _AnchoredMenuRoute extends PopupRoute<AnchoredMenuItem> {
+class _AnchoredMenuRoute extends PopupRoute<AnchoredMenuItem> with DropdownRoute<AnchoredMenuItem> {
   /// Distance between the anchor and the panel's near edge.
   static const _gap = 6.0;
 

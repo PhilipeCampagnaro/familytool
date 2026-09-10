@@ -199,6 +199,14 @@ class ShoppingListItem {
   /// Same key as [ShoppingList.iconKey], same `icon_asset` column.
   final String? iconKey;
 
+  /// Where to buy this — one `http(s)` URL, or null, which is nearly every
+  /// article. Held as a column rather than as an attachment row because
+  /// `list_item_attachments` is objects in a bucket all the way down and a link
+  /// has no object; one rather than a list for the same reason a box has one
+  /// photograph. Nothing ever fetches it: it goes to the device to open, so no
+  /// preview is drawn and no shop page is copied into our database.
+  final String? linkUrl;
+
   /// Who is meant to do this — `assignee_id`. Split out of the old single
   /// `owner` string, which held a member id and doubled as a visibility hint.
   final String? assigneeId;
@@ -223,6 +231,7 @@ class ShoppingListItem {
     this.sub,
     this.unit,
     this.iconKey,
+    this.linkUrl,
     this.assigneeId,
     this.createdBy,
     this.done = false,
@@ -241,6 +250,7 @@ class ShoppingListItem {
       sub: map['sub'] as String?,
       unit: map['unit'] as String?,
       iconKey: map['icon_asset'] as String?,
+      linkUrl: map['link_url'] as String?,
       assigneeId: map['assignee_id'] as String?,
       createdBy: map['created_by'] as String?,
       done: map['done'] as bool? ?? false,
@@ -261,6 +271,7 @@ class ShoppingListItem {
       'sub': sub,
       'unit': unit,
       'icon_asset': iconKey,
+      'link_url': linkUrl,
       'assignee_id': assigneeId,
       'done': done,
       'done_by': doneBy,
@@ -280,6 +291,8 @@ class ShoppingListItem {
     bool clearUnit = false,
     String? iconKey,
     bool clearIconKey = false,
+    String? linkUrl,
+    bool clearLinkUrl = false,
     String? assigneeId,
     String? createdBy,
     bool? done,
@@ -298,6 +311,7 @@ class ShoppingListItem {
       sub: clearSub ? null : (sub ?? this.sub),
       unit: clearUnit ? null : (unit ?? this.unit),
       iconKey: clearIconKey ? null : (iconKey ?? this.iconKey),
+      linkUrl: clearLinkUrl ? null : (linkUrl ?? this.linkUrl),
       assigneeId: assigneeId ?? this.assigneeId,
       createdBy: createdBy ?? this.createdBy,
       done: done ?? this.done,

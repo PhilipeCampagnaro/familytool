@@ -110,7 +110,7 @@ class _BoxOverview extends ConsumerWidget {
                             confirm(L.s.boxDeleted, undo: () => notifier.restoreBox(deleted));
                           }
                         },
-                        child: _BoxRow(box: box, itemCount: state.itemsFor(box.id).length, accent: accent),
+                        child: _BoxRow(box: box, itemCount: state.itemsFor(box.id).length),
                       ),
                   ]),
                   // Not while the first load is still out — an account with
@@ -124,7 +124,7 @@ class _BoxOverview extends ConsumerWidget {
                 ],
               ),
             ],
-      results: (context, query, closeSearch) => _searchResults(context, ref, accent, query, closeSearch),
+      results: (context, query, closeSearch) => _searchResults(context, ref, query, closeSearch),
     );
   }
 
@@ -135,7 +135,7 @@ class _BoxOverview extends ConsumerWidget {
   /// Search covers what's *in* the boxes, not just their names — a box is only
   /// worth finding because of what you stored in it. Article hits are grouped
   /// under their box and open it, so a result is also the way there.
-  Widget? _searchResults(BuildContext context, WidgetRef ref, Color accent, String query, VoidCallback closeSearch) {
+  Widget? _searchResults(BuildContext context, WidgetRef ref, String query, VoidCallback closeSearch) {
     final q = query.toLowerCase();
 
     void open(String id) {
@@ -171,7 +171,7 @@ class _BoxOverview extends ConsumerWidget {
                   // chevron fall through.
                   behavior: HitTestBehavior.opaque,
                   onTap: () => open(box.id),
-                  child: _BoxRow(box: box, itemCount: state.itemsFor(box.id).length, accent: accent),
+                  child: _BoxRow(box: box, itemCount: state.itemsFor(box.id).length),
                 ),
             ],
           ),
@@ -180,7 +180,7 @@ class _BoxOverview extends ConsumerWidget {
             first: index == 0 && matchedBoxes.isEmpty,
             label: box.name,
             count: L.s.itemCount(hits.length),
-            icon: _BoxBadge(box: box, size: 26, iconSize: 14, accent: accent),
+            icon: _BoxBadge(box: box, size: 26, iconSize: 14),
             rows: [
               for (final hit in hits)
                 SearchResultRow(
@@ -191,7 +191,6 @@ class _BoxOverview extends ConsumerWidget {
                     imageSize: 24,
                     glyphSize: 18,
                     fallbackIcon: AppIcons.clipboardText,
-                    glyphColor: accent,
                   ),
                   title: hit.name,
                   subtitle: hit.meta.isEmpty ? '${box.name} · ${box.place}' : '${hit.meta} · ${box.place}',
@@ -277,8 +276,20 @@ class _BoxSheetBodyState extends ConsumerState<_BoxSheetBody> {
     return id == null ? null : ref.read(boxProvider).boxById(id);
   }
 
-  /// The picture row's menu: a photo, one taken now, the symbol picker, or
-  /// away with it.
+  /// The symbol row's tap: straight into the picker, with nothing asked first.
+  ///
+  /// A photograph on the box is left exactly where it is. The two are separate
+  /// rows now (see [IconFieldRow]) and separate columns underneath — the
+  /// symbol is what the box goes back to when the picture is removed, so
+  /// picking one is not a way of throwing the other away.
+  Future<void> _pickSymbol(String? iconKey, String name) async {
+    final picked = await showIconPicker(context, selected: iconKey, name: name, subject: IconSubject.box);
+    if (picked == null || !mounted) return;
+    setState(() => widget.draft.picked = picked);
+  }
+
+  /// The photo row's menu: one from the library, one taken now, or away with
+  /// the one that is there.
   ///
   /// **Two different write moments, and the box is what decides which.** An
   /// existing box takes the picture straight away, exactly as the profile page
@@ -286,7 +297,7 @@ class _BoxSheetBodyState extends ConsumerState<_BoxSheetBody> {
   /// a Sichern to be what keeps it. A box being *created* has no id yet, and
   /// the storage layout keys on that id, so its picture waits on the draft
   /// until the insert comes back.
-  Future<void> _pictureMenu(String? iconKey, String name) async {
+  Future<void> _photoMenu() async {
     // From the state, not from `widget.box` — that is the box as it was when
     // the sheet opened, and a picture taken a moment ago has already moved on
     // without it.
@@ -296,16 +307,6 @@ class _BoxSheetBodyState extends ConsumerState<_BoxSheetBody> {
     if (choice == null || !mounted) return;
 
     switch (choice) {
-      case PictureChoice.symbol:
-        final picked = await showIconPicker(context, selected: iconKey, name: name, subject: IconSubject.box);
-        if (picked == null || !mounted) return;
-        // A symbol replaces a photo the same way a photo replaces a symbol —
-        // there is one picture, and this is the user choosing which.
-        setState(() {
-          widget.draft.picked = picked;
-          widget.draft.photoFile = null;
-        });
-        if (box?.photoPath != null) await ref.read(boxProvider.notifier).removeBoxPhoto(box!.id);
       case PictureChoice.remove:
         setState(() => widget.draft.photoFile = null);
         if (box?.photoPath != null) await ref.read(boxProvider.notifier).removeBoxPhoto(box!.id);
@@ -353,14 +354,18 @@ class _BoxSheetBodyState extends ConsumerState<_BoxSheetBody> {
             IconFieldRow(
               iconKey: iconKey,
               // The sparkle means "the name chose this" — not true of the icon
-              // an edit sheet opens on, and never true of a photograph.
+              // an edit sheet opens on.
               suggested: widget.draft.picked == null && stored == null,
+              fallbackIcon: AppIcons.package,
+              onTap: () => _pickSymbol(iconKey, name),
+            ),
+            CardDivider(),
+            PhotoFieldRow(
               photoUrl: s.photoUrl(s.boxById(widget.box?.id ?? '')?.photoPath),
               photoFile: widget.draft.photoFile,
-              fallbackIcon: AppIcons.package,
               anchorKey: _pictureAnchor,
               uploading: _uploading,
-              onTap: () => _pictureMenu(iconKey, name),
+              onTap: _photoMenu,
             ),
             CardDivider(),
             Padding(
@@ -433,7 +438,7 @@ class _BoxDetail extends ConsumerWidget {
       titleRowBuilder: (context, t) => CollapsingScreenTitle(
         title: L.s.boxLabel,
         collapsedTitle: box.name,
-        collapsedIcon: _BoxBadge(box: box, size: 24, iconSize: 13, accent: accent),
+        collapsedIcon: _BoxBadge(box: box, size: 24, iconSize: 13),
         t: t,
         expandedAlignment: Alignment.center,
         expandedFontSize: 19,
@@ -479,7 +484,7 @@ class _BoxDetail extends ConsumerWidget {
           const SizedBox(height: 16),
           Row(
             children: [
-              _BoxBadge(box: box, size: 44, iconSize: 20, accent: accent),
+              _BoxBadge(box: box, size: 44, iconSize: 20),
               const SizedBox(width: 13),
               // Unfolds when the name is longer than the line, exactly as a
               // list's does — see [ExpandableTitle].
@@ -496,7 +501,7 @@ class _BoxDetail extends ConsumerWidget {
               children: [
                 ...dividedRows([
                   _AddItemRow(),
-                  for (final item in items) _ItemRow(item: item, accent: accent),
+                  for (final item in items) _ItemRow(item: item),
                 ]),
                 if (items.isEmpty)
                   EmptyState(
@@ -519,9 +524,8 @@ class _BoxBadge extends ConsumerWidget {
   final StorageBox box;
   final double size;
   final double iconSize;
-  final Color accent;
 
-  const _BoxBadge({required this.box, required this.size, required this.iconSize, required this.accent});
+  const _BoxBadge({required this.box, required this.size, required this.iconSize});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -535,7 +539,6 @@ class _BoxBadge extends ConsumerWidget {
       imageSize: iconSize * 1.5,
       glyphSize: iconSize,
       fallbackIcon: AppIcons.package,
-      glyphColor: accent,
     );
   }
 }
@@ -554,33 +557,80 @@ Future<void> _deleteItem(BuildContext context, WidgetRef ref, BoxItem item) asyn
   }
 }
 
+/// The picture in front of one item inside a box.
+///
+/// Deliberately *not* an [IconTile]: the box's own badge at the top of the
+/// screen is a blue glyph on a disc, and repeating that treatment down every
+/// row made a shelf of things read as a shelf of boxes. A row's symbol is the
+/// plain mark in the theme's ink inside an empty hairline ring — the ring holds
+/// the column and keeps the row looking built, the missing fill is what stops it
+/// competing with the badge above.
+///
+/// Two things still keep a disc, for the reason [IconTile] has one at all. A
+/// photograph has to be cropped to some shape, and full-colour art (a grocery
+/// picture, a shop logo) is drawn for a light background, so on dark it needs
+/// the white one under it or it goes unreadable.
+class _ItemIcon extends StatelessWidget {
+  final String? iconKey;
+  final String? photoUrl;
+
+  static const double _slot = 44;
+
+  const _ItemIcon({required this.iconKey, this.photoUrl});
+
+  @override
+  Widget build(BuildContext context) {
+    final asset = resolveIcon(iconKey)?.asset;
+    if (photoUrl != null || (asset != null && AppColors.isDark)) {
+      return IconTile(
+        iconKey: iconKey,
+        photoUrl: photoUrl,
+        size: _slot,
+        imageSize: 28,
+        glyphSize: 20,
+        fallbackIcon: AppIcons.clipboardText,
+      );
+    }
+    return Container(
+      width: _slot,
+      height: _slot,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: AppColors.hairline),
+      ),
+      alignment: Alignment.center,
+      child: asset != null
+          ? IconImage(asset: asset, size: 28)
+          : AppIcon(
+              resolveIcon(iconKey)?.glyph ?? AppIcons.clipboardText,
+              size: 22,
+              color: AppColors.inkSecondary,
+            ),
+    );
+  }
+}
+
 class _ItemRow extends ConsumerWidget {
   final BoxItem item;
-  final Color accent;
 
-  const _ItemRow({required this.item, required this.accent});
+  const _ItemRow({required this.item});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // Swiping the row left reveals Delete, the same gesture the Kalender event
     // cards and the Listen article rows use.
     return SwipeToEditDelete(
-      onTap: () => _openItemSheet(context, ref, item),
+      onTap: () => _openItemSheet(context, ref, item: item),
       onDelete: () => _deleteItem(context, ref, item),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 15),
         child: Row(
           children: [
-            IconTile(
+            _ItemIcon(
               iconKey: item.iconKey,
               // The whole point of the feature: a symbol says "Werkzeug", a
               // photograph says *which* drill.
               photoUrl: ref.watch(boxProvider.select((s) => s.photoUrl(item.photoPath))),
-              size: 44,
-              imageSize: 28,
-              glyphSize: 20,
-              fallbackIcon: AppIcons.clipboardText,
-              glyphColor: accent,
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -608,7 +658,7 @@ class _ItemRow extends ConsumerWidget {
                 AnchoredMenuItem(
                   label: L.s.edit,
                   icon: AppIcons.pencilSimple,
-                  onSelected: () => _openItemSheet(context, ref, item),
+                  onSelected: () => _openItemSheet(context, ref, item: item),
                 ),
                 AnchoredMenuItem(
                   label: L.s.delete,
@@ -624,42 +674,81 @@ class _ItemRow extends ConsumerWidget {
     );
   }
 
-  void _openItemSheet(BuildContext context, WidgetRef ref, BoxItem item) {
-    final form = _ItemForm(item);
-    showAppSheet(
-      context: context,
-      title: L.s.editItem,
-      // An emptied *name* means "left it alone", not "call this item ''" —
-      // whereas an emptied Größe or Notiz does mean "drop it", since both are
-      // optional to begin with.
-      onSave: () => ref.read(boxProvider.notifier).editItem(
-            item,
-            name: form.name.text,
-            size: form.size.text,
-            qty: form.qty,
-            note: form.note.text,
-            iconKey: form.draft.picked,
-          ),
-      child: _ItemSheetBody(item: item, form: form),
-    );
-  }
+}
+
+/// The item sheet — the same sheet for a new item and for one being edited,
+/// [item] being what tells them apart.
+///
+/// **Creating goes through here too, rather than through the row at the bottom
+/// of the box.** That row used to take the name inline and file the item on
+/// submit, opening this sheet a keystroke later on the row that came back. It
+/// worked, but it asked the user to finish one field before being shown the
+/// four that make an item an item — a Größe, an Anzahl, a Notiz and above all a
+/// picture of the thing — and it wrote a row to the database for a Bohrmaschine
+/// somebody was still thinking about. Now the row is a button, the sheet opens
+/// empty, and nothing is written until Sichern.
+void _openItemSheet(BuildContext context, WidgetRef ref, {BoxItem? item}) {
+  final form = _ItemForm(item);
+  showAppSheet(
+    context: context,
+    title: item == null ? L.s.newItem : L.s.editItem,
+    // Creating: there is no item to leave alone, so the name is what the save
+    // button waits for.
+    requiredField: item == null ? form.name : null,
+    requiredFocus: form.nameFocus,
+    onSave: () async {
+      final notifier = ref.read(boxProvider.notifier);
+      if (item != null) {
+        // An emptied *name* means "left it alone", not "call this item ''" —
+        // whereas an emptied Größe or Notiz does mean "drop it", since both are
+        // optional to begin with.
+        return notifier.editItem(
+          item,
+          name: form.name.text,
+          size: form.size.text,
+          qty: form.qty,
+          note: form.note.text,
+          iconKey: form.draft.picked,
+        );
+      }
+      // The sheet is already gone by the time the insert comes back, so the
+      // chip lands on the box behind it — same as the box sheet's own.
+      final confirm = confirmChipOf(context);
+      final saved = await notifier.addItem(
+        form.name.text,
+        iconKey: form.draft.picked,
+        size: form.size.text,
+        qty: form.qty,
+        note: form.note.text,
+        // Held on the draft rather than uploaded on the tap: `photo_path`
+        // belongs to a row that does not exist yet.
+        photo: form.draft.photoFile == null ? null : File(form.draft.photoFile!),
+      );
+      if (saved != null) confirm(L.s.itemCreated);
+    },
+    child: _ItemSheetBody(item: item, form: form),
+  );
 }
 
 /// The item being edited, held by reference — the sheet's save button belongs to
 /// the shared chrome and is handed its callback before the body exists, the same
 /// arrangement `IconDraft` and the Kalender event form use.
 class _ItemForm {
-  _ItemForm(BoxItem item)
-      : name = TextEditingController(text: item.name),
-        size = TextEditingController(text: item.size ?? ''),
-        note = TextEditingController(text: item.note ?? ''),
-        draft = IconDraft(item.iconKey),
-        qty = item.qty;
+  _ItemForm(BoxItem? item)
+      : name = TextEditingController(text: item?.name ?? ''),
+        size = TextEditingController(text: item?.size ?? ''),
+        note = TextEditingController(text: item?.note ?? ''),
+        draft = IconDraft(item?.iconKey),
+        qty = item?.qty ?? 1;
 
   final TextEditingController name;
   final TextEditingController size;
   final TextEditingController note;
   final IconDraft draft;
+
+  /// So the greyed save button can put the cursor where the missing name goes —
+  /// see [showAppSheet]'s `requiredFocus`.
+  final nameFocus = FocusNode();
 
   /// Stepped rather than typed: a quantity is a small number, and a keyboard for
   /// it costs more taps than the two buttons do.
@@ -669,11 +758,15 @@ class _ItemForm {
     name.dispose();
     size.dispose();
     note.dispose();
+    nameFocus.dispose();
   }
 }
 
 class _ItemSheetBody extends ConsumerStatefulWidget {
-  final BoxItem item;
+  /// Null while an item is being created — there is no row to write a picture
+  /// to and nothing to delete.
+  final BoxItem? item;
+
   final _ItemForm form;
 
   const _ItemSheetBody({required this.item, required this.form});
@@ -700,37 +793,48 @@ class _ItemSheetBodyState extends ConsumerState<_ItemSheetBody> {
   /// Takes the state rather than reading the provider so it can be used inside
   /// a `select`, which is where the sheet needs it: the picture row has to
   /// rebuild when the upload lands.
-  BoxItem _itemIn(BoxScreenState state) {
+  BoxItem? _itemIn(BoxScreenState state) {
     final item = widget.item;
+    if (item == null) return null;
     for (final i in state.itemsFor(item.boxId)) {
       if (i.id == item.id) return i;
     }
     return item;
   }
 
-  /// The picture row's menu. Unlike the box sheet's, every branch here writes
-  /// straight away: an item is only ever *edited* from a sheet — it is created
-  /// by typing its name into the row at the bottom of the box — so there is
-  /// always a row to point at the object.
-  Future<void> _pictureMenu(String? iconKey, String name) async {
+  /// The symbol row's tap — the picker, and nothing asked first. The item's
+  /// photograph is untouched: see [_BoxSheetBodyState._pickSymbol].
+  Future<void> _pickSymbol(String? iconKey, String name) async {
+    final picked = await showIconPicker(context, selected: iconKey, name: name);
+    if (picked == null || !mounted) return;
+    setState(() => widget.form.draft.picked = picked);
+  }
+
+  /// The photo row's menu, with the same two write moments the box sheet has
+  /// and for the same reason: an item that already exists takes the photograph
+  /// straight away — the user has watched it appear and does not expect a
+  /// Sichern to be what keeps it — while one being created has no row for
+  /// `photo_path` to sit in, so its picture waits on the draft until the insert
+  /// comes back.
+  Future<void> _photoMenu() async {
     final item = _itemIn(ref.read(boxProvider));
     final notifier = ref.read(boxProvider.notifier);
-    final choice = await showPictureMenu(context, anchorKey: _pictureAnchor, hasPhoto: item.photoPath != null);
+    final hasPhoto = widget.form.draft.photoFile != null || item?.photoPath != null;
+    final choice = await showPictureMenu(context, anchorKey: _pictureAnchor, hasPhoto: hasPhoto);
     if (choice == null || !mounted) return;
 
     switch (choice) {
-      case PictureChoice.symbol:
-        final picked = await showIconPicker(context, selected: iconKey, name: name);
-        if (picked == null || !mounted) return;
-        setState(() => widget.form.draft.picked = picked);
-        // One picture per item: choosing a symbol is choosing it *instead*.
-        if (item.photoPath != null) await notifier.removeItemPhoto(item);
       case PictureChoice.remove:
-        await notifier.removeItemPhoto(item);
+        setState(() => widget.form.draft.photoFile = null);
+        if (item?.photoPath != null) await notifier.removeItemPhoto(item!);
       case PictureChoice.photo || PictureChoice.camera:
         final source = choice == PictureChoice.photo ? AttachmentSource.photos : AttachmentSource.camera;
         final picked = await pickAttachment(source, maxDimension: itemPhotoMaxDimension);
         if (picked == null || !picked.isImage || !mounted) return;
+        if (item == null) {
+          setState(() => widget.form.draft.photoFile = picked.path);
+          return;
+        }
         setState(() => _uploading = true);
         await notifier.setItemPhoto(item, File(picked.path));
         if (mounted) setState(() => _uploading = false);
@@ -742,8 +846,8 @@ class _ItemSheetBodyState extends ConsumerState<_ItemSheetBody> {
     final item = widget.item;
     final nameController = widget.form.name;
     final name = nameController.text;
-    final iconKey = widget.form.draft.picked ?? suggestIcon(name)?.key ?? item.iconKey;
-    final photoUrl = ref.watch(boxProvider.select((s) => s.photoUrl(_itemIn(s).photoPath)));
+    final iconKey = widget.form.draft.picked ?? suggestIcon(name)?.key ?? item?.iconKey;
+    final photoUrl = ref.watch(boxProvider.select((s) => s.photoUrl(_itemIn(s)?.photoPath)));
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -756,6 +860,13 @@ class _ItemSheetBodyState extends ConsumerState<_ItemSheetBody> {
                   Expanded(
                     child: TextField(
                       controller: nameController,
+                      focusNode: widget.form.nameFocus,
+                      // A new item opens on the keyboard: the name is the first
+                      // thing to fill in and everything else on the sheet is
+                      // optional. An edit sheet keeps it down — it is opened to
+                      // change the picture or the Anzahl far more often than
+                      // the name. Same rule as the list sheet.
+                      autofocus: item == null,
                       textInputAction: TextInputAction.next,
                       style: AppText.inputTitle,
                       decoration: InputDecoration(border: InputBorder.none, hintText: L.s.itemName, isDense: true),
@@ -776,11 +887,16 @@ class _ItemSheetBodyState extends ConsumerState<_ItemSheetBody> {
             IconFieldRow(
               iconKey: iconKey,
               suggested: widget.form.draft.picked == null,
-              photoUrl: photoUrl,
               fallbackIcon: AppIcons.clipboardText,
+              onTap: () => _pickSymbol(iconKey, name),
+            ),
+            CardDivider(),
+            PhotoFieldRow(
+              photoUrl: photoUrl,
+              photoFile: widget.form.draft.photoFile,
               anchorKey: _pictureAnchor,
               uploading: _uploading,
-              onTap: () => _pictureMenu(iconKey, name),
+              onTap: _photoMenu,
             ),
             CardDivider(),
             Padding(
@@ -840,29 +956,31 @@ class _ItemSheetBodyState extends ConsumerState<_ItemSheetBody> {
             ),
           ],
         ),
-        const SizedBox(height: 14),
-        GestureDetector(
-          onTap: () async {
-            // Taken before the pop, like the Board sheet's own delete row: the
-            // sheet is on its way out, and the chip has to outlive it.
-            final confirm = confirmChipOf(context);
-            final notifier = ref.read(boxProvider.notifier);
-            Navigator.of(context).pop();
-            if (await notifier.removeItem(item) case final deleted?) {
-              confirm(L.s.itemDeleted, undo: () => notifier.restoreItem(deleted));
-            }
-          },
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(20), boxShadow: AppShadows.card),
-            alignment: Alignment.center,
-            child: Text(
-              L.s.deleteItem,
-              style: AppText.rowTitle.copyWith(color: AppColors.danger),
+        if (item != null) ...[
+          const SizedBox(height: 14),
+          GestureDetector(
+            onTap: () async {
+              // Taken before the pop, like the Board sheet's own delete row: the
+              // sheet is on its way out, and the chip has to outlive it.
+              final confirm = confirmChipOf(context);
+              final notifier = ref.read(boxProvider.notifier);
+              Navigator.of(context).pop();
+              if (await notifier.removeItem(item) case final deleted?) {
+                confirm(L.s.itemDeleted, undo: () => notifier.restoreItem(deleted));
+              }
+            },
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(20), boxShadow: AppShadows.card),
+              alignment: Alignment.center,
+              child: Text(
+                L.s.deleteItem,
+                style: AppText.rowTitle.copyWith(color: AppColors.danger),
+              ),
             ),
           ),
-        ),
+        ],
       ],
     );
   }
@@ -924,69 +1042,50 @@ class _QtyButton extends StatelessWidget {
   }
 }
 
-/// The "Artikel hinzufügen" line of a box, with the same live match the Listen
-/// field has: the circle on the left turns into the picture the item is about
-/// to get as soon as the name says what it is (`data/icon_suggestions.dart`).
-/// No grocery bias — a box holds a drill far more often than it holds milk.
-class _AddItemRow extends ConsumerStatefulWidget {
+/// The "Artikel hinzufügen" line of a box — a button, not a field.
+///
+/// **Nothing is typed here.** It used to take the name inline and file the item
+/// on submit, opening its sheet a keystroke later; the difference from the
+/// Listen row is that "Milch" on its own is a whole article, whereas an item in
+/// a box is a Größe, an Anzahl, a Notiz and above all a picture of the thing.
+/// Asking for one field and then showing the other four read as two steps for
+/// one action, and it wrote a row for a Bohrmaschine somebody was still
+/// thinking about. The tap now opens the sheet with everything on it at once,
+/// and the insert happens on Sichern — see [_openItemSheet].
+///
+/// The circle stays empty, and stays a circle. It previewed the matched picture
+/// once, which put a photograph of a drill inside what reads as a checkbox.
+class _AddItemRow extends ConsumerWidget {
   const _AddItemRow();
 
   @override
-  ConsumerState<_AddItemRow> createState() => _AddItemRowState();
-}
-
-class _AddItemRowState extends ConsumerState<_AddItemRow> {
-  final _controller = TextEditingController();
-  String _draft = '';
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _add(String text) {
-    ref.read(boxProvider.notifier).addItem(text);
-    _controller.clear();
-    setState(() => _draft = '');
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final preview = suggestIcon(_draft);
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 13),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 24,
-            height: 24,
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 160),
-              child: preview == null
-                  ? AppIcon(AppIcons.circle, key: ValueKey('empty'), size: 24, color: AppColors.idleRing)
-                  : IconTile(key: ValueKey(preview.key), iconKey: preview.key, size: 24, imageSize: 24, glyphSize: 15),
+  Widget build(BuildContext context, WidgetRef ref) {
+    return GestureDetector(
+      // Without this the row is only tappable where a glyph is actually
+      // painted — the words and the gaps around them fall through.
+      behavior: HitTestBehavior.opaque,
+      onTap: () => _openItemSheet(context, ref),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 13),
+        child: Row(
+          children: [
+            AppIcon(AppIcons.circle, size: 24, color: AppColors.idleRing),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                L.s.addItemPlaceholder,
+                style: AppText.inputTitle.copyWith(color: AppColors.mutedLight),
+              ),
             ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: TextField(
-              controller: _controller,
-              style: AppText.inputTitle,
-              decoration: InputDecoration(border: InputBorder.none, hintText: L.s.addItemPlaceholder, isDense: true),
-              textInputAction: TextInputAction.done,
-              onChanged: (v) => setState(() => _draft = v),
-              onSubmitted: _add,
+            Container(
+              width: 30,
+              height: 30,
+              decoration: BoxDecoration(color: AppColors.surfaceAlt, shape: BoxShape.circle),
+              alignment: Alignment.center,
+              child: AppIcon(AppIcons.scan, size: 16, color: AppColors.inkSecondary),
             ),
-          ),
-          Container(
-            width: 30,
-            height: 30,
-            decoration: BoxDecoration(color: AppColors.surfaceAlt, shape: BoxShape.circle),
-            alignment: Alignment.center,
-            child: AppIcon(AppIcons.scan, size: 16, color: AppColors.inkSecondary),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -998,9 +1097,8 @@ class _AddItemRowState extends ConsumerState<_AddItemRow> {
 class _BoxRow extends ConsumerWidget {
   final StorageBox box;
   final int itemCount;
-  final Color accent;
 
-  const _BoxRow({required this.box, required this.itemCount, required this.accent});
+  const _BoxRow({required this.box, required this.itemCount});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -1008,7 +1106,7 @@ class _BoxRow extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 15),
       child: Row(
         children: [
-          _BoxBadge(box: box, size: 44, iconSize: 20, accent: accent),
+          _BoxBadge(box: box, size: 44, iconSize: 20),
           const SizedBox(width: 13),
           Expanded(
             child: Column(

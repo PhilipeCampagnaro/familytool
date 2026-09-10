@@ -42,16 +42,10 @@ class ListSnapshot {
   /// docs/backend.md, "What the guest can never reach").
   final Set<String> guestListIds;
 
-  /// Item id → the files attached to it, in the order they were added. Empty
-  /// for the overwhelming majority of articles, which is why it is a sparse map
-  /// rather than a field on the item.
-  final Map<String, List<ItemAttachment>> attachmentsByItem;
-
   const ListSnapshot({
     required this.lists,
     required this.itemsByList,
     required this.guestListIds,
-    this.attachmentsByItem = const {},
   });
 
   static const empty = ListSnapshot(lists: [], itemsByList: {}, guestListIds: {});
@@ -78,7 +72,7 @@ class ListRepository {
       'id, family_id, name, icon_asset, kind, owner_id, visibility, position, '
       'event_calendar_id, event_uid, event_starts_at, created_at, updated_at';
   static const _itemColumns =
-      'id, list_id, text, sub, unit, icon_asset, assignee_id, done, done_by, done_at, position, created_by, created_at, updated_at';
+      'id, list_id, text, sub, unit, icon_asset, link_url, assignee_id, done, done_by, done_at, position, created_by, created_at, updated_at';
   static const _attachmentColumns = 'id, item_id, storage_path, name, is_image, created_at';
 
   String get _uid {
@@ -91,33 +85,38 @@ class ListRepository {
   // Read
   // -------------------------------------------------------------------------
 
-  /// Everything the Listen screen needs, in five unfiltered selects. Unfiltered
-  /// is the point — see the class doc.
+  /// Everything the Listen screen needs, in two waits rather than five.
+  /// Unfiltered is the point — see the class doc.
+  ///
+  /// The lists come first because their ids are what the other three reads are
+  /// narrowed to; those three know nothing about each other, so they go
+  /// together. Five round trips in a row was most of the time the screen spent
+  /// blank, and they were serial only because each was written under the last.
+  ///
+  /// The attachments are **not** here any more. They are the one part of the
+  /// screen nothing else depends on — an article whose photo hasn't arrived yet
+  /// still says what to buy — so they load after the articles are on screen
+  /// (see [ListNotifier.load]) rather than in front of them.
   Future<ListSnapshot> fetchAll() async {
     final listRows = await _db.from('lists').select(_listColumns).order('position').order('created_at');
     if (listRows.isEmpty) return ListSnapshot.empty;
 
     final ids = [for (final r in listRows) r['id'] as String];
 
-    // `list_shares` is readable exactly for the lists that are readable, so
-    // this needs no predicate of its own beyond narrowing to what we just read.
-    final shareRows = await _db.from('list_shares').select('list_id, user_id').inFilter('list_id', ids);
-
-    final itemRows = await _db
-        .from('list_items')
-        .select(_itemColumns)
-        .inFilter('list_id', ids)
-        .order('position')
-        .order('created_at');
-
-    // Own grants only — `guest_access_select` also returns the guests *on* my
-    // household's lists, which are somebody else's grants and would wrongly
-    // mark my own lists as foreign.
-    final grantRows = await _db
-        .from('guest_access')
-        .select('resource_id')
-        .eq('resource_kind', 'list')
-        .eq('user_id', _uid);
+    final results = await Future.wait([
+      // `list_shares` is readable exactly for the lists that are readable, so
+      // this needs no predicate of its own beyond narrowing to what we just
+      // read.
+      _db.from('list_shares').select('list_id, user_id').inFilter('list_id', ids),
+      _db.from('list_items').select(_itemColumns).inFilter('list_id', ids).order('position').order('created_at'),
+      // Own grants only — `guest_access_select` also returns the guests *on* my
+      // household's lists, which are somebody else's grants and would wrongly
+      // mark my own lists as foreign.
+      _db.from('guest_access').select('resource_id').eq('resource_kind', 'list').eq('user_id', _uid),
+    ]);
+    final shareRows = results[0];
+    final itemRows = results[1];
+    final grantRows = results[2];
 
     final sharedWith = <String, List<String>>{};
     for (final r in shareRows) {
@@ -136,20 +135,7 @@ class ListRepository {
       ],
       itemsByList: itemsByList,
       guestListIds: {for (final r in grantRows) r['resource_id'] as String},
-      // Deliberately not allowed to take the screen with it. Attachments are
-      // the one part of this snapshot nothing else depends on — an article
-      // whose photo failed to arrive still says what to buy — so a failure here
-      // costs thumbnails rather than the list.
-      attachmentsByItem: await _attachmentsOrNone([for (final r in itemRows) r['id'] as String]),
     );
-  }
-
-  Future<Map<String, List<ItemAttachment>>> _attachmentsOrNone(List<String> itemIds) async {
-    try {
-      return await fetchAttachments(itemIds);
-    } catch (_) {
-      return const {};
-    }
   }
 
   /// The files hanging off a screenful of articles, one statement for all of
@@ -341,6 +327,7 @@ class ListRepository {
     String? sub,
     String? unit,
     String? iconKey,
+    String? linkUrl,
     String? assigneeId,
     required int position,
   }) async {
@@ -351,6 +338,7 @@ class ListRepository {
       sub: sub,
       unit: unit,
       iconKey: iconKey,
+      linkUrl: linkUrl,
       assigneeId: assigneeId,
       createdBy: _uid,
       position: position,
@@ -370,6 +358,23 @@ class ListRepository {
     final row = await _db
         .from('list_items')
         .update({'text': text, 'sub': sub, 'icon_asset': iconKey})
+        .eq('id', itemId)
+        .select(_itemColumns)
+        .single();
+    return ShoppingListItem.fromMap(row);
+  }
+
+  /// The link on its own, or `null` to take it off again.
+  ///
+  /// Its own statement for the same reason [setUnit] is: the URL is pasted into
+  /// a sheet while the name and the count are typed into the row, and an edit
+  /// of one must not restate the other. `list_items_link_url_shape` is what
+  /// refuses a string that is not an http(s) URL — the client normalises first,
+  /// but the column is where that is actually true.
+  Future<ShoppingListItem> setLink(String itemId, String? url) async {
+    final row = await _db
+        .from('list_items')
+        .update({'link_url': url})
         .eq('id', itemId)
         .select(_itemColumns)
         .single();
