@@ -3,7 +3,55 @@
 Read this before changing calendar behavior. Files: `lib/screens/calendar_screen.dart`,
 `lib/state/calendar_state.dart`, `lib/data/calendar_data.dart` — read all three together.
 
-## Week view (`_WeekView` / `_WeekViewState`)
+## The two views are two tabs
+
+**The week view is the Home tab and the month grid is the Kalender tab**, and there is no toggle
+between them any more. They were one screen wearing two faces behind a segmented control in the
+month/year row; the face a household wants nearly every time it opens the app — today, its
+appointments, its to-dos — was the one hidden behind a control that had to be found and
+remembered. `CalendarScreenState.isWeek`, `setWeekView` and `setMonthView` are gone with it, and so
+is `_ViewToggleButton`.
+
+Both still live in this library and both still read `calendarProvider` whole, so the filter chips,
+the selected day and the to-do overlay are **one piece of state across two tabs**: narrowing to one
+person on Home narrows the month grid too. That is deliberate — a filter that meant two different
+things on two screens showing the same calendars is the thing worth avoiding.
+
+`StartScreen` mounts `CalendarWeekScreen`, the one public entry point, and passes the profile
+avatar as its `trailing` — Home's own business, not the calendar's, and the app's **only** way into
+Settings. `_MonthYearRow` keeps the row above the chips at a fixed 40 so both views'
+`_extraHeaderHeight` arithmetic still holds and the label doesn't sit at two different heights on
+two tabs.
+
+Three more things differ per tab, all of them parameters rather than a flag on the state:
+
+- **The title.** `_TitleRow.title` — "Kalender" over the grid, the Home tab's name over the week.
+- **The header's right-hand slot.** `_TitleRow.trailing` + `trailingWidth`, and it holds a
+  different thing on each: Kalender's `_CalendarHeaderActions` capsule (100 wide), Home's profile
+  avatar (52). Home carries **no header actions at all** — "Kalender verbinden" is a setup action
+  done a handful of times ever, and "neuer Termin" is something you do *to* the calendar rather
+  than something today asks of you; the only way to add an appointment from Home is the empty-day
+  state's own button. `_trailingSlot` is what the title clears at rest and is zero when the slot is
+  empty, while `_collapsedSideInset` stays 108 on both tabs — at t == 1 what matters is that the
+  two sides match, not that they are tight. Unlike `leading`, the slot is filled at every stage of
+  the collapse, which is what keeps the one way into Settings on screen while the header is
+  scrolled away.
+- **The label above the chips.** Kalender prints the visible month and crossfades it as that month
+  changes; Home prints `L.s.yourDay` ("Dein Tag") and never changes it. A grid of numbered squares
+  needs telling which month it is; a day strip is already a row of dates. The `_stripAnchor` that
+  used to drive that label — the leftmost visible day, deliberately not the selected one — is gone
+  with it, and the strip's scroll position now feeds only `_todayVisible`. **A household scrolling
+  the strip weeks out therefore has no month named anywhere on Home**; that was the trade.
+
+`CalendarWeekScreen` is a wrapper rather than its own screen because everything the week view draws
+— the strip cells, the agenda rows, the chips, the event sheet — is a `part` of this library, and
+moving one out to be importable would drag the rest with it.
+
+**Both tabs compact the nav bar** (`_compactingTabs` in `main.dart`), and the calendar's
+write-error listener now sits on `AppShell`: two always-mounted screens each running the same
+`ref.listen` would have shown every failed write twice.
+
+## Week view (`_WeekView` / `_WeekViewState`) — the Home tab
 
 Scrolling day strip + selected day's agenda list.
 
@@ -17,15 +65,40 @@ Scrolling day strip + selected day's agenda list.
   `_stripIndexOf`. `_stripItemExtent` is captured from the strip's `LayoutBuilder` and is what
   the offset↔index conversions depend on, so it must be set before `_revealDate` can work.
 - `_revealDate` scrolls a day into view **only** when the selection changed from outside the
-  strip (the "Heute" button) — never in reaction to the user's own scrolling.
-- The month/year header (`monthLabel`) follows `_stripAnchor`, the leftmost visible day, *not*
-  the selected day: on a freely-scrollable strip a header pinned to the selection would name a
-  month that's nowhere on screen. Wrapped in an `AnimatedSwitcher` keyed on its own text so it
-  crossfades as the visible month changes (same in the month view).
+  strip (the "Heute" button, and the first layout) — never in reaction to the user's own scrolling.
+  **It lands the day leftmost**, so today is the first cell and the six beside it are the days
+  still to come. It used to land third-from-left for context on both sides, which spent two of
+  seven cells on days that had already happened.
+- **A cell is the forecast, loose above, then the rounded tile holding the weekday letter, the day
+  number and the dots.** `_DayStripCell` carries the whole arithmetic as a comment; the bands
+  (`_weatherBand`, `_letterBand`, `_dotBand`) are fixed heights reserved whether or not there is
+  anything to put in them, because a strip whose cells changed height as the 16-day forecast
+  horizon ran out would ripple every time it was scrolled.
+- **The forecast and the weekday letter swapped places, and that swap is why the icon is legible.**
+  A Meteocon is a full-colour drawing with soft edges and several are pale — an overcast cloud, a
+  snow cloud — so on a near-white tile they stop reading long before they stop being drawn: at 20,
+  and worse at 16, they are smudges. A cell is a seventh of the screen, about 45 points, so an icon
+  *beside* a two-digit temperature can never exceed 24. Stacked it is bounded by height instead,
+  and height outside the tile costs the tile nothing. The letter is one glyph and fits the narrow
+  band the forecast left. The dots stay with the number: they are what is *in* the day, where the
+  forecast is about the day as a whole.
+- **`_weatherBand` is the sum of `_weatherIcon` and `_weatherTemp`, and `_DayWeather` puts the
+  temperature in a box of exactly `_weatherTemp`** rather than letting its column size itself.
+  `AppText.microLabel` sets no `height`, so its line box is whatever Poppins' metrics make it —
+  about 16 at 11.5pt — and a band guessed at the sum of two natural heights overflowed by two
+  pixels on every visible cell at once. Any new content in a band gets a slot in the same sum.
+- That reading is **the day's weather at home** (`WeatherState.daily` / `forDay`), not any
+  appointment's. A cell has to answer on a day with nothing planned, which is most of them. The
+  agenda rows underneath still carry each appointment's own reading at its own hour in its own
+  town, and the two disagreeing is correct. See the weather section of
+  [ported-features.md](ported-features.md).
+- The month/year label the strip used to carry is gone — Home prints "Dein Tag" — and `_stripAnchor`,
+  the leftmost-visible-day tracker that fed it, went with it. The strip's scroll position now
+  drives only `_todayVisible`.
 - "Heute" button visibility here tracks whether today is in the strip's visible range
   (`_todayVisible`), not whether the selected week contains it.
 
-## Month view (`_MonthView` → `_MonthBlock` → `_MonthCell`)
+## Month view (`_MonthView` → `_MonthBlock` → `_MonthCell`) — the Kalender tab
 
 Infinite bidirectional `CustomScrollView` anchored on the real "today" month via a `center`
 sliver key, so scrolling never runs out in either direction. Tapping a day toggles an inline
@@ -98,14 +171,14 @@ notice a filter change.
 the reason recorded below: UIKit's own menus are a near-opaque vibrant material, and real glass
 over the month grid let the day numbers read straight through the rows.
 
-**Both** views show the chip row at rest and collapse it into the same compact glass dropdown
+**Both** tabs show the chip row at rest and collapse it into the same compact glass dropdown
 (`_CalendarFilterButton`, opening `_FilterMenuRoute`) as the header scrolls away — the dropdown
 is *only* a collapsed-state stand-in, never shown alongside the chips. It lists the same accounts
 and indents each one's calendars underneath, so the one place a single calendar can be picked
 survives the header scrolling away. It's overlaid in
 `_TitleRow` via a `Stack` (not a `Row` child) so it can't push the expanded left-aligned title
 sideways, and fades in over the last 40% of the collapse (`_TitleRow._leadingOpacity`). Keep the
-two views' behaviour identical here.
+two tabs' behaviour identical here.
 
 **On iOS the list is UIKit's own menu, not that panel.** `_openMenu` builds the rows once and
 hands them to `showNativeMenu` (`lib/services/native_menu.dart`); `_FilterMenuRoute` below is what
@@ -188,8 +261,8 @@ The toggle survives the header collapsing: `_FilterMenuSurface` carries the same
 behind the same rule, and it toggles in place rather than popping the route (`_FilterMenuRow.onTap`).
 The system menu keeps that promise with `keepsOpen` — see above.
 
-Session state, like `isWeek` and `calendarFilter` — nothing on this screen is persisted, and one
-flag surviving a restart while the filter beside it did not would read as a bug.
+Session state, like `calendarFilter` — nothing on this screen is persisted, and one flag surviving
+a restart while the filter beside it did not would read as a bug.
 
 ## Header actions
 

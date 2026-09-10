@@ -93,7 +93,7 @@ class _MonthViewState extends ConsumerState<_MonthView> {
   }
 
   /// The collapsing part of the header: title (shrinking + centering via
-  /// [_TitleRow], same as the week view), with the month/year + toggle row
+  /// [_TitleRow], same as the week view), with the month/year row
   /// and the calendar chips fading away underneath as [_headerT] goes 0 (top
   /// of the grid) to 1 (scrolled in) — at which point the filter dropdown
   /// fades into the title row to stand in for the chips.
@@ -105,9 +105,11 @@ class _MonthViewState extends ConsumerState<_MonthView> {
         Padding(
           padding: const EdgeInsets.fromLTRB(AppSpacing.screenPad, 8, AppSpacing.screenPad, 0),
           child: _TitleRow(
+            title: L.s.calendarTitle,
             t: t,
-            onAdd: () => _openNewEventSheet(context, ref),
             leading: _CalendarFilterButton(state: state),
+            trailing: _CalendarHeaderActions(onAdd: () => _openNewEventSheet(context, ref)),
+            trailingWidth: _CalendarHeaderActions.width,
           ),
         ),
         SizedBox(
@@ -121,7 +123,7 @@ class _MonthViewState extends ConsumerState<_MonthView> {
                 opacity: (1 - t).clamp(0.0, 1.0),
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(AppSpacing.screenPad, 16, AppSpacing.screenPad, 16),
-                  child: _ToggleAndChipsRow(state: state, accent: accent, monthLabel: monthLabel),
+                  child: _MonthAndChipsRow(state: state, accent: accent, label: monthLabel),
                 ),
               ),
             ),

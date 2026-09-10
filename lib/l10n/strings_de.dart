@@ -196,8 +196,6 @@ class StringsDe extends AppStrings {
   @override
   String get navExpand => 'Navigation einblenden';
 
-  @override
-  String get startNotDesigned => 'Noch nicht gestaltet';
 
   // ---------------------------------------------------------------- board --
   @override
@@ -545,6 +543,8 @@ class StringsDe extends AppStrings {
   // ------------------------------------------------------------- calendar --
   @override
   String get calendarTitle => 'Kalender';
+  @override
+  String get yourDay => 'Dein Tag';
   @override
   String get all => 'Alle';
   @override
@@ -1463,51 +1463,4 @@ class StringsDe extends AppStrings {
   String get renameFamilyBody => 'Der Name steht auf dem Familien-Chip in Kalender und Board.';
   @override
   String get familyRenameFailed => 'Der Name konnte nicht geändert werden.';
-  @override
-  String get confirmLabBody =>
-      'Jede Form, in der die App „hat geklappt“ sagt — zum Vergleichen und Angleichen.';
-  @override
-  String get confirmLabSheetsGroup => 'Sheets und Seiten';
-  @override
-  String get confirmLabChipsGroup => 'Chips über der Navigation';
-  @override
-  String get confirmLabSampleName => 'Wocheneinkauf';
-  @override
-  String get confirmLabNameHint => 'Wie die Liste heißen soll.';
-  @override
-  String get confirmLabFlow => 'Anlegen, ganzer Weg';
-  @override
-  String get confirmLabFlowHint => 'Feld, Spinner, Haken — und der Griff läuft ab.';
-  @override
-  String get confirmLabBeat => 'Nur der Haken';
-  @override
-  String get confirmLabBeatHint => 'Der Beat allein, 1,1 Sekunden.';
-  @override
-  String get confirmLabCelebration => 'Konfetti mit Karte';
-  @override
-  String get confirmLabCelebrationHint => '🎉 statt Haken, Inhalt darunter, 3,2 Sekunden.';
-  @override
-  String get confirmLabWaiting => 'Wartend, mit Aktion';
-  @override
-  String get confirmLabWaitingHint => 'Läuft nicht ab — „Fertig“ schließt.';
-  @override
-  String get confirmLabFullPage => 'Ganze Seite';
-  @override
-  String get confirmLabFullPageHint => 'Konfetti, Lichtschein von oben, Akzent-Pille.';
-  @override
-  String get confirmLabChipConfirm => 'Bestätigung';
-  @override
-  String get confirmLabChipConfirmHint => 'Grüner Punkt, 1,9 Sekunden.';
-  @override
-  String get confirmLabChipUndo => 'Löschen mit Rückgängig';
-  @override
-  String get confirmLabChipUndoHint => 'Bleibt 5 Sekunden, damit die Hand hinkommt.';
-  @override
-  String get confirmLabChipError => 'Fehler';
-  @override
-  String get confirmLabChipErrorHint => 'Roter Punkt, kein Haptik-Feedback, 4 Sekunden.';
-  @override
-  String get confirmLabChipPending => 'Läuft noch';
-  @override
-  String get confirmLabChipPendingHint => 'Spinner, kein Timer, wird danach zum Haken.';
 }

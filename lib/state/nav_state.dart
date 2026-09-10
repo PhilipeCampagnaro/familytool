@@ -58,6 +58,10 @@ final navBarProvider = StateNotifierProvider<NavBarNotifier, NavBarState>((ref) 
 /// `main.dart` while Kalender's collapsing nav bar was the only thing that
 /// needed to know one; a link that opens a list or a task in another tab needs
 /// a name for the tab it is pointing at.
+/// Home, which is the calendar's week view — see `StartScreen`. Named for the
+/// same reason the others are: the shell has to know which tabs behave like the
+/// calendar, and an index literal in `main.dart` said nothing about which.
+const int homeTabIndex = 0;
 const int calendarTabIndex = 1;
 const int listsTabIndex = 2;
 const int boardTabIndex = 3;

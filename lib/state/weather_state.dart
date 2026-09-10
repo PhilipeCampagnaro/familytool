@@ -13,7 +13,18 @@ class WeatherState {
   /// same two facts the fetch used: where the event is, and when it is.
   final Map<String, WeatherReading> readings;
 
-  const WeatherState({this.readings = const {}});
+  /// One reading per day at the household's own town, keyed by
+  /// `CalendarScreenState.key`. What the week strip draws under each date.
+  ///
+  /// **A day, not an appointment**, which is why it is a second map rather than
+  /// more entries in [readings]: those are keyed on a place *and* an instant
+  /// because two appointments an hour apart in two towns genuinely differ. A
+  /// strip cell is asking a simpler question — what is that day like where we
+  /// live — and it has to have an answer on the days nothing is planned, which
+  /// is most of them.
+  final Map<String, WeatherReading> daily;
+
+  const WeatherState({this.readings = const {}, this.daily = const {}});
 
   /// The forecast to draw beside [event] on [day], or null — which is the
   /// normal answer for a past appointment, one beyond the forecast horizon, or
@@ -21,6 +32,12 @@ class WeatherState {
   /// locations either.
   WeatherReading? forEvent(CalendarEvent event, DateTime day) =>
       readings[eventWeatherKey(event, day)];
+
+  /// The day's own forecast at home, or null — for a past day, one past the
+  /// 16-day horizon (which is nearly every cell on a strip four years deep), or
+  /// a household with no address.
+  WeatherReading? forDay(DateTime day) =>
+      daily[CalendarScreenState.key(day.year, day.month, day.day)];
 }
 
 /// Puts the forecast beside every appointment that has one.
@@ -83,31 +100,34 @@ class WeatherNotifier extends StateNotifier<WeatherState> {
     final fresh = syncedAt != null && now.difference(syncedAt) < _resyncAfter;
     if (signature == _signature && fresh) return;
 
-    if (samples.isEmpty) {
+    // A town is enough on its own now: the week strip wants a reading on every
+    // day it draws, including the empty ones, so an appointment is no longer
+    // what makes a pass worth running.
+    if (samples.isEmpty && town == null) {
       _signature = signature;
       _syncedAt = now;
-      if (state.readings.isNotEmpty) state = const WeatherState();
+      if (state.readings.isNotEmpty || state.daily.isNotEmpty) state = const WeatherState();
       return;
     }
 
     _running = true;
     try {
-      final readings = await _resolve(samples, town);
+      final resolved = await _resolve(samples, town, now);
       if (!mounted) return;
       // A pass that resolved nothing at all is not recorded as done: it is
       // almost always the offline case, and the next refresh should retry
       // rather than sit on an empty answer for an hour.
-      if (readings.isNotEmpty) {
+      if (resolved.readings.isNotEmpty || resolved.daily.isNotEmpty) {
         _signature = signature;
         _syncedAt = now;
-        state = WeatherState(readings: readings);
+        state = resolved;
       }
     } finally {
       _running = false;
     }
   }
 
-  Future<Map<String, WeatherReading>> _resolve(List<_Sample> samples, String? town) async {
+  Future<WeatherState> _resolve(List<_Sample> samples, String? town, DateTime now) async {
     // The home point is resolved first and once: it is the fallback for every
     // event without a placeable location of its own, which is most of them.
     final home = town == null ? null : await _repo.geocode(town);
@@ -130,6 +150,12 @@ class WeatherNotifier extends StateNotifier<WeatherState> {
       return forecasts[key] = await _repo.hourly(point);
     }
 
+    // The strip's readings come out of the home forecast that is already in
+    // hand — the same series, sampled once a day instead of once an event — so
+    // a household with appointments pays nothing for them, and one with none
+    // pays a single geocode and a single fetch.
+    final daily = home == null ? const <String, WeatherReading>{} : _daily(await forecastAt(home), now);
+
     final readings = <String, WeatherReading>{};
     for (final sample in samples) {
       // A location the geocoder could not place falls back to home rather than
@@ -142,7 +168,26 @@ class WeatherNotifier extends StateNotifier<WeatherState> {
       final reading = forecast?.at(sample.at);
       if (reading != null) readings[sample.key] = reading;
     }
-    return readings;
+    return WeatherState(readings: readings, daily: daily);
+  }
+
+  /// One reading per day the forecast reaches, sampled at [dayForecastHour].
+  ///
+  /// From today rather than from the series' own first hour: `past_days=1` means
+  /// it starts yesterday, and a cell behind the strip's "Heute" is a day nobody
+  /// is planning. Days past the horizon simply get no entry — `HourlyForecast.at`
+  /// answers null outside its window rather than handing back the nearest hour
+  /// it happens to hold, so the loop can run past the end harmlessly.
+  Map<String, WeatherReading> _daily(HourlyForecast? forecast, DateTime now) {
+    if (forecast == null || forecast.isEmpty) return const {};
+    final out = <String, WeatherReading>{};
+    final start = _floor(now);
+    for (var i = 0; i < WeatherRepository.forecastHorizon.inDays; i++) {
+      final day = DateTime(start.year, start.month, start.day + i);
+      final reading = forecast.at(DateTime(day.year, day.month, day.day, dayForecastHour));
+      if (reading != null) out[CalendarScreenState.key(day.year, day.month, day.day)] = reading;
+    }
+    return out;
   }
 
   /// The (event, day) pairs that could carry a chip: inside the forecast

@@ -925,8 +925,6 @@ Non-obvious bits, each one a bug that shipped first:
     - On failure the calendar screen's `ref.listen` on `state.error` already puts an error chip up,
       so the pending chip is `dismiss`ed rather than turned red. Two chips saying the same thing is
       one too many.
-    - `confirmation_lab.dart` has a row that fakes both stages, because otherwise the only way to
-      review the animation is to create appointments in somebody's real calendar.
   - A chip only appears on a `true` from the notifier, which is why the create/update calls return
     `Future<bool>` and every delete returns its snapshot-or-null — `Future<DeletedList?>`,
     `Future<DeletedBox?>`, `Future<DeletedListItem?>`, `Future<DeletedBoxItem?>` (see the undo note

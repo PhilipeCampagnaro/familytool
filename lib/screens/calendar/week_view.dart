@@ -8,7 +8,14 @@ class _WeekView extends ConsumerStatefulWidget {
   final CalendarScreenState state;
   final Color accent;
 
-  const _WeekView({required this.state, required this.accent});
+  /// The name of the screen this is mounted on — Home, since the Kalender tab
+  /// is the month grid now. See [CalendarWeekScreen].
+  final String title;
+
+  /// Rides opposite the month/year label, where the view toggle used to be.
+  final Widget? trailing;
+
+  const _WeekView({required this.state, required this.accent, required this.title, this.trailing});
 
   @override
   ConsumerState<_WeekView> createState() => _WeekViewState();
@@ -41,14 +48,13 @@ class _WeekViewState extends ConsumerState<_WeekView> {
   /// and it depends on the available width.
   double _stripItemExtent = 0;
 
-  /// Leftmost fully-visible day, driven by the strip's scroll position. The
-  /// month/year header follows this rather than the selected day: on a strip
-  /// you can scroll freely without selecting, a header pinned to the selection
-  /// would sit there naming a month that's nowhere on screen.
-  DateTime _stripAnchor = calToday();
-
   /// Whether today is currently on screen in the strip — drives the "Heute"
-  /// button, which now tracks the strip rather than the selected week.
+  /// button, which tracks the strip rather than the selected week.
+  ///
+  /// The only thing the strip's scroll position still feeds. It used to drive a
+  /// month/year label above the chips as well, which followed the leftmost
+  /// visible day rather than the selection; that label is "Dein Tag" now and
+  /// names no month, so the anchor it needed went with it.
   bool _todayVisible = true;
 
   CalSelectedDay? _lastSelected;
@@ -69,14 +75,10 @@ class _WeekViewState extends ConsumerState<_WeekView> {
   void _onStripScroll() {
     if (_stripItemExtent <= 0 || !_stripController.hasClients) return;
     final firstIndex = (_stripController.offset / _stripItemExtent).round().clamp(0, _stripDayCount - 1);
-    final anchor = _stripDate(firstIndex);
     final todayIndex = _stripIndexOf(calToday());
     final todayVisible = todayIndex >= firstIndex && todayIndex < firstIndex + 7;
-    if (anchor != _stripAnchor || todayVisible != _todayVisible) {
-      setState(() {
-        _stripAnchor = anchor;
-        _todayVisible = todayVisible;
-      });
+    if (todayVisible != _todayVisible) {
+      setState(() => _todayVisible = todayVisible);
     }
   }
 
@@ -89,8 +91,11 @@ class _WeekViewState extends ConsumerState<_WeekView> {
     final index = _stripIndexOf(date);
     final firstIndex = (_stripController.offset / _stripItemExtent).round();
     if (index >= firstIndex && index < firstIndex + 7) return;
-    // Land the day third-from-left so there's context on both sides of it.
-    final target = ((index - 2) * _stripItemExtent).clamp(0.0, _stripController.position.maxScrollExtent);
+    // Land the day **first**, so "Heute" and the day the app opens on are the
+    // leftmost cell and the six the strip shows beside it are the days still to
+    // come. It used to land third-from-left for context on both sides, which
+    // spent two of seven cells on days that had already happened.
+    final target = (index * _stripItemExtent).clamp(0.0, _stripController.position.maxScrollExtent);
     if (animate) {
       _stripController.animateTo(target, duration: const Duration(milliseconds: 420), curve: Curves.easeOutCubic);
     } else {
@@ -121,12 +126,12 @@ class _WeekViewState extends ConsumerState<_WeekView> {
   // the glass buttons instead of butting straight against them.
   static const _collapsedGap = 14.0;
   static const _collapsedHeaderHeight = 48.0 + _collapsedGap;
-  // 16 top + 40 toggle row + 14 + 44 chip row + 12 + the strip + 4 bottom,
+  // 16 top + 40 month row + 14 + 44 chip row + 12 + the strip + 4 bottom,
   // rounded up so a font-metric wobble leaves slack rather than clipping.
-  static const _extraHeaderHeight = 244.0;
+  static const _extraHeaderHeight = 286.0;
   static const _expandedHeaderHeight = _collapsedHeaderHeight + _extraHeaderHeight;
 
-  Widget _buildHeader(BuildContext context, double t, CalendarScreenState state, Color accent, String monthLabel) {
+  Widget _buildHeader(BuildContext context, double t, CalendarScreenState state, Color accent, String label) {
     // Frosted, not transparent and not solid: NestedScrollView's body isn't
     // clipped to below the pinned header — the gray agenda keeps sliding up
     // until its top hits the screen's — so a see-through header had the agenda's
@@ -147,8 +152,12 @@ class _WeekViewState extends ConsumerState<_WeekView> {
               padding: const EdgeInsets.fromLTRB(AppSpacing.screenPad, 8, AppSpacing.screenPad, 0),
               child: _TitleRow(
                 t: t,
-                onAdd: () => _openNewEventSheet(context, ref),
+                title: widget.title,
                 leading: _CalendarFilterButton(state: state),
+                // The profile avatar, where Kalender puts its actions capsule.
+                // Home has no header actions at all — see [_TitleRow.trailing].
+                trailing: widget.trailing,
+                trailingWidth: _avatarSlot,
               ),
             ),
             SizedBox(
@@ -164,7 +173,7 @@ class _WeekViewState extends ConsumerState<_WeekView> {
                       children: [
                         Padding(
                           padding: const EdgeInsets.fromLTRB(AppSpacing.screenPad, 16, AppSpacing.screenPad, 0),
-                          child: _ToggleAndChipsRow(state: state, accent: accent, monthLabel: monthLabel),
+                          child: _MonthAndChipsRow(state: state, accent: accent, label: label),
                         ),
                         Padding(
                           // Only the left edge is inset: the strip runs to the
@@ -190,8 +199,13 @@ class _WeekViewState extends ConsumerState<_WeekView> {
     );
   }
 
-  // Weekday letter + gap + the rounded day tile (dots, gap, 34pt day circle).
-  static const _stripHeight = 110.0;
+  /// The 40pt profile circle plus the gap the title keeps from it — what
+  /// [_TitleRow.trailingWidth] wants for Home's own trailing widget.
+  static const _avatarSlot = 52.0;
+
+  // The forecast + gap + the rounded day tile (weekday letter, 34pt day
+  // circle, dots) — see the arithmetic on [_DayStripCell].
+  static const _stripHeight = 152.0;
 
   Widget _buildDayStrip(CalendarScreenState state, Color accent) {
     return LayoutBuilder(
@@ -251,9 +265,6 @@ class _WeekViewState extends ConsumerState<_WeekView> {
     // among the appointments. See [_agendaEntries].
     final entries = _agendaEntries(events, todos);
     final headingText = _dayHeading(selDate);
-    // The header names whatever month the strip is actually showing, not the
-    // selected day's — see _stripAnchor.
-    final monthLabel = L.s.monthYear(_stripAnchor.month, _stripAnchor.year);
     final holiday = ref.watch(germanHolidaysProvider).on(sel.y, sel.m, sel.d);
 
     // A selection made outside the strip (the "Heute" button) has to be
@@ -276,7 +287,7 @@ class _WeekViewState extends ConsumerState<_WeekView> {
               delegate: CollapsingSliverHeaderDelegate(
                 expandedHeight: _expandedHeaderHeight,
                 collapsedHeight: _collapsedHeaderHeight,
-                builder: (context, t) => _buildHeader(context, t, state, accent, monthLabel),
+                builder: (context, t) => _buildHeader(context, t, state, accent, L.s.yourDay),
               ),
             ),
           ],
@@ -417,6 +428,52 @@ class _AgendaGrayBody extends StatelessWidget {
 }
 
 class _DayStripCell extends ConsumerWidget {
+  // A cell is three stacked pieces: the forecast, loose above; the rounded
+  // tile; and inside that the weekday letter, the day number and the dots.
+  //
+  //   _weatherBand 48  ( _weatherIcon 30 over _weatherTemp 18 )
+  //   _weatherGap   8
+  //   tile          92  ( 8 + _letterBand 20 + 6 + circle 34 + 8 + _dotBand 8 + 8 )
+  //   ---------------
+  //                148, and _stripHeight leaves a little over it.
+
+  /// The forecast, and it sits **outside the tile**, where the weekday letter
+  /// used to.
+  ///
+  /// The two swapped places, and the swap is what makes the icon legible. A
+  /// Meteocon is a full-colour drawing with soft edges, and several of them are
+  /// pale — an overcast cloud, a snow cloud — so on a near-white tile they stop
+  /// reading long before they stop being drawn: at 20, and worse at 16, they
+  /// are smudges. A cell is a seventh of the screen, about 45 points, so an
+  /// icon beside a two-digit temperature can never exceed 24; stacked, it is
+  /// bounded by height instead, and height outside the tile costs the tile
+  /// nothing. The letter is one glyph and fits the narrow band it left behind.
+  ///
+  /// Size was only ever half of it — the cloud art itself measured 1.09:1
+  /// against this ground until it was deepened; see [WeatherReading.iconAsset].
+  ///
+  /// Reserved whether or not there is a forecast: a strip whose cells changed
+  /// height as the 16-day horizon ran out would ripple every time it was
+  /// scrolled. [_DayWeather] splits it into exactly these two parts rather than
+  /// letting its column size itself — `AppText.microLabel` sets no `height`, so
+  /// its line box is whatever Poppins' metrics make it, about 16 at 11.5pt, and
+  /// a band guessed at the sum of two natural heights overflowed every visible
+  /// cell at once.
+  static const _weatherBand = _weatherIcon + _weatherTemp;
+  static const _weatherIcon = 30.0;
+  static const _weatherTemp = 18.0;
+  static const _weatherGap = 8.0;
+
+  /// The weekday letter, now the tile's top band. Sized for
+  /// `AppText.rowTitle`'s own line box at 15pt rather than left to it, so the
+  /// day numbers below line up across cells whatever the font does.
+  static const _letterBand = 20.0;
+
+  /// The bottom band, where the calendars' dots and the to-do ring sit. They
+  /// stay with the number: the dots are what is *in* the day, where the
+  /// forecast is about the day as a whole and now sits above the tile entirely.
+  static const _dotBand = 8.0;
+
   final DateTime date;
   final String letter;
   final CalendarScreenState state;
@@ -448,15 +505,24 @@ class _DayStripCell extends ConsumerWidget {
       onTap: () => ref.read(calendarProvider.notifier).selectDay(date.year, date.month, date.day),
       child: Column(
         children: [
-          Text(letter, style: AppText.rowTitle.copyWith(color: isSel ? AppColors.ink : AppColors.muted)),
-          const SizedBox(height: 9),
+          SizedBox(height: _weatherBand, child: _DayWeather(date: date)),
+          const SizedBox(height: _weatherGap),
           Container(
-            padding: const EdgeInsets.fromLTRB(0, 12, 0, 8),
+            padding: const EdgeInsets.fromLTRB(0, 8, 0, 8),
             decoration: BoxDecoration(color: isSel ? tint(accent, .9) : AppColors.screenBg, borderRadius: BorderRadius.circular(22)),
             child: Column(
               children: [
                 SizedBox(
-                  height: 8,
+                  height: _letterBand,
+                  child: Center(
+                    child: Text(letter, style: AppText.rowTitle.copyWith(color: isSel ? AppColors.ink : AppColors.muted)),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                DaySelectorCircle(day: date.day, selected: isSel, today: today, highlight: highlight, accent: accent),
+                const SizedBox(height: 8),
+                SizedBox(
+                  height: _dotBand,
                   child: Center(
                     child: EventDots(
                       colors: dots,
@@ -466,13 +532,60 @@ class _DayStripCell extends ConsumerWidget {
                     ),
                   ),
                 ),
-                const SizedBox(height: 14),
-                DaySelectorCircle(day: date.day, selected: isSel, today: today, highlight: highlight, accent: accent),
               ],
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+/// The forecast above a day's tile in the strip: the condition, drawn, and the
+/// temperature under it.
+///
+/// **The day's weather at home, not an appointment's.** A cell is asking what
+/// that day is like where the family lives, which it has to be able to answer
+/// on a day with nothing planned — see [WeatherState.daily]. The agenda rows
+/// below still carry each appointment's own reading at its own hour and in its
+/// own town, and the two disagreeing is correct rather than a bug: a swimming
+/// lesson two towns over genuinely has different weather.
+///
+/// Empty on every day outside the 16-day horizon, which on a strip four years
+/// deep is nearly all of them. That is the same bargain the rest of the feature
+/// makes — no reading is no drawing, never an error — and it is why the band
+/// keeps its height either way.
+///
+/// Stacked, not side by side: a cell is a seventh of the screen and an icon
+/// beside a two-digit temperature caps the icon at 24, which is below the size
+/// these drawings need to read. See [_DayStripCell._weatherBand].
+///
+/// The temperature is [AppText.microLabel], the smallest type in the app, in a
+/// box of exactly [_DayStripCell._weatherTemp] — so the column is the band's
+/// height by construction rather than by adding up two natural heights and
+/// hoping.
+class _DayWeather extends ConsumerWidget {
+  final DateTime date;
+
+  const _DayWeather({required this.date});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final reading = ref.watch(weatherProvider).forDay(date);
+    if (reading == null) return const SizedBox.shrink();
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SvgPicture.asset(
+          reading.iconAsset,
+          width: _DayStripCell._weatherIcon,
+          height: _DayStripCell._weatherIcon,
+        ),
+        SizedBox(
+          height: _DayStripCell._weatherTemp,
+          child: Center(child: Text(reading.temperatureLabel, maxLines: 1, style: AppText.microLabel)),
+        ),
+      ],
     );
   }
 }

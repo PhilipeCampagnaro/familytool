@@ -25,7 +25,6 @@ class CalSelectedDay {
 }
 
 class CalendarScreenState {
-  final bool isWeek;
   final CalSelectedDay selected;
   final bool monthDetailExpanded;
 
@@ -68,7 +67,7 @@ class CalendarScreenState {
   /// to-do he is not assigned to would be the row quietly changing what it
   /// means. Every to-do the reader may see is either shown or not.
   ///
-  /// Session state, like [isWeek] and [calendarFilter] — nothing on this screen
+  /// Session state, like [calendarFilter] — nothing on this screen
   /// is persisted, and one flag that survived a restart while the filter beside
   /// it did not would read as a bug.
   final bool showTasks;
@@ -89,7 +88,6 @@ class CalendarScreenState {
   final DateTime now;
 
   CalendarScreenState({
-    this.isWeek = true,
     CalSelectedDay? selected,
     this.monthDetailExpanded = false,
     this.calendarFilter,
@@ -112,7 +110,6 @@ class CalendarScreenState {
   }
 
   CalendarScreenState copyWith({
-    bool? isWeek,
     CalSelectedDay? selected,
     bool? monthDetailExpanded,
     Set<String>? calendarFilter,
@@ -131,7 +128,6 @@ class CalendarScreenState {
     DateTime? now,
   }) {
     return CalendarScreenState(
-      isWeek: isWeek ?? this.isWeek,
       selected: selected ?? this.selected,
       monthDetailExpanded: monthDetailExpanded ?? this.monthDetailExpanded,
       calendarFilter: clearCalendarFilter ? null : (calendarFilter ?? this.calendarFilter),
@@ -485,9 +481,6 @@ class CalendarNotifier extends StateNotifier<CalendarScreenState> {
   /// The to-do chip. Additive, so it neither reads nor clears
   /// [CalendarScreenState.calendarFilter] — see [CalendarScreenState.showTasks].
   void toggleTasks() => state = state.copyWith(showTasks: !state.showTasks);
-
-  void setWeekView() => state = state.copyWith(isWeek: true);
-  void setMonthView() => state = state.copyWith(isWeek: false);
 
   void selectDay(int y, int m, int d) {
     final same = state.selected.y == y && state.selected.m == m && state.selected.d == d;

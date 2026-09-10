@@ -12,6 +12,7 @@ import 'screens/onboarding_screen.dart';
 import 'screens/start_screen.dart';
 import 'services/supabase.dart';
 import 'state/auth_state.dart';
+import 'state/calendar_state.dart';
 import 'state/family_state.dart';
 import 'state/nav_state.dart';
 import 'state/settings_state.dart';
@@ -20,6 +21,7 @@ import 'theme/app_theme.dart';
 import 'theme/tokens.dart';
 import 'widgets/bottom_nav.dart';
 import 'widgets/empty_state.dart';
+import 'widgets/error_note.dart';
 import 'widgets/native_tab_bar.dart';
 
 Future<void> main() async {
@@ -185,7 +187,7 @@ class _NoHousehold extends ConsumerWidget {
 }
 
 /// Home is the landing tab — the app opens on the overview, not on Board.
-const _initialTab = 0;
+const _initialTab = homeTabIndex;
 
 /// One entry per [navTabs] entry, in the same order.
 ///
@@ -203,10 +205,14 @@ List<Widget> _buildScreens() => [
   BoxScreen(),
 ];
 
-/// Index of Kalender in [navTabs] — the one tab whose scrolling compacts the
-/// nav bar (see [navBarProvider]). Defined beside the other tab indices now
-/// that links between screens need to name one; see [calendarTabIndex].
-const _calendarTab = calendarTabIndex;
+/// The tabs whose scrolling compacts the nav bar (see [navBarProvider]).
+///
+/// Both halves of the calendar: Home is its week view and Kalender its month
+/// grid. They are the screens where the rows are wide, dense and read for a
+/// while, so the bar has the most to gain by getting out of the way — and the
+/// least to lose, since nothing on either is a step in a flow that needs
+/// another tab. See [calendarTabIndex] for why the indices have names at all.
+const _compactingTabs = {homeTabIndex, calendarTabIndex};
 
 class AppShell extends ConsumerStatefulWidget {
   const AppShell({super.key});
@@ -249,9 +255,9 @@ class _AppShellState extends ConsumerState<AppShell> with SingleTickerProviderSt
 
   Future<void> _navigateTo(int i) async {
     if (i == _index) return;
-    // A compacted bar is Kalender's business and must not follow the user out
-    // of it: reset here as well as gating on the index below, so the tab the
-    // bar reappears on is never a surprise.
+    // A compacted bar belongs to the tab that compacted it and must not follow
+    // the user out: reset here as well as gating on the index below, so the tab
+    // the bar reappears on is never a surprise.
     ref.read(navBarProvider.notifier).expand();
     await _controller.reverse();
     if (!mounted) return;
@@ -268,6 +274,22 @@ class _AppShellState extends ConsumerState<AppShell> with SingleTickerProviderSt
     ref.listen<TabJump?>(tabJumpProvider, (_, jump) {
       if (jump != null) _navigateTo(jump.tab);
     });
+    // A calendar write that didn't land is reported once and then forgotten, so
+    // the same message can appear again if the next attempt fails too. This
+    // matters more than anywhere else in the app: the event sheet's save button
+    // closes the sheet before the write to Google has finished, so without this
+    // a family would walk away believing an appointment is in their calendar
+    // when it never arrived.
+    //
+    // **The shell, not a screen.** It used to sit on `CalendarScreen`, which was
+    // the only place an event could be written from. Two tabs draw the calendar
+    // now and both are always mounted in the `IndexedStack`, so the same listener
+    // on each would have shown every failure twice.
+    ref.listen<String?>(calendarProvider.select((s) => s.error), (_, message) {
+      if (message == null) return;
+      showErrorSnack(context, message);
+      ref.read(calendarProvider.notifier).clearError();
+    });
     // The `Scaffold` resizes its body around the keyboard so text fields stay
     // visible, which would otherwise carry the floating nav bar up with it and
     // park it on top of the keyboard. iOS keeps the tab bar at the bottom and
@@ -275,9 +297,10 @@ class _AppShellState extends ConsumerState<AppShell> with SingleTickerProviderSt
     // `Offstage` rather than dropping it from the tree, so the native bar isn't
     // torn down and re-measured on every keystroke session.
     final keyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
-    // Only Kalender compacts the bar, and only while it is the tab on screen.
+    // Only the two calendar tabs compact the bar, and only while one of them
+    // is the tab on screen.
     final nav = ref.watch(navBarProvider);
-    final compact = nav.compact && _index == _calendarTab;
+    final compact = nav.compact && _compactingTabs.contains(_index);
     return Scaffold(
       body: Stack(
         children: [

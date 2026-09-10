@@ -82,6 +82,18 @@ class WeatherReading {
   /// Ten of Meteocons' 535 are vendored, one per line below; anything else the
   /// set offers needs no code, only the file and a line here.
   ///
+  /// **Our copies are recoloured, and a fresh one from upstream will look
+  /// broken.** Meteocons draws its cloud at `#F3F7FE` over `#E6EFFC` with an
+  /// `#E6EFFC` outline, which is art for a coloured card: against this app's own
+  /// `screenBg` it measures **1.09:1**, and on the week strip the overcast and
+  /// snow icons were invisible rather than small. The bodies are deepened to
+  /// `#CBDBF4`/`#A6C0E8` and the outline to `#6E96D0`, which carries the shape
+  /// at 3.03:1 on white and still reads at 5.75:1 on the dark surface — the one
+  /// pair of numbers that had to work at once, since the same file is drawn on
+  /// both. Fog's own lines went from `#E2E8F0` to `#8FA4C4` for the same reason.
+  /// The sun and the moon were already legible and are untouched. MIT permits
+  /// the edit; the licence stays beside the files.
+  ///
   /// Only the two clearest buckets have a night form: a rain cloud at 22:00 is
   /// still a rain cloud, but a sun is not.
   String get iconAsset => 'assets/weather/${switch (condition) {
@@ -238,8 +250,19 @@ class HourlyForecast {
 /// local mid-day on [day] — and because [day] is passed in rather than derived
 /// from the event, every day of a week-long Ferien block is sampled on its own
 /// day instead of all seven sharing Monday's forecast.
+/// The hour that stands for a whole day — an all-day event's reading, and the
+/// one the week strip draws under a date.
+///
+/// Early afternoon, because that is when a German day is what it is going to
+/// be: 07:00 is cold whatever happens later and 22:00 is dark whatever happened
+/// earlier, so neither describes the day somebody is deciding what to wear for.
+/// It is deliberately *not* "now" on today's cell — the cell says what the day
+/// is like, and the agenda rows underneath already carry the hour each
+/// appointment actually falls on.
+const int dayForecastHour = 13;
+
 DateTime eventSampleTime(CalendarEvent event, DateTime day) => event.allDay
-    ? DateTime(day.year, day.month, day.day, 13)
+    ? DateTime(day.year, day.month, day.day, dayForecastHour)
     : event.startsAt;
 
 /// The name of one reading: same place, same moment, same key.

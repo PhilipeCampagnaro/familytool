@@ -198,8 +198,6 @@ class StringsEn extends AppStrings {
   @override
   String get navExpand => 'Show navigation';
 
-  @override
-  String get startNotDesigned => 'Not designed yet';
 
   // ---------------------------------------------------------------- board --
   @override
@@ -543,6 +541,8 @@ class StringsEn extends AppStrings {
   // ------------------------------------------------------------- calendar --
   @override
   String get calendarTitle => 'Calendar';
+  @override
+  String get yourDay => 'Your day';
   @override
   String get all => 'All';
   @override
@@ -1456,50 +1456,4 @@ class StringsEn extends AppStrings {
   String get renameFamilyBody => 'The name appears on the family chip in Calendar and Board.';
   @override
   String get familyRenameFailed => 'The name could not be changed.';
-  @override
-  String get confirmLabBody => 'Every shape the app says "that worked" in, side by side.';
-  @override
-  String get confirmLabSheetsGroup => 'Sheets and pages';
-  @override
-  String get confirmLabChipsGroup => 'Chips above the navigation';
-  @override
-  String get confirmLabSampleName => 'Weekly shop';
-  @override
-  String get confirmLabNameHint => 'What the list should be called.';
-  @override
-  String get confirmLabFlow => 'Create, the whole way';
-  @override
-  String get confirmLabFlowHint => 'Field, spinner, check — and the handle drains.';
-  @override
-  String get confirmLabBeat => 'The check alone';
-  @override
-  String get confirmLabBeatHint => 'Just the beat, 1.1 seconds.';
-  @override
-  String get confirmLabCelebration => 'Confetti with a card';
-  @override
-  String get confirmLabCelebrationHint => '🎉 instead of the check, content below, 3.2 seconds.';
-  @override
-  String get confirmLabWaiting => 'Waiting, with an action';
-  @override
-  String get confirmLabWaitingHint => 'Never leaves on its own — "Done" closes it.';
-  @override
-  String get confirmLabFullPage => 'Full page';
-  @override
-  String get confirmLabFullPageHint => 'Confetti, glow from the top edge, accent pill.';
-  @override
-  String get confirmLabChipConfirm => 'Confirmation';
-  @override
-  String get confirmLabChipConfirmHint => 'Green dot, 1.9 seconds.';
-  @override
-  String get confirmLabChipUndo => 'Delete with undo';
-  @override
-  String get confirmLabChipUndoHint => 'Stays 5 seconds, long enough to reach for it.';
-  @override
-  String get confirmLabChipError => 'Failure';
-  @override
-  String get confirmLabChipErrorHint => 'Red dot, no haptic, 4 seconds.';
-  @override
-  String get confirmLabChipPending => 'In flight';
-  @override
-  String get confirmLabChipPendingHint => 'Spinner, no timer, settles into the tick.';
 }

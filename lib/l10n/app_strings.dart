@@ -129,8 +129,6 @@ abstract class AppStrings {
   /// left of the bar once the agenda is scrolled, and the way back to it.
   String get navExpand;
 
-  // ------------------------------------------------------------ start tab --
-  String get startNotDesigned;
 
   // ---------------------------------------------------------------- board --
   String get boardTitle;
@@ -455,6 +453,11 @@ abstract class AppStrings {
 
   // ------------------------------------------------------------- calendar --
   String get calendarTitle;
+
+  /// The label over Home's chip row, where Kalender prints the visible month.
+  /// Home is one day rather than a grid of them, so it names that instead — see
+  /// `_MonthYearRow`.
+  String get yourDay;
   String get all;
 
   /// The filter row's last chip, the one that lays the Board's to-dos over the
@@ -1083,35 +1086,4 @@ abstract class AppStrings {
   String get renameFamily;
   String get renameFamilyBody;
   String get familyRenameFailed;
-  // ------------------------------------------------ confirmation lab (Home) --
-  /// The Home tab has no design yet, so it carries the bench on which every
-  /// "that worked" surface can be put up side by side and made to agree. Every
-  /// string here is scaffolding and goes when Home gets its real content.
-  String get confirmLabBody;
-  String get confirmLabSheetsGroup;
-  String get confirmLabChipsGroup;
-
-  /// The stand-in subject the demos confirm — a shopping list with a name, so
-  /// the message line is doing the job it does in the app.
-  String get confirmLabSampleName;
-  String get confirmLabNameHint;
-
-  String get confirmLabFlow;
-  String get confirmLabFlowHint;
-  String get confirmLabBeat;
-  String get confirmLabBeatHint;
-  String get confirmLabCelebration;
-  String get confirmLabCelebrationHint;
-  String get confirmLabWaiting;
-  String get confirmLabWaitingHint;
-  String get confirmLabFullPage;
-  String get confirmLabFullPageHint;
-  String get confirmLabChipConfirm;
-  String get confirmLabChipConfirmHint;
-  String get confirmLabChipUndo;
-  String get confirmLabChipUndoHint;
-  String get confirmLabChipError;
-  String get confirmLabChipErrorHint;
-  String get confirmLabChipPending;
-  String get confirmLabChipPendingHint;
 }

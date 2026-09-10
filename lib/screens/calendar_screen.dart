@@ -30,7 +30,6 @@ import '../widgets/avatar.dart';
 import '../widgets/bottom_nav.dart';
 import '../widgets/check_off.dart';
 import '../widgets/day_circle.dart';
-import '../widgets/error_note.dart';
 import '../widgets/event_dots.dart';
 import '../widgets/floating_pill.dart';
 import '../widgets/glass.dart';
@@ -267,6 +266,18 @@ bool _isToday(int y, int m, int d) {
   return (year, month);
 }
 
+/// The Kalender tab: the month grid, and only that.
+///
+/// **The week view moved to Home** ([CalendarWeekScreen]) and the toggle that
+/// used to swap the two went with it. The pair were one screen wearing two
+/// faces, and the face a household wants nearly every time it opens the app —
+/// today, its appointments, its to-dos — was hidden behind a control that had
+/// to be found and remembered. Putting it on the tab the app opens on makes it
+/// the answer to "what is today" without a tap, and leaves this tab to the
+/// question a grid is actually good at: what does the month look like.
+///
+/// The two still share [calendarProvider] whole, filter chips and selected day
+/// included, so narrowing to one person on either is narrowing on both.
 class CalendarScreen extends ConsumerWidget {
   const CalendarScreen({super.key});
 
@@ -275,27 +286,50 @@ class CalendarScreen extends ConsumerWidget {
     final state = ref.watch(calendarProvider);
     final accent = Theme.of(context).colorScheme.primary;
 
-    // A write that didn't land is reported once and then forgotten, so the same
-    // message can appear again if the next attempt fails too. This matters more
-    // here than anywhere else in the app: the sheet's save button closes the
-    // sheet before the write to Google has finished, so without this a family
-    // would walk away believing an appointment is in their calendar when it
-    // never arrived.
-    ref.listen<String?>(calendarProvider.select((s) => s.error), (_, message) {
-      if (message == null) return;
-      showErrorSnack(context, message);
-      ref.read(calendarProvider.notifier).clearError();
-    });
+    return Scaffold(
+      backgroundColor: AppColors.surface,
+      body: SafeArea(
+        bottom: false,
+        // The view builds its own header (title + month row + chips) inside a
+        // scroll listener so it can shrink as the grid scrolls — see _MonthView.
+        child: _CompactNavOnScroll(
+          child: _MonthView(state: state, accent: accent),
+        ),
+      ),
+    );
+  }
+}
+
+/// The week view, as the Home tab — a scrolling day strip over the selected
+/// day's agenda.
+///
+/// A public wrapper rather than a screen of its own, because everything it
+/// draws is the calendar library's: the strip cells, the agenda rows, the
+/// filter chips and the event sheet are all `part` files here, and moving one
+/// of them out to be importable would drag the rest with it. Home mounts this;
+/// nothing else does.
+///
+/// [trailing] is the Home tab's own business rather than the calendar's — the
+/// profile avatar that is this app's only way into Settings. It takes the
+/// header's right-hand slot, where Kalender puts its actions capsule.
+class CalendarWeekScreen extends ConsumerWidget {
+  /// Shown at the right of the title row, at every stage of the collapse. Null
+  /// on any caller that isn't Home.
+  final Widget? trailing;
+
+  const CalendarWeekScreen({super.key, this.trailing});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(calendarProvider);
+    final accent = Theme.of(context).colorScheme.primary;
 
     return Scaffold(
       backgroundColor: AppColors.surface,
       body: SafeArea(
         bottom: false,
-        // Both views build their own header (title + month/toggle row) inside
-        // a scroll-collapsing sliver-or-listener, so it can shrink as their
-        // content scrolls — see _WeekView / _MonthView.
         child: _CompactNavOnScroll(
-          child: state.isWeek ? _WeekView(state: state, accent: accent) : _MonthView(state: state, accent: accent),
+          child: _WeekView(state: state, accent: accent, title: L.s.navHome, trailing: trailing),
         ),
       ),
     );
@@ -383,7 +417,7 @@ class _JumpToTodaySlot extends ConsumerWidget {
   }
 }
 
-/// The screen's "Kalender" title + add button — always visible. [t] (0 =
+/// The screen's title, and — on Kalender — its header actions. Always visible. [t] (0 =
 /// expanded, 1 = fully collapsed) morphs the title from a large left-aligned
 /// heading down to a small centered one, matching an iOS large-title nav bar
 /// collapse. Both views drive it continuously from scroll offset (the week
@@ -391,15 +425,43 @@ class _JumpToTodaySlot extends ConsumerWidget {
 /// `ScrollController`).
 class _TitleRow extends StatelessWidget {
   final double t;
-  final VoidCallback onAdd;
 
   /// Optional control pinned to the far left, alongside the title — the
   /// calendar-filter dropdown lives here, and only while collapsed: it stands
-  /// in for the [_ToggleAndChipsRow] chip row, which has scrolled away by
+  /// in for the [_MonthAndChipsRow] chip row, which has scrolled away by
   /// then. See [_leadingOpacity].
   final Widget? leading;
 
-  const _TitleRow({required this.t, required this.onAdd, this.leading});
+  /// The screen's own name. The two views are two tabs now, so this is
+  /// "Kalender" under the grid and the Home tab's name over the week — a
+  /// header that said "Kalender" on the tab the app opens on would be naming
+  /// the wrong thing.
+  final String title;
+
+  /// What rides at the right, and it is a different thing on each tab:
+  /// Kalender's [_CalendarHeaderActions] capsule, Home's profile avatar. Both
+  /// are always visible — unlike [leading], which only appears once the chips
+  /// it stands in for have gone.
+  ///
+  /// Home carries no header actions at all. Connecting an account is a setup
+  /// action done a handful of times ever, and filing a new appointment is
+  /// something you do *to* the calendar rather than something today asks of
+  /// you; the empty-day state still offers both where they are the only useful
+  /// move ([_EmptyDayActions]).
+  final Widget? trailing;
+
+  /// How much room [trailing] needs, gap included. Passed rather than measured
+  /// because the title's geometry depends on it — see [_trailingSlot] — and a
+  /// layout pass would arrive a frame after the number is wanted.
+  final double trailingWidth;
+
+  const _TitleRow({
+    required this.t,
+    required this.title,
+    this.leading,
+    this.trailing,
+    this.trailingWidth = 0,
+  });
 
   /// The filter dropdown duplicates the chip row, so it stays hidden until
   /// those chips are essentially gone — it fades in over the last 40% of the
@@ -409,14 +471,16 @@ class _TitleRow extends StatelessWidget {
   /// Horizontal breathing room reserved on both sides of the collapsed title.
   /// Both sides get the *same* inset at t == 1 even though the two flanking
   /// controls aren't the same width, because an asymmetric inset is exactly
-  /// what knocks a centered title off-center — so this is the wider of them
-  /// (the actions group) plus a gap.
+  /// what knocks a centered title off-center — so this is the widest of them
+  /// (Kalender's actions group) plus a gap. It stays that number on Home, where
+  /// the avatar is narrower: what matters at t == 1 is that the two sides
+  /// match, and a title this short has width to spare either way.
   static const _collapsedSideInset = 108.0;
 
-  /// What the title must clear on the right at rest: the actions group plus a
-  /// gap. Kept in step with [GlassIconGroup.width] for the two actions below —
-  /// 2 × 44 plus the capsule's end padding.
-  static const _actionsSlot = 100.0;
+  /// What the title must clear on the right at rest. Zero where there is
+  /// nothing there, so the expanded title runs the full width instead of
+  /// stopping short of a space nothing occupies.
+  double get _trailingSlot => trailing == null ? 0 : trailingWidth;
 
   @override
   Widget build(BuildContext context) {
@@ -434,45 +498,20 @@ class _TitleRow extends StatelessWidget {
             child: Padding(
               padding: EdgeInsets.only(
                 left: _collapsedSideInset * t,
-                right: _actionsSlot + (_collapsedSideInset - _actionsSlot) * t,
+                right: _trailingSlot + (_collapsedSideInset - _trailingSlot) * t,
               ),
               child: Align(
                 alignment: Alignment.lerp(Alignment.centerLeft, Alignment.center, t)!,
                 child: Text(
-                  L.s.calendarTitle,
+                  title,
                   maxLines: 1,
                   style: AppText.screenTitle.copyWith(fontSize: 26 - 9 * t),
                 ),
               ),
             ),
           ),
-          // Both header actions in one glass capsule, iOS 26-style: connecting
-          // a calendar is Kalender's own job, and burying it in Einstellungen
-          // made a household walk through three screens to add the school's
-          // link. It is a setup action, though, so it rides *beside* the daily
-          // one rather than taking a button's worth of header for itself.
-          Positioned(
-            right: 0,
-            top: 0,
-            bottom: 0,
-            child: Center(
-              child: GlassIconGroup(
-                actions: [
-                  GlassIconAction(
-                    // Not the empty state's `calendarPlus`: beside a bare plus,
-                    // two plus-bearing glyphs read as two ways to add the same
-                    // thing. A link is what "verbinden" means anyway.
-                    icon: AppIcons.link,
-                    label: L.s.connectCalendars,
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => CalendarConnectionsPage()),
-                    ),
-                  ),
-                  GlassIconAction(icon: AppIcons.plus, label: L.s.addEvent, onTap: onAdd),
-                ],
-              ),
-            ),
-          ),
+          if (trailing != null)
+            Positioned(right: 0, top: 0, bottom: 0, child: Center(child: trailing!)),
           // Overlaid rather than laid out inline for the same reason as the
           // title: reserving width for it would drag the expanded, left-aligned
           // title sideways even at t == 0, where this isn't visible at all.
@@ -492,6 +531,46 @@ class _TitleRow extends StatelessWidget {
   }
 }
 
+/// Kalender's two header actions in one glass capsule, iOS 26-style.
+///
+/// Connecting a calendar is Kalender's own job, and burying it in Einstellungen
+/// made a household walk through three screens to add the school's link. It is
+/// a setup action, though, so it rides *beside* the daily one rather than
+/// taking a button's worth of header for itself.
+///
+/// Its own widget since Home stopped showing it: what the header's right-hand
+/// side holds is now the tab's business, and [_TitleRow] takes whatever it is
+/// handed.
+class _CalendarHeaderActions extends StatelessWidget {
+  final VoidCallback onAdd;
+
+  const _CalendarHeaderActions({required this.onAdd});
+
+  /// [GlassIconGroup.width] for two actions — 2 × 44 plus the capsule's end
+  /// padding — plus the gap the title must keep from it. Handed to
+  /// [_TitleRow.trailingWidth]; change the number of actions and this moves.
+  static const width = 100.0;
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassIconGroup(
+      actions: [
+        GlassIconAction(
+          // Not the empty state's `calendarPlus`: beside a bare plus, two
+          // plus-bearing glyphs read as two ways to add the same thing. A link
+          // is what "verbinden" means anyway.
+          icon: AppIcons.link,
+          label: L.s.connectCalendars,
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => CalendarConnectionsPage()),
+          ),
+        ),
+        GlassIconAction(icon: AppIcons.plus, label: L.s.addEvent, onTap: onAdd),
+      ],
+    );
+  }
+}
+
 /// Identifies the filter chip row for tests. The day strip is a horizontal
 /// `ListView` too, so "the horizontal list in the header" isn't specific enough
 /// to find it by.
@@ -500,24 +579,23 @@ const calendarChipRowKey = ValueKey('calendarChipRow');
 /// Identifies the week view's scrolling day strip for tests.
 const calendarDayStripKey = ValueKey('calendarDayStrip');
 
-/// Month/year label + list-vs-grid toggle, and the calendar filter chip row —
-/// the part of the header that fades/shrinks away entirely as either view
-/// collapses, at which point [_CalendarFilterButton] fades into the title row
-/// to take the chips' place. Shared by both views so the two behave
-/// identically.
-class _ToggleAndChipsRow extends ConsumerWidget {
+/// Month/year label, and the calendar filter chip row — the part of the header
+/// that fades/shrinks away entirely as either view collapses, at which point
+/// [_CalendarFilterButton] fades into the title row to take the chips' place.
+/// Shared by both views so the two behave identically.
+class _MonthAndChipsRow extends ConsumerWidget {
   final CalendarScreenState state;
   final Color accent;
-  final String monthLabel;
+  final String label;
 
-  const _ToggleAndChipsRow({required this.state, required this.accent, required this.monthLabel});
+  const _MonthAndChipsRow({required this.state, required this.accent, required this.label});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _MonthYearToggleRow(state: state, accent: accent, monthLabel: monthLabel),
+        _MonthYearRow(label: label),
         const SizedBox(height: 14),
         SizedBox(
           // Tall enough for a 26pt face plus the chip's own padding and its
@@ -558,75 +636,56 @@ class _ToggleAndChipsRow extends ConsumerWidget {
   }
 }
 
-/// Month/year label (crossfading as the visible month changes) + the
-/// list-vs-grid view toggle — shared by the week view's full header
-/// ([_ToggleAndChipsRow]) and the month view's own collapsing header.
-class _MonthYearToggleRow extends StatelessWidget {
-  final CalendarScreenState state;
-  final Color accent;
-  final String monthLabel;
+/// The label above the chips. Shared by the week view's full header
+/// ([_MonthAndChipsRow]) and the month view's own collapsing header.
+///
+/// **The label says two different kinds of thing on the two tabs, on purpose.**
+/// Kalender prints the month the grid is showing and crossfades it as that
+/// month changes, because a grid of numbered squares needs telling which month
+/// it is. Home prints "Dein Tag" and never changes it: the day strip is already
+/// a row of dates, the agenda under it is one day's, and naming the month over
+/// a screen about today answered a question nobody was asking.
+///
+/// The list-vs-grid toggle used to sit opposite the label and is gone: the two
+/// views are two tabs now, so the control that swapped them would be a second,
+/// quieter way of doing what the nav bar already does. What is left of that
+/// side is [trailing], which only Home fills.
+///
+/// The row keeps its `spaceBetween` and its full width with nothing on the
+/// right, so the label sits where it always did rather than shifting on the one
+/// screen that has no trailing widget.
+class _MonthYearRow extends StatelessWidget {
+  final String label;
 
-  const _MonthYearToggleRow({required this.state, required this.accent, required this.monthLabel});
+  const _MonthYearRow({required this.label});
 
-  @override
-  Widget build(BuildContext context) {
-    return Consumer(
-      builder: (context, ref, _) {
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 260),
-              switchInCurve: Curves.easeOutCubic,
-              switchOutCurve: Curves.easeIn,
-              transitionBuilder: (child, animation) => FadeTransition(
-                opacity: animation,
-                child: SlideTransition(
-                  position: Tween<Offset>(begin: const Offset(0, 0.25), end: Offset.zero).animate(animation),
-                  child: child,
-                ),
-              ),
-              child: Text(monthLabel, key: ValueKey(monthLabel), style: AppText.sectionHeading),
-            ),
-            Container(
-              padding: const EdgeInsets.all(3),
-              decoration: BoxDecoration(color: AppColors.surfaceAlt, borderRadius: BorderRadius.circular(20)),
-              child: Row(
-                children: [
-                  _ViewToggleButton(icon: AppIcons.list, active: state.isWeek, accent: accent, onTap: () => ref.read(calendarProvider.notifier).setWeekView()),
-                  _ViewToggleButton(icon: AppIcons.layout, active: !state.isWeek, accent: accent, onTap: () => ref.read(calendarProvider.notifier).setMonthView()),
-                ],
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-}
-
-class _ViewToggleButton extends StatelessWidget {
-  final IconData icon;
-  final bool active;
-  final Color accent;
-  final VoidCallback onTap;
-
-  const _ViewToggleButton({required this.icon, required this.active, required this.accent, required this.onTap});
+  /// What the row occupied when it held the view toggle (3 + 34 + 3), kept as a
+  /// fixed height rather than let go: both views' `_extraHeaderHeight` are
+  /// arithmetic over this row, and a label that set its own height would move
+  /// the chips under it on one tab and not the other.
+  static const _height = 40.0;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 38,
-        height: 34,
-        decoration: BoxDecoration(
-          color: active ? AppColors.surface : Colors.transparent,
-          borderRadius: BorderRadius.circular(17),
-          boxShadow: active ? AppShadows.thumb : null,
+    return SizedBox(
+      height: _height,
+      child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 260),
+          switchInCurve: Curves.easeOutCubic,
+          switchOutCurve: Curves.easeIn,
+          transitionBuilder: (child, animation) => FadeTransition(
+            opacity: animation,
+            child: SlideTransition(
+              position: Tween<Offset>(begin: const Offset(0, 0.25), end: Offset.zero).animate(animation),
+              child: child,
+            ),
+          ),
+          child: Text(label, key: ValueKey(label), style: AppText.sectionHeading),
         ),
-        alignment: Alignment.center,
-        child: AppIcon(icon, size: 17, color: active ? accent : AppColors.muted),
+      ],
       ),
     );
   }

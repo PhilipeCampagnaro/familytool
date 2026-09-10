@@ -179,20 +179,39 @@ only, not a visual one.
 
 ## Weather API — **built**
 
-Per-event weather is live on the Kalender screen: the agenda row shows an icon + temperature
-beside the event, and the detail sheet shows a card with icon, temperature and condition. Nothing
-else in the app uses weather yet (the old app also had a "Your Day" header reading and an hourly
-strip — neither is ported, and the Start tab has no design).
+Weather appears in three places. **Per event**: the agenda row shows an icon + temperature beside
+the appointment, and the detail sheet a card with icon, temperature and condition — resolved at
+the event's own location and its own hour. **Per day**: each cell of Home's week strip carries the
+forecast for that day at the household's town, under the date. The old app's hourly strip is still
+not ported.
+
+The two are separate maps on `WeatherState` — `readings` keyed by
+`(place, instant)` and `daily` keyed by `'y-m-d'` — because they answer different questions. An
+event's reading is keyed on a place *and* a moment, since two appointments an hour apart in two
+towns genuinely differ; a strip cell asks what a day is like where the family lives, and needs an
+answer on the days nothing is planned. `daily` costs no extra request on a household with
+appointments: it is sampled out of the home forecast the event pass already fetched, once per day
+at `dayForecastHour` (13:00 — early afternoon is when a German day is what it is going to be).
+Outside the 16-day horizon there is simply no entry, and the strip reserves the space either way.
 
 | Piece | Where |
 |---|---|
 | Reading, WMO→condition→icon/skin, hourly parsing, sample time + key | [lib/models/weather.dart](../lib/models/weather.dart) |
-| The icons themselves (Meteocons, MIT) | [assets/weather/](../assets/weather/) |
+| The icons themselves (Meteocons, MIT, **recoloured** — see below) | [assets/weather/](../assets/weather/) |
 | `WeatherSkin` / `AppSkies` — the forecast card's wash and ink | [lib/theme/tokens.dart](../lib/theme/tokens.dart) |
 | Open-Meteo HTTP, geocode + forecast, in-flight de-dup | [lib/data/repositories/weather_repository.dart](../lib/data/repositories/weather_repository.dart) |
 | Device cache (places forever, forecasts 1 h) | [lib/services/weather_cache.dart](../lib/services/weather_cache.dart) |
 | `weatherProvider`, resolve pass, forecast window | [lib/state/weather_state.dart](../lib/state/weather_state.dart) |
 
+- **The vendored icons are not upstream's colours, and must not be re-copied from upstream.**
+  Meteocons draws its cloud at `#F3F7FE` over `#E6EFFC` with an `#E6EFFC` outline — art meant for a
+  coloured card. Against the app's own `screenBg` that is **1.09:1**: on Home's week strip the
+  overcast, drizzle, rain, fog and snow icons were invisible, which read as "the icons are too
+  small" and is not. Bodies are deepened to `#CBDBF4`/`#A6C0E8`, outlines to `#6E96D0`, fog's lines
+  from `#E2E8F0` to `#8FA4C4`. The outline is what carries the shape: 3.03:1 on white, and 5.75:1
+  on the dark surface, which is the pair that had to hold at once because one file is drawn on both
+  grounds. Sun and moon were already legible and are untouched. MIT permits it; the licence stays in
+  the folder. `WeatherReading.iconAsset` says the same thing beside the mapping.
 - **Provider: Open-Meteo** — free, no API key, and nothing in the payload that names the household,
   so it is called **straight from the app**. It is the one external service with no Edge Function
   in front of it, deliberately: a proxy would add a hop, a deploy and a place for household
