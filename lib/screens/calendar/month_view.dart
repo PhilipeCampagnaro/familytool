@@ -123,7 +123,11 @@ class _MonthViewState extends ConsumerState<_MonthView> {
                 opacity: (1 - t).clamp(0.0, 1.0),
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(AppSpacing.screenPad, 16, AppSpacing.screenPad, 16),
-                  child: _MonthAndChipsRow(state: state, accent: accent, label: monthLabel),
+                  child: _MonthAndChipsRow(
+                    state: state,
+                    accent: accent,
+                    label: Text(monthLabel, key: ValueKey(monthLabel), style: AppText.sectionHeading),
+                  ),
                 ),
               ),
             ),
@@ -343,7 +347,7 @@ class _MonthBlock extends ConsumerWidget {
                             children: [
                               Text(L.s.noEventsThisDay, style: AppText.body.copyWith(color: AppColors.inkTertiary)),
                               const SizedBox(height: 14),
-                              const _EmptyDayActions(),
+                              _EmptyDayActions(),
                             ],
                           ),
                         )

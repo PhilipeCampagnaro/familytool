@@ -73,6 +73,8 @@ class StringsDe extends AppStrings {
   @override
   String monthYear(int month, int year) => '${monthNames[month]} $year';
   @override
+  String dateRange(String from, String to) => '$from\u00A0– $to';
+  @override
   String dayRangeSameMonth(int fromDay, int toDay, int month) =>
       '$fromDay. – $toDay. ${monthNames[month]}';
   @override
@@ -572,6 +574,10 @@ class StringsDe extends AppStrings {
   @override
   String get repeatEnds => 'Endet';
   @override
+  String get repeatFollowsStart =>
+      'Die Wiederholung richtet sich nach dem Startdatum.';
+  @override
+  String repeatUntilDate(String date) => 'bis $date';
   String get repeats => 'Wiederholt sich';
   @override
   String get repeatNotEditable =>
@@ -680,7 +686,6 @@ class StringsDe extends AppStrings {
   @override
   String get eventBeingCreated => 'Termin wird angelegt …';
   @override
-  String get calendarsUpdating => 'Kalender werden aktualisiert …';
   @override
   String get eventCreated => 'Termin erstellt';
   @override
@@ -1286,6 +1291,8 @@ class StringsDe extends AppStrings {
   String get searchTermsCalendar =>
       'kalender termine verbindungen verbinden google outlook icloud iserv ferien abfall schule';
   @override
+      'apple pay wallet ausgaben geräte iphone kurzbefehle automation aktivieren entfernen';
+  @override
   String get searchTermsLanguage => 'sprache language deutsch english übersetzung';
   @override
   String get searchTermsDarkMode =>
@@ -1463,4 +1470,72 @@ class StringsDe extends AppStrings {
   String get renameFamilyBody => 'Der Name steht auf dem Familien-Chip in Kalender und Board.';
   @override
   String get familyRenameFailed => 'Der Name konnte nicht geändert werden.';
+
+  @override
+  String homeOverdue(int count) => '$count überfällig';
+  @override
+  String homeOpenToday(int count) => 'Noch $count offen';
+  @override
+  String homeTrackersLeft(int count) => 'Noch $count Tracker';
+  @override
+  String homeNextUp(String time, String title) => '$time · $title';
+  @override
+  String get homeAllDone => 'Alles erledigt';
+  @override
+  String homeDayEntries(int count) => count == 1 ? '1 Termin' : '$count Termine';
+  @override
+  String get homeDayEmpty => 'Keine Termine';
+  @override
+  String get homeThinking => 'Einen Moment';
+  @override
+  String get homeHintThinking => 'Dein Tag wird zusammengestellt';
+  @override
+  String get homeHintSetup => 'Richte Aporah für deine Familie ein';
+  @override
+  String get homeHintOverdue => 'To-dos, deren Datum vorbei ist';
+  @override
+  String get homeHintOpen => 'To-dos für heute';
+  @override
+  String get homeHintTrackers => 'Heute noch nicht abgehakt';
+  @override
+  String get homeHintNext => 'Als Nächstes im Kalender';
+  @override
+  String get homeHintDone => 'Heute ist nichts mehr offen';
+  @override
+  String get homeOpenSection => 'Offen';
+  @override
+  String get homeTrackerSection => 'Heute dran';
+  @override
+  String get homeListsSection => 'Listen';
+  @override
+  String get homeShowAll => 'Alle anzeigen';
+  @override
+  String homeMoreEntries(int count) => '$count weitere';
+  @override
+  String homeListOpenItems(int count) => '$count offen';
+
+  @override
+  String get firstStepsTitle => 'Erste Schritte';
+  @override
+  String firstStepsProgress(int done, int total) => '$done von $total';
+  @override
+  String get firstStepCalendar => 'Kalender verbinden';
+  @override
+  String get firstStepCalendarBody => 'Schule, Arbeit und Abfuhr an einem Ort.';
+  @override
+  String get firstStepFamily => 'Familie einladen';
+  @override
+  String get firstStepFamilyBody => 'Damit alle dasselbe sehen.';
+  @override
+  String get firstStepTodo => 'Erstes To-do';
+  @override
+  String get firstStepTodoBody => 'Etwas, das diese Woche erledigt sein muss.';
+  @override
+  String get firstStepTracker => 'Tracker anlegen';
+  @override
+  String get firstStepTrackerBody => 'Eine Gewohnheit, die ihr gemeinsam haltet.';
+  @override
+  String get firstStepList => 'Erste Liste';
+  @override
+  String get firstStepListBody => 'Der Einkauf ist ein guter Anfang.';
 }

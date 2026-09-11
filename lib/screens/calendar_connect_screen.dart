@@ -131,7 +131,7 @@ class CalendarConnectionsPage extends ConsumerWidget {
                           leading: _ProviderTile(connection.provider),
                           title: entry.name,
                           subtitle: lastSyncedLabel(connection.lastSyncedAt),
-                          trailing: const _CheckBadge(),
+                          trailing: _CheckBadge(),
                         ),
                   ]),
           ),
@@ -749,7 +749,7 @@ class _ConnectedRowState extends ConsumerState<_ConnectedRow> {
               if (attention)
                 AppIcon(AppIcons.warning, size: 18, color: AppColors.danger)
               else
-                const _CheckBadge(),
+                _CheckBadge(),
               const SizedBox(width: 4),
               RowMoreButton(onTap: _open),
             ],
@@ -2741,7 +2741,7 @@ class _PickStep extends StatelessWidget {
                 title: calendar.name,
                 subtitle: calendar.readOnly ? L.s.readOnlyCalendar : null,
                 trailing: flow.selected.contains(calendar.externalId)
-                    ? const _CheckBadge()
+                    ? _CheckBadge()
                     // Not const: the border below is a palette colour, and a
                     // const instance would keep painting the palette it was
                     // born with. `_CheckBadge` may stay const — it reads its
@@ -3109,7 +3109,7 @@ class _RegionStep extends ConsumerWidget {
                 SettingsRow(
                   title: entry.value,
                   trailing: flow.region == entry.key
-                      ? const _CheckBadge()
+                      ? _CheckBadge()
                       // Not const: the border is a palette colour, and a const
                       // instance would keep painting the palette it was born
                       // with.

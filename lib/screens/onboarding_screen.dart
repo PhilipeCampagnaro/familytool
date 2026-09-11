@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/calendar_connection.dart';
+import '../state/calendar_connections_state.dart';
 import '../state/family_state.dart';
 import '../state/onboarding_state.dart';
 import '../theme/tokens.dart';
@@ -579,6 +580,10 @@ class _AddressStep extends ConsumerStatefulWidget {
 class _AddressStepState extends ConsumerState<_AddressStep> {
   late final TextEditingController _addressController;
 
+  /// Whether the address field holds the keyboard. See the note on [action]
+  /// below for why "Weiter" cares.
+  bool _typing = false;
+
   @override
   void initState() {
     super.initState();
@@ -631,8 +636,19 @@ class _AddressStepState extends ConsumerState<_AddressStep> {
             // The lookup replaces the button with its spinner rather than
             // greying it out, same as it always did — the bar keeps the height
             // either way, so the step doesn't jump while an address resolves.
-            action: state.connecting ? _InlineBusy() : _StepButton(label: L.s.next, onTap: _continue),
+            //
+            // **"Weiter" steps aside while the address field has the
+            // keyboard**, for the same reason it does on the invitations: the
+            // button leaves the step, while the thing that submits an address
+            // is the suggestion row under the field. Held above the keyboard it
+            // covered both the field and the first suggestions — the one strip
+            // of screen the step still needed — so a control that does not act
+            // on what is being typed gives it back.
+            action: state.connecting ? _InlineBusy() : (_typing ? null : _StepButton(label: L.s.next, onTap: _continue)),
             bodyBuilder: (context, bottomInset) => SingleChildScrollView(
+              // A drag on the body drops the focus, which brings "Weiter" back
+              // for the address that was typed and never picked.
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               padding: EdgeInsets.fromLTRB(AppSpacing.screenPad, 4, AppSpacing.screenPad, bottomInset),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -643,7 +659,18 @@ class _AddressStepState extends ConsumerState<_AddressStep> {
                   const SizedBox(height: 8),
                   Text(L.s.onboardAddressBody, style: AppText.body),
                   const SizedBox(height: 20),
-                  SectionCard(radius: AppRadii.card, children: dividedRows(_addressRows(state), inset: true)),
+                  // Asks the focus tree rather than the field itself, exactly
+                  // as the invitations do: the card's rows come and go as the
+                  // lookup answers, and a rebuilt field must not read as a
+                  // moment with no focus in which the bar flickers back.
+                  Focus(
+                    canRequestFocus: false,
+                    skipTraversal: true,
+                    onFocusChange: (has) {
+                      if (has != _typing) setState(() => _typing = has);
+                    },
+                    child: SectionCard(radius: AppRadii.card, children: dividedRows(_addressRows(state), inset: true)),
+                  ),
                   if (state.found case final found?) ...[
                     const SizedBox(height: 16),
                     _FoundCalendars(found: found, state: state),
@@ -886,6 +913,16 @@ class _DoneStep extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(onboardingProvider);
+    // **The recap reports what happened, not what was ticked.** Both feeds are
+    // ticked from the moment the lookup finds them, and they were ticked before
+    // that too — a tour clicked straight through without an address used to
+    // finish by congratulating the household on two calendars nobody had
+    // connected. So the row asks the connect for its outcome, and the live
+    // connection list beside it, which is what answers for the household that
+    // already had the calendar when the tour was replayed from Settings.
+    final connections = ref.watch(calendarConnectionsProvider);
+    final hasTrash = state.trashConnected || connections.of(CalendarProvider.abfall).isNotEmpty;
+    final hasFerien = state.ferienConnected || connections.of(CalendarProvider.ferien).isNotEmpty;
 
     return PinnedActionLayout(
       fadeInto: AppColors.surface,
@@ -912,9 +949,9 @@ class _DoneStep extends ConsumerWidget {
                   children: [
                     _RecapRow(icon: AppIcons.userPlus, label: state.invites.isEmpty ? L.s.noInvitesSent : L.s.invitedCount(state.invites.length), done: state.invites.isNotEmpty),
                     CardDivider(),
-                    _RecapRow(icon: AppIcons.recycle, label: L.s.wasteCalendar, done: state.trashCalendar),
+                    _RecapRow(icon: AppIcons.recycle, label: L.s.wasteCalendar, done: hasTrash),
                     CardDivider(),
-                    _RecapRow(icon: AppIcons.graduationCap, label: L.s.holidayCalendar, done: state.ferienCalendar),
+                    _RecapRow(icon: AppIcons.graduationCap, label: L.s.holidayCalendar, done: hasFerien),
                   ],
                 ),
                 // The personal accounts, offered exactly once and never as a

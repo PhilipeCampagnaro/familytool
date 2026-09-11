@@ -14,7 +14,8 @@ Keep this file lean; detail lives in [docs/](docs/) and is only worth loading fo
 task:
 
 - [docs/kalender.md](docs/kalender.md) — Kalender internals (week/month view, filter chips,
-  collapsing headers, persistence, timeline, "Heute" button). **Read before changing calendar
+  collapsing headers, persistence, timeline, "Heute" button) **and Home**, which is the week view
+  plus four slots it fills. **Read before changing calendar or Home
   behavior.**
 - [docs/design-system.md](docs/design-system.md) — glass/frosted-header gotchas, shared widget
   index, animation conventions. Read before touching `lib/widgets/` or adding animations.

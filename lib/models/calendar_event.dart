@@ -494,6 +494,20 @@ class CalendarEvent {
     return out;
   }
 
+  /// The order events sit in within one day.
+  ///
+  /// Shared rather than written twice: the day map is built in
+  /// `CalendarRepository` from a provider read *and* patched in
+  /// `CalendarNotifier` by an optimistic write, and a provisional appointment
+  /// that sorted differently from a fetched one would visibly jump the moment
+  /// the read caught up with it.
+  static int compareForDay(CalendarEvent a, CalendarEvent b) {
+    // All-day events head the day — they are context for it, not an
+    // appointment competing for a slot in it.
+    if (a.allDay != b.allDay) return a.allDay ? -1 : 1;
+    return a.startsAt.compareTo(b.startsAt);
+  }
+
   CalendarEvent copyWith({
     String? title,
     DateTime? startsAt,

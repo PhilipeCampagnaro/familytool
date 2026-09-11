@@ -146,9 +146,10 @@ class _ShareSheetBodyState extends ConsumerState<_ShareSheetBody> {
                       ],
                     ),
                   ),
-                  // SheetSwitch, not NativeSwitch: a platform view inside a
-                  // sheet body makes iOS drop everything painted below it.
-                  SheetSwitch(value: _canEdit, onChanged: (v) => setState(() => _canEdit = v)),
+                  // The real control, like every other on/off row in the app
+                  // — see [NativeSwitch] on why a sheet body may hold one
+                  // again, and what to watch for if it may not.
+                  NativeSwitch(value: _canEdit, onChanged: (v) => setState(() => _canEdit = v)),
                 ],
               ),
             ),

@@ -12,24 +12,21 @@ void _openNewEventSheet(BuildContext context, WidgetRef ref) {
     title: L.s.newEvent,
     requiredField: form.title,
     onSave: () async {
-      // The chip is the only sign a write to a *connected* calendar went out —
-      // the event itself only shows up once the next `calendar-events` read
-      // brings it back from the provider.
-      //
-      // And that takes **seconds**, not a moment: the write goes out to Google,
-      // Outlook or a school's CalDAV server and the read then goes out to all
-      // of them again. A confirmation that only appears at the end of that
-      // leaves the sheet closing onto a calendar with nothing new in it, which
-      // reads as a save that silently failed. So the chip goes up *now*, with a
-      // spinner, and says which calendar the appointment is going into; the
-      // notifier moves it on to the refresh, and the spinner becomes the tick.
+      // The appointment itself is already on the calendar behind this sheet —
+      // `createEvent` draws it before the write goes out. What the chip still
+      // covers is the part that can genuinely fail: the write to Google, Outlook
+      // or a school's CalDAV server, which takes a moment and which nothing else
+      // on screen would report. So it goes up with a spinner naming the calendar
+      // the appointment is going into, and becomes a tick when the provider
+      // accepts it. The re-read behind that is housekeeping and nobody waits for
+      // it.
       final draft = form.result();
       final calendar = ref.read(calendarProvider).sourceById(draft.calendarId)?.name;
       final chip = showPendingChip(
         context,
         calendar == null ? L.s.eventBeingCreated : L.s.eventBeingCreatedIn(calendar),
       );
-      if (await notifier.createEvent(draft, onProgress: chip.step)) {
+      if (await notifier.createEvent(draft)) {
         chip.done(L.s.eventCreated);
       } else {
         // Taken down rather than turned red: the screen already listens on
@@ -121,15 +118,6 @@ class _EventFormBody extends ConsumerStatefulWidget {
 }
 
 class _EventFormBodyState extends ConsumerState<_EventFormBody> {
-  /// Whether the repeat card is showing its six choices.
-  ///
-  /// Collapsed by default and expanded in place rather than opened as a menu:
-  /// this sheet's chrome is native glass, and Flutter content composited after a
-  /// platform view is dropped whole on device — the same reason "Ganztägig" is a
-  /// [SheetSwitch]. An inline list is also what the calendar card below already
-  /// does, so the sheet has one way of asking a multiple-choice question.
-  bool _repeatOpen = false;
-
   EventDraft get _draft => widget.form.draft;
   set _draft(EventDraft value) => setState(() => widget.form.draft = value);
 
@@ -244,50 +232,30 @@ class _EventFormBodyState extends ConsumerState<_EventFormBody> {
     }
   }
 
-  /// What each rule is called, with the start's own weekday filled in — the
-  /// rule carries no day of its own, so "Jeden Montag" is only true while the
-  /// appointment starts on one, and this is read fresh on every rebuild.
-  String _repeatLabel(EventRepeat repeat) {
-    final weekday = L.s.weekdayLong[_draft.start.weekday % 7];
-    return switch (repeat) {
-      EventRepeat.never => L.s.repeatNever,
-      EventRepeat.daily => L.s.repeatDaily,
-      EventRepeat.weekly => L.s.repeatWeekly(weekday),
-      EventRepeat.biweekly => L.s.repeatBiweekly(weekday),
-      EventRepeat.monthly => L.s.repeatMonthly,
-      EventRepeat.yearly => L.s.repeatYearly,
-    };
-  }
-
-  /// "Nie", or the last day the series may land on.
-  String get _repeatEndLabel {
-    final until = _draft.repeatUntil;
-    return until == null ? L.s.repeatNever : L.s.dayMonth(until.day, until.month);
-  }
-
-  void _setRepeat(EventRepeat repeat) {
-    setState(() {
-      _repeatOpen = false;
-      widget.form.draft = repeat == EventRepeat.never
-          ? _draft.copyWith(repeat: repeat, clearRepeatUntil: true)
-          : _draft.copyWith(repeat: repeat);
-    });
-  }
-
-  /// The last day the series may land on. Opens two months out by default,
-  /// which is the length of a Kurs — the case the picker exists for.
-  Future<void> _pickRepeatEnd() async {
-    final first = _addDays(DateTime(_draft.start.year, _draft.start.month, _draft.start.day), 1);
-    final suggested = DateTime(_draft.start.year, _draft.start.month + 2, _draft.start.day);
-    final current = _draft.repeatUntil;
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: current != null && !current.isBefore(first) ? current : suggested,
-      firstDate: first,
-      lastDate: DateTime(_draft.start.year + 5),
+  /// The rule, its end and the day it hangs off, all answered next door in
+  /// [_showRepeatSheet].
+  ///
+  /// Null means the sheet was dismissed, and the draft is left exactly as it
+  /// was — the same contract the Board's due-date sheet has.
+  ///
+  /// The start comes back because the sheet can move it: "jeden Montag" *is* a
+  /// Monday start plus weekly, and reading that in the sheet while having to
+  /// close it to change it is the sort of round trip that gets an appointment
+  /// saved on the wrong day. Applied through [_setStart], so a move made in
+  /// here takes the event's length with it exactly as one made on the row
+  /// above does.
+  Future<void> _pickRepeat() async {
+    final choice = await _showRepeatSheet(
+      context,
+      current: _draft.repeat,
+      until: _draft.repeatUntil,
+      start: _draft.start,
     );
-    if (picked == null || !mounted) return;
-    _draft = _draft.copyWith(repeatUntil: DateTime(picked.year, picked.month, picked.day));
+    if (choice == null || !mounted) return;
+    if (choice.start != _draft.start) _setStart(choice.start);
+    _draft = choice.until == null
+        ? _draft.copyWith(repeat: choice.repeat, clearRepeatUntil: true)
+        : _draft.copyWith(repeat: choice.repeat, repeatUntil: choice.until);
   }
 
   @override
@@ -325,14 +293,15 @@ class _EventFormBodyState extends ConsumerState<_EventFormBody> {
                 child: Row(
                   children: [
                     Expanded(child: Text(L.s.allDay, style: AppText.rowTitle)),
-                    // Flutter's switch, not the real `UISwitch`: a platform
-                    // view here is a third one in a sheet that already embeds
-                    // two in its header, and iOS then drops the overlay layer
-                    // holding everything painted after it — Beginn, Ende, the
-                    // calendar card and the notes field all laid out and all
-                    // invisible. That regression shipped once already. See
-                    // [SheetSwitch]; it must stay a [SheetSwitch].
-                    SheetSwitch(value: _draft.allDay, onChanged: _setAllDay),
+                    // The real `UISwitch`, the same control Settings' dark
+                    // mode row carries — read [NativeSwitch] before changing
+                    // it. This row is the one that emptied a sheet once, and
+                    // the cause turned out to be the *screen behind* the sheet
+                    // rather than this view; native chrome now stands down
+                    // while it is covered. If the body below here ever paints
+                    // white again, that is what came back, and [GlassSwitch]
+                    // is the way out.
+                    NativeSwitch(value: _draft.allDay, onChanged: _setAllDay),
                   ],
                 ),
               ),
@@ -391,37 +360,17 @@ class _EventFormBodyState extends ConsumerState<_EventFormBody> {
             ],
           )
         else
+          // One row carrying the whole answer, opening the sheet that asks it.
+          // The six rules and the end date used to unfold inside this card,
+          // which pushed the calendar, the notes and "Termin löschen" off the
+          // bottom of a form that is read as a whole before it is saved.
           SectionCard(
             children: [
               _ValueRow(
                 label: L.s.eventRepeat,
-                value: _repeatLabel(_draft.repeat),
-                onTap: () => setState(() => _repeatOpen = !_repeatOpen),
+                value: _repeatSummary(_draft.repeat, _draft.repeatUntil, _draft.start),
+                onTap: _pickRepeat,
               ),
-              if (_repeatOpen)
-                for (final option in EventRepeat.values) ...[
-                  InsetDivider(),
-                  _ChoiceRow(
-                    label: _repeatLabel(option),
-                    selected: option == _draft.repeat,
-                    accent: accent,
-                    onTap: () => _setRepeat(option),
-                  ),
-                ],
-              // Nothing to end when nothing repeats. A never-ending series is
-              // the ordinary case — a Sportkurs runs until somebody stops
-              // going — so this defaults to "Nie" rather than to a date.
-              if (_draft.repeat != EventRepeat.never) ...[
-                CardDivider(),
-                _ValueRow(
-                  label: L.s.repeatEnds,
-                  value: _repeatEndLabel,
-                  onTap: _pickRepeatEnd,
-                  onClear: _draft.repeatUntil == null
-                      ? null
-                      : () => _draft = _draft.copyWith(clearRepeatUntil: true),
-                ),
-              ],
             ],
           ),
         const SizedBox(height: 14),
@@ -761,19 +710,24 @@ class _CardNote extends StatelessWidget {
 /// "Wiederholen · Jeden Montag" — a label, the answer, and the whole row as the
 /// target, shaped like [_TimeRow] so the two cards read as one column.
 ///
-/// [onClear] adds the small × that takes an answer back to its default. It is
-/// only ever the repeat end: every other row here always has a value.
+/// It carries no × for clearing an answer: the one row that needed it was the
+/// repeat end, and that is now a "Nie" row inside [_showRepeatSheet], where
+/// taking the date away is a choice like any other rather than a mark beside
+/// the value.
+///
+/// It does carry a chevron, alone among this form's rows: every other one opens
+/// a system picker over the sheet, and this is the only one that leads to
+/// another sheet of ours — the same mark, for the same reason, as the Board's
+/// "Fällig" and rhythm rows.
 class _ValueRow extends StatelessWidget {
   final String label;
   final String value;
   final VoidCallback onTap;
-  final VoidCallback? onClear;
 
   const _ValueRow({
     required this.label,
     required this.value,
     required this.onTap,
-    this.onClear,
   });
 
   @override
@@ -800,14 +754,8 @@ class _ValueRow extends StatelessWidget {
                 style: AppText.input.copyWith(color: AppColors.inkTertiary),
               ),
             ),
-            if (onClear case final clear?) ...[
-              const SizedBox(width: 8),
-              GestureDetector(
-                onTap: clear,
-                behavior: HitTestBehavior.opaque,
-                child: AppIcon(AppIcons.x, size: 16, color: AppColors.mutedLight),
-              ),
-            ],
+            const SizedBox(width: 4),
+            AppIcon(AppIcons.caretRight, size: 16, color: AppColors.mutedLight),
           ],
         ),
       ),
@@ -901,7 +849,10 @@ class _TimeRow extends StatelessWidget {
   final bool showTime;
   final Color accent;
   final VoidCallback onPickDate;
-  final VoidCallback onPickTime;
+
+  /// Null on a row that shows no time at all — the repeat sheet's start row,
+  /// which asks for the day the rule is anchored to and nothing else.
+  final VoidCallback? onPickTime;
 
   const _TimeRow({
     required this.label,
@@ -909,8 +860,8 @@ class _TimeRow extends StatelessWidget {
     required this.showTime,
     required this.accent,
     required this.onPickDate,
-    required this.onPickTime,
-  });
+    this.onPickTime,
+  }) : assert(!showTime || onPickTime != null, 'a row showing a time needs somewhere to change it');
 
   String get _date =>
       '${weekdayShort[value.weekday % 7]}, ${L.s.dayMonthShort(value.day, value.month)}';

@@ -43,6 +43,15 @@ class _CalendarFilterButton extends ConsumerWidget {
     final anchor = button.localToGlobal(Offset.zero) & button.size;
 
     final rows = <NativeMenuOption>[
+      // First and in its own section, the same place and the same reason as the
+      // chip row's own to-do chip. Every row under it answers "which
+      // calendars"; this one does not.
+      NativeMenuOption(
+        L.s.todosChip,
+        symbol: 'checkmark.circle',
+        selected: ref.read(calendarProvider).showTasks,
+        keepsOpen: true,
+      ),
       NativeMenuOption(
         L.s.all,
         // Two people rather than a dot, for the same reason the panel draws
@@ -50,10 +59,13 @@ class _CalendarFilterButton extends ConsumerWidget {
         // "Alle" calendar for it to stand for.
         symbol: 'person.2',
         selected: state.calendarFilter == null,
+        section: 1,
       ),
     ];
-    final values = <Set<String>?>[const {}];
-    var section = 0;
+    // Index-aligned with [rows]: the to-do row keeps the menu open and so is
+    // never the answer, but a placeholder keeps every later row's index right.
+    final values = <Set<String>?>[null, const {}];
+    var section = 1;
     for (final group in state.activeGroups) {
       section++;
       rows.add(NativeMenuOption(
@@ -75,15 +87,6 @@ class _CalendarFilterButton extends ConsumerWidget {
         }
       }
     }
-    section++;
-    rows.add(NativeMenuOption(
-      L.s.todosChip,
-      symbol: 'checkmark.circle',
-      selected: ref.read(calendarProvider).showTasks,
-      section: section,
-      keepsOpen: true,
-    ));
-    values.add(null);
 
     final picked = await showNativeMenu(
       options: rows,
@@ -255,6 +258,26 @@ class _FilterMenuSurface extends ConsumerWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  // First, and in front of a rule — the same place and the
+                  // same reason as the chip row's own to-do chip. Without it
+                  // the toggle would be reachable only while the header is
+                  // open, which is the half of the screen a reader is *not* on
+                  // once they have scrolled into a day.
+                  _FilterMenuRow(
+                    label: L.s.todosChip,
+                    color: AppColors.muted,
+                    // Watched rather than read off the `state` this panel was
+                    // built with: the row stays on screen while it is tapped, so
+                    // it has to notice its own tick appearing.
+                    active: ref.watch(calendarProvider.select((s) => s.showTasks)),
+                    value: const {},
+                    glyph: AppIcons.checkCircle,
+                    onTap: () => ref.read(calendarProvider.notifier).toggleTasks(),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.only(left: 16),
+                    child: Divider(height: 0.5, thickness: 0.5, color: AppColors.menuSeparator),
+                  ),
                   _FilterMenuRow(
                     label: L.s.all,
                     color: AppColors.muted,
@@ -292,26 +315,6 @@ class _FilterMenuSurface extends ConsumerWidget {
                           indent: true,
                         ),
                   ],
-                  // Last, and behind a rule — the same place and the same
-                  // reason as the chip row's own to-do chip. Without it the
-                  // toggle would be reachable only while the header is open,
-                  // which is the half of the screen a reader is *not* on once
-                  // they have scrolled into a day.
-                  Padding(
-                    padding: EdgeInsets.only(left: 16),
-                    child: Divider(height: 0.5, thickness: 0.5, color: AppColors.menuSeparator),
-                  ),
-                  _FilterMenuRow(
-                    label: L.s.todosChip,
-                    color: AppColors.muted,
-                    // Watched rather than read off the `state` this panel was
-                    // built with: the row stays on screen while it is tapped, so
-                    // it has to notice its own tick appearing.
-                    active: ref.watch(calendarProvider.select((s) => s.showTasks)),
-                    value: const {},
-                    glyph: AppIcons.checkCircle,
-                    onTap: () => ref.read(calendarProvider.notifier).toggleTasks(),
-                  ),
                 ],
               ),
             ),

@@ -5,6 +5,9 @@ import '../state/family_state.dart';
 import '../theme/tokens.dart';
 import '../widgets/avatar.dart';
 import 'calendar_screen.dart';
+import 'home/day_island.dart';
+import 'home/first_steps.dart';
+import 'home/home_sections.dart';
 import 'settings_screen.dart';
 import '../theme/app_icons.dart';
 
@@ -18,17 +21,50 @@ import '../theme/app_icons.dart';
 /// is what the app opens on, and the toggle that used to swap them is gone —
 /// the nav bar already switches between two screens.
 ///
-/// This screen owns almost nothing. [CalendarWeekScreen] draws the view, and
-/// what Home adds is the profile avatar, which is this app's only entry point
-/// into Settings (the old web app's "tap your avatar on the dashboard" pattern;
-/// see CLAUDE.md's "Ported feature knowledge" -> Settings). It sits opposite
-/// the month/year label, in the space the view toggle left behind.
+/// **This screen is the assembly, not the drawing.** [CalendarWeekScreen] owns
+/// the header, the day strip and the day card; everything else fills one of its
+/// four slots, and each piece lives under `lib/screens/home/` so that the
+/// calendar's `part` library never learns what a tracker or a shopping list is.
+///
+/// Read top to bottom, Home is:
+///
+/// - the profile avatar ([_ProfileButton]), which is this app's only entry point
+///   into Settings — the old web app's "tap your avatar on the dashboard"
+///   pattern, see CLAUDE.md's "Ported feature knowledge" -> Settings;
+/// - the status island ([DayIsland]), where Kalender names the month;
+/// - the day card, which is the calendar's;
+/// - and [HomeSections] under its bottom edge.
+///
+/// The edge between the last two is a boundary in meaning, not only in paint:
+/// above it is the day the strip is on, below it is the household right now.
+///
+/// [FirstStepsCard] sits between the first two, inside the header: it folds out
+/// of the island and pushes the day down, and the header grows by exactly the
+/// height this screen works out for it.
 class StartScreen extends ConsumerWidget {
   const StartScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return CalendarWeekScreen(trailing: const _ProfileButton());
+    // **The panel's height is worked out here, not measured down there.** The
+    // header is a collapsing sliver laid out against a single extent, so it has
+    // to be told how much room the checklist needs before the checklist is
+    // built; `firstStepsPanelHeight` is arithmetic over a fixed row height for
+    // exactly that reason.
+    final open = ref.watch(firstStepsOpenProvider);
+    final steps = ref.watch(firstStepsProvider);
+
+    // None of the three below may be `const`: each reads a design token while
+    // it builds, and a const instance is canonical, so the parent handing back
+    // an identical widget is how one keeps painting the palette it was born
+    // with. See `tool/check_const_palette.dart`.
+    return CalendarWeekScreen(
+      trailing: _ProfileButton(),
+      label: DayIsland(),
+      underLabel: FirstStepsCard(),
+      underLabelHeight: open ? firstStepsPanelHeight(steps.length) : 0,
+      belowDay: HomeSections(),
+    );
   }
 }
 

@@ -17,11 +17,16 @@ the selected day and the to-do overlay are **one piece of state across two tabs*
 person on Home narrows the month grid too. That is deliberate — a filter that meant two different
 things on two screens showing the same calendars is the thing worth avoiding.
 
-`StartScreen` mounts `CalendarWeekScreen`, the one public entry point, and passes the profile
-avatar as its `trailing` — Home's own business, not the calendar's, and the app's **only** way into
-Settings. `_MonthYearRow` keeps the row above the chips at a fixed 40 so both views'
-`_extraHeaderHeight` arithmetic still holds and the label doesn't sit at two different heights on
-two tabs.
+`StartScreen` mounts `CalendarWeekScreen`, the one public entry point, and fills its **four slots**
+— `trailing`, `label`, `underLabel` (with the height it needs) and `belowDay`. They are slots rather
+than content so that everything Home knows about lives in `lib/screens/home/` and this library never
+learns what a tracker or a shopping list is; what it owns is the *shape*. See "Home's four slots"
+below. `_MonthYearRow` keeps the row
+above the chips at a fixed 40 so both views' `_extraHeaderHeight` arithmetic still holds and the
+label doesn't sit at two different heights on two tabs — which is also what made Home's island free,
+since a glyph beside a heading fits the old toggle's slot with room to spare. That row's label is
+given the full width (`Expanded`, with the switcher's own `layoutBuilder` aligned left) rather than
+left to measure itself against infinity, or the island could not ellipsise an appointment's title.
 
 Three more things differ per tab, all of them parameters rather than a flag on the state:
 
@@ -36,12 +41,15 @@ Three more things differ per tab, all of them parameters rather than a flag on t
   two sides match, not that they are tight. Unlike `leading`, the slot is filled at every stage of
   the collapse, which is what keeps the one way into Settings on screen while the header is
   scrolled away.
-- **The label above the chips.** Kalender prints the visible month and crossfades it as that month
-  changes; Home prints `L.s.yourDay` ("Dein Tag") and never changes it. A grid of numbered squares
-  needs telling which month it is; a day strip is already a row of dates. The `_stripAnchor` that
-  used to drive that label — the leftmost visible day, deliberately not the selected one — is gone
-  with it, and the strip's scroll position now feeds only `_todayVisible`. **A household scrolling
-  the strip weeks out therefore has no month named anywhere on Home**; that was the trade.
+- **The label above the chips.** `_MonthYearRow` takes a **widget**, not a string, because the two
+  tabs put different kinds of thing there: Kalender the visible month, crossfaded as that month
+  changes; Home its status island (`DayIsland`). A grid of numbered squares needs telling which
+  month it is; a day strip is already a row of dates. The `_stripAnchor` that used to drive that
+  label — the leftmost visible day, deliberately not the selected one — is gone with it, and the
+  strip's scroll position now feeds only `_todayVisible`. **A household scrolling the strip weeks
+  out therefore has no month named anywhere on Home**; that was the trade. The crossfade is keyed
+  on whatever widget it is handed, so **every caller must put a `Key` on its child** or the row
+  swaps contents without animating.
 
 `CalendarWeekScreen` is a wrapper rather than its own screen because everything the week view draws
 — the strip cells, the agenda rows, the chips, the event sheet — is a `part` of this library, and
@@ -92,11 +100,157 @@ Scrolling day strip + selected day's agenda list.
   agenda rows underneath still carry each appointment's own reading at its own hour in its own
   town, and the two disagreeing is correct. See the weather section of
   [ported-features.md](ported-features.md).
-- The month/year label the strip used to carry is gone — Home prints "Dein Tag" — and `_stripAnchor`,
+- **A day with no forecast draws a dash, not a skeleton.** There is no reading past the 16-day
+  horizon, on a past day, or in a household with no address, and on a strip four years deep that is
+  nearly every cell. A skeleton promises something is on its way; on a day in 2029 nothing is, and
+  seven shimmering blocks across the top of Home would be the app claiming to load for ever on the
+  one piece of chrome always in front of the reader. `_DayWeather` draws a 10 × 2 bar in
+  `AppColors.mutedLight` instead — a table's convention for a cell with no value — which also
+  covers the past and the no-address cases without a second treatment.
+- The month/year label the strip used to carry is gone — see the island above — and `_stripAnchor`,
   the leftmost-visible-day tracker that fed it, went with it. The strip's scroll position now
   drives only `_todayVisible`.
+- **The body is one scroll, and the day card ends.** The agenda used to be its own scroller filling
+  the viewport under a gray panel that never moved, which is precisely why nothing could sit below
+  it. `_AgendaGrayBody` is now a row in a `ListView` with a radius on *all four* corners, sized to
+  the day by `_DayAgenda`, with `belowDay` under it. It stays a `NestedScrollView`
+  on purpose: its body is laid out at the viewport's full height, so there is always enough travel
+  to collapse the header even on a day with one appointment. A plain `CustomScrollView` would leave
+  the header stuck open whenever the content was shorter than the display.
+- `_DayAgenda` **grows with the day and folds at `_maxEntries` (8)**. A cap is not the instinct to
+  reach for here — this screen exists so you can open the app and see everything happening today —
+  so the number is high enough that no real family day reaches it, and exists only so a badly
+  connected calendar cannot push the sections a thousand points down the page. Past it the rest
+  unfolds in place; there is nowhere else to send anybody, because this *is* the day view. The fold
+  resets with the day, because the `AnimatedSwitcher` key already changes.
 - "Heute" button visibility here tracks whether today is in the strip's visible range
   (`_todayVisible`), not whether the selected week contains it.
+
+## Home's four slots
+
+Files: `lib/screens/home/day_island.dart`, `first_steps.dart`, `home_sections.dart`, and
+`lib/screens/start_screen.dart`, which is the assembly and nothing else.
+
+**The day card's bottom edge is a boundary in meaning, not only in paint.** Above it is whichever
+date the strip is on. Below it is the household as it stands right now. Tap a Thursday three weeks
+out and the top changes while the bottom does not — which is correct, and only readable because the
+card visibly ends. So **nothing in `belowDay` may be day-scoped**: an open to-do is open whatever
+date is selected, a tracker is owed today, a shopping list has no date at all. A "tomorrow" block
+would read as belonging to the strip and be wrong on every day but one.
+
+`DayIsland` — the `label` slot. It says **one** thing and always the most pressing thing about
+today. **It is a heading with a glyph, not a badge**: the filter chips directly beneath it are
+already a row of tinted capsules, and a capsule above them left three stacked badges with no
+hierarchy between them. The glyph carries the tone and the words stay in ink — a red sentence among
+black headings shouts across the page for what is one overdue to-do — and the glyph always names
+what the line is about (a clock for the next appointment, a warning for something overdue, and
+footprints for the first steps), never that the app is being clever. **It is ink wherever the colour
+would not mean anything** — the accent on five of seven states put a blue mark above a row of blue
+chips saying nothing the words were not; what is left in colour is the pair that is about the
+household rather than the app, red for overdue and green for a day that is finished. Same reasoning
+inside the checklist, where five accent glyphs read as five things wanting attention rather than one
+list. **Under the sentence is a
+second line naming what it counts** (`homeHint*`): "Noch 1 offen" is a number and an adjective, and
+the island is the one place in the app with no row, no section heading and no list around the count
+to say which of four kinds of thing it means. That line is what makes the row 48 rather than the 40
+a month name takes — `_MonthYearRow.monthHeight` is now a default, and `_WeekView._labelHeight`
+pays the eight points in its own `_extraHeaderHeight`.
+
+**The line, its crossfade and its sweep now live in `lib/widgets/status_island.dart`**, lifted out
+of here the moment Ausgaben wanted the same thing about money; `DayIsland` is the ladder and nothing
+else. What follows is why that widget is shaped the way it is.
+
+**The island runs its own `AnimatedSwitcher`, and it has to.** `_MonthYearRow` has one, but it
+compares the widget it is handed — always a keyless `DayIsland` — so it never saw one state become
+another and every change to the sentence landed as an instant swap; the keys are a level down, on
+what `DayIsland` builds. Its two halves deliberately **do not overlap** (interval curves, old out in
+the first half, new in over the second): two different sentences crossfading at the same left edge
+are two sentences printed over each other. `_Sweep` then runs one pale wave across the words, once.
+The sentence changes while nobody is watching — a to-do is ticked on another phone and the words are
+simply different next time — and the wave is what says *this changed* without the header moving. It
+is the page's own colour rather than white, so the letters dissolve towards the paper behind them
+and the dark palette gets the same effect instead of a flashbulb; `BlendMode.srcATop` keeps it
+inside the glyphs; and the `ShaderMask` is dropped the moment the wave finishes rather than leaving
+a save-layer under the header all day. A row of counters would be a dashboard, and the four other tabs already are one; what
+somebody wants from the top of Home is the sentence they would otherwise go looking for. The cases
+are a ladder, first match wins: **still loading**, setup, overdue, open today, unticked trackers,
+the next appointment, then "alles erledigt". The first rung is the only one about the app rather
+than the household, and it is why the island now visibly resolves into what it says: everything
+under it reads state that arrives over the network, and printing "Dein Tag" and quietly replacing it
+a second later is a change nobody ever sees happen. It is also the one place a brain glyph belongs,
+and the one state whose wave repeats — there the sweep *is* the spinner. **The ladder is about today and only today** — a count of what is overdue *now* printed above next
+Thursday's agenda is a sentence about a different screen. Selecting another day drops all of it, but
+it does **not** fall back to the generic "Dein Tag": the header then said nothing about the day
+underneath it, and the strip is the only other place the date appears. The island names the selected
+day and how much is on it instead, counted through the same filtered `eventsFor` the card below
+uses, which is exactly what Kalender's label does on its own tab. That line carries no wave
+(`_SweepMode.none`) and one stable key: the reader tapped the day themselves, so nothing changed on
+its own, and a 400ms swap plus a shimmer on every tap along the strip would be noise. "Next up" is deliberately not tappable: the appointment is the
+first card four centimetres below, and a second route to the same sheet from the same screen is a
+coin toss rather than a shortcut. It reads `DateTime.now()` with no ticker of its own, so the line
+settles on the next rebuild rather than driving a clock in the header.
+
+`FirstStepsCard` — the `underLabel` slot, between the island and the chips, **inside the collapsing
+header**. It opens in place and pushes the day down; the header's extent grows by exactly its
+height. Two earlier shapes were wrong: a card in the scroll body put the chips and the entire day
+strip between the chevron and what the chevron opened, and a floating `CompositedTransformFollower`
+panel sat in the right place but hovered over the day instead of belonging to the header its control
+is in.
+
+**Its height is arithmetic, not a measurement** (`firstStepsPanelHeight`, over a fixed
+`firstStepRowHeight`). A `SliverPersistentHeader` is laid out against one extent, so the header has
+to know the panel's height before the panel is built; a child that sized itself would be a frame
+ahead of the header containing it and the chips would jump. `StartScreen` computes it,
+`CalendarWeekScreen` passes it as `underLabelHeight`, and `_WeekView` animates its own controller
+between 0 and that number so the extent and the space the panel occupies are the same number on the
+same frame. The panel is `null` while shut rather than zero-height, or the rows would lay themselves
+out against a tight zero and overflow. `firstStepsOpenProvider` holds the flag because three widgets
+need it and none contains the others. Setup outranks every status the ladder could print, since a
+household with no calendar connected has nothing true to say about its day.
+
+**Every step is derived from live state and none of it is stored.** A stored checkbox drifts the
+moment somebody deletes their only list, does not travel to the other parent's phone, and needs a
+column, a migration and a policy of its own; asking the providers costs nothing, since the screen
+watches all five anyway, and answers correctly on a second device and for the household that set
+everything up before the card existed. **The family step is done when the invitation is sent**, not
+when it is accepted (`members.length > 1 || invites.isNotEmpty`): a household that has just invited
+somebody has done everything this list can ask of them, and a row still standing there reads as the
+invitation having failed. `invites` being admin-only costs nothing, since only an admin can invite.
+`firstStepsProvider` returns the **remaining** steps and is empty while `familyProvider` and
+`calendarProvider` are still loading, so an established family never sees a checklist flash up
+telling them to connect the calendar they already have.
+
+There is **no address step**, even though the address is what Abfall, Ferien and the weather all
+hang off: `FamilyNotifier.saveAddress` has exactly one caller, in onboarding, so the step would have
+nowhere to send anybody. Connecting Abfall asks for the address on the way, which is the door that
+does exist. Two steps (tracker, list) can only offer a tab, because neither create flow has a public
+door the way `openTaskSheet` does, and inventing one would mean a second entrance to keep in step
+with the first.
+
+`HomeSections` — the `belowDay` slot: **Offen**, **Heute dran**, **Listen**, each hidden entirely
+when it has nothing. The to-do rows use `CheckOffRow` — the Board's strike-hold-collapse — unlike
+the agenda row above them, which does not: there a ticked to-do stays put, because a day whose
+to-dos all vanished as they were done would read as a day that never had any, while here the
+section *is* the open list and the row's whole job is to leave it. Tracker rows keep their circle
+because a tracker you have to navigate to in order to tick is a tracker that stops being ticked, and
+ticked ones stay on the card rather than emptying it as the day goes on. Beside each tracker's name —
+on the same line, where it reads as the answer to the name rather than as a second fact about it —
+is `_WeekStrip`, **the last seven days and nothing more** — as much history as a summary row can
+carry and still be glanced at, and the span somebody actually asks about; the months of record live
+on the tracker's own screen where the chart is tall enough to read. Its three marks are the detail
+chart's colour for colour, so a day the rhythm never named stays neutral rather than pale-missed (a
+Mo/Do tracker would otherwise report five failures a week of a perfect record), and days before the
+tracker existed leave their space empty so the squares beside them don't shift. It is not tappable:
+the row's circle already ticks today, back-filling is the detail chart's job, and a 9-point square
+on a summary row is a mis-tap waiting to write a day nobody meant. Lists show counts, not
+articles.
+
+**Boxen is deliberately absent.** A box answers "where did we put the winter coats", which is a
+question you already know you have when you go looking. It would be on Home because it is a tab, and
+that is not a reason.
+
+`TabJumpNotifier.toTab` exists for the section headers — a jump with no payload, which the shell
+clears itself since no destination screen's listener will.
 
 ## Month view (`_MonthView` → `_MonthBlock` → `_MonthCell`) — the Kalender tab
 

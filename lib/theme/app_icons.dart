@@ -72,6 +72,7 @@ abstract final class AppIcons {
   static const barcode = IconData(0xe0b9, fontFamily: _family);
   static const basket = IconData(0xe965, fontFamily: _family);
   static const bathtub = IconData(0xe81f, fontFamily: _family);
+  static const brain = IconData(0xe74f, fontFamily: _family);
   static const batteryCharging = IconData(0xe0bb, fontFamily: _family);
   static const bed = IconData(0xe0cd, fontFamily: _family);
   static const beerStein = IconData(0xeb63, fontFamily: _family);
@@ -267,6 +268,7 @@ const Map<int, IconData> _underLayers = {
   0xe0b9: IconData(0xe0b8, fontFamily: _family),
   0xe965: IconData(0xe964, fontFamily: _family),
   0xe81f: IconData(0xe81e, fontFamily: _family),
+  0xe74f: IconData(0xe74e, fontFamily: _family),
   0xe0bb: IconData(0xe0ba, fontFamily: _family),
   0xe0cd: IconData(0xe0cc, fontFamily: _family),
   0xeb63: IconData(0xeb62, fontFamily: _family),
@@ -453,6 +455,7 @@ const Map<int, IconData> _flat = {
   0xe0b9: IconData(0xe0b8, fontFamily: _flatFamily),
   0xe965: IconData(0xe964, fontFamily: _flatFamily),
   0xe81f: IconData(0xe81e, fontFamily: _flatFamily),
+  0xe74f: IconData(0xe74e, fontFamily: _flatFamily),
   0xe0bb: IconData(0xe0ba, fontFamily: _flatFamily),
   0xe0cd: IconData(0xe0cc, fontFamily: _flatFamily),
   0xeb63: IconData(0xeb62, fontFamily: _flatFamily),

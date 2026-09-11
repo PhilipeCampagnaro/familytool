@@ -75,6 +75,8 @@ class StringsEn extends AppStrings {
   @override
   String monthYear(int month, int year) => '${monthNames[month]} $year';
   @override
+  String dateRange(String from, String to) => '$from\u00A0– $to';
+  @override
   String dayRangeSameMonth(int fromDay, int toDay, int month) =>
       '$fromDay – $toDay ${monthNames[month]}';
   @override
@@ -570,6 +572,9 @@ class StringsEn extends AppStrings {
   @override
   String get repeatEnds => 'Ends';
   @override
+  String get repeatFollowsStart => 'The repeat follows the start date.';
+  @override
+  String repeatUntilDate(String date) => 'until $date';
   String get repeats => 'Repeats';
   @override
   String get repeatNotEditable =>
@@ -677,7 +682,6 @@ class StringsEn extends AppStrings {
   @override
   String get eventBeingCreated => 'Adding event …';
   @override
-  String get calendarsUpdating => 'Updating calendars …';
   @override
   String get eventCreated => 'Event created';
   @override
@@ -1280,6 +1284,8 @@ class StringsEn extends AppStrings {
   String get searchTermsCalendar =>
       'calendar events connections connect google outlook icloud iserv holidays waste school kalender';
   @override
+      'apple pay wallet spending devices iphone shortcuts automation activate remove geräte';
+  @override
   String get searchTermsLanguage => 'language sprache german english deutsch translation';
   @override
   String get searchTermsDarkMode =>
@@ -1456,4 +1462,72 @@ class StringsEn extends AppStrings {
   String get renameFamilyBody => 'The name appears on the family chip in Calendar and Board.';
   @override
   String get familyRenameFailed => 'The name could not be changed.';
+
+  @override
+  String homeOverdue(int count) => '$count overdue';
+  @override
+  String homeOpenToday(int count) => '$count still open';
+  @override
+  String homeTrackersLeft(int count) => '$count trackers left';
+  @override
+  String homeNextUp(String time, String title) => '$time · $title';
+  @override
+  String get homeAllDone => 'All done';
+  @override
+  String homeDayEntries(int count) => count == 1 ? '1 appointment' : '$count appointments';
+  @override
+  String get homeDayEmpty => 'Nothing planned';
+  @override
+  String get homeThinking => 'One moment';
+  @override
+  String get homeHintThinking => 'Putting your day together';
+  @override
+  String get homeHintSetup => 'Set Aporah up for your family';
+  @override
+  String get homeHintOverdue => 'To-dos past their date';
+  @override
+  String get homeHintOpen => 'To-dos for today';
+  @override
+  String get homeHintTrackers => 'Not ticked off today yet';
+  @override
+  String get homeHintNext => 'Next up in your calendar';
+  @override
+  String get homeHintDone => 'Nothing left for today';
+  @override
+  String get homeOpenSection => 'Open';
+  @override
+  String get homeTrackerSection => 'Due today';
+  @override
+  String get homeListsSection => 'Lists';
+  @override
+  String get homeShowAll => 'Show all';
+  @override
+  String homeMoreEntries(int count) => '$count more';
+  @override
+  String homeListOpenItems(int count) => '$count open';
+
+  @override
+  String get firstStepsTitle => 'First steps';
+  @override
+  String firstStepsProgress(int done, int total) => '$done of $total';
+  @override
+  String get firstStepCalendar => 'Connect a calendar';
+  @override
+  String get firstStepCalendarBody => 'School, work and waste collection in one place.';
+  @override
+  String get firstStepFamily => 'Invite your family';
+  @override
+  String get firstStepFamilyBody => 'So everyone sees the same thing.';
+  @override
+  String get firstStepTodo => 'First to-do';
+  @override
+  String get firstStepTodoBody => 'Something that has to happen this week.';
+  @override
+  String get firstStepTracker => 'Add a tracker';
+  @override
+  String get firstStepTrackerBody => 'A habit you keep together.';
+  @override
+  String get firstStepList => 'First list';
+  @override
+  String get firstStepListBody => 'The shopping is a good place to start.';
 }

@@ -86,8 +86,29 @@ Future<void> showAnchoredMenu({
 }) async {
   final box = anchorKey.currentContext?.findRenderObject() as RenderBox?;
   if (box == null || !box.hasSize) return;
-  final anchor = box.localToGlobal(Offset.zero) & box.size;
+  return showAnchoredMenuAt(
+    context: context,
+    anchor: box.localToGlobal(Offset.zero) & box.size,
+    items: items,
+    width: width,
+    title: title,
+  );
+}
 
+/// [showAnchoredMenu] for a caller that has a rect but no widget to hang a key
+/// on — the nav bar's **Mehr** item, which on iOS is one `UITabBarItem` inside
+/// a platform view and so has no Flutter render object of its own.
+///
+/// Everything else is identical, including the system-first rule: whoever
+/// computed [anchor] gets UIKit's menu where UIKit has one and the app's own
+/// panel where it hasn't.
+Future<void> showAnchoredMenuAt({
+  required BuildContext context,
+  required Rect anchor,
+  required List<AnchoredMenuItem> items,
+  double width = AnchoredMenuSurface.defaultWidth,
+  String? title,
+}) async {
   final picked = await showNativeMenu(
     anchor: anchor,
     title: title,

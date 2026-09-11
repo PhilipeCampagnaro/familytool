@@ -200,12 +200,7 @@ class CalendarRepository {
     }
 
     for (final list in eventsByDay.values) {
-      list.sort((a, b) {
-        // All-day events head the day — they are context for it, not an
-        // appointment competing for a slot in it.
-        if (a.allDay != b.allDay) return a.allDay ? -1 : 1;
-        return a.startsAt.compareTo(b.startsAt);
-      });
+      list.sort(CalendarEvent.compareForDay);
     }
 
     return CalendarSnapshot(

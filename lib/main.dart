@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -94,13 +96,52 @@ class AporahApp extends ConsumerWidget {
           data: MediaQuery.of(context).copyWith(
             alwaysUse24HourFormat: alwaysUse24HourFormat,
           ),
-          child: child ?? const SizedBox.shrink(),
+          child: _DismissKeyboardOnTap(child: child ?? const SizedBox.shrink()),
         ),
       ),
       // Not `const`: a canonicalised instance would make the element below
       // identical across a theme flip, and the whole screen tree would be
       // skipped and keep painting the old palette.
       home: _RootGate(),
+    );
+  }
+}
+
+/// Puts the keyboard away on a tap that was meant for nothing else.
+///
+/// **Flutter drops focus on a tap outside the field only on desktop.** On a
+/// phone `EditableText` deliberately holds on through a touch, so a field the
+/// user has changed their mind about keeps the keyboard up with no way out of
+/// it: "Artikel hinzufügen" with nothing typed in it offers Return, and the
+/// number pad behind a quantity does not even offer that. The article row grew
+/// its own `onTapOutside` for exactly this (`_unfocusFields` in
+/// [ListScreen]'s row), and every other field in the app was still stuck. This
+/// is that answer once, sitting above the `Navigator` so the sheets and the
+/// screens behind them are both covered.
+///
+/// **A gesture-arena entry rather than a [Listener].** Anything with a tap of
+/// its own — a row, a suggestion chip, a button, the check-off circle — sits
+/// deeper in the tree and wins the arena, so only a tap nobody else wanted puts
+/// the keyboard away. The native chrome is safe for the same reason from the
+/// other direction: the tab bar, the switch and the search field each claim
+/// their touches with an `EagerGestureRecognizer`, which resolves the arena
+/// before this ever sees it.
+class _DismissKeyboardOnTap extends StatelessWidget {
+  final Widget child;
+
+  const _DismissKeyboardOnTap({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      // The child fills the screen, but much of it is transparent and a tap on
+      // empty glass is the commonest way of saying "I'm done here".
+      behavior: HitTestBehavior.translucent,
+      // VoiceOver already has its own way out of a field; announcing the whole
+      // app as a button would bury every control under it.
+      excludeFromSemantics: true,
+      onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+      child: child,
     );
   }
 }
@@ -229,7 +270,8 @@ class AppShell extends ConsumerStatefulWidget {
 /// only ever paints one child, this "out then in" sequence reads as a single
 /// smooth transition without the cost of a true crossfade (both screens
 /// visible at once), which `IndexedStack` can't do.
-class _AppShellState extends ConsumerState<AppShell> with SingleTickerProviderStateMixin {
+class _AppShellState extends ConsumerState<AppShell>
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   int _index = _initialTab;
 
   late final AnimationController _controller = AnimationController(
@@ -243,12 +285,35 @@ class _AppShellState extends ConsumerState<AppShell> with SingleTickerProviderSt
   void initState() {
     super.initState();
     _controller.value = 1;
+    WidgetsBinding.instance.addObserver(this);
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _controller.dispose();
     super.dispose();
+  }
+
+  /// Coming back to the app re-reads the calendar.
+  ///
+  /// Without this the only calendar read in the app's life is the one at launch,
+  /// because all five screens stay mounted in the `IndexedStack` and nothing
+  /// remounts. A phone left in a pocket overnight and picked up in the morning
+  /// showed yesterday — on the screen the whole product is sold on.
+  ///
+  /// **The shell, not a screen**, for the same reason the write-failure listener
+  /// below sits here: two tabs draw the calendar and both are always mounted, so
+  /// an observer on each would fan out twice on every resume.
+  ///
+  /// [CalendarNotifier.refreshIfStale] owns the throttle. This deliberately does
+  /// not wait on it and does not report failure — a resume is not an action on
+  /// the calendar, and whatever is already on screen stays there.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) return;
+    if (!mounted) return;
+    unawaited(ref.read(calendarProvider.notifier).refreshIfStale());
   }
 
   void _expandNav() => ref.read(navBarProvider.notifier).expand();
@@ -271,8 +336,17 @@ class _AppShellState extends ConsumerState<AppShell> with SingleTickerProviderSt
     // in an event's sheet. The shell owns the tab and does that half; the
     // payload is left in place for the destination screen's own listener, which
     // is what clears it. See [TabJump].
+    //
+    // A jump with no payload — Home's "Alle anzeigen" over the open to-dos —
+    // has no destination listener to clear it, so the shell clears its own.
     ref.listen<TabJump?>(tabJumpProvider, (_, jump) {
-      if (jump != null) _navigateTo(jump.tab);
+      if (jump == null) return;
+      // [_switchTo] rather than [_navigateTo]: a jump names its destination, so
+      // it must never be answered with a menu.
+      _switchTo(jump.tab);
+      if (jump.listId == null && jump.taskId == null) {
+        ref.read(tabJumpProvider.notifier).done();
+      }
     });
     // A calendar write that didn't land is reported once and then forgotten, so
     // the same message can appear again if the next attempt fails too. This

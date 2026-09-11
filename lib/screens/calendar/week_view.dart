@@ -15,7 +15,34 @@ class _WeekView extends ConsumerStatefulWidget {
   /// Rides opposite the month/year label, where the view toggle used to be.
   final Widget? trailing;
 
-  const _WeekView({required this.state, required this.accent, required this.title, this.trailing});
+  /// Home's status island, in the row that names the month on the other tab.
+  /// Null falls back to the plain label. See [CalendarWeekScreen].
+  final Widget? label;
+
+  /// Directly under the label, above the filter chips: Home's first-steps
+  /// checklist, folded out of the island. Always built; how much of it shows is
+  /// [underLabelHeight].
+  final Widget? underLabel;
+
+  /// How tall that panel is when it is open, and zero when it is not — the
+  /// caller's arithmetic, not a measurement, because the header's collapsing
+  /// extent has to be known before the panel is laid out. The view animates
+  /// between the two.
+  final double underLabelHeight;
+
+  /// Below the day card. Home's, and null on any other caller.
+  final Widget? belowDay;
+
+  const _WeekView({
+    required this.state,
+    required this.accent,
+    required this.title,
+    this.trailing,
+    this.label,
+    this.underLabel,
+    this.underLabelHeight = 0,
+    this.belowDay,
+  });
 
   @override
   ConsumerState<_WeekView> createState() => _WeekViewState();
@@ -30,7 +57,7 @@ class _WeekView extends ConsumerStatefulWidget {
 /// is far past anything reachable by flicking and avoids the bookkeeping of a
 /// two-directional `center:` sliver for a strip this simple. Days are addressed
 /// by index off [_stripEpoch]; [_stripDate] and [_stripIndexOf] convert.
-class _WeekViewState extends ConsumerState<_WeekView> {
+class _WeekViewState extends ConsumerState<_WeekView> with SingleTickerProviderStateMixin {
   static const _stripDaysBefore = 730;
   static const _stripDayCount = 1461;
   static const _stripGap = 6.0;
@@ -64,10 +91,24 @@ class _WeekViewState extends ConsumerState<_WeekView> {
     super.initState();
     _stripController.addListener(_onStripScroll);
     _lastSelected = widget.state.selected;
+    // Open on the first frame without an animation, so a household that left
+    // the checklist unfolded does not watch it unfold again on every rebuild
+    // of the screen.
+    if (widget.underLabelHeight > 0) {
+      _panelFull = widget.underLabelHeight;
+      _panel.value = 1;
+    }
+  }
+
+  @override
+  void didUpdateWidget(_WeekView old) {
+    super.didUpdateWidget(old);
+    if (old.underLabelHeight != widget.underLabelHeight) _syncPanel();
   }
 
   @override
   void dispose() {
+    _panel.dispose();
     _stripController.dispose();
     super.dispose();
   }
@@ -126,12 +167,51 @@ class _WeekViewState extends ConsumerState<_WeekView> {
   // the glass buttons instead of butting straight against them.
   static const _collapsedGap = 14.0;
   static const _collapsedHeaderHeight = 48.0 + _collapsedGap;
-  // 16 top + 40 month row + 14 + 44 chip row + 12 + the strip + 4 bottom,
+  // 16 top + 48 island row + 14 + 44 chip row + 12 + the strip + 4 bottom,
   // rounded up so a font-metric wobble leaves slack rather than clipping.
-  static const _extraHeaderHeight = 286.0;
-  static const _expandedHeaderHeight = _collapsedHeaderHeight + _extraHeaderHeight;
+  static const _baseExtraHeight = 294.0;
 
-  Widget _buildHeader(BuildContext context, double t, CalendarScreenState state, Color accent, String label) {
+  /// The header's extent, panel included. **Not a constant any more**: Home's
+  /// first-steps checklist opens *inside* the header rather than over the top
+  /// of it, so the block it lives in grows by exactly its height and the whole
+  /// day moves down. Everything else about the collapse is unchanged — this is
+  /// still one number the sliver is laid out against, it is just no longer the
+  /// same number all day.
+  double get _extraHeaderHeight => _baseExtraHeight + _panelHeight;
+
+  // Home's island is a sentence over the noun it counts, so this row is taller
+  // than the 40 a month name takes on the other tab — eight points, paid for
+  // once, above.
+  static const _labelHeight = 48.0;
+  double get _expandedHeaderHeight => _collapsedHeaderHeight + _extraHeaderHeight;
+
+  /// The panel's open fraction. Driven here rather than by an `AnimatedSize`
+  /// inside the header because the number the sliver is measured against and
+  /// the space the panel occupies have to be the same number on the same frame;
+  /// a child that animated its own height would be a frame ahead of the header
+  /// containing it, and the chips would jump.
+  late final AnimationController _panel = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 280),
+  )..addListener(() => setState(() {}));
+
+  /// The panel's height when fully open. Held past the close so the collapse
+  /// animates back down through the same distance it came up.
+  double _panelFull = 0;
+
+  double get _panelHeight => _panelFull * _panel.value;
+
+  void _syncPanel() {
+    final target = widget.underLabelHeight;
+    if (target > 0) {
+      _panelFull = target;
+      _panel.forward();
+    } else {
+      _panel.reverse();
+    }
+  }
+
+  Widget _buildHeader(BuildContext context, double t, CalendarScreenState state, Color accent, Widget label) {
     // Frosted, not transparent and not solid: NestedScrollView's body isn't
     // clipped to below the pinned header — the gray agenda keeps sliding up
     // until its top hits the screen's — so a see-through header had the agenda's
@@ -173,7 +253,32 @@ class _WeekViewState extends ConsumerState<_WeekView> {
                       children: [
                         Padding(
                           padding: const EdgeInsets.fromLTRB(AppSpacing.screenPad, 16, AppSpacing.screenPad, 0),
-                          child: _MonthAndChipsRow(state: state, accent: accent, label: label),
+                          child: _MonthAndChipsRow(
+                            state: state,
+                            accent: accent,
+                            label: label,
+                            labelHeight: _labelHeight,
+                            // Sized by the same value the sliver was measured
+                            // against, and clipped to it: the rows are built at
+                            // their full height throughout and the panel shows
+                            // as much of them as it has opened.
+                            // Nothing at all while it is shut: a zero-height
+                            // box would hand the rows a tight zero to lay
+                            // themselves out in and overflow against it.
+                            underLabel: widget.underLabel == null || _panelHeight <= 0
+                                ? null
+                                : SizedBox(
+                                    height: _panelHeight,
+                                    child: ClipRect(
+                                      child: OverflowBox(
+                                        alignment: Alignment.topCenter,
+                                        minHeight: _panelFull,
+                                        maxHeight: _panelFull,
+                                        child: widget.underLabel,
+                                      ),
+                                    ),
+                                  ),
+                          ),
                         ),
                         Padding(
                           // Only the left edge is inset: the strip runs to the
@@ -287,81 +392,64 @@ class _WeekViewState extends ConsumerState<_WeekView> {
               delegate: CollapsingSliverHeaderDelegate(
                 expandedHeight: _expandedHeaderHeight,
                 collapsedHeight: _collapsedHeaderHeight,
-                builder: (context, t) => _buildHeader(context, t, state, accent, L.s.yourDay),
+                builder: (context, t) => _buildHeader(
+                  context,
+                  t,
+                  state,
+                  accent,
+                  widget.label ?? Text(L.s.yourDay, key: const ValueKey('yourDay'), style: AppText.sectionHeading),
+                ),
               ),
             ),
           ],
-          body: _AgendaGrayBody(
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 240),
-              switchInCurve: Curves.easeOutCubic,
-              switchOutCurve: Curves.easeIn,
-              transitionBuilder: (child, animation) => FadeTransition(
-                opacity: animation,
-                child: SlideTransition(
-                  position: Tween<Offset>(begin: const Offset(0, 0.02), end: Offset.zero).animate(animation),
-                  child: child,
-                ),
-              ),
-              child: KeyedSubtree(
-                // The to-do toggle joins the key, so turning the chip on
-                // crossfades the day the way changing the filter does rather
-                // than having rows appear under the reader's thumb.
-                key: ValueKey('${sel.y}-${sel.m}-${sel.d}-${state.calendarFilterKey}-${state.showTasks}'),
-                // The Feiertag sits above the agenda rather than in it — it is
-                // something about the day, not an appointment on it. A day off
-                // with nothing planned is still worth saying, so it shows over
-                // the empty state too.
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (holiday != null)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 14),
-                        child: _HolidayChip(holiday: holiday, accent: accent),
-                      ),
-                    Expanded(
-                      // A day with only to-dos on it is not an empty day, so
-                      // the empty state waits for both to be empty.
-                      child: events.isEmpty && todos.isEmpty
-                          ? Padding(
-                              padding: EdgeInsets.only(bottom: navContentInset(context)),
-                              child: Center(
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(L.s.noEventsThisDay, style: AppText.body.copyWith(color: AppColors.inkTertiary)),
-                                    const SizedBox(height: 18),
-                                    const _EmptyDayActions(),
-                                  ],
-                                ),
-                              ),
-                            )
-                          : ListView(
-                              padding: EdgeInsets.only(bottom: navContentInset(context)),
-                              children: [
-                                for (var i = 0; i < entries.length; i++)
-                                  if (entries[i] case final BoardTask task)
-                                    _TodoAgendaRow(
-                                      key: ValueKey(task.id),
-                                      task: task,
-                                      isFirst: i == 0,
-                                      accent: accent,
-                                    )
-                                  else if (entries[i] case final CalendarEvent event)
-                                    _EventAgendaRow(
-                                      event: event,
-                                      isFirst: i == 0,
-                                      headingText: headingText,
-                                      accent: accent,
-                                    ),
-                              ],
-                            ),
+          // **One scroll for the whole page.** The agenda used to be its own
+          // scroller filling the viewport below a panel that never moved, which
+          // is precisely why nothing could ever sit under it. It is a row of
+          // widgets in this list now, the gray card sizes itself to the day, and
+          // everything Home has to say that is *not* about a day goes below it.
+          //
+          // Still a `NestedScrollView`: its body is laid out at the viewport's
+          // full height, so there is always enough travel to collapse the header
+          // even on a day with one appointment and nothing else on screen. A
+          // plain `CustomScrollView` would have left the header stuck open
+          // whenever the content was shorter than the display.
+          body: ListView(
+            padding: EdgeInsets.only(bottom: navContentInset(context)),
+            children: [
+              _AgendaGrayBody(
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 240),
+                  switchInCurve: Curves.easeOutCubic,
+                  switchOutCurve: Curves.easeIn,
+                  transitionBuilder: (child, animation) => FadeTransition(
+                    opacity: animation,
+                    child: SlideTransition(
+                      position: Tween<Offset>(begin: const Offset(0, 0.02), end: Offset.zero).animate(animation),
+                      child: child,
                     ),
-                  ],
+                  ),
+                  child: KeyedSubtree(
+                    // The to-do toggle joins the key, so turning the chip on
+                    // crossfades the day the way changing the filter does rather
+                    // than having rows appear under the reader's thumb. It also
+                    // resets [_DayAgenda]'s fold, so a day always opens showing
+                    // what it shows rather than inheriting the last day's
+                    // "weitere" still unfolded.
+                    key: ValueKey('${sel.y}-${sel.m}-${sel.d}-${state.calendarFilterKey}-${state.showTasks}'),
+                    child: _DayAgenda(
+                      holiday: holiday,
+                      entries: entries,
+                      headingText: headingText,
+                      accent: accent,
+                      // A day with only to-dos on it is not an empty day, so the
+                      // empty state waits for both to be empty.
+                      empty: events.isEmpty && todos.isEmpty,
+                    ),
+                  ),
                 ),
               ),
-            ),
+              ?widget.belowDay,
+            ],
           ),
         ),
         _JumpToTodaySlot(visible: !_todayVisible, accent: accent, onTap: _jumpToToday),
@@ -409,9 +497,19 @@ class _EmptyDayActions extends ConsumerWidget {
   }
 }
 
-/// Full-width, top-rounded gray body used below the fixed header on both the
-/// week view (day strip above the agenda) — kept as its own widget so the
-/// gray body treatment can't visually drift from the rest of the screen.
+/// The selected day's card: full-width gray, and **rounded at the bottom as
+/// well as the top**.
+///
+/// That bottom edge is the whole reason Home can say anything else. While this
+/// was the viewport's floor it was a background, and anything put near it read
+/// as one more appointment; ending it makes it an object, and the white below
+/// it is visibly a different subject. What is above the edge is whichever date
+/// the strip is on. What is below it is the household as it stands — see
+/// `HomeSections`.
+///
+/// Still full-bleed rather than inset like a card: the agenda rows inside it
+/// have a 54pt time rail, and pulling the whole thing in from both margins
+/// would cost the appointment names the width they actually need.
 class _AgendaGrayBody extends StatelessWidget {
   final Widget child;
 
@@ -420,9 +518,122 @@ class _AgendaGrayBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(color: AppColors.screenBg, borderRadius: BorderRadius.vertical(top: Radius.circular(26))),
-      padding: const EdgeInsets.fromLTRB(14, 20, 16, 0),
+      decoration: BoxDecoration(color: AppColors.screenBg, borderRadius: BorderRadius.circular(26)),
+      padding: const EdgeInsets.fromLTRB(14, 20, 16, 16),
       child: child,
+    );
+  }
+}
+
+/// What is inside the day card: the Feiertag, then the day in reading order.
+///
+/// **It grows with the day and stops at [_maxEntries].** A floor would have been
+/// the wrong instinct — the founding brief for this screen was that you open the
+/// app and see everything happening today, so truncating today's agenda on the
+/// one screen built to show it undoes the point. The cap is high enough that no
+/// real family day reaches it and exists only so that a calendar somebody has
+/// connected badly cannot push the sections below a thousand points down the
+/// page. Past it the rest unfolds in place; there is nowhere else to send
+/// anybody, because this *is* the day view.
+class _DayAgenda extends StatefulWidget {
+  final GermanHoliday? holiday;
+  final List<Object> entries;
+  final String headingText;
+  final Color accent;
+  final bool empty;
+
+  const _DayAgenda({
+    required this.holiday,
+    required this.entries,
+    required this.headingText,
+    required this.accent,
+    required this.empty,
+  });
+
+  @override
+  State<_DayAgenda> createState() => _DayAgendaState();
+}
+
+class _DayAgendaState extends State<_DayAgenda> {
+  static const _maxEntries = 8;
+
+  /// What an empty day is given so the card still reads as a card rather than
+  /// as a gray stripe. The only place a height is asserted here — every other
+  /// day is as tall as what is on it.
+  static const _emptyHeight = 170.0;
+
+  bool _showAll = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final entries = widget.entries;
+    final folded = !_showAll && entries.length > _maxEntries;
+    final shown = folded ? entries.take(_maxEntries).toList() : entries;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // The Feiertag sits above the agenda rather than in it — it is something
+        // about the day, not an appointment on it. A day off with nothing
+        // planned is still worth saying, so it shows over the empty state too.
+        if (widget.holiday case final holiday?)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 14),
+            child: _HolidayChip(holiday: holiday, accent: widget.accent),
+          ),
+        if (widget.empty)
+          SizedBox(
+            height: _emptyHeight,
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(L.s.noEventsThisDay, style: AppText.body.copyWith(color: AppColors.inkTertiary)),
+                  const SizedBox(height: 18),
+                  _EmptyDayActions(),
+                ],
+              ),
+            ),
+          )
+        else ...[
+          for (var i = 0; i < shown.length; i++)
+            if (shown[i] case final BoardTask task)
+              _TodoAgendaRow(
+                key: ValueKey(task.id),
+                task: task,
+                isFirst: i == 0,
+                accent: widget.accent,
+              )
+            else if (shown[i] case final CalendarEvent event)
+              _EventAgendaRow(
+                event: event,
+                isFirst: i == 0,
+                headingText: widget.headingText,
+                accent: widget.accent,
+              ),
+          if (folded)
+            GestureDetector(
+              onTap: () => setState(() => _showAll = true),
+              behavior: HitTestBehavior.opaque,
+              child: Padding(
+                // Inset to where the cards start (the rail plus its gap), so the
+                // fold reads as the end of the column of cards rather than as a
+                // row of its own.
+                padding: const EdgeInsets.only(left: _EventAgendaRow._railWidth + 9, top: 2, bottom: 4),
+                child: Row(
+                  children: [
+                    Text(
+                      L.s.homeMoreEntries(entries.length - _maxEntries),
+                      style: AppText.caption.copyWith(color: widget.accent),
+                    ),
+                    const SizedBox(width: 4),
+                    AppIcon(AppIcons.caretDown, size: 13, color: widget.accent, flat: true),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ],
     );
   }
 }
@@ -551,10 +762,20 @@ class _DayStripCell extends ConsumerWidget {
 /// own town, and the two disagreeing is correct rather than a bug: a swimming
 /// lesson two towns over genuinely has different weather.
 ///
-/// Empty on every day outside the 16-day horizon, which on a strip four years
-/// deep is nearly all of them. That is the same bargain the rest of the feature
+/// There is no reading on any day outside the 16-day horizon, which on a strip
+/// four years deep is nearly all of them, nor on a past day, nor in a household
+/// that has given no address. That is the same bargain the rest of the feature
 /// makes — no reading is no drawing, never an error — and it is why the band
 /// keeps its height either way.
+///
+/// **What stands in for one is a dash, not a skeleton.** A skeleton is a
+/// promise that something is on its way, and on a day in 2029 nothing is: the
+/// forecast is not late, it does not exist and will not until the day is a
+/// fortnight out. Seven shimmering blocks across the top of the screen would be
+/// the app telling the reader it is loading, for ever, on the one piece of
+/// chrome that is always in front of them. The dash is the convention a table
+/// uses for a cell with no value — quiet, uniform, and honest about the fact
+/// that it is nothing rather than pretending to be something not yet arrived.
 ///
 /// Stacked, not side by side: a cell is a seventh of the screen and an icon
 /// beside a two-digit temperature caps the icon at 24, which is below the size
@@ -569,10 +790,28 @@ class _DayWeather extends ConsumerWidget {
 
   const _DayWeather({required this.date});
 
+  /// The stand-in when there is no forecast. Sized in points rather than set as
+  /// a text glyph so it is the same mark whatever the font does with an en
+  /// dash, and drawn in [AppColors.mutedLight] so it reads as an absence on
+  /// both palettes without competing with the day numbers under it.
+  static const _dashWidth = 10.0;
+  static const _dashHeight = 2.0;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final reading = ref.watch(weatherProvider).forDay(date);
-    if (reading == null) return const SizedBox.shrink();
+    if (reading == null) {
+      return Center(
+        child: Container(
+          width: _dashWidth,
+          height: _dashHeight,
+          decoration: BoxDecoration(
+            color: AppColors.mutedLight,
+            borderRadius: BorderRadius.circular(_dashHeight / 2),
+          ),
+        ),
+      );
+    }
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [

@@ -649,6 +649,13 @@ class GlassAccentButton extends StatelessWidget {
   final double fontSize;
   final EdgeInsetsGeometry padding;
 
+  /// False while the action cannot be taken yet — a save already in flight, an
+  /// enrolment waiting on the server. Same bargain as [GlassConfirmButton]'s
+  /// own [GlassConfirmButton.enabled]: the pill keeps its place and its shape,
+  /// loses the accent and the glow, and swallows the tap, so it reads as "not
+  /// yet" rather than vanishing mid-gesture.
+  final bool enabled;
+
   const GlassAccentButton({
     super.key,
     required this.label,
@@ -656,14 +663,15 @@ class GlassAccentButton extends StatelessWidget {
     this.icon,
     this.expand = false,
     this.fontSize = 15,
+    this.enabled = true,
     this.padding = const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
   });
 
   @override
   Widget build(BuildContext context) {
-    final accent = Theme.of(context).colorScheme.primary;
+    final accent = enabled ? Theme.of(context).colorScheme.primary : AppColors.mutedLight;
     return _PressableGlass(
-      onTap: onTap,
+      onTap: enabled ? onTap : () {},
       // A capsule regardless of height: it's what iOS renders anyway (the
       // native effect view sets `cornerConfiguration = .capsule()`), so a
       // smaller radius would only disagree with the material's own edge
@@ -671,7 +679,7 @@ class GlassAccentButton extends StatelessWidget {
       borderRadius: BorderRadius.circular(999),
       tint: accent,
       fallbackTint: accent,
-      boxShadow: AppShadows.accentGlass(accent),
+      boxShadow: enabled ? AppShadows.accentGlass(accent) : null,
       child: Padding(
         padding: padding,
         child: SizedBox(

@@ -53,10 +53,19 @@ class OnboardingState {
   final String address;
 
   /// Whether each found calendar is still ticked. They start on the moment the
-  /// lookup finds them (that is the whole point of looking), and end up as what
-  /// the last step reports as connected.
+  /// lookup finds them (that is the whole point of looking) — which is exactly
+  /// why they are *not* what the last step recaps: a tick is what the household
+  /// would like, and it is on before anybody has typed an address.
   final bool trashCalendar;
   final bool ferienCalendar;
+
+  /// Whether this run of the tour actually created each one. Nothing but a
+  /// connect that came back sets these, so a wizard skipped end to end recaps
+  /// two crosses — which is what happened. The last step also asks the live
+  /// connection list, for the household that already had the calendar before
+  /// the tour was replayed.
+  final bool trashConnected;
+  final bool ferienConnected;
 
   // -- the address lookup
   final List<GeoAddress> addressResults;
@@ -81,6 +90,8 @@ class OnboardingState {
     this.address = '',
     this.trashCalendar = true,
     this.ferienCalendar = true,
+    this.trashConnected = false,
+    this.ferienConnected = false,
     this.addressResults = const [],
     this.searchingAddress = false,
     this.pickedAddress,
@@ -97,6 +108,8 @@ class OnboardingState {
     String? address,
     bool? trashCalendar,
     bool? ferienCalendar,
+    bool? trashConnected,
+    bool? ferienConnected,
     List<GeoAddress>? addressResults,
     bool? searchingAddress,
     GeoAddress? pickedAddress,
@@ -115,6 +128,8 @@ class OnboardingState {
       address: address ?? this.address,
       trashCalendar: trashCalendar ?? this.trashCalendar,
       ferienCalendar: ferienCalendar ?? this.ferienCalendar,
+      trashConnected: trashConnected ?? this.trashConnected,
+      ferienConnected: ferienConnected ?? this.ferienConnected,
       addressResults: addressResults ?? this.addressResults,
       searchingAddress: searchingAddress ?? this.searchingAddress,
       pickedAddress: clearPickedAddress ? null : (pickedAddress ?? this.pickedAddress),
@@ -276,9 +291,11 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
   /// wrong; the step stays put on false, and every other outcome moves on.
   ///
   /// Each feed is connected on its own, so a waste vendor having a bad morning
-  /// does not cost the family their school holidays. Whichever half fails is
-  /// switched off before the last step recaps it — the recap has to say what
-  /// actually happened, not what was ticked a moment ago.
+  /// does not cost the family their school holidays. Only the half that came
+  /// back is recorded as connected — the recap has to say what actually
+  /// happened, not what was ticked a moment ago — while the ticks themselves
+  /// are left alone, so pressing "Weiter" again after an error retries the feed
+  /// that failed rather than quietly dropping it.
   ///
   /// Anything the household already subscribes to is skipped rather than
   /// created again: the tour can be replayed from Settings at any time, and a
@@ -297,6 +314,16 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
         .of(CalendarProvider.ferien)
         .any((c) => c.ferienBundesland == found.ferienState);
     final hasAbfallAlready = existing.of(CalendarProvider.abfall).isNotEmpty;
+
+    // Already subscribed counts as connected: the tour did not create it, but
+    // the household has it, and a cross beside a calendar they can see in
+    // Kalender would be its own kind of lie.
+    if (hasFerienAlready || hasAbfallAlready) {
+      state = state.copyWith(
+        ferienConnected: state.ferienConnected || hasFerienAlready,
+        trashConnected: state.trashConnected || hasAbfallAlready,
+      );
+    }
 
     final wantFerien = state.ferienCalendar && found.hasFerien && !hasFerienAlready;
     final wantAbfall = state.trashCalendar && found.hasAbfall && !hasAbfallAlready;
@@ -333,8 +360,8 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
     if (!mounted) return error == null;
     state = state.copyWith(
       connecting: false,
-      ferienCalendar: state.ferienCalendar && ferienOk,
-      trashCalendar: state.trashCalendar && abfallOk,
+      ferienConnected: state.ferienConnected || (wantFerien && ferienOk),
+      trashConnected: state.trashConnected || (wantAbfall && abfallOk),
       addressError: error,
       clearAddressError: error == null,
     );

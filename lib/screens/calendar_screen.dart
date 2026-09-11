@@ -46,6 +46,7 @@ import 'list_screen.dart';
 import '../theme/app_icons.dart';
 
 part 'calendar/event_form.dart';
+part 'calendar/repeat_sheet.dart';
 part 'calendar/calendar_filter.dart';
 part 'calendar/week_view.dart';
 part 'calendar/month_view.dart';
@@ -309,15 +310,45 @@ class CalendarScreen extends ConsumerWidget {
 /// of them out to be importable would drag the rest with it. Home mounts this;
 /// nothing else does.
 ///
-/// [trailing] is the Home tab's own business rather than the calendar's — the
-/// profile avatar that is this app's only way into Settings. It takes the
-/// header's right-hand slot, where Kalender puts its actions capsule.
+/// The four slots below are the Home tab's own business rather than the
+/// calendar's, and they are slots rather than content so that everything Home
+/// knows about — the household's to-dos, its trackers, its setup — stays in
+/// `lib/screens/home/` and out of this library. What this file owns is the
+/// *shape*: a header, a day, and room above and below it.
 class CalendarWeekScreen extends ConsumerWidget {
   /// Shown at the right of the title row, at every stage of the collapse. Null
   /// on any caller that isn't Home.
   final Widget? trailing;
 
-  const CalendarWeekScreen({super.key, this.trailing});
+  /// The line above the filter chips — Home's status island. Falls back to the
+  /// plain "Dein Tag" label, which is also what a caller with nothing smarter
+  /// to say should leave it as.
+  final Widget? label;
+
+  /// Below the day card's bottom edge, and therefore **not about the selected
+  /// day** — see `HomeSections`. Everything here keeps saying the same thing
+  /// while the strip moves, which is only readable because the card between
+  /// them visibly ends.
+  /// Directly under the label and above the chips: Home's first-steps
+  /// checklist. It opens *inside* the header — see [underLabelHeight].
+  final Widget? underLabel;
+
+  /// How tall [underLabel] is when open, zero when closed. Arithmetic rather
+  /// than a measurement, because the collapsing header's extent has to be known
+  /// before the panel is laid out; `firstStepsPanelHeight` is where Home works
+  /// it out.
+  final double underLabelHeight;
+
+  final Widget? belowDay;
+
+  const CalendarWeekScreen({
+    super.key,
+    this.trailing,
+    this.label,
+    this.underLabel,
+    this.underLabelHeight = 0,
+    this.belowDay,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -329,7 +360,16 @@ class CalendarWeekScreen extends ConsumerWidget {
       body: SafeArea(
         bottom: false,
         child: _CompactNavOnScroll(
-          child: _WeekView(state: state, accent: accent, title: L.s.navHome, trailing: trailing),
+          child: _WeekView(
+            state: state,
+            accent: accent,
+            title: L.s.navHome,
+            trailing: trailing,
+            label: label,
+            underLabel: underLabel,
+            underLabelHeight: underLabelHeight,
+            belowDay: belowDay,
+          ),
         ),
       ),
     );
@@ -586,16 +626,38 @@ const calendarDayStripKey = ValueKey('calendarDayStrip');
 class _MonthAndChipsRow extends ConsumerWidget {
   final CalendarScreenState state;
   final Color accent;
-  final String label;
 
-  const _MonthAndChipsRow({required this.state, required this.accent, required this.label});
+  /// A widget rather than a string, because the two tabs put different *kinds*
+  /// of thing here now: Kalender a month name, Home a status pill that can
+  /// carry a glyph, a count and a disclosure chevron. See [_MonthYearRow].
+  final Widget label;
+
+  /// How tall that row is. Kalender keeps [_MonthYearRow.monthHeight], which is
+  /// what a month name needs; Home asks for more because its island is two
+  /// lines. Passed in rather than measured because both views' collapsing
+  /// arithmetic is done against it.
+  final double labelHeight;
+
+  /// Home's first-steps checklist, between the label and the chips. Already
+  /// sized by the caller — see `_WeekView`, which has to know its height before
+  /// it lays the header out at all.
+  final Widget? underLabel;
+
+  const _MonthAndChipsRow({
+    required this.state,
+    required this.accent,
+    required this.label,
+    this.labelHeight = _MonthYearRow.monthHeight,
+    this.underLabel,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _MonthYearRow(label: label),
+        _MonthYearRow(height: labelHeight, child: label),
+        ?underLabel,
         const SizedBox(height: 14),
         SizedBox(
           // Tall enough for a 26pt face plus the chip's own padding and its
@@ -605,13 +667,20 @@ class _MonthAndChipsRow extends ConsumerWidget {
           child: ListView(
             key: calendarChipRowKey,
             scrollDirection: Axis.horizontal,
-            // The last chip carries no gap of its own, so scrolled to the end
-            // its selection ring lands exactly on the viewport's clip and the
-            // rounded stroke gets shaved. Three points is the ring — 1.5 of
-            // border plus its 1.5 inset — so this is slack for the one thing
-            // that reaches past a chip's fill, not a margin.
-            padding: const EdgeInsets.only(right: 3),
             children: [
+              // First, and in front of a rule. Every chip after it is a face
+              // that narrows the row to one person; this one adds a second kind
+              // of thing on top of them all. Sitting in among the faces it
+              // would read as another person, and its first tap would look like
+              // it had hidden everybody. It leads because it is the one chip
+              // always there — which faces follow depends on what the household
+              // has connected, so the row would otherwise open on a different
+              // kind of thing from one phone to the next.
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: _TodosChip(state: state),
+              ),
+              _ChipRowDivider(),
               Padding(
                 padding: const EdgeInsets.only(right: 8),
                 child: _AllCalendarsChip(state: state),
@@ -621,13 +690,6 @@ class _MonthAndChipsRow extends ConsumerWidget {
                   padding: const EdgeInsets.only(right: 8),
                   child: _CalendarGroupChip(state: state, group: group),
                 ),
-              // Last, and behind a rule. Every chip before it is a face that
-              // narrows the row to one person; this one adds a second kind of
-              // thing on top of them all. Sitting in among the faces it would
-              // read as another person, and its first tap would look like it
-              // had hidden everybody.
-              const _ChipRowDivider(),
-              _TodosChip(state: state),
             ],
           ),
         ),
@@ -642,48 +704,70 @@ class _MonthAndChipsRow extends ConsumerWidget {
 /// **The label says two different kinds of thing on the two tabs, on purpose.**
 /// Kalender prints the month the grid is showing and crossfades it as that
 /// month changes, because a grid of numbered squares needs telling which month
-/// it is. Home prints "Dein Tag" and never changes it: the day strip is already
-/// a row of dates, the agenda under it is one day's, and naming the month over
-/// a screen about today answered a question nobody was asking.
+/// it is. Home never names a month — the day strip is already a row of dates and
+/// the agenda under it is one day's — and spends the row on its status island
+/// instead: the single most pressing thing about today, or "Dein Tag" when
+/// there is nothing pressing. See `DayIsland`.
+///
+/// Which is why this takes a widget. The crossfade below is keyed on whatever
+/// it is given, so **every caller must put a `Key` on its child** or the row
+/// will swap contents without animating.
 ///
 /// The list-vs-grid toggle used to sit opposite the label and is gone: the two
 /// views are two tabs now, so the control that swapped them would be a second,
 /// quieter way of doing what the nav bar already does. What is left of that
 /// side is [trailing], which only Home fills.
 ///
-/// The row keeps its `spaceBetween` and its full width with nothing on the
-/// right, so the label sits where it always did rather than shifting on the one
-/// screen that has no trailing widget.
+/// The label is given the row's full width and aligned left, rather than left
+/// to ask for what it wants: a child measured against infinity cannot ellipsise,
+/// and Home's island can be holding an appointment's title.
 class _MonthYearRow extends StatelessWidget {
-  final String label;
+  final Widget child;
+  final double height;
 
-  const _MonthYearRow({required this.label});
+  const _MonthYearRow({required this.child, this.height = monthHeight});
 
   /// What the row occupied when it held the view toggle (3 + 34 + 3), kept as a
   /// fixed height rather than let go: both views' `_extraHeaderHeight` are
   /// arithmetic over this row, and a label that set its own height would move
-  /// the chips under it on one tab and not the other.
-  static const _height = 40.0;
+  /// the chips under it on one tab and not the other. It is also the reason
+  /// Home's island was nearly free — a glyph beside a heading fits the toggle's
+  /// old slot with room to spare.
+  ///
+  /// It is the *default* rather than the only value: Home's island grew a
+  /// second line saying what its count is counting, and its own view pays the
+  /// eight points for it. Kalender's month name still sits at 40.
+  static const monthHeight = 40.0;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: _height,
+      height: height,
       child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        AnimatedSwitcher(
-          duration: const Duration(milliseconds: 260),
-          switchInCurve: Curves.easeOutCubic,
-          switchOutCurve: Curves.easeIn,
-          transitionBuilder: (child, animation) => FadeTransition(
-            opacity: animation,
-            child: SlideTransition(
-              position: Tween<Offset>(begin: const Offset(0, 0.25), end: Offset.zero).animate(animation),
-              child: child,
+        // Given the row's whole width rather than left to ask for what it
+        // wants: a label that measures itself against infinity cannot
+        // ellipsise, and Home's island can hold an appointment's title. The
+        // switcher stacks its children centred by default, so the alignment
+        // has to be said out loud once the box is wider than the words.
+        Expanded(
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 260),
+            switchInCurve: Curves.easeOutCubic,
+            switchOutCurve: Curves.easeIn,
+            layoutBuilder: (current, previous) => Stack(
+              alignment: Alignment.centerLeft,
+              children: [...previous, ?current],
             ),
+            transitionBuilder: (child, animation) => FadeTransition(
+              opacity: animation,
+              child: SlideTransition(
+                position: Tween<Offset>(begin: const Offset(0, 0.25), end: Offset.zero).animate(animation),
+                child: child,
+              ),
+            ),
+            child: child,
           ),
-          child: Text(label, key: ValueKey(label), style: AppText.sectionHeading),
         ),
       ],
       ),
@@ -698,9 +782,9 @@ class _MonthYearRow extends StatelessWidget {
 /// colour: which chip is selected is one piece of state for the whole row, and
 /// a selection that changed hue per chip read as a second colour code fighting
 /// the dot that is already saying which calendar this is.
-/// The hairline between the person chips and the to-do toggle.
+/// The hairline between the to-do toggle and the person chips.
 ///
-/// The one mark in the row that says the chip after it answers a different
+/// The one mark in the row that says the chip before it answers a different
 /// question. Inset top and bottom so it reads as a separator rather than as a
 /// very thin chip of its own.
 class _ChipRowDivider extends StatelessWidget {
@@ -721,7 +805,7 @@ class _ChipRowDivider extends StatelessWidget {
 /// careful about here. It borrows [_CalendarChip] so the row stays one row, but
 /// it neither joins nor clears `calendarFilter`: tapping it turns to-dos on and
 /// tapping it again turns them off, and whichever person is selected stays
-/// selected throughout. The rule before it is what carries that difference —
+/// selected throughout. The rule after it is what carries that difference —
 /// see [_ChipRowDivider].
 ///
 /// It carries the check the Board's create sheet puts on "To-do", not the Board

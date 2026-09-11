@@ -55,6 +55,11 @@ abstract class AppStrings {
   /// wants it reversed can have it.
   String monthYear(int month, int year);
 
+  /// Two dates as one span — `1. Mär – 14. Apr`. The dash is an en dash with
+  /// its own spacing in both languages, which is why it is here and not joined
+  /// at the call site.
+  String dateRange(String from, String to);
+
   /// Board's week label: `10. – 16. August` / `10 – 16 August`.
   String dayRangeSameMonth(int fromDay, int toDay, int month);
 
@@ -152,7 +157,9 @@ abstract class AppStrings {
   String get sectionUndated;
 
   /// Due-date picker. The shortcuts carry most of the traffic; "Datum wählen"
-  /// opens the calendar behind them.
+  /// opens the calendar behind them. [duePickDate] is also the row that opens
+  /// the calendar in the Kalender's repeat sheet — the same offer, and a second
+  /// string saying it would only be the same words twice.
   String get dueThisWeekend;
   String get dueNextWeek;
   String get duePickDate;
@@ -497,6 +504,14 @@ abstract class AppStrings {
   String get repeatMonthly;
   String get repeatYearly;
   String get repeatEnds;
+
+  /// The line under the repeat sheet's start row, saying why the start is
+  /// standing there at all: every rule but "Täglich" is read off it.
+  String get repeatFollowsStart;
+
+  /// The end date as the form's repeat row carries it, after the rule and a
+  /// middle dot: "Jeden Montag · bis 15. Nov".
+  String repeatUntilDate(String date);
   String get repeats;
 
   /// Why the repeat card has nothing to tap on an event that already repeats: a
@@ -597,7 +612,6 @@ abstract class AppStrings {
   /// case where the calendar has gone from under the draft.
   String eventBeingCreatedIn(String calendar);
   String get eventBeingCreated;
-  String get calendarsUpdating;
 
   String get eventCreated;
   String get eventUpdated;
@@ -1086,4 +1100,73 @@ abstract class AppStrings {
   String get renameFamily;
   String get renameFamilyBody;
   String get familyRenameFailed;
+
+  // ------------------------------------------------------------------- Home
+
+  /// The Home island — the one line above the filter chips that used to read
+  /// only "Dein Tag". It says the single most pressing thing about **today**,
+  /// and these are in priority order: an overdue to-do outranks an open one,
+  /// which outranks an unticked tracker, which outranks the next appointment.
+  String homeOverdue(int count);
+  String homeOpenToday(int count);
+  String homeTrackersLeft(int count);
+
+  /// The next appointment still to come today: its clock time and its name.
+  String homeNextUp(String time, String title);
+
+  /// Today had something to do and all of it is done. Not the same as having
+  /// nothing at all, which falls back to [yourDay].
+  String get homeAllDone;
+
+  /// What the island says on a day that is not today: how much is on it. The
+  /// date itself comes from [weekdayWithDateShort].
+  String homeDayEntries(int count);
+  String get homeDayEmpty;
+
+  /// What the island says while the day is still arriving — the state before
+  /// every one of the above, and the only one that is about the app rather than
+  /// about the household.
+  String get homeThinking;
+  String get homeHintThinking;
+
+  /// The quiet second line under each of those, naming what is being counted.
+  /// "Noch 1 offen" is a number without a noun on its own, and the island is
+  /// the one place in the app where the reader has no row, no icon and no
+  /// section heading to tell them which of four kinds of thing it means.
+  String get homeHintSetup;
+  String get homeHintOverdue;
+  String get homeHintOpen;
+  String get homeHintTrackers;
+  String get homeHintNext;
+  String get homeHintDone;
+
+  // The sections below the day card.
+  String get homeOpenSection;
+  String get homeTrackerSection;
+  String get homeListsSection;
+  String get homeShowAll;
+
+  /// The day card's fold, on a day with more entries than it shows at once.
+  String homeMoreEntries(int count);
+
+  /// How many articles on a shopping list are still unticked.
+  String homeListOpenItems(int count);
+
+  // ------------------------------------------------------- First steps
+
+  /// The setup checklist, shown in the island and its card until every step is
+  /// done. Each step is derived from live state, so none of these is a label on
+  /// a stored flag.
+  String get firstStepsTitle;
+  String firstStepsProgress(int done, int total);
+  String get firstStepCalendar;
+  String get firstStepCalendarBody;
+  String get firstStepFamily;
+  String get firstStepFamilyBody;
+  String get firstStepTodo;
+  String get firstStepTodoBody;
+  String get firstStepTracker;
+  String get firstStepTrackerBody;
+  String get firstStepList;
+  String get firstStepListBody;
 }

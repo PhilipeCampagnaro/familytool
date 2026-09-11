@@ -5,9 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/calendar_data.dart';
 import '../data/repositories/calendar_repository.dart';
+import '../data/repositories/list_repository.dart' show newUuidV4;
 import '../models/calendar_event.dart';
 import 'auth_state.dart';
 import 'family_state.dart';
+import 'realtime_state.dart';
 import '../l10n/l10n.dart';
 
 class CalSelectedDay {
@@ -385,17 +387,44 @@ class CalendarScreenState {
 const kPickedCalendarFilterId = '__picked__';
 
 class CalendarNotifier extends StateNotifier<CalendarScreenState> {
-  CalendarNotifier(this._repo, {required bool signedIn})
-      : super(CalendarScreenState(now: DateTime.now())) {
+  CalendarNotifier(this._repo, {required bool signedIn, FamilyChannel? channel})
+      // `channel` is the public name and `_channel` the private field. Dart
+      // forbids an underscore in a named parameter, so an initializing formal
+      // is not available here.
+      // ignore: prefer_initializing_formals
+      : _channel = channel,
+        super(CalendarScreenState(now: DateTime.now())) {
     if (signedIn) load();
     // Ticks the real-time clock so the agenda's timeline phase (done/live/
     // upcoming) advances on its own instead of only updating on interaction.
     _ticker = Timer.periodic(const Duration(seconds: 30), (_) {
       state = state.copyWith(now: DateTime.now());
+      // And, far more rarely, a re-read. This is the only thing that catches an
+      // appointment somebody added **in Google itself** while the app sat open:
+      // no trigger fires for that and no device broadcasts it, so the one way to
+      // learn about it is to ask. Riding the clock ticker rather than a second
+      // timer is also what makes it foreground-only for free — iOS suspends
+      // timers along with the app, so a phone in a pocket polls nothing.
+      unawaited(refreshIfStale(after: _foregroundStaleAfter));
     });
   }
 
   final CalendarRepository _repo;
+
+  /// The household's live channel, for telling the other devices that an
+  /// appointment moved.
+  ///
+  /// **The calendar is the one thing a database trigger cannot announce**, which
+  /// is exactly the point of storing no events: there is no row anywhere in our
+  /// database to fire on. The device that made the change is the only thing that
+  /// knows it happened, so it says so — and everybody else re-reads through
+  /// `calendar-events` like they always do. Null before the household is known.
+  final FamilyChannel? _channel;
+
+  /// The name this screen's changes travel under. Not a table, deliberately: it
+  /// sits in the same namespace as `lists` and `tasks` because it does the same
+  /// job for the same receivers, and there is no table it could be named after.
+  static const kCalendarTopic = 'calendar';
 
   Timer? _ticker;
 
@@ -460,14 +489,240 @@ class CalendarNotifier extends StateNotifier<CalendarScreenState> {
     }
   }
 
+  /// How long a calendar read stays good enough that coming back to the app
+  /// doesn't trigger another one.
+  ///
+  /// Short enough that a phone picked up after lunch shows this afternoon, long
+  /// enough that flicking to Mail to check a confirmation and straight back
+  /// doesn't cost every connected provider another fan-out. The cost of getting
+  /// this wrong is asymmetric — too long is a stale calendar the user can see,
+  /// too short is load on somebody's school server that nobody can see — so it
+  /// errs short and the throttle exists to stop the pathological case, not to
+  /// ration ordinary use.
+  static const _resumeStaleAfter = Duration(minutes: 2);
+
+  /// How long the app may sit open before it asks the providers again.
+  ///
+  /// Much longer than the resume window, and the asymmetry is deliberate: coming
+  /// back to the app is a moment the user is about to *look*, whereas this fires
+  /// whether anyone is looking or not. Every household doing this hits the same
+  /// providers, and the quota it spends is shared across every user of the app —
+  /// so four fan-outs an hour per open app is the ceiling, not a target.
+  static const _foregroundStaleAfter = Duration(minutes: 15);
+
+  /// When the last **network** read landed. Null until one has, and deliberately
+  /// not set by a cache read: a month-old snapshot restored at launch is on
+  /// screen, but it is not a reason to skip the refresh behind it.
+  DateTime? _lastFetched;
+
+  /// Re-read only if the calendar on screen has had time to go wrong.
+  ///
+  /// This is what returning to the app runs. It is separate from [refresh]
+  /// because "the user asked" and "the user came back" are different questions:
+  /// **"Jetzt aktualisieren" must always go out**, however recently we looked,
+  /// or the one control whose entire job is to fetch would sometimes do nothing.
+  Future<void> refreshIfStale({Duration? after}) async {
+    final last = _lastFetched;
+    if (last != null && DateTime.now().difference(last) < (after ?? _resumeStaleAfter)) {
+      return;
+    }
+    // Silent whenever there is already a calendar on screen. A resume is not an
+    // action the user took on the calendar, so a red banner over a working one
+    // would be the app reporting a failure nobody asked it to risk.
+    await refresh(silent: state.loaded);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Optimistic writes
+  //
+  // **We store no events, so a write cannot appear until a provider hands it
+  // back** — and that is two round trips away: `calendar-write` puts the
+  // appointment in Google, Outlook or the school's CalDAV server, and then
+  // `calendar-events` asks every connected calendar again. Waiting for both left
+  // the user staring at the day they had just filled, still empty. On the one
+  // screen this product is sold on.
+  //
+  // So the appointment goes on screen first and the round trips happen behind
+  // it. The overlay below is what makes that safe: rather than patching the
+  // fetched day map in place — where the next refresh, a resume or somebody
+  // else's, would silently wipe the change back off — provisional events are
+  // held *beside* the snapshot and merged on the way into state. A refresh can
+  // then land at any moment without the write flickering away.
+  // ---------------------------------------------------------------------------
+
+  /// The last read, unmerged. Kept so the overlay can be re-composed against it
+  /// when a write starts or settles without going back to the network.
+  CalendarSnapshot? _snapshot;
+
+  /// Appointments written here that no provider has handed back yet.
+  final List<CalendarEvent> _pendingAdds = [];
+
+  /// Event ids removed or replaced here, suppressed until a read agrees they
+  /// are gone. An edit is both: the original hidden, the new one added.
+  final Set<String> _pendingHides = {};
+
+  /// Overlay entries to retire the moment the **next** snapshot arrives.
+  ///
+  /// Not dropped as soon as the write succeeds, which would blink the
+  /// appointment out for the length of the read that follows, and not dropped
+  /// after it either, which would show the provisional and the real one side by
+  /// side for a frame. Retiring them *with* the snapshot is the only timing that
+  /// is never wrong on screen.
+  final Set<String> _retiring = {};
+
   void _apply(CalendarSnapshot snapshot) {
+    if (!snapshot.fromCache) _lastFetched = DateTime.now();
+    if (_retiring.isNotEmpty) {
+      _pendingAdds.removeWhere((e) => _retiring.contains(e.id));
+      _pendingHides.removeAll(_retiring);
+      _retiring.clear();
+    }
+    _snapshot = snapshot;
+    _compose(clearError: true);
+  }
+
+  /// Puts the snapshot plus whatever is in flight into state.
+  ///
+  /// [clearError] only on a fresh read. An overlay change is not an answer to
+  /// the question a banner is asking, and a failed write sets its own message
+  /// straight after rolling back.
+  void _compose({bool clearError = false}) {
+    final snapshot = _snapshot;
+    if (snapshot == null) return;
     state = state.copyWith(
       calendars: snapshot.calendars,
-      eventsByDay: snapshot.eventsByDay,
+      eventsByDay: _withPending(snapshot.eventsByDay),
       loaded: true,
       fromCache: snapshot.fromCache,
-      clearError: true,
+      clearError: clearError,
     );
+  }
+
+  Map<String, List<CalendarEvent>> _withPending(Map<String, List<CalendarEvent>> fetched) {
+    // The overwhelmingly common case: nothing in flight, so the read's own map
+    // goes through untouched and costs nothing to overlay.
+    if (_pendingAdds.isEmpty && _pendingHides.isEmpty) return fetched;
+
+    final out = <String, List<CalendarEvent>>{};
+    fetched.forEach((day, events) {
+      final kept = [
+        for (final e in events)
+          if (!_pendingHides.contains(e.id)) e,
+      ];
+      if (kept.isNotEmpty) out[day] = kept;
+    });
+
+    final touched = <String>{};
+    for (final event in _pendingAdds) {
+      for (final day in event.days) {
+        final k = CalendarScreenState.key(day.year, day.month, day.day);
+        (out[k] ??= []).add(event);
+        touched.add(k);
+      }
+    }
+    for (final k in touched) {
+      out[k]!.sort(CalendarEvent.compareForDay);
+    }
+    return out;
+  }
+
+  /// The appointment as it will look once the provider has it, drawn from the
+  /// draft and the calendar it is going into.
+  ///
+  /// The id is ours and local — a provider's own uid does not exist until it
+  /// answers — which is exactly why the overlay is keyed on it: nothing a read
+  /// returns can ever collide with one.
+  CalendarEvent _provisional(EventDraft draft, CalendarSource target) => CalendarEvent(
+    id: 'pending:${newUuidV4()}',
+    calendarId: target.id,
+    title: draft.title,
+    startsAt: draft.start,
+    endsAt: draft.end,
+    allDay: draft.allDay,
+    body: draft.notes,
+    loc: draft.location,
+    source: target.name,
+    srcColor: target.color,
+  );
+
+  void _addPending(CalendarEvent event) {
+    _pendingAdds.add(event);
+    _compose();
+  }
+
+  /// Hides [event], and its whole series when that is what is being removed —
+  /// otherwise "Ganze Serie" would take one Monday off the grid and leave the
+  /// rest of the term sitting there until the read came back.
+  Set<String> _hidePending(CalendarEvent event, EventScope scope) {
+    final ids = <String>{event.id};
+    if (scope == EventScope.series && event.seriesUid.isNotEmpty) {
+      for (final day in state.eventsByDay.values) {
+        for (final e in day) {
+          if (e.seriesUid == event.seriesUid) ids.add(e.id);
+        }
+      }
+    }
+    _pendingHides.addAll(ids);
+    _compose();
+    return ids;
+  }
+
+  void _rollBack({Iterable<String> adds = const [], Iterable<String> hides = const []}) {
+    _pendingAdds.removeWhere((e) => adds.contains(e.id));
+    _pendingHides.removeAll(hides);
+    _compose();
+  }
+
+  /// Re-reads in the background and retires [ids] when the answer lands.
+  ///
+  /// Deliberately not awaited by the write that starts it. The write is the part
+  /// that can fail in a way the user must know about; the read behind it is
+  /// housekeeping, and making the sheet wait for it is the whole problem this
+  /// section exists to remove.
+  ///
+  /// A provider that has not caught up with its own write yet will return
+  /// without the appointment, and retiring the overlay against that answer
+  /// blinks it off until the next read. Google and Graph are read-your-writes
+  /// for the same credential so this is a CalDAV-only risk, and the honest
+  /// alternative — holding a provisional event on screen that the server may
+  /// have rejected — is worse.
+  /// Settle our own view, and tell the rest of the household to re-read.
+  ///
+  /// Every successful write ends here, which is why the announcement sits here
+  /// rather than at four call sites that would drift apart.
+  void _reconcile(Iterable<String> ids) {
+    _channel?.announce(kCalendarTopic);
+    unawaited(_readAfterWrite(ids.toList()));
+  }
+
+  /// Somebody else in the household changed an appointment.
+  ///
+  /// Always goes out, unlike a resume: this is not a guess that the calendar
+  /// might have moved on, it is a device saying that it has. Silent because the
+  /// user did nothing to provoke it and a banner over a working calendar would
+  /// be the app reporting a failure nobody asked it to risk.
+  Future<void> refreshFromElsewhere() => refresh(silent: true);
+
+  Future<void> _readAfterWrite(List<String> ids) async {
+    // **Never retire against a read that was already in the air.** [refresh]
+    // deliberately joins a fetch in flight rather than starting a second one,
+    // which is right for two screens asking at once and wrong here: that fetch
+    // left before this write did, so it cannot contain it, and retiring the
+    // overlay against its answer would blink the appointment straight back off.
+    // A resume landing while the event sheet saves is the ordinary way to get
+    // one.
+    final inFlight = _inFlight;
+    if (inFlight != null) {
+      try {
+        await inFlight;
+      } catch (_) {
+        // Its failure is its own caller's to report; this read carries on.
+      }
+      if (!mounted) return;
+    }
+
+    _retiring.addAll(ids);
+    await refresh(silent: true);
   }
 
   /// Jumps the selection to the real current day — what the "Heute" button
@@ -645,30 +900,40 @@ class CalendarNotifier extends StateNotifier<CalendarScreenState> {
   /// Creates the event. Returns false and records a German message on failure,
   /// so the sheet can stay open with what the user typed still in it.
   ///
-  /// [onProgress] is called with a line of copy each time the wait moves on,
-  /// for the pending chip the sheet leaves behind. **There are exactly two
-  /// stages and they are the two round trips**, which is also why this is the
-  /// slowest write in the app: `calendar-write` puts the appointment in Google,
-  /// Outlook or the CalDAV server, and then `calendar-events` re-reads every
-  /// connected calendar, because the app stores no events of its own and the
-  /// new one cannot appear until a proxied read brings it back.
+  /// **The appointment is on the calendar before this is called back.** It goes
+  /// up as a provisional event the moment the draft is known to be writable, and
+  /// the answer here is only about whether `calendar-write` accepted it — the
+  /// re-read that follows is housekeeping and nothing waits for it. See the
+  /// optimistic-writes section above.
   ///
-  /// It is **one** calendar being written — the one the sheet picked. The
-  /// second stage names no calendar because the fan-out to the providers
-  /// happens inside the Edge Function, in parallel, and the client is handed
-  /// one answer for all of them.
-  Future<bool> createEvent(EventDraft draft, {void Function(String message)? onProgress}) async {
+  /// It is **one** calendar being written, the one the sheet picked; the fan-out
+  /// to the providers happens inside the Edge Function.
+  Future<bool> createEvent(EventDraft draft) async {
     final clean = draft.copyWith(title: draft.title.trim());
     if (clean.title.isEmpty) return _failed(L.s.eventNeedsTitle);
 
+    // Resolved before anything is drawn: a provisional event needs the
+    // calendar's name and colour, and this is the same check `_write` would
+    // have failed on anyway.
+    final target = state.sourceById(clean.calendarId);
+    if (target == null) {
+      return _failed(
+        clean.calendarId.isEmpty ? L.s.noWritableCalendar : L.s.calendarNoLongerAvailable,
+      );
+    }
+
+    final provisional = _provisional(clean, target);
+    _addPending(provisional);
+
     try {
-      await _write(clean);
-      onProgress?.call(L.s.calendarsUpdating);
-      await refresh();
-      return true;
+      await _repo.writeExternal(action: 'create', calendarId: target.id, draft: clean);
     } catch (e) {
+      _rollBack(adds: [provisional.id]);
       return _failed(_message(e, L.s.eventSaveFailed));
     }
+
+    _reconcile([provisional.id]);
+    return true;
   }
 
   /// Saves an edited event, including a move to a different calendar.
@@ -698,6 +963,41 @@ class CalendarNotifier extends StateNotifier<CalendarScreenState> {
       return _failed(L.s.seriesCannotMoveCalendar);
     }
 
+    state = state.copyWith(clearOpenEvent: true);
+
+    // A whole series is the one edit that is not drawn ahead of the answer.
+    // The app is handed expanded occurrences and never the rule behind them, so
+    // there is no way to work out on the client which other days a changed
+    // series lands on — and an overlay that moved this Monday while leaving the
+    // rest of the term where it was would be a worse lie than a short wait.
+    if (scope == EventScope.series) {
+      try {
+        await _repo.writeExternal(
+          action: 'update',
+          calendarId: event.calendarId,
+          uid: event.uid,
+          draft: clean,
+          scope: scope,
+          seriesUid: event.seriesUid,
+          occurrence: event,
+        );
+        _channel?.announce(kCalendarTopic);
+        await refresh();
+        return true;
+      } catch (e) {
+        return _failed(_message(e, L.s.changeSaveFailed));
+      }
+    }
+
+    final target = state.sourceById(clean.calendarId);
+    if (target == null) return _failed(L.s.calendarNoLongerAvailable);
+
+    // Both routes are the same change on screen — this appointment gone, that
+    // one in its place — however differently the providers have to be told.
+    final provisional = _provisional(clean, target);
+    final hidden = _hidePending(event, EventScope.single);
+    _addPending(provisional);
+
     try {
       if (clean.calendarId == event.calendarId) {
         await _repo.writeExternal(
@@ -710,32 +1010,37 @@ class CalendarNotifier extends StateNotifier<CalendarScreenState> {
           occurrence: event,
         );
       } else {
-        // Guarded above: only a single occurrence gets this far, so the delete
-        // takes an EXDATE or one instance and leaves the rest of the series
-        // where it is.
+        // Create first, delete second, on purpose: a failed create has lost
+        // nothing, where deleting first and then failing would lose the
+        // appointment outright. Only a single occurrence gets this far, so the
+        // delete takes an EXDATE or one instance and leaves the series alone.
         await _write(clean);
         await _remove(event);
       }
-
-      state = state.copyWith(clearOpenEvent: true);
-      await refresh();
-      return true;
     } catch (e) {
+      _rollBack(adds: [provisional.id], hides: hidden);
       return _failed(_message(e, L.s.changeSaveFailed));
     }
+
+    _reconcile([provisional.id, ...hidden]);
+    return true;
   }
 
   Future<bool> deleteEvent(CalendarEvent event, {EventScope scope = EventScope.single}) async {
     if (!canEdit(event)) return _failed(L.s.calendarNotEditable);
     state = state.copyWith(clearOpenEvent: true);
 
+    final hidden = _hidePending(event, scope);
+
     try {
       await _remove(event, scope: scope);
-      await refresh();
-      return true;
     } catch (e) {
+      _rollBack(hides: hidden);
       return _failed(_message(e, L.s.eventDeleteFailed));
     }
+
+    _reconcile(hidden);
+    return true;
   }
 
   /// Writes a deleted appointment back where it came from — the chip's
@@ -746,13 +1051,25 @@ class CalendarNotifier extends StateNotifier<CalendarScreenState> {
   /// provider's own id — the appointment returns as a new one — which matters
   /// only to a guest who had been invited to it in Google.
   Future<bool> restoreEvent(CalendarEvent event) async {
+    final draft = EventDraft.of(event);
+    final target = state.sourceById(draft.calendarId);
+    if (target == null) return _failed(L.s.calendarNoLongerAvailable);
+
+    // Back on the grid before the write goes out, like any other create. Undo is
+    // the one action where a wait is least forgivable: the user is already
+    // looking at the gap they want filled.
+    final provisional = _provisional(draft, target);
+    _addPending(provisional);
+
     try {
-      await _write(EventDraft.of(event));
-      await refresh();
-      return true;
+      await _repo.writeExternal(action: 'create', calendarId: target.id, draft: draft);
     } catch (e) {
+      _rollBack(adds: [provisional.id]);
       return _failed(_message(e, L.s.eventRestoreFailed));
     }
+
+    _reconcile([provisional.id]);
+    return true;
   }
 
   /// The one place an event is written, and there is only one route out: back to
@@ -820,8 +1137,15 @@ final calendarProvider = StateNotifierProvider<CalendarNotifier, CalendarScreenS
   // still has to rebuild it, or the calendar of the family just left stays on
   // screen.
   ref.watch(familyProvider.select((s) => s.household?.id));
-  return CalendarNotifier(
+  final notifier = CalendarNotifier(
     ref.watch(calendarRepositoryProvider),
     signedIn: userId != null,
+    channel: ref.watch(familyChannelProvider),
   );
+  reloadOnFamilyChange(
+    ref,
+    const {CalendarNotifier.kCalendarTopic},
+    notifier.refreshFromElsewhere,
+  );
+  return notifier;
 });

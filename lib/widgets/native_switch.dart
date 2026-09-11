@@ -1,4 +1,4 @@
-import 'package:flutter/cupertino.dart' show CupertinoSwitch;
+import 'package:flutter/cupertino.dart' show CupertinoColors;
 import 'package:flutter/foundation.dart' show Factory, kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -25,6 +25,28 @@ const Size kNativeSwitchSize = Size(51, 31);
 /// Off iOS there's no such control to embed, so it falls back to
 /// `Switch.adaptive` — Material's switch everywhere it matters, the same
 /// fallback split `GlassSurface` makes.
+///
+/// ## It goes in a sheet body too, and that is a reversal
+///
+/// It used to be forbidden there, and [GlassSwitch] existed to take its place:
+/// the Kalender event form shipped with a real `UISwitch` in its "Ganztägig"
+/// row and rendered blank white below it — the Beginn/Ende rows, the calendar
+/// card and the notes field all laid out at full height and painting nothing.
+/// The reading at the time was a headcount: two platform views in every sheet
+/// header, a third in the body, and iOS drops the overlay layer carrying
+/// everything above them.
+///
+/// The headcount was the symptom. [occludedByRoute] found the cause — a sheet
+/// is a **non-opaque** route, so the whole screen behind it kept its native
+/// chrome composited into the same scene, and it was the tab bar and the search
+/// field punching up through the sheet that took the body with them. Every
+/// native view now stands down for as long as something covers it, which is
+/// why the *same* symptom stopped happening everywhere else in the app. The
+/// switch was simply never tried again afterwards.
+///
+/// So a sheet body may hold one. If the blank body ever comes back, the tell is
+/// unchanged — a card whose height is right and whose contents aren't there —
+/// and the way back is one word: [GlassSwitch] at the call site.
 class NativeSwitch extends StatefulWidget {
   final bool value;
   final ValueChanged<bool> onChanged;
@@ -37,33 +59,126 @@ class NativeSwitch extends StatefulWidget {
   State<NativeSwitch> createState() => _NativeSwitchState();
 }
 
-/// The same on/off row, drawn by Flutter — for use **inside a `showAppSheet`
-/// body**, where [NativeSwitch] must not go.
+/// The switch drawn by Flutter, for the moments the real one cannot be on
+/// screen — **[NativeSwitch] is what a row asks for**, and this is what it
+/// falls back to while a sheet or a menu covers it.
 ///
-/// Not a style preference; a compositing limit. Every sheet's header already
-/// embeds two platform views (the glass X and the check are each a
-/// `NativeGlassView`), and adding a third inside the scrolling body makes iOS
-/// drop the overlay layer holding everything painted after it. The first sheet
-/// to try it — the Kalender event form — laid out correctly and rendered as
-/// blank white below the switch: the Beginn/Ende rows, the calendar picker and
-/// the notes field were all there, all invisible. It is the same failure
-/// `showAppSheet`'s header documents, where the title vanished on device
-/// between those two buttons.
+/// Drawn rather than borrowed from `CupertinoSwitch`, which redraws the
+/// *pre-iOS 26* control: a switch that changed shape for as long as a menu was
+/// open is the same visible swap the glass buttons used to make, and the whole
+/// point of the fallback is that nobody notices it. Same metrics, same system
+/// green, and a knob lit with the lift, specular and rim the rest of the app's
+/// material uses when it cannot have the real thing ([GlassSurface]'s
+/// approximation).
 ///
-/// So: [NativeSwitch] on a *screen*, [SheetSwitch] in a *sheet*. The visible
-/// difference is the iOS 26 Liquid Glass knob, which `CupertinoSwitch` doesn't
-/// redraw — a smaller price than a form nobody can see.
-class SheetSwitch extends StatelessWidget {
+/// It is an approximation and stays one. What only the real `UISwitch` has is
+/// the knob's stretch as it is dragged and the system's own commit haptic
+/// timing; the haptic is fired here, the stretch is not drawn.
+///
+/// It is also the way back if a platform view in a sheet body ever empties one
+/// again — see [NativeSwitch]'s note. That is why it is still a widget of its
+/// own rather than a private fallback.
+class GlassSwitch extends StatelessWidget {
   final bool value;
   final ValueChanged<bool> onChanged;
 
-  const SheetSwitch({super.key, required this.value, required this.onChanged});
+  const GlassSwitch({super.key, required this.value, required this.onChanged});
+
+  /// The system green the real control shows, picked off the app's own
+  /// brightness rather than the phone's — dark mode here is an in-app setting,
+  /// so `CupertinoDynamicColor` resolved against the platform would light the
+  /// wrong one whenever the two disagree.
+  static Color get _onTrack =>
+      AppColors.isDark ? CupertinoColors.systemGreen.darkColor : CupertinoColors.systemGreen.color;
+
+  static Color get _offTrack => AppColors.isDark
+      ? CupertinoColors.secondarySystemFill.darkColor
+      : CupertinoColors.secondarySystemFill.color;
+
+  void _toggle() {
+    // The real control's commit feedback. Without it the two switches in the
+    // app feel different even when they look the same.
+    HapticFeedback.lightImpact();
+    onChanged(!value);
+  }
 
   @override
   Widget build(BuildContext context) {
-    // No `activeColor`: the system green is what the real control shows, and
-    // matching it is the whole point of standing in for one.
-    return CupertinoSwitch(value: value, onChanged: onChanged);
+    const inset = 2.0;
+    final knob = kNativeSwitchSize.height - inset * 2;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: _toggle,
+      // Drag-to-toggle, which the real control has and a bare tap target
+      // doesn't: a flick across the switch commits the direction it was going,
+      // and a flick back the way it already is does nothing.
+      onHorizontalDragEnd: (details) {
+        final velocity = details.primaryVelocity ?? 0;
+        if (velocity > 0 && !value) _toggle();
+        if (velocity < 0 && value) _toggle();
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOutCubic,
+        width: kNativeSwitchSize.width,
+        height: kNativeSwitchSize.height,
+        padding: const EdgeInsets.all(inset),
+        decoration: BoxDecoration(
+          color: value ? _onTrack : _offTrack,
+          borderRadius: BorderRadius.circular(kNativeSwitchSize.height / 2),
+        ),
+        child: AnimatedAlign(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOutCubic,
+          alignment: value ? Alignment.centerRight : Alignment.centerLeft,
+          child: _SwitchKnob(size: knob),
+        ),
+      ),
+    );
+  }
+}
+
+/// The knob: white, and lit the way glass is lit everywhere else in this app —
+/// a lift toward white at the top for curvature, a specular off the top-left,
+/// a rim, and the thumb shadow that lifts it off the track.
+///
+/// White in both palettes, unlike every surface token: the real control's knob
+/// does not darken in dark mode, and one that did would read as an *off* switch
+/// with a hole in it.
+class _SwitchKnob extends StatelessWidget {
+  final double size;
+
+  const _SwitchKnob({required this.size});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        // A white ball on a white gradient is a flat disc. The foot of it is
+        // pulled a tenth of the way toward the muted grey so the sphere has a
+        // shaded underside for the specular above to play against.
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Colors.white, Color.lerp(Colors.white, AppColors.mutedLight, 0.10)!],
+        ),
+        border: Border.all(color: AppColors.glassRim, width: 0.5),
+        boxShadow: AppShadows.thumb,
+      ),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: RadialGradient(
+            center: const Alignment(-0.6, -0.8),
+            radius: 1.2,
+            colors: [AppColors.glassSpecular, AppColors.glassSpecular.withValues(alpha: 0)],
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -139,12 +254,15 @@ class _NativeSwitchState extends State<NativeSwitch> {
 
   @override
   Widget build(BuildContext context) {
-    // The same fallback also covers a switch left behind an open sheet, which
-    // would otherwise paint straight through it — see [occludedByRoute]. That
-    // is [SheetSwitch]'s rule one level up: a sheet must not be *over* a
-    // platform view any more than it may contain one.
-    if (!NativeSwitch._isNative || occludedByRoute(context)) {
+    if (!NativeSwitch._isNative) {
       return Switch.adaptive(value: widget.value, onChanged: widget.onChanged);
+    }
+    // A switch left behind an open sheet would otherwise paint straight through
+    // it — see [occludedByRoute]. It stands down to the drawn one rather than
+    // to `Switch.adaptive`, which on iOS is `CupertinoSwitch`: the control
+    // would visibly change shape for as long as a menu was open over it.
+    if (occludedByRoute(context)) {
+      return GlassSwitch(value: widget.value, onChanged: widget.onChanged);
     }
     final size = _intrinsicSize ?? kNativeSwitchSize;
     return SizedBox(

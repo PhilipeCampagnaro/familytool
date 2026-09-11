@@ -712,7 +712,7 @@ class _TodayHeader extends ConsumerWidget {
         // Faces first, above the tracker: it is the control, and the grid
         // behind it is a report. It appears only where there is more than one
         // person to choose between — see [_PersonFilterRow].
-        const _PersonFilterRow(),
+        _PersonFilterRow(),
         // Named rather than left to explain itself — it has no axis, no numbers
         // and nothing to tap. The caption is drawn inside the grid's first row
         // (see [BoardTrackerStrip]) rather than above it: a line of its own here

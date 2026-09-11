@@ -1468,7 +1468,7 @@ class _UnitButtonState extends State<_UnitButton> {
   @override
   Widget build(BuildContext context) {
     final label = widget.current == null ? GroceryUnit.piece.label : groceryUnitLabel(widget.current!);
-    return GestureDetector(
+    final control = GestureDetector(
       key: _anchorKey,
       behavior: HitTestBehavior.opaque,
       onTap: _pick,
@@ -1496,6 +1496,15 @@ class _UnitButtonState extends State<_UnitButton> {
               child: Text(label, style: AppText.label),
             ),
     );
+    // The chip only exists while a row is being edited, which means a field on
+    // that row holds the focus and its `onTapOutside` is waiting for a tap
+    // anywhere else. Without this the chip's own tap was that tap: the
+    // pointer-down dropped the focus, the row committed and left edit mode in
+    // the same frame, and the chip was gone before the pointer came back up —
+    // so the menu never opened and the only visible effect was the keyboard
+    // going away. [TextFieldTapRegion] puts the chip inside the field's own
+    // group, so pressing it counts as staying in the row.
+    return widget.chip ? TextFieldTapRegion(child: control) : control;
   }
 }
 

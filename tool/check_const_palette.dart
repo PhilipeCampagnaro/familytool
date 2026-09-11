@@ -36,7 +36,15 @@ final _identifier = RegExp(r'\b([A-Z_]\w+)\b');
 /// A capitalised name that is *invoked* — `Foo(`, `Foo.named(`. Anything else
 /// is a static read like `CollapsingHeaderScreen.collapsedGap`, which is a
 /// plain compile-time constant and perfectly fine inside a `const`.
-final _construction = RegExp(r'\b([A-Z]\w*)\s*(?:\.\s*\w+\s*)?\(');
+///
+/// **The leading underscore is not optional.** It was missing, and with it the
+/// scanner could not see a single private widget being constructed — which is
+/// most of the widgets in this app. `const [_OpenTodos(), _TrackersToday(),
+/// _ListsOverview()]` sat in Home reading `OK` while it shipped light-mode ink
+/// on a dark card. The classes themselves were always collected (see
+/// [_identifier], which has allowed `_` all along); only the construction was
+/// invisible.
+final _construction = RegExp(r'(?<![\w\$])(_?[A-Z]\w*)\s*(?:\.\s*\w+\s*)?\(');
 
 const _open = '([{';
 const _close = ')]}';

@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -354,7 +353,15 @@ class _ToastLayerState extends State<_ToastLayer> with SingleTickerProviderState
     // Above the keyboard while one is up and clear of the home indicator when
     // it isn't — the two cases the `Scaffold` used to handle for the floating
     // snack bar this replaced.
-    final bottom = math.max(media.viewInsets.bottom, media.viewPadding.bottom) + widget.bottomInset;
+    //
+    // **The two cases don't add up.** [bottomInset] is the room the nav bar
+    // needs, and a keyboard covers the nav bar: stacking one on the other
+    // parked the chip a bar's height and a home indicator above the keys,
+    // floating in the middle of the list it had just changed. While the
+    // keyboard is up it is the only thing to clear, and the chip sits just
+    // above it — close enough to read as the answer to what was typed.
+    final keyboard = media.viewInsets.bottom;
+    final bottom = keyboard > 0 ? keyboard + 12 : media.viewPadding.bottom + widget.bottomInset;
     return Positioned(
       left: 16,
       right: 16,

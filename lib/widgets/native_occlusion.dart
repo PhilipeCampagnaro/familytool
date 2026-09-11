@@ -18,7 +18,7 @@ import 'package:flutter/widgets.dart';
 /// sheet's entire body went with them — the two glass buttons in its header
 /// were all that was left, being platform views themselves. The tell is a sheet
 /// whose chrome is right and whose content isn't there, which is the same tell
-/// [showAppSheet] and [SheetSwitch] already document at a smaller scale.
+/// [showAppSheet] and [NativeSwitch] already document at a smaller scale.
 ///
 /// So a native view stands down for as long as it is covered, and every caller
 /// already has the fallback to stand down *to*: the branch each of these

@@ -277,7 +277,10 @@ Board, Box and Listen all scroll the same way: `CollapsingHeaderScreen` (a `Nest
 pinned `SliverPersistentHeader` over `CollapsingSliverHeaderDelegate`) pins a title row while the
 block under it — search field, stat tiles, Board's today/progress line, a detail screen's big name
 row — clips and
-fades away. `CollapsingScreenTitle` morphs the heading from large-left to small-centered;
+fades away. That collapse tracks the finger; `extraCollapse` is the one way to drive the same fold
+from an animation instead (Listen and Boxen, handing the header over to search — see the search
+entry in the widget index), and it scales the extent the block is *given*, never the height it is
+measured at. `CollapsingScreenTitle` morphs the heading from large-left to small-centered;
 `ScreenBodyPanel` is the rounded gray panel the body scrolls on; `HeaderBrandGlow` is the colored
 wash the detail screens put behind theirs.
 
@@ -307,6 +310,14 @@ them, but a change to how the collapse *feels* belongs in both.
 
 Non-obvious bits, each one a bug that shipped first:
 
+- **A screen with no `extra` block at all still gets a collapse range.** `t` is the fraction of the
+  header's *own* range that has been scrolled away, so a header whose block is empty has no range
+  and every title is drawn at `t == 1` from the first frame — pinned size, centred, on a tab nobody
+  has scrolled yet. `bareTitleHeadroom` (44) is the height the sliver keeps beyond its pinned bar in
+  that case, and the title morphs over it exactly as it does over a real block. It is keyed on the
+  block's **natural** height, not its folded one: a block folded away by `extraCollapse` is on its
+  way to zero deliberately and must not stop 44px short. Ausgaben is the screen that found this —
+  its month pager used to be the block, and taking it out left the page with a small centred title.
 - **The `extra` block measures itself at runtime; never hardcode its height.** It's laid out
   unbounded in an `OverflowBox` and read back through a `GlobalKey` after the frame, with
   `estimatedExtraHeight` only covering frame one (the sliver must publish its extents before
@@ -338,6 +349,37 @@ Non-obvious bits, each one a bug that shipped first:
 
 ## Other shared widgets
 
+- **`StatusIsland` / `IslandLine` (`status_island.dart`)** — a screen's one-line status: a glyph, a
+  sentence, and a second line saying what the sentence counts. Home's `DayIsland` and Ausgaben's
+  `SpendIsland` are both a ladder of cases handing the first match to an `IslandLine`; this file is
+  the sentence, the crossfade between two of them and the wave that says one has just changed.
+  - **The crossfade belongs here, not in the row that hosts the island.** A switcher one level up
+    compares the widget it is handed — always a keyless `DayIsland` — so it never sees one state
+    become another and every change lands as an instant swap. The keys are on what the ladder
+    builds.
+  - **The two halves do not overlap.** Interval curves take the old sentence away over the first
+    half and bring the new one in over the second; a plain crossfade of two sentences at the same
+    left edge is two sentences printed over each other.
+  - **The sweep plays once and then drops its shader.** It is the page's own colour rather than
+    white so the letters dissolve towards the paper and the dark palette gets the same effect
+    instead of a flashbulb, `BlendMode.srcATop` keeps it inside the glyphs, and a `ShaderMask` left
+    in place would hold a save-layer under the header all day. `IslandSweep.loop` is the loading
+    line, where the wave *is* the spinner; `IslandSweep.none` is a sentence the reader changed
+    themselves, which is not news.
+  - **The tone goes on the glyph and never on the words.** A red sentence among black headings
+    shouts across the page for what is one overdue to-do or one mis-filed payment.
+- **`RollingNumber` (`rolling_number.dart`)** — a figure whose digits roll from the old value to the
+  new, one column at a time, as on the total at the top of the Ausgaben card.
+  - **Only the columns that changed move**, so the eye sees *where* the change was rather than only
+    that there was one. A total that ticks while a finger drags along a chart then reads as one
+    quantity being measured, not as a series of unrelated numbers flashed in the same place.
+  - **It animates the string, not the amount.** The caller has already decided the grouping
+    separator, the currency symbol and the U+2212 minus; re-deriving any of it here would put a
+    second opinion about money formatting in the widget layer. Anything that is not `0`–`9` is set.
+  - Columns are keyed **from the right**, so a number growing a digit rolls the place that changed
+    instead of shunting every column along. A figure appearing for the first time is set rather than
+    rolled — there is nothing for it to have come from. Nothing in it reads a palette: the style is
+    the caller's, exactly as on a `Text`.
 - **`SegmentedControl` (`segmented_control.dart`)** — the app's two-or-three-way switch, at the top
   of the Listen sheet ("Welche Art von Liste?") and the Board sheet ("Was möchtest du anlegen?" —
   To-do or Tracker). It lived as a private `_SegButton` inside `list_screen.dart` until the Board
@@ -681,16 +723,36 @@ Non-obvious bits, each one a bug that shipped first:
   the *list* of providers in a sheet made the household guess what Aporah could read before
   opening anything.
 - `HeaderSearchBar` / `SearchTriggerField` / `HeaderSearchButton` (`search.dart`) — Listen's and
-  Boxen's search, which happens **in place, never in a sheet**. Both entry points only flip a bool
-  on the screen: the flat pill in the resting header (`SearchTriggerField`) and the glass magnifier
-  that replaces it once the header has collapsed (`HeaderSearchButton`, fading in on the same late
-  curve as the collapsed title — pass `leadingWidth: 0` so it doesn't shift the expanded heading).
-  `HeaderSearchBar` wraps the screen's whole title row: while active it fades that row out and
-  grows the system search field out of the magnifier's own footprint, over to a glass X that closes
-  search again. The screen drops its `extra` while searching (the pill would be a second box for
-  the same query) and renders hits in its own body. Search reaches *into* the detail screens —
-  articles inside a list, contents of a box — so a hit is grouped under whatever holds it and
-  tapping it opens that list/box.
+  Boxen's search, which happens **in place, never in a sheet**. Two ways in: the flat pill in the
+  resting header (`SearchTriggerField`) and the glass magnifier that replaces it once the header
+  has collapsed (`HeaderSearchButton`, fading in on the same late curve as the collapsed title —
+  pass `leadingWidth: 0` so it doesn't shift the expanded heading). `HeaderSearchBar` wraps the
+  screen's whole title row: it fades that row out and grows the system search field out of the
+  magnifier's own footprint, over to a glass X that closes search again. Search reaches *into* the
+  detail screens — articles inside a list, contents of a box — so a hit is grouped under whatever
+  holds it and tapping it opens that list/box.
+- **Opening search is one movement, and `SearchableOverviewScreen` owns it, not `HeaderSearchBar`.**
+  Four things happen at once — the field grows, the title row and its `+` give way to the X, the
+  collapsing block folds up, and the body crossfades to the hits — and the screen holds the single
+  `AnimationController` (`kSearchTransition`, 360ms, `easeOutCubic` in / `easeInCubic` out) that
+  drives all four. `HeaderSearchBar` is a `StatelessWidget` taking an already-eased `progress`;
+  don't give it a controller of its own again, or the header's height and the field's width will
+  be two animations that only look like one.
+  - The block **folds**, it isn't dropped. Swapping `extra` for an empty box was what made this
+    read as a jump cut: the sliver lost its whole extent between one frame and the next, so the
+    header teleported up while the field animated. `CollapsingHeaderScreen.extraCollapse` scales
+    the extent instead, and the block stays in the tree at its natural measured height.
+  - The `+` and the X are the same glass circle in the same place, so they are **not** crossfaded
+    50/50 — the row is gone by `progress` 0.45 and the X only starts at 0.4. Held at half opacity
+    together they draw one smeared button rather than a swap.
+  - The body is a `Stack`: the screen's own `ListView` stays mounted underneath and the results
+    fade in over it on an **opaque** `AppColors.screenBg` (a transparent crossfade shows two lists
+    through each other). That keeps the body's scroll offset, so closing search puts the reader
+    back where they were. The results list must carry `primary: false` and a controller of its own
+    — the body list already holds `PrimaryScrollController`, and two scrollables can't share it.
+  - The query is cleared when the reverse animation *completes*, not on the tap: clearing it at
+    the tap empties the hits to the "search for something" placeholder for the third of a second
+    they spend fading out.
 - `NativeSearchField` (`native_search_field.dart`) — the real system search control as a platform
   view (`ios/Runner/SearchFieldPlatformView.swift`, view type `aporah/search_field`), in two
   styles. `NativeSearchFieldStyle.bar` is a whole `UISearchBar`: it reports its own height
@@ -720,15 +782,19 @@ Non-obvious bits, each one a bug that shipped first:
   native look, and on iOS 26 the on-track is a material a flat color would flatten. Needs an
   `EagerGestureRecognizer` so UIKit owns tap and drag-to-toggle; a drag starting *on the switch*
   therefore doesn't scroll the list. Off iOS it falls back to `Switch.adaptive`.
-- **Never put a platform view inside a `showAppSheet` body** — use `SheetSwitch`
-  (`native_switch.dart`) rather than `NativeSwitch` there. Every sheet header already embeds two
-  (`GlassIconButton`'s X and `GlassConfirmButton`'s check are each a `NativeGlassView`), and a
-  third one inside the scrolling body makes iOS drop the overlay layer carrying everything painted
-  after it. The Kalender event form shipped that way and rendered as blank white below the
-  Ganztägig toggle — the Beginn/Ende rows, the calendar picker and the notes field laid out at
-  full height and painted nothing. Same failure as the sheet title vanishing between the two
-  header buttons (`app_sheet.dart`), and it fails the same way: silently, on device only, with
-  correct layout. The tell is a card whose height is right and whose contents aren't there.
+- **A sheet body may hold a platform view again — it was forbidden, and the ban outlived its
+  cause.** The Kalender event form shipped with a real `UISwitch` in its Ganztägig row and rendered
+  as blank white below it: the Beginn/Ende rows, the calendar picker and the notes field laid out
+  at full height and painted nothing. That was read as a headcount — two `NativeGlassView`s in
+  every sheet header, a third view in the body, overlay layer dropped — and `SheetSwitch` existed
+  to keep the count down. The headcount was the symptom. `native_occlusion.dart` found the cause:
+  a sheet is a **non-opaque** route, so the screen behind it kept compositing its own native
+  chrome into the same scene, and the tab bar and search field punching up through the sheet were
+  what took the body with them. Native views now stand down while covered, which is why the same
+  symptom stopped happening everywhere else. So sheets use `NativeSwitch` like every other on/off
+  row, and `GlassSwitch` is the Flutter-drawn fallback it stands down *to* — also the one-word way
+  back if the blank body ever returns. It fails silently, on device only, with correct layout: the
+  tell is a card whose height is right and whose contents aren't there.
 - `showAnchoredMenu` / `RowMenuButton` (`anchored_menu.dart`) — the menu a row's trailing "..."
   opens (Listen and Boxen item rows), and the one door every menu in the app goes through. **On
   iOS it is UIKit's own `UIMenu`**, so give each `AnchoredMenuItem` a `symbol:` (an SF Symbol name)

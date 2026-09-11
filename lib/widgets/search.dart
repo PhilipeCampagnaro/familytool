@@ -14,9 +14,12 @@ import '../theme/app_icons.dart';
 /// search field and the screen's own body shows the hits, instead of a sheet
 /// sliding over the content. There's one control either way — the flat
 /// [SearchTriggerField] in the resting header and the glass [HeaderSearchButton]
-/// once it has scrolled away both just switch the screen into search — and
-/// [HeaderSearchBar] does the switching, so a screen only has to hold a query
-/// string and render results for it.
+/// once it has scrolled away both just switch the screen into search.
+///
+/// The pieces here draw the handover; they don't time it. Opening search also
+/// folds the header's collapsing block away and swaps the body to the hits, so
+/// the screen ([SearchableOverviewScreen]) holds the one controller that runs
+/// all of it and passes the eased value down — see [kSearchTransition].
 
 /// The search pill in a screen's collapsing header at rest. Not a live field:
 /// tapping it hands over to [HeaderSearchBar], so there's one place where typing
@@ -83,10 +86,27 @@ class HeaderSearchButton extends StatelessWidget {
   }
 }
 
-/// Wraps a screen's pinned title row so search can take it over: while
-/// [active], the row's contents fade out and the system search field grows out
+/// How long Listen and Boxen take to hand their header over to search, and the
+/// easing on the way in and back out.
+///
+/// One duration for the whole handover — the field growing, the title row and
+/// its `+` going, the X arriving, the collapsing block folding up and the body
+/// swapping to results are a single movement, and they're timed here so they
+/// stay one. It's deliberately unhurried: the header loses most of its height
+/// in that moment, and a fast fold of a tall thing reads as a glitch rather
+/// than a transition.
+const Duration kSearchTransition = Duration(milliseconds: 360);
+const Curve kSearchTransitionCurve = Curves.easeOutCubic;
+const Curve kSearchTransitionReverseCurve = Curves.easeInCubic;
+
+/// Wraps a screen's pinned title row so search can take it over: as [progress]
+/// runs 0 → 1 the row's contents fade out and the system search field grows out
 /// of the leading slot — where [HeaderSearchButton] just was — up to a glass X
 /// that closes search again.
+///
+/// [progress] is the screen's, not this widget's: the same eased value folds the
+/// collapsing block away underneath ([CollapsingHeaderScreen.extraCollapse]) and
+/// crossfades the body to the results, so the whole header moves as one thing.
 ///
 /// The field is the real `UISearchTextField` ([NativeSearchField] in
 /// [NativeSearchFieldStyle.field]), autofocused, so the keyboard is already up
@@ -98,11 +118,13 @@ class HeaderSearchButton extends StatelessWidget {
 /// field, all platform views on iOS, with the only Flutter content (the title)
 /// painted before all of them. Sandwiching Flutter content between two platform
 /// views drops it on device (see docs/design-system.md).
-class HeaderSearchBar extends StatefulWidget {
+class HeaderSearchBar extends StatelessWidget {
   /// The screen's normal title row, shown whenever search is closed.
   final Widget child;
 
-  final bool active;
+  /// 0 closed → 1 open, already eased.
+  final double progress;
+
   final String hint;
   final ValueChanged<String> onChanged;
   final VoidCallback onClose;
@@ -110,7 +132,7 @@ class HeaderSearchBar extends StatefulWidget {
   const HeaderSearchBar({
     super.key,
     required this.child,
-    required this.active,
+    required this.progress,
     required this.hint,
     required this.onChanged,
     required this.onClose,
@@ -122,86 +144,64 @@ class HeaderSearchBar extends StatefulWidget {
   static const _gap = 10.0;
 
   @override
-  State<HeaderSearchBar> createState() => _HeaderSearchBarState();
-}
-
-class _HeaderSearchBarState extends State<HeaderSearchBar> with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 260),
-    value: widget.active ? 1 : 0,
-  );
-  late final Animation<double> _grow = CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic, reverseCurve: Curves.easeInCubic);
-
-  @override
-  void didUpdateWidget(HeaderSearchBar oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.active != oldWidget.active) {
-      widget.active ? _controller.forward() : _controller.reverse();
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final a = progress.clamp(0.0, 1.0);
+    // The two don't cross at 50/50. The `+` and the X are the same glass circle
+    // in the same spot, so holding both at half opacity mid-way draws one
+    // smeared button rather than a swap; the row is gone before the X starts
+    // arriving.
+    final rowFade = (1 - a / 0.45).clamp(0.0, 1.0);
+    final closeFade = ((a - 0.4) / 0.6).clamp(0.0, 1.0);
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
-        return AnimatedBuilder(
-          animation: _grow,
-          builder: (context, _) {
-            final a = _grow.value;
-            // From the search button's own footprint out to the full row, minus
-            // the X it stops beside.
-            final fieldRight = lerpDouble(width - HeaderSearchBar._buttonSize, HeaderSearchBar._buttonSize + HeaderSearchBar._gap, a)!;
-            return Stack(
-              children: [
-                // Kept in the tree rather than swapped out so nothing below it
-                // is rebuilt (and, on iOS, so its glass views aren't torn down
-                // and recreated) for what is only a fade.
-                IgnorePointer(
-                  ignoring: a > 0.5,
-                  child: Opacity(opacity: 1 - a, child: widget.child),
+        // From the search button's own footprint out to the full row, minus
+        // the X it stops beside.
+        final fieldRight = lerpDouble(width - _buttonSize, _buttonSize + _gap, a)!;
+        return Stack(
+          children: [
+            // Kept in the tree rather than swapped out so nothing below it
+            // is rebuilt (and, on iOS, so its glass views aren't torn down
+            // and recreated) for what is only a fade.
+            IgnorePointer(
+              ignoring: a > 0,
+              child: Opacity(opacity: rowFade, child: child),
+            ),
+            // Keys: the two only exist while search is open, so without
+            // them the field would be matched against the X the frame the
+            // row above it goes away — recreating the platform view mid-
+            // animation and dropping focus and the query with it.
+            if (a > 0)
+              Positioned(
+                key: const ValueKey('close'),
+                right: 0,
+                top: 0,
+                bottom: 0,
+                child: Center(
+                  child: IgnorePointer(
+                    ignoring: closeFade < 0.5,
+                    child: Opacity(
+                      opacity: closeFade,
+                      child: GlassIconButton(icon: AppIcons.x, onTap: onClose),
+                    ),
+                  ),
                 ),
-                // Keys: the two only exist while search is open, so without
-                // them the field would be matched against the X the frame the
-                // row above it goes away — recreating the platform view mid-
-                // animation and dropping focus and the query with it.
-                if (a > 0)
-                  Positioned(
-                    key: const ValueKey('close'),
-                    right: 0,
-                    top: 0,
-                    bottom: 0,
-                    child: Center(
-                      child: Opacity(
-                        opacity: a,
-                        child: GlassIconButton(icon: AppIcons.x, onTap: widget.onClose),
-                      ),
-                    ),
-                  ),
-                if (a > 0)
-                  Positioned(
-                    key: const ValueKey('field'),
-                    left: 0,
-                    right: fieldRight,
-                    top: 0,
-                    bottom: 0,
-                    child: NativeSearchField(
-                      placeholder: widget.hint,
-                      style: NativeSearchFieldStyle.field,
-                      autofocus: true,
-                      onChanged: widget.onChanged,
-                    ),
-                  ),
-              ],
-            );
-          },
+              ),
+            if (a > 0)
+              Positioned(
+                key: const ValueKey('field'),
+                left: 0,
+                right: fieldRight,
+                top: 0,
+                bottom: 0,
+                child: NativeSearchField(
+                  placeholder: hint,
+                  style: NativeSearchFieldStyle.field,
+                  autofocus: true,
+                  onChanged: onChanged,
+                ),
+              ),
+          ],
         );
       },
     );

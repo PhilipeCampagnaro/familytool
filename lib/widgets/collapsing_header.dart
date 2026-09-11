@@ -62,6 +62,19 @@ class CollapsingHeaderScreen extends StatefulWidget {
   /// the only place a backdrop was ever visible.)
   final Widget? backdrop;
 
+  /// Folds the collapsing block away *without* anybody scrolling — 0 at rest,
+  /// 1 gone — so a screen can drive the same shrink from an animation of its
+  /// own. Listen and Boxen use it when their header hands over to the search
+  /// field: the block goes with the field's growth instead of the sliver losing
+  /// its whole extent between one frame and the next, which is what made
+  /// opening search read as a jump cut rather than a move.
+  ///
+  /// It scales the height the block is *given*, never the height it's measured
+  /// at — the block is laid out unbounded either way (see [_buildHeader]), so
+  /// [_measureExtra] keeps reading its natural size and the fold can't feed
+  /// back into the thing it's folding.
+  final double extraCollapse;
+
   final double titleRowHeight;
   final EdgeInsets extraPadding;
 
@@ -72,11 +85,28 @@ class CollapsingHeaderScreen extends StatefulWidget {
     required this.estimatedExtraHeight,
     required this.body,
     this.backdrop,
+    this.extraCollapse = 0,
     this.titleRowHeight = 40,
     this.extraPadding = const EdgeInsets.symmetric(horizontal: AppSpacing.screenPad),
   });
 
   static const topPad = 8.0;
+
+  /// The collapse range a screen with **no** block at all still gets.
+  ///
+  /// `t` is the fraction of the header's own range that has been scrolled away,
+  /// so a header with nothing below the title row has no range and every title
+  /// is drawn at `t == 1` — pinned size, centred — from the first frame. That is
+  /// the collapsed *look* on a screen that has never been scrolled, which is
+  /// wrong on a tab: its name belongs large and flush left until the content
+  /// starts passing under it.
+  ///
+  /// So the sliver keeps this much height beyond its pinned bar, and the title
+  /// morphs over it exactly as it does over a real block. It is about the
+  /// distance iOS's own large titles take, and it is deliberately *not* applied
+  /// to a block that has merely been folded away by [extraCollapse] — that one
+  /// is on its way to zero on purpose and must not stop 44px short.
+  static const bareTitleHeadroom = 44.0;
 
   /// Sits inside the *collapsed* height on purpose: it's the band of header
   /// that survives at t == 1, so the sharp gray body starts a little below the
@@ -117,9 +147,11 @@ class _CollapsingHeaderScreenState extends State<CollapsingHeaderScreen> {
   /// window onto it did not.
   ///
   /// Zero is a legitimate measurement, not a "not laid out yet" one: a screen
-  /// may drop its collapsing block entirely (Listen and Boxen do while their
-  /// header is showing the search field), and treating 0 as garbage would leave
-  /// the sliver holding the old block's height as empty space.
+  /// may drop its collapsing block entirely, and treating 0 as garbage would
+  /// leave the sliver holding the old block's height as empty space. (A block
+  /// folded away by [CollapsingHeaderScreen.extraCollapse] still measures its
+  /// natural height — that fold is applied to the sliver's extent, not to the
+  /// block's layout, so there's nothing here to confuse the two.)
   void _measureExtra() {
     final box = _extraKey.currentContext?.findRenderObject() as RenderBox?;
     if (box == null || !box.hasSize) return;
@@ -133,7 +165,13 @@ class _CollapsingHeaderScreenState extends State<CollapsingHeaderScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _measureExtra();
     });
-    final extraHeight = _measured ?? widget.estimatedExtraHeight;
+    final unfolded = 1 - widget.extraCollapse.clamp(0.0, 1.0);
+    final natural = _measured ?? widget.estimatedExtraHeight;
+    final extraHeight = natural * unfolded;
+    // A screen that has a block and folds it keeps going to zero; one that never
+    // had a block gets a range for its title to collapse over — see
+    // [CollapsingHeaderScreen.bareTitleHeadroom].
+    final headroom = natural > 0 ? extraHeight : CollapsingHeaderScreen.bareTitleHeadroom;
     final collapsedHeight = _collapsedHeight(context);
     final topInset = _topInset(context);
 
@@ -142,9 +180,9 @@ class _CollapsingHeaderScreenState extends State<CollapsingHeaderScreen> {
         SliverPersistentHeader(
           pinned: true,
           delegate: CollapsingSliverHeaderDelegate(
-            expandedHeight: collapsedHeight + extraHeight,
+            expandedHeight: collapsedHeight + headroom,
             collapsedHeight: collapsedHeight,
-            builder: (context, t) => _buildHeader(context, t, extraHeight, topInset),
+            builder: (context, t) => _buildHeader(context, t, extraHeight, topInset, unfolded),
           ),
         ),
       ],
@@ -152,8 +190,10 @@ class _CollapsingHeaderScreenState extends State<CollapsingHeaderScreen> {
     );
   }
 
-  Widget _buildHeader(BuildContext context, double t, double extraHeight, double topInset) {
-    final visible = (1 - t).clamp(0.0, 1.0);
+  Widget _buildHeader(BuildContext context, double t, double extraHeight, double topInset, double unfolded) {
+    // Scroll and the fold both hide the block, and they compose: the height is
+    // already folded, the opacity has to be told.
+    final visible = (1 - t).clamp(0.0, 1.0) * unfolded;
     // Frosted rather than solid: NestedScrollView doesn't clip its body to
     // below a pinned header — the gray panel keeps sliding up until its top
     // reaches the top of the screen — so without a material of its own the

@@ -5,6 +5,7 @@ import 'collapsing_header.dart';
 import 'glass.dart';
 import 'search.dart';
 import '../theme/app_icons.dart';
+import '../theme/tokens.dart';
 
 /// The overview half of Listen and Boxen: a collapsing header that turns into a
 /// search field, and a body that shows either the screen's own content or the
@@ -73,28 +74,70 @@ class SearchableOverviewScreen extends StatefulWidget {
   State<SearchableOverviewScreen> createState() => _SearchableOverviewScreenState();
 }
 
-class _SearchableOverviewScreenState extends State<SearchableOverviewScreen> {
+class _SearchableOverviewScreenState extends State<SearchableOverviewScreen> with SingleTickerProviderStateMixin {
   /// Search runs *in* the screen (see [HeaderSearchBar]): the header becomes
   /// the system search field and this body shows the hits — no sheet over the
   /// content.
+  ///
+  /// Which means the screen, not the search bar, owns the animation: opening
+  /// search shortens the header by the whole collapsing block and replaces
+  /// everything below it, and those have to happen *as* the field grows rather
+  /// than on the frame the tap lands. One controller drives all three.
+  late final AnimationController _controller = AnimationController(vsync: this, duration: kSearchTransition);
+  late final Animation<double> _progress = CurvedAnimation(
+    parent: _controller,
+    curve: kSearchTransitionCurve,
+    reverseCurve: kSearchTransitionReverseCurve,
+  );
+
+  /// The results list scrolls on its own controller rather than the primary
+  /// one: [CollapsingHeaderScreen]'s body already holds the screen's own list
+  /// on [PrimaryScrollController], and two scrollables can't share it. Nothing
+  /// is lost — while search is open the header has no block left to collapse,
+  /// so there's no scroll for it to track.
+  final ScrollController _resultsScroll = ScrollController();
+
   bool _searching = false;
   String _query = '';
 
-  void _openSearch() => setState(() => _searching = true);
+  @override
+  void dispose() {
+    _controller.dispose();
+    _resultsScroll.dispose();
+    super.dispose();
+  }
 
+  void _openSearch() {
+    if (_searching) return;
+    setState(() => _searching = true);
+    _controller.forward();
+  }
+
+  /// The query outlives the tap by the length of the animation on purpose:
+  /// clearing it here would empty the results to "search for something" for the
+  /// third of a second they spend fading out.
   void _closeSearch() {
-    setState(() {
-      _searching = false;
-      _query = '';
+    if (!_searching) return;
+    setState(() => _searching = false);
+    _controller.reverse().whenComplete(() {
+      if (mounted && !_searching && _query.isNotEmpty) setState(() => _query = '');
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _progress,
+      builder: (context, _) => _build(context, _progress.value.clamp(0.0, 1.0)),
+    );
+  }
+
+  Widget _build(BuildContext context, double a) {
     final query = _query.trim();
+    final padding = EdgeInsets.fromLTRB(16, 18, 16, navContentInset(context, pill: 140));
     return CollapsingHeaderScreen(
       titleRowBuilder: (context, t) => HeaderSearchBar(
-        active: _searching,
+        progress: a,
         hint: widget.searchHint,
         onChanged: (v) => setState(() => _query = v),
         onClose: _closeSearch,
@@ -111,25 +154,54 @@ class _SearchableOverviewScreenState extends State<SearchableOverviewScreen> {
         ),
       ),
       // While searching the header is only the field: the trigger pill would be
-      // a second search box for the same query.
-      estimatedExtraHeight: _searching ? 0 : widget.extraHeight,
-      extra: _searching
-          ? const SizedBox.shrink()
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 16),
-                SearchTriggerField(hint: widget.searchHint, onTap: _openSearch),
-                if (widget.headerExtra != null) ...[
-                  const SizedBox(height: 14),
-                  widget.headerExtra!,
-                ],
-              ],
-            ),
+      // a second search box for the same query, and the stat tiles say nothing
+      // about the query. The block stays in the tree and is folded away instead
+      // of being swapped for an empty one, so the header travels the distance
+      // rather than jumping it.
+      extraCollapse: a,
+      estimatedExtraHeight: widget.extraHeight,
+      extra: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 16),
+          SearchTriggerField(hint: widget.searchHint, onTap: _openSearch),
+          if (widget.headerExtra != null) ...[
+            const SizedBox(height: 14),
+            widget.headerExtra!,
+          ],
+        ],
+      ),
       body: ScreenBodyPanel(
-        child: ListView(
-          padding: EdgeInsets.fromLTRB(16, 18, 16, navContentInset(context, pill: 140)),
-          children: _searching ? [_results(context, query)] : widget.body(context),
+        child: Stack(
+          children: [
+            // The screen's own list is never torn down, only covered: it keeps
+            // its scroll offset, so closing search puts the reader back exactly
+            // where they were instead of at the top.
+            IgnorePointer(
+              ignoring: a > 0,
+              child: ListView(padding: padding, children: widget.body(context)),
+            ),
+            if (a > 0)
+              Positioned.fill(
+                child: IgnorePointer(
+                  ignoring: a < 1,
+                  child: Opacity(
+                    opacity: a,
+                    // Opaque, so the fade is a crossfade rather than the two
+                    // lists showing through each other half-drawn.
+                    child: ColoredBox(
+                      color: AppColors.screenBg,
+                      child: ListView(
+                        primary: false,
+                        controller: _resultsScroll,
+                        padding: padding,
+                        children: [_results(context, query)],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );
