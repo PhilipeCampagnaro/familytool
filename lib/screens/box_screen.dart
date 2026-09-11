@@ -10,6 +10,7 @@ import '../state/family_state.dart';
 import '../services/media_picker.dart';
 import '../state/sharing_state.dart';
 import '../theme/tokens.dart';
+import '../widgets/paywall_sheet.dart';
 import '../widgets/anchored_menu.dart';
 import '../widgets/app_sheet.dart';
 import '../widgets/avatar.dart';
@@ -26,6 +27,7 @@ import '../widgets/share_sheet.dart';
 import '../widgets/swipe_actions.dart';
 import '../widgets/toast_chip.dart';
 import '../widgets/visibility_picker.dart';
+import '../models/entitlements.dart';
 import '../l10n/l10n.dart';
 import '../theme/app_icons.dart';
 
@@ -75,7 +77,15 @@ class _BoxOverview extends ConsumerWidget {
       title: L.s.boxes,
       searchHint: L.s.searchBoxesAndItems,
       searchPrompt: L.s.searchBoxesAndItemsLong,
-      onAdd: () => openBoxSheet(context, ref),
+      // Gated on the way in, because a new box is a form somebody fills in:
+      // refusing it at save would take that work away. Editing an existing box
+      // is never gated — a household that drops to free must still be able to
+      // tidy up what it already has.
+      onAdd: () async {
+        if (await requireAnother(context, ref, Feature.boxes, ref.read(boxProvider).boxes.length)) {
+          if (context.mounted) openBoxSheet(context, ref);
+        }
+      },
       extraHeight: _extraHeight,
       headerExtra: Row(
         children: [
@@ -312,6 +322,11 @@ class _BoxSheetBodyState extends ConsumerState<_BoxSheetBody> {
         setState(() => widget.draft.photoFile = null);
         if (box?.photoPath != null) await ref.read(boxProvider.notifier).removeBoxPhoto(box!.id);
       case PictureChoice.photo || PictureChoice.camera:
+        // Before the system picker, not after it: asking somebody to choose a
+        // photograph and then refusing to keep it is the worst possible moment
+        // for a paywall. Removing one stays free — a household that drops to the
+        // free plan must still be able to take its pictures back off.
+        if (!await requireFeature(context, ref, Feature.photos)) return;
         final source = choice == PictureChoice.photo ? AttachmentSource.photos : AttachmentSource.camera;
         final picked = await pickAttachment(source, maxDimension: itemPhotoMaxDimension);
         if (picked == null || !picked.isImage || !mounted) return;
@@ -834,6 +849,11 @@ class _ItemSheetBodyState extends ConsumerState<_ItemSheetBody> {
         setState(() => widget.form.draft.photoFile = null);
         if (item?.photoPath != null) await notifier.removeItemPhoto(item!);
       case PictureChoice.photo || PictureChoice.camera:
+        // Before the system picker, not after it: asking somebody to choose a
+        // photograph and then refusing to keep it is the worst possible moment
+        // for a paywall. Removing one stays free — a household that drops to the
+        // free plan must still be able to take its pictures back off.
+        if (!await requireFeature(context, ref, Feature.photos)) return;
         final source = choice == PictureChoice.photo ? AttachmentSource.photos : AttachmentSource.camera;
         final picked = await pickAttachment(source, maxDimension: itemPhotoMaxDimension);
         if (picked == null || !picked.isImage || !mounted) return;

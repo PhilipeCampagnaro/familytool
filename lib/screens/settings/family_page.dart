@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../models/entitlements.dart';
+import '../../widgets/paywall_sheet.dart';
 import '../../state/calendar_state.dart';
 import '../../state/family_state.dart';
 import '../../state/auth_state.dart';
 import '../../theme/tokens.dart';
+import '../../widgets/anchored_menu.dart';
 import '../../widgets/app_sheet.dart';
 import '../../widgets/avatar.dart';
 import '../../widgets/confirmation.dart';
@@ -52,7 +55,22 @@ class FamilyPage extends ConsumerWidget {
           : AccentAction(
               icon: AppIcons.userPlus,
               label: L.s.inviteMember,
-              onTap: () => _openInviteSheet(context, ref),
+              // People already in the household *plus* invitations still
+              // outstanding: a sent invite is a seat that is spoken for, and
+              // counting only the accepted ones would let a free household
+              // invite six people and discover the limit when the last two
+              // cannot join.
+              onTap: () async {
+                final family = ref.read(familyProvider);
+                if (await requireAnother(
+                  context,
+                  ref,
+                  Feature.members,
+                  family.members.length + family.invites.length,
+                )) {
+                  if (context.mounted) _openInviteSheet(context, ref);
+                }
+              },
             ),
       children: [
         // The household's name, above the people in it. It has to live

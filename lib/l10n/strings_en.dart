@@ -1785,4 +1785,79 @@ class StringsEn extends AppStrings {
   String get spendCatHome => 'Home';
   @override
   String get spendCatOther => 'Other';
+
+  @override
+  String get plusName => 'Aporah Plus';
+  @override
+  String get plusPriceMonthly => '€4.99 / month';
+  @override
+  String get plusPriceYearly => '€39.99 / year';
+  @override
+  String get plusYearlySaving => 'Saves 33%';
+  @override
+  String get plusTrialNote => 'Free for 14 days. Cancel any time.';
+  @override
+  String get plusUpgrade => 'Get Plus';
+  @override
+  String get plusNotNow => 'Not now';
+  @override
+  String get plusRestore => 'Restore purchase';
+  @override
+  String get plusActive => 'Plus is active';
+  @override
+  String plusActiveUntil(String date) => 'Plus runs until $date';
+  @override
+  String get plusDebugOverride => 'Test mode: the plan is simulated';
+
+  @override
+  String get paywallCalendarsTitle => 'More than one calendar';
+  @override
+  String get paywallCalendarsBody =>
+      'With Plus you can connect as many calendars as you need — the second Google account, '
+      'Outlook from work, school through IServ or WebUntis, and any iCal link. '
+      'The whole family\'s week in one place.';
+  @override
+  String get paywallTrackersTitle => 'More routines';
+  @override
+  String get paywallTrackersBody =>
+      'Three routines are free. With Plus you can keep as many as daily life asks for — '
+      'brushing teeth, taking the bins out, vocabulary, each with its own record.';
+  @override
+  String get paywallBoxesTitle => 'More boxes';
+  @override
+  String get paywallBoxesBody =>
+      'One box is free. With Plus every cellar, every loft and every moving carton gets its own — '
+      'with a photograph, so nobody has to guess.';
+  @override
+  String get paywallMembersTitle => 'More people';
+  @override
+  String get paywallMembersBody =>
+      'Up to four people are free. With Plus the household is as big as it actually is — '
+      'grandma, the au pair, the third child.';
+  @override
+  String get paywallSharingTitle => 'More shares at once';
+  @override
+  String get paywallSharingBody =>
+      'Two share links can be live at the same time. With Plus there is no limit — the shopping '
+      'list for work, the packing list for camp and the box for the neighbour, all side by side.';
+  @override
+  String get paywallPhotosTitle => 'Photographs and files';
+  @override
+  String get paywallPhotosBody =>
+      'With Plus every box, every thing inside it and every article on a list gets a photograph — '
+      'the serial number on the drill, the right cable out of three. A picture says what no symbol '
+      'can.';
+  @override
+  String get paywallSpendTitle => 'Spending';
+  @override
+  String get paywallSpendBody =>
+      'With Plus you can see where the money goes: Apple Pay payments file themselves, and '
+      'everything else takes two taps to add.';
+
+  @override
+  String get debugPlanTitle => 'Plan (debug)';
+  @override
+  String debugPlanReal(String plan) => 'Real: $plan';
+  @override
+  String debugPlanSimulated(String plan) => '$plan (simulated)';
 }

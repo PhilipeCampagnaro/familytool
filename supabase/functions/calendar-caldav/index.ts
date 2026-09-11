@@ -31,6 +31,7 @@ import { callerId, corsHeaders, fail, json, serviceClient } from "../_shared/htt
 import { seal } from "../_shared/secrets.ts";
 import { assertPublicUrl, membershipOf, type Provider } from "../_shared/calendar.ts";
 import { baseUrl, collections, discover } from "../_shared/caldav.ts";
+import { canAddCalendarAccount } from "../_shared/entitlements.ts";
 
 const LABELS: Record<string, string> = {
   icloud: "iCloud",
@@ -104,6 +105,20 @@ Deno.serve(async (req) => {
   if (!found.length) return fail("Für dieses Konto wurde kein Kalender gefunden.");
 
   const label = LABELS[provider] ?? provider;
+
+  // The free tier's one connected account. Checked *after* the credential has
+  // been proved, so a household on the limit is told about the limit rather
+  // than about a password that was in fact correct — and checked before the
+  // seal, so nothing is written. A repair of the account they already have is
+  // not an addition; see canAddCalendarAccount.
+  if (!await canAddCalendarAccount(db, membership.familyId, {
+    provider,
+    externalAccount: username,
+  })) {
+    return fail(
+      "Mit dem kostenlosen Zugang lässt sich ein Kalender verbinden. Mit Aporah Plus sind es beliebig viele.", 402,
+    );
+  }
 
   // Sealed *before* the connection row is written, not after. seal() throws when
   // CALENDAR_SECRET_KEY is missing or malformed, and doing it in the second

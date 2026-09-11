@@ -217,6 +217,7 @@ abstract final class AppIcons {
   static const userMinus = IconData(0xe4cf, fontFamily: _family);
   static const userPlus = IconData(0xe4d1, fontFamily: _family);
   static const users = IconData(0xe4d7, fontFamily: _family);
+  static const usersThree = IconData(0xe68f, fontFamily: _family);
   static const wallet = IconData(0xe68b, fontFamily: _family);
   static const warehouse = IconData(0xecd5, fontFamily: _family);
   static const warning = IconData(0xe4e1, fontFamily: _family);
@@ -407,6 +408,7 @@ const Map<int, IconData> _underLayers = {
   0xe4cf: IconData(0xe4ce, fontFamily: _family),
   0xe4d1: IconData(0xe4d0, fontFamily: _family),
   0xe4d7: IconData(0xe4d6, fontFamily: _family),
+  0xe68f: IconData(0xe68e, fontFamily: _family),
   0xe68b: IconData(0xe68a, fontFamily: _family),
   0xecd5: IconData(0xecd4, fontFamily: _family),
   0xe4e1: IconData(0xe4e0, fontFamily: _family),
@@ -606,6 +608,7 @@ const Map<int, IconData> _flat = {
   0xe4cf: IconData(0xe4ce, fontFamily: _flatFamily),
   0xe4d1: IconData(0xe4d0, fontFamily: _flatFamily),
   0xe4d7: IconData(0xe4d6, fontFamily: _flatFamily),
+  0xe68f: IconData(0xe68e, fontFamily: _flatFamily),
   0xe68b: IconData(0xe68a, fontFamily: _flatFamily),
   0xecd5: IconData(0xecd4, fontFamily: _flatFamily),
   0xe4e1: IconData(0xe4e0, fontFamily: _flatFamily),

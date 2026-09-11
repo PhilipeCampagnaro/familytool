@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart'
     show FileOptions, FunctionException, SignedUrlSuccess;
 
+import '../models/entitlements.dart';
 import '../models/who.dart';
 import '../services/supabase.dart';
 import 'auth_state.dart';
@@ -165,6 +166,16 @@ class Household {
   final String? avatarPath;
   final String? avatarUrl;
 
+  /// What the household has paid for — `families.plan` and `plan_expires_at`,
+  /// read here rather than in a query of their own because the household load
+  /// is the chain every screen waits behind, and two more columns on a row we
+  /// are already fetching cost nothing. **No client can write either of them**;
+  /// the only update grant on `families` names the four columns above. See
+  /// `lib/models/entitlements.dart` for what they mean and
+  /// `entitlementProvider` for the answer screens actually ask.
+  final Plan plan;
+  final DateTime? planExpiresAt;
+
   const Household({
     required this.id,
     required this.name,
@@ -172,6 +183,8 @@ class Household {
     this.address,
     this.avatarPath,
     this.avatarUrl,
+    this.plan = Plan.free,
+    this.planExpiresAt,
   });
 
   /// Up to two letters for the fallback circle — "Familie Campagnaro" -> "FC",
@@ -199,6 +212,8 @@ class Household {
     String? avatarPath,
     String? avatarUrl,
     bool clearAvatar = false,
+    Plan? plan,
+    DateTime? planExpiresAt,
   }) => Household(
     id: id,
     name: name ?? this.name,
@@ -206,6 +221,8 @@ class Household {
     onboardingDone: onboardingDone ?? this.onboardingDone,
     avatarPath: clearAvatar ? null : (avatarPath ?? this.avatarPath),
     avatarUrl: clearAvatar ? null : (avatarUrl ?? this.avatarUrl),
+    plan: plan ?? this.plan,
+    planExpiresAt: planExpiresAt ?? this.planExpiresAt,
   );
 }
 
@@ -417,7 +434,11 @@ class HouseholdNotifier extends StateNotifier<FamilyState> {
     // household has answered — so a round trip saved here is a round trip
     // saved on all four tabs at once.
     final head = await Future.wait<Object?>([
-      db.from('families').select('id, name, address, onboarding_done, avatar_url').eq('id', familyId).maybeSingle(),
+      db
+          .from('families')
+          .select('id, name, address, onboarding_done, avatar_url, plan, plan_expires_at')
+          .eq('id', familyId)
+          .maybeSingle(),
       db.from('family_members').select('user_id, role').eq('family_id', familyId),
     ]);
     final familyRow = head[0] as Map<String, dynamic>?;
@@ -478,6 +499,8 @@ class HouseholdNotifier extends StateNotifier<FamilyState> {
               address: familyRow['address'] as String?,
               onboardingDone: familyRow['onboarding_done'] as bool? ?? false,
               avatarPath: familyAvatarPath,
+              plan: Plan.fromWire(familyRow['plan'] as String?),
+              planExpiresAt: DateTime.tryParse(familyRow['plan_expires_at'] as String? ?? ''),
             ),
       members: members,
       loaded: true,

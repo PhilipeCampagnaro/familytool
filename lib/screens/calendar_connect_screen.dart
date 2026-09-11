@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/repositories/calendar_connection_repository.dart';
+import '../models/entitlements.dart';
 import '../models/calendar_connection.dart';
 import '../models/who.dart';
 import '../services/external_links.dart';
@@ -12,6 +13,7 @@ import '../services/media_picker.dart';
 import '../state/calendar_connections_state.dart';
 import '../state/family_state.dart';
 import '../theme/tokens.dart';
+import '../widgets/paywall_sheet.dart';
 import '../widgets/anchored_menu.dart';
 import '../widgets/app_sheet.dart';
 import '../widgets/avatar.dart';
@@ -254,7 +256,36 @@ class _ProviderPageState extends ConsumerState<_ProviderPage> with WidgetsBindin
     showCalendarConnectSheet(context, ref, _provider, useCaldavLogin: true);
   }
 
+  /// The free tier's one connected account, asked before the user is sent
+  /// anywhere.
+  ///
+  /// **Ferien and Abfall are never counted**, exactly as the server does not
+  /// count them: they are subscriptions to a shared `public_feeds` row, a
+  /// hundred households on one street cause one daily fetch between them, and
+  /// they are part of the free product. Everything else on this screen —
+  /// including an iCal link — creates a `calendar_connections` row and is an
+  /// account.
+  ///
+  /// **Reconnecting is not adding.** An account this household already has is
+  /// let through, or "Erneut verbinden" would put a paywall in front of
+  /// repairing the single calendar free entitles them to. The Edge Functions
+  /// make the same exception; this is the polite half of the same rule.
+  Future<bool> _allowedToConnect() async {
+    if (_provider == CalendarProvider.ferien || _provider == CalendarProvider.abfall) return true;
+
+    final state = ref.read(calendarConnectionsProvider);
+    if (state.of(_provider).isNotEmpty) return true;
+
+    final accounts = state.connections
+        .where((c) => c.provider != CalendarProvider.ferien && c.provider != CalendarProvider.abfall)
+        .length;
+    if (!mounted) return false;
+    return requireAnother(context, ref, Feature.calendarAccounts, accounts);
+  }
+
   Future<void> _start() async {
+    if (!await _allowedToConnect()) return;
+
     if (!_isOAuth) {
       _openSheet();
       return;

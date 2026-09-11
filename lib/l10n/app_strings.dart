@@ -1372,4 +1372,45 @@ abstract class AppStrings {
   String get spendCatHealth;
   String get spendCatHome;
   String get spendCatOther;
+
+  // --- Plus (entitlements & paywall) ------------------------------------
+  //
+  // The paywall's copy is keyed on the feature that was reached, so a new
+  // Feature does not compile until somebody has written the sentence that
+  // explains it — see lib/models/entitlements.dart.
+  String get plusName;
+  String get plusPriceMonthly;
+  String get plusPriceYearly;
+  String get plusYearlySaving;
+  String get plusTrialNote;
+  String get plusUpgrade;
+  String get plusNotNow;
+  String get plusRestore;
+  String get plusActive;
+  String plusActiveUntil(String date);
+  String get plusDebugOverride;
+
+  String get paywallCalendarsTitle;
+  String get paywallCalendarsBody;
+  String get paywallTrackersTitle;
+  String get paywallTrackersBody;
+  String get paywallBoxesTitle;
+  String get paywallBoxesBody;
+  String get paywallMembersTitle;
+  String get paywallMembersBody;
+  String get paywallSharingTitle;
+  String get paywallSharingBody;
+  String get paywallPhotosTitle;
+  String get paywallPhotosBody;
+  String get paywallSpendTitle;
+  String get paywallSpendBody;
+
+  /// The debug-only plan switch in Settings. Localized like everything else
+  /// rather than excepted: the rule that a string you add to one language and
+  /// forget in the other fails to compile is worth more than three strings.
+  /// "Free" and "Plus" stay literal inside them — they are the plan's name, the
+  /// same call as the shop names in `merchant_logos.dart`.
+  String get debugPlanTitle;
+  String debugPlanReal(String plan);
+  String debugPlanSimulated(String plan);
 }

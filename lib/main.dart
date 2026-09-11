@@ -25,6 +25,7 @@ import 'theme/app_icons.dart';
 import 'theme/app_theme.dart';
 import 'theme/tokens.dart';
 import 'widgets/bottom_nav.dart';
+import 'widgets/paywall_sheet.dart';
 import 'widgets/empty_state.dart';
 import 'widgets/error_note.dart';
 import 'widgets/native_tab_bar.dart';

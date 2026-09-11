@@ -19,6 +19,7 @@ import '../state/nav_state.dart';
 import '../state/sharing_state.dart';
 import '../theme/tokens.dart';
 import 'calendar_screen.dart';
+import '../widgets/paywall_sheet.dart';
 import '../widgets/anchored_menu.dart';
 import '../widgets/app_sheet.dart';
 import '../widgets/avatar.dart';
@@ -39,6 +40,7 @@ import '../widgets/share_sheet.dart';
 import '../widgets/swipe_actions.dart';
 import '../widgets/toast_chip.dart';
 import '../widgets/visibility_picker.dart';
+import '../models/entitlements.dart';
 import '../l10n/l10n.dart';
 import '../theme/app_icons.dart';
 
@@ -1633,7 +1635,18 @@ class _LinkLine extends StatelessWidget {
 
 /// Puts up the system picker and files whatever comes back under the item.
 /// Cancelling (or a device with no camera) simply returns nothing.
-Future<void> _attach(WidgetRef ref, ShoppingListItem item, AttachmentSource source) async {
+Future<void> _attach(
+  BuildContext context,
+  WidgetRef ref,
+  ShoppingListItem item,
+  AttachmentSource source,
+) async {
+  // Before the system picker, not after it: asking somebody to choose a
+  // photograph and then refusing to keep it is the worst possible moment for a
+  // paywall. Taking one off again is not gated — a household that drops to the
+  // free plan must still be able to clear what it already has.
+  if (!await requireFeature(context, ref, Feature.photos)) return;
+
   // Photographs are capped on their way in; a document from Dateien is left
   // alone, because there is no such thing as a downscaled PDF.
   final picked = await pickAttachment(source, maxDimension: itemPhotoMaxDimension);
@@ -1803,8 +1816,8 @@ List<AnchoredMenuItem> _itemMenu(BuildContext context, WidgetRef ref, ShoppingLi
     // shopping list wants beside it is a picture of the thing, and the
     // document picker offered a PDF that would then sit under the name as a
     // caption nobody can open from the row.
-    AnchoredMenuItem(label: L.s.photo, icon: AppIcons.image, symbol: 'photo.on.rectangle', onSelected: () => _attach(ref, item, AttachmentSource.photos)),
-    AnchoredMenuItem(label: L.s.camera, icon: AppIcons.camera, symbol: 'camera', onSelected: () => _attach(ref, item, AttachmentSource.camera)),
+    AnchoredMenuItem(label: L.s.photo, icon: AppIcons.image, symbol: 'photo.on.rectangle', onSelected: () => _attach(context, ref, item, AttachmentSource.photos)),
+    AnchoredMenuItem(label: L.s.camera, icon: AppIcons.camera, symbol: 'camera', onSelected: () => _attach(context, ref, item, AttachmentSource.camera)),
     // One row per attached file, because they are stored now and a file you
     // cannot take off again is a file you think twice about putting on. Named
     // by the file only when there are several — with one there is nothing to

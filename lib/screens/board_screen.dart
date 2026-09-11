@@ -12,6 +12,7 @@ import '../state/sharing_state.dart';
 import '../state/family_state.dart';
 import '../theme/tokens.dart';
 import 'calendar_screen.dart';
+import '../widgets/paywall_sheet.dart';
 import '../widgets/app_sheet.dart';
 import '../widgets/avatar.dart';
 import '../widgets/bottom_nav.dart';
@@ -32,6 +33,7 @@ import 'board/tracker_detail.dart';
 import 'board/tracker_strip.dart';
 import '../state/calendar_state.dart';
 import '../state/tracker_state.dart';
+import '../models/entitlements.dart';
 import '../l10n/l10n.dart';
 import '../theme/app_icons.dart';
 
@@ -471,7 +473,23 @@ class BoardScreen extends ConsumerWidget {
                 ),
                 SegmentedControl<BoardItemKind>(
                   value: state.newKind,
-                  onChanged: notifier.setKind,
+                  // At the moment the choice is made, not at save. The sheet is
+                  // shared with to-dos, so gating it on the way in would put a
+                  // paywall in front of a free feature; gating it at save would
+                  // take a filled-in form away. Picking the segment is the one
+                  // moment that is only ever about a tracker.
+                  onChanged: (kind) async {
+                    if (kind == BoardItemKind.tracker &&
+                        !await requireAnother(
+                          screen,
+                          ref,
+                          Feature.trackers,
+                          ref.read(trackerProvider).trackers.length,
+                        )) {
+                      return;
+                    }
+                    notifier.setKind(kind);
+                  },
                   options: [
                     SegmentedOption(value: BoardItemKind.task, label: L.s.kindTask, icon: AppIcons.checkCircle),
                     SegmentedOption(value: BoardItemKind.tracker, label: L.s.kindTracker, icon: AppIcons.repeat),

@@ -15,6 +15,7 @@
 import { callerId, corsHeaders, fail, json, serviceClient } from "../_shared/http.ts";
 import { createToken, hashToken } from "../_shared/tokens.ts";
 import { escapeHtml, sendMail } from "../_shared/mail.ts";
+import { canAddShareLink } from "../_shared/entitlements.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const KINDS = { list: "lists", box: "boxes", task: "tasks" } as const;
@@ -86,6 +87,21 @@ Deno.serve(async (req) => {
 
   if ((count ?? 0) >= MAX_LINKS_PER_DAY) {
     return fail("Du hast heute zu viele Freigabe-Links erstellt. Versuch es morgen wieder.", 429);
+  }
+
+  // The free tier's cap on links live *at once*. A different question from the
+  // daily rate limit above: that one is about abuse, this one is about the
+  // plan, and revoking a link frees its slot where a day's quota only comes
+  // back tomorrow.
+  //
+  // Capped rather than closed on purpose — a share link is the only way anybody
+  // outside a household ever meets Aporah, so charging before the first one can
+  // be sent would gate the funnel itself. See `Feature.shareLinks`.
+  if (!await canAddShareLink(db, resource.family_id)) {
+    return fail(
+      "Kostenlos dürfen zwei Freigabe-Links gleichzeitig aktiv sein. Hebe einen auf — oder hol dir Aporah Plus für beliebig viele.",
+      402,
+    );
   }
 
   const token = createToken();

@@ -1793,4 +1793,80 @@ class StringsDe extends AppStrings {
   String get spendCatHome => 'Wohnen';
   @override
   String get spendCatOther => 'Sonstiges';
+
+  @override
+  String get plusName => 'Aporah Plus';
+  @override
+  String get plusPriceMonthly => '4,99 € / Monat';
+  @override
+  String get plusPriceYearly => '39,99 € / Jahr';
+  @override
+  String get plusYearlySaving => 'Spart 33 %';
+  @override
+  String get plusTrialNote => '14 Tage kostenlos testen. Jederzeit kündbar.';
+  @override
+  String get plusUpgrade => 'Plus holen';
+  @override
+  String get plusNotNow => 'Später';
+  @override
+  String get plusRestore => 'Kauf wiederherstellen';
+  @override
+  String get plusActive => 'Plus ist aktiv';
+  @override
+  String plusActiveUntil(String date) => 'Plus läuft bis $date';
+  @override
+  String get plusDebugOverride => 'Testmodus: Plan wird simuliert';
+
+  @override
+  String get paywallCalendarsTitle => 'Mehr als ein Kalender';
+  @override
+  String get paywallCalendarsBody =>
+      'Mit Plus verbindet ihr so viele Kalender, wie ihr braucht — den zweiten Google-Account, '
+      'Outlook von der Arbeit, die Schule über IServ oder WebUntis und jeden iCal-Link. '
+      'Alle Termine der Familie an einem Ort.';
+  @override
+  String get paywallTrackersTitle => 'Mehr Routinen';
+  @override
+  String get paywallTrackersBody =>
+      'Kostenlos sind drei Routinen dabei. Mit Plus legt ihr so viele an, wie der Alltag hergibt — '
+      'Zähneputzen, Müll rausbringen, Vokabeln, jede für sich nachvollziehbar.';
+  @override
+  String get paywallBoxesTitle => 'Mehr Boxen';
+  @override
+  String get paywallBoxesBody =>
+      'Eine Box ist kostenlos dabei. Mit Plus bekommt jeder Keller, jeder Dachboden und jeder '
+      'Umzugskarton seine eigene — mit Foto, damit ihr nicht raten müsst.';
+  @override
+  String get paywallMembersTitle => 'Mehr Personen';
+  @override
+  String get paywallMembersBody =>
+      'Bis zu vier Personen sind kostenlos dabei. Mit Plus ist der Haushalt so groß, wie er ist — '
+      'auch Oma, die Au-pair oder das dritte Kind.';
+  @override
+  String get paywallSharingTitle => 'Mehr Freigaben gleichzeitig';
+  @override
+  String get paywallSharingBody =>
+      'Zwei Freigabe-Links dürfen gleichzeitig aktiv sein. Mit Plus sind es beliebig viele — '
+      'die Einkaufsliste für die Arbeit, die Packliste fürs Zeltlager und die Kiste für den '
+      'Nachbarn, alle nebeneinander.';
+  @override
+  String get paywallPhotosTitle => 'Fotos und Dateien';
+  @override
+  String get paywallPhotosBody =>
+      'Mit Plus bekommt jede Box, jedes Teil darin und jeder Artikel auf der Liste ein Foto — '
+      'die Seriennummer auf der Bohrmaschine, das richtige Kabel von dreien. Ein Bild sagt, was '
+      'kein Symbol sagen kann.';
+  @override
+  String get paywallSpendTitle => 'Ausgaben';
+  @override
+  String get paywallSpendBody =>
+      'Mit Plus seht ihr, wohin das Geld geht: Apple-Pay-Zahlungen landen von selbst im Monat, '
+      'alles andere tragt ihr in zwei Handgriffen nach.';
+
+  @override
+  String get debugPlanTitle => 'Plan (Debug)';
+  @override
+  String debugPlanReal(String plan) => 'Echt: $plan';
+  @override
+  String debugPlanSimulated(String plan) => '$plan (simuliert)';
 }

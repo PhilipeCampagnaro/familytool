@@ -27,6 +27,11 @@ task:
 - [docs/ported-features.md](docs/ported-features.md) — knowledge captured from the old web app
   (grocery lists, onboarding, Settings, weather, calendar connections). Read the one section for
   the feature you're building; each says whether it is built or still groundwork.
+- [docs/production-plan.md](docs/production-plan.md) — **the road to both stores, and the record of
+  where we stopped.** The free/Plus split and the €4.99 price, the four iOS-only method channels
+  Android still needs, the three separate mechanisms behind a live calendar, and the two legal
+  items with months of lead time. **Read it before starting a session of plan work, and tick the
+  box in it when a task is done** — it is the only place that says what is finished.
 
 ## Stack
 
@@ -227,11 +232,6 @@ task:
   `showLinkedEventSheet`, which stacks the event's own sheet over Board or Listen, so closing it
   lands where the reader already was. On a *row* the chip is a marker with no tap at all: the row
   itself opens the thing, and a second target beside it made that a coin toss.
-- Don't filter content by `family_id` in Dart. RLS already decides what "my lists" means, and a
-  client-side family filter would hide exactly the rows a guest is meant to see. (Edge Functions
-  are the exception and must filter — `service_role` bypasses RLS, so there the family filter *is*
-  the tenant boundary.)
-- **The RLS helper predicates live in the `private` schema, not `public`.** `can_read_list`,
 - **Spending is captured by an iOS App Intent, and the user never handles a credential.** An Apple
   Pay **Personal Automation** runs an action Aporah donates on install
   ([ios/Runner/SpendAppIntent.swift](ios/Runner/SpendAppIntent.swift)), which posts to
@@ -250,6 +250,11 @@ task:
   is why **manual entry is half the feature rather than a fallback**. There is no Android
   equivalent — Google's Wallet API issues passes and reads no transactions. Read
   [docs/spend.md](docs/spend.md) before touching any of it.
+- Don't filter content by `family_id` in Dart. RLS already decides what "my lists" means, and a
+  client-side family filter would hide exactly the rows a guest is meant to see. (Edge Functions
+  are the exception and must filter — `service_role` bypasses RLS, so there the family filter *is*
+  the tenant boundary.)
+- **The RLS helper predicates live in the `private` schema, not `public`.** `can_read_list`,
   `my_family_id`, `is_admin` and the other 14 were reachable as `/rest/v1/rpc/<name>` while they
   sat in `public`. Don't move one back, and don't add a new one to `public`. Policies reference
   them by OID, so `alter function … set schema` moves one without touching a single policy.

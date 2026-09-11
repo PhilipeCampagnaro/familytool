@@ -243,6 +243,37 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ),
       ],
       [
+        // **Debug builds only, and it grants nothing.** Every screen from here
+        // to launch has a free state and a Plus state, and the alternative to
+        // this row is a second test account, a sandbox purchase to move between
+        // them and a store round trip to read a paywall's wording. It forces
+        // the plan the *app* believes in and cannot write `families.plan`,
+        // which no client holds an update grant on — so a server-enforced limit
+        // stays enforced while it is on. See `planOverrideProvider`.
+        if (kDebugMode)
+          (
+            terms: 'plus plan debug',
+            row: SettingsRow(
+              icon: AppIcons.sparkle,
+              title: L.s.debugPlanTitle,
+              value: switch (ref.watch(planOverrideProvider)) {
+                null => L.s.debugPlanReal(ref.watch(entitlementProvider).isPlus ? 'Plus' : 'Free'),
+                Plan.free => L.s.debugPlanSimulated('Free'),
+                Plan.plus => L.s.debugPlanSimulated('Plus'),
+              },
+              // Cycles real -> free -> plus -> real. A menu would be three more
+              // strings and a anchor key for a row that only ever exists on a
+              // developer's phone.
+              onTap: () {
+                final notifier = ref.read(planOverrideProvider.notifier);
+                notifier.state = switch (notifier.state) {
+                  null => Plan.free,
+                  Plan.free => Plan.plus,
+                  Plan.plus => null,
+                };
+              },
+            ),
+          ),
         (
           terms: L.s.searchTermsSignOut,
           row: SettingsRow(

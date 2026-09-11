@@ -33,6 +33,7 @@ import { callerId, corsHeaders, fail, json, serviceClient } from "../_shared/htt
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { assertPublicUrl } from "../_shared/net.ts";
 import { membershipOf } from "../_shared/calendar.ts";
+import { canAddCalendarAccount } from "../_shared/entitlements.ts";
 import {
   assertCalendarFile,
   type FeedEntry,
@@ -331,6 +332,21 @@ async function add(
 
   const id = crypto.randomUUID();
   const entry = entryFor(id, name, host, payload);
+
+  // The free tier's one connected account. This is the *new account* path —
+  // the branch above, which adds another feed to a connection the household
+  // already has, is not an addition and is deliberately not gated: a school
+  // hands out three or four links for one IServ account and they belong
+  // together, so the unit here is the account, as it is everywhere else.
+  //
+  // Checked after the link has been proved to return a calendar, so a household
+  // on the limit hears about the limit and not about a link that in fact works.
+  if (!await canAddCalendarAccount(db, familyId, { provider, externalAccount: key })) {
+    return fail(
+      "Mit dem kostenlosen Zugang lässt sich ein Kalender verbinden. Mit Aporah Plus sind es beliebig viele.",
+      402,
+    );
+  }
 
   // Sealed before the connection row exists, for the same reason calendar-caldav
   // seals before its upsert: if the key is missing or unusable we must fail with

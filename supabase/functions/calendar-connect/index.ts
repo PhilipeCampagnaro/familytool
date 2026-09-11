@@ -43,6 +43,7 @@ import {
   storeTokens,
 } from "../_shared/calendar.ts";
 import { type Connection, listRemoteCalendars } from "../_shared/providers.ts";
+import { canAddCalendarAccount } from "../_shared/entitlements.ts";
 import { migrateLegacyFeeds } from "../_shared/ics_feed.ts";
 
 const OAUTH_PROVIDERS: Provider[] = ["google", "outlook"];
@@ -193,6 +194,18 @@ async function handleCallback(url: URL): Promise<Response> {
   const account = email ?? `${state.provider}:${state.userId}`;
   const label = email ? `${cfg.label} (${email})` : cfg.label;
 
+  // The free tier's one connected account, re-checked here because the app's
+  // own gate is the polite half and this is the load-bearing one — a second
+  // account is a second provider quota and an extra fetch on every refresh
+  // forever. A repair of an account they already have is not an addition; see
+  // canAddCalendarAccount.
+  if (!await canAddCalendarAccount(db, membership.familyId, {
+    provider: state.provider,
+    externalAccount: account,
+  })) {
+    return backToApp("limit");
+  }
+
   // Re-connecting the same account updates it in place — that is what makes
   // "Erneut verbinden" repair an expired token instead of producing a second
   // entry in the provider list.
@@ -240,7 +253,7 @@ async function readState(raw: string | null): Promise<OAuthState | null> {
 /// The consent screen runs in a system browser sheet, so the last hop has to
 /// leave that sheet. A deep link closes it and hands the result to the app; the
 /// HTML fallback covers a desktop browser opened by hand.
-function backToApp(status: "ok" | "error", provider?: string): Response {
+function backToApp(status: "ok" | "error" | "limit", provider?: string): Response {
   const target = Deno.env.get("APORAH_APP_REDIRECT");
   if (target) {
     const location = new URL(target);
@@ -251,6 +264,8 @@ function backToApp(status: "ok" | "error", provider?: string): Response {
 
   const message = status === "ok"
     ? "Kalender verbunden. Du kannst dieses Fenster schließen."
+    : status === "limit"
+    ? "Mit dem kostenlosen Zugang lässt sich ein Kalender verbinden. Du kannst dieses Fenster schließen."
     : "Die Verbindung hat nicht geklappt. Du kannst dieses Fenster schließen.";
 
   return new Response(
