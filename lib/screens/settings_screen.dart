@@ -1,10 +1,15 @@
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../models/entitlements.dart';
+import '../services/spend_intent.dart';
 import '../state/auth_state.dart';
 import '../state/calendar_connections_state.dart';
+import '../state/entitlement_state.dart';
 import '../state/family_state.dart';
 import '../state/onboarding_state.dart';
 import '../state/settings_state.dart';
+import '../state/spend_state.dart';
 import '../theme/tokens.dart';
 import '../widgets/app_sheet.dart';
 import '../widgets/avatar.dart';
@@ -15,6 +20,7 @@ import '../widgets/settings_chrome.dart';
 import 'calendar_connect_screen.dart';
 import '../widgets/native_switch.dart';
 import 'onboarding_screen.dart';
+import 'settings/apple_pay_page.dart';
 import 'settings/family_page.dart';
 import 'settings/language_page.dart';
 import 'settings/profile_page.dart';
@@ -186,6 +192,23 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             onTap: () => _push(context, CalendarConnectionsPage()),
           ),
         ),
+        // Admin only, and the row is simply absent for everyone else: spends are
+        // admin-only in the policies, so a member tapping through to a list of
+        // the household's phones would find a page they cannot act on. Absent
+        // too where Ausgaben does not ship at all (`spendAvailable`) — there
+        // the page would list the *other* parent's iPhones and offer to revoke
+        // them, which is a confusing amount of power over a feature this phone
+        // has never seen.
+        if (spendAvailable && ref.watch(isAdminProvider))
+          (
+            terms: L.s.searchTermsApplePay,
+            row: SettingsRow(
+              icon: AppIcons.wallet,
+              title: L.s.settingsApplePay,
+              value: _deviceSummary(ref.watch(spendProvider).devices.length),
+              onTap: () => _push(context, ApplePayPage()),
+            ),
+          ),
         (
           terms: L.s.searchTermsLanguage,
           row: SettingsRow(
@@ -268,6 +291,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
   }
 }
+
+/// The "Apple Pay" row's status text: how many phones are filing payments,
+/// which is the one thing about the page worth knowing before opening it.
+String _deviceSummary(int count) => L.s.spendWalletDeviceCount(count);
 
 /// The "Kalender" row's status text. Deliberately a count rather than a list of
 /// names — the row has one line, and a household with a Google account, a school

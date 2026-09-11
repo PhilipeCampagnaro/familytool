@@ -7,15 +7,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'l10n/l10n.dart';
 import 'screens/auth_screen.dart';
 import 'screens/board_screen.dart';
-import 'screens/box_screen.dart';
+import 'screens/more_screen.dart';
 import 'screens/calendar_screen.dart';
 import 'screens/list_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/start_screen.dart';
+import 'models/entitlements.dart';
+import 'services/spend_intent.dart';
 import 'services/supabase.dart';
 import 'state/auth_state.dart';
 import 'state/calendar_state.dart';
 import 'state/family_state.dart';
+import 'state/more_state.dart';
 import 'state/nav_state.dart';
 import 'state/settings_state.dart';
 import 'theme/app_icons.dart';
@@ -243,7 +246,7 @@ List<Widget> _buildScreens() => [
   CalendarScreen(),
   ListScreen(),
   BoardScreen(),
-  BoxScreen(),
+  MoreScreen(),
 ];
 
 /// The tabs whose scrolling compacts the nav bar (see [navBarProvider]).
@@ -273,6 +276,10 @@ class AppShell extends ConsumerStatefulWidget {
 class _AppShellState extends ConsumerState<AppShell>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   int _index = _initialTab;
+
+  /// Whichever of the two bars is up, so the **Mehr** menu can be anchored on
+  /// the item that opened it. See [_moreItemAnchor].
+  final GlobalKey _navBarKey = GlobalKey();
 
   late final AnimationController _controller = AnimationController(
     vsync: this,
@@ -318,7 +325,63 @@ class _AppShellState extends ConsumerState<AppShell>
 
   void _expandNav() => ref.read(navBarProvider.notifier).expand();
 
-  Future<void> _navigateTo(int i) async {
+  /// A tap on the nav bar. Four of the five items are a tab; **Mehr** is a
+  /// menu, and only becomes a tab change once the user has picked a row out of
+  /// it — see [showMoreMenu]. Backing out of that menu must leave the screen
+  /// they were reading alone, which is why this is the one item that does not
+  /// switch on the tap itself.
+  ///
+  /// Where Ausgaben does not ship the last slot is Boxen rather than Mehr
+  /// (`spendAvailable`), so every item is an ordinary tab and there is no menu
+  /// to put up.
+  Future<void> _navigateTo(int i) =>
+      i == moreTabIndex && spendAvailable ? _openMoreMenu() : _switchTo(i);
+
+  Future<void> _openMoreMenu() async {
+    final section = await showMoreMenu(
+      context: context,
+      anchor: _moreItemAnchor(),
+      // The tick is only true while that screen is actually the one on
+      // screen — on any other tab neither of them is "the one in force".
+      current: _index == moreTabIndex ? ref.read(moreProvider) : null,
+    );
+    if (section == null || !mounted) return;
+    // The row is offered and then explains itself, rather than being absent:
+    // a menu that quietly loses an item reads as a bug, and somebody who has
+    // never seen Ausgaben cannot want it. See the gate rules in
+    // docs/production-plan.md.
+    if (section == MoreSection.spend &&
+        !await requireFeature(context, ref, Feature.spend)) {
+      return;
+    }
+    if (!mounted) return;
+    ref.read(moreProvider.notifier).open(section);
+    await _switchTo(moreTabIndex);
+  }
+
+  /// The rect the **Mehr** menu grows out of: the last of the bar's five slots.
+  ///
+  /// Computed from the bar's own rect rather than read off the item itself,
+  /// because on iOS the items are `UITabBarItem`s inside a platform view and
+  /// Flutter has no render object for one. Both bars lay their items out evenly
+  /// across the width, so the last fifth is the right slot to within a few
+  /// points — and an anchor only decides which control a bubble appears to grow
+  /// from, never what the menu does.
+  Rect _moreItemAnchor() {
+    final box = _navBarKey.currentContext?.findRenderObject() as RenderBox?;
+    if (box != null && box.hasSize) {
+      final bar = box.localToGlobal(Offset.zero) & box.size;
+      final slot = bar.width / navTabs.length;
+      return Rect.fromLTWH(bar.right - slot, bar.top, slot, bar.height);
+    }
+    // The bar is mid-swap or offstage, so nothing can have tapped the item —
+    // but a missing anchor would mean no menu at all rather than a misplaced
+    // one, so fall back to the corner the item lives in.
+    final size = MediaQuery.sizeOf(context);
+    return Rect.fromLTWH(size.width - 88, size.height - 120, 72, kNativeTabBarHeight);
+  }
+
+  Future<void> _switchTo(int i) async {
     if (i == _index) return;
     // A compacted bar belongs to the tab that compacted it and must not follow
     // the user out: reset here as well as gating on the index below, so the tab
@@ -391,6 +454,7 @@ class _AppShellState extends ConsumerState<AppShell>
           // with `navContentInset`.
           Positioned.fill(
             child: _NavLayer(
+              barKey: _navBarKey,
               index: _index,
               compact: compact,
               barHeight: nav.barHeight,
@@ -416,6 +480,10 @@ class _AppShellState extends ConsumerState<AppShell>
 /// reads as the bar drawing itself in rather than one control blinking out and
 /// another blinking on.
 class _NavLayer extends StatefulWidget {
+  /// Attached to whichever bar is on screen, so the shell can work out where
+  /// the **Mehr** item is — see `_AppShellState._moreItemAnchor`.
+  final GlobalKey barKey;
+
   final int index;
   final bool compact;
 
@@ -424,11 +492,18 @@ class _NavLayer extends StatefulWidget {
   /// here, because Kalender's "Heute" button needs the same number.
   final double? barHeight;
   final bool keyboardOpen;
-  final ValueChanged<int> onTap;
+
+  /// Awaited by [NativeTabBar], which has to know whether a tap actually
+  /// changed the tab: UIKit selects the item it was tapped on by itself, and a
+  /// **Mehr** menu the user backs out of leaves that selection pointing at a
+  /// tab the app never went to.
+  final Future<void> Function(int) onTap;
+
   final VoidCallback onExpand;
   final ValueChanged<double> onBarHeight;
 
   const _NavLayer({
+    required this.barKey,
     required this.index,
     required this.compact,
     required this.barHeight,
@@ -490,7 +565,12 @@ class _NavLayerState extends State<_NavLayer> with SingleTickerProviderStateMixi
                 t: _t,
                 compactShape: false,
                 child: Center(
-                  child: NativeTabBar(index: widget.index, onTap: widget.onTap, onHeight: widget.onBarHeight),
+                  child: NativeTabBar(
+                    key: widget.barKey,
+                    index: widget.index,
+                    onTap: widget.onTap,
+                    onHeight: widget.onBarHeight,
+                  ),
                 ),
               ),
             )
@@ -502,7 +582,7 @@ class _NavLayerState extends State<_NavLayer> with SingleTickerProviderStateMixi
               child: _NavShape(
                 t: _t,
                 compactShape: false,
-                child: AppBottomNav(index: widget.index, onTap: widget.onTap),
+                child: AppBottomNav(key: widget.barKey, index: widget.index, onTap: widget.onTap),
               ),
             ),
           Positioned(

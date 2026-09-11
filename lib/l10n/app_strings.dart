@@ -986,6 +986,7 @@ abstract class AppStrings {
   String get searchTermsProfile;
   String get searchTermsFamily;
   String get searchTermsCalendar;
+  String get searchTermsApplePay;
   String get searchTermsLanguage;
   String get searchTermsDarkMode;
   String get searchTermsTour;
@@ -1169,4 +1170,206 @@ abstract class AppStrings {
   String get firstStepTrackerBody;
   String get firstStepList;
   String get firstStepListBody;
+
+  // ------------------------------------------------------- Ausgaben
+
+  /// The fifth tab: the shelf that holds Boxen and Ausgaben.
+  String get navMore;
+
+  /// Number formatting, which follows the interface language rather than the
+  /// phone — the same rule as `formatTime` and the month names. German writes
+  /// `1.234,56 €`, English `€1,234.56`, and the symbol changes sides.
+  String get decimalSeparator;
+  String get thousandsSeparator;
+
+  /// What a chart axis shortens a thousand and a million to. German writes
+  /// `99,9k` like English but says `1,4 Mio.` where English says `1.4M`.
+  String get thousandsSuffix;
+  String get millionsSuffix;
+  String money(String amount, String symbol);
+  String percent(int value);
+
+  String get spendTitle;
+  String get spendAdminsOnly;
+  String get spendEmpty;
+  String get spendEmptyEnrolled;
+
+  /// The three ways the breakdown card cuts the money up. They are the rows of
+  /// one menu as well as the card's own heading, so they read as a parallel set
+  /// — "Nach …" all three times — rather than as three unrelated titles.
+  String get spendByCategory;
+  String get spendTopMerchants;
+  String get spendByMember;
+
+  String get spendOtherCategories;
+  String get spendAllPurchases;
+  String get spendFormerMember;
+
+  /// How many payments — short, because it sits under a name in a row rather
+  /// than in a sentence.
+  String spendCountShort(int count);
+
+  /// The same noun with the number taken off it, for the donut's hole, where
+  /// the count is set under its own label rather than beside it. Still takes
+  /// the count, because the word is the one that agrees with it.
+  String spendPaymentsWord(int count);
+
+  /// What the three chart segments are called. Never drawn: the segments carry
+  /// a glyph each, and these are what VoiceOver reads instead.
+  String get spendChartTrend;
+  String get spendChartBars;
+  String get spendChartRing;
+
+  /// The range slicer's four segments. Abbreviated hard — they sit four across
+  /// a phone — and the long form is [spendRangeThisWeek] and its three
+  /// neighbours, which caption the total instead.
+  String get spendRangeWeek;
+  String get spendRangeMonth;
+  String get spendRangeHalfYear;
+  String get spendRangeYear;
+
+  String get spendRangeThisWeek;
+  String get spendRangeThisMonth;
+  String get spendRangeLastSixMonths;
+  String get spendRangeThisYear;
+
+  /// The calendar button beside the slicer, and the title of the picker it
+  /// opens.
+  String get spendRangePick;
+
+  /// The bar chart's caption — the dashed line drawn through it, in words.
+  /// Which of the two depends on whether the bars are days or months.
+  String spendAveragePerDay(String amount);
+  String spendAveragePerMonth(String amount);
+
+  /// "Alle Ausgaben" — the unfiltered metric, beside the two `spendKind`
+  /// labels in the picker on the total.
+  String get spendMetricAll;
+
+  /// The card's way to the page listing every row of a breakdown rather than
+  /// the five it can hold.
+  String get spendShowAll;
+
+  /// The same link where the card also had a count to lose — the payments list,
+  /// whose heading said how many there were before the link took the slot. One
+  /// phrase rather than a count and a link side by side, which on a phone is
+  /// three pieces of furniture in a heading that holds two.
+  String spendShowAllCount(int count);
+
+  // -- The status island under the page title. One sentence, and a second line
+  //    saying what it counts — the same pair Home's day island prints.
+
+  String get spendIslandThinking;
+  String get spendIslandThinkingHint;
+
+  /// The line under "2 Zahlungen brauchen dich kurz". The title itself is
+  /// [spendReviewTitle], shared with the rows that fold out of it.
+  String get spendIslandReviewHint;
+
+  String get spendIslandNothing;
+
+  String spendIslandUp(int percent);
+  String spendIslandDown(int percent);
+  String get spendIslandVsPrevious;
+
+  /// Which category is carrying the range, and how much of it.
+  String spendIslandTop(String category);
+  String spendIslandTopHint(int percent);
+
+  String get spendAdd;
+  String get spendEdit;
+  String get spendAmount;
+  String get spendDate;
+  String get spendCategory;
+
+  /// The detail sheet's header — the word for one payment, not the page's
+  /// plural and not the merchant's own name, which has the body's full width
+  /// right below it.
+  String get spendLabel;
+
+  /// The same question [spendKindQuestion] asks, as a label on a line that is
+  /// only being read.
+  String get spendKindLabel;
+  String get spendPaidBy;
+  String get spendCard;
+
+  /// How the row arrived. Apple Pay is a brand and stays itself in both
+  /// languages; the other value is a person at a keyboard.
+  String get spendSourceLabel;
+  String get spendSourceWallet;
+  String get spendSourceManual;
+  String get spendNote;
+
+  /// The category picker's first row, and the form's default: the database
+  /// names the category from the merchant. Not a category of its own — see
+  /// `private.classify_merchant`.
+  String get spendCategoryAuto;
+  String get spendMerchantPlaceholder;
+  String get spendNotePlaceholder;
+  String get spendKindQuestion;
+  String get spendKindBudget;
+  String get spendKindExtra;
+  String get spendNeedsMerchantAndAmount;
+  String get spendDeleted;
+
+  /// Rows the Apple Pay automation filed with an empty merchant or a zero
+  /// amount — a known, unresolved defect in Apple's own Transaction trigger.
+  String spendReviewTitle(int count);
+  String get spendReviewBody;
+
+  /// The same defect explained inside the payment itself, where "tap the row"
+  /// is advice for somebody who already has.
+  String get spendReviewDetail;
+
+  String get spendLoadFailed;
+  String get spendSaveFailed;
+  String get spendDeleteFailed;
+  String get spendEnrolFailed;
+
+  String get spendWalletTitle;
+  String get spendWalletIntro;
+
+  /// The card's own action, and deliberately not "Fertig": tapping it does
+  /// not finish anything, it enrols this phone and reveals the four steps in
+  /// Shortcuts that are the other half of the setup.
+  String get spendWalletEnable;
+  String get spendWalletUnsupported;
+  String get spendWalletEnabled;
+  String get spendWalletActive;
+  String get spendWalletInactive;
+  String get spendWalletStepsTitle;
+  String get spendWalletStep1;
+  String get spendWalletStep2;
+  String get spendWalletStep3;
+  String get spendWalletStep4;
+  String get spendWalletOpenShortcuts;
+
+  /// The Apple Pay row in Settings and the page behind it, which holds the
+  /// whole of setup: activating *this* phone, the steps that finish the job in
+  /// Shortcuts, the phones the household has enrolled and taking one back.
+  /// Ausgaben keeps one row that leads there.
+  String get settingsApplePay;
+  String get applePayPageDesc;
+  String get spendWalletNoDevices;
+  String get spendWalletNoDevicesHint;
+  String get spendWalletDevicesLabel;
+  String get spendWalletDeviceUnused;
+  String spendWalletDeviceLastUsed(String date);
+  String spendWalletDeviceCount(int count);
+  String get spendWalletRevoke;
+
+  String get spendCatGroceries;
+  String get spendCatDrugstore;
+  String get spendCatFuel;
+  String get spendCatRestaurant;
+  String get spendCatCafe;
+  String get spendCatShipping;
+  String get spendCatClothing;
+  String get spendCatShopping;
+  String get spendCatElectronics;
+  String get spendCatTransport;
+  String get spendCatEntertainment;
+  String get spendCatHealth;
+  String get spendCatHome;
+  String get spendCatOther;
 }

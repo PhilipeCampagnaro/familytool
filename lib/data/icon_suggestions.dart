@@ -394,6 +394,16 @@ final Map<String, IconChoice> _symbolsByKey = {for (final entry in _symbolIndex)
 /// Shops in one flat, alphabetical list — what the picker browses.
 List<IconChoice> get merchantChoices => [for (final entry in _merchantIndex) entry.choice];
 
+/// The logo for a shop **named by a payment**, or null where the folder has
+/// none — what an Ausgaben row draws before falling back to the shop's initials.
+///
+/// The shop folder and nothing else, which is the difference between this and
+/// [suggestIcon]: a payment at "Apotheke am Markt" wants the Shop-Apotheke logo
+/// or no logo, never the generic pill-bottle symbol. A row that cannot be
+/// matched to a brand is not a row about a category.
+String? merchantLogoAsset(String merchant) =>
+    merchant.trim().isEmpty ? null : _match(_merchantIndex, merchant)?.key;
+
 // ---------------------------------------------------------------------------
 // Matching
 // ---------------------------------------------------------------------------

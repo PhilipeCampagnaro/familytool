@@ -5,8 +5,10 @@ handoff (`design_handoff_aporah_flutter/README.md` — tokens in
 [lib/theme/tokens.dart](lib/theme/tokens.dart) come from it). **German and English, switched in
 Settings — never hardcode a user-facing string.** See the localization section below.
 
-Scope: **core features only** — Board, Box, Listen, Kalender. Explicitly out of scope: the KAI AI
-assistant and Apple Pay/Wallet — don't port them even if the old codebase shows them.
+Scope: **core features only** — Board, Box, Listen, Kalender, plus Ausgaben (Apple Pay spend
+tracking, rebuilt rather than ported — see [docs/spend.md](docs/spend.md)). Explicitly out of scope:
+the KAI AI assistant — don't port it even if the old codebase shows it, including the DeepSeek
+merchant fallback Ausgaben deliberately leaves out.
 
 ## Deep-dive docs — read on demand, not proactively
 
@@ -19,6 +21,9 @@ task:
   behavior.**
 - [docs/design-system.md](docs/design-system.md) — glass/frosted-header gotchas, shared widget
   index, animation conventions. Read before touching `lib/widgets/` or adding animations.
+- [docs/spend.md](docs/spend.md) — Ausgaben: the Apple Pay App Intent, the device token, the SQL
+  merchant classifier, and why there is no Android equivalent. **Read before touching spend
+  tracking or the Shortcuts integration.**
 - [docs/ported-features.md](docs/ported-features.md) — knowledge captured from the old web app
   (grocery lists, onboarding, Settings, weather, calendar connections). Read the one section for
   the feature you're building; each says whether it is built or still groundwork.
@@ -227,6 +232,24 @@ task:
   are the exception and must filter — `service_role` bypasses RLS, so there the family filter *is*
   the tenant boundary.)
 - **The RLS helper predicates live in the `private` schema, not `public`.** `can_read_list`,
+- **Spending is captured by an iOS App Intent, and the user never handles a credential.** An Apple
+  Pay **Personal Automation** runs an action Aporah donates on install
+  ([ios/Runner/SpendAppIntent.swift](ios/Runner/SpendAppIntent.swift)), which posts to
+  `spend-ingest` from Swift on a locked phone with no Flutter engine and no session — so the
+  function is the second one pinned to `verify_jwt = false`, and a **per-device token** in the
+  Keychain is the whole security boundary. **No app can install a Personal Automation**; there is
+  no API and never has been, so the trigger stays the user's to create and what the rebuild deleted
+  is the old web app's copy-a-token-and-paste-it dance. Apple's trigger is known to hand a custom
+  intent an empty merchant or a zero amount, so a row that arrives that way is **kept and flagged**
+  (`needs_review`), never dropped — the payment happened and a locked phone cannot be told
+  otherwise. **Which category a merchant falls into is decided in SQL** by
+  `private.classify_merchant` in a trigger, because the ingest function and the app's own form both
+  write spends and two copies of those rules would drift into putting one shop in two slices of the
+  same ring. **Admin only**, enforced in the policies; money is **integer cents**, never a double or
+  the old app's text column; and Apple Pay sees no cash, card, browser checkout or transfer, which
+  is why **manual entry is half the feature rather than a fallback**. There is no Android
+  equivalent — Google's Wallet API issues passes and reads no transactions. Read
+  [docs/spend.md](docs/spend.md) before touching any of it.
   `my_family_id`, `is_admin` and the other 14 were reachable as `/rest/v1/rpc/<name>` while they
   sat in `public`. Don't move one back, and don't add a new one to `public`. Policies reference
   them by OID, so `alter function … set schema` moves one without touching a single policy.
@@ -234,7 +257,20 @@ task:
 ## Structure
 
 - [lib/screens/](lib/screens/) — one file per tab. Calendar is by far the largest/most complex.
-  Board, Box and Listen share one collapsing-header pattern (`CollapsingHeaderScreen` +
+  **Box and Ausgaben share the fifth tab, `Mehr`** ([lib/screens/more_screen.dart](lib/screens/more_screen.dart))
+  — which switches between them on `moreProvider`, the way Listen opens a list, not a route; five is
+  the ceiling on both nav bars. **`Mehr` is a menu, not a page**: tapping it puts up the system's own
+  menu beside the bar item (`showMoreMenu`), and the shell changes tab only once a row is picked, so
+  neither screen needs a way back and a dismissed menu leaves the reader where they were. That means
+  the one nav item whose tap is not a tab change — `AppShell._navigateTo` splits it off, and
+  `NativeTabBar` awaits the answer so UIKit's own selection can be put back when nothing was picked.
+  Don't draw a second bar or a sheet for those two icons: the iOS bar is a real `UITabBar` platform
+  view, so anything beside it would be a Flutter approximation of Liquid Glass next to the real
+  thing, and a `UIMenu` *is* the real thing. **Where Ausgaben does not ship the slot is plain
+  Boxen** — label, icon and ordinary tap — because a "Mehr" naming one place is a promise the menu
+  cannot keep; one getter decides, `spendAvailable` in
+  [lib/services/spend_intent.dart](lib/services/spend_intent.dart), and it also keeps `SpendScreen`
+  from being built at all and takes the Apple Pay row out of Settings. Board, Box and Listen share one collapsing-header pattern (`CollapsingHeaderScreen` +
   `CollapsingScreenTitle` + `ScreenBodyPanel`); Kalender has its own copy on purpose. Read the
   collapsing-headers section of [docs/design-system.md](docs/design-system.md) before changing one
   — in particular, never hardcode the header's collapsing-block height.

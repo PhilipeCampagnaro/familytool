@@ -66,6 +66,16 @@ const int calendarTabIndex = 1;
 const int listsTabIndex = 2;
 const int boardTabIndex = 3;
 
+/// The tab that holds Boxen and Ausgaben. Which of the two it shows is
+/// `moreProvider`'s business — see `MoreScreen`. **The only nav item whose tap
+/// is not a tab change**: it puts up a menu first and the shell switches here
+/// only once a row has been picked.
+///
+/// Where Ausgaben does not ship (`spendAvailable`) this slot is plain Boxen,
+/// labelled and iconed as such, and it behaves like every other tab. The index
+/// is the same either way, which is why the name stays.
+const int moreTabIndex = 4;
+
 /// One tab asking the shell to show another, and telling it what to open there.
 ///
 /// It carries the two directions that really do change tab: an appointment's
@@ -102,6 +112,14 @@ class TabJumpNotifier extends StateNotifier<TabJump?> {
   void toList(String listId) => state = TabJump(tab: listsTabIndex, seq: ++_seq, listId: listId);
 
   void toTask(String taskId) => state = TabJump(tab: boardTabIndex, seq: ++_seq, taskId: taskId);
+
+  /// Switch tab and open nothing in particular.
+  ///
+  /// What Home's section headers use: "Alle anzeigen" over the open to-dos
+  /// means the Board itself, not one task on it. It still goes through the same
+  /// sequence number as the two above, so tapping the same header twice fires
+  /// twice rather than setting an identical value nobody listens to.
+  void toTab(int tab) => state = TabJump(tab: tab, seq: ++_seq);
 
   /// Called by whichever screen acted on it. The shell does the tab switch and
   /// leaves the payload alone, so a screen that is mid-transition still finds

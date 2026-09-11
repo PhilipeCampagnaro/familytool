@@ -95,6 +95,9 @@ abstract final class AppIcons {
   static const caretRight = IconData(0xe13b, fontFamily: _family);
   static const caretUp = IconData(0xe13d, fontFamily: _family);
   static const caretUpDown = IconData(0xe141, fontFamily: _family);
+  static const chartBar = IconData(0xe151, fontFamily: _family);
+  static const chartLine = IconData(0xe155, fontFamily: _family);
+  static const chartPieSlice = IconData(0xe15b, fontFamily: _family);
   static const check = IconData(0xe183, fontFamily: _family);
   static const checkCircle = IconData(0xe185, fontFamily: _family);
   static const circle = IconData(0xe18b, fontFamily: _family);
@@ -286,6 +289,9 @@ const Map<int, IconData> _underLayers = {
   0xea13: IconData(0xea12, fontFamily: _family),
   0xe10f: IconData(0xe10e, fontFamily: _family),
   0xe113: IconData(0xe112, fontFamily: _family),
+  0xe151: IconData(0xe150, fontFamily: _family),
+  0xe155: IconData(0xe154, fontFamily: _family),
+  0xe15b: IconData(0xe15a, fontFamily: _family),
   0xe185: IconData(0xe184, fontFamily: _family),
   0xe18b: IconData(0xe18a, fontFamily: _family),
   0xe603: IconData(0xe602, fontFamily: _family),
@@ -478,6 +484,9 @@ const Map<int, IconData> _flat = {
   0xe13b: IconData(0xe13a, fontFamily: _flatFamily),
   0xe13d: IconData(0xe13c, fontFamily: _flatFamily),
   0xe141: IconData(0xe140, fontFamily: _flatFamily),
+  0xe151: IconData(0xe150, fontFamily: _flatFamily),
+  0xe155: IconData(0xe154, fontFamily: _flatFamily),
+  0xe15b: IconData(0xe15a, fontFamily: _flatFamily),
   0xe183: IconData(0xe182, fontFamily: _flatFamily),
   0xe185: IconData(0xe184, fontFamily: _flatFamily),
   0xe18b: IconData(0xe18a, fontFamily: _flatFamily),

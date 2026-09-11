@@ -127,6 +127,29 @@ class AppPalette {
   /// Avatar tone pairs, in the order `AppTones.list` exposes them.
   final List<Tone> tones;
 
+  /// Chart colours for the Spend page's category ring and its legend, in the
+  /// order `AppSpendColors` hands them out — one per `SpendCategory`, then the
+  /// grey.
+  ///
+  /// **One each, because the assignment is by the category's own position and
+  /// not by its rank this month.** That is what keeps a category the same
+  /// colour when two stretches are compared, and it is also why a short palette
+  /// could not be folded: with eight slots the six categories past the end all
+  /// came out the same grey, so a ring showing Wohnen, Elektronik and Transport
+  /// drew three identical arcs and the hole was the only way to tell them
+  /// apart. A colour that is shared is not a colour.
+  ///
+  /// Only ever four of them are on screen at once — the ring folds everything
+  /// past the fourth into the grey — so these do not have to survive being
+  /// read as a thirteen-way legend. They have to survive being read four at a
+  /// time beside a name.
+  ///
+  /// Hues are ordered to stay apart for the commonest colour-vision
+  /// deficiencies: blue, amber and teal carry the three biggest slices in a
+  /// typical household month, and no two neighbours here differ in red-green
+  /// alone.
+  final List<Color> spendSlices;
+
   /// Forecast-card skies, in the order `AppSkies` names them.
   final List<WeatherSkin> skies;
 
@@ -188,6 +211,7 @@ class AppPalette {
     required this.dayNumber,
     required this.holidayNumber,
     required this.tones,
+    required this.spendSlices,
     required this.skies,
     required this.shadowCard,
     required this.shadowNavBar,
@@ -251,6 +275,14 @@ class AppPalette {
       Tone(Color(0xFFDBEAFE), Color(0xFF1E40AF)),
       Tone(Color(0xFFFEF9C3), Color(0xFF854D0E)),
       Tone(Color(0xFFFFE4E6), Color(0xFF9F1239)),
+    ],
+    // Saturated enough to hold a 12-point ring segment against a white card
+    // without going neon in a legend dot beside 15-point text.
+    spendSlices: [
+      Color(0xFF3B6FD4), Color(0xFFD98A1F), Color(0xFF1E9E8A), Color(0xFFD6456F),
+      Color(0xFF7C55D4), Color(0xFF5A9E36), Color(0xFFE2653C), Color(0xFF1B8FB5),
+      Color(0xFF4B54C6), Color(0xFFB2479E), Color(0xFF8A6A4B), Color(0xFF8C8A22),
+      Color(0xFF2E8F5B), Color(0xFF6B7A90),
     ],
     // Pale on light, so the icon drawn on top keeps its own colours and the
     // temperature keeps a text-weight contrast — see [WeatherSkin].
@@ -340,6 +372,14 @@ class AppPalette {
       Tone(Color(0xFF1E2A44), Color(0xFF93C5FD)),
       Tone(Color(0xFF3A3520), Color(0xFFFDE68A)),
       Tone(Color(0xFF3D2830), Color(0xFFFDA4AF)),
+    ],
+    // The same eight hues lifted and slightly desaturated. The light set drawn
+    // on a dark card reads as holes punched in it rather than as a chart.
+    spendSlices: [
+      Color(0xFF7BA3F0), Color(0xFFF0B45E), Color(0xFF55C7B2), Color(0xFFF07FA0),
+      Color(0xFFB693F5), Color(0xFF92CC6E), Color(0xFFF79470), Color(0xFF5FBFDF),
+      Color(0xFF8E94F0), Color(0xFFE289CE), Color(0xFFC4A183), Color(0xFFC6C45F),
+      Color(0xFF62C48D), Color(0xFF9AA9BC),
     ],
     // Same hues at the surface lift the rest of the dark palette sits at, which
     // is what keeps a sunny card from glowing out of a night-time sheet. The
@@ -466,6 +506,39 @@ class AppTones {
   static Tone get rose => AppColors.palette.tones[4];
 
   static List<Tone> get list => AppColors.palette.tones;
+}
+
+/// The Spend page's chart colours, named the way [AppTones] names the avatar
+/// tones and for the same reason: a widget asks for a colour by what it is for,
+/// never by a literal.
+///
+/// [forCategory] is the one entry point. It maps a category onto a fixed slot,
+/// so Lebensmittel is the same blue in September as it was in August — a chart
+/// whose colours are assigned by this month's ranking makes two months
+/// impossible to compare, which is most of what anybody does with this page.
+/// The last slot is deliberately the grey one, and that is where "Sonstige"
+/// lands.
+class AppSpendColors {
+  AppSpendColors._();
+
+  static List<Color> get list => AppColors.palette.spendSlices;
+
+  /// The neutral slot, for the folded "everything else" slice and for a
+  /// category with nothing to show.
+  static Color get rest => list.last;
+
+  /// A stable colour per category, by the category's own position in
+  /// `SpendCategory` rather than by its rank this month — so a slice keeps its
+  /// colour when two stretches are compared.
+  ///
+  /// The list is one longer than the enum: the last slot is the grey, which
+  /// `other` lands on by position and the folded "Sonstige" arc takes on
+  /// purpose. An index past the end is a category the palette has not been
+  /// told about, and grey is the honest answer to that too.
+  static Color forCategory(int categoryIndex) {
+    final coloured = list.length - 1;
+    return categoryIndex >= 0 && categoryIndex < coloured ? list[categoryIndex] : rest;
+  }
 }
 
 /// The sky a forecast card wears: a two-stop wash plus the ink that reads on it.

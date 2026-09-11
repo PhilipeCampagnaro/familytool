@@ -19,7 +19,14 @@ import 'native_occlusion.dart';
 /// drift apart (e.g. if a tab change comes from somewhere other than the bar).
 class NativeTabBar extends StatefulWidget {
   final int index;
-  final ValueChanged<int> onTap;
+
+  /// Awaited, and that matters: `UITabBar` selects the item under the finger
+  /// itself, so after a tap UIKit's selection is whatever was tapped whether or
+  /// not the app agreed. **Mehr** puts up a menu and only changes tab if a row
+  /// is picked, so a dismissed menu would leave the bar highlighting a tab
+  /// nobody is on. Once [onTap] has settled, the app's index is pushed back
+  /// down and the two agree again.
+  final Future<void> Function(int) onTap;
 
   /// Reports the height UIKit laid the bar out at, once it has one. Nothing
   /// in Dart can predict it — an iOS 26 capsule is a good deal taller than the
@@ -88,7 +95,7 @@ class _NativeTabBarState extends State<NativeTabBar> {
     channel.setMethodCallHandler((call) async {
       if (call.method == 'tabSelected') {
         final index = (call.arguments as Map?)?['index'] as int?;
-        if (index != null && index != widget.index) widget.onTap(index);
+        if (index != null) await _tapped(index);
       }
       return null;
     });
@@ -101,6 +108,20 @@ class _NativeTabBarState extends State<NativeTabBar> {
     if (width <= 0 || height <= 0) return;
     setState(() => _intrinsicSize = Size(width, height));
     widget.onHeight?.call(height);
+  }
+
+  /// Reports a tap and then makes UIKit's selection match the app's.
+  ///
+  /// The re-push is a no-op in the ordinary case — the tab changed, so
+  /// [didUpdateWidget] has already sent the same index — and it is the whole
+  /// point in the one case that isn't: a **Mehr** menu that was dismissed.
+  Future<void> _tapped(int index) async {
+    // Reported even when it is the tab already on screen: the shell drops a
+    // repeat tap on an ordinary tab, and **Mehr** wants it, because tapping it
+    // again is how you swap Boxen for Ausgaben.
+    await widget.onTap(index);
+    if (!mounted || widget.index == index) return;
+    _channel?.invokeMethod('setSelectedIndex', {'index': widget.index});
   }
 
   @override

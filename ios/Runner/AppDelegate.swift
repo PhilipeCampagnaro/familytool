@@ -9,6 +9,7 @@ import UIKit
   private var mediaChannel: FlutterMethodChannel?
   private var mapChannel: FlutterMethodChannel?
   private var menuChannel: FlutterMethodChannel?
+  private var spendChannel: FlutterMethodChannel?
   private let mediaPicker = MediaPicker()
   private let mapSnapshot = MapSnapshot()
   private let nativeMenu = NativeMenu()
@@ -93,6 +94,18 @@ import UIKit
       // menu open has to report itself while its own request is still waiting.
       nativeMenu.channel = channel
       menuChannel = channel
+    }
+    // The Keychain slot the Apple Pay App Intent reads its ingest token out of.
+    // Nothing about a *transaction* crosses this channel — the intent posts
+    // straight to `spend-ingest` from Swift, because it runs on a locked phone
+    // with no Flutter engine to ask. See SpendCapture.swift, SpendAppIntent.swift
+    // and lib/services/spend_intent.dart.
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "AporahSpend") {
+      let channel = FlutterMethodChannel(name: "aporah/spend", binaryMessenger: registrar.messenger())
+      channel.setMethodCallHandler { call, result in
+        SpendChannel.handle(call, result)
+      }
+      spendChannel = channel
     }
   }
 }

@@ -14,3 +14,14 @@ project_id = "uzhzrwakrtwbpuuupccu"
 # open.
 [functions.calendar-connect]
 verify_jwt = false
+
+# spend-ingest is the second exception, and the reason is structural rather than
+# a preference. It is called by an iOS App Intent that an Apple Pay Personal
+# Automation woke on a locked phone: there is no session behind it and there can
+# never be one, so the gateway's JWT check would reject every legitimate post.
+# The per-device token minted by spend-enroll is the security boundary, and the
+# function checks it itself. Declared here rather than passed as a
+# --no-verify-jwt flag so a routine `supabase functions deploy` cannot quietly
+# re-secure it and leave spend tracking silently dead.
+[functions.spend-ingest]
+verify_jwt = false

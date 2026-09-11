@@ -271,6 +271,19 @@ supabase-js cannot open a transaction; those functions take a user id and so are
 `remove-member`, `set-role`, revoking a link and kicking a guest need no function — plain RLS
 writes, protected by triggers.
 
+Two more cover spending. `spend-enroll` mints a **per-device** ingest token (only its SHA-256
+reaches the database, same contract as the two above) and is the only way a `spend_ingest_devices`
+row can exist — `authenticated` holds no INSERT grant on that table. `spend-ingest` takes one Apple
+Pay transaction from the iOS App Intent and files it; it is the **second function pinned to
+`verify_jwt = false`**, because the caller is a background automation on a locked phone that has no
+session and can never have one. The device token, checked inside the function, is the entire
+security boundary. See [docs/spend.md](spend.md).
+
+`public.spends` is **admin-only** — every policy names `private.is_admin()` — and has no
+`visibility` column and no `*_shares` table, because a spend row is not a container anybody owns a
+private copy of. The permission matrix above pencilled Finanzen in as admin + member; it ships
+narrower, and widening it is one `or private.my_role() = 'member'` in four policies.
+
 Six more cover the calendar layer: `calendar-connect` (OAuth start/callback/disconnect — the only
 function that must run with `verify_jwt = false`), `calendar-caldav` (iCloud, GMX, WEB.DE, and
 IServ's secondary login), `calendar-link` (school calendars connected by a pasted link — IServ plugin feeds and

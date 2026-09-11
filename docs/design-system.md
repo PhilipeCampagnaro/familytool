@@ -388,6 +388,37 @@ Non-obvious bits, each one a bug that shipped first:
     `screenBg` body on light, so without the border the control has no visible edge at all and
     reads as two loose labels, one of which happens to sit on a white pill. The border draws the
     control; the fill only separates the inactive half from the white thumb.
+  - **`pill: true` is the Spend page's two slicers, and it is a different control rather than a
+    skin.** The thumb is a capsule, the track drops its border — a pill inside a pill reads as a
+    button with a button in it — and hairlines part the segments instead, which is the mark iOS uses
+    once the border is gone. The hairline is drawn only between two *inactive* segments, because a
+    rule against the thumb's edge reads as a seam in the thumb, and it keeps its width when hidden
+    so the segments do not shuffle sideways as the thumb moves. The chosen segment goes `ink`
+    rather than `accent` there: the thumb already says which one it is, and a blue label on top of
+    it competed with the figure the control qualifies.
+  - A segment carries a label, an icon, or **an icon alone** (`showLabel: false`, for the three
+    chart glyphs). `label` is still required either way — it is what VoiceOver reads in place of
+    the glyph, and each segment publishes itself as a selected/unselected button.
+  - **A pill whose `value` matches no segment lights none**, which is deliberate: it is how the
+    Spend page's range slicer shows that the stretch on screen came from the date picker beside it
+    rather than from one of its four.
+  - **The thumb is one object that slides, not one that is repainted somewhere else.** It is a
+    single `AnimatedAlign` in a `Stack` *under* the labels, and the labels cross from muted to
+    chosen on the same clock, so the two segments trade weight while the capsule is in flight. Painted per segment, the control answered a tap by having the capsule vanish from
+    under one word and appear under another, which says nothing about *which way* the choice went;
+    on a range slicer, whose four segments are an ordered scale, that direction is most of what the
+    movement is for. The hairlines fade on the same duration rather than blinking off a frame after
+    the tap. Because the capsule is no longer the segment's own background, `_SegButton` hit-tests
+    opaque — a transparent child is not a target.
+  - **The thumb is placed by fraction and never measured, and that is not a shortcut.** A
+    `LayoutBuilder` is the obvious way to get a segment's width, and it **cannot answer an intrinsic
+    query** — which is exactly what the Spend page's range slicer asks of it, from inside an
+    `IntrinsicHeight`. What that costs is not a wrong number: the throw leaves the subtree
+    `NEEDS-LAYOUT`, and the next semantics pass fails `!semantics.parentDataDirty` over and over. The
+    segments are all flex 1, so a capsule one-nth wide aligned on a fraction lands where the
+    arithmetic would have put it anyway; the hairlines are a point each and that is the whole of the
+    error. It is a `Positioned.fill`, so only the row gives the stack its size — as a plain child it
+    would be asked to fill a height with no end inside a column.
   - The selected half is `AppColors.surface` plus `AppShadows.thumb`, so it reads as a thumb
     sitting on the track rather than as a second fill.
 

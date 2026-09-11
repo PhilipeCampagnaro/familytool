@@ -578,6 +578,7 @@ class StringsDe extends AppStrings {
       'Die Wiederholung richtet sich nach dem Startdatum.';
   @override
   String repeatUntilDate(String date) => 'bis $date';
+  @override
   String get repeats => 'Wiederholt sich';
   @override
   String get repeatNotEditable =>
@@ -1291,6 +1292,7 @@ class StringsDe extends AppStrings {
   String get searchTermsCalendar =>
       'kalender termine verbindungen verbinden google outlook icloud iserv ferien abfall schule';
   @override
+  String get searchTermsApplePay =>
       'apple pay wallet ausgaben geräte iphone kurzbefehle automation aktivieren entfernen';
   @override
   String get searchTermsLanguage => 'sprache language deutsch english übersetzung';
@@ -1538,4 +1540,257 @@ class StringsDe extends AppStrings {
   String get firstStepList => 'Erste Liste';
   @override
   String get firstStepListBody => 'Der Einkauf ist ein guter Anfang.';
+
+  // ------------------------------------------------------- Ausgaben
+
+  @override
+  String get navMore => 'Mehr';
+  @override
+  @override
+
+  @override
+  String get decimalSeparator => ',';
+  @override
+  String get thousandsSeparator => '.';
+  @override
+  String get thousandsSuffix => 'k';
+  @override
+  String get millionsSuffix => 'Mio.';
+  @override
+  String money(String amount, String symbol) => '$amount\u00A0$symbol';
+  @override
+  String percent(int value) => '$value\u00A0%';
+
+  @override
+  String get spendTitle => 'Ausgaben';
+  @override
+  String get spendAdminsOnly => 'Ausgaben sehen nur Admins.';
+  @override
+  String get spendEmpty => 'In diesem Monat ist noch nichts erfasst.';
+  @override
+  String get spendEmptyEnrolled => 'Noch nichts in diesem Monat. Die nächste Apple-Pay-Zahlung landet automatisch hier.';
+
+  @override
+  String get spendByCategory => 'Nach Kategorie';
+  @override
+  String get spendTopMerchants => 'Nach Geschäft';
+  @override
+  String get spendByMember => 'Nach Person';
+
+  @override
+  String get spendOtherCategories => 'Sonstige';
+  @override
+  String get spendAllPurchases => 'Alle Ausgaben';
+  @override
+  String get spendFormerMember => 'Ehemaliges Mitglied';
+
+  @override
+  String spendCountShort(int count) => count == 1 ? '1 Zahlung' : '$count Zahlungen';
+
+  @override
+  String spendPaymentsWord(int count) => count == 1 ? 'Zahlung' : 'Zahlungen';
+
+  @override
+  String get spendChartTrend => 'Verlauf';
+  @override
+  String get spendChartBars => 'Balken';
+  @override
+  String get spendChartRing => 'Ring';
+
+  @override
+  String get spendRangeWeek => '1 W.';
+  @override
+  String get spendRangeMonth => '1 M.';
+  @override
+  String get spendRangeHalfYear => '6 M.';
+  @override
+  String get spendRangeYear => '1 J.';
+
+  @override
+  String get spendRangeThisWeek => 'Diese Woche';
+  @override
+  String get spendRangeThisMonth => 'Dieser Monat';
+  @override
+  String get spendRangeLastSixMonths => 'Letzte 6 Monate';
+  @override
+  String get spendRangeThisYear => 'Dieses Jahr';
+
+  @override
+  String get spendRangePick => 'Zeitraum wählen';
+
+  @override
+  String spendAveragePerDay(String amount) => 'Durchschn. $amount pro Tag';
+  @override
+  String spendAveragePerMonth(String amount) => 'Durchschn. $amount pro Monat';
+
+  @override
+  String get spendMetricAll => 'Ausgaben';
+  @override
+  String get spendShowAll => 'Alle anzeigen';
+
+  @override
+  String spendShowAllCount(int count) => 'Alle $count anzeigen';
+
+  @override
+  String get spendIslandThinking => 'Ich rechne nach';
+  @override
+  String get spendIslandThinkingHint => 'Zahlungen werden geladen';
+
+  @override
+  String get spendIslandReviewHint => 'Händler oder Betrag fehlt';
+
+  @override
+  String get spendIslandNothing => 'Nichts erfasst';
+
+  @override
+  String spendIslandUp(int percent) => '$percent\u00A0% mehr ausgegeben';
+  @override
+  String spendIslandDown(int percent) => '$percent\u00A0% weniger ausgegeben';
+  @override
+  String get spendIslandVsPrevious => 'gegenüber dem Zeitraum davor';
+
+  @override
+  String spendIslandTop(String category) => '$category ist der größte Posten';
+  @override
+  String spendIslandTopHint(int percent) => '$percent\u00A0% der Ausgaben';
+
+  @override
+  String get spendAdd => 'Ausgabe erfassen';
+  @override
+  String get spendEdit => 'Ausgabe bearbeiten';
+  @override
+  String get spendAmount => 'Betrag';
+  @override
+  String get spendDate => 'Datum';
+  @override
+  String get spendCategory => 'Kategorie';
+  @override
+  String get spendLabel => 'Ausgabe';
+  @override
+  String get spendKindLabel => 'Art';
+  @override
+  String get spendPaidBy => 'Bezahlt von';
+  @override
+  String get spendCard => 'Karte';
+  @override
+  String get spendSourceLabel => 'Erfasst';
+  @override
+  String get spendSourceWallet => 'Apple Pay';
+  @override
+  String get spendSourceManual => 'Von Hand';
+  @override
+  String get spendNote => 'Notiz';
+  @override
+  String get spendCategoryAuto => 'Automatisch';
+  @override
+  String get spendMerchantPlaceholder => 'Wo? z.\u00A0B. REWE';
+  @override
+  String get spendNotePlaceholder => 'Notiz (optional)';
+  @override
+  String get spendKindQuestion => 'Was für eine Ausgabe?';
+  @override
+  String get spendKindBudget => 'Fix';
+  @override
+  String get spendKindExtra => 'Extra';
+  @override
+  String get spendNeedsMerchantAndAmount => 'Händler und Betrag fehlen noch.';
+  @override
+  String get spendDeleted => 'Ausgabe gelöscht';
+
+  @override
+  String spendReviewTitle(int count) =>
+      count == 1 ? 'Eine Zahlung braucht dich kurz' : '$count Zahlungen brauchen dich kurz';
+  @override
+  String get spendReviewBody =>
+      'Apple hat Händler oder Betrag nicht mitgeliefert. Tippe die Zeile an und ergänze sie.';
+  @override
+  String get spendReviewDetail =>
+      'Apple hat Händler oder Betrag nicht mitgeliefert. Tippe oben auf den Stift und ergänze die Zeile.';
+
+  @override
+  String get spendLoadFailed => 'Die Ausgaben konnten nicht geladen werden.';
+  @override
+  String get spendSaveFailed => 'Die Ausgabe konnte nicht gespeichert werden.';
+  @override
+  String get spendDeleteFailed => 'Die Ausgabe konnte nicht gelöscht werden.';
+  @override
+  String get spendEnrolFailed => 'Dieses Gerät konnte nicht aktiviert werden.';
+
+  @override
+  String get spendWalletTitle => 'Apple Pay automatisch erfassen';
+  @override
+  String get spendWalletIntro =>
+      'Jede Zahlung mit diesem iPhone landet danach von allein hier. Ohne Link, ohne Code — du richtest nur einmal eine Kurzbefehl-Automation ein.';
+  @override
+  String get spendWalletEnable => 'Dieses iPhone aktivieren';
+  @override
+  String get spendWalletUnsupported =>
+      'Das automatische Erfassen gibt es nur auf dem iPhone. Auf anderen Geräten trägst du Ausgaben von Hand ein.';
+  @override
+  String get spendWalletEnabled => 'Gerät aktiviert';
+  @override
+  String get spendWalletActive => 'Dieses iPhone ist aktiviert';
+  @override
+  String get spendWalletInactive => 'Dieses iPhone ist noch nicht aktiviert';
+  @override
+  String get spendWalletStepsTitle => 'Noch einmal in der Kurzbefehle-App';
+  @override
+  String get spendWalletStep1 => 'Kurzbefehle öffnen, unten auf „Automation".';
+  @override
+  String get spendWalletStep2 => 'Auf „+", dann „Transaktion" wählen.';
+  @override
+  String get spendWalletStep3 => 'Karten auswählen und „Sofort ausführen".';
+  @override
+  String get spendWalletStep4 => 'Als Aktion „Ausgabe erfassen" wählen — sie steht schon in der Liste.';
+  @override
+  String get spendWalletOpenShortcuts => 'Kurzbefehle öffnen';
+  @override
+  String get settingsApplePay => 'Apple Pay';
+  @override
+  String get applePayPageDesc =>
+      'Zahlungen mit Apple Pay landen von allein bei den Ausgaben. Hier aktivierst du dieses iPhone — und nimmst jedes Gerät wieder zurück.';
+  @override
+  String get spendWalletNoDevices => 'Noch kein Gerät aktiviert';
+  @override
+  String get spendWalletNoDevicesHint => 'Mit dem Knopf unten aktivierst du dieses iPhone.';
+  @override
+  String get spendWalletDevicesLabel => 'Aktivierte Geräte';
+  @override
+  String get spendWalletDeviceUnused => 'Noch nichts erfasst';
+  @override
+  String spendWalletDeviceLastUsed(String date) => 'Zuletzt am $date';
+  @override
+  String spendWalletDeviceCount(int count) =>
+      count == 0 ? 'Keins' : count == 1 ? '1 Gerät' : '$count Geräte';
+  @override
+  String get spendWalletRevoke => 'Entfernen';
+
+  @override
+  String get spendCatGroceries => 'Lebensmittel';
+  @override
+  String get spendCatDrugstore => 'Drogerie';
+  @override
+  String get spendCatFuel => 'Tanken';
+  @override
+  String get spendCatRestaurant => 'Restaurant';
+  @override
+  String get spendCatCafe => 'Bäckerei & Café';
+  @override
+  String get spendCatShipping => 'Post & Versand';
+  @override
+  String get spendCatClothing => 'Kleidung';
+  @override
+  String get spendCatShopping => 'Shopping';
+  @override
+  String get spendCatElectronics => 'Elektronik';
+  @override
+  String get spendCatTransport => 'Unterwegs';
+  @override
+  String get spendCatEntertainment => 'Unterhaltung';
+  @override
+  String get spendCatHealth => 'Gesundheit';
+  @override
+  String get spendCatHome => 'Wohnen';
+  @override
+  String get spendCatOther => 'Sonstiges';
 }

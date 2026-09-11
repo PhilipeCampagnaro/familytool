@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/material.dart';
 import '../l10n/l10n.dart';
+import '../services/spend_intent.dart';
 import '../theme/tokens.dart';
 import 'glass.dart';
 import '../theme/app_icons.dart';
@@ -50,12 +51,44 @@ IconData navRowIcon({required IconData lucide, required IconData cupertino}) =>
 /// Rebuilt on every read so the labels follow the interface language. The
 /// native iOS bar re-sends these to UIKit when it rebuilds, so the system tab
 /// bar changes language with the rest of the app.
+///
+/// **Five, and five is the ceiling.** Boxen used to hold the last slot and gave
+/// it up to **Mehr**, which now carries Boxen and Ausgaben together — see
+/// `MoreScreen` for why those two and not a sixth tab. A sixth item fits the
+/// data structure on both bars and fits neither design: UIKit squeezes six
+/// German labels into a floating capsule until they truncate, and the Figma
+/// pill was drawn for five.
 List<NavTab> get navTabs => [
   NavTab(L.s.navHome, AppIcons.house, cupertinoIcon: CupertinoIcons.house, sfSymbol: 'house', sfSymbolSelected: 'house.fill'),
   NavTab(L.s.navCalendar, AppIcons.calendar, cupertinoIcon: CupertinoIcons.calendar, sfSymbol: 'calendar'),
   NavTab(L.s.navLists, AppIcons.listChecks, cupertinoIcon: CupertinoIcons.checkmark_square, sfSymbol: 'checklist'),
   NavTab(L.s.navBoard, AppIcons.layout, cupertinoIcon: CupertinoIcons.square_grid_2x2, sfSymbol: 'square.grid.2x2', sfSymbolSelected: 'square.grid.2x2.fill'),
-  NavTab(L.s.navBox, AppIcons.package, cupertinoIcon: CupertinoIcons.cube_box, sfSymbol: 'shippingbox', sfSymbolSelected: 'shippingbox.fill'),
+  // A stack of cards seen end-on, not an ellipsis: the three dots said "more
+  // options" — a menu of settings — where this tab is two *places*. The SF
+  // Symbol is the picture; Phosphor's nearest is its layered `stack-simple`,
+  // which says the same thing in the set's own hand, because the family has no
+  // card-stack glyph (checked against all 1504 in the vendored font).
+  //
+  // **Where Ausgaben does not ship, the slot is simply Boxen** — see
+  // `spendAvailable`. "Mehr" naming one place is a promise the menu cannot
+  // keep: it would put up a menu of a single row, or open Boxen and leave the
+  // reader wondering what the rest of "more" was.
+  if (spendAvailable)
+    NavTab(
+      L.s.navMore,
+      AppIcons.stackSimple,
+      cupertinoIcon: CupertinoIcons.rectangle_stack,
+      sfSymbol: 'rectangle.stack',
+      sfSymbolSelected: 'rectangle.stack.fill',
+    )
+  else
+    NavTab(
+      L.s.navBox,
+      AppIcons.package,
+      cupertinoIcon: CupertinoIcons.cube_box,
+      sfSymbol: 'shippingbox',
+      sfSymbolSelected: 'shippingbox.fill',
+    ),
 ];
 
 /// iPhone/iPad gets the real system tab bar — an actual `UITabBar` embedded as
