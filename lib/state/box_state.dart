@@ -12,6 +12,7 @@ import '../services/supabase.dart';
 import 'auth_state.dart';
 import 'family_state.dart';
 import '../l10n/l10n.dart';
+import 'realtime_state.dart';
 
 /// Everything the Boxen screen renders, and nothing it doesn't.
 ///
@@ -838,10 +839,12 @@ final boxRepositoryProvider = Provider<BoxRepository>((ref) => BoxRepository(Apo
 /// `select` rather than a bare `watch(familyProvider)`, or saving a profile
 /// would tear the whole screen's data down and refetch it.
 final boxProvider = StateNotifierProvider<BoxNotifier, BoxScreenState>((ref) {
-  return BoxNotifier(
+  final notifier = BoxNotifier(
     ref.watch(boxRepositoryProvider),
     ref.watch(photoRepositoryProvider),
     ref.watch(currentUserIdProvider),
     ref.watch(familyProvider.select((s) => s.household?.id)),
   );
+  reloadOnFamilyChange(ref, const {'boxes', 'box_items'}, notifier.load);
+  return notifier;
 });

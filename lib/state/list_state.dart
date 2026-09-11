@@ -14,6 +14,7 @@ import '../services/supabase.dart';
 import 'auth_state.dart';
 import 'family_state.dart';
 import '../l10n/l10n.dart';
+import 'realtime_state.dart';
 
 /// Everything the Listen screen renders, and nothing it doesn't.
 ///
@@ -1049,10 +1050,12 @@ final listRepositoryProvider = Provider<ListRepository>((ref) => ListRepository(
 /// `select` rather than a bare `watch(familyProvider)`, or saving a profile
 /// would tear the whole screen's data down and refetch it.
 final listProvider = StateNotifierProvider<ListNotifier, ListScreenState>((ref) {
-  return ListNotifier(
+  final notifier = ListNotifier(
     ref.watch(listRepositoryProvider),
     ref.watch(photoRepositoryProvider),
     ref.watch(currentUserIdProvider),
     ref.watch(familyProvider.select((s) => s.household?.id)),
   );
+  reloadOnFamilyChange(ref, const {'lists', 'list_items'}, notifier.load);
+  return notifier;
 });

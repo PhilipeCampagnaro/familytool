@@ -10,6 +10,7 @@ import '../services/supabase.dart';
 import 'auth_state.dart';
 import 'family_state.dart';
 import '../l10n/l10n.dart';
+import 'realtime_state.dart';
 
 /// Everything the Board renders, and nothing it doesn't.
 ///
@@ -593,9 +594,11 @@ final boardRepositoryProvider = Provider<BoardRepository>((ref) => BoardReposito
 
 /// Rebuilt when the signed-in user or their household changes, and only then.
 final boardProvider = StateNotifierProvider<BoardNotifier, BoardState>((ref) {
-  return BoardNotifier(
+  final notifier = BoardNotifier(
     ref.watch(boardRepositoryProvider),
     ref.watch(currentUserIdProvider),
     ref.watch(familyProvider.select((s) => s.household?.id)),
   );
+  reloadOnFamilyChange(ref, const {'tasks', 'trackers', 'tracker_checks'}, notifier.load);
+  return notifier;
 });
