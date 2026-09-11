@@ -49,6 +49,20 @@ dependencies:
   # lib/data/repositories/weather_repository.dart. Also already present
   # transitively, and named here for the same reason as path_provider.
   http: ^1.6.0
+
+  # --- Android only ------------------------------------------------------
+  #
+  # Every one of these is a no-op on iOS, where the same job is done by a method
+  # channel into UIKit. That split is deliberate rather than inconsistent: the
+  # iOS side takes the native route because the app is *built* on iOS system
+  # controls — a real UITabBar, Liquid Glass, UIMenu — and a plugin's
+  # approximation next to the real thing is exactly what the design avoids.
+  # Android has no such requirement, and hand-writing SAF, the photo picker and
+  # a FileProvider in Kotlin would be several hundred lines to land in the same
+  # place these do.
+  url_launcher: ^6.3.1
+  image_picker: ^1.1.2
+  file_picker: ^8.1.2
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -289,7 +289,9 @@ task:
   `Documents/attachments/`; `map_snapshot.dart` geocodes an event's location with CoreLocation and
   renders a still map of it with MapKit (`aporah/map`, `ios/Runner/MapSnapshot.swift`) — **the map
   in the event sheet is the device's own, not a tile service**, so no key and no household address
-  on the wire, and `openNavigation` in `external_links.dart` hands the route to Waze or Google
+  on the wire, and **off iOS there is deliberately no map at all** (`deviceMapsAvailable`, which
+  holds the reasoning): the Android twin would put an API key in the build and send every place the
+  family goes to Google, so the card is its address row and its route button there, and `openNavigation` in `external_links.dart` hands the route to Waze or Google
   Maps by trying their URL scheme and falling back to their website; `native_menu.dart` puts up
   the system's own menu beside the control that opened it (`aporah/menu`,
   `ios/Runner/NativeMenu.swift`). **The iOS

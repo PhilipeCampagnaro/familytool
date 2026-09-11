@@ -1,21 +1,49 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart' as launcher;
 
 /// Opens a URL outside the app (Safari, or whichever app claims the scheme).
 ///
-/// Flutter has no built-in for this and the app takes no plugins for it: the
-/// iOS side is a dozen lines of `UIApplication.open` on a method channel
-/// registered in `ios/Runner/AppDelegate.swift` under "aporah/links". Off iOS
-/// there's no handler, so this is a no-op — the same trade the native tab bar,
-/// switch and search field already make.
+/// The iOS side is a dozen lines of `UIApplication.open` on a method channel
+/// registered in `ios/Runner/AppDelegate.swift` under "aporah/links"; Android
+/// goes through `url_launcher`. Two routes rather than one because the native
+/// one is free on iOS, where the channel exists anyway for the pickers and the
+/// menus, and because the plugin is the whole of the work on Android.
 const _channel = MethodChannel('aporah/links');
 
 /// Returns whether the URL was actually handed off.
+///
+/// **The bool is load-bearing, not a courtesy.** [openNavigation] tries an app's
+/// own scheme and falls back to its website on false, which is what lets a
+/// household without Waze installed land on waze.com with no `canOpenURL` on
+/// iOS and no `<queries>` guesswork on Android. Both platforms report the same
+/// thing here: iOS because `UIApplication.open` says whether anything claimed
+/// the scheme, Android because `startActivity` throws when nothing does.
 Future<bool> openExternalUrl(String url) async {
-  if (kIsWeb || defaultTargetPlatform != TargetPlatform.iOS) return false;
+  if (kIsWeb) return false;
+
+  if (defaultTargetPlatform == TargetPlatform.iOS) {
+    try {
+      return await _channel.invokeMethod<bool>('open', {'url': url}) ?? false;
+    } on PlatformException {
+      return false;
+    } on MissingPluginException {
+      return false;
+    }
+  }
+
+  if (defaultTargetPlatform != TargetPlatform.android) return false;
+
+  final uri = Uri.tryParse(url);
+  if (uri == null) return false;
   try {
-    return await _channel.invokeMethod<bool>('open', {'url': url}) ?? false;
+    // `externalApplication` rather than the default: a shop page belongs in the
+    // browser the household actually uses, with their logins and their basket,
+    // not in an in-app tab that forgets both.
+    return await launcher.launchUrl(uri, mode: launcher.LaunchMode.externalApplication);
   } on PlatformException {
+    // Nothing on the device claims the scheme. That is an answer, not an error —
+    // see the note on the return value above.
     return false;
   } on MissingPluginException {
     return false;
@@ -81,10 +109,18 @@ enum NavigationApp {
 /// own search for it rather than not opening at all.
 ///
 /// The app's own URL scheme is tried first and the website is the fallback, in
-/// that order, because `UIApplication.open` reports back whether anything
-/// claimed the scheme. That is what makes this work with no
-/// `LSApplicationQueriesSchemes` entry and no `canOpenURL`: a household without
-/// Waze installed simply lands on waze.com.
+/// that order, because both platforms report whether anything claimed the
+/// scheme. That is what makes this work with no `LSApplicationQueriesSchemes`
+/// entry and no `canOpenURL`: a household without Waze installed simply lands
+/// on waze.com.
+///
+/// **On Android the Google Maps scheme always misses, and that is the right
+/// outcome.** `comgooglemaps://` is an iOS-only scheme, so the first attempt
+/// fails and the https fallback goes out — which Google Maps claims with its own
+/// intent filter, so an Android household with the app installed still lands in
+/// it rather than in a browser. Waze's scheme is the same on both, and is
+/// declared in the manifest's `<queries>` so package visibility does not turn
+/// every answer into "no".
 Future<void> openNavigation(
   NavigationApp app, {
   required String query,

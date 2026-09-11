@@ -583,8 +583,12 @@ class _EventLocationCardState extends State<_EventLocationCard> {
               ),
             ),
           ),
-          // An online meeting has a link, not a place on a map.
-          if (!e.online)
+          // An online meeting has a link, not a place on a map; a platform with
+          // no device map draws none either, and is asked *before* the request
+          // rather than after it — the gray box would otherwise be up for a
+          // frame and collapse again under every address on Android. See
+          // `deviceMapsAvailable` for why there is no Android map.
+          if (!e.online && deviceMapsAvailable)
             LayoutBuilder(
               builder: (context, constraints) {
                 _load(

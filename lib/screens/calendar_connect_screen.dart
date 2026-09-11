@@ -1652,14 +1652,18 @@ class _ConnectFlow extends ChangeNotifier {
   ///
   /// The vendorless tile only: IServ and WebUntis both mint subscription links,
   /// and a school timetable frozen on the day it was exported is worse than no
-  /// school timetable. And iOS only, for the same reason there is no photo off
-  /// iOS — the picker is a `UIDocumentPickerViewController` behind a method
-  /// channel, and there is nothing behind it anywhere else.
+  /// school timetable.
+  ///
+  /// On a phone, either phone. It used to be iOS only because the picker was a
+  /// `UIDocumentPickerViewController` and nothing stood behind the channel
+  /// anywhere else; `media_picker.dart` now answers on Android too, so the
+  /// question here is only whether there is a system file picker at all.
   bool get canUploadFile =>
       provider == CalendarProvider.ical &&
       isLink &&
       !kIsWeb &&
-      defaultTargetPlatform == TargetPlatform.iOS;
+      (defaultTargetPlatform == TargetPlatform.iOS ||
+          defaultTargetPlatform == TargetPlatform.android);
 
   /// The steps this flow walks, in order.
   ///

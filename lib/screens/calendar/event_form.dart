@@ -571,6 +571,12 @@ class _LocationFieldState extends ConsumerState<_LocationField> {
 
   void _onChanged(String value) {
     _debounce?.cancel();
+    // No device place search here, so the field is plain free text and nothing
+    // is asked. Not merely a search that answers nothing: that would put
+    // "Keine Orte gefunden" under every third letter typed on Android, which
+    // says the place does not exist when what happened is that nobody looked.
+    // See `deviceMapsAvailable`.
+    if (!deviceMapsAvailable) return;
     final text = value.trim();
     if (text.length < _minQuery) {
       setState(() {

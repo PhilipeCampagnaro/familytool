@@ -1,6 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application
-        android:label="aporah"
+        android:label="Aporah"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
@@ -24,6 +24,38 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+
+            <!-- The aporah:// scheme, the Android half of what
+                 ios/Runner/Info.plist declares under CFBundleURLTypes. Four
+                 flows land back in the app through it and none of them work
+                 without this filter: Supabase's e-mail confirmation and
+                 password reset (aporah://login-callback, opened by
+                 supabase_flutter itself), an invite accepted from a mail
+                 (aporah://invite/<token>), a list opened from a share link
+                 (aporah://share/<token>), and the calendar OAuth return
+                 (aporah://kalender/verbunden, the APORAH_APP_REDIRECT secret on
+                 the calendar-connect function).
+
+                 BROWSABLE is the load-bearing category: without it a link tapped
+                 in a mail client or a browser is not offered to us at all, which
+                 is exactly where every one of these four arrives from.
+
+                 The activity is already launchMode="singleTop", so a link
+                 arriving while the app is running resumes it and delivers an
+                 intent rather than stacking a second copy of the whole app on
+                 top of the first.
+
+                 No autoVerify and no android:host: this is a custom scheme, not
+                 an App Link, so there is no domain to verify and nothing to
+                 host. Every one of these URLs must also sit on the redirect
+                 allowlist in the Supabase dashboard — the filter only decides
+                 what the device does once the redirect has been allowed. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="aporah"/>
+            </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
@@ -40,6 +72,27 @@
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
+        </intent>
+
+        <!-- A browser, for an article's shop link and for the navigation
+             fallback. Without this, Android 11 and up hide every browser from
+             us and `url_launcher` reports that nothing can open a plain https
+             URL — which is not a permission failure the user could fix, just a
+             dead button. -->
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="https"/>
+        </intent>
+
+        <!-- Waze and Google Maps by their own schemes, so `openNavigation` can
+             hand the route to the installed app and fall back to its website
+             when it is not there. See lib/services/external_links.dart: the
+             fallback is driven by whether the launch succeeded, and package
+             visibility is what makes that answer truthful rather than always
+             "no". -->
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="waze"/>
         </intent>
     </queries>
 </manifest>

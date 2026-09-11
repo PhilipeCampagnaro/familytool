@@ -12,6 +12,31 @@ import 'package:flutter/services.dart';
 /// bar, switch and media picker make.
 const _channel = MethodChannel('aporah/map');
 
+/// Whether this device can draw a map and complete a place name at all.
+///
+/// **The decision, written down: there is no Android map, and that is the
+/// answer rather than a gap.** The Android twin would be a static Google Maps
+/// tile or a `google_maps_flutter` widget, and both mean an API key in the
+/// build and the household's addresses — the Kita, the Zahnarzt, the
+/// grandparents' street — going to Google on every event a parent opens. MapKit
+/// costs nothing and sends nothing: CoreLocation and the renderer both run on
+/// the phone. Buying a picture of a street with the list of streets this family
+/// visits is exactly the trade the app refuses everywhere else — it is why
+/// there is no tile service, why the weather carries a coordinate and no name,
+/// and why a pasted feed URL is sealed.
+///
+/// So on Android the location card is its address row and the route button, and
+/// the "Ort" field is plain free text. **Both still do the thing that matters**:
+/// the route hands the words to Waze or Google Maps, which have the map and the
+/// key and the household's consent to hold both. What is lost is a 132-point
+/// picture; what is kept is that we never learn where they are going.
+///
+/// Callers ask this rather than inferring it from a null, because "no map on
+/// this platform" and "the geocoder could not place this address" want
+/// different UI: the first draws no map *and no empty box*, and shows no
+/// "nothing found" line under a search that never ran.
+bool get deviceMapsAvailable => !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
+
 /// One line of the location field's suggestion list.
 ///
 /// [name] is a business or a street ("Rossmann", "Hauptstraße 5"), [address] the
@@ -39,7 +64,7 @@ class PlaceSuggestion {
 Future<List<PlaceSuggestion>> searchPlaces({required String query, String? near}) async {
   final text = query.trim();
   if (text.isEmpty) return const [];
-  if (kIsWeb || defaultTargetPlatform != TargetPlatform.iOS) return const [];
+  if (!deviceMapsAvailable) return const [];
 
   try {
     final rows = await _channel.invokeListMethod<Map<Object?, Object?>>('search', {
@@ -95,7 +120,7 @@ Future<MapView?> mapSnapshot({
 }) async {
   final place = query.trim();
   if (place.isEmpty) return null;
-  if (kIsWeb || defaultTargetPlatform != TargetPlatform.iOS) return null;
+  if (!deviceMapsAvailable) return null;
 
   final key = '$place|${width.round()}x${height.round()}@${scale.round()}|${dark ? 'dark' : 'light'}';
   final cached = _cache[key];
