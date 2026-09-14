@@ -20,7 +20,7 @@ import '../widgets/settings_chrome.dart';
 import 'calendar_connect_screen.dart';
 import '../widgets/native_switch.dart';
 import 'onboarding_screen.dart';
-import 'settings/apple_pay_page.dart';
+import 'settings/wallet_capture_page.dart';
 import 'settings/family_page.dart';
 import 'settings/language_page.dart';
 import 'settings/profile_page.dart';
@@ -88,7 +88,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 title: L.s.settingsTitle,
                 t: t,
                 expandedAlignment: Alignment.center,
-                expandedFontSize: 17,
+                expandedFontSize: AppText.headerCollapsed,
                 leading: GlassIconButton(icon: AppIcons.caretLeft, onTap: () => Navigator.of(context).pop()),
                 leadingWidth: 48,
                 trailing: GlassPillButton(label: L.s.doneAction, onTap: () => Navigator.of(context).pop()),
@@ -204,9 +204,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             terms: L.s.searchTermsApplePay,
             row: SettingsRow(
               icon: AppIcons.wallet,
-              title: L.s.settingsApplePay,
+              // Two names for one page, because it is two mechanisms: Apple Pay
+              // is what the user set up in Shortcuts, and on Android there is no
+              // Apple Pay to name at all.
+              title: spendUsesNotificationAccess
+                  ? L.s.settingsWalletCapture
+                  : L.s.settingsApplePay,
               value: _deviceSummary(ref.watch(spendProvider).devices.length),
-              onTap: () => _push(context, ApplePayPage()),
+              onTap: () => _push(context, WalletCapturePage()),
             ),
           ),
         (

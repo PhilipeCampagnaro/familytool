@@ -170,6 +170,11 @@ class _SpendTrendChartState extends State<SpendTrendChart> with SingleTickerProv
             indexAt: (dx) => current.length < 2
                 ? null
                 : ((dx / plot) * (summary.buckets.length - 1)).round().clamp(0, current.length - 1),
+            // The same two ways in as the bars — see [ChartScrub]. A point is
+            // smaller than a bar, but the tap picks the nearest one rather than
+            // the ink under the finger, so there is nothing to miss.
+            tapToSelect: true,
+            scrub: widget.scrub,
             onScrub: widget.onScrub,
             child: ChartReveal(
               builder: (context, reveal) => AnimatedBuilder(
@@ -506,6 +511,10 @@ class SpendBarsChart extends StatelessWidget {
             // rounds: the finger is on whichever bar it is over.
             indexAt: (dx) =>
                 summary.buckets.isEmpty ? null : (dx / slot).floor().clamp(0, summary.buckets.length - 1),
+            // A bar is a target the finger can hit, so it is tapped rather than
+            // held — see [ChartScrub].
+            tapToSelect: true,
+            scrub: scrub,
             onScrub: onScrub,
             child: ChartReveal(
               builder: (context, reveal) => CustomPaint(
@@ -983,54 +992,88 @@ class SpendShareBar extends StatelessWidget {
 // Reading a value off a chart
 // ---------------------------------------------------------------------------
 
-/// Press and hold on a chart, then slide: the bucket under the finger is
-/// reported up and the headline says what it is worth.
+/// Read a value off a chart: the bucket that is picked is reported up and the
+/// headline says what it is worth.
+///
+/// **A bar is tapped and a line is held, because a bar is a thing and a line is
+/// a stretch.** Bars stand apart with air between them, so one of them is a
+/// target the finger can hit — asking for a press and a wait to hit it is a
+/// toll on the obvious gesture. A line has no targets on it at all: every point
+/// of it is as good as the one beside it, so the only way to read a day off it
+/// is to put a finger down and slide until the callout says the day you wanted.
 ///
 /// **Press and hold, not touch and drag, and that is not a compromise.** The
 /// charts live in a pager — a horizontal drag on one of them is the gesture
 /// that turns to the next chart, and a scrubber that stole it would leave the
 /// pager unusable. A long press is what iOS's own charts take for the same
 /// reason, and it is the only gesture here that cannot be started by accident
-/// while scrolling the page.
+/// while scrolling the page. A tap can't be either, so both charts take both:
+/// tap a bucket to pick it, or hold and slide across them.
 ///
-/// It reports `null` on release: the headline goes back to the range's total.
-/// A reading left behind after the finger has gone is a headline that quietly
-/// stops being about the page.
-class ChartScrub extends StatefulWidget {
+/// **The line took only the hold once, and that was the wrong half of it.** A
+/// reader who taps a day on it got nothing back and read that as a chart that
+/// does not answer, rather than as one asking to be held — so the two drawings
+/// of the same figures now take the same two gestures.
+///
+/// **A picked reading stays until it is picked away**, held or tapped: a tap is
+/// a choice rather than a finger passing through, and a slide that ends on a
+/// bucket is the same choice made the other way. It goes on a second tap of the
+/// bucket already picked. The pager clears it when the page turns: a reading
+/// belongs to the drawing it was taken off.
+class ChartScrub extends StatelessWidget {
   /// The bucket at a local x inside the plot, or null where there is nothing to
   /// read. Each chart answers this differently — a line has points and bars
   /// have slots — which is why it is the caller's function and not a number.
   final int? Function(double dx) indexAt;
 
+  /// Whether a plain tap picks a bucket and leaves it picked. Off, the only way
+  /// in is the long press and the reading goes on release. Both spend charts
+  /// pass it; it stays an option because a chart with nothing to pick out of it
+  /// would want the other half.
+  final bool tapToSelect;
+
+  /// Which bucket is currently being read, as the parent holds it. This is the
+  /// only copy: keeping a second one here would go stale the moment the pager
+  /// cleared the reading out from under it.
+  final int? scrub;
+
   final ValueChanged<int?> onScrub;
   final Widget child;
 
-  const ChartScrub({super.key, required this.indexAt, required this.onScrub, required this.child});
-
-  @override
-  State<ChartScrub> createState() => _ChartScrubState();
-}
-
-class _ChartScrubState extends State<ChartScrub> {
-  int? _at;
+  const ChartScrub({
+    super.key,
+    required this.indexAt,
+    required this.onScrub,
+    required this.child,
+    this.scrub,
+    this.tapToSelect = false,
+  });
 
   /// **A tick each time the finger crosses into the next bucket**, the same
   /// `lightImpact` the swipe actions and the undo chip use. Sliding along a
-  /// line the eye is not on is the whole of what this gesture is for, and the
-  /// tick is what tells the finger it has moved a day — without it the reader
-  /// has to watch the headline to know anything is happening.
+  /// line the eye is not on is the whole of what the held gesture is for, and
+  /// the tick is what tells the finger it has moved a day — without it the
+  /// reader has to watch the headline to know anything is happening.
   void _report(double dx) {
-    final at = widget.indexAt(dx);
-    if (at == _at) return;
-    _at = at;
+    final at = indexAt(dx);
+    if (at == scrub) return;
     if (at != null) HapticFeedback.lightImpact();
-    widget.onScrub(at);
+    onScrub(at);
+  }
+
+  /// A tap on the bucket that is already picked lets it go, which is the way
+  /// back out of a reading that stays put.
+  void _tap(double dx) {
+    final at = indexAt(dx);
+    if (at == null) return;
+    if (at == scrub) return onScrub(null);
+    HapticFeedback.lightImpact();
+    onScrub(at);
   }
 
   void _release() {
-    if (_at == null) return;
-    _at = null;
-    widget.onScrub(null);
+    if (scrub == null) return;
+    onScrub(null);
   }
 
   @override
@@ -1040,11 +1083,16 @@ class _ChartScrubState extends State<ChartScrub> {
       // a short bar: a scrubber you have to hit the ink of is a scrubber that
       // misses.
       behavior: HitTestBehavior.opaque,
+      onTapUp: tapToSelect ? (details) => _tap(details.localPosition.dx) : null,
       onLongPressStart: (details) => _report(details.localPosition.dx),
       onLongPressMoveUpdate: (details) => _report(details.localPosition.dx),
-      onLongPressEnd: (_) => _release(),
-      onLongPressCancel: _release,
-      child: widget.child,
+      // Where a tap picks, a slide leaves its last bucket picked for the same
+      // reason — and the release handlers have to go entirely rather than be
+      // made conditional, because `onLongPressCancel` also fires on the way to
+      // a tap and would clear the reading the tap is about to toggle.
+      onLongPressEnd: tapToSelect ? null : (_) => _release(),
+      onLongPressCancel: tapToSelect ? null : _release,
+      child: child,
     );
   }
 }

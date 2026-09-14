@@ -1,0 +1,9 @@
+/* See de.lproj/AppShortcuts.strings for what the keys are.
+
+   Every phrase must be distinct *within a language*: the third key's natural
+   English reading is the same sentence as the first one's, so it is worded
+   differently here rather than registering the same phrase twice. */
+
+"Ausgabe in ${applicationName} erfassen" = "Log a spend in ${applicationName}";
+"Zahlung in ${applicationName} speichern" = "Save a payment in ${applicationName}";
+"Log a spend in ${applicationName}" = "Record a payment in ${applicationName}";

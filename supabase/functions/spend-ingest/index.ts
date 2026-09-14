@@ -1,11 +1,12 @@
-/// Take one Apple Pay transaction from a device and file it as a spend.
+/// Take one wallet transaction from a device and file it as a spend.
 ///
 /// This is the only function in the project besides `calendar-connect` that runs
 /// with `verify_jwt = false`, and for a comparable reason: the caller is an App
-/// Intent woken by a Personal Automation while the phone is locked, so there is
-/// no session and there can never be one. The per-device token from
-/// `spend-enroll` is the entire security boundary, and it is checked here, in
-/// the function, rather than at the gateway.
+/// Intent woken by a Personal Automation while the phone is locked, or the
+/// Android notification listener the system keeps alive with the app closed. In
+/// neither case is there a session, and in neither case can there ever be one.
+/// The per-device token from `spend-enroll` is the entire security boundary, and
+/// it is checked here, in the function, rather than at the gateway.
 ///
 /// What that buys and what it costs is worth stating plainly. The token
 /// identifies a device, not a person at a keyboard, so anything it can do it can
@@ -14,9 +15,10 @@
 ///
 /// **Nothing here trusts the payload.** Apple's Transaction trigger is known to
 /// hand a custom App Intent an empty merchant or an amount of zero — reported to
-/// Apple DTS and unresolved. A row that arrives that way is still written, and
-/// flagged `needs_review`, because the payment really happened and the user
-/// cannot see what we silently dropped.
+/// Apple DTS and unresolved. Android hands its listener a sentence written for a
+/// human, which a parser can price correctly and still misname the shop in. A row
+/// that arrives either way is still written, and flagged `needs_review`, because
+/// the payment really happened and the user cannot see what we silently dropped.
 
 import { corsHeaders, fail, json, serviceClient } from "../_shared/http.ts";
 import { hashToken } from "../_shared/tokens.ts";
@@ -103,7 +105,15 @@ Deno.serve(async (req) => {
 
   // Either failure means Shortcuts handed the intent a hole. The row is kept so
   // the user can see that *something* was paid and fix the rest in two seconds.
-  const needsReview = merchantRaw === "" || amountCents === null || amountCents === 0;
+  //
+  // A caller may **add** doubt and never remove it. Android's listener knows one
+  // thing this function cannot see — whether the shop name was read out of the
+  // notification or inferred from what was left of it — and says so; `false`
+  // from a caller is simply not a value, so nothing on the wire can talk the
+  // function out of the checks it makes for itself.
+  const callerDoubts = body.needs_review === true;
+  const needsReview = callerDoubts ||
+    merchantRaw === "" || amountCents === null || amountCents === 0;
 
   const merchant = merchantRaw === "" ? "Unbekannt" : merchantRaw.slice(0, 200);
   const cents = amountCents ?? 0;
@@ -182,20 +192,26 @@ function readAmountCents(body: Record<string, unknown>): number | null {
   }
 
   if (typeof amount === "string") {
-    // Strip the currency symbol and any thousands separator, then decide which
-    // of "." and "," was the decimal point by which one came last. "1.234,56"
-    // and "1,234.56" are the same number written by two conventions and both
-    // reach this endpoint.
-    const cleaned = amount.replace(/[^\d.,-]/g, "");
+    // Strip the currency symbol, then decide where the decimal point is by **how
+    // many digits follow the last separator**, not by which separator it is.
+    //
+    // "Whichever of `.` and `,` came last wins" is the obvious rule and it is
+    // wrong on the one case that turns up: "1,234" is twelve hundred and
+    // thirty-four in English and in German alike, because no currency here has
+    // three decimal places. Read as a decimal point it becomes 1.23, and a shop
+    // that charged twelve hundred euros lands in the month as one. One or two
+    // digits after a separator is a decimal point; anything else is a thousands
+    // separator. That settles "12,34", "1.234,56", "1,234.56", "1,234" and
+    // "1.234" alike, and it is the same rule `WalletNotifications.kt` applies to
+    // the text it reads off an Android notification.
+    const cleaned = amount.replace(/[^\d.,]/g, "");
     if (!cleaned) return null;
-    const lastComma = cleaned.lastIndexOf(",");
-    const lastDot = cleaned.lastIndexOf(".");
-    let normalised: string;
-    if (lastComma > lastDot) {
-      normalised = cleaned.replace(/\./g, "").replace(",", ".");
-    } else {
-      normalised = cleaned.replace(/,/g, "");
-    }
+    const lastSeparator = Math.max(cleaned.lastIndexOf(","), cleaned.lastIndexOf("."));
+    const decimals = lastSeparator < 0 ? 0 : cleaned.length - lastSeparator - 1;
+    const normalised = lastSeparator >= 0 && decimals >= 1 && decimals <= 2
+      ? cleaned.slice(0, lastSeparator).replace(/\D/g, "") + "." +
+        cleaned.slice(lastSeparator + 1)
+      : cleaned.replace(/\D/g, "");
     const parsed = Number.parseFloat(normalised);
     if (!Number.isFinite(parsed)) return null;
     return Math.round(Math.abs(parsed) * 100);

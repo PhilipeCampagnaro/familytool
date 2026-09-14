@@ -57,8 +57,8 @@ class HomeSections extends ConsumerWidget {
   }
 }
 
-/// A heading, an optional way through to the tab that owns it, and a white card
-/// of rows. One shell for all three so the sections cannot drift apart.
+/// A heading, an optional way through to the tab that owns it, and a card of
+/// rows. One shell for all three so the sections cannot drift apart.
 class _Section extends StatelessWidget {
   final String title;
   final VoidCallback? onShowAll;
@@ -87,9 +87,15 @@ class _Section extends StatelessWidget {
             ],
           ),
         ),
+        // **[AppColors.cardOnSurface], not [AppColors.surface].** Home's page is
+        // white — the day card above takes the grey — so these three were a
+        // white card on white paper held apart by a 6% blur, which is to say
+        // not held apart at all; on dark the card and the page were the same
+        // colour outright. The light half of the fix is in the shadow token,
+        // the dark half is here.
         Container(
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: AppColors.cardOnSurface,
             borderRadius: BorderRadius.circular(AppRadii.card),
             boxShadow: AppShadows.card,
           ),
@@ -97,7 +103,7 @@ class _Section extends StatelessWidget {
           child: Column(
             children: [
               for (var i = 0; i < rows.length; i++) ...[
-                if (i > 0) Divider(height: 1, thickness: 1, color: AppColors.divider),
+                if (i > 0) Divider(height: 1, thickness: 1, color: AppColors.cardOnSurfaceDivider),
                 rows[i],
               ],
             ],

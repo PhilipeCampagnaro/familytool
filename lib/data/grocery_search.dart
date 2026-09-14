@@ -7,11 +7,13 @@ import 'merchant_logos.dart';
 /// Two things it has to survive, both from the same household typing into the
 /// same field:
 ///
-/// * **German and English.** The files are named in English and the interface
-///   is one or the other, and people reach for either regardless — "Milch" and
-///   "milk" both land on `Dairy_Milk` whichever language Settings is set to.
-///   Both names are indexed always; the interface language decides only what is
-///   *shown*, never what can be found.
+/// * **All four languages at once.** The files are named in English and the
+///   interface is one of four, and people reach for any of them regardless —
+///   "Milch", "milk", "leite" and "leche" all land on `Dairy_Milk` whichever
+///   language Settings is set to. Every name is indexed always; the interface
+///   language decides only what is *shown*, never what can be found. That
+///   matters more than it sounds in a bilingual household: a Portuguese parent
+///   and a German grandparent share one list.
 /// * **How German is actually typed.** Umlauts get spelled out or dropped, so
 ///   *Müsli*, *Muesli* and *Musli* have to be one query: [foldTerm] folds all
 ///   three to the same string, and folds the catalog the same way so the
@@ -38,6 +40,15 @@ const _foldPairs = {
   'û': 'u',
   'ç': 'c',
   'ñ': 'n',
+  // Portuguese nasals. Not optional politeness: anything left unfolded is
+  // stripped by [_punctuation] below, so without these `Romã` folds to "rom"
+  // and stops answering to *roma* — the icon would be in the catalog and
+  // findable by nothing.
+  'ã': 'a',
+  'õ': 'o',
+  'ẽ': 'e',
+  'ĩ': 'i',
+  'ũ': 'u',
 };
 
 /// Everything that isn't a letter or a digit becomes a space: `Coca-Cola`,
@@ -114,6 +125,8 @@ List<_FoldedIcon> _foldCategory(GroceryCategory category) {
   final categoryTerms = [
     foldTerm(category.de),
     foldTerm(category.en),
+    foldTerm(category.pt),
+    foldTerm(category.es),
     if (prefix.isNotEmpty) foldTerm(prefix),
   ].where((t) => t.isNotEmpty).toList();
   return [
@@ -126,6 +139,11 @@ List<_FoldedIcon> _foldCategory(GroceryCategory category) {
           // anything the file name says — "Chocolate figures" has to be
           // findable by the name it wears.
           foldTerm(icon.en),
+          // Both nullable — a file the Portuguese or Spanish map hasn't reached
+          // yet folds to the empty string and is dropped by the `where` below,
+          // rather than indexing every icon under one shared blank term.
+          foldTerm(icon.pt ?? ''),
+          foldTerm(icon.es ?? ''),
           for (final term in icon.alias) foldTerm(term),
           for (final phrase in _phrases(icon.file.substring(prefix.length))) foldTerm(phrase),
         }.where((t) => t.isNotEmpty).toList(),

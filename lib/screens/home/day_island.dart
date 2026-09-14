@@ -32,11 +32,14 @@ import 'first_steps.dart';
 /// the sentence is about (a clock for the next appointment, a warning for
 /// something overdue) rather than announce that the app is being clever.
 ///
-/// **The glyph is ink wherever the colour would not mean anything.** It was the
-/// accent on five of the seven states, which put a blue mark above a row of
-/// blue chips saying nothing the words were not already saying. What is left in
-/// colour is the pair that is about the household rather than the app: red for
-/// something overdue, green for a day that is finished.
+/// **Every glyph here is ink, and [IslandLine] takes no colour at all.** It was
+/// the accent on five of the seven states, which put a blue mark above a row of
+/// blue chips saying nothing the words were not already saying — and the two
+/// that kept a tone were worse than that. A red warning triangle at the top of
+/// Home is the shape an app uses to report a fault, so one to-do past its date
+/// read as something broken; the green beside it then made the pair look like a
+/// status light for the household. The sentence says which of the seven this
+/// is, and the sentence is what is being read.
 ///
 /// **The ladder is about today, and only today.** A count of what is overdue
 /// *now* printed above next Thursday's agenda is a sentence about a different
@@ -73,7 +76,6 @@ class DayIsland extends ConsumerWidget {
         icon: AppIcons.calendarDots,
         label: L.s.weekdayWithDateShort(date.weekday % 7, sel.d, sel.m),
         hint: count == 0 ? L.s.homeDayEmpty : L.s.homeDayEntries(count),
-        tone: AppColors.inkSecondary,
         // No wave: the reader just tapped the day, so nothing here changed on
         // its own and there is nothing to point out.
         sweep: IslandSweep.none,
@@ -97,7 +99,6 @@ class DayIsland extends ConsumerWidget {
         icon: AppIcons.brain,
         label: L.s.homeThinking,
         hint: L.s.homeHintThinking,
-        tone: AppColors.inkSecondary,
         // The one state that shimmers over and over: here the wave *is* the
         // spinner, and it stops the moment there is something to say.
         sweep: IslandSweep.loop,
@@ -118,7 +119,6 @@ class DayIsland extends ConsumerWidget {
         label: L.s.firstStepsTitle,
         hint: L.s.homeHintSetup,
         trailingLabel: L.s.firstStepsProgress(firstStepCount - steps.length, firstStepCount),
-        tone: AppColors.inkSecondary,
         expanded: open,
         onTap: () => ref.read(firstStepsOpenProvider.notifier).state = !open,
       );
@@ -147,7 +147,6 @@ class DayIsland extends ConsumerWidget {
         icon: AppIcons.warning,
         label: L.s.homeOverdue(overdue),
         hint: L.s.homeHintOverdue,
-        tone: AppColors.danger,
         onTap: toBoard,
       );
     }
@@ -157,7 +156,6 @@ class DayIsland extends ConsumerWidget {
         icon: AppIcons.checkCircle,
         label: L.s.homeOpenToday(openToday),
         hint: L.s.homeHintOpen,
-        tone: AppColors.inkSecondary,
         onTap: toBoard,
       );
     }
@@ -173,7 +171,6 @@ class DayIsland extends ConsumerWidget {
         icon: AppIcons.repeat,
         label: L.s.homeTrackersLeft(trackersLeft),
         hint: L.s.homeHintTrackers,
-        tone: AppColors.inkSecondary,
         onTap: toBoard,
       );
     }
@@ -192,7 +189,6 @@ class DayIsland extends ConsumerWidget {
         icon: AppIcons.clock,
         label: L.s.homeNextUp(formatTimeOfDay(next.startsAt.hour, next.startsAt.minute), next.title),
         hint: L.s.homeHintNext,
-        tone: AppColors.inkSecondary,
       );
     }
 
@@ -204,7 +200,6 @@ class DayIsland extends ConsumerWidget {
         icon: AppIcons.checkCircle,
         label: L.s.homeAllDone,
         hint: L.s.homeHintDone,
-        tone: AppColors.success,
       );
     }
     return _plain();

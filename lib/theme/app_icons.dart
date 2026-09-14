@@ -147,6 +147,7 @@ abstract final class AppIcons {
   static const laptop = IconData(0xe587, fontFamily: _family);
   static const layout = IconData(0xe6d7, fontFamily: _family);
   static const leaf = IconData(0xe2db, fontFamily: _family);
+  static const lightbulb = IconData(0xe2dd, fontFamily: _family);
   static const link = IconData(0xe2e3, fontFamily: _family);
   static const linkBreak = IconData(0xe2e5, fontFamily: _family);
   static const list = IconData(0xe2f1, fontFamily: _family);
@@ -194,6 +195,7 @@ abstract final class AppIcons {
   static const sparkle = IconData(0xe6a3, fontFamily: _family);
   static const spinnerGap = IconData(0xe66d, fontFamily: _family);
   static const sprayBottle = IconData(0xe7e8, fontFamily: _family);
+  static const squaresFour = IconData(0xe465, fontFamily: _family);
   static const stack = IconData(0xe467, fontFamily: _family);
   static const stackSimple = IconData(0xe469, fontFamily: _family);
   static const star = IconData(0xe46b, fontFamily: _family);
@@ -211,6 +213,8 @@ abstract final class AppIcons {
   static const trash = IconData(0xe4a7, fontFamily: _family);
   static const tree = IconData(0xe6db, fontFamily: _family);
   static const treeEvergreen = IconData(0xe6dd, fontFamily: _family);
+  static const trendDown = IconData(0xe4ad, fontFamily: _family);
+  static const trendUp = IconData(0xe4af, fontFamily: _family);
   static const umbrella = IconData(0xe685, fontFamily: _family);
   static const user = IconData(0xe4c3, fontFamily: _family);
   static const userCheck = IconData(0xeafb, fontFamily: _family);
@@ -340,6 +344,7 @@ const Map<int, IconData> _underLayers = {
   0xe587: IconData(0xe586, fontFamily: _family),
   0xe6d7: IconData(0xe6d6, fontFamily: _family),
   0xe2db: IconData(0xe2da, fontFamily: _family),
+  0xe2dd: IconData(0xe2dc, fontFamily: _family),
   0xe2e3: IconData(0xe2e2, fontFamily: _family),
   0xe2e5: IconData(0xe2e4, fontFamily: _family),
   0xe2f1: IconData(0xe2f0, fontFamily: _family),
@@ -387,6 +392,7 @@ const Map<int, IconData> _underLayers = {
   0xe7e8: IconData(0xe7e4, fontFamily: _family),
   0xe467: IconData(0xe466, fontFamily: _family),
   0xe469: IconData(0xe468, fontFamily: _family),
+  0xe465: IconData(0xe464, fontFamily: _family),
   0xe46b: IconData(0xe46a, fontFamily: _family),
   0xe7eb: IconData(0xe7ea, fontFamily: _family),
   0xe471: IconData(0xe470, fontFamily: _family),
@@ -402,6 +408,8 @@ const Map<int, IconData> _underLayers = {
   0xe4a7: IconData(0xe4a6, fontFamily: _family),
   0xe6db: IconData(0xe6da, fontFamily: _family),
   0xe6dd: IconData(0xe6dc, fontFamily: _family),
+  0xe4ad: IconData(0xe4ac, fontFamily: _family),
+  0xe4af: IconData(0xe4ae, fontFamily: _family),
   0xe685: IconData(0xe684, fontFamily: _family),
   0xe4c3: IconData(0xe4c2, fontFamily: _family),
   0xeafb: IconData(0xeafa, fontFamily: _family),
@@ -444,11 +452,33 @@ const Map<int, IconData> _underLayers = {
 /// an SF Symbol in a nav bar sits. **Every weight of Phosphor shares one
 /// codepoint per glyph**, so this is a font swap and not a table edit: the
 /// numbers below are the same for Regular, Bold or Thin, and changing
-/// [_flatFamily] changes all 164 at once.
+/// [_flatFamily] changes all 171 at once.
 ///
 /// So: **flat means the Bold weight**, not the duotone with its under-layer
 /// left off. [AppIcon] reads this whenever it is not stacking two layers, which
 /// covers both `flat: true` controls and the fourteen bare marks.
+/// The glyph [icon] is actually drawn as when it is drawn flat — [_flat]'s
+/// entry, or the icon itself where the set has no Bold twin for it. Exactly
+/// what [AppIcon] resolves internally, exposed for the one caller that cannot
+/// let Flutter do the drawing: the native Liquid Glass button hands its glyph
+/// to UIKit, so it needs the codepoint *and* the family that pair actually
+/// lives in. The two weights do **not** share a codepoint space — Bold holds
+/// 1513 glyphs where Duotone holds 3022, because a duotone glyph is a pair —
+/// so sending the [AppIcons] constant's own codepoint to a Bold font draws a
+/// missing-glyph box.
+IconData flatIcon(IconData icon) => _flat[icon.codePoint] ?? icon;
+
+/// The asset each family is loaded from, for that same caller. Declared beside
+/// the families rather than re-derived from `pubspec.yaml`, so a font swap
+/// moves both at once.
+const Map<String, String> _fontAssets = {
+  _family: 'assets/icons/Phosphor-Duotone.ttf',
+  _flatFamily: 'assets/icons/Phosphor-Bold.ttf',
+};
+
+/// The font file [icon] is drawn from — see [flatIcon].
+String? iconFontAsset(IconData icon) => _fontAssets[icon.fontFamily];
+
 const Map<int, IconData> _flat = {
   0xe003: IconData(0xe002, fontFamily: _flatFamily),
   0xe00d: IconData(0xe00c, fontFamily: _flatFamily),
@@ -538,6 +568,7 @@ const Map<int, IconData> _flat = {
   0xe587: IconData(0xe586, fontFamily: _flatFamily),
   0xe6d7: IconData(0xe6d6, fontFamily: _flatFamily),
   0xe2db: IconData(0xe2da, fontFamily: _flatFamily),
+  0xe2dd: IconData(0xe2dc, fontFamily: _flatFamily),
   0xe2e3: IconData(0xe2e2, fontFamily: _flatFamily),
   0xe2e5: IconData(0xe2e4, fontFamily: _flatFamily),
   0xe2f1: IconData(0xe2f0, fontFamily: _flatFamily),
@@ -587,6 +618,7 @@ const Map<int, IconData> _flat = {
   0xe7e8: IconData(0xe7e4, fontFamily: _flatFamily),
   0xe467: IconData(0xe466, fontFamily: _flatFamily),
   0xe469: IconData(0xe468, fontFamily: _flatFamily),
+  0xe465: IconData(0xe464, fontFamily: _flatFamily),
   0xe46b: IconData(0xe46a, fontFamily: _flatFamily),
   0xe7eb: IconData(0xe7ea, fontFamily: _flatFamily),
   0xe471: IconData(0xe470, fontFamily: _flatFamily),
@@ -602,6 +634,8 @@ const Map<int, IconData> _flat = {
   0xe4a7: IconData(0xe4a6, fontFamily: _flatFamily),
   0xe6db: IconData(0xe6da, fontFamily: _flatFamily),
   0xe6dd: IconData(0xe6dc, fontFamily: _flatFamily),
+  0xe4ad: IconData(0xe4ac, fontFamily: _flatFamily),
+  0xe4af: IconData(0xe4ae, fontFamily: _flatFamily),
   0xe685: IconData(0xe684, fontFamily: _flatFamily),
   0xe4c3: IconData(0xe4c2, fontFamily: _flatFamily),
   0xeafb: IconData(0xeafa, fontFamily: _flatFamily),

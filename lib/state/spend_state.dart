@@ -35,14 +35,24 @@ class SpendState {
   final DateTime windowFrom;
   final DateTime windowTo;
 
-  /// The phones allowed to file Apple Pay transactions into this household.
+  /// The phones allowed to file wallet transactions into this household.
   final List<SpendDevice> devices;
 
-  /// Whether *this* phone is one of them. Answered by the Keychain rather than
-  /// by [devices]: the list says who may write, the Keychain says whether we
-  /// hold the token to do it, and only the second question can be answered
-  /// offline or distinguish this iPhone from the other parent's.
+  /// Whether *this* phone is one of them. Answered by the device's own token
+  /// store rather than by [devices]: the list says who may write, the token says
+  /// whether we hold the permission to do it, and only the second question can
+  /// be answered offline or tell this phone from the other parent's.
   final bool thisDeviceEnrolled;
+
+  /// Android's second switch: whether the user has granted Aporah notification
+  /// access, without which the listener is never bound and nothing is captured.
+  ///
+  /// It is a separate field from [thisDeviceEnrolled] rather than folded into it
+  /// because the two fail differently and the page has to say which. A phone
+  /// that holds a token but has no access is set up and deaf; one with access
+  /// and no token hears a payment it has no permission to file. Always false on
+  /// iOS, where there is no such grant and the page never asks.
+  final bool notificationAccess;
 
   /// True while `spend-enroll` is in flight, so the button can say so.
   final bool enrolling;
@@ -60,6 +70,7 @@ class SpendState {
     required this.windowTo,
     this.devices = const [],
     this.thisDeviceEnrolled = false,
+    this.notificationAccess = false,
     this.enrolling = false,
     this.loading = true,
     this.error,
@@ -94,6 +105,7 @@ class SpendState {
     DateTime? windowTo,
     List<SpendDevice>? devices,
     bool? thisDeviceEnrolled,
+    bool? notificationAccess,
     bool? enrolling,
     bool? loading,
     String? error,
@@ -106,6 +118,7 @@ class SpendState {
     windowTo: windowTo ?? this.windowTo,
     devices: devices ?? this.devices,
     thisDeviceEnrolled: thisDeviceEnrolled ?? this.thisDeviceEnrolled,
+    notificationAccess: notificationAccess ?? this.notificationAccess,
     enrolling: enrolling ?? this.enrolling,
     loading: loading ?? this.loading,
     error: clearError ? null : (error ?? this.error),
@@ -158,8 +171,13 @@ class SpendNotifier extends StateNotifier<SpendState> {
     try {
       final devices = await _repo.fetchDevices();
       final mine = await _intents.hasToken();
+      final access = await _intents.hasNotificationAccess();
       if (!mounted) return;
-      state = state.copyWith(devices: devices, thisDeviceEnrolled: mine);
+      state = state.copyWith(
+        devices: devices,
+        thisDeviceEnrolled: mine,
+        notificationAccess: access,
+      );
     } catch (_) {
       // Silent on purpose. The device list is a Settings detail; failing to read
       // it must not put an error banner over a page full of correct numbers.
@@ -247,16 +265,22 @@ class SpendNotifier extends StateNotifier<SpendState> {
 
   /// Corrects a row, on screen first and on the server after. Rolls back on
   /// failure, so a row cannot end up saying something the database does not.
-  Future<void> editSpend(Spend updated) async {
+  ///
+  /// Answers whether it landed, like [addSpend] — the sheet it is called from
+  /// confirms the save with a chip, and a chip that says "gespeichert" over a
+  /// row that has just rolled back is worse than no chip at all.
+  Future<bool> editSpend(Spend updated) async {
     final before = state.spends.firstWhere((s) => s.id == updated.id, orElse: () => updated);
     _replace(updated);
     try {
       final saved = await _repo.updateSpend(updated);
       if (mounted) _replace(saved);
+      return true;
     } catch (_) {
-      if (!mounted) return;
+      if (!mounted) return false;
       _replace(before);
       state = state.copyWith(error: L.s.spendSaveFailed);
+      return false;
     }
   }
 
@@ -300,8 +324,9 @@ class SpendNotifier extends StateNotifier<SpendState> {
   // This phone's permission to file Apple Pay transactions
   // ---------------------------------------------------------------------------
 
-  /// Mints a token for this device and hands it to the Keychain, where the App
-  /// Intent will find it.
+  /// Mints a token for this device and hands it to the platform's own store —
+  /// the Keychain on iOS, a keystore-wrapped file on Android — where capture
+  /// will find it.
   ///
   /// The token never touches the UI, `shared_preferences` or a clipboard — the
   /// entire reason this replaces the old copy-and-paste flow is that the user no
@@ -334,7 +359,28 @@ class SpendNotifier extends StateNotifier<SpendState> {
     }
   }
 
-  /// Stops a phone filing spends. When it is this one, the Keychain copy goes
+  /// Asks the system again whether notification access is still granted.
+  ///
+  /// Called when the capture page comes back to the foreground, which is the
+  /// only moment it can have changed: granting it means leaving Aporah for a
+  /// system screen and coming back, and revoking it happens entirely outside the
+  /// app. Nothing else would notice, and the page would go on promising a
+  /// capture that stopped.
+  Future<void> refreshNotificationAccess() async {
+    if (!_intents.usesNotificationAccess) return;
+    final access = await _intents.hasNotificationAccess();
+    if (!mounted || access == state.notificationAccess) return;
+    state = state.copyWith(notificationAccess: access);
+  }
+
+  /// Opens the system list where the grant lives.
+  ///
+  /// Aporah cannot set it — there is no runtime dialog for notification access —
+  /// so this only gets the user to the right screen and the page says what to do
+  /// once they are there.
+  Future<void> openNotificationAccess() => _intents.openNotificationAccess();
+
+  /// Stops a phone filing spends. When it is this one, the local copy goes
   /// too — leaving it would mean a device that still holds a credential the
   /// household has taken back.
   Future<void> revokeDevice(String id, {required bool isThisDevice}) async {

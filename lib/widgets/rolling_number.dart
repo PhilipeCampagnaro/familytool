@@ -5,9 +5,15 @@ import 'package:flutter/material.dart';
 /// **Only the digits that changed move.** A number that is replaced outright
 /// tells the reader something is different and nothing about what: the euros
 /// went up, the cents went down, some of it stayed. Rolling each column
-/// separately means the eye sees *where* the change was, and a total that ticks
-/// while a finger drags along a chart reads as one quantity being measured
-/// rather than as a series of unrelated numbers flashed in the same place.
+/// separately means the eye sees *where* the change was: the figure reads as one
+/// quantity moving rather than as a number replaced by another number.
+///
+/// **Which is also the limit of what it is for.** It belongs on a figure that
+/// is still answering the same question — Ausgaben's total as the range slicer
+/// widens it — and not on one that has been swapped for a different reading,
+/// where rolling claims a relationship between two numbers that have none. The
+/// Spend headline uses it for the range slicer and sets its chart readings
+/// outright for exactly that reason; see docs/spend.md.
 ///
 /// **It is the string that is animated, not the amount.** The caller has
 /// already formatted the figure — grouping separator, currency symbol, the

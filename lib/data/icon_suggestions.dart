@@ -133,19 +133,28 @@ class SymbolIcon {
   /// thing — `sprayCan` is "Drogerie" here, not "spray can".
   final String en;
 
+  /// Portuguese and Spanish, hand-written for the same reason [en] is: the
+  /// Phosphor [name] is close but not the same thing. Written out on the line
+  /// rather than tabulated the way `grocery_catalog.dart` does it — this set is
+  /// curated and a hundred-odd entries long, so a new symbol is meant to cost
+  /// four labels, and the compiler cannot ask for them.
+  final String pt;
+  final String es;
+
   final IconData glyph;
 
-  /// Everything else this symbol answers to: German synonyms, the English name
-  /// people reach for, and the *bare stem* of a compound so "Wocheneinkauf"
-  /// still finds "Einkauf" (see [_compoundRank]).
+  /// Everything else this symbol answers to: synonyms in any of the four
+  /// languages, and the *bare stem* of a compound so "Wocheneinkauf" still
+  /// finds "Einkauf" (see [_compoundRank]).
   final List<String> alias;
 
-  const SymbolIcon(this.name, this.de, this.en, this.glyph, [this.alias = const []]);
+  const SymbolIcon(this.name, this.de, this.en, this.pt, this.es, this.glyph,
+      [this.alias = const []]);
 
   String get key => '$symbolIconPrefix$name';
 
   /// What the picker shows and what the "Symbol" row reads.
-  String get label => L.s.localeCode == 'en' ? en : de;
+  String get label => pickLabel(de: de, en: en, pt: pt, es: es);
 
   IconChoice get choice => IconChoice(kind: IconKind.symbol, key: key, label: label, glyph: glyph);
 }
@@ -153,11 +162,13 @@ class SymbolIcon {
 class SymbolGroup {
   final String de;
   final String en;
+  final String pt;
+  final String es;
   final List<SymbolIcon> icons;
 
-  const SymbolGroup(this.de, this.en, this.icons);
+  const SymbolGroup(this.de, this.en, this.pt, this.es, this.icons);
 
-  String get label => L.s.localeCode == 'en' ? en : de;
+  String get label => pickLabel(de: de, en: en, pt: pt, es: es);
 }
 
 /// The curated Lucide set — the icons a family organizer actually needs, not
@@ -170,138 +181,138 @@ class SymbolGroup {
 /// An icon appears **once** — the groups are the picker's sections, and a glyph
 /// in two of them would be two hits for one thing.
 const symbolGroups = <SymbolGroup>[
-  SymbolGroup('Einkauf', 'Shopping', [
-    SymbolIcon('shoppingCart', 'Einkauf', 'Shopping', AppIcons.shoppingCart, ['einkaufen', 'einkaufswagen', 'supermarkt', 'lebensmittel', 'shopping', 'groceries']),
-    SymbolIcon('shoppingBasket', 'Einkaufskorb', 'Shopping basket', AppIcons.basket, ['korb', 'basket']),
-    SymbolIcon('shoppingBag', 'Einkaufstasche', 'Shopping bag', AppIcons.shoppingBag, ['tasche', 'tuete', 'bag']),
-    SymbolIcon('store', 'Laden', 'Shop', AppIcons.storefront, ['geschaeft', 'shop', 'markt', 'store', 'kiosk']),
-    SymbolIcon('package', 'Paket', 'Parcel', AppIcons.package, ['pakete', 'lieferung', 'bestellung', 'versand', 'delivery']),
-    SymbolIcon('tag', 'Angebot', 'Offer', AppIcons.tag, ['preis', 'preisschild', 'rabatt', 'sale']),
-    SymbolIcon('creditCard', 'Karte', 'Card', AppIcons.creditCard, ['bezahlen', 'kreditkarte', 'zahlung', 'card']),
-    SymbolIcon('wallet', 'Geldbeutel', 'Wallet', AppIcons.wallet, ['portemonnaie', 'geldboerse', 'wallet']),
-    SymbolIcon('receipt', 'Kassenbon', 'Receipt', AppIcons.receipt, ['quittung', 'beleg', 'rechnung', 'receipt']),
-    SymbolIcon('banknote', 'Geld', 'Money', AppIcons.money, ['budget', 'bargeld', 'kasse', 'money', 'cash']),
-    SymbolIcon('barcode', 'Barcode', 'Barcode', AppIcons.barcode, ['strichcode', 'scannen']),
+  SymbolGroup('Einkauf', 'Shopping', 'Compras', 'Compras', [
+    SymbolIcon('shoppingCart', 'Einkauf', 'Shopping', 'Compras', 'Compras', AppIcons.shoppingCart, ['einkaufen', 'einkaufswagen', 'supermarkt', 'lebensmittel', 'shopping', 'groceries']),
+    SymbolIcon('shoppingBasket', 'Einkaufskorb', 'Shopping basket', 'Cesta de compras', 'Cesta de la compra', AppIcons.basket, ['korb', 'basket']),
+    SymbolIcon('shoppingBag', 'Einkaufstasche', 'Shopping bag', 'Sacola de compras', 'Bolsa de la compra', AppIcons.shoppingBag, ['tasche', 'tuete', 'bag']),
+    SymbolIcon('store', 'Laden', 'Shop', 'Loja', 'Tienda', AppIcons.storefront, ['geschaeft', 'shop', 'markt', 'store', 'kiosk']),
+    SymbolIcon('package', 'Paket', 'Parcel', 'Encomenda', 'Paquete', AppIcons.package, ['pakete', 'lieferung', 'bestellung', 'versand', 'delivery']),
+    SymbolIcon('tag', 'Angebot', 'Offer', 'Promoção', 'Oferta', AppIcons.tag, ['preis', 'preisschild', 'rabatt', 'sale']),
+    SymbolIcon('creditCard', 'Karte', 'Card', 'Cartão', 'Tarjeta', AppIcons.creditCard, ['bezahlen', 'kreditkarte', 'zahlung', 'card']),
+    SymbolIcon('wallet', 'Geldbeutel', 'Wallet', 'Carteira', 'Cartera', AppIcons.wallet, ['portemonnaie', 'geldboerse', 'wallet']),
+    SymbolIcon('receipt', 'Kassenbon', 'Receipt', 'Recibo', 'Ticket', AppIcons.receipt, ['quittung', 'beleg', 'rechnung', 'receipt']),
+    SymbolIcon('banknote', 'Geld', 'Money', 'Dinheiro', 'Dinero', AppIcons.money, ['budget', 'bargeld', 'kasse', 'money', 'cash']),
+    SymbolIcon('barcode', 'Barcode', 'Barcode', 'Código de barras', 'Código de barras', AppIcons.barcode, ['strichcode', 'scannen']),
   ]),
-  SymbolGroup('Haushalt', 'Household', [
-    SymbolIcon('house', 'Haus', 'House', AppIcons.house, ['zuhause', 'wohnung', 'haushalt', 'home', 'heim']),
-    SymbolIcon('sofa', 'Wohnzimmer', 'Living room', AppIcons.couch, ['sofa', 'couch', 'moebel', 'einrichtung', 'furniture']),
-    SymbolIcon('bedDouble', 'Schlafzimmer', 'Bedroom', AppIcons.bed, ['bett', 'betten', 'bed']),
-    SymbolIcon('bath', 'Bad', 'Bathroom', AppIcons.bathtub, ['badezimmer', 'baden', 'dusche', 'bathroom']),
-    SymbolIcon('lamp', 'Lampe', 'Lamp', AppIcons.lamp, ['licht', 'leuchte', 'beleuchtung', 'light']),
-    SymbolIcon('doorOpen', 'Tür', 'Door', AppIcons.doorOpen, ['tueren', 'eingang', 'door']),
-    SymbolIcon('keyRound', 'Schlüssel', 'Key', AppIcons.key, ['schluessel', 'key']),
-    SymbolIcon('washingMachine', 'Wäsche', 'Laundry', AppIcons.washingMachine, ['waschen', 'waschmaschine', 'waschkueche', 'laundry']),
-    SymbolIcon('sprayCan', 'Drogerie', 'Toiletries', AppIcons.sprayBottle, ['putzen', 'putzmittel', 'reinigung', 'haushaltswaren', 'cleaning']),
-    SymbolIcon('trash2', 'Müll', 'Rubbish', AppIcons.trash, ['abfall', 'entsorgen', 'trash']),
-    SymbolIcon('plug', 'Strom', 'Electricity', AppIcons.plug, ['steckdose', 'stecker', 'energie']),
-    SymbolIcon('droplets', 'Wasser', 'Water', AppIcons.drop, ['water']),
+  SymbolGroup('Haushalt', 'Household', 'Casa', 'Hogar', [
+    SymbolIcon('house', 'Haus', 'House', 'Casa', 'Casa', AppIcons.house, ['zuhause', 'wohnung', 'haushalt', 'home', 'heim']),
+    SymbolIcon('sofa', 'Wohnzimmer', 'Living room', 'Sala', 'Salón', AppIcons.couch, ['sofa', 'couch', 'moebel', 'einrichtung', 'furniture']),
+    SymbolIcon('bedDouble', 'Schlafzimmer', 'Bedroom', 'Quarto', 'Dormitorio', AppIcons.bed, ['bett', 'betten', 'bed']),
+    SymbolIcon('bath', 'Bad', 'Bathroom', 'Banheiro', 'Baño', AppIcons.bathtub, ['badezimmer', 'baden', 'dusche', 'bathroom']),
+    SymbolIcon('lamp', 'Lampe', 'Lamp', 'Luminária', 'Lámpara', AppIcons.lamp, ['licht', 'leuchte', 'beleuchtung', 'light']),
+    SymbolIcon('doorOpen', 'Tür', 'Door', 'Porta', 'Puerta', AppIcons.doorOpen, ['tueren', 'eingang', 'door']),
+    SymbolIcon('keyRound', 'Schlüssel', 'Key', 'Chave', 'Llave', AppIcons.key, ['schluessel', 'key']),
+    SymbolIcon('washingMachine', 'Wäsche', 'Laundry', 'Lavanderia', 'Colada', AppIcons.washingMachine, ['waschen', 'waschmaschine', 'waschkueche', 'laundry']),
+    SymbolIcon('sprayCan', 'Drogerie', 'Toiletries', 'Higiene', 'Droguería', AppIcons.sprayBottle, ['putzen', 'putzmittel', 'reinigung', 'haushaltswaren', 'cleaning']),
+    SymbolIcon('trash2', 'Müll', 'Rubbish', 'Lixo', 'Basura', AppIcons.trash, ['abfall', 'entsorgen', 'trash']),
+    SymbolIcon('plug', 'Strom', 'Electricity', 'Eletricidade', 'Electricidad', AppIcons.plug, ['steckdose', 'stecker', 'energie']),
+    SymbolIcon('droplets', 'Wasser', 'Water', 'Água', 'Agua', AppIcons.drop, ['water']),
   ]),
-  SymbolGroup('Werkzeug & Bau', 'Tools & DIY', [
-    SymbolIcon('hammer', 'Werkzeug', 'Tools', AppIcons.hammer, ['hammer', 'reparatur', 'reparieren', 'basteln', 'tools']),
-    SymbolIcon('wrench', 'Schrauben', 'Spanner', AppIcons.wrench, ['schraubenschluessel', 'montage', 'wrench']),
-    SymbolIcon('drill', 'Bohrmaschine', 'Drill', AppIcons.screwdriver, ['bohren', 'bohrer', 'akkuschrauber', 'drill']),
-    SymbolIcon('hardHat', 'Baumarkt', 'DIY store', AppIcons.hardHat, ['baustelle', 'bau', 'handwerk', 'renovierung', 'renovieren', 'umbau']),
-    SymbolIcon('paintRoller', 'Streichen', 'Decorating', AppIcons.paintRoller, ['farbe', 'malern', 'anstrich', 'tapete', 'paint']),
-    SymbolIcon('ruler', 'Messen', 'Measuring', AppIcons.ruler, ['massband', 'zollstock', 'lineal', 'ruler']),
+  SymbolGroup('Werkzeug & Bau', 'Tools & DIY', 'Ferramentas e obras', 'Herramientas y obras', [
+    SymbolIcon('hammer', 'Werkzeug', 'Tools', 'Ferramentas', 'Herramientas', AppIcons.hammer, ['hammer', 'reparatur', 'reparieren', 'basteln', 'tools']),
+    SymbolIcon('wrench', 'Schrauben', 'Spanner', 'Chave inglesa', 'Llave inglesa', AppIcons.wrench, ['schraubenschluessel', 'montage', 'wrench']),
+    SymbolIcon('drill', 'Bohrmaschine', 'Drill', 'Furadeira', 'Taladro', AppIcons.screwdriver, ['bohren', 'bohrer', 'akkuschrauber', 'drill']),
+    SymbolIcon('hardHat', 'Baumarkt', 'DIY store', 'Bricolagem', 'Bricolaje', AppIcons.hardHat, ['baustelle', 'bau', 'handwerk', 'renovierung', 'renovieren', 'umbau']),
+    SymbolIcon('paintRoller', 'Streichen', 'Decorating', 'Pintar', 'Pintar', AppIcons.paintRoller, ['farbe', 'malern', 'anstrich', 'tapete', 'paint']),
+    SymbolIcon('ruler', 'Messen', 'Measuring', 'Medir', 'Medir', AppIcons.ruler, ['massband', 'zollstock', 'lineal', 'ruler']),
   ]),
-  SymbolGroup('Garten', 'Garden', [
-    SymbolIcon('sprout', 'Garten', 'Garden', AppIcons.plant, ['gaertnern', 'gartenarbeit', 'pflanzen', 'saat', 'beet', 'garden']),
-    SymbolIcon('flower2', 'Blumen', 'Flowers', AppIcons.flower, ['blume', 'strauss', 'flower']),
-    SymbolIcon('treeDeciduous', 'Baum', 'Tree', AppIcons.tree, ['baeume', 'hecke', 'tree']),
-    SymbolIcon('leaf', 'Pflanze', 'Plant', AppIcons.leaf, ['blatt', 'gruen', 'plant']),
-    SymbolIcon('shovel', 'Schaufel', 'Spade', AppIcons.shovel, ['graben', 'spaten', 'shovel']),
+  SymbolGroup('Garten', 'Garden', 'Jardim', 'Jardín', [
+    SymbolIcon('sprout', 'Garten', 'Garden', 'Jardim', 'Jardín', AppIcons.plant, ['gaertnern', 'gartenarbeit', 'pflanzen', 'saat', 'beet', 'garden']),
+    SymbolIcon('flower2', 'Blumen', 'Flowers', 'Flores', 'Flores', AppIcons.flower, ['blume', 'strauss', 'flower']),
+    SymbolIcon('treeDeciduous', 'Baum', 'Tree', 'Árvore', 'Árbol', AppIcons.tree, ['baeume', 'hecke', 'tree']),
+    SymbolIcon('leaf', 'Pflanze', 'Plant', 'Planta', 'Planta', AppIcons.leaf, ['blatt', 'gruen', 'plant']),
+    SymbolIcon('shovel', 'Schaufel', 'Spade', 'Pá', 'Pala', AppIcons.shovel, ['graben', 'spaten', 'shovel']),
   ]),
-  SymbolGroup('Feiern & Feste', 'Celebrations', [
-    SymbolIcon('cake', 'Geburtstag', 'Birthday', AppIcons.cake, ['kuchen', 'torte', 'birthday', 'feier']),
-    SymbolIcon('partyPopper', 'Party', 'Party', AppIcons.confetti, ['fest', 'feiern', 'silvester', 'jubilaeum', 'party']),
-    SymbolIcon('gift', 'Geschenk', 'Gift', AppIcons.gift, ['geschenke', 'praesent', 'gift', 'wunschliste']),
-    SymbolIcon('treePine', 'Weihnachten', 'Christmas', AppIcons.treeEvergreen, ['weihnacht', 'advent', 'tannenbaum', 'christmas', 'xmas', 'nikolaus']),
-    SymbolIcon('egg', 'Ostern', 'Easter', AppIcons.egg, ['osterfest', 'easter']),
-    SymbolIcon('sparkles', 'Deko', 'Decorations', AppIcons.sparkle, ['dekoration', 'schmuck', 'glitzer']),
-    SymbolIcon('music', 'Musik', 'Music', AppIcons.musicNotes, ['lieder', 'konzert', 'music']),
+  SymbolGroup('Feiern & Feste', 'Celebrations', 'Festas', 'Celebraciones', [
+    SymbolIcon('cake', 'Geburtstag', 'Birthday', 'Aniversário', 'Cumpleaños', AppIcons.cake, ['kuchen', 'torte', 'birthday', 'feier']),
+    SymbolIcon('partyPopper', 'Party', 'Party', 'Festa', 'Fiesta', AppIcons.confetti, ['fest', 'feiern', 'silvester', 'jubilaeum', 'party']),
+    SymbolIcon('gift', 'Geschenk', 'Gift', 'Presente', 'Regalo', AppIcons.gift, ['geschenke', 'praesent', 'gift', 'wunschliste']),
+    SymbolIcon('treePine', 'Weihnachten', 'Christmas', 'Natal', 'Navidad', AppIcons.treeEvergreen, ['weihnacht', 'advent', 'tannenbaum', 'christmas', 'xmas', 'nikolaus']),
+    SymbolIcon('egg', 'Ostern', 'Easter', 'Páscoa', 'Pascua', AppIcons.egg, ['osterfest', 'easter']),
+    SymbolIcon('sparkles', 'Deko', 'Decorations', 'Decoração', 'Decoración', AppIcons.sparkle, ['dekoration', 'schmuck', 'glitzer']),
+    SymbolIcon('music', 'Musik', 'Music', 'Música', 'Música', AppIcons.musicNotes, ['lieder', 'konzert', 'music']),
   ]),
-  SymbolGroup('Essen & Trinken', 'Food & drink', [
-    SymbolIcon('utensils', 'Essen', 'Meals', AppIcons.forkKnife, ['restaurant', 'mittag', 'abendessen', 'speiseplan', 'menue', 'food']),
-    SymbolIcon('cookingPot', 'Kochen', 'Cooking', AppIcons.cookingPot, ['topf', 'rezept', 'rezepte', 'kueche', 'cooking']),
-    SymbolIcon('coffee', 'Kaffee', 'Coffee', AppIcons.coffee, ['cafe', 'tee', 'coffee']),
-    SymbolIcon('wine', 'Wein', 'Wine', AppIcons.wine, ['wine']),
-    SymbolIcon('beer', 'Bier', 'Beer', AppIcons.beerStein, ['beer']),
-    SymbolIcon('pizza', 'Pizza', 'Pizza', AppIcons.pizza, ['italienisch']),
-    SymbolIcon('iceCreamCone', 'Eis', 'Ice cream', AppIcons.iceCream, ['eiscreme', 'icecream']),
-    SymbolIcon('flame', 'Grillen', 'Barbecue', AppIcons.flame, ['grill', 'feuer', 'kamin', 'bbq']),
+  SymbolGroup('Essen & Trinken', 'Food & drink', 'Comida e bebida', 'Comida y bebida', [
+    SymbolIcon('utensils', 'Essen', 'Meals', 'Refeições', 'Comidas', AppIcons.forkKnife, ['restaurant', 'mittag', 'abendessen', 'speiseplan', 'menue', 'food']),
+    SymbolIcon('cookingPot', 'Kochen', 'Cooking', 'Cozinhar', 'Cocinar', AppIcons.cookingPot, ['topf', 'rezept', 'rezepte', 'kueche', 'cooking']),
+    SymbolIcon('coffee', 'Kaffee', 'Coffee', 'Café', 'Café', AppIcons.coffee, ['cafe', 'tee', 'coffee']),
+    SymbolIcon('wine', 'Wein', 'Wine', 'Vinho', 'Vino', AppIcons.wine, ['wine']),
+    SymbolIcon('beer', 'Bier', 'Beer', 'Cerveja', 'Cerveza', AppIcons.beerStein, ['beer']),
+    SymbolIcon('pizza', 'Pizza', 'Pizza', 'Pizza', 'Pizza', AppIcons.pizza, ['italienisch']),
+    SymbolIcon('iceCreamCone', 'Eis', 'Ice cream', 'Sorvete', 'Helado', AppIcons.iceCream, ['eiscreme', 'icecream']),
+    SymbolIcon('flame', 'Grillen', 'Barbecue', 'Churrasco', 'Barbacoa', AppIcons.flame, ['grill', 'feuer', 'kamin', 'bbq']),
   ]),
-  SymbolGroup('Familie', 'Family', [
-    SymbolIcon('users', 'Familie', 'Family', AppIcons.users, ['alle', 'gruppe', 'family', 'eltern']),
-    SymbolIcon('user', 'Person', 'Person', AppIcons.user, ['ich', 'profil', 'person']),
-    SymbolIcon('baby', 'Baby', 'Baby', AppIcons.baby, ['kind', 'kinder', 'saeugling', 'wickeln']),
-    SymbolIcon('graduationCap', 'Schule', 'School', AppIcons.graduationCap, ['schulsachen', 'lernen', 'uni', 'kita', 'hausaufgaben', 'school']),
-    SymbolIcon('pawPrint', 'Haustier', 'Pet', AppIcons.pawPrint, ['tier', 'hund', 'katze', 'tierbedarf', 'pet']),
-    SymbolIcon('heart', 'Liebe', 'Love', AppIcons.heart, ['lieblings', 'favoriten', 'heart']),
-    SymbolIcon('briefcase', 'Arbeit', 'Work', AppIcons.briefcase, ['buero', 'job', 'beruf', 'work']),
+  SymbolGroup('Familie', 'Family', 'Família', 'Familia', [
+    SymbolIcon('users', 'Familie', 'Family', 'Família', 'Familia', AppIcons.users, ['alle', 'gruppe', 'family', 'eltern']),
+    SymbolIcon('user', 'Person', 'Person', 'Pessoa', 'Persona', AppIcons.user, ['ich', 'profil', 'person']),
+    SymbolIcon('baby', 'Baby', 'Baby', 'Bebê', 'Bebé', AppIcons.baby, ['kind', 'kinder', 'saeugling', 'wickeln']),
+    SymbolIcon('graduationCap', 'Schule', 'School', 'Escola', 'Colegio', AppIcons.graduationCap, ['schulsachen', 'lernen', 'uni', 'kita', 'hausaufgaben', 'school']),
+    SymbolIcon('pawPrint', 'Haustier', 'Pet', 'Animal', 'Mascota', AppIcons.pawPrint, ['tier', 'hund', 'katze', 'tierbedarf', 'pet']),
+    SymbolIcon('heart', 'Liebe', 'Love', 'Amor', 'Amor', AppIcons.heart, ['lieblings', 'favoriten', 'heart']),
+    SymbolIcon('briefcase', 'Arbeit', 'Work', 'Trabalho', 'Trabajo', AppIcons.briefcase, ['buero', 'job', 'beruf', 'work']),
   ]),
-  SymbolGroup('Gesundheit & Sport', 'Health & sport', [
-    SymbolIcon('pill', 'Apotheke', 'Pharmacy', AppIcons.pill, ['medikamente', 'medikament', 'tabletten', 'medizin', 'pille']),
-    SymbolIcon('stethoscope', 'Arzt', 'Doctor', AppIcons.stethoscope, ['doktor', 'praxis', 'termin', 'doctor']),
-    SymbolIcon('heartPulse', 'Gesundheit', 'Health', AppIcons.heartbeat, ['vorsorge', 'health']),
-    SymbolIcon('syringe', 'Impfung', 'Vaccination', AppIcons.syringe, ['spritze', 'impfen']),
-    SymbolIcon('bandage', 'Erste Hilfe', 'First aid', AppIcons.bandaids, ['pflaster', 'verband', 'verbandskasten']),
-    SymbolIcon('dumbbell', 'Sport', 'Sport', AppIcons.barbell, ['fitness', 'training', 'sportsachen', 'gym']),
+  SymbolGroup('Gesundheit & Sport', 'Health & sport', 'Saúde e esporte', 'Salud y deporte', [
+    SymbolIcon('pill', 'Apotheke', 'Pharmacy', 'Farmácia', 'Farmacia', AppIcons.pill, ['medikamente', 'medikament', 'tabletten', 'medizin', 'pille']),
+    SymbolIcon('stethoscope', 'Arzt', 'Doctor', 'Médico', 'Médico', AppIcons.stethoscope, ['doktor', 'praxis', 'termin', 'doctor']),
+    SymbolIcon('heartPulse', 'Gesundheit', 'Health', 'Saúde', 'Salud', AppIcons.heartbeat, ['vorsorge', 'health']),
+    SymbolIcon('syringe', 'Impfung', 'Vaccination', 'Vacina', 'Vacuna', AppIcons.syringe, ['spritze', 'impfen']),
+    SymbolIcon('bandage', 'Erste Hilfe', 'First aid', 'Primeiros socorros', 'Primeros auxilios', AppIcons.bandaids, ['pflaster', 'verband', 'verbandskasten']),
+    SymbolIcon('dumbbell', 'Sport', 'Sport', 'Esporte', 'Deporte', AppIcons.barbell, ['fitness', 'training', 'sportsachen', 'gym']),
   ]),
-  SymbolGroup('Reise & Auto', 'Travel & car', [
-    SymbolIcon('car', 'Auto', 'Car', AppIcons.car, ['wagen', 'werkstatt', 'pkw', 'car']),
-    SymbolIcon('plane', 'Reise', 'Travel', AppIcons.airplane, ['urlaub', 'flug', 'flugzeug', 'ferien', 'travel']),
-    SymbolIcon('luggage', 'Koffer', 'Suitcase', AppIcons.suitcaseRolling, ['gepaeck', 'packliste', 'packen', 'reisetasche']),
-    SymbolIcon('trainFront', 'Zug', 'Train', AppIcons.train, ['bahn', 'train']),
-    SymbolIcon('bus', 'Bus', 'Bus', AppIcons.bus, ['bus']),
-    SymbolIcon('bike', 'Fahrrad', 'Bicycle', AppIcons.bicycle, ['rad', 'bike']),
-    SymbolIcon('fuel', 'Tanken', 'Fuel', AppIcons.gasPump, ['tankstelle', 'benzin', 'diesel', 'sprit']),
-    SymbolIcon('tent', 'Camping', 'Camping', AppIcons.tent, ['zelt', 'campen', 'camping']),
-    SymbolIcon('ship', 'Schiff', 'Ship', AppIcons.boat, ['faehre', 'boot', 'ship']),
-    SymbolIcon('mapPin', 'Ort', 'Place', AppIcons.mapPin, ['adresse', 'karte', 'route', 'map']),
+  SymbolGroup('Reise & Auto', 'Travel & car', 'Viagens e carro', 'Viajes y coche', [
+    SymbolIcon('car', 'Auto', 'Car', 'Carro', 'Coche', AppIcons.car, ['wagen', 'werkstatt', 'pkw', 'car']),
+    SymbolIcon('plane', 'Reise', 'Travel', 'Viagem', 'Viaje', AppIcons.airplane, ['urlaub', 'flug', 'flugzeug', 'ferien', 'travel']),
+    SymbolIcon('luggage', 'Koffer', 'Suitcase', 'Mala', 'Maleta', AppIcons.suitcaseRolling, ['gepaeck', 'packliste', 'packen', 'reisetasche']),
+    SymbolIcon('trainFront', 'Zug', 'Train', 'Trem', 'Tren', AppIcons.train, ['bahn', 'train']),
+    SymbolIcon('bus', 'Bus', 'Bus', 'Ônibus', 'Autobús', AppIcons.bus, ['bus']),
+    SymbolIcon('bike', 'Fahrrad', 'Bicycle', 'Bicicleta', 'Bicicleta', AppIcons.bicycle, ['rad', 'bike']),
+    SymbolIcon('fuel', 'Tanken', 'Fuel', 'Combustível', 'Combustible', AppIcons.gasPump, ['tankstelle', 'benzin', 'diesel', 'sprit']),
+    SymbolIcon('tent', 'Camping', 'Camping', 'Camping', 'Camping', AppIcons.tent, ['zelt', 'campen', 'camping']),
+    SymbolIcon('ship', 'Schiff', 'Ship', 'Barco', 'Barco', AppIcons.boat, ['faehre', 'boot', 'ship']),
+    SymbolIcon('mapPin', 'Ort', 'Place', 'Local', 'Lugar', AppIcons.mapPin, ['adresse', 'karte', 'route', 'map']),
   ]),
-  SymbolGroup('Kleidung', 'Clothing', [
-    SymbolIcon('shirt', 'Kleidung', 'Clothing', AppIcons.tShirt, ['klamotten', 'hemd', 'shirt', 'anziehsachen', 'clothes']),
-    SymbolIcon('footprints', 'Schuhe', 'Shoes', AppIcons.footprints, ['schuh', 'stiefel', 'shoes']),
-    SymbolIcon('glasses', 'Brille', 'Glasses', AppIcons.eyeglasses, ['sehhilfe', 'glasses']),
-    SymbolIcon('watch', 'Uhr', 'Watch', AppIcons.watch, ['armbanduhr', 'watch']),
-    SymbolIcon('umbrella', 'Regenschirm', 'Umbrella', AppIcons.umbrella, ['schirm', 'regen', 'umbrella']),
+  SymbolGroup('Kleidung', 'Clothing', 'Lavanderia', 'Ropa', [
+    SymbolIcon('shirt', 'Kleidung', 'Clothing', 'Lavanderia', 'Ropa', AppIcons.tShirt, ['klamotten', 'hemd', 'shirt', 'anziehsachen', 'clothes']),
+    SymbolIcon('footprints', 'Schuhe', 'Shoes', 'Sapatos', 'Zapatos', AppIcons.footprints, ['schuh', 'stiefel', 'shoes']),
+    SymbolIcon('glasses', 'Brille', 'Glasses', 'Óculos', 'Gafas', AppIcons.eyeglasses, ['sehhilfe', 'glasses']),
+    SymbolIcon('watch', 'Uhr', 'Watch', 'Relógio', 'Reloj', AppIcons.watch, ['armbanduhr', 'watch']),
+    SymbolIcon('umbrella', 'Regenschirm', 'Umbrella', 'Guarda-chuva', 'Paraguas', AppIcons.umbrella, ['schirm', 'regen', 'umbrella']),
   ]),
-  SymbolGroup('Technik', 'Tech', [
-    SymbolIcon('smartphone', 'Handy', 'Phone', AppIcons.deviceMobile, ['telefon', 'mobil', 'phone']),
-    SymbolIcon('laptop', 'Laptop', 'Laptop', AppIcons.laptop, ['notebook', 'computer', 'rechner']),
-    SymbolIcon('monitor', 'Bildschirm', 'Monitor', AppIcons.monitor, ['pc', 'monitor']),
-    SymbolIcon('tv', 'Fernseher', 'TV', AppIcons.television, ['tv', 'fernsehen']),
-    SymbolIcon('headphones', 'Kopfhörer', 'Headphones', AppIcons.headphones, ['kopfhoerer', 'headset']),
-    SymbolIcon('camera', 'Kamera', 'Camera', AppIcons.camera, ['foto', 'fotos', 'bilder', 'camera']),
-    SymbolIcon('cable', 'Kabel', 'Cable', AppIcons.plugsConnected, ['ladekabel', 'stecker', 'cable']),
-    SymbolIcon('batteryCharging', 'Batterien', 'Batteries', AppIcons.batteryCharging, ['akku', 'batterie', 'laden', 'battery']),
-    SymbolIcon('gamepad2', 'Spiele', 'Games', AppIcons.gameController, ['gaming', 'konsole', 'spielzeug', 'games']),
-    SymbolIcon('printer', 'Drucker', 'Printer', AppIcons.printer, ['drucken', 'printer']),
+  SymbolGroup('Technik', 'Tech', 'Tecnologia', 'Tecnología', [
+    SymbolIcon('smartphone', 'Handy', 'Phone', 'Celular', 'Móvil', AppIcons.deviceMobile, ['telefon', 'mobil', 'phone']),
+    SymbolIcon('laptop', 'Laptop', 'Laptop', 'Notebook', 'Portátil', AppIcons.laptop, ['notebook', 'computer', 'rechner']),
+    SymbolIcon('monitor', 'Bildschirm', 'Monitor', 'Tela', 'Pantalla', AppIcons.monitor, ['pc', 'monitor']),
+    SymbolIcon('tv', 'Fernseher', 'TV', 'Televisão', 'Televisión', AppIcons.television, ['tv', 'fernsehen']),
+    SymbolIcon('headphones', 'Kopfhörer', 'Headphones', 'Fones de ouvido', 'Auriculares', AppIcons.headphones, ['kopfhoerer', 'headset']),
+    SymbolIcon('camera', 'Kamera', 'Camera', 'Câmera', 'Cámara', AppIcons.camera, ['foto', 'fotos', 'bilder', 'camera']),
+    SymbolIcon('cable', 'Kabel', 'Cable', 'Cabo', 'Cable', AppIcons.plugsConnected, ['ladekabel', 'stecker', 'cable']),
+    SymbolIcon('batteryCharging', 'Batterien', 'Batteries', 'Pilhas', 'Pilas', AppIcons.batteryCharging, ['akku', 'batterie', 'laden', 'battery']),
+    SymbolIcon('gamepad2', 'Spiele', 'Games', 'Jogos', 'Juegos', AppIcons.gameController, ['gaming', 'konsole', 'spielzeug', 'games']),
+    SymbolIcon('printer', 'Drucker', 'Printer', 'Impressora', 'Impresora', AppIcons.printer, ['drucken', 'printer']),
   ]),
-  SymbolGroup('Büro & Dokumente', 'Office & documents', [
-    SymbolIcon('fileText', 'Dokumente', 'Documents', AppIcons.fileText, ['dokument', 'unterlagen', 'papiere', 'vertrag', 'zeugnis', 'documents']),
-    SymbolIcon('folder', 'Ordner', 'Folder', AppIcons.folder, ['akten', 'mappe', 'folder']),
-    SymbolIcon('book', 'Bücher', 'Books', AppIcons.book, ['buch', 'lesen', 'book']),
-    SymbolIcon('calendar', 'Termine', 'Events', AppIcons.calendar, ['kalender', 'termin', 'calendar']),
-    SymbolIcon('mail', 'Post', 'Post', AppIcons.envelope, ['briefe', 'brief', 'mail']),
-    SymbolIcon('scissors', 'Schere', 'Scissors', AppIcons.scissors, ['schneiden', 'scissors']),
-    SymbolIcon('palette', 'Malen', 'Art', AppIcons.palette, ['kunst', 'hobby', 'farben', 'art']),
-    SymbolIcon('bell', 'Erinnerung', 'Reminder', AppIcons.bell, ['erinnern', 'notiz', 'reminder']),
+  SymbolGroup('Büro & Dokumente', 'Office & documents', 'Escritório e documentos', 'Oficina y documentos', [
+    SymbolIcon('fileText', 'Dokumente', 'Documents', 'Documentos', 'Documentos', AppIcons.fileText, ['dokument', 'unterlagen', 'papiere', 'vertrag', 'zeugnis', 'documents']),
+    SymbolIcon('folder', 'Ordner', 'Folder', 'Pasta', 'Carpeta', AppIcons.folder, ['akten', 'mappe', 'folder']),
+    SymbolIcon('book', 'Bücher', 'Books', 'Livros', 'Libros', AppIcons.book, ['buch', 'lesen', 'book']),
+    SymbolIcon('calendar', 'Termine', 'Events', 'Compromissos', 'Citas', AppIcons.calendar, ['kalender', 'termin', 'calendar']),
+    SymbolIcon('mail', 'Post', 'Post', 'Correio', 'Correo', AppIcons.envelope, ['briefe', 'brief', 'mail']),
+    SymbolIcon('scissors', 'Schere', 'Scissors', 'Tesoura', 'Tijeras', AppIcons.scissors, ['schneiden', 'scissors']),
+    SymbolIcon('palette', 'Malen', 'Art', 'Pintura', 'Arte', AppIcons.palette, ['kunst', 'hobby', 'farben', 'art']),
+    SymbolIcon('bell', 'Erinnerung', 'Reminder', 'Lembrete', 'Recordatorio', AppIcons.bell, ['erinnern', 'notiz', 'reminder']),
   ]),
-  SymbolGroup('Aufbewahrung', 'Storage', [
-    SymbolIcon('box', 'Box', 'Box', AppIcons.package, ['kiste', 'karton', 'behaelter']),
-    SymbolIcon('boxes', 'Umzug', 'Moving', AppIcons.stack, ['umziehen', 'kartons', 'kisten', 'moving']),
-    SymbolIcon('warehouse', 'Lager', 'Storage', AppIcons.warehouse, ['keller', 'dachboden', 'garage', 'abstellraum', 'speicher', 'schuppen', 'lagerraum']),
-    SymbolIcon('archive', 'Archiv', 'Archive', AppIcons.archive, ['aufbewahrung', 'aufbewahren', 'archiv']),
-    SymbolIcon('layers', 'Stapel', 'Stack', AppIcons.stackSimple, ['sortiert', 'schichten']),
+  SymbolGroup('Aufbewahrung', 'Storage', 'Armazenamento', 'Almacenaje', [
+    SymbolIcon('box', 'Box', 'Box', 'Caixa', 'Caja', AppIcons.package, ['kiste', 'karton', 'behaelter']),
+    SymbolIcon('boxes', 'Umzug', 'Moving', 'Mudança', 'Mudanza', AppIcons.stack, ['umziehen', 'kartons', 'kisten', 'moving']),
+    SymbolIcon('warehouse', 'Lager', 'Storage', 'Armazenamento', 'Almacén', AppIcons.warehouse, ['keller', 'dachboden', 'garage', 'abstellraum', 'speicher', 'schuppen', 'lagerraum']),
+    SymbolIcon('archive', 'Archiv', 'Archive', 'Arquivo', 'Archivo', AppIcons.archive, ['aufbewahrung', 'aufbewahren', 'archiv']),
+    SymbolIcon('layers', 'Stapel', 'Stack', 'Pilha', 'Pila', AppIcons.stackSimple, ['sortiert', 'schichten']),
   ]),
-  SymbolGroup('Jahreszeiten', 'Seasons', [
-    SymbolIcon('sun', 'Sommer', 'Summer', AppIcons.sun, ['sonne', 'sonnig', 'summer']),
-    SymbolIcon('snowflake', 'Winter', 'Winter', AppIcons.snowflake, ['schnee', 'kalt', 'winter']),
-    SymbolIcon('leafyGreen', 'Frühling', 'Spring', AppIcons.flowerTulip, ['fruehling', 'spring']),
-    SymbolIcon('wind', 'Herbst', 'Autumn', AppIcons.wind, ['wind', 'sturm', 'autumn']),
-    SymbolIcon('star', 'Favorit', 'Favourite', AppIcons.star, ['stern', 'wichtig', 'star']),
+  SymbolGroup('Jahreszeiten', 'Seasons', 'Estações do ano', 'Estaciones', [
+    SymbolIcon('sun', 'Sommer', 'Summer', 'Verão', 'Verano', AppIcons.sun, ['sonne', 'sonnig', 'summer']),
+    SymbolIcon('snowflake', 'Winter', 'Winter', 'Inverno', 'Invierno', AppIcons.snowflake, ['schnee', 'kalt', 'winter']),
+    SymbolIcon('leafyGreen', 'Frühling', 'Spring', 'Primavera', 'Primavera', AppIcons.flowerTulip, ['fruehling', 'spring']),
+    SymbolIcon('wind', 'Herbst', 'Autumn', 'Outono', 'Otoño', AppIcons.wind, ['wind', 'sturm', 'autumn']),
+    SymbolIcon('star', 'Favorit', 'Favourite', 'Favorito', 'Favorito', AppIcons.star, ['stern', 'wichtig', 'star']),
   ]),
 ];
 
@@ -386,7 +397,7 @@ final List<_Entry> _merchantIndex = () {
 
 final List<_Entry> _symbolIndex = [
   for (final group in symbolGroups)
-    for (final icon in group.icons) _Entry(icon.choice, _folded([icon.de, icon.en, icon.name, ...icon.alias]), compound: true),
+    for (final icon in group.icons) _Entry(icon.choice, _folded([icon.de, icon.en, icon.pt, icon.es, icon.name, ...icon.alias]), compound: true),
 ];
 
 final Map<String, IconChoice> _symbolsByKey = {for (final entry in _symbolIndex) entry.choice.key: entry.choice};

@@ -12,17 +12,24 @@ import '../l10n/l10n.dart';
 // three-value copy whose third value was `child` — which the database has no
 // value for, so every attempt to save a child's role would have been rejected.
 
-/// The interface languages. `name` is the locale code (`'de'` / `'en'`) that
-/// `AporahApp` hands to both `L.use` and `MaterialApp.locale`, and the string
-/// this preference is persisted as — don't rename a value without a migration.
-enum AppLanguage { de, en }
+/// The interface languages. `name` is the locale code (`'de'` / `'en'` / `'pt'`
+/// / `'es'`) that `AporahApp` hands to both `L.use` and `MaterialApp.locale`,
+/// and the string this preference is persisted as — don't rename a value
+/// without a migration. Adding one is additive: `_load` already resolves a
+/// stored name against `AppLanguage.values` and falls back to German, so a
+/// downgrade past a language finds an unknown name rather than a crash.
+enum AppLanguage { de, en, pt, es }
 
 extension AppLanguageLabel on AppLanguage {
   /// Each language named in itself, not translated: a picker that renamed
   /// "Deutsch" to "German" would be unreadable to the person looking for it.
+  /// The names come through `L.s` like everything else, so the compiler still
+  /// refuses a language that forgot one — they simply read the same in all four.
   String get label => switch (this) {
-        AppLanguage.de => 'Deutsch',
-        AppLanguage.en => 'English',
+        AppLanguage.de => L.s.languageGerman,
+        AppLanguage.en => L.s.languageEnglish,
+        AppLanguage.pt => L.s.languagePortuguese,
+        AppLanguage.es => L.s.languageSpanish,
       };
 
   /// The region under the name — this one *does* follow the interface
@@ -30,6 +37,8 @@ extension AppLanguageLabel on AppLanguage {
   String get nativeSubtitle => switch (this) {
         AppLanguage.de => L.s.languageGermanRegion,
         AppLanguage.en => L.s.languageEnglishRegion,
+        AppLanguage.pt => L.s.languagePortugueseRegion,
+        AppLanguage.es => L.s.languageSpanishRegion,
       };
 }
 

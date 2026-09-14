@@ -218,16 +218,19 @@ class _Disc extends StatelessWidget {
     if (row.member case final member?) {
       final tone = AppTones.list[member.tone % AppTones.list.length];
       return Avatar(
-        size: 38,
+        // The same disc as the [SpendMark] below it — a column that changed
+        // diameter depending on whether a row named a person or a shop read as
+        // two lists interleaved, which is the thing that widget exists to stop.
+        size: AppText.rowMark,
         bg: tone.bg,
         fg: tone.fg,
-        fontSize: 14,
+        fontSize: AppText.markInitials(AppText.rowMark),
         initials: member.initials,
         imageUrl: member.avatarUrl,
       );
     }
 
-    return SpendMark(size: 38, icon: row.icon, merchant: row.merchant);
+    return SpendMark(size: AppText.rowMark, icon: row.icon, merchant: row.merchant);
   }
 }
 

@@ -35,8 +35,16 @@ class DaySelectorCircle extends StatelessWidget {
   final DayHighlight highlight;
 
   final Color accent;
-  final double size;
-  final double fontSize;
+
+  /// Null takes the diameter and the day-number size from the installed
+  /// [AppTypeScale], which is what **both** views do — a day is the same object
+  /// in the week strip and in the month grid, so it is the same size in both.
+  /// They can't be `const` defaults here, because a default argument has to be
+  /// a compile-time constant and the scale is an installed global.
+  final double? size;
+  final double? fontSize;
+  final FontWeight? fontWeight;
+
   /// Null falls back to the palette (`surface` / `dayNumber`). They can't be
   /// const defaults any more — a default argument has to be a compile-time
   /// constant, and the tokens are getters over the installed palette.
@@ -50,8 +58,9 @@ class DaySelectorCircle extends StatelessWidget {
     required this.today,
     required this.accent,
     this.highlight = DayHighlight.none,
-    this.size = 34,
-    this.fontSize = 14,
+    this.size,
+    this.fontSize,
+    this.fontWeight,
     this.unselectedFill,
     this.unselectedTextColor,
   });
@@ -63,7 +72,22 @@ class DaySelectorCircle extends StatelessWidget {
     final dayText = unselectedTextColor ?? AppColors.dayNumber;
     final offText = AppColors.holidayNumber;
     final textColor = selected ? Colors.white : (today ? accent : (off ? offText : dayText));
-    final weight = (selected || today) ? FontWeight.w600 : (off ? FontWeight.w500 : FontWeight.w400);
+    final diameter = size ?? AppText.dayCircle;
+    // The resting weight is the scale's, and state is only ever allowed to add
+    // to it — a selected day used to be pinned at w600, which on a scale that
+    // rests there already made the emphasis vanish and, worse, would have set a
+    // selected day *lighter* than an ordinary one on anything heavier.
+    //
+    // Weight is the weakest of the three signals here and always was. A
+    // selected day is white on a filled accent circle and today's carries an
+    // accent ring in the accent's own ink; neither needs a bolder glyph to be
+    // found. A day off is a step up from rest where there is a step to take,
+    // and where there is not, the wash and the holiday ink carry it — which is
+    // what they were already doing most of.
+    final rest = fontWeight ?? AppText.dayNumber.weight;
+    final weight = (selected || today)
+        ? _atLeast(rest, FontWeight.w600)
+        : (off ? _atLeast(rest, FontWeight.w500) : rest);
 
     final fill = selected
         ? accent
@@ -76,7 +100,14 @@ class DaySelectorCircle extends StatelessWidget {
     // Both size and weight are the caller's / the day's own — a day number is
     // the one place where the *state* (selected, today, day off) is carried by
     // weight rather than colour alone. The family comes from the scale.
-    final text = Text('$day', style: AppText.input.copyWith(fontSize: fontSize, fontWeight: weight, color: textColor));
+    final text = Text(
+      '$day',
+      style: AppText.input.copyWith(
+        fontSize: fontSize ?? AppText.dayNumber.size,
+        fontWeight: weight,
+        color: textColor,
+      ),
+    );
 
     final fillCircle = Container(
       decoration: BoxDecoration(color: fill, shape: BoxShape.circle),
@@ -100,8 +131,8 @@ class DaySelectorCircle extends StatelessWidget {
     // BoxShadow halo (which used to bleed a few px past the box and overlap
     // whatever sat above the circle in a Column).
     return Container(
-      width: size,
-      height: size,
+      width: diameter,
+      height: diameter,
       padding: selected ? const EdgeInsets.all(1.5) : EdgeInsets.zero,
       alignment: Alignment.center,
       decoration: BoxDecoration(
@@ -114,6 +145,14 @@ class DaySelectorCircle extends StatelessWidget {
     );
   }
 }
+
+/// The heavier of two weights.
+///
+/// `FontWeight.value` is the numeric weight (400, 500, 600...), so comparing
+/// those is comparing the weights — and it is the only way to, since
+/// `FontWeight` is not `Comparable`.
+FontWeight _atLeast(FontWeight weight, FontWeight floor) =>
+    weight.value >= floor.value ? weight : floor;
 
 /// Light diagonal-hatch texture painted inside a Feiertag day-circle.
 ///

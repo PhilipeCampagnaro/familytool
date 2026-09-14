@@ -7,6 +7,7 @@ import '../l10n/l10n.dart';
 import '../theme/tokens.dart';
 import 'bottom_nav.dart';
 import 'glass.dart';
+import 'native_glass_buttons.dart';
 import '../theme/app_icons.dart';
 
 /// A liquid-glass pill parked above the bottom nav that comes and goes with the
@@ -79,8 +80,64 @@ class _FloatingGlassPillState extends State<FloatingGlassPill> {
     );
   }
 
+  /// The pill's contents at its own shape — and on the native path, the thing
+  /// that gives the platform view its box. See [NativeGlassButtons.sizer].
+  Widget get _box => widget.onNavRow
+      ? SizedBox(
+          height: kCompactNavSize,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 22),
+            child: _content(rowShape: true),
+          ),
+        )
+      : Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
+          child: _content(rowShape: false),
+        );
+
   @override
   Widget build(BuildContext context) {
+    // A real `UIButton` on the glass configuration where the material is real:
+    // it presses itself, so the scale-down below is the Flutter drawing's
+    // substitute for a response it hasn't got, not something to do twice.
+    final native = nativeGlassActive(context);
+    final Widget pill = native
+        ? NativeGlassButtons(
+            buttons: [
+              NativeGlassButton(
+                icon: widget.icon,
+                label: widget.label,
+                title: widget.label,
+                titleStyle: widget.onNavRow
+                    ? AppText.rowTitle
+                    : AppText.buttonSmall.copyWith(fontWeight: FontWeight.w600),
+                onTap: widget.onTap,
+              ),
+            ],
+            tint: widget.accent,
+            iconSize: widget.onNavRow ? 18 : 15,
+            sizer: _box,
+          )
+        : GestureDetector(
+            onTap: widget.onTap,
+            onTapDown: (_) => _setPressed(true),
+            onTapUp: (_) => _setPressed(false),
+            onTapCancel: () => _setPressed(false),
+            child: AnimatedScale(
+              scale: _pressed ? 0.92 : 1.0,
+              duration: const Duration(milliseconds: 120),
+              curve: Curves.easeOut,
+              child: GlassSurface(
+                borderRadius: BorderRadius.circular(widget.onNavRow ? kCompactNavSize / 2 : 22),
+                // Same reasoning as _CalendarFilterButton: let the real
+                // UIGlassEffect adapt on iOS, and let the Flutter drawing
+                // take the default light material the dark label reads on.
+                blurSigma: 20,
+                boxShadow: AppShadows.floatingPill,
+                child: _box,
+              ),
+            ),
+          );
     return Semantics(
       button: true,
       label: widget.label,
@@ -94,37 +151,7 @@ class _FloatingGlassPillState extends State<FloatingGlassPill> {
             duration: const Duration(milliseconds: 220),
             curve: Curves.easeOutCubic,
             opacity: widget.visible ? 1 : 0,
-            child: GestureDetector(
-              onTap: widget.onTap,
-              onTapDown: (_) => _setPressed(true),
-              onTapUp: (_) => _setPressed(false),
-              onTapCancel: () => _setPressed(false),
-              child: AnimatedScale(
-                scale: _pressed ? 0.92 : 1.0,
-                duration: const Duration(milliseconds: 120),
-                curve: Curves.easeOut,
-                child: GlassSurface(
-                  borderRadius: BorderRadius.circular(widget.onNavRow ? kCompactNavSize / 2 : 22),
-                  // Same reasoning as _CalendarFilterButton: let the real
-                  // UIGlassEffect adapt on iOS, and let the Flutter drawing
-                  // take the default light material the dark label reads on.
-                  blurSigma: 20,
-                  boxShadow: AppShadows.floatingPill,
-                  child: widget.onNavRow
-                      ? SizedBox(
-                          height: kCompactNavSize,
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 22),
-                            child: _content(rowShape: true),
-                          ),
-                        )
-                      : Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
-                          child: _content(rowShape: false),
-                        ),
-                ),
-              ),
-            ),
+            child: pill,
           ),
         ),
       ),

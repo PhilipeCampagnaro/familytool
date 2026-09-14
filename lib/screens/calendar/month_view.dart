@@ -401,9 +401,14 @@ class _MonthCell extends ConsumerWidget {
 
   const _MonthCell({super.key, required this.index, required this.lead, required this.len, required this.year, required this.month, required this.state, required this.accent, required this.holidays, required this.ferien});
 
+  /// The circle, the gap under it and the dot band, plus 5 points of slack —
+  /// derived rather than written down, so a scale that grows the day cannot
+  /// quietly crowd the dots beneath it. At the shipped scale it is still 50.
+  static double get _cellHeight => AppText.dayCircle + 3 + 8 + 5;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    if (index < lead || index - lead >= len) return const SizedBox(height: 50);
+    if (index < lead || index - lead >= len) return SizedBox(height: _cellHeight);
     final n = index - lead + 1;
     final isSel = _sameDay(state.selected, year, month, n);
     final isToday = _isToday(year, month, n);
@@ -419,7 +424,7 @@ class _MonthCell extends ConsumerWidget {
     return GestureDetector(
       onTap: () => ref.read(calendarProvider.notifier).selectDay(year, month, n),
       child: SizedBox(
-        height: 50,
+        height: _cellHeight,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -429,8 +434,6 @@ class _MonthCell extends ConsumerWidget {
               today: isToday,
               highlight: highlight,
               accent: accent,
-              size: 38,
-              fontSize: 15,
               unselectedFill: Colors.transparent,
               unselectedTextColor: AppColors.ink,
             ),

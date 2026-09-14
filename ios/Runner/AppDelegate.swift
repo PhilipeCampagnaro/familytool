@@ -29,6 +29,12 @@ import UIKit
         withId: "aporah/glass_view"
       )
     }
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "GlassButtonPlatformView") {
+      registrar.register(
+        GlassButtonPlatformViewFactory(messenger: registrar.messenger()),
+        withId: "aporah/glass_buttons"
+      )
+    }
     if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "TabBarPlatformView") {
       registrar.register(
         TabBarPlatformViewFactory(messenger: registrar.messenger()),

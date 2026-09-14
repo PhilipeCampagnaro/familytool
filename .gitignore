@@ -44,13 +44,16 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-# Secrets. Nothing in this repo needs an .env — the Supabase publishable key is
+# Secrets. No *app* secret belongs in an .env — the Supabase publishable key is
 # a compile-time default in lib/services/supabase.dart and every real secret
-# lives in Supabase Function secrets. This is here so that stops being true by
-# accident rather than silently.
+# lives in Supabase Function secrets. What .env is for is the developer tooling
+# in tool/, which runs on a laptop and never ships: today that is GEMINI_API_KEY
+# for tool/icon_gen. .env.example is committed as the template and is the only
+# .env* file that may be; the negation must stay below the patterns it undoes.
 .env
 .env.*
 *.env
+!.env.example
 !ios/Flutter/ephemeral/flutter_native_integration.env
 !macos/Flutter/ephemeral/flutter_native_integration.env
 
@@ -62,3 +65,11 @@ supabase/.temp/
 # repo, is not part of this Flutter project, and gets deleted once the rebuild
 # is done — see CLAUDE.md.
 Aporah-Family-Hub/
+
+# Generated grocery icons, pending review. Never committed — they are copied
+# into assets/grocery/ by tool/icon_gen/install.dart once they pass a look.
+tool/icon_gen/out/
+tool/icon_gen/catalog_lines.txt
+tool/icon_gen/review/
+
+tool/icon_gen/reframe_preview/

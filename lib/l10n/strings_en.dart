@@ -1,5 +1,6 @@
 import '../data/german_holidays.dart';
 import '../models/grocery_unit.dart';
+import '../theme/app_icons.dart';
 import 'app_strings.dart';
 
 /// English. Written for a family living in Germany who prefer an English
@@ -77,8 +78,7 @@ class StringsEn extends AppStrings {
   @override
   String dateRange(String from, String to) => '$from\u00A0– $to';
   @override
-  String dayRangeSameMonth(int fromDay, int toDay, int month) =>
-      '$fromDay – $toDay ${monthNames[month]}';
+  String dayRangeSameMonth(int fromDay, int toDay, int month) => '$fromDay – $toDay ${monthNames[month]}';
   @override
   String dayRangeCrossMonth(int fromDay, int fromMonth, int toDay, int toMonth) =>
       '$fromDay ${monthNames[fromMonth]} – $toDay ${monthNames[toMonth]}';
@@ -199,7 +199,6 @@ class StringsEn extends AppStrings {
   String get navBox => 'Box';
   @override
   String get navExpand => 'Show navigation';
-
 
   // ---------------------------------------------------------------- board --
   @override
@@ -514,7 +513,8 @@ class StringsEn extends AppStrings {
   @override
   String get removeItemLink => 'Remove link';
   @override
-  String get itemLinkMessage => 'The page this article can be bought on. Tapping the link opens it in the browser.';
+  String get itemLinkMessage =>
+      'The page this article can be bought on. Tapping the link opens it in the browser.';
   @override
   String get itemLinkHint => 'e.g. amazon.co.uk/dp/B0C…';
   @override
@@ -578,13 +578,11 @@ class StringsEn extends AppStrings {
   @override
   String get repeats => 'Repeats';
   @override
-  String get repeatNotEditable =>
-      "The repeat rule can't be changed here — only in the calendar itself.";
+  String get repeatNotEditable => "The repeat rule can't be changed here — only in the calendar itself.";
   @override
   String get repeatingEvent => 'Repeating event';
   @override
-  String get changeRepeatingEventBody =>
-      'Apply this change to this event only, or to the whole series?';
+  String get changeRepeatingEventBody => 'Apply this change to this event only, or to the whole series?';
   @override
   String get deleteRepeatingEventBody => 'Delete this event only, or the whole series?';
   @override
@@ -793,8 +791,7 @@ class StringsEn extends AppStrings {
   @override
   String get accessRevokedToo => 'Access will be revoked at the provider as well.';
   @override
-  String get accountStaysConnected =>
-      'The account stays connected — and so do the other calendars in it.';
+  String get accountStaysConnected => 'The account stays connected — and so do the other calendars in it.';
   @override
   String get householdOnlyOthersKeep => 'For your household only — others keep the calendar.';
   @override
@@ -825,16 +822,14 @@ class StringsEn extends AppStrings {
   String calendarsFoundPickThem(int count) =>
       '$count calendars found. Pick the ones you want to see in Aporah.';
   @override
-  String get nameYourCalendarBody =>
-      'That\'s what the calendar is called in Aporah. You can rename it now.';
+  String get nameYourCalendarBody => 'That\'s what the calendar is called in Aporah. You can rename it now.';
   @override
   String get nameEachCalendarBody =>
       'That\'s what the calendars are called in Aporah. You can rename them now.';
   @override
   String get whichCalendars => 'Calendars';
   @override
-  String get whichCalendarsHint =>
-      'Only the ones you tick show up in Aporah. You can change this later.';
+  String get whichCalendarsHint => 'Only the ones you tick show up in Aporah. You can change this later.';
   @override
   String get readOnlyCalendar => 'Read-only';
   @override
@@ -844,8 +839,7 @@ class StringsEn extends AppStrings {
   @override
   String get deselectAll => 'Deselect all';
   @override
-  String calendarsSelected(int count) =>
-      count == 1 ? '1 calendar selected' : '$count calendars selected';
+  String calendarsSelected(int count) => count == 1 ? '1 calendar selected' : '$count calendars selected';
   @override
   String get loadingCalendarsEllipsis => 'Loading calendars …';
   @override
@@ -931,8 +925,7 @@ class StringsEn extends AppStrings {
   @override
   String get uploadCalendarFile => 'Upload a calendar file';
   @override
-  String get uploadCalendarFileHint =>
-      'For a calendar published as a download rather than as a link.';
+  String get uploadCalendarFileHint => 'For a calendar published as a download rather than as a link.';
   @override
   String get calendarFileNote =>
       'A file is a snapshot: it holds exactly the events it contained when you '
@@ -950,8 +943,7 @@ class StringsEn extends AppStrings {
   @override
   String get pasteCalendarLink => 'Calendar link';
   @override
-  String get pasteCalendarLinkHint =>
-      'We fetch it right away, so you know at once whether it works.';
+  String get pasteCalendarLinkHint => 'We fetch it right away, so you know at once whether it works.';
   @override
   String get whoseCalendar => 'Whose account is this?';
   @override
@@ -977,8 +969,7 @@ class StringsEn extends AppStrings {
   @override
   String get removeCalendar => 'Remove calendar';
   @override
-  String get linkStaysAtSchool =>
-      ' The link stays in the school platform — we simply stop remembering it.';
+  String get linkStaysAtSchool => ' The link stays in the school platform — we simply stop remembering it.';
   @override
   String get connectWithLogin => 'Sign in with credentials instead';
   @override
@@ -1060,8 +1051,7 @@ class StringsEn extends AppStrings {
   @override
   String get providerIservDesc => 'Homework, exams and class calendars from IServ.';
   @override
-  String get providerWebuntisDesc =>
-      'Show the timetable from WebUntis, via the iCal link in the profile.';
+  String get providerWebuntisDesc => 'Show the timetable from WebUntis, via the iCal link in the profile.';
   @override
   String get providerIcalDesc => 'Add any calendar you can subscribe to — a club, a nursery, work.';
   @override
@@ -1145,9 +1135,8 @@ class StringsEn extends AppStrings {
   @override
   String youAndOthersSee(String names, String noun) => 'Only you and $names see $noun.';
   @override
-  String joinNames(List<String> names) => names.length == 1
-      ? names.first
-      : '${names.sublist(0, names.length - 1).join(', ')} and ${names.last}';
+  String joinNames(List<String> names) =>
+      names.length == 1 ? names.first : '${names.sublist(0, names.length - 1).join(', ')} and ${names.last}';
 
   // ------------------------------------------------------------ icon pick --
   @override
@@ -1270,14 +1259,21 @@ class StringsEn extends AppStrings {
   @override
   String get languageEnglish => 'English';
   @override
+  String get languagePortuguese => 'Português';
+  @override
+  String get languageSpanish => 'Español';
+  @override
   String get languageGermanRegion => 'Germany';
   @override
   String get languageEnglishRegion => 'United Kingdom';
+  @override
+  String get languagePortugueseRegion => 'Brazil';
+  @override
+  String get languageSpanishRegion => 'Spain';
 
   // Both languages' keywords, so search finds a row whichever word comes to mind.
   @override
-  String get searchTermsProfile =>
-      'profile account name display name avatar colour role admin profil konto';
+  String get searchTermsProfile => 'profile account name display name avatar colour role admin profil konto';
   @override
   String get searchTermsFamily =>
       'family members people invite role roles child children admin familie mitglieder';
@@ -1286,12 +1282,12 @@ class StringsEn extends AppStrings {
       'calendar events connections connect google outlook icloud iserv holidays waste school kalender';
   @override
   String get searchTermsApplePay =>
-      'apple pay wallet spending devices iphone shortcuts automation activate remove geräte';
+      'apple pay google wallet samsung pay spending devices iphone android shortcuts automation '
+      'notifications notification access detection activate remove geräte';
   @override
   String get searchTermsLanguage => 'language sprache german english deutsch translation';
   @override
-  String get searchTermsDarkMode =>
-      'dark mode appearance light dark night theme dunkelmodus darstellung';
+  String get searchTermsDarkMode => 'dark mode appearance light dark night theme dunkelmodus darstellung';
   @override
   String get searchTermsTour => 'welcome tour onboarding intro repeat help willkommenstour';
   @override
@@ -1315,8 +1311,7 @@ class StringsEn extends AppStrings {
   @override
   String get onboardInviteTitle => 'Invite your family';
   @override
-  String get onboardInviteBody =>
-      'Everyone in your family can see and add to events, boxes and lists.';
+  String get onboardInviteBody => 'Everyone in your family can see and add to events, boxes and lists.';
   @override
   String get adult => 'Adult';
   @override
@@ -1352,8 +1347,7 @@ class StringsEn extends AppStrings {
   @override
   String get onboardReady => 'Ready!';
   @override
-  String get onboardReadyBody =>
-      'Your family is set up — you can change all of it later in Settings.';
+  String get onboardReadyBody => 'Your family is set up — you can change all of it later in Settings.';
   @override
   String get noInvitesSent => 'No invitations sent';
   @override
@@ -1408,8 +1402,7 @@ class StringsEn extends AppStrings {
   @override
   String get passwordTooShort => 'That password is too short.';
   @override
-  String get passwordLeaked =>
-      'This password appears in known data leaks. Please choose another one.';
+  String get passwordLeaked => 'This password appears in known data leaks. Please choose another one.';
   @override
   String get tooManyAttempts => 'Too many attempts. Please wait a moment.';
   @override
@@ -1539,7 +1532,6 @@ class StringsEn extends AppStrings {
   String get navMore => 'More';
   @override
   @override
-
   @override
   String get decimalSeparator => '.';
   @override
@@ -1560,7 +1552,8 @@ class StringsEn extends AppStrings {
   @override
   String get spendEmpty => 'Nothing recorded for this month yet.';
   @override
-  String get spendEmptyEnrolled => 'Nothing this month yet. Your next Apple Pay payment lands here on its own.';
+  String get spendEmptyEnrolled =>
+      'Nothing this month yet. Your next Apple Pay payment lands here on its own.';
 
   @override
   String get spendByCategory => 'By category';
@@ -1687,6 +1680,10 @@ class StringsEn extends AppStrings {
   @override
   String get spendNeedsMerchantAndAmount => 'Merchant and amount are still missing.';
   @override
+  String get spendSaved => 'Spend saved';
+  @override
+  String get spendUpdated => 'Spend updated';
+  @override
   String get spendDeleted => 'Spend deleted';
 
   @override
@@ -1717,7 +1714,7 @@ class StringsEn extends AppStrings {
   String get spendWalletEnable => 'Activate this iPhone';
   @override
   String get spendWalletUnsupported =>
-      'Automatic capture only works on iPhone. On other devices you add spending by hand.';
+      'Automatic capture works on iPhone and Android. On other devices you add spending by hand.';
   @override
   String get spendWalletEnabled => 'Device activated';
   @override
@@ -1733,9 +1730,49 @@ class StringsEn extends AppStrings {
   @override
   String get spendWalletStep3 => 'Pick your cards and choose Run Immediately.';
   @override
-  String get spendWalletStep4 => 'Choose the action "Ausgabe erfassen" — it is already in the list.';
+  String get spendWalletStep4 => 'Choose the action "Log a spend" — it is already in the list.';
   @override
   String get spendWalletOpenShortcuts => 'Open Shortcuts';
+  @override
+  String get settingsWalletCapture => 'Wallet detection';
+  @override
+  String get walletCapturePageDesc =>
+      'Payments made with this phone land in Ausgaben by themselves. Activate this device here — and take any device back the same way.';
+  @override
+  String get spendWalletAndroidTitle => 'Capture payments automatically';
+  @override
+  String get spendWalletAndroidIntro =>
+      'When you pay with your phone, your wallet tells you the amount. Aporah reads that one notification and files the spend — no bank, no login, nothing to type.';
+  @override
+  String get spendWalletAndroidEnable => 'Activate this device';
+  @override
+  String get spendWalletAndroidActive => 'This device is capturing payments';
+  @override
+  String get spendWalletAndroidInactive => 'This device is not activated yet';
+  @override
+  String get spendWalletAndroidDeaf =>
+      'Activated, but without notification access — no payment can reach us.';
+  @override
+  String get spendWalletAndroidStepsTitle => 'Two switches, then it runs';
+  @override
+  String get spendWalletAndroidStep1 => 'Activate this device — that is what lets it file spending.';
+  @override
+  String get spendWalletAndroidStep2 => 'Turn on notification access for Aporah in your system settings.';
+  @override
+  String get spendWalletAndroidStep3 => 'Pay with your phone — the spend shows up here by itself.';
+  @override
+  String get spendWalletAndroidNoDevicesHint => 'Use the button below to activate this device.';
+  @override
+  String get spendWalletGrantAccess => 'Allow notification access';
+  @override
+  String get spendWalletAccessGranted => 'Access granted';
+  @override
+  String get spendWalletDisclosureTitle => 'What Aporah reads';
+  @override
+  String get spendWalletDisclosureBody =>
+      'Android has no per-app notification access: granting it grants everything. Aporah only ever evaluates the payment notifications posted by wallet apps — every other notification is discarded immediately, unread, unstored and uncounted. What leaves the device is the merchant, the amount, the last digits of the card and the time. Never the text of a notification.';
+  @override
+  String get spendWalletAndroidSources => 'Google Wallet, Google Pay and Samsung Wallet are detected.';
   @override
   String get settingsApplePay => 'Apple Pay';
   @override
@@ -1752,8 +1789,11 @@ class StringsEn extends AppStrings {
   @override
   String spendWalletDeviceLastUsed(String date) => 'Last on $date';
   @override
-  String spendWalletDeviceCount(int count) =>
-      count == 0 ? 'None' : count == 1 ? '1 device' : '$count devices';
+  String spendWalletDeviceCount(int count) => count == 0
+      ? 'None'
+      : count == 1
+      ? '1 device'
+      : '$count devices';
   @override
   String get spendWalletRevoke => 'Remove';
 
@@ -1860,4 +1900,80 @@ class StringsEn extends AppStrings {
   String debugPlanReal(String plan) => 'Real: $plan';
   @override
   String debugPlanSimulated(String plan) => '$plan (simulated)';
+  // --- Planner ----------------------------------------------------------
+  @override
+  String get plannerTitle => 'Plan';
+  @override
+  String get plannerPrompt =>
+      'Say in one sentence what you are up to. You get the method and, more to the point, the '
+      'list you can take to the shop.';
+  @override
+  String get plannerHint => 'What are you planning?';
+  @override
+  String get plannerExamplesLabel => 'FOR EXAMPLE';
+  @override
+  List<List<PlannerExample>> get plannerExampleGroups => const [
+    [
+      (text: "Kid's birthday for 8", icon: AppIcons.cake),
+      (text: "New Year's Eve for 10", icon: AppIcons.confetti),
+      (text: 'Barbecue in the garden', icon: AppIcons.flame),
+      (text: 'Christmas dinner for the family', icon: AppIcons.treeEvergreen),
+      (text: 'A housewarming party', icon: AppIcons.house),
+      (text: 'Pack for a week in Italy', icon: AppIcons.suitcaseRolling),
+    ],
+    [
+      (text: 'Weekly shop for 5 days', icon: AppIcons.shoppingCart),
+      (text: 'Restock the pantry', icon: AppIcons.package),
+      (text: 'Deep clean the bathroom', icon: AppIcons.sprayBottle),
+      (text: 'Refill the first-aid kit', icon: AppIcons.bandaids),
+      (text: 'Swap the wardrobe for winter', icon: AppIcons.tShirt),
+      (text: 'Everything a new baby needs', icon: AppIcons.baby),
+    ],
+    [
+      (text: 'Build a raised garden bed', icon: AppIcons.hammer),
+      (text: "Build shelves for the kids' room", icon: AppIcons.ruler),
+      (text: 'Repaint the living room', icon: AppIcons.paintRoller),
+      (text: 'Plant up the balcony', icon: AppIcons.plant),
+      (text: 'Get the bikes ready for spring', icon: AppIcons.bicycle),
+      (text: 'A treehouse for the kids', icon: AppIcons.tree),
+    ],
+    [
+      (text: 'Butter chicken for 4', icon: AppIcons.cookingPot),
+      (text: 'Sunday roast for 6', icon: AppIcons.forkKnife),
+      (text: 'Pizza night from scratch', icon: AppIcons.pizza),
+      (text: 'A cake for the school fair', icon: AppIcons.cake),
+      (text: 'Brunch for 6 guests', icon: AppIcons.egg),
+      (text: 'Homemade ice cream', icon: AppIcons.iceCream),
+    ],
+  ];
+  @override
+  String get plannerGo => 'Suggest a list';
+  @override
+  String get plannerWorking => 'Putting it together …';
+  @override
+  String get plannerWhatToBuy => 'WHAT YOU NEED';
+  @override
+  String plannerItemCount(int count) => count == 1 ? '1 item' : '$count items';
+  @override
+  String get plannerHowTo => 'HOW TO';
+  @override
+  String get plannerCreateList => 'Create list';
+  @override
+  String get plannerAgain => 'Ask again';
+  @override
+  String get plannerEditGoal => 'Word it differently';
+  @override
+  String get plannerListCreated => 'List created';
+  @override
+  String get plannerUnavailable => "That didn't work just now. Try again in a moment.";
+  @override
+  String get plannerUnusable =>
+      "We couldn't make a list out of that. Try something more specific — a dish, a project or "
+      'an occasion.';
+  @override
+  String get plannerNotConfigured => 'The planner is not set up in this build.';
+  @override
+  String get plannerIslandLine => 'Say what you are planning.';
+  @override
+  String get plannerIslandHint => 'We turn it into the list';
 }

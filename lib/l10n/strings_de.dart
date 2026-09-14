@@ -1,5 +1,6 @@
 import '../data/german_holidays.dart';
 import '../models/grocery_unit.dart';
+import '../theme/app_icons.dart';
 import 'app_strings.dart';
 
 /// German — the language Aporah was written in. Every string here is the exact
@@ -75,8 +76,7 @@ class StringsDe extends AppStrings {
   @override
   String dateRange(String from, String to) => '$from\u00A0– $to';
   @override
-  String dayRangeSameMonth(int fromDay, int toDay, int month) =>
-      '$fromDay. – $toDay. ${monthNames[month]}';
+  String dayRangeSameMonth(int fromDay, int toDay, int month) => '$fromDay. – $toDay. ${monthNames[month]}';
   @override
   String dayRangeCrossMonth(int fromDay, int fromMonth, int toDay, int toMonth) =>
       '$fromDay. ${monthNames[fromMonth]} – $toDay. ${monthNames[toMonth]}';
@@ -197,7 +197,6 @@ class StringsDe extends AppStrings {
   String get navBox => 'Box';
   @override
   String get navExpand => 'Navigation einblenden';
-
 
   // ---------------------------------------------------------------- board --
   @override
@@ -516,7 +515,8 @@ class StringsDe extends AppStrings {
   @override
   String get removeItemLink => 'Link entfernen';
   @override
-  String get itemLinkMessage => 'Die Seite, auf der es diesen Artikel gibt. Ein Tipp auf den Link öffnet sie im Browser.';
+  String get itemLinkMessage =>
+      'Die Seite, auf der es diesen Artikel gibt. Ein Tipp auf den Link öffnet sie im Browser.';
   @override
   String get itemLinkHint => 'z. B. amazon.de/dp/B0C…';
   @override
@@ -574,23 +574,20 @@ class StringsDe extends AppStrings {
   @override
   String get repeatEnds => 'Endet';
   @override
-  String get repeatFollowsStart =>
-      'Die Wiederholung richtet sich nach dem Startdatum.';
+  String get repeatFollowsStart => 'Die Wiederholung richtet sich nach dem Startdatum.';
   @override
   String repeatUntilDate(String date) => 'bis $date';
   @override
   String get repeats => 'Wiederholt sich';
   @override
-  String get repeatNotEditable =>
-      'Die Wiederholung lässt sich hier nicht ändern — nur im Kalender selbst.';
+  String get repeatNotEditable => 'Die Wiederholung lässt sich hier nicht ändern — nur im Kalender selbst.';
   @override
   String get repeatingEvent => 'Terminserie';
   @override
   String get changeRepeatingEventBody =>
       'Soll die Änderung nur für diesen Termin gelten oder für die ganze Serie?';
   @override
-  String get deleteRepeatingEventBody =>
-      'Soll nur dieser Termin gelöscht werden oder die ganze Serie?';
+  String get deleteRepeatingEventBody => 'Soll nur dieser Termin gelöscht werden oder die ganze Serie?';
   @override
   String get thisEventOnly => 'Nur dieser Termin';
   @override
@@ -703,8 +700,7 @@ class StringsDe extends AppStrings {
   @override
   String get noHouseholdFound => 'Kein Haushalt gefunden.';
   @override
-  String get eventSaveFailedRemote =>
-      'Der Termin konnte nicht im verbundenen Kalender gespeichert werden.';
+  String get eventSaveFailedRemote => 'Der Termin konnte nicht im verbundenen Kalender gespeichert werden.';
 
   @override
   String get allDayDuration => 'Ganztägig';
@@ -798,8 +794,7 @@ class StringsDe extends AppStrings {
   @override
   String get accessRevokedToo => 'Der Zugriff wird auch beim Anbieter widerrufen.';
   @override
-  String get accountStaysConnected =>
-      'Das Konto bleibt verbunden — die anderen Kalender darin auch.';
+  String get accountStaysConnected => 'Das Konto bleibt verbunden — die anderen Kalender darin auch.';
   @override
   String get householdOnlyOthersKeep => 'Nur für euren Haushalt — andere behalten den Kalender.';
   @override
@@ -830,16 +825,13 @@ class StringsDe extends AppStrings {
   String calendarsFoundPickThem(int count) =>
       '$count Kalender gefunden. Wähl aus, welche in Aporah erscheinen sollen.';
   @override
-  String get nameYourCalendarBody =>
-      'So heißt der Kalender in Aporah. Du kannst ihn jetzt umbenennen.';
+  String get nameYourCalendarBody => 'So heißt der Kalender in Aporah. Du kannst ihn jetzt umbenennen.';
   @override
-  String get nameEachCalendarBody =>
-      'So heißen die Kalender in Aporah. Du kannst sie jetzt umbenennen.';
+  String get nameEachCalendarBody => 'So heißen die Kalender in Aporah. Du kannst sie jetzt umbenennen.';
   @override
   String get whichCalendars => 'Kalender';
   @override
-  String get whichCalendarsHint =>
-      'Nur die ausgewählten erscheinen in Aporah. Das kannst du später ändern.';
+  String get whichCalendarsHint => 'Nur die ausgewählten erscheinen in Aporah. Das kannst du später ändern.';
   @override
   String get readOnlyCalendar => 'Nur lesen';
   @override
@@ -849,8 +841,7 @@ class StringsDe extends AppStrings {
   @override
   String get deselectAll => 'Alle abwählen';
   @override
-  String calendarsSelected(int count) =>
-      count == 1 ? '1 Kalender ausgewählt' : '$count Kalender ausgewählt';
+  String calendarsSelected(int count) => count == 1 ? '1 Kalender ausgewählt' : '$count Kalender ausgewählt';
   @override
   String get loadingCalendarsEllipsis => 'Kalender werden geladen …';
   @override
@@ -947,8 +938,7 @@ class StringsDe extends AppStrings {
   @override
   String get checkingFileEllipsis => 'Datei wird geprüft …';
   @override
-  String get calendarFileUnreadable =>
-      'Die Datei ließ sich nicht lesen. Bitte wähle eine .ics-Datei.';
+  String get calendarFileUnreadable => 'Die Datei ließ sich nicht lesen. Bitte wähle eine .ics-Datei.';
   @override
   String calendarFileCoversTo(String date) => 'Die Termine reichen bis zum $date.';
   @override
@@ -958,8 +948,7 @@ class StringsDe extends AppStrings {
   @override
   String get pasteCalendarLink => 'Kalender-Link';
   @override
-  String get pasteCalendarLinkHint =>
-      'Wir rufen den Link jetzt ab – so wisst ihr sofort, ob er stimmt.';
+  String get pasteCalendarLinkHint => 'Wir rufen den Link jetzt ab – so wisst ihr sofort, ob er stimmt.';
   @override
   String get whoseCalendar => 'Für wen ist dieser Zugang?';
   @override
@@ -997,8 +986,7 @@ class StringsDe extends AppStrings {
   String get linkedCalendarsNote =>
       'Aporah liest diese Kalender nur. Termine ändert ihr weiterhin in der Schulplattform.';
   @override
-  String eventsFoundAtLink(int count) =>
-      count == 1 ? '1 Termin gefunden' : '$count Termine gefunden';
+  String eventsFoundAtLink(int count) => count == 1 ? '1 Termin gefunden' : '$count Termine gefunden';
   @override
   String get noEventsAtLinkYet =>
       'Der Link funktioniert, enthält aber gerade keine Termine. Das ist in den Ferien normal.';
@@ -1044,8 +1032,7 @@ class StringsDe extends AppStrings {
   @override
   String get calendarConnected => 'Kalender verbunden';
   @override
-  String get calendarNameInAporah =>
-      'So heißt der Kalender in Aporah. Du kannst ihn später umbenennen.';
+  String get calendarNameInAporah => 'So heißt der Kalender in Aporah. Du kannst ihn später umbenennen.';
 
   // -------------------------------------------------------- provider meta --
   @override
@@ -1146,16 +1133,14 @@ class StringsDe extends AppStrings {
   @override
   String peopleCount(int count) => '$count Personen';
   @override
-  String wholeFamilySees(String noun) =>
-      'Für die ganze Familie — alle können $noun sehen und bearbeiten.';
+  String wholeFamilySees(String noun) => 'Für die ganze Familie — alle können $noun sehen und bearbeiten.';
   @override
   String onlyYouSee(String noun) => 'Nur für dich sichtbar — niemand sonst sieht $noun.';
   @override
   String youAndOthersSee(String names, String noun) => 'Nur du und $names sehen $noun.';
   @override
-  String joinNames(List<String> names) => names.length == 1
-      ? names.first
-      : '${names.sublist(0, names.length - 1).join(', ')} und ${names.last}';
+  String joinNames(List<String> names) =>
+      names.length == 1 ? names.first : '${names.sublist(0, names.length - 1).join(', ')} und ${names.last}';
 
   // ------------------------------------------------------------ icon pick --
   @override
@@ -1279,9 +1264,17 @@ class StringsDe extends AppStrings {
   @override
   String get languageEnglish => 'English';
   @override
+  String get languagePortuguese => 'Português';
+  @override
+  String get languageSpanish => 'Español';
+  @override
   String get languageGermanRegion => 'Deutschland';
   @override
   String get languageEnglishRegion => 'United Kingdom';
+  @override
+  String get languagePortugueseRegion => 'Brasilien';
+  @override
+  String get languageSpanishRegion => 'Spanien';
 
   @override
   String get searchTermsProfile => 'profil konto account name anzeigename avatar farbe rolle admin';
@@ -1293,7 +1286,8 @@ class StringsDe extends AppStrings {
       'kalender termine verbindungen verbinden google outlook icloud iserv ferien abfall schule';
   @override
   String get searchTermsApplePay =>
-      'apple pay wallet ausgaben geräte iphone kurzbefehle automation aktivieren entfernen';
+      'apple pay google wallet samsung pay ausgaben geräte iphone android kurzbefehle automation '
+      'benachrichtigungen benachrichtigungszugriff erkennung aktivieren entfernen';
   @override
   String get searchTermsLanguage => 'sprache language deutsch english übersetzung';
   @override
@@ -1350,8 +1344,7 @@ class StringsDe extends AppStrings {
   @override
   String get onboardNotFoundHere => 'Für diese Adresse nicht gefunden';
   @override
-  String get onboardRenameLater =>
-      'Umbenennen könnt ihr die Kalender später unter Einstellungen → Kalender.';
+  String get onboardRenameLater => 'Umbenennen könnt ihr die Kalender später unter Einstellungen → Kalender.';
   @override
   String get onboardConnectMoreHint => 'Google, Outlook, iCloud oder IServ dazunehmen';
   @override
@@ -1416,8 +1409,7 @@ class StringsDe extends AppStrings {
   @override
   String get passwordTooShort => 'Das Passwort ist zu kurz.';
   @override
-  String get passwordLeaked =>
-      'Dieses Passwort taucht in bekannten Daten-Leaks auf. Bitte wähl ein anderes.';
+  String get passwordLeaked => 'Dieses Passwort taucht in bekannten Daten-Leaks auf. Bitte wähl ein anderes.';
   @override
   String get tooManyAttempts => 'Zu viele Versuche. Bitte warte einen Moment.';
   @override
@@ -1547,7 +1539,6 @@ class StringsDe extends AppStrings {
   String get navMore => 'Mehr';
   @override
   @override
-
   @override
   String get decimalSeparator => ',';
   @override
@@ -1568,7 +1559,8 @@ class StringsDe extends AppStrings {
   @override
   String get spendEmpty => 'In diesem Monat ist noch nichts erfasst.';
   @override
-  String get spendEmptyEnrolled => 'Noch nichts in diesem Monat. Die nächste Apple-Pay-Zahlung landet automatisch hier.';
+  String get spendEmptyEnrolled =>
+      'Noch nichts in diesem Monat. Die nächste Apple-Pay-Zahlung landet automatisch hier.';
 
   @override
   String get spendByCategory => 'Nach Kategorie';
@@ -1695,6 +1687,10 @@ class StringsDe extends AppStrings {
   @override
   String get spendNeedsMerchantAndAmount => 'Händler und Betrag fehlen noch.';
   @override
+  String get spendSaved => 'Ausgabe gespeichert';
+  @override
+  String get spendUpdated => 'Ausgabe aktualisiert';
+  @override
   String get spendDeleted => 'Ausgabe gelöscht';
 
   @override
@@ -1725,7 +1721,7 @@ class StringsDe extends AppStrings {
   String get spendWalletEnable => 'Dieses iPhone aktivieren';
   @override
   String get spendWalletUnsupported =>
-      'Das automatische Erfassen gibt es nur auf dem iPhone. Auf anderen Geräten trägst du Ausgaben von Hand ein.';
+      'Das automatische Erfassen gibt es auf iPhone und Android. Auf anderen Geräten trägst du Ausgaben von Hand ein.';
   @override
   String get spendWalletEnabled => 'Gerät aktiviert';
   @override
@@ -1745,6 +1741,47 @@ class StringsDe extends AppStrings {
   @override
   String get spendWalletOpenShortcuts => 'Kurzbefehle öffnen';
   @override
+  String get settingsWalletCapture => 'Wallet-Erkennung';
+  @override
+  String get walletCapturePageDesc =>
+      'Zahlungen mit dem Handy landen von allein bei den Ausgaben. Hier aktivierst du dieses Gerät — und nimmst jedes wieder zurück.';
+  @override
+  String get spendWalletAndroidTitle => 'Zahlungen automatisch erfassen';
+  @override
+  String get spendWalletAndroidIntro =>
+      'Wenn du mit dem Handy bezahlst, meldet dir die Wallet den Betrag. Aporah liest genau diese eine Meldung und trägt die Ausgabe ein — ohne Bank, ohne Login, ohne Abtippen.';
+  @override
+  String get spendWalletAndroidEnable => 'Dieses Gerät aktivieren';
+  @override
+  String get spendWalletAndroidActive => 'Dieses Gerät erfasst Zahlungen';
+  @override
+  String get spendWalletAndroidInactive => 'Dieses Gerät ist noch nicht aktiviert';
+  @override
+  String get spendWalletAndroidDeaf =>
+      'Aktiviert, aber ohne Benachrichtigungszugriff — so kommt keine Zahlung an.';
+  @override
+  String get spendWalletAndroidStepsTitle => 'Zwei Schalter, dann läuft es';
+  @override
+  String get spendWalletAndroidStep1 => 'Dieses Gerät aktivieren — damit darf es Ausgaben eintragen.';
+  @override
+  String get spendWalletAndroidStep2 =>
+      'In den Systemeinstellungen den Benachrichtigungszugriff für Aporah einschalten.';
+  @override
+  String get spendWalletAndroidStep3 => 'Mit dem Handy bezahlen — die Ausgabe steht danach von allein hier.';
+  @override
+  String get spendWalletAndroidNoDevicesHint => 'Mit dem Knopf unten aktivierst du dieses Gerät.';
+  @override
+  String get spendWalletGrantAccess => 'Benachrichtigungszugriff erlauben';
+  @override
+  String get spendWalletAccessGranted => 'Zugriff erteilt';
+  @override
+  String get spendWalletDisclosureTitle => 'Was Aporah dabei liest';
+  @override
+  String get spendWalletDisclosureBody =>
+      'Android kennt keinen Zugriff auf eine einzelne App: Benachrichtigungszugriff gilt immer für alle. Aporah wertet ausschließlich die Zahlungsmeldungen der Wallet-Apps aus — jede andere Benachrichtigung wird sofort verworfen, ohne gelesen, gespeichert oder gezählt zu werden. Das Gerät verlässt nur Händler, Betrag, die letzten Ziffern der Karte und der Zeitpunkt. Nie der Text einer Benachrichtigung.';
+  @override
+  String get spendWalletAndroidSources => 'Erkannt werden Google Wallet, Google Pay und Samsung Wallet.';
+  @override
   String get settingsApplePay => 'Apple Pay';
   @override
   String get applePayPageDesc =>
@@ -1760,8 +1797,11 @@ class StringsDe extends AppStrings {
   @override
   String spendWalletDeviceLastUsed(String date) => 'Zuletzt am $date';
   @override
-  String spendWalletDeviceCount(int count) =>
-      count == 0 ? 'Keins' : count == 1 ? '1 Gerät' : '$count Geräte';
+  String spendWalletDeviceCount(int count) => count == 0
+      ? 'Keins'
+      : count == 1
+      ? '1 Gerät'
+      : '$count Geräte';
   @override
   String get spendWalletRevoke => 'Entfernen';
 
@@ -1869,4 +1909,80 @@ class StringsDe extends AppStrings {
   String debugPlanReal(String plan) => 'Echt: $plan';
   @override
   String debugPlanSimulated(String plan) => '$plan (simuliert)';
+  // --- Vorhaben ---------------------------------------------------------
+  @override
+  String get plannerTitle => 'Vorhaben';
+  @override
+  String get plannerPrompt =>
+      'Sag in einem Satz, was du vorhast. Du bekommst die Anleitung und vor allem die Liste, '
+      'mit der du einkaufen gehen kannst.';
+  @override
+  String get plannerHint => 'Was hast du vor?';
+  @override
+  String get plannerExamplesLabel => 'ZUM BEISPIEL';
+  @override
+  List<List<PlannerExample>> get plannerExampleGroups => const [
+    [
+      (text: 'Kindergeburtstag für 8 Kinder', icon: AppIcons.cake),
+      (text: 'Silvesterabend für 10 Personen', icon: AppIcons.confetti),
+      (text: 'Grillabend im Garten', icon: AppIcons.flame),
+      (text: 'Weihnachtsessen für die Familie', icon: AppIcons.treeEvergreen),
+      (text: 'Einschulungsfeier vorbereiten', icon: AppIcons.graduationCap),
+      (text: 'Koffer für eine Woche Italien', icon: AppIcons.suitcaseRolling),
+    ],
+    [
+      (text: 'Wocheneinkauf für 5 Tage', icon: AppIcons.shoppingCart),
+      (text: 'Vorratsschrank auffüllen', icon: AppIcons.package),
+      (text: 'Großputz im Badezimmer', icon: AppIcons.sprayBottle),
+      (text: 'Hausapotheke auffrischen', icon: AppIcons.bandaids),
+      (text: 'Winterkleidung einmotten', icon: AppIcons.tShirt),
+      (text: 'Erstausstattung fürs Baby', icon: AppIcons.baby),
+    ],
+    [
+      (text: 'Hochbeet aus Holz bauen', icon: AppIcons.hammer),
+      (text: 'Regal fürs Kinderzimmer bauen', icon: AppIcons.ruler),
+      (text: 'Wohnzimmer neu streichen', icon: AppIcons.paintRoller),
+      (text: 'Balkon bepflanzen', icon: AppIcons.plant),
+      (text: 'Fahrräder frühlingsfit machen', icon: AppIcons.bicycle),
+      (text: 'Baumhaus für die Kinder', icon: AppIcons.tree),
+    ],
+    [
+      (text: 'Butter Chicken für 4', icon: AppIcons.cookingPot),
+      (text: 'Sonntagsbraten für 6', icon: AppIcons.forkKnife),
+      (text: 'Pizzateig für den Familienabend', icon: AppIcons.pizza),
+      (text: 'Kuchen für das Schulfest', icon: AppIcons.cake),
+      (text: 'Brunch für 6 Gäste', icon: AppIcons.egg),
+      (text: 'Eis selber machen', icon: AppIcons.iceCream),
+    ],
+  ];
+  @override
+  String get plannerGo => 'Liste vorschlagen';
+  @override
+  String get plannerWorking => 'Wird zusammengestellt …';
+  @override
+  String get plannerWhatToBuy => 'WAS DU BRAUCHST';
+  @override
+  String plannerItemCount(int count) => count == 1 ? '1 Artikel' : '$count Artikel';
+  @override
+  String get plannerHowTo => 'SO GEHT’S';
+  @override
+  String get plannerCreateList => 'Liste erstellen';
+  @override
+  String get plannerAgain => 'Nochmal fragen';
+  @override
+  String get plannerEditGoal => 'Anders formulieren';
+  @override
+  String get plannerListCreated => 'Liste angelegt';
+  @override
+  String get plannerUnavailable => 'Das hat gerade nicht geklappt. Versuch es in einem Moment noch einmal.';
+  @override
+  String get plannerUnusable =>
+      'Daraus konnten wir keine Liste machen. Formulier es etwas konkreter — ein Gericht, ein '
+      'Projekt oder ein Anlass.';
+  @override
+  String get plannerNotConfigured => 'Vorhaben ist in diesem Build nicht eingerichtet.';
+  @override
+  String get plannerIslandLine => 'Sag, was du vorhast.';
+  @override
+  String get plannerIslandHint => 'Wir machen die Liste daraus';
 }

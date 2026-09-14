@@ -1,4 +1,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- **Not only in the debug manifest.** Flutter's template declares INTERNET
+         for `src/debug` alone, because the tool needs it for hot reload; a
+         release build assembled from this file would ship with no network
+         permission at all and every Supabase call would fail on a user's phone
+         with nothing on screen to explain it. Aporah is a backend app on both
+         platforms, so the permission belongs here, in the manifest that ships. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
         android:label="Aporah"
         android:name="${applicationName}"
@@ -57,6 +64,33 @@
                 <data android:scheme="aporah"/>
             </intent-filter>
         </activity>
+        <!-- Automatic spend capture. Read the class doc-comment before
+             changing anything here: this service is handed every notification
+             on the phone, which is a privacy cost the setup screen discloses
+             and the code minimises by returning immediately for any package
+             that is not a wallet.
+
+             `exported="true"` with `permission=BIND_NOTIFICATION_LISTENER_SERVICE`
+             is the pattern the framework requires, and it is not a hole: the
+             system process is the only holder of that signature-level
+             permission, so nothing else on the device can bind this. The
+             attribute has to be explicit because the app targets 31 or higher,
+             where an intent-filter without it fails to install.
+
+             No `android:label`: without one the system's notification-access
+             list shows the application label, "Aporah", which is a brand name
+             and the same in both languages. A label here would be the one
+             user-facing string in the app that `lib/l10n/` could not own,
+             because the OS draws it. -->
+        <service
+            android:name=".SpendNotificationListener"
+            android:exported="true"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService"/>
+            </intent-filter>
+        </service>
+
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

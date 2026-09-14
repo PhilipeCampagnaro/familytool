@@ -131,10 +131,10 @@ class BoardState {
   /// The tasks the person filter lets through.
   ///
   /// A chip standing for a household member narrows to what is **assigned** to
-  /// them — `assigneeId`, which is the axis that already answers "who does it".
-  /// The family chip and a chip for somebody with no account have no assignee to
-  /// match, so they leave the task list alone: a chore nobody has been given is
-  /// everybody's, and hiding it under every filter would make the Board look
+  /// them — `assigneeId`, which is the axis that already answers "who does it",
+  /// and the same axis the row of chips is built out of. Anything else (a stale
+  /// filter, "Alle") leaves the task list alone: a chore nobody has been given
+  /// is everybody's, and hiding it under every filter would make the Board look
   /// empty at exactly the moment somebody was looking for something to do.
   List<BoardTask> get visibleTasks {
     final filter = personFilter;

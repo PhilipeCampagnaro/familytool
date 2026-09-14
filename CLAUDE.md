@@ -2,8 +2,9 @@
 
 A Flutter family-organizer app (Home, Kalender, Listen, Board, Box tabs) built from a Figma
 handoff (`design_handoff_aporah_flutter/README.md` — tokens in
-[lib/theme/tokens.dart](lib/theme/tokens.dart) come from it). **German and English, switched in
-Settings — never hardcode a user-facing string.** See the localization section below.
+[lib/theme/tokens.dart](lib/theme/tokens.dart) come from it). **German, English, Portuguese and
+Spanish, switched in Settings — never hardcode a user-facing string.** See the localization section
+below.
 
 Scope: **core features only** — Board, Box, Listen, Kalender, plus Ausgaben (Apple Pay spend
 tracking, rebuilt rather than ported — see [docs/spend.md](docs/spend.md)). Explicitly out of scope:
@@ -22,8 +23,8 @@ task:
 - [docs/design-system.md](docs/design-system.md) — glass/frosted-header gotchas, shared widget
   index, animation conventions. Read before touching `lib/widgets/` or adding animations.
 - [docs/spend.md](docs/spend.md) — Ausgaben: the Apple Pay App Intent, the device token, the SQL
-  merchant classifier, and why there is no Android equivalent. **Read before touching spend
-  tracking or the Shortcuts integration.**
+  merchant classifier, and the notification listener Android captures with instead. **Read before
+  touching spend tracking, the Shortcuts integration or the Android allowlist.**
 - [docs/ported-features.md](docs/ported-features.md) — knowledge captured from the old web app
   (grocery lists, onboarding, Settings, weather, calendar connections). Read the one section for
   the feature you're building; each says whether it is built or still groundwork.
@@ -63,11 +64,28 @@ task:
   to tick**; a weekly count gets bars per week instead, because it owes no particular day. Keep the
   three states apart there: a day the rhythm never asked for is neutral, never a pale "missed", or a
   Mo/Do tracker reports five failures a week of a perfect record.
-- **Localization: German + English, and every user-facing string goes through
-  [lib/l10n/](lib/l10n/).** `AppStrings` declares them, `StringsDe`/`StringsEn` answer them, and
-  `L.s.someString` reads the live one. Because `AppStrings` is abstract, a string you add to one
-  language and forget in the other **fails to compile** — that is the point, so don't work around
-  it with a map or a `??`.
+- **Localization: German, English, Portuguese and Spanish, and every user-facing string goes
+  through [lib/l10n/](lib/l10n/).** `AppStrings` declares them and `StringsDe`/`StringsEn`/
+  `StringsPt`/`StringsEs` answer them — 835 members each — and `L.s.someString` reads the live one.
+  Because `AppStrings` is abstract, a string you add to one language and forget in another **fails
+  to compile** — that is the point, so don't work around it with a map or a `??`. Portuguese is
+  **Brazilian (pt-BR)** and Spanish is peninsular (es-ES); `appSupportedLocales` carries bare
+  language codes, so a pt-PT or es-MX phone resolves to them rather than falling back to German.
+  Brazilian is a decision, not a default — *senha*, *celular*, *ônibus*, and **"Carregando…"** where
+  Portugal says *"A carregar…"*. Money follows it: `money()` puts the symbol **before** the number
+  (`R$ 1.234,56`), which is the one place pt-BR does not simply inherit the German shape.
+  - **Content catalogs are the deliberate exception, and they use `pickLabel` instead.** The
+    grocery icons and the curated symbol set carry their own labels rather than
+    going through `AppStrings`: content has to stay cheap to add, and a PNG that needs four
+    translations before it compiles is a PNG nobody adds. `pickLabel(de:en:pt:es:)` in
+    [lib/l10n/l10n.dart](lib/l10n/l10n.dart) falls back to **English**, and
+    `dart tool/check_catalog_labels.dart` reports what is still missing — run it after touching
+    `grocery_catalog.dart`, and leave it saying `OK`.
+  - **What is German market data rather than German text, and is therefore still German-only:**
+    the Feiertage (`german_holidays.dart`; a Portuguese or Spanish household sees **no public
+    holidays at all** — see the note in [lib/state/holidays_state.dart](lib/state/holidays_state.dart)),
+    the Ferien Bundesland picker, the six waste-vendor families in `abfall.ts`, and IServ/WebUntis.
+    Translating the UI did not port any of it, and that is written down rather than hidden.
   - `L.s` is a global swapped in `AporahApp.build`, exactly like `AppColors.palette`, so it works
     in notifiers, models and repositories where there is no `BuildContext` — which is most of the
     error copy. There is no `AppLocalizations.of(context)`.
@@ -246,9 +264,31 @@ task:
   `private.classify_merchant` in a trigger, because the ingest function and the app's own form both
   write spends and two copies of those rules would drift into putting one shop in two slices of the
   same ring. **Admin only**, enforced in the policies; money is **integer cents**, never a double or
-  the old app's text column; and Apple Pay sees no cash, card, browser checkout or transfer, which
-  is why **manual entry is half the feature rather than a fallback**. There is no Android
-  equivalent — Google's Wallet API issues passes and reads no transactions. Read
+  the old app's text column; and a wallet sees no cash, card, browser checkout or transfer, which
+  is why **manual entry is half the feature rather than a fallback**. Read
+  [docs/spend.md](docs/spend.md) before touching any of it.
+- **Android captures the same payment by reading the wallet's own notification, and the allowlist is
+  the whole privacy promise.** There is no payment trigger and no transaction API on Android —
+  Google's Wallet API issues passes — so `SpendNotificationListener` reads the notification Google
+  Wallet or Samsung Wallet posts the instant a tap goes through, and posts to the *same*
+  `spend-ingest` with the same per-device token. Nothing else is duplicated: no second backend, no
+  second classifier, no second table. Two things about it are not negotiable. **The grant is
+  all-or-nothing, so the cost is disclosed on the page before the ask** (`_DisclosureCard`, which is
+  also what Google Play's prominent-disclosure rule requires) **and paid without being used** —
+  `onNotificationPosted` returns on its first line for any package outside
+  `WalletNotifications.sourcePackages`, before it reads a single extra. **Adding a package to that
+  set is not a small change**, and Google Play services is deliberately not in it: it is not a
+  payments app, and allowing it would mean parsing most of what Google sends a phone. And **the
+  parse is a guess** — Apple hands over typed fields, Android hands over a sentence written for a
+  human in whatever language the phone is set to — so no amount means no row, a refund or a decline
+  is refused by name, and a merchant that had to be inferred is filed `needs_review` rather than
+  dropped. Setup is **two switches** that fail differently, our token and the OS grant, which is why
+  `SpendState` carries `notificationAccess` beside `thisDeviceEnrolled` instead of one boolean. The
+  token is **not** in `EncryptedSharedPreferences` — that library was deprecated in 2025 — but in an
+  AndroidKeystore AES-GCM wrapper over an app-private file, which is
+  `kSecAttrAccessibleAfterFirstUnlock`'s promise made twice. **Open banking would catch the card, the
+  transfer and the direct debit that no wallet notification ever will; it was considered and declined
+  on cost** (a licensed AISP contract, KYB, 90-day consent re-auth). Read
   [docs/spend.md](docs/spend.md) before touching any of it.
 - Don't filter content by `family_id` in Dart. RLS already decides what "my lists" means, and a
   client-side family filter would hide exactly the rows a guest is meant to see. (Edge Functions
@@ -264,15 +304,22 @@ task:
 - [lib/screens/](lib/screens/) — one file per tab. Calendar is by far the largest/most complex.
   **Box and Ausgaben share the fifth tab, `Mehr`** ([lib/screens/more_screen.dart](lib/screens/more_screen.dart))
   — which switches between them on `moreProvider`, the way Listen opens a list, not a route; five is
-  the ceiling on both nav bars. **`Mehr` is a menu, not a page**: tapping it puts up the system's own
-  menu beside the bar item (`showMoreMenu`), and the shell changes tab only once a row is picked, so
-  neither screen needs a way back and a dismissed menu leaves the reader where they were. That means
-  the one nav item whose tap is not a tab change — `AppShell._navigateTo` splits it off, and
+  the ceiling on both nav bars. **`Mehr` is two buttons, not a page**: tapping it stands
+  [`MoreShelf`](lib/widgets/more_shelf.dart) on the bar item — a column of two labelled glass
+  buttons, one per place, each circle the size and material of the compacted nav button and wearing
+  the bar's own muted/accent tints — and the shell changes tab only once one is pressed, so
+  neither screen needs a way back and a dismissed shelf leaves the reader where they were. That
+  means the one nav item whose tap is not a tab change — `AppShell._navigateTo` splits it off, and
   `NativeTabBar` awaits the answer so UIKit's own selection can be put back when nothing was picked.
-  Don't draw a second bar or a sheet for those two icons: the iOS bar is a real `UITabBar` platform
-  view, so anything beside it would be a Flutter approximation of Liquid Glass next to the real
-  thing, and a `UIMenu` *is* the real thing. **Where Ausgaben does not ship the slot is plain
-  Boxen** — label, icon and ordinary tap — because a "Mehr" naming one place is a promise the menu
+  It was a `UIMenu` first, which was right about the layer and wrong about the control: **Mehr**
+  names two *places* where every other menu in the app lists verbs for a row, and a list of two
+  labelled lines put a flat text list where the other four tabs answer with a glyph. Glass beside
+  the bar is
+  not the compromise that reasoning assumed — `GlassSurface` embeds the real `UIGlassEffect`, so
+  the buttons are the same material as the bar, not an approximation of it. **Still don't draw a
+  second *bar*** — a five-slot capsule with two items in it is a different control wearing the nav
+  bar's clothes. **Where Ausgaben does not ship the slot is plain
+  Boxen** — label, icon and ordinary tap — because a "Mehr" naming one place is a promise the shelf
   cannot keep; one getter decides, `spendAvailable` in
   [lib/services/spend_intent.dart](lib/services/spend_intent.dart), and it also keeps `SpendScreen`
   from being built at all and takes the Apple Pay row out of Settings. Board, Box and Listen share one collapsing-header pattern (`CollapsingHeaderScreen` +
@@ -289,8 +336,9 @@ task:
   turn them into a feed. The real, non-mock data behind Listen lives here:
   `grocery_catalog.dart` names every `assets/grocery/` icon in German and derives the English name
   from the file name (`englishGroceryLabel`; `_englishLabelOverrides` covers the files whose names
-  lie), `grocery_search.dart` matches typed articles against **both languages at once, umlauts
-  optional** — the interface language decides only what is *shown*, never what can be found — and
+  lie), and `_ptLabels`/`_esLabels` tabulate the other two because a file name yields no
+  Portuguese; `grocery_search.dart` matches typed articles against **all four languages at once,
+  umlauts and Portuguese nasals optional** — the interface language decides only what is *shown*, never what can be found — and
   `merchant_logos.dart` names the shop logos (brands, so untranslated). `icon_suggestions.dart`
   sits over all three plus a curated symbol set, whose entries carry both labels by hand:
   `suggestIcon(name)` is the pure function behind every list, box and item picking its own icon as

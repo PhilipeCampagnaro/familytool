@@ -2,9 +2,25 @@ import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../theme/tokens.dart';
+import 'native_glass_buttons.dart';
 import 'native_glass_view.dart';
 import 'native_occlusion.dart';
 import '../theme/app_icons.dart';
+
+/// Whether a glass surface built in [context] will be the **real** native
+/// `UIGlassEffect` rather than the Flutter-drawn approximation.
+///
+/// Public because the press depends on the answer: the material's own
+/// [NativeGlassView] response belongs to UIKit, while the approximation is a
+/// Flutter drawing whose caller has to detect the tap itself. Both sides ask
+/// here so they can never disagree about which of the two is on screen.
+bool nativeGlassActive(BuildContext context, {bool forceApproximation = false}) {
+  if (forceApproximation || kIsWeb || defaultTargetPlatform != TargetPlatform.iOS) return false;
+  // A glass control on the screen *behind* an open sheet would paint over it —
+  // see [occludedByRoute]. The approximation is already the non-iOS look, so a
+  // covered control simply wears it until the sheet closes.
+  return !occludedByRoute(context);
+}
 
 /// Apple's "Liquid Glass" material. On iOS this embeds the real native
 /// `UIGlassEffect` (iOS 26) via a platform view — genuine refraction/blur of
@@ -52,6 +68,18 @@ class GlassSurface extends StatelessWidget {
   /// would. Anything shown inside such a transition should set this `true`.
   final bool forceFlutterApproximation;
 
+  /// The surface's tappable segments, as fractions of its own box — see
+  /// [NativeGlassView.regions]. Empty means decoration, which takes no
+  /// touches. Only ever reaches the real material; the approximation is a
+  /// Flutter drawing and its caller keeps its own `GestureDetector`.
+  final List<GlassTouchRegion> regions;
+
+  /// A completed tap on segment `index` of [regions].
+  final void Function(int index)? onTap;
+
+  /// Touch-down / touch-up on segment `index` of [regions].
+  final void Function(int index, bool pressed)? onPressed;
+
   const GlassSurface({
     super.key,
     required this.child,
@@ -62,25 +90,41 @@ class GlassSurface extends StatelessWidget {
     this.boxShadow,
     this.interactive = true,
     this.forceFlutterApproximation = false,
+    this.regions = const <GlassTouchRegion>[],
+    this.onTap,
+    this.onPressed,
   });
-
-  bool get _useNativeGlass => !forceFlutterApproximation && !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
 
   @override
   Widget build(BuildContext context) {
-    // A glass control on the screen *behind* an open sheet would paint over it
-    // — see [occludedByRoute]. The approximation is already the non-iOS look,
-    // so a covered control simply wears it until the sheet closes.
-    final useNativeGlass = _useNativeGlass && !occludedByRoute(context);
+    final useNativeGlass = nativeGlassActive(context, forceApproximation: forceFlutterApproximation);
     return DecoratedBox(
-      decoration: BoxDecoration(borderRadius: borderRadius, boxShadow: boxShadow),
+      decoration: BoxDecoration(
+        borderRadius: borderRadius,
+        // **Nothing may be painted underneath real glass**, and a drop shadow
+        // is the easiest thing to forget that about. Flutter paints this into
+        // the surface *below* the platform view, which is precisely what
+        // `UIGlassEffect` samples and refracts — so a 35%-black blur sized to
+        // sit behind the control gets pulled up through the material and
+        // smeared across its rim, and the rest of it hangs outside the capsule
+        // as a grey halo. That is what made the header buttons read as a
+        // painted approximation rather than glass. The material carries its own
+        // shadow; ours is for the Flutter drawing, which has none.
+        boxShadow: useNativeGlass ? null : boxShadow,
+      ),
       child: ClipRRect(
         borderRadius: borderRadius,
         child: Stack(
           children: [
             Positioned.fill(
               child: useNativeGlass
-                  ? NativeGlassView(tint: tint, interactive: interactive)
+                  ? NativeGlassView(
+                      tint: tint,
+                      interactive: interactive,
+                      regions: regions,
+                      onTap: onTap,
+                      onPressed: onPressed,
+                    )
                   : _FlutterGlassApproximation(
                       tint: tint ?? fallbackTint ?? AppColors.glassFallbackTint,
                       blurSigma: blurSigma,
@@ -216,6 +260,17 @@ class FrostedHeaderBackground extends StatelessWidget {
   /// solid white — the effect runs, it simply has nothing left to show. Most of
   /// the visible contrast has to come from the content itself; the tint only
   /// carries enough white to keep the dark title legible over it.
+  ///
+  /// **It is also what the header's glass buttons have to refract, which is why
+  /// it came down from 0.62.** A [GlassIconGroup] or [GlassIconButton] on the
+  /// title row is real `UIGlassEffect` sitting on this bar, and glass shows you
+  /// whatever is behind it: behind a near-opaque tint there is nothing left to
+  /// lens, so the control rendered as a flat grey pill with a hard rim — the
+  /// look of a painted approximation, not of the material. Apple's own
+  /// scroll-edge effect is mostly *blur* with a very light tint for the same
+  /// reason, and the five bands above already do that work. This is the one
+  /// knob: raise it if a title ever loses its footing over scrolled content,
+  /// lower it if the buttons go flat again.
   final double tintOpacity;
 
   /// **Deliberately not `const`, and the lint below is suppressed on purpose.**
@@ -232,7 +287,7 @@ class FrostedHeaderBackground extends StatelessWidget {
   /// A non-const constructor turns that into a compile error at the call site,
   /// the same trade `AppStrings` makes for a missing translation.
   // ignore: prefer_const_constructors_in_immutables
-  FrostedHeaderBackground({super.key, this.tintOpacity = 0.62});
+  FrostedHeaderBackground({super.key, this.tintOpacity = 0.46});
 
   /// Stacked top-anchored blur bands, each covering a *fraction* of the bar's
   /// height. Each one filters what the previous ones have already blurred, so
@@ -310,9 +365,15 @@ class FrostedHeaderBackground extends StatelessWidget {
 }
 
 /// A tappable [GlassSurface]: the press feedback every glass control shares.
-/// The scale-down exists because the real material is a native platform view —
-/// a Flutter ink splash or highlight overlay would be composited *behind* it
-/// and never seen, so the whole control moves instead.
+///
+/// **Which of the two materials is on screen decides who handles the press.**
+/// Real `UIGlassEffect` has a response of its own — `isInteractive`, the
+/// lensing that gathers under a finger — and it only runs for touches UIKit
+/// delivers into the effect view, so on the native path the tap is a
+/// [GlassSurface.regions] target and there is no `GestureDetector` here at all.
+/// The Flutter-drawn approximation has no such response, so it keeps the
+/// scale-down: an ink splash or highlight overlay would be composited *behind*
+/// the surface and never seen, so the whole control moves instead.
 class _PressableGlass extends StatefulWidget {
   final VoidCallback onTap;
   final BorderRadius borderRadius;
@@ -343,6 +404,21 @@ class _PressableGlassState extends State<_PressableGlass> {
 
   @override
   Widget build(BuildContext context) {
+    final native = nativeGlassActive(context);
+    final surface = GlassSurface(
+      borderRadius: widget.borderRadius,
+      tint: widget.tint,
+      fallbackTint: widget.fallbackTint,
+      blurSigma: 16,
+      boxShadow: widget.boxShadow ?? AppShadows.glassButton,
+      regions: native ? oneGlassTouchRegion : const <GlassTouchRegion>[],
+      onTap: native ? (_) => widget.onTap() : null,
+      child: widget.child,
+    );
+    // The whole control is one target, so UIKit's press *is* the feedback.
+    // Wrapping it in a Semantics node keeps VoiceOver a way in: the platform
+    // view publishes no Flutter semantics of its own.
+    if (native) return Semantics(button: true, child: surface);
     return GestureDetector(
       onTap: widget.onTap,
       onTapDown: (_) => _setPressed(true),
@@ -352,14 +428,7 @@ class _PressableGlassState extends State<_PressableGlass> {
         scale: _pressed ? 0.90 : 1.0,
         duration: const Duration(milliseconds: 120),
         curve: Curves.easeOut,
-        child: GlassSurface(
-          borderRadius: widget.borderRadius,
-          tint: widget.tint,
-          fallbackTint: widget.fallbackTint,
-          blurSigma: 16,
-          boxShadow: widget.boxShadow ?? AppShadows.glassButton,
-          child: widget.child,
-        ),
+        child: surface,
       ),
     );
   }
@@ -367,11 +436,21 @@ class _PressableGlassState extends State<_PressableGlass> {
 
 /// A circular glass button, e.g. the floating "+" on every screen header, the
 /// X / check controls on a sheet, or the trash beside a [GlassAccentButton].
+///
+/// **On iOS this is a real `UIButton` wearing `.glass()`** — see
+/// [NativeGlassButtons] for why the system's own control beats the material
+/// with a glyph laid over it. The [GlassSurface] below is what it falls back
+/// to: everywhere else, and on iOS for as long as a sheet covers the screen.
 class GlassIconButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
   final double size;
   final double iconSize;
+
+  /// Never drawn — the button's accessible name, which an icon hasn't got.
+  /// UIKit publishes it on the native path; the Flutter fallback wraps itself
+  /// in a `Semantics` node for it.
+  final String? label;
 
   /// Null falls back to [AppColors.ink] — it can't be a const default, since
   /// the token is a getter over the installed palette. Pass [AppColors.danger]
@@ -401,22 +480,43 @@ class GlassIconButton extends StatelessWidget {
     this.tint,
     this.fallbackTint,
     this.boxShadow,
+    this.label,
   });
 
   @override
   Widget build(BuildContext context) {
-    return _PressableGlass(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(size / 2),
-      tint: tint,
-      fallbackTint: fallbackTint,
-      boxShadow: boxShadow,
-      child: SizedBox(
+    if (nativeGlassActive(context)) {
+      return SizedBox(
         width: size,
         height: size,
-        // Flat: the glyph on a glass button is the control, not a label for
-        // one. See [AppIcon.flat].
-        child: AppIcon(icon, size: iconSize, color: iconColor ?? AppColors.ink, flat: true),
+        child: NativeGlassButtons(
+          buttons: [NativeGlassButton(icon: icon, label: label ?? '', onTap: onTap)],
+          // A forced [tint] is only ever the deliberate accent — see the
+          // accent-filled glass rule below — and the accent is what
+          // `.prominentGlass()` is. Without one this is an ordinary glass
+          // button and the colour goes to the glyph instead, which is how the
+          // trash button stays red.
+          prominent: tint != null,
+          tint: tint ?? iconColor ?? AppColors.ink,
+          iconSize: iconSize,
+        ),
+      );
+    }
+    return Semantics(
+      label: label,
+      child: _PressableGlass(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(size / 2),
+        tint: tint,
+        fallbackTint: fallbackTint,
+        boxShadow: boxShadow,
+        child: SizedBox(
+          width: size,
+          height: size,
+          // Flat: the glyph on a glass button is the control, not a label for
+          // one. See [AppIcon.flat].
+          child: AppIcon(icon, size: iconSize, color: iconColor ?? AppColors.ink, flat: true),
+        ),
       ),
     );
   }
@@ -464,6 +564,18 @@ class GlassIconGroup extends StatefulWidget {
   /// What the group measures, for a header that has to reserve room for it.
   double get width => actions.length * _segmentWidth + 2 * _hPad;
 
+  /// Each segment as a fraction of the capsule, for the real material's own
+  /// touch handling ([GlassSurface.regions]). Derived from the same three
+  /// numbers the `Row` is laid out from, so the target and the glyph under a
+  /// finger can't drift apart.
+  List<GlassTouchRegion> get _regions {
+    final total = width;
+    return [
+      for (var i = 0; i < actions.length; i++)
+        Rect.fromLTWH((_hPad + i * _segmentWidth) / total, 0, _segmentWidth / total, 1),
+    ];
+  }
+
   @override
   State<GlassIconGroup> createState() => _GlassIconGroupState();
 }
@@ -487,6 +599,27 @@ class _GlassIconGroupState extends State<GlassIconGroup> {
 
   @override
   Widget build(BuildContext context) {
+    final native = nativeGlassActive(context);
+    if (native) {
+      // **One capsule, several real buttons.** The native side hangs them in a
+      // `UIGlassContainerEffect`, which is the documented way to make adjacent
+      // glass merge into a single shape rather than sit beside each other as
+      // separate pieces — exactly what this widget's doc above says a group
+      // has to look like, now done by the system instead of by us drawing one
+      // wide piece of material and putting two glyphs on it.
+      return SizedBox(
+        width: widget.width,
+        height: widget.size,
+        child: NativeGlassButtons(
+          buttons: [
+            for (final action in widget.actions)
+              NativeGlassButton(icon: action.icon, label: action.label, onTap: action.onTap),
+          ],
+          tint: AppColors.ink,
+          iconSize: widget.iconSize,
+        ),
+      );
+    }
     return GlassSurface(
       borderRadius: BorderRadius.circular(widget.size / 2),
       // Same material arguments as the "Heute" pill, which is the shape this
@@ -495,7 +628,11 @@ class _GlassIconGroupState extends State<GlassIconGroup> {
       blurSigma: 20,
       // Not `glassButton`: that lift is sized for a 40pt circle and reads as a
       // dark smudge under something this wide. See [AppShadows.floatingPill].
+      // Dropped entirely under real glass — see [GlassSurface.build].
       boxShadow: AppShadows.floatingPill,
+      regions: native ? widget._regions : const <GlassTouchRegion>[],
+      onTap: native ? (i) => widget.actions[i].onTap() : null,
+      onPressed: native ? (i, pressed) => _setPressed(pressed ? i : null) : null,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: GlassIconGroup._hPad),
         child: Row(
@@ -505,12 +642,10 @@ class _GlassIconGroupState extends State<GlassIconGroup> {
               Semantics(
                 button: true,
                 label: widget.actions[i].label,
-                child: GestureDetector(
-                  onTap: widget.actions[i].onTap,
-                  behavior: HitTestBehavior.opaque,
-                  onTapDown: (_) => _setPressed(i),
-                  onTapUp: (_) => _setPressed(null),
-                  onTapCancel: () => _setPressed(null),
+                onTap: native ? widget.actions[i].onTap : null,
+                child: _segment(
+                  i,
+                  native: native,
                   child: SizedBox(
                     width: GlassIconGroup._segmentWidth,
                     height: widget.size,
@@ -528,6 +663,22 @@ class _GlassIconGroupState extends State<GlassIconGroup> {
       ),
     );
   }
+
+  /// The glyph, wrapped in its own gesture detector only where Flutter is the
+  /// one detecting gestures. Under real glass a `GestureDetector` here would
+  /// sit in the platform view's overlay layer and take nothing anyway — the
+  /// touch has already been claimed by UIKit.
+  Widget _segment(int index, {required bool native, required Widget child}) {
+    if (native) return child;
+    return GestureDetector(
+      onTap: widget.actions[index].onTap,
+      behavior: HitTestBehavior.opaque,
+      onTapDown: (_) => _setPressed(index),
+      onTapUp: (_) => _setPressed(null),
+      onTapCancel: () => _setPressed(null),
+      child: child,
+    );
+  }
 }
 
 /// The **neutral** labelled glass pill: a way *out* rather than the action —
@@ -543,15 +694,34 @@ class GlassPillButton extends StatelessWidget {
 
   const GlassPillButton({super.key, required this.label, required this.onTap});
 
+  /// The padding that, with the label inside it, *is* this pill's size — on
+  /// both paths. The native button is handed the box this produces rather than
+  /// measuring the word itself; see [NativeGlassButtons.sizer].
+  static const _padding = EdgeInsets.symmetric(horizontal: 18, vertical: 10);
+
+  Widget get _label =>
+      Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.rowTitle);
+
   @override
   Widget build(BuildContext context) {
+    if (nativeGlassActive(context)) {
+      return NativeGlassButtons(
+        buttons: [
+          NativeGlassButton(
+            label: label,
+            title: label,
+            titleStyle: AppText.rowTitle,
+            onTap: onTap,
+          ),
+        ],
+        tint: AppColors.ink,
+        sizer: Padding(padding: _padding, child: _label),
+      );
+    }
     return _PressableGlass(
       onTap: onTap,
       borderRadius: BorderRadius.circular(AppRadii.bar),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-        child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.rowTitle),
-      ),
+      child: Padding(padding: _padding, child: _label),
     );
   }
 }

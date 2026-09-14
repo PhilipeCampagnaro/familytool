@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,7 +16,7 @@ import '../../widgets/glass.dart';
 import '../../widgets/settings_chrome.dart';
 import '../../widgets/segmented_control.dart';
 import '../../widgets/toast_chip.dart';
-import '../settings/apple_pay_page.dart';
+import '../settings/wallet_capture_page.dart';
 import 'spend_mark.dart';
 
 // ---------------------------------------------------------------------------
@@ -296,31 +298,53 @@ class _ReviewNote extends StatelessWidget {
 /// Answers **true when the spend was deleted from inside it**, which is the one
 /// outcome the caller cannot see for itself: [showSpendDetailSheet] is still
 /// open underneath and would be left showing a payment that no longer exists.
+///
+/// The check in the header is the only way to commit it. There used to be a
+/// second one — a full-width "Fertig" at the foot of the form — which made the
+/// same promise twice and put one of them at the end of a scroll, below a
+/// delete action.
 Future<bool> showSpendSheet(BuildContext context, WidgetRef ref, {Spend? spend}) async {
+  final draft = _SpendDraft(spend);
   final deleted = await showAppSheet<bool>(
     context: context,
-    title: spend == null ? L.s.spendAdd : L.s.spendEdit,
-    child: _SpendForm(spend: spend),
+    // Not the shared `title:` header: that one pops on the check, and this form
+    // refuses a save it cannot make — an empty amount has to leave the sheet
+    // standing with what was typed still in it.
+    header: _SpendFormHeader(draft: draft),
+    child: _SpendForm(draft: draft),
   );
+
+  // Not disposed on the spot: the sheet's own widgets are still mounted — and
+  // still reading the controllers — while the route animates out. Same delay,
+  // for the same reason, as `showRenameSheet`.
+  unawaited(Future<void>.delayed(const Duration(milliseconds: 400), draft.dispose));
   return deleted ?? false;
 }
 
-class _SpendForm extends ConsumerStatefulWidget {
-  final Spend? spend;
+/// Everything the sheet is typing, held by reference.
+///
+/// The header's check is built beside the body rather than inside it, so the
+/// two need one object between them — the same arrangement the calendar's
+/// `_EventForm` and `IconDraft` use.
+class _SpendDraft {
+  _SpendDraft(this.original)
+      : merchant = TextEditingController(text: original?.merchant ?? ''),
+        amount = TextEditingController(
+          text: original == null ? '' : formatMoney(original.amountCents, withSymbol: false),
+        ),
+        note = TextEditingController(text: original?.note ?? ''),
+        date = original?.occurredAt ?? DateTime.now(),
+        category = original?.category,
+        kind = original?.kind ?? SpendKind.budget;
 
-  const _SpendForm({this.spend});
+  /// The row being corrected, or null on a fresh payment.
+  final Spend? original;
 
-  @override
-  ConsumerState<_SpendForm> createState() => _SpendFormState();
-}
+  final TextEditingController merchant;
+  final TextEditingController amount;
+  final TextEditingController note;
 
-class _SpendFormState extends ConsumerState<_SpendForm> {
-  late final TextEditingController _merchant;
-  late final TextEditingController _amount;
-  late final TextEditingController _note;
-  final _categoryAnchor = GlobalKey();
-
-  late DateTime _date;
+  DateTime date;
 
   /// Null means "let the database decide from the merchant name".
   ///
@@ -328,34 +352,126 @@ class _SpendFormState extends ConsumerState<_SpendForm> {
   /// `spends_classify` trigger reads as permission to classify, and it is how
   /// the one copy of the merchant rules stays the one copy. On an *edit* it
   /// starts at the row's actual category, because by then a human has seen it.
-  SpendCategory? _category;
-  late SpendKind _kind;
+  SpendCategory? category;
+  SpendKind kind;
 
-  bool _saving = false;
+  /// The write is in flight — the header's check becomes a spinner, so a second
+  /// tap cannot file the same payment twice.
+  final ValueNotifier<bool> saving = ValueNotifier(false);
 
-  bool get _editing => widget.spend != null;
+  bool get editing => original != null;
 
-  @override
-  void initState() {
-    super.initState();
-    final spend = widget.spend;
-    _merchant = TextEditingController(text: spend?.merchant ?? '');
-    _amount = TextEditingController(
-      text: spend == null ? '' : formatMoney(spend.amountCents, withSymbol: false),
-    );
-    _note = TextEditingController(text: spend?.note ?? '');
-    _date = spend?.occurredAt ?? DateTime.now();
-    _category = spend?.category;
-    _kind = spend?.kind ?? SpendKind.budget;
-  }
-
-  @override
   void dispose() {
-    _merchant.dispose();
-    _amount.dispose();
-    _note.dispose();
-    super.dispose();
+    merchant.dispose();
+    amount.dispose();
+    note.dispose();
+    saving.dispose();
   }
+}
+
+/// Close on the left, the accent check on the right — and a spinner in its
+/// place while the payment is being filed.
+///
+/// The check greys out until there is a merchant, which is [_SaveButton]'s own
+/// behaviour everywhere else; the amount cannot be guarded that way and is
+/// answered by [_saveSpend] instead.
+class _SpendFormHeader extends ConsumerWidget {
+  final _SpendDraft draft;
+
+  const _SpendFormHeader({required this.draft});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return ValueListenableBuilder<bool>(
+      valueListenable: draft.saving,
+      builder: (context, saving, _) => SheetActionHeader(
+        title: draft.editing ? L.s.spendEdit : L.s.spendAdd,
+        action: saving ? SheetHeaderAction.busy : SheetHeaderAction.confirm,
+        requiredField: draft.merchant,
+        onConfirm: () => _saveSpend(context, ref, draft),
+      ),
+    );
+  }
+}
+
+/// Files the payment, says so, and only then closes the sheet.
+///
+/// The confirmation is the point: a manual spend used to be committed in
+/// silence — the sheet closed, and whether the row had reached the server or
+/// died on the way was something you found out by going looking for it. The
+/// chip is captured before the write for the usual reason ([confirmChipOf]):
+/// this sheet is gone by the time there is anything to report.
+Future<void> _saveSpend(BuildContext context, WidgetRef ref, _SpendDraft draft) async {
+  if (draft.saving.value) return;
+
+  final merchant = draft.merchant.text.trim();
+  final cents = parseAmountCents(draft.amount.text);
+  if (merchant.isEmpty || cents == null) {
+    // The two fields that cannot be guessed. Everything else on this form has
+    // a defensible default, which is why only these two can block a save. The
+    // sheet stays open on top of what was typed — closing it would throw the
+    // rest of the form away over a missing comma.
+    confirmChipOf(context, kind: ToastKind.error)(L.s.spendNeedsMerchantAndAmount);
+    return;
+  }
+
+  final confirm = confirmChipOf(context);
+  final failed = confirmChipOf(context, kind: ToastKind.error);
+  final navigator = Navigator.of(context);
+  final notifier = ref.read(spendProvider.notifier);
+  final note = draft.note.text.trim();
+
+  draft.saving.value = true;
+  final spend = draft.original;
+  final saved = spend == null
+      ? await notifier.addSpend(
+          merchant: merchant,
+          amountCents: cents,
+          occurredAt: draft.date,
+          category: draft.category,
+          kind: draft.kind,
+          note: note,
+        )
+      : await notifier.editSpend(
+          spend.copyWith(
+            merchant: merchant,
+            amountCents: cents,
+            occurredAt: draft.date,
+            category: draft.category ?? spend.category,
+            kind: draft.kind,
+            note: note.isEmpty ? null : note,
+            // Editing a flagged row *is* the review. Anything the user just
+            // looked at and saved is, by definition, no longer waiting to be
+            // looked at.
+            needsReview: false,
+          ),
+        );
+
+  // The sheet goes either way: a failed write has already rolled the row back
+  // off the month, and leaving the form up would invite the same tap again.
+  navigator.pop();
+  if (saved) {
+    confirm(spend == null ? L.s.spendSaved : L.s.spendUpdated);
+  } else {
+    failed(L.s.spendSaveFailed);
+  }
+}
+
+class _SpendForm extends ConsumerStatefulWidget {
+  final _SpendDraft draft;
+
+  const _SpendForm({required this.draft});
+
+  @override
+  ConsumerState<_SpendForm> createState() => _SpendFormState();
+}
+
+class _SpendFormState extends ConsumerState<_SpendForm> {
+  final _categoryAnchor = GlobalKey();
+
+  /// The controllers and the picked values live on the draft, which outlives
+  /// this widget — the header is built from the same object.
+  _SpendDraft get _draft => widget.draft;
 
   @override
   Widget build(BuildContext context) {
@@ -367,8 +483,8 @@ class _SpendFormState extends ConsumerState<_SpendForm> {
           child: Text(L.s.spendKindQuestion, style: AppText.microLabel),
         ),
         SegmentedControl<SpendKind>(
-          value: _kind,
-          onChanged: (kind) => setState(() => _kind = kind),
+          value: _draft.kind,
+          onChanged: (kind) => setState(() => _draft.kind = kind),
           options: [
             SegmentedOption(value: SpendKind.budget, label: L.s.spendKindBudget, icon: AppIcons.repeat),
             SegmentedOption(value: SpendKind.extra, label: L.s.spendKindExtra, icon: AppIcons.sparkle),
@@ -381,8 +497,8 @@ class _SpendFormState extends ConsumerState<_SpendForm> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
               child: TextField(
-                controller: _merchant,
-                autofocus: !_editing,
+                controller: _draft.merchant,
+                autofocus: !_draft.editing,
                 textCapitalization: TextCapitalization.words,
                 textInputAction: TextInputAction.next,
                 style: AppText.inputTitle,
@@ -399,20 +515,20 @@ class _SpendFormState extends ConsumerState<_SpendForm> {
               ),
             ),
             CardDivider(),
-            _AmountField(controller: _amount),
+            _AmountField(controller: _draft.amount),
             CardDivider(),
-            _DateField(value: _date, onChanged: (value) => setState(() => _date = value)),
+            _DateField(value: _draft.date, onChanged: (value) => setState(() => _draft.date = value)),
             CardDivider(),
             _CategoryField(
               anchorKey: _categoryAnchor,
-              value: _category,
-              onChanged: (value) => setState(() => _category = value),
+              value: _draft.category,
+              onChanged: (value) => setState(() => _draft.category = value),
             ),
             CardDivider(),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               child: TextField(
-                controller: _note,
+                controller: _draft.note,
                 textCapitalization: TextCapitalization.sentences,
                 style: AppText.input,
                 maxLines: 3,
@@ -427,16 +543,8 @@ class _SpendFormState extends ConsumerState<_SpendForm> {
           ],
         ),
 
-        const SizedBox(height: 14),
-        GlassAccentButton(
-          label: L.s.doneAction,
-          expand: true,
-          enabled: !_saving,
-          onTap: _save,
-        ),
-
-        if (_editing) ...[
-          const SizedBox(height: 10),
+        if (_draft.editing) ...[
+          const SizedBox(height: 14),
           OutlinedSheetAction(
             icon: AppIcons.trash,
             label: L.s.delete,
@@ -447,7 +555,7 @@ class _SpendFormState extends ConsumerState<_SpendForm> {
               final navigator = Navigator.of(context);
               final notifier = ref.read(spendProvider.notifier);
               navigator.pop(true);
-              if (await notifier.deleteSpend(widget.spend!.id) case final deleted?) {
+              if (await notifier.deleteSpend(_draft.original!.id) case final deleted?) {
                 confirm(L.s.spendDeleted, undo: () => notifier.undoDelete(deleted));
               }
             },
@@ -455,50 +563,6 @@ class _SpendFormState extends ConsumerState<_SpendForm> {
         ],
       ],
     );
-  }
-
-  Future<void> _save() async {
-    final merchant = _merchant.text.trim();
-    final cents = parseAmountCents(_amount.text);
-    if (merchant.isEmpty || cents == null) {
-      // The two fields that cannot be guessed. Everything else on this form has
-      // a defensible default, which is why only these two can block a save.
-      confirmChipOf(context, kind: ToastKind.error)(L.s.spendNeedsMerchantAndAmount);
-      return;
-    }
-
-    setState(() => _saving = true);
-    final notifier = ref.read(spendProvider.notifier);
-    final navigator = Navigator.of(context);
-
-    final spend = widget.spend;
-    if (spend == null) {
-      await notifier.addSpend(
-        merchant: merchant,
-        amountCents: cents,
-        occurredAt: _date,
-        category: _category,
-        kind: _kind,
-        note: _note.text,
-      );
-    } else {
-      await notifier.editSpend(
-        spend.copyWith(
-          merchant: merchant,
-          amountCents: cents,
-          occurredAt: _date,
-          category: _category ?? spend.category,
-          kind: _kind,
-          note: _note.text.trim().isEmpty ? null : _note.text.trim(),
-          // Editing a flagged row *is* the review. Anything the user just
-          // looked at and saved is, by definition, no longer waiting to be
-          // looked at.
-          needsReview: false,
-        ),
-      );
-    }
-
-    if (mounted) navigator.pop();
   }
 }
 
@@ -664,7 +728,7 @@ class _CategoryField extends StatelessWidget {
 /// ending in a setup guide that never goes away, while the Apple Pay page in
 /// Settings listed the household's phones and pointed *back* here for the one
 /// button that mattered. Both halves now sit on
-/// [ApplePayPage](../settings/apple_pay_page.dart); this row is the second way
+/// [WalletCapturePage](../settings/wallet_capture_page.dart); this row is the second way
 /// in, because the wish for automatic capture arrives while looking at money,
 /// not while looking at Settings.
 ///
@@ -678,22 +742,35 @@ class WalletSetupCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(spendProvider);
 
-    // Off iOS there is nothing to switch on and the row would lead to a page
-    // that says so. `SpendScreen` is iOS-only today anyway, so this is the
-    // belt to that braces.
-    if (!ref.watch(spendIntentsProvider).isSupported) return const SizedBox.shrink();
+    // Off both phone platforms there is nothing to switch on and the row would
+    // lead to a page that says so. `SpendScreen` ships where `spendAvailable` is
+    // true anyway, so this is the belt to that braces.
+    final intents = ref.watch(spendIntentsProvider);
+    if (!intents.isSupported) return const SizedBox.shrink();
+
+    // **Android is set up when both switches are on, not when the token is
+    // stored.** A row reading "aktiv" over a phone that has been enrolled but
+    // never granted notification access would describe a capture that files
+    // nothing, which is the one thing this subtitle exists to prevent.
+    final ready = intents.usesNotificationAccess
+        ? state.thisDeviceEnrolled && state.notificationAccess
+        : state.thisDeviceEnrolled;
 
     return SectionCard(
       radius: AppRadii.card,
       children: [
         SettingsRow(
           icon: AppIcons.wallet,
-          title: L.s.spendWalletTitle,
-          subtitle: state.thisDeviceEnrolled
-              ? L.s.spendWalletActive
-              : L.s.spendWalletInactive,
+          title: intents.usesNotificationAccess
+              ? L.s.spendWalletAndroidTitle
+              : L.s.spendWalletTitle,
+          subtitle: intents.usesNotificationAccess
+              ? (ready ? L.s.spendWalletAndroidActive : L.s.spendWalletAndroidInactive)
+              : (ready ? L.s.spendWalletActive : L.s.spendWalletInactive),
           onTap: () => Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => ApplePayPage(parentTitle: L.s.spendTitle)),
+            MaterialPageRoute(
+              builder: (_) => WalletCapturePage(parentTitle: L.s.spendTitle),
+            ),
           ),
         ),
       ],

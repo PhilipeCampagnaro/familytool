@@ -12,79 +12,20 @@ import '../theme/app_icons.dart';
 ///
 /// Searching happens *in place*: the screen's header turns into the system
 /// search field and the screen's own body shows the hits, instead of a sheet
-/// sliding over the content. There's one control either way — the flat
-/// [SearchTriggerField] in the resting header and the glass [HeaderSearchButton]
-/// once it has scrolled away both just switch the screen into search.
+/// sliding over the content.
+///
+/// **There is one way in, and it is the magnifier beside the `+`.** It used to
+/// be two — a flat pill in the collapsing header and a glass button that faded
+/// in once that pill had scrolled away — which cost the block a whole row to
+/// say a second time what the top bar could say once, and made the resting
+/// header a search box above a heading above a card. A control that is always
+/// in the same place is also what lets the field grow out of it (see
+/// [HeaderSearchBar]); a pill that scrolls away cannot be grown out of.
 ///
 /// The pieces here draw the handover; they don't time it. Opening search also
 /// folds the header's collapsing block away and swaps the body to the hits, so
 /// the screen ([SearchableOverviewScreen]) holds the one controller that runs
 /// all of it and passes the eased value down — see [kSearchTransition].
-
-/// The search pill in a screen's collapsing header at rest. Not a live field:
-/// tapping it hands over to [HeaderSearchBar], so there's one place where typing
-/// happens.
-class SearchTriggerField extends StatelessWidget {
-  final String hint;
-  final VoidCallback onTap;
-
-  const SearchTriggerField({super.key, required this.hint, required this.onTap});
-
-  static const _radius = 20.0;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      // Flat gray, not glass: it sits on the frosted header bar, and glass on
-      // glass reads as a smudge.
-      child: DecoratedBox(
-        decoration: BoxDecoration(color: AppColors.surfaceAlt, borderRadius: BorderRadius.circular(_radius)),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
-          child: Row(
-            children: [
-              AppIcon(AppIcons.magnifyingGlass, size: 17, color: AppColors.muted),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(hint, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.searchInput.copyWith(color: AppColors.muted)),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// The glass search button that takes the [SearchTriggerField]'s place in the
-/// pinned bar once the header has collapsed — without it, scrolling down leaves
-/// no way to search.
-///
-/// It fades in on the same late curve the collapsed title crossfades on, so the
-/// pill below has actually gone before the button appears rather than the two
-/// overlapping mid-scroll. While it's invisible it also stops taking taps, so it
-/// can't swallow a tap meant for the expanded title area underneath.
-class HeaderSearchButton extends StatelessWidget {
-  /// Collapse progress from the header: 0 expanded, 1 collapsed.
-  final double t;
-  final VoidCallback onTap;
-
-  const HeaderSearchButton({super.key, required this.t, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final visible = ((t - 0.55) / 0.45).clamp(0.0, 1.0);
-    return IgnorePointer(
-      ignoring: visible < 0.5,
-      child: Opacity(
-        opacity: visible,
-        child: GlassIconButton(icon: AppIcons.magnifyingGlass, onTap: onTap),
-      ),
-    );
-  }
-}
 
 /// How long Listen and Boxen take to hand their header over to search, and the
 /// easing on the way in and back out.
@@ -100,9 +41,15 @@ const Curve kSearchTransitionCurve = Curves.easeOutCubic;
 const Curve kSearchTransitionReverseCurve = Curves.easeInCubic;
 
 /// Wraps a screen's pinned title row so search can take it over: as [progress]
-/// runs 0 → 1 the row's contents fade out and the system search field grows out
-/// of the leading slot — where [HeaderSearchButton] just was — up to a glass X
-/// that closes search again.
+/// runs 0 → 1 the row's contents fade out and the system search field grows
+/// leftward out of the magnifier in the trailing capsule, until it fills the row
+/// beside the glass X that closes it again.
+///
+/// **It opens and closes on the right**, on the magnifier that was pressed: the
+/// capsule's two segments sit at the right end of the bar, the X lands over the
+/// `+` at the very end of it, and the field unrolls from the segment beside it.
+/// Closing runs the same movement backwards, so the field rolls back into the
+/// button it came out of rather than draining off the opposite margin.
 ///
 /// [progress] is the screen's, not this widget's: the same eased value folds the
 /// collapsing block away underneath ([CollapsingHeaderScreen.extraCollapse]) and
@@ -138,8 +85,8 @@ class HeaderSearchBar extends StatelessWidget {
     required this.onClose,
   });
 
-  /// Matches [GlassIconButton]'s default — the size the field starts at and the
-  /// width the X takes on the right.
+  /// Matches [GlassIconButton]'s default — the width the X takes on the right,
+  /// and the size of the collapsed field that grows out from beside it.
   static const _buttonSize = 40.0;
   static const _gap = 10.0;
 
@@ -155,9 +102,13 @@ class HeaderSearchBar extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
-        // From the search button's own footprint out to the full row, minus
-        // the X it stops beside.
-        final fieldRight = lerpDouble(width - _buttonSize, _buttonSize + _gap, a)!;
+        // Out of the magnifier's own footprint and leftward to the full row.
+        // The field's right edge never moves, so it grows and rolls back up on
+        // the side the header keeps its glass — a 40pt box one button in from
+        // the right edge is where the capsule's search segment sits, which is
+        // the control that was just pressed. Growing from the far margin
+        // instead read as a separate thing arriving.
+        final fieldLeft = lerpDouble(width - _buttonSize * 2 - _gap, 0, a)!;
         return Stack(
           children: [
             // Kept in the tree rather than swapped out so nothing below it
@@ -190,8 +141,8 @@ class HeaderSearchBar extends StatelessWidget {
             if (a > 0)
               Positioned(
                 key: const ValueKey('field'),
-                left: 0,
-                right: fieldRight,
+                left: fieldLeft,
+                right: _buttonSize + _gap,
                 top: 0,
                 bottom: 0,
                 child: NativeSearchField(

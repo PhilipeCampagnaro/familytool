@@ -1,0 +1,1767 @@
+{
+  "_comment": "Gap manifest for assets/grocery/. One entry per icon that does not exist yet. `file` must keep its category's shared underscore-prefix, because lib/data/grocery_catalog.dart derives the English label by stripping it (sharedFilePrefix). `de` is the German label, the one thing the catalog cannot infer. `subject` is the only part of the image prompt that varies; the style half lives in generate.dart. `ref` picks the style-reference trio.",
+  "refs": {
+    "produce": [
+      "Vegetables_Carrot.png",
+      "Vegetables_Tomato.png",
+      "Vegetables_Bell_Pepper.png"
+    ],
+    "packaged": [
+      "Dairy_Milk.png",
+      "Sauces_Ketchup.png",
+      "Baking_Supplies_Flour.png"
+    ],
+    "bakery": [
+      "Bread_Pretzel.png",
+      "Bread_Croissant.png",
+      "Bread_Baguette.png"
+    ],
+    "meat": [
+      "Meat_Bratwurst.png",
+      "Meat_Chicken_Breast.png",
+      "Meat_Salmon_Fillet.png"
+    ],
+    "household": [
+      "Hygiene_Toothpaste.png",
+      "Hygiene_Shampoo.png",
+      "Cleaning_Supplies_Laundry_detergent.png"
+    ]
+  },
+  "items": [
+    {
+      "file": "Fruits_Pear.png",
+      "cat": "Obst",
+      "de": "Birne",
+      "alias": [
+        "Birnen"
+      ],
+      "ref": "produce",
+      "subject": "two whole ripe pears, one green-yellow Williams pear standing upright and one lying beside it"
+    },
+    {
+      "file": "Fruits_Lime.png",
+      "cat": "Obst",
+      "de": "Limette",
+      "alias": [
+        "Limetten"
+      ],
+      "ref": "produce",
+      "subject": "one whole bright green lime next to a lime cut in half showing the juicy pale green flesh"
+    },
+    {
+      "file": "Fruits_Mandarin.png",
+      "cat": "Obst",
+      "de": "Mandarine",
+      "alias": [
+        "Mandarinen",
+        "Clementine",
+        "Clementinen"
+      ],
+      "ref": "produce",
+      "subject": "two whole mandarin oranges with a single glossy green leaf, and a few peeled segments beside them"
+    },
+    {
+      "file": "Fruits_Apricot.png",
+      "cat": "Obst",
+      "de": "Aprikose",
+      "alias": [
+        "Aprikosen",
+        "Marille"
+      ],
+      "ref": "produce",
+      "subject": "three whole orange apricots and one halved apricot showing the stone"
+    },
+    {
+      "file": "Fruits_Nectarine.png",
+      "cat": "Obst",
+      "de": "Nektarine",
+      "alias": [
+        "Nektarinen"
+      ],
+      "ref": "produce",
+      "subject": "two whole nectarines with smooth red-orange skin, one cut in half showing the yellow flesh and stone"
+    },
+    {
+      "file": "Fruits_Blackberries.png",
+      "cat": "Obst",
+      "de": "Brombeeren",
+      "alias": [
+        "Brombeere"
+      ],
+      "ref": "produce",
+      "subject": "a small pile of ripe blackberries, glossy and deep purple-black"
+    },
+    {
+      "file": "Fruits_Currants.png",
+      "cat": "Obst",
+      "de": "Johannisbeeren",
+      "alias": [
+        "Johannisbeere",
+        "Ribisel"
+      ],
+      "ref": "produce",
+      "subject": "two clusters of bright red redcurrants on their stems"
+    },
+    {
+      "file": "Fruits_Rhubarb.png",
+      "cat": "Obst",
+      "de": "Rhabarber",
+      "alias": [],
+      "ref": "produce",
+      "subject": "a bundle of fresh rhubarb stalks, deep pink fading to green, cut ends visible"
+    },
+    {
+      "file": "Fruits_Dates.png",
+      "cat": "Obst",
+      "de": "Datteln",
+      "alias": [
+        "Dattel"
+      ],
+      "ref": "produce",
+      "subject": "a small heap of whole Medjool dates, wrinkled glossy brown"
+    },
+    {
+      "file": "Fruits_Grapefruit.png",
+      "cat": "Obst",
+      "de": "Grapefruit",
+      "alias": [
+        "Pampelmuse"
+      ],
+      "ref": "produce",
+      "subject": "one whole pink grapefruit beside a half grapefruit showing the ruby segments"
+    },
+    {
+      "file": "Fruits_Papaya.png",
+      "cat": "Obst",
+      "de": "Papaya",
+      "alias": [],
+      "ref": "produce",
+      "subject": "a whole papaya beside a half papaya showing orange flesh and black seeds"
+    },
+    {
+      "file": "Fruits_Passion_fruit.png",
+      "cat": "Obst",
+      "de": "Maracuja",
+      "alias": [
+        "Passionsfrucht",
+        "Passionsfrüchte"
+      ],
+      "ref": "produce",
+      "subject": "two whole purple passion fruits and one cut open showing the golden pulp and seeds"
+    },
+    {
+      "file": "Fruits_Cranberries.png",
+      "cat": "Obst",
+      "de": "Cranberrys",
+      "alias": [
+        "Cranberries",
+        "Preiselbeeren"
+      ],
+      "ref": "produce",
+      "subject": "a small pile of fresh red cranberries"
+    },
+    {
+      "file": "Fruits_Guava.png",
+      "cat": "Obst",
+      "de": "Guave",
+      "alias": [
+        "Guaven"
+      ],
+      "ref": "produce",
+      "subject": "a whole green guava beside a half guava showing the pink seeded flesh"
+    },
+    {
+      "file": "Vegetables_Lambs_lettuce.png",
+      "cat": "Gemüse",
+      "de": "Feldsalat",
+      "alias": [
+        "Ackersalat",
+        "Rapunzel"
+      ],
+      "ref": "produce",
+      "subject": "a loose handful of fresh lamb's lettuce (mache), small dark green rosettes"
+    },
+    {
+      "file": "Vegetables_Red_cabbage.png",
+      "cat": "Gemüse",
+      "de": "Rotkohl",
+      "alias": [
+        "Rotkraut",
+        "Blaukraut"
+      ],
+      "ref": "produce",
+      "subject": "a whole red cabbage beside a quarter wedge showing the purple and white inner pattern"
+    },
+    {
+      "file": "Vegetables_Sauerkraut.png",
+      "cat": "Gemüse",
+      "de": "Sauerkraut",
+      "alias": [],
+      "ref": "packaged",
+      "subject": "a mound of pale fermented sauerkraut in a small white ceramic bowl"
+    },
+    {
+      "file": "Vegetables_Spring_onion.png",
+      "cat": "Gemüse",
+      "de": "Frühlingszwiebel",
+      "alias": [
+        "Lauchzwiebel",
+        "Frühlingszwiebeln",
+        "Lauchzwiebeln"
+      ],
+      "ref": "produce",
+      "subject": "a small bunch of spring onions with white bulbs and long green tops"
+    },
+    {
+      "file": "Vegetables_Sugar_snap_peas.png",
+      "cat": "Gemüse",
+      "de": "Zuckerschoten",
+      "alias": [
+        "Zuckerschote",
+        "Kaiserschoten"
+      ],
+      "ref": "produce",
+      "subject": "a small pile of bright green sugar snap pea pods"
+    },
+    {
+      "file": "Vegetables_Tofu.png",
+      "cat": "Gemüse",
+      "de": "Tofu",
+      "alias": [
+        "Naturtofu"
+      ],
+      "ref": "packaged",
+      "subject": "a block of firm white tofu with two slices cut from it lying beside it"
+    },
+    {
+      "file": "Vegetables_Falafel.png",
+      "cat": "Gemüse",
+      "de": "Falafel",
+      "alias": [],
+      "ref": "bakery",
+      "subject": "five round golden-brown falafel balls stacked in a small heap"
+    },
+    {
+      "file": "Dairy_Quark.png",
+      "cat": "Milchprodukte",
+      "de": "Quark",
+      "alias": [
+        "Speisequark",
+        "Magerquark"
+      ],
+      "ref": "packaged",
+      "subject": "a plain white plastic tub of quark with the lid off, showing thick white curd, no branding or text"
+    },
+    {
+      "file": "Dairy_Skyr.png",
+      "cat": "Milchprodukte",
+      "de": "Skyr",
+      "alias": [],
+      "ref": "packaged",
+      "subject": "a tall plain white plastic pot of skyr with a spoonful of thick white skyr beside it, no branding or text"
+    },
+    {
+      "file": "Dairy_Schmand.png",
+      "cat": "Milchprodukte",
+      "de": "Schmand",
+      "alias": [
+        "Saure Sahne"
+      ],
+      "ref": "packaged",
+      "subject": "a small plain white tub of thick soured cream with the lid off, no branding or text"
+    },
+    {
+      "file": "Dairy_Creme_fraiche.png",
+      "cat": "Milchprodukte",
+      "de": "Crème fraîche",
+      "alias": [
+        "Creme fraiche",
+        "Cremefraiche"
+      ],
+      "ref": "packaged",
+      "subject": "a small plain white tub of creme fraiche with the lid off showing thick cream, no branding or text"
+    },
+    {
+      "file": "Dairy_Margarine.png",
+      "cat": "Milchprodukte",
+      "de": "Margarine",
+      "alias": [],
+      "ref": "packaged",
+      "subject": "an open plain white tub of pale yellow margarine, no branding or text"
+    },
+    {
+      "file": "Dairy_Oat_milk.png",
+      "cat": "Milchprodukte",
+      "de": "Hafermilch",
+      "alias": [
+        "Haferdrink"
+      ],
+      "ref": "packaged",
+      "subject": "a plain unbranded carton of oat milk beside a glass of oat milk, no text or logos"
+    },
+    {
+      "file": "Dairy_Almond_milk.png",
+      "cat": "Milchprodukte",
+      "de": "Mandelmilch",
+      "alias": [
+        "Mandeldrink"
+      ],
+      "ref": "packaged",
+      "subject": "a plain unbranded carton of almond milk beside a glass of almond milk and two almonds, no text or logos"
+    },
+    {
+      "file": "Dairy_Soy_milk.png",
+      "cat": "Milchprodukte",
+      "de": "Sojamilch",
+      "alias": [
+        "Sojadrink"
+      ],
+      "ref": "packaged",
+      "subject": "a plain unbranded carton of soy milk beside a glass of soy milk, no text or logos"
+    },
+    {
+      "file": "Dairy_Pudding.png",
+      "cat": "Milchprodukte",
+      "de": "Pudding",
+      "alias": [
+        "Vanillepudding",
+        "Schokopudding",
+        "Grießbrei"
+      ],
+      "ref": "packaged",
+      "subject": "a glass dessert cup of vanilla pudding topped with a swirl, smooth pale yellow custard"
+    },
+    {
+      "file": "Dairy_Camembert.png",
+      "cat": "Milchprodukte",
+      "de": "Camembert",
+      "alias": [],
+      "ref": "packaged",
+      "subject": "a round white-rind camembert with one wedge cut out showing the soft ripe interior"
+    },
+    {
+      "file": "Dairy_Halloumi.png",
+      "cat": "Milchprodukte",
+      "de": "Halloumi",
+      "alias": [
+        "Grillkäse"
+      ],
+      "ref": "packaged",
+      "subject": "a block of white halloumi cheese with two thick slices cut beside it"
+    },
+    {
+      "file": "Bread_Zwieback.png",
+      "cat": "Brot & Backwaren",
+      "de": "Zwieback",
+      "alias": [],
+      "ref": "bakery",
+      "subject": "a small stack of four rusk zwieback slices, pale golden and dry"
+    },
+    {
+      "file": "Bread_Crispbread.png",
+      "cat": "Brot & Backwaren",
+      "de": "Knäckebrot",
+      "alias": [
+        "Knaeckebrot"
+      ],
+      "ref": "bakery",
+      "subject": "three rectangular rye crispbread crackers stacked slightly offset"
+    },
+    {
+      "file": "Bread_Toast_bread.png",
+      "cat": "Brot & Backwaren",
+      "de": "Toastbrot",
+      "alias": [
+        "Toast",
+        "Sandwichbrot"
+      ],
+      "ref": "bakery",
+      "subject": "a stack of square white sandwich toast slices beside a partial loaf"
+    },
+    {
+      "file": "Bread_Cake.png",
+      "cat": "Brot & Backwaren",
+      "de": "Kuchen",
+      "alias": [
+        "Torte",
+        "Rührkuchen"
+      ],
+      "ref": "bakery",
+      "subject": "a round sponge cake with one slice cut and lifted slightly out, plain and undecorated"
+    },
+    {
+      "file": "Bread_Waffles.png",
+      "cat": "Brot & Backwaren",
+      "de": "Waffeln",
+      "alias": [
+        "Waffel"
+      ],
+      "ref": "bakery",
+      "subject": "two golden Belgian waffles stacked slightly offset"
+    },
+    {
+      "file": "Cereals_Muesli.png",
+      "cat": "Frühstück & Müsli",
+      "de": "Müsli",
+      "alias": [
+        "Muesli",
+        "Knuspermüsli",
+        "Granola"
+      ],
+      "ref": "packaged",
+      "subject": "a white ceramic bowl of mixed muesli with oats, raisins, nuts and dried fruit"
+    },
+    {
+      "file": "Sauces_Honey.png",
+      "cat": "Saucen & Aufstriche",
+      "de": "Honig",
+      "alias": [
+        "Bienenhonig",
+        "Blütenhonig"
+      ],
+      "ref": "packaged",
+      "subject": "a plain glass jar of golden honey with a wooden honey dipper resting beside it, no label or text"
+    },
+    {
+      "file": "Sauces_Jam.png",
+      "cat": "Saucen & Aufstriche",
+      "de": "Marmelade",
+      "alias": [
+        "Konfitüre",
+        "Erdbeermarmelade",
+        "Fruchtaufstrich"
+      ],
+      "ref": "packaged",
+      "subject": "a plain glass jar of red strawberry jam with the lid off, no label or text"
+    },
+    {
+      "file": "Sauces_Peanut_butter.png",
+      "cat": "Saucen & Aufstriche",
+      "de": "Erdnussbutter",
+      "alias": [
+        "Erdnussmus"
+      ],
+      "ref": "packaged",
+      "subject": "a plain open glass jar of creamy peanut butter with a few peanuts beside it, no label or text"
+    },
+    {
+      "file": "Sauces_Vinegar.png",
+      "cat": "Saucen & Aufstriche",
+      "de": "Essig",
+      "alias": [
+        "Weinessig",
+        "Apfelessig"
+      ],
+      "ref": "packaged",
+      "subject": "a clear glass bottle of pale white wine vinegar with a simple cap, no label or text"
+    },
+    {
+      "file": "Sauces_Balsamic_vinegar.png",
+      "cat": "Saucen & Aufstriche",
+      "de": "Balsamico",
+      "alias": [
+        "Balsamicoessig",
+        "Aceto balsamico"
+      ],
+      "ref": "packaged",
+      "subject": "a dark glass bottle of balsamic vinegar with a pourer cap, no label or text"
+    },
+    {
+      "file": "Baking_Supplies_Icing_sugar.png",
+      "cat": "Backzutaten",
+      "de": "Puderzucker",
+      "alias": [
+        "Staubzucker"
+      ],
+      "ref": "packaged",
+      "subject": "a small white bowl heaped with fine white icing sugar, a dusting of it spilled beside the bowl"
+    },
+    {
+      "file": "Baking_Supplies_Cornflour.png",
+      "cat": "Backzutaten",
+      "de": "Speisestärke",
+      "alias": [
+        "Stärke",
+        "Maisstärke",
+        "Mondamin"
+      ],
+      "ref": "packaged",
+      "subject": "a small white bowl of fine cornflour starch with a spoon resting in it"
+    },
+    {
+      "file": "Canned_Goods_Coconut_milk.png",
+      "cat": "Konserven",
+      "de": "Kokosmilch",
+      "alias": [
+        "Kokosnussmilch"
+      ],
+      "ref": "packaged",
+      "subject": "a plain unlabelled metal tin of coconut milk beside a small bowl of white coconut milk, no text"
+    },
+    {
+      "file": "Canned_Goods_Stock.png",
+      "cat": "Konserven",
+      "de": "Brühe",
+      "alias": [
+        "Gemüsebrühe",
+        "Hühnerbrühe",
+        "Bouillon",
+        "Brühwürfel"
+      ],
+      "ref": "packaged",
+      "subject": "a plain glass jar of instant stock powder beside two unwrapped stock cubes, no label or text"
+    },
+    {
+      "file": "Canned_Goods_Ravioli.png",
+      "cat": "Konserven",
+      "de": "Dosenravioli",
+      "alias": [
+        "Ravioli"
+      ],
+      "ref": "packaged",
+      "subject": "an open plain unlabelled tin of ravioli in tomato sauce, no text"
+    },
+    {
+      "file": "Meat_Schnitzel.png",
+      "cat": "Fleisch & Fisch",
+      "de": "Schnitzel",
+      "alias": [
+        "Wiener Schnitzel",
+        "Schweineschnitzel"
+      ],
+      "ref": "meat",
+      "subject": "one raw flat pork schnitzel cutlet, pale pink, lying flat"
+    },
+    {
+      "file": "Meat_Frankfurters.png",
+      "cat": "Fleisch & Fisch",
+      "de": "Wiener Würstchen",
+      "alias": [
+        "Frankfurter",
+        "Würstchen",
+        "Wiener"
+      ],
+      "ref": "meat",
+      "subject": "a pair of thin smoked frankfurter sausages lying side by side"
+    },
+    {
+      "file": "Meat_Liver_sausage.png",
+      "cat": "Fleisch & Fisch",
+      "de": "Leberwurst",
+      "alias": [],
+      "ref": "meat",
+      "subject": "a short length of liver sausage with two slices cut from the end lying beside it"
+    },
+    {
+      "file": "Meat_Trout.png",
+      "cat": "Fleisch & Fisch",
+      "de": "Forelle",
+      "alias": [
+        "Forellen"
+      ],
+      "ref": "meat",
+      "subject": "one whole fresh rainbow trout lying flat, silver skin with pink stripe"
+    },
+    {
+      "file": "Meat_Smoked_salmon.png",
+      "cat": "Fleisch & Fisch",
+      "de": "Räucherlachs",
+      "alias": [
+        "Lachs geräuchert",
+        "Raeucherlachs"
+      ],
+      "ref": "meat",
+      "subject": "three thin slices of orange-pink smoked salmon fanned out and slightly overlapping"
+    },
+    {
+      "file": "Meat_Pickled_herring.png",
+      "cat": "Fleisch & Fisch",
+      "de": "Matjes",
+      "alias": [
+        "Hering",
+        "Matjesfilet"
+      ],
+      "ref": "meat",
+      "subject": "two pickled herring matjes fillets with a few onion rings beside them"
+    },
+    {
+      "file": "Snacks_Crisps.png",
+      "cat": "Snacks & Knabbereien",
+      "de": "Chips",
+      "alias": [
+        "Kartoffelchips"
+      ],
+      "ref": "packaged",
+      "subject": "a small heap of golden ridged potato crisps"
+    },
+    {
+      "file": "Snacks_Pretzel_sticks.png",
+      "cat": "Snacks & Knabbereien",
+      "de": "Salzstangen",
+      "alias": [
+        "Salzstange",
+        "Salzbrezeln"
+      ],
+      "ref": "bakery",
+      "subject": "a small bundle of thin salted pretzel sticks lying in a loose pile"
+    },
+    {
+      "file": "Snacks_Popcorn.png",
+      "cat": "Snacks & Knabbereien",
+      "de": "Popcorn",
+      "alias": [
+        "Puffmais"
+      ],
+      "ref": "packaged",
+      "subject": "a loose heap of fluffy white popped popcorn"
+    },
+    {
+      "file": "Snacks_Peanuts.png",
+      "cat": "Snacks & Knabbereien",
+      "de": "Erdnüsse",
+      "alias": [
+        "Erdnuss",
+        "Erdnusskerne"
+      ],
+      "ref": "produce",
+      "subject": "a small pile of shelled roasted peanuts with two whole peanuts in their shells beside them"
+    },
+    {
+      "file": "Snacks_Almonds.png",
+      "cat": "Snacks & Knabbereien",
+      "de": "Mandeln",
+      "alias": [
+        "Mandel"
+      ],
+      "ref": "produce",
+      "subject": "a small pile of whole brown almonds"
+    },
+    {
+      "file": "Snacks_Walnuts.png",
+      "cat": "Snacks & Knabbereien",
+      "de": "Walnüsse",
+      "alias": [
+        "Walnuss",
+        "Walnusskerne"
+      ],
+      "ref": "produce",
+      "subject": "two whole walnuts in their shells beside three shelled walnut halves"
+    },
+    {
+      "file": "Snacks_Cashews.png",
+      "cat": "Snacks & Knabbereien",
+      "de": "Cashewkerne",
+      "alias": [
+        "Cashews",
+        "Cashew",
+        "Cashewnüsse"
+      ],
+      "ref": "produce",
+      "subject": "a small pile of curved pale cashew nuts"
+    },
+    {
+      "file": "Snacks_Gummy_bears.png",
+      "cat": "Snacks & Knabbereien",
+      "de": "Gummibärchen",
+      "alias": [
+        "Fruchtgummi",
+        "Weingummi",
+        "Gummibaerchen"
+      ],
+      "ref": "packaged",
+      "subject": "a small scattered pile of colourful translucent gummy bears in red, yellow, green and orange"
+    },
+    {
+      "file": "Snacks_Muesli_bar.png",
+      "cat": "Snacks & Knabbereien",
+      "de": "Müsliriegel",
+      "alias": [
+        "Muesliriegel",
+        "Energieriegel"
+      ],
+      "ref": "packaged",
+      "subject": "two unwrapped oat and honey muesli bars, one whole and one broken showing the texture"
+    },
+    {
+      "file": "Snacks_Crackers.png",
+      "cat": "Snacks & Knabbereien",
+      "de": "Cracker",
+      "alias": [
+        "Salzcracker",
+        "Salzgebäck"
+      ],
+      "ref": "bakery",
+      "subject": "a small fanned stack of square salted crackers"
+    },
+    {
+      "file": "Snacks_Raisins.png",
+      "cat": "Snacks & Knabbereien",
+      "de": "Rosinen",
+      "alias": [
+        "Rosine",
+        "Sultaninen"
+      ],
+      "ref": "produce",
+      "subject": "a small heap of dark wrinkled raisins"
+    },
+    {
+      "file": "Snacks_Biscuits.png",
+      "cat": "Snacks & Knabbereien",
+      "de": "Kekse",
+      "alias": [
+        "Keks",
+        "Plätzchen",
+        "Butterkekse",
+        "Plaetzchen"
+      ],
+      "ref": "bakery",
+      "subject": "a small stack of round golden butter biscuits with one leaning against the stack"
+    },
+    {
+      "file": "Drinks_Apple_spritzer.png",
+      "cat": "Getränke",
+      "de": "Apfelschorle",
+      "alias": [
+        "Schorle",
+        "Apfelsaftschorle"
+      ],
+      "ref": "packaged",
+      "subject": "a tall clear glass of sparkling pale golden apple spritzer with bubbles"
+    },
+    {
+      "file": "Drinks_Sparkling_water.png",
+      "cat": "Getränke",
+      "de": "Sprudelwasser",
+      "alias": [
+        "Mineralwasser",
+        "Sprudel",
+        "Wasser mit Kohlensäure"
+      ],
+      "ref": "packaged",
+      "subject": "a clear glass bottle of sparkling mineral water with visible bubbles and a plain cap, no label or text"
+    },
+    {
+      "file": "Drinks_Iced_tea.png",
+      "cat": "Getränke",
+      "de": "Eistee",
+      "alias": [
+        "Ice Tea"
+      ],
+      "ref": "packaged",
+      "subject": "a tall glass of amber iced tea with ice cubes and a lemon slice"
+    },
+    {
+      "file": "Drinks_Energy_drink.png",
+      "cat": "Getränke",
+      "de": "Energydrink",
+      "alias": [
+        "Energy Drink",
+        "Energiedrink"
+      ],
+      "ref": "packaged",
+      "subject": "a plain unbranded slim silver energy drink can, completely blank with no text or logos"
+    },
+    {
+      "file": "Drinks_Cordial.png",
+      "cat": "Getränke",
+      "de": "Sirup",
+      "alias": [
+        "Fruchtsirup",
+        "Holunderblütensirup",
+        "Getränkesirup"
+      ],
+      "ref": "packaged",
+      "subject": "a tall slim clear glass bottle of fruit drinking syrup to dilute with water, straight cylindrical sides and a long slender tapered neck, filled with vivid deep raspberry-red concentrate, plain unpainted metal screw cap, the glass completely bare with no label, no sticker and no printing anywhere"
+    },
+    {
+      "file": "Drinks_Shandy.png",
+      "cat": "Getränke",
+      "de": "Radler",
+      "alias": [
+        "Alsterwasser"
+      ],
+      "ref": "packaged",
+      "subject": "a tall glass of pale golden shandy beer with a white head and a lemon slice on the rim"
+    },
+    {
+      "file": "Drinks_Black_tea.png",
+      "cat": "Getränke",
+      "de": "Schwarztee",
+      "alias": [
+        "Tee",
+        "Teebeutel",
+        "Schwarzer Tee"
+      ],
+      "ref": "packaged",
+      "subject": "a white cup of black tea with a tea bag tag hanging over the rim and two loose tea bags beside it, no text on the tags"
+    },
+    {
+      "file": "Drinks_Herbal_tea.png",
+      "cat": "Getränke",
+      "de": "Kräutertee",
+      "alias": [
+        "Kraeutertee",
+        "Pfefferminztee",
+        "Kamillentee"
+      ],
+      "ref": "packaged",
+      "subject": "a glass cup of pale green herbal tea with a sprig of mint and a few dried herbs beside it"
+    },
+    {
+      "file": "Drinks_Fruit_tea.png",
+      "cat": "Getränke",
+      "de": "Früchtetee",
+      "alias": [
+        "Fruechtetee",
+        "Hagebuttentee"
+      ],
+      "ref": "packaged",
+      "subject": "a glass cup of deep red fruit tea with dried berries and hibiscus petals beside it"
+    },
+    {
+      "file": "Drinks_Ground_coffee.png",
+      "cat": "Getränke",
+      "de": "Gemahlener Kaffee",
+      "alias": [
+        "Kaffee",
+        "Filterkaffee",
+        "Kaffeepulver"
+      ],
+      "ref": "packaged",
+      "subject": "a small heap of dark ground coffee in a white bowl with a few whole coffee beans beside it"
+    },
+    {
+      "file": "Drinks_Coffee_pods.png",
+      "cat": "Getränke",
+      "de": "Kaffeepads",
+      "alias": [
+        "Kaffeekapseln",
+        "Kapseln",
+        "Pads",
+        "Kaffeepad"
+      ],
+      "ref": "packaged",
+      "subject": "three plain aluminium coffee capsules in neutral silver standing beside two flat round paper coffee pods, no branding or text"
+    },
+    {
+      "file": "Household_Kitchen_roll.png",
+      "cat": "Haushalt",
+      "de": "Küchenrolle",
+      "alias": [
+        "Küchenpapier",
+        "Kuechenrolle",
+        "Papiertücher"
+      ],
+      "ref": "household",
+      "subject": "a roll of white kitchen paper towel standing upright with the end sheet loose, no printing"
+    },
+    {
+      "file": "Household_Aluminium_foil.png",
+      "cat": "Haushalt",
+      "de": "Alufolie",
+      "alias": [
+        "Aluminiumfolie",
+        "Folie"
+      ],
+      "ref": "household",
+      "subject": "a roll of aluminium kitchen foil with a length of shiny foil unrolled, plain white box, no text"
+    },
+    {
+      "file": "Household_Cling_film.png",
+      "cat": "Haushalt",
+      "de": "Frischhaltefolie",
+      "alias": [
+        "Klarsichtfolie"
+      ],
+      "ref": "household",
+      "subject": "a roll of transparent cling film in a plain white box with a length pulled out, no text"
+    },
+    {
+      "file": "Household_Baking_paper.png",
+      "cat": "Haushalt",
+      "de": "Backpapier",
+      "alias": [
+        "Backfolie"
+      ],
+      "ref": "household",
+      "subject": "a roll of brown baking parchment paper partly unrolled, plain white box, no text"
+    },
+    {
+      "file": "Household_Freezer_bags.png",
+      "cat": "Haushalt",
+      "de": "Gefrierbeutel",
+      "alias": [
+        "Gefriertüten",
+        "Frischhaltebeutel",
+        "Zipbeutel"
+      ],
+      "ref": "household",
+      "subject": "three clear plastic zip freezer bags stacked slightly fanned, no printing"
+    },
+    {
+      "file": "Household_Dishwasher_tablets.png",
+      "cat": "Haushalt",
+      "de": "Spülmaschinentabs",
+      "alias": [
+        "Spülmaschinentabletten",
+        "Geschirrspültabs",
+        "Spuelmaschinentabs"
+      ],
+      "ref": "household",
+      "subject": "three white and blue dishwasher tablets stacked, one leaning upright, no printing"
+    },
+    {
+      "file": "Household_Sponge.png",
+      "cat": "Haushalt",
+      "de": "Schwamm",
+      "alias": [
+        "Spülschwamm",
+        "Topfschwamm",
+        "Spuelschwamm"
+      ],
+      "ref": "household",
+      "subject": "one yellow kitchen sponge with a green scouring pad on top"
+    },
+    {
+      "file": "Household_Batteries.png",
+      "cat": "Haushalt",
+      "de": "Batterien",
+      "alias": [
+        "Batterie",
+        "AA Batterien",
+        "Akkus"
+      ],
+      "ref": "household",
+      "subject": "four plain silver AA batteries, two standing and two lying, completely unbranded with no text"
+    },
+    {
+      "file": "Household_Light_bulb.png",
+      "cat": "Haushalt",
+      "de": "Glühbirne",
+      "alias": [
+        "Leuchtmittel",
+        "Lampe",
+        "Gluehbirne",
+        "LED Lampe"
+      ],
+      "ref": "household",
+      "subject": "one clear LED light bulb with a silver screw base, standing upright"
+    },
+    {
+      "file": "Household_Candles.png",
+      "cat": "Haushalt",
+      "de": "Kerzen",
+      "alias": [
+        "Kerze",
+        "Teelichter",
+        "Stumpenkerze"
+      ],
+      "ref": "household",
+      "subject": "two plain white pillar candles of different heights standing side by side, unlit"
+    },
+    {
+      "file": "Household_Matches.png",
+      "cat": "Haushalt",
+      "de": "Streichhölzer",
+      "alias": [
+        "Zündhölzer",
+        "Streichholz",
+        "Streichhoelzer",
+        "Feuerzeug"
+      ],
+      "ref": "household",
+      "subject": "a plain matchbox with a few wooden matches with red heads spilling out, no printing on the box"
+    },
+    {
+      "file": "Pharmacy_Painkillers.png",
+      "cat": "Apotheke",
+      "de": "Schmerztabletten",
+      "alias": [
+        "Ibuprofen",
+        "Paracetamol",
+        "Kopfschmerztabletten",
+        "Aspirin",
+        "Tabletten"
+      ],
+      "ref": "household",
+      "subject": "a silver blister pack of plain white round tablets with two loose tablets beside it, no printing or text"
+    },
+    {
+      "file": "Pharmacy_Plasters.png",
+      "cat": "Apotheke",
+      "de": "Pflaster",
+      "alias": [
+        "Wundpflaster",
+        "Heftpflaster"
+      ],
+      "ref": "household",
+      "subject": "three beige fabric adhesive plasters fanned out slightly overlapping, no printing"
+    },
+    {
+      "file": "Pharmacy_Vitamins.png",
+      "cat": "Apotheke",
+      "de": "Vitamine",
+      "alias": [
+        "Vitaminpräparate",
+        "Magnesium",
+        "Vitamin C",
+        "Nahrungsergänzung"
+      ],
+      "ref": "household",
+      "subject": "a plain white pill bottle with the cap off and several orange and yellow vitamin capsules spilled beside it, no label or text"
+    },
+    {
+      "file": "Pharmacy_Cough_syrup.png",
+      "cat": "Apotheke",
+      "de": "Hustensaft",
+      "alias": [
+        "Hustenstiller",
+        "Hustensirup"
+      ],
+      "ref": "household",
+      "subject": "a brown glass medicine bottle with a plain white cap beside a small dosing cup of amber syrup, no label or text"
+    },
+    {
+      "file": "Pharmacy_Nasal_spray.png",
+      "cat": "Apotheke",
+      "de": "Nasenspray",
+      "alias": [
+        "Nasentropfen"
+      ],
+      "ref": "household",
+      "subject": "one plain white nasal spray pump bottle standing upright, no label or text"
+    },
+    {
+      "file": "Pharmacy_Thermometer.png",
+      "cat": "Apotheke",
+      "de": "Fieberthermometer",
+      "alias": [
+        "Thermometer"
+      ],
+      "ref": "household",
+      "subject": "one white digital clinical thermometer lying at a slight angle, blank display"
+    },
+    {
+      "file": "Pharmacy_Throat_lozenges.png",
+      "cat": "Apotheke",
+      "de": "Halstabletten",
+      "alias": [
+        "Lutschtabletten",
+        "Hustenbonbons"
+      ],
+      "ref": "household",
+      "subject": "a small pile of amber honey throat lozenges, two still in plain foil wrappers with no printing"
+    },
+    {
+      "file": "Pet_Supplies_Cat_litter.png",
+      "cat": "Tierbedarf",
+      "de": "Katzenstreu",
+      "alias": [
+        "Streu"
+      ],
+      "ref": "household",
+      "subject": "a plain unbranded bag of cat litter standing upright beside a small heap of grey litter granules, no text or logos"
+    },
+    {
+      "file": "Pet_Supplies_Dog_treats.png",
+      "cat": "Tierbedarf",
+      "de": "Hundeleckerli",
+      "alias": [
+        "Hundesnacks",
+        "Leckerli",
+        "Kauknochen"
+      ],
+      "ref": "household",
+      "subject": "a small pile of brown bone-shaped dog biscuit treats"
+    },
+    {
+      "file": "Pet_Supplies_Bird_food.png",
+      "cat": "Tierbedarf",
+      "de": "Vogelfutter",
+      "alias": [
+        "Körnerfutter",
+        "Vogelkörner",
+        "Streufutter"
+      ],
+      "ref": "produce",
+      "subject": "a small heap of mixed bird seed, sunflower seeds millet and grains, nothing else"
+    },
+    {
+      "file": "Pet_Supplies_Small_animal_food.png",
+      "cat": "Tierbedarf",
+      "de": "Kleintierfutter",
+      "alias": [
+        "Nagerfutter",
+        "Hasenfutter",
+        "Meerschweinchenfutter"
+      ],
+      "ref": "household",
+      "subject": "a small heap of mixed small animal pellets and dried vegetable pieces"
+    },
+    {
+      "file": "Soft_Drinks_Cola.png",
+      "cat": "Erfrischungsgetränke",
+      "de": "Cola",
+      "alias": [
+        "Coca-Cola",
+        "Coke",
+        "Pepsi",
+        "Colaflasche",
+        "Dr Pepper"
+      ],
+      "ref": "packaged",
+      "subject": "a plain glass bottle of dark cola with a crown cap and condensation, completely unlabelled"
+    },
+    {
+      "file": "Soft_Drinks_Orange_soda.png",
+      "cat": "Erfrischungsgetränke",
+      "de": "Orangenlimonade",
+      "alias": [
+        "Fanta",
+        "Orangenbrause",
+        "Orangenlimo"
+      ],
+      "ref": "packaged",
+      "subject": "a plain glass bottle of bright orange fizzy soda with a crown cap, completely unlabelled"
+    },
+    {
+      "file": "Soft_Drinks_Lemon_lime_soda.png",
+      "cat": "Erfrischungsgetränke",
+      "de": "Zitronenlimonade",
+      "alias": [
+        "Sprite",
+        "7Up",
+        "Zitronenbrause",
+        "Mountain Dew",
+        "Limo",
+        "Limonade"
+      ],
+      "ref": "packaged",
+      "subject": "a plain green glass bottle of clear lemon-lime fizzy soda with a crown cap, completely unlabelled"
+    },
+    {
+      "file": "Soft_Drinks_Ginger_Ale.png",
+      "cat": "Erfrischungsgetränke",
+      "de": "Ginger Ale",
+      "alias": [
+        "Ginger",
+        "Ingwerlimonade"
+      ],
+      "ref": "packaged",
+      "subject": "a plain glass bottle of pale golden ginger ale with a crown cap, completely unlabelled"
+    },
+    {
+      "file": "Cereals_Frosted_flakes.png",
+      "cat": "Frühstück & Müsli",
+      "de": "Gezuckerte Cornflakes",
+      "alias": [
+        "Frosties",
+        "Frosted Flakes",
+        "Zuckerflocken"
+      ],
+      "ref": "packaged",
+      "subject": "a loose heap of sugar-frosted golden corn flakes with a white sugar glaze"
+    },
+    {
+      "file": "Baby_Care_&_Hygiene_Baby_shampoo_&_body_wash.png",
+      "cat": "Baby",
+      "de": "Babyshampoo",
+      "alias": [
+        "Baby-Waschgel",
+        "Babybad"
+      ],
+      "ref": "household",
+      "subject": "a plain pale-pink plastic baby shampoo bottle with a white flip cap, completely blank with no printing"
+    },
+    {
+      "file": "Canned_Goods_Canned_soup.png",
+      "cat": "Konserven",
+      "de": "Dosensuppe",
+      "alias": [
+        "Suppe",
+        "Fertigsuppe"
+      ],
+      "ref": "packaged",
+      "subject": "a plain unprinted metal soup tin standing beside a white bowl of thick vegetable soup"
+    },
+    {
+      "file": "Meat_Haddock.png",
+      "cat": "Fleisch & Fisch",
+      "de": "Schellfisch",
+      "alias": [
+        "Schellfischfilet"
+      ],
+      "ref": "meat",
+      "subject": "two raw white haddock fillets lying side by side, pale translucent flesh"
+    },
+    {
+      "file": "Noodles_&_Pasta_Orzo.png",
+      "cat": "Nudeln & Pasta",
+      "de": "Kritharaki",
+      "alias": [
+        "Orzo",
+        "Reisnudeln"
+      ],
+      "ref": "packaged",
+      "subject": "a small neat heap of dry orzo rice-shaped pasta, pale golden"
+    },
+    {
+      "file": "Rice_Arborio_Rice.png",
+      "cat": "Reis",
+      "de": "Arborio-Reis",
+      "alias": [
+        "Risottoreis",
+        "Arborio"
+      ],
+      "ref": "packaged",
+      "subject": "a small heap of short round white arborio rice grains"
+    },
+    {
+      "file": "Rice_Parboiled_Rice.png",
+      "cat": "Reis",
+      "de": "Parboiled-Reis",
+      "alias": [
+        "Parboiled",
+        "Langkornreis"
+      ],
+      "ref": "packaged",
+      "subject": "a small heap of pale golden parboiled long-grain rice"
+    },
+    {
+      "file": "Baby_Food_&_Drinks_Baby_cereal.png",
+      "cat": "Baby",
+      "de": "Babybrei",
+      "alias": [
+        "Getreidebrei",
+        "Milchbrei"
+      ],
+      "ref": "packaged",
+      "subject": "a white bowl of smooth pale baby cereal porridge with a small plastic baby spoon resting in it"
+    },
+    {
+      "file": "Baby_Food_&_Drinks_Baby_purees.png",
+      "cat": "Baby",
+      "de": "Babygläschen",
+      "alias": [
+        "Babybrei im Glas",
+        "Gemüsebrei"
+      ],
+      "ref": "packaged",
+      "subject": "a small plain glass baby food jar filled with smooth orange vegetable puree, metal lid off and no label"
+    },
+    {
+      "file": "Cleaning_Supplies_Oven_cleaner.png",
+      "cat": "Putzmittel",
+      "de": "Backofenreiniger",
+      "alias": [
+        "Ofenreiniger"
+      ],
+      "ref": "household",
+      "subject": "a plain white plastic spray bottle with a blue trigger head, completely blank with no printing"
+    },
+    {
+      "file": "Dairy_Evaporated_Milk.png",
+      "cat": "Milchprodukte",
+      "de": "Dosenmilch",
+      "alias": [
+        "Kondensmilch",
+        "Evaporierte Milch"
+      ],
+      "ref": "packaged",
+      "subject": "a plain unprinted metal evaporated milk tin beside a small white jug of creamy milk"
+    },
+    {
+      "file": "Dairy_Greek_Yogurt.png",
+      "cat": "Milchprodukte",
+      "de": "Griechischer Joghurt",
+      "alias": [
+        "Griechischer Jogurt",
+        "Sahnejoghurt"
+      ],
+      "ref": "packaged",
+      "subject": "a plain white tub of thick strained greek yoghurt with the lid off, a spoonful lifted, no printing"
+    },
+    {
+      "file": "Dairy_Half_and_Half.png",
+      "cat": "Milchprodukte",
+      "de": "Kaffeesahne",
+      "alias": [
+        "Kondensmilch für Kaffee",
+        "Kaffeemilch"
+      ],
+      "ref": "packaged",
+      "subject": "a small plain white jug of coffee cream beside a white cup of black coffee, no printing"
+    },
+    {
+      "file": "Dairy_Kefir.png",
+      "cat": "Milchprodukte",
+      "de": "Kefir",
+      "alias": [
+        "Kefirmilch"
+      ],
+      "ref": "packaged",
+      "subject": "a plain glass of white kefir beside a plain unprinted bottle of it, no label"
+    },
+    {
+      "file": "Dairy_Lactose-Free_Milk.png",
+      "cat": "Milchprodukte",
+      "de": "Laktosefreie Milch",
+      "alias": [
+        "Laktosefrei",
+        "Milch laktosefrei"
+      ],
+      "ref": "packaged",
+      "subject": "a plain unprinted white carton of milk beside a glass of milk, no text or logos"
+    },
+    {
+      "file": "Drinks_Green_tea.png",
+      "cat": "Getränke",
+      "de": "Grüner Tee",
+      "alias": [
+        "Gruener Tee",
+        "Grüntee",
+        "Sencha"
+      ],
+      "ref": "packaged",
+      "subject": "a clear glass cup of pale green tea beside a small heap of loose green tea leaves"
+    },
+    {
+      "file": "Drinks_Chamomile_tea.png",
+      "cat": "Getränke",
+      "de": "Kamillentee",
+      "alias": [
+        "Kamille",
+        "Kamillen Tee"
+      ],
+      "ref": "packaged",
+      "subject": "a clear glass cup of pale golden chamomile tea with two dried chamomile flowers beside it"
+    },
+    {
+      "file": "Drinks_Ginger_tea.png",
+      "cat": "Getränke",
+      "de": "Ingwertee",
+      "alias": [
+        "Ingwer Tee"
+      ],
+      "ref": "packaged",
+      "subject": "a clear glass cup of golden ginger tea with a slice of fresh ginger and a lemon slice beside it"
+    },
+    {
+      "file": "Drinks_Peppermint_tea.png",
+      "cat": "Getränke",
+      "de": "Pfefferminztee",
+      "alias": [
+        "Pfefferminz",
+        "Minztee"
+      ],
+      "ref": "packaged",
+      "subject": "a clear glass cup of pale green mint tea with a fresh sprig of peppermint beside it"
+    },
+    {
+      "file": "Drinks_Rooibos_tea.png",
+      "cat": "Getränke",
+      "de": "Rooibostee",
+      "alias": [
+        "Rooibos",
+        "Rotbuschtee"
+      ],
+      "ref": "packaged",
+      "subject": "a clear glass cup of deep red-brown rooibos tea with a small heap of dry rooibos beside it"
+    },
+    {
+      "file": "Sauces_Raspberry_jam.png",
+      "cat": "Saucen & Aufstriche",
+      "de": "Himbeermarmelade",
+      "alias": [
+        "Himbeerkonfitüre",
+        "Himbeergelee"
+      ],
+      "ref": "packaged",
+      "subject": "a plain glass jar of deep red raspberry jam with the lid off and two fresh raspberries beside it, no label"
+    },
+    {
+      "file": "Sauces_Orange_marmalade.png",
+      "cat": "Saucen & Aufstriche",
+      "de": "Orangenmarmelade",
+      "alias": [
+        "Orangenkonfitüre",
+        "Bitterorangenmarmelade"
+      ],
+      "ref": "packaged",
+      "subject": "a plain glass jar of amber orange marmalade with visible peel, lid off, an orange wedge beside it, no label"
+    },
+    {
+      "file": "Sauces_Apricot_jam.png",
+      "cat": "Saucen & Aufstriche",
+      "de": "Aprikosenmarmelade",
+      "alias": [
+        "Aprikosenkonfitüre",
+        "Marillenmarmelade"
+      ],
+      "ref": "packaged",
+      "subject": "a plain glass jar of golden orange apricot jam with the lid off and half an apricot beside it, no label"
+    },
+    {
+      "file": "Sauces_Cherry_jam.png",
+      "cat": "Saucen & Aufstriche",
+      "de": "Kirschmarmelade",
+      "alias": [
+        "Kirschkonfitüre",
+        "Kirschgelee"
+      ],
+      "ref": "packaged",
+      "subject": "a plain glass jar of dark red cherry jam with the lid off and two cherries beside it, no label"
+    },
+    {
+      "file": "Sauces_Blueberry_jam.png",
+      "cat": "Saucen & Aufstriche",
+      "de": "Blaubeermarmelade",
+      "alias": [
+        "Heidelbeermarmelade",
+        "Blaubeerkonfitüre"
+      ],
+      "ref": "packaged",
+      "subject": "a plain glass jar of deep purple blueberry jam with the lid off and a few blueberries beside it, no label"
+    },
+    {
+      "file": "Vegetables_Savoy_cabbage.png",
+      "cat": "Gemüse",
+      "de": "Wirsing",
+      "alias": [
+        "Wirsingkohl"
+      ],
+      "ref": "produce",
+      "subject": "a whole savoy cabbage with deeply crinkled dark green leaves, one quarter wedge cut beside it"
+    },
+    {
+      "file": "Bread_Donut.png",
+      "cat": "Brot & Backwaren",
+      "de": "Donut",
+      "alias": [
+        "Berliner",
+        "Krapfen",
+        "Pfannkuchen Berliner",
+        "Doughnut"
+      ],
+      "ref": "bakery",
+      "subject": "one glazed ring doughnut and one round filled berliner doughnut dusted with sugar, side by side"
+    },
+    {
+      "file": "Bread_Pancakes.png",
+      "cat": "Brot & Backwaren",
+      "de": "Pfannkuchen",
+      "alias": [
+        "Eierkuchen",
+        "Crêpe",
+        "Crepes",
+        "Palatschinken"
+      ],
+      "ref": "bakery",
+      "subject": "a stack of three golden pancakes, plain, no syrup and no berries"
+    },
+    {
+      "file": "Snacks_Hazelnuts.png",
+      "cat": "Snacks & Knabbereien",
+      "de": "Haselnüsse",
+      "alias": [
+        "Haselnuss",
+        "Haselnusskerne"
+      ],
+      "ref": "produce",
+      "subject": "a small pile of whole hazelnuts in their shells with three shelled kernels beside them"
+    },
+    {
+      "file": "Snacks_Pine_nuts.png",
+      "cat": "Snacks & Knabbereien",
+      "de": "Pinienkerne",
+      "alias": [
+        "Pinienkern"
+      ],
+      "ref": "produce",
+      "subject": "a small heap of pale ivory pine nuts"
+    },
+    {
+      "file": "Snacks_Sweets.png",
+      "cat": "Snacks & Knabbereien",
+      "de": "Bonbons",
+      "alias": [
+        "Lutscher",
+        "Lakritz",
+        "Süßigkeiten",
+        "Fruchtbonbons"
+      ],
+      "ref": "packaged",
+      "subject": "a small scattered pile of colourful wrapped hard sweets in twisted transparent wrappers, no printing"
+    },
+    {
+      "file": "Snacks_Chewing_gum.png",
+      "cat": "Snacks & Knabbereien",
+      "de": "Kaugummi",
+      "alias": [
+        "Kaugummis"
+      ],
+      "ref": "packaged",
+      "subject": "four white chewing gum pellets beside a plain unprinted blister strip, no text"
+    },
+    {
+      "file": "Snacks_Marshmallows.png",
+      "cat": "Snacks & Knabbereien",
+      "de": "Marshmallows",
+      "alias": [
+        "Mäusespeck",
+        "Schaumzucker"
+      ],
+      "ref": "packaged",
+      "subject": "a small pile of soft white and pink cylindrical marshmallows"
+    },
+    {
+      "file": "Sauces_Maple_syrup.png",
+      "cat": "Saucen & Aufstriche",
+      "de": "Ahornsirup",
+      "alias": [
+        "Ahorn Sirup",
+        "Maple Syrup",
+        "Pfannkuchensirup"
+      ],
+      "ref": "packaged",
+      "subject": "a classic maple syrup jug: a squat clear glass bottle with a wide rounded body, sloping shoulders, a short narrow neck and a small round glass loop handle moulded at the side of the neck, the traditional maple-syrup bottle silhouette recognised worldwide, filled with deep amber-brown syrup, plain unpainted metal screw cap, the glass completely bare with no label, no sticker and no printing anywhere"
+    },
+    {
+      "file": "Sauces_Curry_paste.png",
+      "cat": "Saucen & Aufstriche",
+      "de": "Currypaste",
+      "alias": [
+        "Curry Paste",
+        "Currypasten"
+      ],
+      "ref": "packaged",
+      "subject": "a small plain glass jar of red thai curry paste with the lid off and a spoonful beside it, no label"
+    },
+    {
+      "file": "Sauces_Tahini.png",
+      "cat": "Saucen & Aufstriche",
+      "de": "Tahini",
+      "alias": [
+        "Sesampaste",
+        "Tahin"
+      ],
+      "ref": "packaged",
+      "subject": "a plain open glass jar of pale beige sesame tahini paste with a few sesame seeds beside it, no label"
+    },
+    {
+      "file": "Household_Napkins.png",
+      "cat": "Haushalt",
+      "de": "Servietten",
+      "alias": [
+        "Papierservietten",
+        "Serviette"
+      ],
+      "ref": "household",
+      "subject": "a neat stack of folded plain white paper napkins, one fanned out on top"
+    },
+    {
+      "file": "Household_Vacuum_bags.png",
+      "cat": "Haushalt",
+      "de": "Staubsaugerbeutel",
+      "alias": [
+        "Staubbeutel",
+        "Filterbeutel"
+      ],
+      "ref": "household",
+      "subject": "two plain white paper vacuum cleaner dust bags with a grey cardboard collar, no printing"
+    },
+    {
+      "file": "Household_Adhesive_tape.png",
+      "cat": "Haushalt",
+      "de": "Klebeband",
+      "alias": [
+        "Paketband",
+        "Tesafilm",
+        "Klebeband Rolle"
+      ],
+      "ref": "household",
+      "subject": "one roll of clear adhesive tape on a plain core, standing at a slight angle"
+    },
+    {
+      "file": "Pet_Supplies_Fish_food.png",
+      "cat": "Tierbedarf",
+      "de": "Fischfutter",
+      "alias": [
+        "Futterflocken",
+        "Zierfischfutter"
+      ],
+      "ref": "household",
+      "subject": "a small plain tub of fish food flakes with the lid off and a few flakes spilled beside it, no printing"
+    },
+    {
+      "file": "Pet_Supplies_Poop_bags.png",
+      "cat": "Tierbedarf",
+      "de": "Hundekotbeutel",
+      "alias": [
+        "Kotbeutel",
+        "Gassibeutel"
+      ],
+      "ref": "household",
+      "subject": "a roll of plain green plastic dog waste bags partly unrolled, no printing"
+    },
+    {
+      "file": "Stationery_Wrapping_paper.png",
+      "cat": "Schreibwaren & Party",
+      "de": "Geschenkpapier",
+      "alias": [
+        "Geschenkpapierrolle",
+        "Packpapier"
+      ],
+      "ref": "household",
+      "subject": "two rolls of plain patterned gift wrapping paper standing upright beside a curled ribbon"
+    },
+    {
+      "file": "Stationery_Balloons.png",
+      "cat": "Schreibwaren & Party",
+      "de": "Luftballons",
+      "alias": [
+        "Ballons",
+        "Luftballon"
+      ],
+      "ref": "household",
+      "subject": "five inflated balloons in red yellow blue and green, bunched together with their necks tied"
+    },
+    {
+      "file": "Stationery_Birthday_candles.png",
+      "cat": "Schreibwaren & Party",
+      "de": "Geburtstagskerzen",
+      "alias": [
+        "Kuchenkerzen",
+        "Tortenkerzen"
+      ],
+      "ref": "household",
+      "subject": "a small bundle of thin striped birthday cake candles in mixed colours, unlit"
+    },
+    {
+      "file": "Stationery_Notebook.png",
+      "cat": "Schreibwaren & Party",
+      "de": "Notizbuch",
+      "alias": [
+        "Heft",
+        "Schulheft",
+        "Block"
+      ],
+      "ref": "household",
+      "subject": "one closed plain notebook with a neutral cover lying flat, completely blank with no printing"
+    },
+    {
+      "file": "Stationery_Pens.png",
+      "cat": "Schreibwaren & Party",
+      "de": "Stifte",
+      "alias": [
+        "Kugelschreiber",
+        "Bleistift",
+        "Buntstifte",
+        "Filzstifte"
+      ],
+      "ref": "household",
+      "subject": "three ballpoint pens and two sharpened pencils lying in a loose fan, plain and unbranded"
+    },
+    {
+      "file": "Stationery_Envelopes.png",
+      "cat": "Schreibwaren & Party",
+      "de": "Briefumschläge",
+      "alias": [
+        "Umschlag",
+        "Briefumschlag",
+        "Kuvert"
+      ],
+      "ref": "household",
+      "subject": "three plain white envelopes fanned out slightly overlapping, blank with no printing"
+    },
+    {
+      "file": "Stationery_Glue.png",
+      "cat": "Schreibwaren & Party",
+      "de": "Klebstoff",
+      "alias": [
+        "Kleber",
+        "Klebestift",
+        "Alleskleber"
+      ],
+      "ref": "household",
+      "subject": "one plain white glue stick with the cap off beside a small bottle of white craft glue, no printing"
+    },
+    {
+      "file": "Stationery_Newspaper.png",
+      "cat": "Schreibwaren & Party",
+      "de": "Zeitung",
+      "alias": [
+        "Zeitschrift",
+        "Magazin",
+        "Tageszeitung"
+      ],
+      "ref": "household",
+      "subject": "a folded newspaper with plain grey unreadable text blocks and no headline, lying flat"
+    },
+    {
+      "file": "Garden_Flowers.png",
+      "cat": "Garten",
+      "de": "Blumen",
+      "alias": [
+        "Blumenstrauß",
+        "Schnittblumen",
+        "Strauß"
+      ],
+      "ref": "produce",
+      "subject": "a small mixed bouquet of fresh cut flowers in pink white and yellow, wrapped in plain paper"
+    },
+    {
+      "file": "Garden_Potting_soil.png",
+      "cat": "Garten",
+      "de": "Blumenerde",
+      "alias": [
+        "Pflanzerde",
+        "Erde",
+        "Topferde"
+      ],
+      "ref": "household",
+      "subject": "a plain unprinted bag of potting soil standing open with a small heap of dark soil beside it"
+    },
+    {
+      "file": "Garden_Fertiliser.png",
+      "cat": "Garten",
+      "de": "Pflanzendünger",
+      "alias": [
+        "Dünger",
+        "Blumendünger"
+      ],
+      "ref": "household",
+      "subject": "a plain white bottle of liquid plant fertiliser beside a small heap of blue fertiliser granules, no printing"
+    },
+    {
+      "file": "Garden_Insect_spray.png",
+      "cat": "Garten",
+      "de": "Insektenspray",
+      "alias": [
+        "Insektenschutz",
+        "Mückenspray",
+        "Insektizid"
+      ],
+      "ref": "household",
+      "subject": "one plain white aerosol spray can with a simple cap, completely blank with no printing"
+    },
+    {
+      "file": "Sauces_Agave_syrup.png",
+      "cat": "Saucen & Aufstriche",
+      "de": "Agavendicksaft",
+      "alias": [
+        "Agavensirup",
+        "Zuckerrübensirup",
+        "Rübenkraut",
+        "Dattelsirup",
+        "Reissirup",
+        "Golden Syrup",
+        "Karamellsirup",
+        "Zuckersirup",
+        "Sirup zum Backen"
+      ],
+      "ref": "packaged",
+      "subject": "a tall clear plastic squeeze bottle of golden syrup, straight sides tapering to a sloped shoulder and a plain white flip-top dispensing cap, filled with pale golden-amber translucent syrup, the bottle completely bare with no label, no sticker and no printing anywhere"
+    }
+  ]
+}

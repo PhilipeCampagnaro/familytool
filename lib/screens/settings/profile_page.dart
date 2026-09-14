@@ -150,7 +150,7 @@ class ProfilePageState extends ConsumerState<ProfilePage> {
             collapsedTitle: displayName,
             t: t,
             expandedAlignment: Alignment.center,
-            expandedFontSize: 17,
+            expandedFontSize: AppText.headerCollapsed,
             leading: GlassIconButton(icon: AppIcons.caretLeft, onTap: () => Navigator.of(context).pop()),
             leadingWidth: 48,
             trailing: CloseSettingsButton(),

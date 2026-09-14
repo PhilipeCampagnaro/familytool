@@ -1,0 +1,5 @@
+/* See de.lproj/AppShortcuts.strings for what the keys are. */
+
+"Ausgabe in ${applicationName} erfassen" = "Registar despesa no ${applicationName}";
+"Zahlung in ${applicationName} speichern" = "Guardar pagamento no ${applicationName}";
+"Log a spend in ${applicationName}" = "Anotar despesa no ${applicationName}";

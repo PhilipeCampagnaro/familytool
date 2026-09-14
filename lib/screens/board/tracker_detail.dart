@@ -76,7 +76,7 @@ class TrackerDetailView extends ConsumerWidget {
         collapsedIcon: IconTile(iconKey: tracker.iconKey, size: 24, imageSize: 17),
         t: t,
         expandedAlignment: Alignment.center,
-        expandedFontSize: 19,
+        expandedFontSize: AppText.pageTitle,
         fontWeight: FontWeight.w500,
         leadingWidth: 48,
         trailingWidth: 48,
@@ -111,7 +111,7 @@ class TrackerDetailView extends ConsumerWidget {
           const SizedBox(height: 16),
           Row(
             children: [
-              IconTile(iconKey: tracker.iconKey, size: 44, imageSize: 30),
+              IconTile(iconKey: tracker.iconKey, size: AppText.headerMark, imageSize: AppText.markImage(AppText.headerMark)),
               const SizedBox(width: 13),
               Expanded(
                 child: Column(

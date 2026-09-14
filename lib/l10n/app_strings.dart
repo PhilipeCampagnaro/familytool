@@ -1,7 +1,18 @@
 library;
 
+// The one Flutter type this file names, and it is named on purpose: a Vorhaben
+// suggestion carries its own glyph — see [PlannerExample].
+import 'package:flutter/widgets.dart' show IconData;
+
 import '../data/german_holidays.dart';
 import '../models/grocery_unit.dart';
+
+/// One tappable suggestion on the Vorhaben card: what it says, and the glyph
+/// that says what *kind* of goal it is at a glance.
+///
+/// A record rather than a class — it is two fields with no behaviour, and it is
+/// written out four times per language.
+typedef PlannerExample = ({String text, IconData icon});
 
 /// Every user-facing string in Aporah, declared once here and answered by
 /// [StringsDe] and [StringsEn].
@@ -133,7 +144,6 @@ abstract class AppStrings {
   /// VoiceOver label for the collapsed nav button on Kalender — the only thing
   /// left of the bar once the agenda is scrolled, and the way back to it.
   String get navExpand;
-
 
   // ---------------------------------------------------------------- board --
   String get boardTitle;
@@ -602,6 +612,7 @@ abstract class AppStrings {
   String get eventSaveFailed;
   String get calendarNotEditable;
   String get eventDeleteFailed;
+
   /// The pending chip's line while a create is still in flight. Two phases,
   /// because the wait has two: `calendar-write` goes out to Google, Outlook or
   /// the CalDAV server, and then `calendar-events` re-reads every connected
@@ -977,10 +988,21 @@ abstract class AppStrings {
   String removeMemberBody(String name);
   String get languagePageDesc;
   String get setUpProfile;
+
+  /// Each language named **in itself** — `languageGerman` is `'Deutsch'` in all
+  /// four implementations, not `'German'`. Somebody hunting for their own
+  /// language in the picker is looking for the word they would write, and a
+  /// list that translated them would be unreadable to exactly the person who
+  /// needs it. The `…Region` half is a description rather than a name, so that
+  /// one *does* follow the interface language.
   String get languageGerman;
   String get languageEnglish;
+  String get languagePortuguese;
+  String get languageSpanish;
   String get languageGermanRegion;
   String get languageEnglishRegion;
+  String get languagePortugueseRegion;
+  String get languageSpanishRegion;
 
   /// Search keywords behind each settings row — typed, not shown.
   String get searchTermsProfile;
@@ -1310,6 +1332,12 @@ abstract class AppStrings {
   String get spendKindBudget;
   String get spendKindExtra;
   String get spendNeedsMerchantAndAmount;
+
+  /// The chip a hand-entered payment ends with. Manual entry is half of
+  /// Ausgaben rather than a fallback, so a save that reached the server says so
+  /// — Apple Pay's own rows arrive on their own and need no confirming.
+  String get spendSaved;
+  String get spendUpdated;
   String get spendDeleted;
 
   /// Rows the Apple Pay automation filed with an empty merchant or a zero
@@ -1343,6 +1371,43 @@ abstract class AppStrings {
   String get spendWalletStep3;
   String get spendWalletStep4;
   String get spendWalletOpenShortcuts;
+
+  /// **Android's capture is a different mechanism, so it gets its own copy.**
+  /// The Apple Pay strings above promise a Shortcuts automation and say
+  /// "iPhone"; Android promises a notification the wallet posts and asks for a
+  /// system grant that iOS has no equivalent of. Rewriting the pair into one
+  /// platform-neutral set would have cost both of them the only thing setup copy
+  /// is for, which is telling the reader exactly what to go and tap. See
+  /// `lib/services/spend_intent.dart`.
+  String get settingsWalletCapture;
+  String get walletCapturePageDesc;
+  String get spendWalletAndroidTitle;
+  String get spendWalletAndroidIntro;
+  String get spendWalletAndroidEnable;
+  String get spendWalletAndroidActive;
+  String get spendWalletAndroidInactive;
+
+  /// Enrolled, but the OS grant is missing — the one state where the household
+  /// would otherwise believe capture is running and quietly get nothing.
+  String get spendWalletAndroidDeaf;
+  String get spendWalletAndroidStepsTitle;
+  String get spendWalletAndroidStep1;
+  String get spendWalletAndroidStep2;
+  String get spendWalletAndroidStep3;
+  String get spendWalletAndroidNoDevicesHint;
+  String get spendWalletGrantAccess;
+  String get spendWalletAccessGranted;
+
+  /// **Google Play's prominent-disclosure requirement, and the honest answer to
+  /// a fair question.** Notification access is all-or-nothing — the system has
+  /// no way to subscribe to one app — so the user is being asked for everything
+  /// on their phone to get one thing. This says that in as many words, says what
+  /// is thrown away unread, and says the four fields that actually leave the
+  /// device. It is shown *before* the grant, on the page itself, which is what
+  /// the policy requires and what the reader deserves.
+  String get spendWalletDisclosureTitle;
+  String get spendWalletDisclosureBody;
+  String get spendWalletAndroidSources;
 
   /// The Apple Pay row in Settings and the page behind it, which holds the
   /// whole of setup: activating *this* phone, the steps that finish the job in
@@ -1413,4 +1478,63 @@ abstract class AppStrings {
   String get debugPlanTitle;
   String debugPlanReal(String plan);
   String debugPlanSimulated(String plan);
+  // --- Vorhaben (the list planner) --------------------------------------
+  //
+  // The chrome only. The *answer* is content in whatever language the model was
+  // asked in — see `_systemPrompt` in lib/services/list_planner.dart, which is
+  // told `localeCode` — exactly as the content catalogs carry their own
+  // translations while the screen around them goes through here.
+  String get plannerTitle;
+  String get plannerPrompt;
+  String get plannerHint;
+  String get plannerExamplesLabel;
+
+  /// Goals that seed the field, in this language and worth cooking or building
+  /// here. **Not a translation of one another** — the point is to show the
+  /// *range* of thing that can be asked, so each language picks what a
+  /// household there would actually type.
+  ///
+  /// **Four groups, and the group order is the chip order.** Anlässe und
+  /// Reisen, then Einkauf und Haushalt, then Bauen und Garten, then Kochen —
+  /// `plannerSuggestions` draws exactly one chip from each, in that order. The
+  /// row scrolls, so the first two chips are the ones read without a swipe, and
+  /// those are the broad household errands; the narrower ones, a build and then
+  /// one dish, follow.
+  ///
+  /// **This shape is why the chips can rotate without going stupid.** Drawn
+  /// uniformly from one flat pool, a day's four could easily be four dinners,
+  /// and a first-time reader would learn that Vorhaben is a recipe generator
+  /// and never ask it for a Hochbeet. One draw per group means every reader on
+  /// every day sees the whole range, which is the entire job of this row. Keep
+  /// the four groups and keep them in this order; grow them by adding examples
+  /// *inside* a group.
+  ///
+  /// **The glyph travels with the words**, rather than the card holding a list
+  /// of icons and zipping it by index. Exactly because these are not
+  /// translations, nothing stops a language from picking a different example,
+  /// and an icon matched by position would then quietly be about something
+  /// else. Every entry is `const`, so `--tree-shake-icons` still sees which
+  /// glyphs are named.
+  ///
+  /// A group may be any length — the languages need not agree, and the draw is
+  /// modulo the group's own size — but none may be empty.
+  List<List<PlannerExample>> get plannerExampleGroups;
+
+  String get plannerGo;
+  String get plannerWorking;
+  String get plannerWhatToBuy;
+  String plannerItemCount(int count);
+  String get plannerHowTo;
+  String get plannerCreateList;
+  String get plannerAgain;
+  String get plannerEditGoal;
+  String get plannerListCreated;
+  String get plannerUnavailable;
+  String get plannerUnusable;
+  String get plannerNotConfigured;
+
+  /// Listen's island: the invitation to Vorhaben, and the promise under it.
+  /// One line each — the island ellipsises, it does not wrap.
+  String get plannerIslandLine;
+  String get plannerIslandHint;
 }

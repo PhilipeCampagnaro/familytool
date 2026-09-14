@@ -5,73 +5,143 @@ import 'package:flutter/services.dart';
 ///
 /// **The whole feature, not just the automatic half.** [SpendIntents.isSupported]
 /// answers whether *capture* can work; this answers whether the household is
-/// offered the screen, the fifth tab's second row and the Apple Pay page in
-/// Settings. Today both are "iOS", and they are still two questions: manual
-/// entry is half of Ausgaben and would run anywhere, so the day the Play build
-/// ships a typed-only version this flips and [SpendIntents.isSupported] stays
-/// false.
-///
-/// It is false on Android deliberately rather than for want of work. Google's
-/// Wallet API issues passes and reads no transactions, so the automatic half
-/// has nothing to be built on there, and a tab that leads to a form the other
-/// parent's iPhone fills in by itself is a worse product than no tab. See
-/// [docs/spend.md](../../docs/spend.md).
-bool get spendAvailable => !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
+/// offered the screen, the fifth tab's second row and the capture page in
+/// Settings. They are still two questions, because manual entry is half of
+/// Ausgaben and would run anywhere — but on both platforms that ship today the
+/// answer happens to be the same.
+bool get spendAvailable =>
+    !kIsWeb &&
+    (defaultTargetPlatform == TargetPlatform.iOS ||
+        defaultTargetPlatform == TargetPlatform.android);
 
-/// This phone's side of Apple Pay spend capture.
+/// How this phone hears about a payment.
 ///
-/// **The app never sees the transaction.** An iOS Personal Automation with a
-/// Transaction trigger runs an App Intent that Aporah donates, the intent posts
-/// straight to `spend-ingest` in Swift, and Flutter learns about it on the next
-/// refresh like any other row. There is no method channel carrying a payment,
-/// because there is no moment at which Flutter is running when one arrives — the
-/// phone is usually locked and the app is not on screen.
+/// Not cosmetic: the two routes need different setup, different copy and
+/// different promises, and every branch in the capture page turns on this rather
+/// than on `defaultTargetPlatform` scattered through the widgets.
+enum SpendCaptureRoute {
+  /// iOS. A Personal Automation with a Transaction trigger runs an App Intent
+  /// Aporah donates, and the intent posts the payment itself. The transaction
+  /// arrives **typed** — Apple hands over a merchant and an amount as fields.
+  appIntent,
+
+  /// Android. There is no payment trigger and no wallet API that reads
+  /// transactions, so the wallet's own notification is read instead. The
+  /// transaction arrives as **a sentence written for a human**, which is why
+  /// `WalletNotifications.kt` is a parser and why a shop name it had to guess is
+  /// filed flagged.
+  notificationListener,
+
+  /// Nowhere else. Manual entry still works; nothing captures.
+  none,
+}
+
+SpendCaptureRoute get spendCaptureRoute {
+  if (kIsWeb) return SpendCaptureRoute.none;
+  return switch (defaultTargetPlatform) {
+    TargetPlatform.iOS => SpendCaptureRoute.appIntent,
+    TargetPlatform.android => SpendCaptureRoute.notificationListener,
+    _ => SpendCaptureRoute.none,
+  };
+}
+
+/// Whether setup on this platform has a second, OS-owned switch in it.
 ///
-/// So what crosses this channel is only the plumbing the intent needs and Dart
-/// owns: the token from `spend-enroll`, which Swift keeps in the Keychain where
-/// a background intent can reach it, and the device's name and vendor id, so the
-/// enrolment can be named and later revoked.
+/// True only on Android. Top-level as well as on [SpendIntents] because the
+/// Settings row and the Ausgaben row need it to choose a *label* long before
+/// anybody has an instance in hand, and reaching for the provider to answer a
+/// question about the platform would be the long way round.
+bool get spendUsesNotificationAccess =>
+    spendCaptureRoute == SpendCaptureRoute.notificationListener;
+
+/// This phone's side of automatic spend capture.
 ///
-/// Off iOS every call is a no-op and [isSupported] is false. There is no
-/// Android equivalent to fall back to: Google's Wallet API issues passes and
-/// reads no transactions, and the only automatic route there is reading the
-/// bank app's own notifications, which is per-bank, fragile, and a restricted
-/// Play Store permission. Android enters spending by hand.
+/// **The app never sees the transaction, on either platform.** On iOS an App
+/// Intent woken by a Personal Automation posts straight to `spend-ingest` in
+/// Swift; on Android a `NotificationListenerService` the system keeps alive does
+/// the same in Kotlin. Flutter learns about the row on the next refresh like any
+/// other. There is no method channel carrying a payment, because at the moment
+/// one arrives there is no Flutter engine to carry it to — the phone is usually
+/// locked and the app is not on screen, and on Android the app may not have been
+/// opened for a week.
+///
+/// So what crosses this channel is only the plumbing that capture needs and Dart
+/// owns: the token from `spend-enroll`, which the native side keeps where a
+/// background process can reach it, and the device's name and id, so the
+/// enrolment can be named and later revoked. Android adds one question iOS does
+/// not have — whether the user has granted notification access — because there
+/// the OS grant is a second switch beside our own and capture is dead without
+/// it.
+///
+/// Off both platforms every call is a no-op and [isSupported] is false.
 class SpendIntents {
   const SpendIntents();
 
   static const _channel = MethodChannel('aporah/spend');
 
-  /// Whether this device can capture Apple Pay transactions at all.
+  /// Whether this device can capture transactions at all.
   ///
-  /// Answers for the platform, not for the OS version: the Swift side needs
-  /// iOS 16 for App Intents and reports that separately through
-  /// [describeDevice], because a phone that cannot run the intent can still
-  /// hold a token and would otherwise be told nothing.
-  bool get isSupported => !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
+  /// Answers for the platform, not for the OS version: iOS needs 16 for App
+  /// Intents and reports that separately through [describeDevice], because a
+  /// phone that cannot run the intent can still hold a token and would otherwise
+  /// be told nothing. Android's floor is below the notification listener's, so
+  /// there the version question cannot fail.
+  bool get isSupported => spendCaptureRoute != SpendCaptureRoute.none;
 
-  /// Whether the Keychain holds a token on this device.
+  /// Whether setup has a second, OS-owned switch in it.
+  ///
+  /// True only on Android. It is the difference between the two routes that the
+  /// user actually feels: on iOS the remaining work is in the Shortcuts app, on
+  /// Android it is a toggle in system Settings that Aporah can open but cannot
+  /// set.
+  bool get usesNotificationAccess => spendUsesNotificationAccess;
+
+  /// Whether this device holds a token.
   ///
   /// The device list from the server answers a different question — who *may*
-  /// write — and cannot tell this iPhone from the other parent's.
+  /// write — and cannot tell this phone from the other parent's.
   Future<bool> hasToken() async {
     if (!isSupported) return false;
     return await _invoke<bool>('hasToken') ?? false;
   }
 
-  /// Puts the token, and the address it is good for, where the App Intent will
-  /// look for them.
+  /// Whether the user has granted this app notification access.
   ///
-  /// Stored with `kSecAttrAccessibleAfterFirstUnlock`, which is what makes
-  /// background capture work at all: a Personal Automation fires on a locked
-  /// phone, and an item that is only readable while unlocked would be
-  /// unreadable exactly when it is needed.
+  /// Android only; false everywhere else, and the capture page only asks where
+  /// [usesNotificationAccess] is true. Read from the system's own setting on
+  /// every call rather than remembered: the user can revoke it in Settings at
+  /// any time, and a remembered "granted" would leave the page claiming a
+  /// capture that has silently stopped.
+  Future<bool> hasNotificationAccess() async {
+    if (!usesNotificationAccess) return false;
+    return await _invoke<bool>('hasNotificationAccess') ?? false;
+  }
+
+  /// Opens the system screen that grants it.
   ///
-  /// The endpoint travels with the token rather than being compiled into Swift,
-  /// so a build pointed at a staging project with `--dart-define=SUPABASE_URL=…`
-  /// files its spends there too. Two copies of that address would be one copy
-  /// too many, and the wrong one would only show up as transactions silently
-  /// landing in the wrong project.
+  /// There is no runtime permission dialog for notification access and there
+  /// never has been — the user has to find Aporah in a system list and switch it
+  /// on. So this opens the list and the page spells the step out beside it,
+  /// rather than pretending a tap here is the grant.
+  Future<void> openNotificationAccess() async {
+    if (!usesNotificationAccess) return;
+    await _invoke<void>('openNotificationAccess');
+  }
+
+  /// Puts the token, and the address it is good for, where capture will look for
+  /// them.
+  ///
+  /// Stored on iOS with `kSecAttrAccessibleAfterFirstUnlock` and on Android in
+  /// an AES-GCM-wrapped app-private file, which is the same promise twice:
+  /// readable once the phone has been unlocked at least since boot, and
+  /// unreadable before that. It is what makes background capture work at all,
+  /// because a payment happens with the phone in a pocket.
+  ///
+  /// The endpoint travels with the token rather than being compiled into the
+  /// native side, so a build pointed at a staging project with
+  /// `--dart-define=SUPABASE_URL=…` files its spends there too. Two copies of
+  /// that address would be one copy too many, and the wrong one would only show
+  /// up as transactions silently landing in the wrong project.
   Future<void> storeToken({
     required String token,
     required String endpoint,
@@ -95,14 +165,18 @@ class SpendIntents {
   Future<SpendDeviceIdentity> describeDevice() async {
     final map = await _invoke<Map<Object?, Object?>>('describeDevice');
     return SpendDeviceIdentity(
-      label: map?['label'] as String? ?? 'iPhone',
+      label: map?['label'] as String? ?? _fallbackLabel,
       uid: map?['uid'] as String? ?? '',
       // False on iOS 15, where App Intents do not exist. The setup screen says
-      // so instead of walking the user into Shortcuts to look for an action
-      // that was never donated.
-      canRunIntents: map?['can_run_intents'] as bool? ?? false,
+      // so instead of walking the user into Shortcuts to look for an action that
+      // was never donated. Always true on Android.
+      canCapture: map?['can_run_intents'] as bool? ?? false,
+      notificationAccess: map?['has_notification_access'] as bool? ?? false,
     );
   }
+
+  String get _fallbackLabel =>
+      spendCaptureRoute == SpendCaptureRoute.notificationListener ? 'Android' : 'iPhone';
 
   Future<T?> _invoke<T>(String method, [Map<String, Object?>? args]) async {
     try {
@@ -116,19 +190,28 @@ class SpendIntents {
 }
 
 class SpendDeviceIdentity {
-  /// The device's own name, as the user set it in iOS Settings.
+  /// The device's own name, as the user set it — iOS Settings, or Android's
+  /// `device_name`. A model number is the fallback, never the first answer: the
+  /// revoke list has to be readable by whoever is holding the other phone.
   final String label;
 
-  /// `identifierForVendor` — stable for this app on this device, and reset when
-  /// the app is deleted. Not a tracking identifier: it never leaves our own
-  /// backend and is only ever compared against itself.
+  /// `identifierForVendor` on iOS, a uuid minted once per install on Android.
+  /// Stable for this app on this device, reset when the app's data goes. Not a
+  /// tracking identifier: it never leaves our own backend and is only ever
+  /// compared against itself.
   final String uid;
 
-  final bool canRunIntents;
+  /// Whether the OS is new enough to capture at all.
+  final bool canCapture;
+
+  /// Android's second switch, answered at the same time so the page can show
+  /// both halves of setup without a second round trip.
+  final bool notificationAccess;
 
   const SpendDeviceIdentity({
     required this.label,
     required this.uid,
-    required this.canRunIntents,
+    required this.canCapture,
+    required this.notificationAccess,
   });
 }

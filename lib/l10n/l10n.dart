@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'app_strings.dart';
 import 'strings_de.dart';
 import 'strings_en.dart';
+import 'strings_es.dart';
+import 'strings_pt.dart';
 
 export 'app_strings.dart';
 
@@ -31,17 +33,50 @@ class L {
   }
 }
 
-/// Maps `AppLanguage.name` (`'de'` / `'en'`) onto an implementation. Anything
-/// unrecognised falls back to German rather than throwing: a stored preference
-/// from a future version must not brick the app on downgrade.
+/// Maps `AppLanguage.name` (`'de'` / `'en'` / `'pt'` / `'es'`) onto an
+/// implementation. Anything unrecognised falls back to German rather than
+/// throwing: a stored preference from a future version must not brick the app
+/// on downgrade.
 AppStrings stringsFor(String localeCode) => switch (localeCode) {
       'en' => const StringsEn(),
+      'pt' => const StringsPt(),
+      'es' => const StringsEs(),
       _ => const StringsDe(),
     };
 
 /// The locales `MaterialApp` is told about. Order matters — the first is the
 /// fallback when the device asks for something we don't have.
-const appSupportedLocales = [Locale('de'), Locale('en')];
+///
+/// Bare language codes, no country: `Locale('pt')` is **Brazilian** Portuguese
+/// here and `Locale('es')` is European Spanish, which is what [StringsPt] and
+/// [StringsEs] are written in. A phone set to pt-PT or es-MX still resolves to
+/// them rather than falling all the way back to German — a household in Lisbon
+/// gets Portuguese that reads as foreign rather than a language they do not
+/// speak at all. That is the right call while there is one variant of each, and
+/// `stringsFor` is where a second one would slot in.
+const appSupportedLocales = [Locale('de'), Locale('en'), Locale('pt'), Locale('es')];
+
+/// Picks one of up to four hand-written labels for the live language.
+///
+/// This is for the **content catalogs** — `grocery_catalog.dart` and
+/// `icon_suggestions.dart` — and deliberately not for the
+/// app's own words, which go through [AppStrings] where a forgotten string is a
+/// compile error. Content cannot work that way: a grocery PNG dropped into the
+/// folder needs one German line to be usable, and holding the whole catalog
+/// hostage to four translations would mean nobody ever adds an icon.
+///
+/// So [pt] and [es] are nullable and fall back to [en] rather than to [de] —
+/// English is the one an untranslated row is most likely to be guessed from.
+/// One row in the wrong language is a great deal better than a blank row or a
+/// build that won't run, and `tool/check_catalog_labels.dart` reports what is
+/// still missing.
+String pickLabel({required String de, required String en, String? pt, String? es}) =>
+    switch (L.s.localeCode) {
+      'en' => en,
+      'pt' => pt ?? en,
+      'es' => es ?? en,
+      _ => de,
+    };
 
 // ---------------------------------------------------------------------------
 // Formatting that depends on the language but isn't itself a string.

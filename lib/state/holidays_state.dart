@@ -14,10 +14,20 @@ import 'settings_state.dart';
 ///    Reformationstag in Niedersachsen, Buß- und Bettag in Sachsen.
 /// 2. **Otherwise, is this a German household at all?** The interface language
 ///    is the only signal left, so German means the nine nationwide Feiertage —
-///    incomplete, but never wrong — and English means none at all rather than a
-///    guess. Device GPS and the household address are deliberately not
-///    consulted: neither is worth a network call for a decoration, and the
-///    address is free text that may name no country.
+///    incomplete, but never wrong — and **every other language means none at
+///    all** rather than a guess. Device GPS and the household address are
+///    deliberately not consulted: neither is worth a network call for a
+///    decoration, and the address is free text that may name no country.
+///
+/// **What that costs Portuguese and Spanish households, stated plainly: they
+/// see no public holidays.** This file computes *German* Feiertage — the name
+/// is not incidental — and there is no Portuguese or Spanish equivalent behind
+/// it. Both are perfectly computable the same way (Portugal has thirteen
+/// national days off one Easter calculation; Spain has a national set plus
+/// seventeen autonomous communities), and until somebody writes them, marking
+/// a Spanish family's calendar with Fronleichnam would be worse than marking
+/// nothing. The gap is in the content, not in the wiring: a `PortugueseHolidays`
+/// beside `german_holidays.dart` and a branch here is the whole job.
 ///
 /// Not a notifier: nothing here is owned or mutated, it is derived. It lives in
 /// its own file because it reads the *connections* — putting it in

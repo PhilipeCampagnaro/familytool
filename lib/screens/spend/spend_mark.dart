@@ -12,9 +12,17 @@ import '../../widgets/icon_picker.dart';
 /// those carried its own kind of tile — a tone-coloured square here, a filled
 /// category colour there, a neutral circle on the third — the left edge of the
 /// card read as three unrelated lists that happened to be stacked. A column of
-/// identical grey circles is what lets the eye go down the *names*, which is
-/// what the reader came for. The colours are not lost: they are in the donut,
-/// which is the one place on the page a colour means something.
+/// identical discs is what lets the eye go down the *names*, which is what the
+/// reader came for. The colours are not lost: they are in the donut, which is
+/// the one place on the page a colour means something.
+///
+/// **The disc is white, because most of them have a logo on them.** Shop marks
+/// are full-colour artwork drawn for paper, and a grey circle behind one reads
+/// as a sticker on the wrong background — so the mark takes the same white tile
+/// the app already gives a brand in Listen and on the calendar providers, with
+/// the hairline that is the only reason a white circle is visible on a white
+/// card. What is set on that tile is [AppColors.brandTileInk] rather than
+/// `ink`: the tile does not follow the theme, so its contents cannot either.
 ///
 /// **A business is drawn as itself where we know it.** A logo says "REWE"
 /// faster than any word does, and `assets/merchants/` already holds two hundred
@@ -42,27 +50,31 @@ class SpendMark extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(color: AppColors.surfaceAlt, shape: BoxShape.circle),
+      decoration: BoxDecoration(
+        color: AppColors.brandTile,
+        shape: BoxShape.circle,
+        border: Border.all(color: AppColors.hairline),
+      ),
       alignment: Alignment.center,
       // The logos are drawn for paper and a few of them bleed to their own
       // edge; the clip is what keeps one of those a circle.
       clipBehavior: Clip.antiAlias,
       padding: asset == null ? EdgeInsets.zero : EdgeInsets.all(size * 0.16),
       child: switch ((asset, initials)) {
-        (final logo?, _) => IconImage(asset: logo, size: size * 0.68),
+        (final logo?, _) => IconImage(asset: logo, size: AppText.markImage(size)),
         (_, final letters?) => Text(
             letters,
             // Sized against the circle, like an avatar's initials.
             style: AppText.itemTitle.copyWith(
-              fontSize: size * 0.36,
+              fontSize: AppText.markInitials(size),
               letterSpacing: 0.2,
-              color: AppColors.ink,
+              color: AppColors.brandTileInk,
             ),
           ),
-        // Duotone, in the app's ink: the over-layer is the black line and the
-        // under-layer the grey fill behind it, which is the whole point of the
-        // icon set and is what the tone-coloured tiles were flattening.
-        _ => AppIcon(icon ?? AppIcons.receipt, size: size * 0.5, color: AppColors.ink),
+        // Duotone: the over-layer is the black line and the under-layer the
+        // grey fill behind it, which is the whole point of the icon set and is
+        // what the tone-coloured tiles were flattening.
+        _ => AppIcon(icon ?? AppIcons.receipt, size: AppText.markGlyph(size), color: AppColors.brandTileInk),
       },
     );
   }

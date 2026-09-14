@@ -31,7 +31,6 @@ import 'board/due_date_sheet.dart';
 import 'board/schedule_sheet.dart';
 import 'board/tracker_detail.dart';
 import 'board/tracker_strip.dart';
-import '../state/calendar_state.dart';
 import '../state/tracker_state.dart';
 import '../models/entitlements.dart';
 import '../l10n/l10n.dart';
@@ -1640,21 +1639,33 @@ class _DueDateField extends StatelessWidget {
   }
 }
 
-/// Board's filter row: one face per person, plus the household.
+/// Board's filter row: one face per person who is actually holding something.
 ///
-/// **The same people, in the same order, as Kalender's chip row**, keyed on the
-/// same `'member:'` / `'person:'` / `'family'` identifiers — so a household
-/// learns the row once and it means the same thing on both tabs. Filtering to
-/// Alice here shows the chores assigned to her and the rhythms she keeps;
-/// filtering to her over in Kalender shows her lessons and the family's shared
-/// calendars.
+/// **The row is read off `assignee_id`, not off the household**, because
+/// `assignee_id` is the only axis this filter narrows on — a member with no
+/// to-do and no tracker to their name is a chip that can only ever empty the
+/// screen, and a household full of them is a row of faces that means nothing.
+/// It is deliberately *not* Kalender's chip row: over there a person owns
+/// calendars whether or not anybody assigned them anything, so the two rows
+/// answer different questions and only happen to look alike.
+///
+/// Both kinds of Board content count, and that is the point of doing it here
+/// rather than over tasks alone: a parent who keeps a rhythm but was never
+/// given a chore still gets a chip, and tapping it narrows the to-dos *and* the
+/// trackers ([BoardState.visibleTasks], [TrackerState.visibleTrackers]).
+/// Finished to-dos count too — filtering to somebody is also how you find what
+/// they already did.
+///
+/// The person a filter is currently on keeps their chip even after their last
+/// item is gone, or ticking off the final chore would take away the only way
+/// back to "Alle".
 ///
 /// Rendered only where there is more than one person to choose between, which
 /// is the honest threshold: a single chip beside "Alle" narrows nothing, and a
 /// row that cannot change the screen is one more thing to explain.
 ///
-/// Scrolls horizontally. Four children plus two parents plus the family is
-/// seven chips, and this app is built for exactly that household.
+/// Scrolls horizontally. Four children plus two parents is six chips, and this
+/// app is built for exactly that household.
 class _PersonFilterRow extends ConsumerWidget {
   const _PersonFilterRow();
 
@@ -1664,17 +1675,22 @@ class _PersonFilterRow extends ConsumerWidget {
     final notifier = ref.read(boardProvider.notifier);
     final members = ref.watch(householdMembersProvider);
 
-    // Everybody with an account, then anybody who only exists as the owner of a
-    // calendar — a child with no login, which is most of them. Read off the
-    // calendars themselves rather than off any content they carry, so a chip
-    // stands for a person the household has actually named.
-    final people = <({String id, String name})>[for (final m in members) (id: 'member:${m.id}', name: m.name)];
-    final calendars = ref.watch(calendarProvider.select((s) => s.calendars));
-    final seen = {for (final p in people) p.id};
-    for (final c in calendars) {
-      if (c.groupId.isEmpty || c.groupId == 'family' || !seen.add(c.groupId)) continue;
-      people.add((id: c.groupId, name: c.groupName));
-    }
+    // Who is carrying something on this Board — the to-dos and the rhythms
+    // together, since the filter narrows both. Somebody who was assigned
+    // nothing has nothing for their chip to show.
+    final assigned = <String>{
+      for (final t in ref.watch(boardProvider.select((s) => s.tasks)))
+        if (t.assigneeId != null) t.assigneeId!,
+      for (final t in ref.watch(trackerProvider.select((s) => s.trackers)))
+        if (t.assigneeId != null) t.assigneeId!,
+    };
+
+    // In the household's own order, so the row does not reshuffle itself as
+    // work is handed around.
+    final people = <({String id, String name})>[
+      for (final m in members)
+        if (assigned.contains(m.id) || selected == 'member:${m.id}') (id: 'member:${m.id}', name: m.name),
+    ];
 
     if (people.length < 2) return const SizedBox.shrink();
 

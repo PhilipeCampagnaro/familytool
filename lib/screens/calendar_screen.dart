@@ -31,6 +31,7 @@ import '../widgets/bottom_nav.dart';
 import '../widgets/check_off.dart';
 import '../widgets/day_circle.dart';
 import '../widgets/event_dots.dart';
+import '../widgets/filter_chip.dart';
 import '../widgets/floating_pill.dart';
 import '../widgets/glass.dart';
 import '../widgets/icon_picker.dart';
@@ -545,7 +546,9 @@ class _TitleRow extends StatelessWidget {
                 child: Text(
                   title,
                   maxLines: 1,
-                  style: AppText.screenTitle.copyWith(fontSize: 26 - 9 * t),
+                  style: AppText.screenTitle.copyWith(
+                    fontSize: AppText.headerExpanded + (AppText.headerCollapsed - AppText.headerExpanded) * t,
+                  ),
                 ),
               ),
             ),
@@ -660,10 +663,9 @@ class _MonthAndChipsRow extends ConsumerWidget {
         ?underLabel,
         const SizedBox(height: 14),
         SizedBox(
-          // Tall enough for a 26pt face plus the chip's own padding and its
-          // selected ring. The row is measured by the collapsing header rather
-          // than assumed, so this is the only place the number lives.
-          height: 44,
+          // The shared chip's own row height — see [AppFilterChip.rowHeight].
+          // The row is measured by the collapsing header rather than assumed.
+          height: AppFilterChip.rowHeight,
           child: ListView(
             key: calendarChipRowKey,
             scrollDirection: Axis.horizontal,
@@ -878,70 +880,53 @@ class _CalendarChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return AppFilterChip(
+      label: label,
+      tone: active ? ChipTone.lit : ChipTone.muted,
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(1.5),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(27),
-          border: Border.all(color: active ? AppColors.accent : Colors.transparent, width: 1.5),
-        ),
-        child: Container(
-          // A face sits close to the chip's edge the way an avatar does in a
-          // row; a bare colour dot needs the full inset or it reads as debris,
-          // and a glyph sits between the two.
-          padding: EdgeInsets.only(
-            left: face != null ? 5 : (glyph != null ? 11 : 14),
-            right: hasList ? 8 : 14,
-            top: face == null ? 8 : 5,
-            bottom: face == null ? 8 : 5,
-          ),
-          decoration: BoxDecoration(color: active ? tint(AppColors.accent, .82) : AppColors.surfaceAlt, borderRadius: BorderRadius.circular(24)),
-          alignment: Alignment.center,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // A face where the chip stands for somebody, the colour dot
-              // where it does not. The two are the same width apart so the row
-              // does not jitter as chips come and go.
-              if (face != null) ...[
-                face!,
-                const SizedBox(width: 7),
-              ] else if (glyph != null) ...[
-                AppIcon(glyph!, size: 17, color: active ? AppColors.accent : AppColors.muted),
-                const SizedBox(width: 6),
-              ] else ...[
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: partial ? Colors.transparent : color,
-                    shape: BoxShape.circle,
-                    border: partial ? Border.all(color: color, width: 1.5) : null,
-                  ),
-                ),
-                const SizedBox(width: 7),
-              ],
-              Text(label, style: AppText.caption.copyWith(fontWeight: active ? FontWeight.w600 : FontWeight.w400, color: active ? AppColors.ink : AppColors.muted)),
-              if (hasList) ...[
-                const SizedBox(width: 3),
-                // A mark rather than a control: the whole chip is one tap
-                // target, and what that tap does depends on whether this chip
-                // is the lit one.
-                SizedBox(
-                  width: 22,
-                  height: 22,
-                  child: AppIcon(
-                    AppIcons.caretDown,
-                    size: 14,
-                    color: active ? AppColors.ink : AppColors.muted,
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
+      // A face sits close to the chip's edge the way an avatar does in a row; a
+      // bare colour dot needs the full inset or it reads as debris, and a glyph
+      // sits between the two.
+      padding: EdgeInsets.only(
+        left: face != null ? 5 : (glyph != null ? 11 : 14),
+        right: hasList ? 8 : 14,
+        top: face == null ? 8 : 5,
+        bottom: face == null ? 8 : 5,
       ),
+      // A face where the chip stands for somebody, the colour dot where it does
+      // not. The two are the same width apart so the row does not jitter as
+      // chips come and go.
+      leading: switch ((face, glyph)) {
+        (final Widget person?, _) => Padding(padding: const EdgeInsets.only(right: 7), child: person),
+        (_, final IconData mark?) => Padding(
+          padding: const EdgeInsets.only(right: 6),
+          child: AppIcon(mark, size: 17, color: active ? AppColors.accent : AppColors.muted),
+        ),
+        _ => Padding(
+          padding: const EdgeInsets.only(right: 7),
+          child: Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: partial ? Colors.transparent : color,
+              shape: BoxShape.circle,
+              border: partial ? Border.all(color: color, width: 1.5) : null,
+            ),
+          ),
+        ),
+      },
+      // A mark rather than a control: the whole chip is one tap target, and
+      // what that tap does depends on whether this chip is the lit one.
+      trailing: hasList
+          ? Padding(
+              padding: const EdgeInsets.only(left: 3),
+              child: SizedBox(
+                width: 22,
+                height: 22,
+                child: AppIcon(AppIcons.caretDown, size: 14, color: active ? AppColors.ink : AppColors.muted),
+              ),
+            )
+          : null,
     );
   }
 }

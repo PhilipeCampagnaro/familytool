@@ -385,8 +385,13 @@ class CollapsingScreenTitle extends StatelessWidget {
   /// room for something that's no longer there.
   final double? collapsedSideInset;
 
-  final double expandedFontSize;
-  final double collapsedFontSize;
+  /// The two ends of the title's size. Null takes the tab-header pair from the
+  /// installed scale ([AppText.headerExpanded] / [AppText.headerCollapsed]);
+  /// a pushed page passes [AppText.pageTitle] for the expanded end. They can't
+  /// be `const` defaults — a default argument has to be a compile-time
+  /// constant, and the scale is an installed global.
+  final double? expandedFontSize;
+  final double? collapsedFontSize;
   final FontWeight fontWeight;
 
   /// Where the title sits at rest. Overview screens start flush left (the large
@@ -405,8 +410,8 @@ class CollapsingScreenTitle extends StatelessWidget {
     this.leadingWidth = 0,
     this.trailingWidth = 0,
     this.collapsedSideInset,
-    this.expandedFontSize = 26,
-    this.collapsedFontSize = 17,
+    this.expandedFontSize,
+    this.collapsedFontSize,
     this.fontWeight = FontWeight.w600,
     this.expandedAlignment = Alignment.centerLeft,
   });
@@ -415,6 +420,9 @@ class CollapsingScreenTitle extends StatelessWidget {
   /// collapse is nearly done — the name only makes sense in the bar once the
   /// big version it's replacing has actually gone.
   double get _swap => ((t - 0.55) / 0.45).clamp(0.0, 1.0);
+
+  double get _expandedSize => expandedFontSize ?? AppText.headerExpanded;
+  double get _collapsedSize => collapsedFontSize ?? AppText.headerCollapsed;
 
   double get _sideInset => collapsedSideInset ?? math.max(leadingWidth, trailingWidth) + 38;
 
@@ -472,16 +480,16 @@ class CollapsingScreenTitle extends StatelessWidget {
           child: Padding(
             padding: EdgeInsets.only(left: expandedLeft + (inset - expandedLeft) * t, right: expandedRight + (inset - expandedRight) * t),
             child: collapsedTitle == null
-                ? label(title, expandedFontSize + (collapsedFontSize - expandedFontSize) * t)
+                ? label(title, _expandedSize + (_collapsedSize - _expandedSize) * t)
                 : Stack(
                     children: [
                       Positioned.fill(
-                        child: Opacity(opacity: 1 - swap, child: label(title, expandedFontSize)),
+                        child: Opacity(opacity: 1 - swap, child: label(title, _expandedSize)),
                       ),
                       Positioned.fill(
                         child: Opacity(
                           opacity: swap,
-                          child: label(collapsedTitle!, collapsedFontSize, icon: collapsedIcon),
+                          child: label(collapsedTitle!, _collapsedSize, icon: collapsedIcon),
                         ),
                       ),
                     ],

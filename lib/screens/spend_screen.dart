@@ -19,6 +19,7 @@ import '../widgets/rolling_number.dart';
 import '../widgets/segmented_control.dart';
 import '../widgets/settings_chrome.dart';
 import '../widgets/step_dots.dart';
+import '../widgets/swipe_actions.dart';
 import '../widgets/toast_chip.dart';
 import 'spend/spend_charts.dart';
 import 'spend/spend_breakdown.dart';
@@ -79,13 +80,21 @@ class SpendScreen extends ConsumerWidget {
         // thing on this page asking for something rather than telling you
         // something.
         if (summary.needsReview.isNotEmpty)
-          _ReviewDrawer(rows: summary.needsReview),
+          _ReviewDrawer(key: const ValueKey('review'), rows: summary.needsReview),
 
         // The analysis, and it is drawn even on an empty stretch: the range
         // slicer inside it is how somebody gets *to* a stretch with money in
         // it, and an empty state that swallows the controls is an empty state
         // you cannot leave.
-        _AnalysisBlock(state: state),
+        // **Keyed, and the key is load-bearing.** The rows above it come and
+        // go with the range — a wider stretch can turn up a payment to review
+        // where the narrower one had none — and an unkeyed child that changes
+        // position in this list is matched against the widget that used to be
+        // there, which throws its state away. That state is the chart the pager
+        // is on and the thumb's place in the range slicer, so a week-to-month
+        // tap snapped the thumb across instead of sliding it and put the pager
+        // back on the first chart.
+        _AnalysisBlock(key: const ValueKey('analysis'), state: state),
         const SizedBox(height: AppSpacing.blockGap),
 
         if (state.loading && state.spends.isEmpty)
@@ -217,7 +226,7 @@ class _Shell extends StatelessWidget {
 class _AnalysisBlock extends StatefulWidget {
   final SpendState state;
 
-  const _AnalysisBlock({required this.state});
+  const _AnalysisBlock({super.key, required this.state});
 
   @override
   State<_AnalysisBlock> createState() => _AnalysisBlockState();
@@ -227,9 +236,23 @@ class _AnalysisBlockState extends State<_AnalysisBlock> {
   final _pages = PageController();
   SpendChart _chart = SpendChart.trend;
 
-  /// Which bucket a finger is holding on the chart, if one is. See
-  /// [ChartScrub].
+  /// Which bucket the chart is being read at, if one is. See [ChartScrub] — on
+  /// the bars and on the line alike it is a choice that stays put, made by a
+  /// tap or by the end of a slide.
   int? _scrub;
+
+  /// A reading belongs to the drawing it was taken off, and a range or metric
+  /// change is a different drawing. It matters because a picked bucket stays
+  /// picked: without this, tapping the slicer would leave the fifth bucket of
+  /// last week lit up as the fifth bucket of last year.
+  @override
+  void didUpdateWidget(_AnalysisBlock old) {
+    super.didUpdateWidget(old);
+    if (old.state.summary.range != widget.state.summary.range ||
+        old.state.summary.metric != widget.state.summary.metric) {
+      _scrub = null;
+    }
+  }
 
   @override
   void dispose() {
@@ -378,10 +401,12 @@ class _Headline extends StatelessWidget {
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
                   alignment: Alignment.centerLeft,
-                  child: RollingNumber(
-                    value: reading?.value ??
-                        formatMoneyShort(summary.totalCents, currency: spendCurrency(summary.rows)),
-                    style: AppText.screenTitle,
+                  child: _Figure(
+                    reading: reading?.value,
+                    total: formatMoneyShort(
+                      summary.totalCents,
+                      currency: spendCurrency(summary.rows),
+                    ),
                   ),
                 ),
               ),
@@ -409,6 +434,44 @@ class _Headline extends StatelessWidget {
           _ContextLine(summary: summary, chart: chart),
       ],
     );
+  }
+}
+
+/// The card's big figure: the range's total, or the one bucket the reader has
+/// picked off the chart.
+///
+/// **The digits roll for the slicer and the chart's readings are simply set**,
+/// because the two are asking different things. Changing the range or the
+/// metric asks the same question of a longer stretch, so the figure that
+/// answers it is the *same quantity* moving — which is the whole of what a
+/// rolling column says, and only the digits that changed move. Picking a bar
+/// asks about one day instead: 1.234 € and 87 € are two readings rather than
+/// one number that changed, and every way of animating between them says
+/// otherwise. Rolling invents a relationship they do not have, a cross-fade
+/// leaves both legible at once and neither for long, and a slide puts motion
+/// under a finger that is already moving. What is left is the figure changing
+/// the instant the bar is tapped, which is what a readout does.
+///
+/// There is no switcher here and that is the mechanism, not an omission. While
+/// the headline is on the total it is one [RollingNumber] that stays put across
+/// slicer taps, so its columns roll; a reading replaces it with plain text, and
+/// coming back builds it afresh — and a `RollingNumber` appearing for the first
+/// time sets itself rather than rolling, there being nothing for it to have
+/// come from.
+class _Figure extends StatelessWidget {
+  /// The picked bucket's figure, or null when the headline is back on the
+  /// range's total.
+  final String? reading;
+  final String total;
+
+  const _Figure({required this.reading, required this.total});
+
+  @override
+  Widget build(BuildContext context) {
+    return switch (reading) {
+      final at? => Text(at, style: AppText.screenTitle, maxLines: 1),
+      null => RollingNumber(value: total, style: AppText.screenTitle),
+    };
   }
 }
 
@@ -792,12 +855,19 @@ class _Card extends StatelessWidget {
   final GlobalKey? titleKey;
   final VoidCallback? onTitleTap;
 
+  /// Runs [child] to the card's own edges, padding the heading instead. For
+  /// the one card made of swipeable rows: a delete strip that stops a card's
+  /// padding short of the edge reads as a floating red block rather than as
+  /// the row's own action. See [_SpendRow].
+  final bool bleedChild;
+
   const _Card({
     required this.title,
     required this.child,
     this.trailing,
     this.titleKey,
     this.onTitleTap,
+    this.bleedChild = false,
   });
 
   @override
@@ -813,34 +883,50 @@ class _Card extends StatelessWidget {
       ],
     );
 
+    final head = Row(
+      children: [
+        Expanded(
+          child: onTitleTap == null
+              ? heading
+              : GestureDetector(
+                  key: titleKey,
+                  behavior: HitTestBehavior.opaque,
+                  onTap: onTitleTap,
+                  child: heading,
+                ),
+        ),
+        ?trailing,
+      ],
+    );
+
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.cardPad),
+      padding: bleedChild ? EdgeInsets.zero : const EdgeInsets.all(AppSpacing.cardPad),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(AppRadii.card),
         boxShadow: AppShadows.card,
       ),
+      // Only where the child reaches the corners: an unclipped card is
+      // cheaper, and it is what every other card here wants.
+      clipBehavior: bleedChild ? Clip.antiAlias : Clip.none,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: onTitleTap == null
-                    ? heading
-                    : GestureDetector(
-                        key: titleKey,
-                        behavior: HitTestBehavior.opaque,
-                        onTap: onTitleTap,
-                        child: heading,
-                      ),
-              ),
-              ?trailing,
-            ],
-          ),
+          bleedChild
+              ? Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.cardPad,
+                    AppSpacing.cardPad,
+                    AppSpacing.cardPad,
+                    0,
+                  ),
+                  child: head,
+                )
+              : head,
           const SizedBox(height: 14),
           child,
+          if (bleedChild) const SizedBox(height: AppSpacing.cardPad),
         ],
       ),
     );
@@ -976,6 +1062,7 @@ class _TransactionList extends ConsumerWidget {
 
     return _Card(
       title: L.s.spendAllPurchases,
+      bleedChild: true,
       trailing: rows.length <= shown.length
           ? Text(
               L.s.spendCountShort(rows.length),
@@ -1030,8 +1117,10 @@ class SpendPurchasesPage extends ConsumerWidget {
                 ),
               )
             else
+              // Vertical only: the rows pad themselves sideways so their
+              // swipe strip reaches the card's edge. See [_SpendRow].
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.cardPad, vertical: 6),
+                padding: const EdgeInsets.symmetric(vertical: 6),
                 child: Column(
                   children: [
                     for (final spend in rows) _SpendRow(spend: spend),
@@ -1045,6 +1134,20 @@ class SpendPurchasesPage extends ConsumerWidget {
   }
 }
 
+/// One payment, wearing the same swipe the Listen and Boxen rows wear.
+///
+/// **It used to delete on a long press, which is the reason this now goes
+/// through [SwipeToEditDelete].** A press-and-hold is what a finger does while
+/// it decides — resting on a row, scrolling a card that has stopped moving —
+/// and the app answered it by taking the payment away. Nowhere else does a
+/// long press do anything at all, let alone something destructive; the gesture
+/// for "do something to this row" is the leftward swipe, and it shows what it
+/// is about to do before the finger lifts.
+///
+/// The row is drawn edge to edge and carries its own horizontal padding, so
+/// the revealed strip reaches the card's own corners rather than stopping
+/// short of them — every container that holds one of these therefore pads
+/// around it vertically only.
 class _SpendRow extends ConsumerWidget {
   final Spend spend;
 
@@ -1052,13 +1155,18 @@ class _SpendRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return InkWell(
+    return SwipeToEditDelete(
+      identity: spend.id,
       // The detail sheet, not the form: a row that already exists opens as
       // something to read, and editing it is the pencil in that sheet's
       // header — the same two steps an appointment takes.
       onTap: () => showSpendDetailSheet(context, ref, spend),
-      onLongPress: () async {
-        // Captured before the write: the row this was tapped in is the one the
+      // The swipe is the shortcut past those two steps, so it opens the form
+      // itself. Its `true` — deleted from inside — needs nothing here: there
+      // is no detail sheet underneath this one to close.
+      onEdit: () => showSpendSheet(context, ref, spend: spend),
+      onDelete: () async {
+        // Captured before the write: the row this was swiped in is the one the
         // delete unmounts.
         final confirm = confirmChipOf(context);
         final notifier = ref.read(spendProvider.notifier);
@@ -1066,15 +1174,14 @@ class _SpendRow extends ConsumerWidget {
           confirm(L.s.spendDeleted, undo: () => notifier.undoDelete(deleted));
         }
       },
-      borderRadius: BorderRadius.circular(AppRadii.cardSmall),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 9),
+        padding: const EdgeInsets.symmetric(vertical: 9, horizontal: AppSpacing.cardPad),
         child: Row(
           children: [
             // The shop, not its category: the row's own title is the shop,
             // and the category is already the middle word of the line under
             // it. See [SpendMark].
-            SpendMark(size: 34, merchant: spend.merchant),
+            SpendMark(size: AppText.rowMark, merchant: spend.merchant),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -1138,7 +1245,7 @@ class _SpendRow extends ConsumerWidget {
 class _ReviewDrawer extends ConsumerWidget {
   final List<Spend> rows;
 
-  const _ReviewDrawer({required this.rows});
+  const _ReviewDrawer({super.key, required this.rows});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -1153,21 +1260,31 @@ class _ReviewDrawer extends ConsumerWidget {
         padding: const EdgeInsets.only(bottom: AppSpacing.blockGap),
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.all(AppSpacing.cardPad),
           decoration: BoxDecoration(
             color: AppColors.surface,
             borderRadius: BorderRadius.circular(AppRadii.card),
             boxShadow: AppShadows.card,
           ),
+          // The rows run to the card's edge, so the card clips its own corners
+          // rather than letting a revealed delete strip square them off.
+          clipBehavior: Clip.antiAlias,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                L.s.spendReviewBody,
-                style: AppText.body.copyWith(color: AppColors.inkSecondary),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.cardPad,
+                  AppSpacing.cardPad,
+                  AppSpacing.cardPad,
+                  8,
+                ),
+                child: Text(
+                  L.s.spendReviewBody,
+                  style: AppText.body.copyWith(color: AppColors.inkSecondary),
+                ),
               ),
-              const SizedBox(height: 8),
               for (final spend in rows) _SpendRow(spend: spend),
+              const SizedBox(height: AppSpacing.cardPad),
             ],
           ),
         ),

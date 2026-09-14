@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../l10n/l10n.dart';
 import '../../state/spend_state.dart';
 import '../../theme/app_icons.dart';
-import '../../theme/tokens.dart';
 import '../../widgets/status_island.dart';
 
 /// Whether the flagged rows are folded out.
@@ -63,7 +62,6 @@ class SpendIsland extends ConsumerWidget {
         icon: AppIcons.brain,
         label: L.s.spendIslandThinking,
         hint: L.s.spendIslandThinkingHint,
-        tone: AppColors.inkSecondary,
         // The one state that shimmers over and over: here the wave *is* the
         // spinner, and it stops the moment there is something to say.
         sweep: IslandSweep.loop,
@@ -80,7 +78,6 @@ class SpendIsland extends ConsumerWidget {
         icon: AppIcons.warning,
         label: L.s.spendReviewTitle(summary.needsReview.length),
         hint: L.s.spendIslandReviewHint,
-        tone: AppColors.inkSecondary,
         expanded: open,
         onTap: () => ref.read(spendReviewOpenProvider.notifier).state = !open,
       );
@@ -92,7 +89,6 @@ class SpendIsland extends ConsumerWidget {
         icon: AppIcons.receipt,
         label: L.s.spendIslandNothing,
         hint: summary.range.caption,
-        tone: AppColors.inkSecondary,
       );
     }
 
@@ -104,12 +100,16 @@ class SpendIsland extends ConsumerWidget {
       final up = change > 0;
       return IslandLine(
         key: ValueKey(up ? 'up' : 'down'),
-        // Carets rather than arrows: the set has no `arrowDown`, and a caret
-        // pair is the mark a reader already knows means up and down.
-        icon: up ? AppIcons.caretUp : AppIcons.caretDown,
+        // **Not a caret.** A caret under a title is a disclosure mark first and
+        // a direction second, and this island really does expand on the review
+        // rung directly above — so readers tapped the sentence waiting for rows
+        // that were never coming. `trendUp`/`trendDown` is a chart line with an
+        // arrowhead: it can only mean which way the money went, and it is a
+        // duotone glyph like every other one on this line rather than a bare
+        // mark borrowed from a control.
+        icon: up ? AppIcons.trendUp : AppIcons.trendDown,
         label: up ? L.s.spendIslandUp(percent) : L.s.spendIslandDown(percent),
         hint: L.s.spendIslandVsPrevious,
-        tone: AppColors.inkSecondary,
       );
     }
 
@@ -121,7 +121,6 @@ class SpendIsland extends ConsumerWidget {
       icon: top.key.icon,
       label: L.s.spendIslandTop(top.key.label),
       hint: L.s.spendIslandTopHint((top.share * 100).round()),
-      tone: AppColors.inkSecondary,
     );
   }
 }

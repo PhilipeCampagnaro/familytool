@@ -34,14 +34,25 @@ import Foundation
 /// user watched happen, on a locked phone, with no way to tell them, is the one
 /// outcome worse than a row that needs a two-second fix.
 ///
-/// ## The titles are the one hardcoded user-facing strings in the app
+/// ## The titles are localized, and not through `lib/l10n/`
 ///
-/// Everything else goes through `lib/l10n/`, and even the native tab bar has its
-/// labels pushed over a method channel. This cannot: the system reads an
-/// intent's title out of the app bundle to list it in Shortcuts and Spotlight,
-/// long before any Flutter engine exists to ask. Localising it properly means a
-/// `Localizable.xcstrings` added to the Runner target in Xcode, at which point
-/// these `LocalizedStringResource`s pick it up with no code change here.
+/// Everything else in the app goes through `lib/l10n/`, and even the native tab
+/// bar has its labels pushed over a method channel. This cannot: the system
+/// reads an intent's title out of the app bundle to list it in Shortcuts and
+/// Spotlight, long before any Flutter engine exists to ask.
+///
+/// So the German literals below are **keys**, and the four translations live in
+/// `Localizable.xcstrings` (this intent) and `AppShortcuts.xcstrings` (the Siri
+/// phrases), both in the Runner target. Adding a string here means adding it
+/// there, in all four languages — there is no compiler to catch a missing one,
+/// which is exactly the guarantee `AppStrings` gives on the Dart side and this
+/// cannot.
+///
+/// **`Localizable.xcstrings`'s "Ausgabe erfassen" and `AppStrings`'s
+/// `spendWalletStep4` name the same thing and must agree.** The setup steps tell
+/// the user which action to pick out of a list; if the two drift, the app names
+/// an action that is not there, in a screen whose only job is to be followed
+/// literally.
 @available(iOS 16.0, *)
 struct LogSpendIntent: AppIntent {
   static var title: LocalizedStringResource = "Ausgabe erfassen"

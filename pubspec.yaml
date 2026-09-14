@@ -62,7 +62,12 @@ dependencies:
   # place these do.
   url_launcher: ^6.3.1
   image_picker: ^1.1.2
-  file_picker: ^8.1.2
+  # **12, not 8.** file_picker 8 is compiled against android-34, and a
+  # transitive `flutter_plugin_android_lifecycle` now requires every dependent
+  # to compile against 36 — which fails the Android build outright at
+  # `checkDebugAarMetadata`, not at runtime. The single call site
+  # (`FilePicker.platform.pickFiles`) is unchanged across the jump.
+  file_picker: ^12.3.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

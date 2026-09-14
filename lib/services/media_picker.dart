@@ -120,8 +120,12 @@ Future<PickedFile?> _pickAndroid(AttachmentSource source, int? maxDimension) asy
         return await _adopt(shot.path, shot.name, isImage: true);
 
       case AttachmentSource.files:
-        final result = await FilePicker.platform.pickFiles(withData: false);
-        final file = result?.files.single;
+        // `pickFile`, not `pickFiles`: one attachment at a time is what every
+        // caller here wants, and the plural form's `withData` is deprecated in
+        // favour of reading the bytes off the `PlatformFile` — which we never do,
+        // because [_adopt] copies the file by path instead of pulling a whole
+        // attachment through memory.
+        final file = await FilePicker.pickFile();
         final path = file?.path;
         if (file == null || path == null) return null;
         return await _adopt(path, file.name, isImage: _looksLikeImage(file.name));

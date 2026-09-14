@@ -91,6 +91,34 @@ against its own receipts over a couple of years. **That tuning is the value, not
 app also fell back to DeepSeek for merchants the regexes missed; that is deliberately not here —
 unknown merchants land in `other`, which is an honest answer, and the user can override.
 
+### The Brazilian, Spanish and Portuguese high street
+
+`20260913090000_classify_merchant_iberia_brazil.sql` adds Pão de Açúcar, Assaí, Drogasil, Ipiranga,
+iFood, Magalu, Mercadona, Continente, Galp, Correios and the rest of three countries' everyday
+names. This is not cosmetic: **the ring chart *is* Ausgaben**, so a classifier that knows only REWE
+and dm hands a São Paulo or Madrid household one grey circle — a feature that technically works and
+tells them nothing.
+
+- **Still one list, not a list per country.** Adding a market means adding names to
+  `classify_merchant`, never a second function beside it. The whole reason these rules are in SQL is
+  that two copies drift.
+- **No country column, deliberately.** A German family on holiday buys petrol at a Galp and a
+  Portuguese household orders from Amazon. Matching every chain regardless of where the household
+  says it lives is simpler and more often right than asking.
+- **`~*` folds case, not accents.** `cafe` does not match `café`; write `caf[eé]`, or `farm.cia` to
+  cover `farmácia` and `farmacia` at once. This is the single easiest mistake to make here.
+- **The short tokens are the dangerous ones.** `\ydia\y` (DIA, Spain) and `\yextra\y` (Extra,
+  Brazil) are the two riskiest patterns — both are chains too big to omit and ordinary words in
+  their own language. `cp` (Comboios de Portugal), `nos` (a Portuguese telecom), `gol` and `azul`
+  (Brazilian airlines) were all considered and **left out**: "nos" is a Portuguese pronoun and "gol"
+  is a goal, and filing every notification containing them under Entertainment or Transport is worse
+  than missing a bill. When in doubt, leave it out — `other` is honest, and the category is a
+  starting guess the user can change.
+- **Pix never reaches this function.** Brazil's everyday payment rail is not a card tap and posts no
+  wallet notification, so a large share of a Brazilian household's spending arrives through manual
+  entry or not at all. That is a limit of the capture mechanism, not of these rules — and one more
+  reason manual entry is half the feature rather than a fallback.
+
 ## Admin only
 
 `spends_select` and its three siblings name `private.is_admin()`. There is no `visibility` column and
@@ -231,23 +259,37 @@ thing nobody had laid out.
   the one part of the app that came from somewhere else. None of the chart widgets may be
   `const`-constructed; `tool/check_const_palette.dart` enforces it.
 
-### Press and hold a chart to read a day off it
+### Tap a bar, hold a line: reading a figure off a chart
 
-`ChartScrub` wraps the line and the bar chart: hold a finger down and slide, and the bucket under it
-is reported up to the card, which puts **that** figure in the headline with the date under it. The
-line answers "how much by here" (it is cumulative) and the bars answer "how much here", which is the
-same difference the two drawings already are.
+`ChartScrub` wraps the line and the bar chart: the bucket that is picked is reported up to the card,
+which puts **that** figure in the headline with the date under it. The line answers "how much by
+here" (it is cumulative) and the bars answer "how much here", which is the same difference the two
+drawings already are.
 
+- **A bar is tapped and a line is held, because a bar is a thing and a line is a stretch.** Bars
+  stand apart with air between them, so one of them is a target the finger can hit, and asking for a
+  press and a wait to hit it is a toll on the obvious gesture. A line has no targets on it at all —
+  every point of it is as good as the one beside it — so the only way to read a day off it is to put
+  a finger down and slide until the callout says the day you wanted. The bars take the hold as well
+  as the tap; the line takes only the hold.
 - **Press and hold, not touch and drag, and that is not a compromise.** The charts live in a pager —
   a horizontal drag on one of them is the gesture that turns to the next chart — so a scrubber that
   took plain drags would have left the pager unusable. A long press is what iOS's own charts take
   for the same reason, and it is the only gesture here that cannot be started by accident while
-  scrolling the page.
+  scrolling the page. A tap cannot be either, which is what lets the bars have both.
 - **The reading goes in the headline, not in a bubble at the finger.** A tooltip covers exactly the
   stretch of chart the reader is dragging along, and the headline is already the place this card
   says what a number is worth.
-- **It lets go on release.** A reading left behind after the finger has gone is a headline that has
-  quietly stopped being about the page.
+- **A held reading lets go on release; a tapped one stays until it is tapped away.** A reading left
+  behind after the finger has gone is a headline that has quietly stopped being about the page — but
+  a tap is a choice rather than a finger passing through, so the chosen bar keeps the headline until
+  the reader taps it again or picks another. The card clears it when the pager turns and when the
+  range or the metric changes: a reading belongs to the drawing it was taken off.
+- **`ChartScrub` holds no copy of which bucket is picked.** The card's `_scrub` is the only one, and
+  a second one inside the gesture would go stale the moment the card cleared it. The sticky variant
+  also drops the long-press *release* handlers rather than making them conditional, because
+  `onLongPressCancel` fires on the way to an ordinary tap and would clear the very reading that tap
+  is about to toggle.
 - **A `lightImpact` each time the finger crosses into the next bucket**, the same tick the swipe
   actions and the undo chip use. Sliding along a line the eye is not on is the whole of what the
   gesture is for; without the tick the reader has to watch the headline to know anything happened.
@@ -307,19 +349,24 @@ meisten" looks at the heading that currently says something else.
 
 ### One mark, and a shop is drawn as itself
 
-Every row on the page wears the same grey circle (`SpendMark`), and what is inside it is the only
-thing that changes.
+Every row on the page wears the same white circle (`SpendMark`), and what is inside it is the only
+thing that changes. **White rather than grey because most of them carry a logo**: shop marks are
+full-colour artwork drawn for paper, and a grey circle behind one reads as a sticker on the wrong
+background. It is the same brand tile Listen and the calendar providers already use, with the
+hairline that is the only reason a white circle is visible on a white card, and what is set on it is
+`brandTileInk` rather than `ink` — the tile is white in both palettes, so its contents have to be
+dark in both.
 
 - **A business gets its logo** where `assets/merchants/` has one — the same two hundred marks Listen
   already searches, matched by `merchantLogoAsset`, which consults the shop folder and nothing else.
   A payment at "Apotheke am Markt" wants the Shop-Apotheke logo or no logo; it never wants the
   generic pill-bottle symbol, because a row that cannot be matched to a brand is not a row about a
   category.
-- **Where there is no logo it gets the shop's first two letters**, black on the same grey. One
+- **Where there is no logo it gets the shop's first two letters**, black on the same white. One
   shopfront glyph repeated down a column of eight different shops names none of them; two letters
   name every one. Letters *and digits*, because "Q1" and "o2" are shops.
-- **Everything else is the category's own glyph in the app's ink** — duotone, so the black line sits
-  on its grey fill, which is what the tone-coloured tiles were flattening.
+- **Everything else is the category's own glyph**, duotone, so the black line sits on its grey fill
+  — which is what the tone-coloured tiles were flattening.
 - **A payment row is marked by its shop, not by its category.** The row's title *is* the shop, and
   the category is already the middle word of the line under it.
 - **A person stays a person.** A household member has a picture and a tone that are theirs across
@@ -346,13 +393,30 @@ Three things move when the slicer is tapped, and they are three halves of one ge
   around it carries the old picture out while the new one arrives, or the sweep would still start
   from a blink.
 - **The total rolls** (`RollingNumber`). Only the digits that changed move, so a reader sees where
-  the change was; a figure that ticks under a finger dragging along the chart reads as one quantity
-  being measured rather than as numbers being flashed in the same place. It is scaled down rather
-  than ellipsised, because this figure is the answer the whole card is for.
+  the change was. It is scaled down rather than ellipsised, because this figure is the answer the
+  whole card is for. **It rolls for the slicer and is simply set for the chart** (`_Figure`):
+  changing the range or the metric asks the same question of a longer stretch, so the figure is one
+  quantity moving, which is what a rolling column says. Picking a bar asks about one day instead —
+  1.234 € and 87 € are two readings rather than one number that changed, and every way of animating
+  between them says otherwise. Rolling invents a relationship they do not have, a cross-fade leaves
+  both legible at once and neither for long, a slide puts motion under a finger that is already
+  moving; all three were tried on the page and all three read as fuss. A reading now changes the
+  instant the bar is tapped, which is what a readout does. There is no switcher, and that is the
+  mechanism: on the total the headline is one `RollingNumber` that stays put across slicer taps, so
+  its columns roll, while a reading replaces it with plain text — and the one built afresh on the
+  way back sets itself rather than rolling, there being nothing for it to have come from.
 - **The slicer's thumb travels.** See the `SegmentedControl` notes in
   [design-system.md](design-system.md): the four segments are an ordered scale, and a capsule that
   vanishes from under one word and reappears under another says nothing about which way the choice
   went.
+
+**And all three of those need the analysis card to survive the tap, which is why it is keyed.** The
+page's body is a plain list of children, and the review drawer above the card comes and goes with
+the range — a wider stretch can turn up a payment to review where the narrower one had none. An
+unkeyed child that changes position in such a list is matched against whatever used to sit at its
+index, so the card was thrown away and rebuilt: the thumb snapped across instead of sliding, and the
+pager went back to the first chart. `const ValueKey('analysis')` on `_AnalysisBlock` (and one on the
+drawer) is the whole fix, and it is load-bearing rather than tidiness.
 
 ### The status island says the one thing worth saying
 
@@ -376,6 +440,14 @@ would otherwise have had to work out by looking.
    the one percent the old header chip used, because that chip captioned a figure the reader was
    already looking at and this is a sentence claiming something is worth knowing;
 5. which category is carrying the range, under its own glyph.
+
+**Rung 4 is drawn with `trendUp`/`trendDown`, and a caret there was a bug report.** The rise and
+the fall started out under `caretUp`/`caretDown`, which is a direction everywhere else in the app
+and a *disclosure* mark here: rung 2 directly above it really does fold rows out of the island, so
+readers tapped "80 % weniger ausgegeben" waiting for a list that was never coming. A chart line
+with an arrowhead can only mean which way the money went, and it is a duotone glyph like the other
+four rungs rather than a bare mark borrowed from a control. The euro delta inside the card keeps
+its caret: it sits beside the figure it qualifies, with nothing there that expands.
 
 **Every glyph is ink, and none of them is coloured.** A red warning and a green fall were the
 obvious design and they are wrong here for the same reason the words are black: the line sits
@@ -423,6 +495,27 @@ amount would come back to the old one still sitting there. `showSpendSheet` answ
 spend was deleted inside it**, the one outcome the caller cannot see for itself, and the detail
 sheet closes on it rather than showing a payment that no longer exists.
 
+**The form has one save, and it is the check in its header.** It carried two: the header's check and
+a full-width *Fertig* at the foot of the body, which made the same promise twice and put one of them
+below a delete action at the end of a scroll. The header is `SheetActionHeader` rather than
+`showAppSheet`'s built-in one because that one pops on the check, and this form has to refuse a save
+it cannot make — an empty amount leaves the sheet standing with everything else still typed into it,
+rather than throwing the form away over a missing comma. The check greys out until there is a
+merchant, the way every create sheet's does, and becomes a spinner while the write is in flight so
+the same payment cannot be filed twice.
+
+Because the header and the body are built side by side, the controllers and the picked values live
+on a `_SpendDraft` the two share — the arrangement the calendar's `_EventForm` uses — and it is
+disposed a beat after the sheet pops, because the body is still reading it while the route animates
+out.
+
+**And the save says so.** A hand-entered payment used to commit in silence: the sheet closed, and
+whether the row had reached the server or died on the way was something you found out by going
+looking for it. Now the write answers — `addSpend` already did, and `editSpend` was changed to —
+and the sheet puts up the usual chip, *Ausgabe gespeichert* or *aktualisiert* on the way through and
+`spendSaveFailed` when it didn't land. Apple Pay's own rows need none of this: nobody is watching
+when they arrive.
+
 ### Setup lives in Settings, and Ausgaben keeps one row that leads there
 
 All of it is `ApplePayPage` (`lib/screens/settings/apple_pay_page.dart`): activating *this* phone,
@@ -461,16 +554,126 @@ It resolves the household and the payer itself, and it leaves `category` and `ki
 rules actually make of those names rather than a picture of what we wish they made. Nothing runs it
 automatically; it is not a migration and not `seed.sql`.
 
-## Android
+## Android reads the wallet's own notification
 
-There is no equivalent and none is promised. Google's Wallet API issues passes — loyalty cards,
-tickets, generic passes — and exposes no transaction read for third parties. The only automatic
-route is a `NotificationListenerService` parsing the bank app's own push, which means per-bank text
-parsing, German banks that each post differently and many that post nothing unless the user turns it
-on, and a restricted Play Store policy area needing justification at review.
+**There is no payment trigger on Android and there is no transaction API.** Google's Wallet API
+issues passes — loyalty cards, tickets, generic passes — and exposes no transaction read for third
+parties; Samsung's is the same shape. What Android does have is the notification the wallet posts to
+the user the instant a tap goes through, carrying the shop, the amount and the card. A
+`NotificationListenerService` reads that one notification and files it. It is the same payment
+arriving by a worse road, and everything below is about how much worse.
 
-Android enters spending by hand. If notification capture is ever built it should be an opt-in
-experiment per bank, not a feature the store listing claims.
+The pieces mirror iOS one for one, which is the point — there is no second backend, no second
+classifier and no second table:
+
+| | iOS | Android |
+|---|---|---|
+| What wakes up | Personal Automation → App Intent | `SpendNotificationListener` |
+| Where the token lives | Keychain, `AfterFirstUnlockThisDeviceOnly` | AES-GCM in the AndroidKeystore over an app-private file |
+| What posts | `SpendIngest` in Swift | `HttpURLConnection` in Kotlin |
+| What it posts to | `spend-ingest` | `spend-ingest` |
+| Who names the category | `private.classify_merchant` | `private.classify_merchant` |
+
+### The allowlist is the privacy promise, and it is four packages
+
+Notification access is **all-or-nothing**. Android offers no way to subscribe to one app, so the
+grant hands this process every notification on the phone — messages, one-time codes, everything.
+That cost is real and it is not hidden behind a policy link: `_DisclosureCard` on the capture page
+states it before the ask, which is also what Google Play's prominent-disclosure rule requires.
+
+What makes it defensible is that the cost is paid and not used. `onNotificationPosted` returns on
+its first line for any package outside `WalletNotifications.sourcePackages`, before it reads a single
+extra. Nothing else is parsed, logged, buffered or counted.
+
+**Google Play services is deliberately not on that list.** It is where the tap-to-pay "Purchases"
+notification used to come from, so allowing it would catch a few old phones. It is also not a
+payments app — it notifies about device scanning, account warnings and nearby sharing — so it would
+mean running a parser over most of what Google sends a phone to find the one thing that is a
+payment. Google Wallet has posted its own purchase notifications since 2024. Missing a payment on an
+old phone is the cheaper mistake, and manual entry is right there. **Adding a package to that set is
+not a small change**; it widens what this process reads, which is the one thing the setup page
+promises it does not do.
+
+### The parse is a guess, and the code is written as one
+
+Apple hands the App Intent typed fields. Android hands us a sentence a product team wrote for a
+human, in the phone's language, which changes without notice when the wallet app updates. So
+`WalletNotifications.kt` matches no known layout. It looks for **an amount with a currency on it**
+anywhere in the notification and treats everything else as material for naming the shop. Two rules
+fall out of that and both matter more than any regex in the file:
+
+- **No amount, no row.** A wallet posts plenty that is not a payment — a pass added, a card verified
+  — and a notification we cannot price is one of those far more often than it is a payment we
+  mis-read. A refund, a decline or a reversal is refused by name for the same reason: filing one as
+  a spend puts a number in the month that nobody spent.
+- **A merchant we had to guess is flagged, never dropped.** The listener sends `needs_review: true`,
+  the row lands in the fold-out drawer at the top of the page, and the household fixes it in two
+  seconds. This is the same trade the ingest function already makes for Apple's empty-merchant
+  defect, and it is why that drawer was worth building before Android existed.
+
+**"Had to guess" is defined by which of the three naming attempts answered, not by whether one
+answered at all**, and getting that wrong is the difference between a feature people pay for and a
+category ring quietly filling with junk. The shop is read from an "at"/"bei" phrase, else from a
+title that is not the wallet naming itself, else from **whatever survives stripping the price, the
+card and the wallet's own vocabulary off the priced line** — and that last one is a sentence
+fragment far more often than it is a shop, so it is flagged by construction. Flagging only the total
+miss let a payment be filed to a merchant called "Zahlung erfolgreich" with full confidence, land in
+`other` from the classifier, and never surface for anyone to correct. The wallet's own words are
+therefore matched as **whole words inside the candidate** rather than against the whole string,
+which is what let a phrase through where a single word was caught; a candidate that is *entirely*
+those words plus grammar names nothing and is dropped, and one that merely contains some of them is
+kept and flagged.
+
+**The refusal words are matched in more languages than the app speaks, on purpose.** The
+notification is written in the phone's language, not Aporah's, and the amount parser already reads
+two dozen currencies — so a Turkish or Polish refund notice prices itself perfectly and would be
+filed as a purchase for want of one word. They are bounded on letters rather than tested as
+substrings, because at four characters "iade" otherwise turns up inside somebody's shop name.
+
+`spend-ingest` honours `needs_review: true` from the body and ignores `false`. A caller may **add**
+doubt and never remove it, so nothing on the wire can talk the function out of its own checks.
+
+### What it cannot see, and what is not being built
+
+Device wallet payments only, exactly as on iOS: a physical card, a browser checkout, a transfer, a
+direct debit and cash are all invisible. Manual entry is half the feature on both platforms.
+
+**Open banking is the route that would fix that, and it is not being built.** A PSD2 account feed
+catches everything the wallet cannot, and it would improve iOS too, but it needs a contract and KYB
+under a licensed AISP, banks rate-limit to a handful of calls per account per day, and consent needs
+re-authorising every 90 days. That is Plus-tier economics for a household feature. It was considered
+and declined on cost.
+
+### Two switches, and the page says which one is missing
+
+Setup is our token *and* the OS grant, and they fail differently. A phone that holds a token but has
+no access is set up and deaf; one with access and no token hears a payment it may not file. So
+`SpendState` carries `notificationAccess` beside `thisDeviceEnrolled` rather than folding them into
+one boolean, the capture page's step list shows a check against each, and the "activated but deaf"
+state is the only warning on the page.
+
+The grant is the one piece of state the app cannot watch change — it is given and taken on a system
+screen — so the page observes the app lifecycle and re-reads it on resume. Without that it would go
+on offering a grant already given, or promising a capture already switched off.
+
+### The release manifest needed `INTERNET`
+
+Unrelated to capture and found while building it: Flutter's template declares
+`android.permission.INTERNET` in `src/debug` only, because the tool needs it for hot reload. A
+release build assembled from the main manifest had **no network permission at all**, which would
+have failed every Supabase call on a user's phone with nothing on screen to explain it. It is now
+declared in the manifest that ships.
+
+### Not `EncryptedSharedPreferences`
+
+All of `androidx.security:security-crypto` was deprecated in April 2025 with no replacement release.
+Its two known failure modes are a strict-mode violation on the main thread and an unrecoverable
+keyset corruption, and the second is worse here than anywhere else: a corrupted keyset would
+silently stop a household's payments arriving with nothing on screen to say so. `SpendCredential.kt`
+is the same construction without the library — one AES-GCM key that never leaves the AndroidKeystore,
+wrapping values in an ordinary app-private file. App-private storage is credential-encrypted, so it
+becomes readable once the phone has been unlocked since boot, which is the same promise
+`kSecAttrAccessibleAfterFirstUnlock` makes on iOS.
 
 ## The App Intent's titles are hardcoded, and that is not a bug
 

@@ -116,6 +116,10 @@ class TabBarPlatformView: NSObject, FlutterPlatformView, UITabBarDelegate {
         let width = fitted.width.isFinite && fitted.width > 0 ? min(fitted.width, available) : available
         let height = fitted.height.isFinite && fitted.height > 0 ? fitted.height : 49
         result(["width": Double(width), "height": Double(height)])
+      // Where UIKit actually put the **Mehr** item, so the shelf can stand on
+      // it — see `lastItemFrame`.
+      case "getMoreItemFrame":
+        result(TabBarPlatformView.lastItemFrame(in: self.tabBar, relativeTo: self.container))
       // Aporah's theme is an in-app setting, so the embedded control has to be
       // told when it flips; there's no device-appearance change to observe.
       case "setBrightness":
@@ -155,6 +159,106 @@ class TabBarPlatformView: NSObject, FlutterPlatformView, UITabBarDelegate {
   private func setSelectedIndex(_ index: Int) {
     guard let items = tabBar.items, index >= 0, index < items.count else { return }
     tabBar.selectedItem = items[index]
+  }
+
+  /// The outermost item's frame in the container's own coordinates, or nil.
+  ///
+  /// The **Mehr** shelf stands a column of Flutter buttons on that item, and a
+  /// `UITabBarItem` is a *description*, not a view — there is no public frame to
+  /// ask it for. Dividing the bar into five is close enough to grow a menu
+  /// bubble out of and visibly wrong for standing a control on: an iOS 26 bar
+  /// reports the full display width and then draws its floating glass platter
+  /// inset inside those bounds, so the last fifth of what it reported lands to
+  /// the right of the item the user is looking at. Mehr is the last tab on both
+  /// bars, so the rightmost item view is the one and only one wanted here.
+  ///
+  /// **It reads and changes nothing** — no `layoutIfNeeded`, no items rebuilt,
+  /// no sizing. That is not tidiness, it is the whole design: forcing this bar
+  /// to lay itself out before Flutter has given the platform view its real
+  /// frame lays five items out in zero width, and a `UITabBarItem`'s title
+  /// keeps the width it was first laid out at — which is a bar that looks
+  /// perfectly spread reading `Home Ka… Li… Bo… Me…` until a tab is selected.
+  /// Left alone, UIKit lays the bar out for the first time when it has its real
+  /// frame, and the labels are simply right.
+  ///
+  /// So it answers nil until there is something to see, and Dart asks at the
+  /// moment the item is tapped, by which time the bar has been on screen for as
+  /// long as the app has.
+  private static func lastItemFrame(in bar: UITabBar, relativeTo container: UIView) -> [String: Any]? {
+    // **Two passes, kept apart, and the named one wins outright.** The view
+    // UIKit lays out for an item has carried the same class name across every
+    // version of the bar — but iOS 26 reworked the bar's insides for Liquid
+    // Glass, and a renamed class would find nothing at all here. Failing the
+    // name, the shape: an item is a control with a real size, which in a bar of
+    // five items and no accessories is only ever one of the five. Mixed, a
+    // stray control on the platter could out-rank a real item; apart, the shape
+    // pass only speaks when the name pass is silent.
+    var named: [CGRect] = []
+    var controls: [CGRect] = []
+    // The platter the items sit on — the glass capsule on iOS 26, the classic
+    // bar background before it. Worth having even when no item view can be
+    // found, because it is the band they were laid out in: **this** is the
+    // thing an iOS 26 bar insets inside its own bounds, so a fifth of the
+    // platter is off by the padding inside it where a fifth of the bar is off
+    // by the whole inset. Kept apart from any old glass view — the selection
+    // pill has one of its own — so the background wins.
+    var background = CGRect.null
+    var glass = CGRect.null
+
+    func walk(_ view: UIView) {
+      for sub in view.subviews {
+        let name = NSStringFromClass(type(of: sub))
+        // Not descended into: the label and the image inside an item are not
+        // items.
+        if name.contains("TabBarButton") || name.contains("TabBarItem") {
+          named.append(container.convert(sub.bounds, from: sub))
+          continue
+        }
+        if let control = sub as? UIControl, control.bounds.width > 1, control.bounds.height > 1 {
+          controls.append(container.convert(control.bounds, from: control))
+          continue
+        }
+        if name.contains("BarBackground") || name.contains("Platter") {
+          background = background.union(container.convert(sub.bounds, from: sub))
+        } else if name.contains("Glass") {
+          glass = glass.union(container.convert(sub.bounds, from: sub))
+        }
+        walk(sub)
+      }
+    }
+    walk(bar)
+
+    let frames = named.isEmpty ? controls : named
+    let platter = background.isNull ? glass : background
+    var found = named.isEmpty ? "shape:\(controls.count)" : "named:\(named.count)"
+    var last = frames.max(by: { $0.midX < $1.midX }) ?? .null
+
+    // Neither pass found an item view, so the last resort: the band they were
+    // laid out in, split into as many slots as there are items. A guess, and
+    // said to be one in `found` — but the alternative is Dart splitting the
+    // whole bar, which on an iOS 26 floating capsule is tens of points wrong
+    // rather than a few.
+    if last.isNull || last.width <= 1, !platter.isNull, platter.width > 1 {
+      let count = CGFloat(max(bar.items?.count ?? 0, 1))
+      let slot = platter.width / count
+      last = CGRect(x: platter.maxX - slot, y: platter.minY, width: slot, height: platter.height)
+      found = "platter/\(Int(count))"
+    }
+
+    guard !last.isNull, last.width > 1 else { return nil }
+    return [
+      "x": Double(last.minX),
+      "y": Double(last.minY),
+      "width": Double(last.width),
+      "height": Double(last.height),
+      // What answered, so a shelf standing in the wrong place says why from one
+      // console line. The difference between "UIKit moved the item" and "we
+      // measured something that is not an item" is otherwise invisible from the
+      // Dart side.
+      "found": found,
+      "barWidth": Double(bar.bounds.width),
+      "containerWidth": Double(container.bounds.width),
+    ]
   }
 
   private static func items(labels: [String], symbols: [String], selectedSymbols: [String]) -> [UITabBarItem] {

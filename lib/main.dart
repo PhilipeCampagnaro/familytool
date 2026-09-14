@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -25,6 +26,7 @@ import 'theme/app_icons.dart';
 import 'theme/app_theme.dart';
 import 'theme/tokens.dart';
 import 'widgets/bottom_nav.dart';
+import 'widgets/more_shelf.dart';
 import 'widgets/paywall_sheet.dart';
 import 'widgets/empty_state.dart';
 import 'widgets/error_note.dart';
@@ -278,9 +280,20 @@ class _AppShellState extends ConsumerState<AppShell>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   int _index = _initialTab;
 
-  /// Whichever of the two bars is up, so the **Mehr** menu can be anchored on
+  /// Whichever of the two bars is up, so the **Mehr** shelf can be stood on
   /// the item that opened it. See [_moreItemAnchor].
   final GlobalKey _navBarKey = GlobalKey();
+
+  /// The **Mehr** shelf is up while this holds a completer, and whoever takes
+  /// it down answers it with the section that was pressed — or null, which the
+  /// shell reads as "don't change tab".
+  Completer<MoreSection?>? _moreShelf;
+
+  /// Where the shelf stands: the **Mehr** bar item's own rect, measured when it
+  /// was opened. **Kept after it closes**, because the buttons animate away
+  /// over the next breath and still need somewhere to be while they do. Null
+  /// only until the first time it is opened.
+  Rect? _moreAnchor;
 
   late final AnimationController _controller = AnimationController(
     vsync: this,
@@ -326,26 +339,24 @@ class _AppShellState extends ConsumerState<AppShell>
 
   void _expandNav() => ref.read(navBarProvider.notifier).expand();
 
-  /// A tap on the nav bar. Four of the five items are a tab; **Mehr** is a
-  /// menu, and only becomes a tab change once the user has picked a row out of
-  /// it — see [showMoreMenu]. Backing out of that menu must leave the screen
+  /// A tap on the nav bar. Four of the five items are a tab; **Mehr** puts up
+  /// two buttons and only becomes a tab change once one of them has been
+  /// pressed — see [MoreShelf]. Backing out of the shelf must leave the screen
   /// they were reading alone, which is why this is the one item that does not
   /// switch on the tap itself.
   ///
   /// Where Ausgaben does not ship the last slot is Boxen rather than Mehr
-  /// (`spendAvailable`), so every item is an ordinary tab and there is no menu
+  /// (`spendAvailable`), so every item is an ordinary tab and there is nothing
   /// to put up.
-  Future<void> _navigateTo(int i) =>
-      i == moreTabIndex && spendAvailable ? _openMoreMenu() : _switchTo(i);
+  ///
+  /// [itemFrame] is where the bar had the tapped item, which only **Mehr** is
+  /// asked for and only the shelf uses — see [_moreItemAnchor].
+  Future<void> _navigateTo(int i, Rect? itemFrame) => i == moreTabIndex && spendAvailable
+      ? _openMoreShelf(itemFrame)
+      : _switchTo(i);
 
-  Future<void> _openMoreMenu() async {
-    final section = await showMoreMenu(
-      context: context,
-      anchor: _moreItemAnchor(),
-      // The tick is only true while that screen is actually the one on
-      // screen — on any other tab neither of them is "the one in force".
-      current: _index == moreTabIndex ? ref.read(moreProvider) : null,
-    );
+  Future<void> _openMoreShelf(Rect? itemFrame) async {
+    final section = await _showMoreShelf(itemFrame);
     if (section == null || !mounted) return;
     // The row is offered and then explains itself, rather than being absent:
     // a menu that quietly loses an item reads as a bug, and somebody who has
@@ -360,29 +371,87 @@ class _AppShellState extends ConsumerState<AppShell>
     await _switchTo(moreTabIndex);
   }
 
-  /// The rect the **Mehr** menu grows out of: the last of the bar's five slots.
+  /// Stands the shelf on the **Mehr** item and answers what was pressed.
   ///
-  /// Computed from the bar's own rect rather than read off the item itself,
-  /// because on iOS the items are `UITabBarItem`s inside a platform view and
-  /// Flutter has no render object for one. Both bars lay their items out evenly
-  /// across the width, so the last fifth is the right slot to within a few
-  /// points — and an anchor only decides which control a bubble appears to grow
-  /// from, never what the menu does.
-  Rect _moreItemAnchor() {
+  /// A `Completer` rather than a route, because the shelf is not one: it is two
+  /// widgets in the nav layer, sitting where the bar can be seen behind them.
+  /// The future still matters, and for the reason `NativeTabBar.onTap` gives —
+  /// UIKit selects the item under the finger by itself, so the bar goes on
+  /// highlighting **Mehr** for exactly as long as this is unresolved and snaps
+  /// back to the real tab the moment it is dismissed.
+  ///
+  /// **A second tap on Mehr takes it down again**, which is the gesture anyone
+  /// who has opened a menu by accident reaches for first.
+  Future<MoreSection?> _showMoreShelf(Rect? itemFrame) {
+    if (_moreShelf != null) {
+      _closeMoreShelf(null);
+      return Future.value();
+    }
+    final completer = Completer<MoreSection?>();
+    setState(() {
+      _moreAnchor = _moreItemAnchor(itemFrame);
+      _moreShelf = completer;
+    });
+    return completer.future;
+  }
+
+  /// Takes the shelf down, answering whoever is waiting on it. A no-op when it
+  /// is already down, so every path out of it can call this without checking.
+  void _closeMoreShelf(MoreSection? section) {
+    final completer = _moreShelf;
+    if (completer == null) return;
+    setState(() => _moreShelf = null);
+    completer.complete(section);
+  }
+
+  /// The rect the **Mehr** shelf stands on, which is the bar item itself
+  /// wherever UIKit was willing to say where that is.
+  ///
+  /// [itemFrame] is UIKit's own answer, measured on the tap and handed over by
+  /// [NativeTabBar.onTap]. It is the whole reason that exists: the items are
+  /// `UITabBarItem`s inside a platform view and Flutter has no render object
+  /// for one, and the obvious substitute — the last fifth of the bar's rect —
+  /// is close enough to grow a menu bubble out of and visibly wrong for
+  /// standing a control on. An iOS 26 bar reports the **full display width**
+  /// and then draws its floating glass platter inset inside those bounds, so
+  /// the last fifth of it lands to the right of the item the reader is looking
+  /// at. That is exactly where the shelf used to stand.
+  ///
+  /// The fallback is that fifth anyway, for the Flutter pill — where it is
+  /// simply right, because that bar really does spread five items evenly across
+  /// its own width — and for an iOS bar that would not answer, where a shelf a
+  /// few points off its item still beats no shelf at all.
+  ///
+  /// **Only the horizontal half comes from the item.** The shelf is parked a
+  /// gap above the *bar*, not above the glyph inside it: an iOS 26 item view
+  /// sits inset within the glass platter, which is itself inset within the
+  /// bar's bounds, so taking the item's top would tuck the bottom button behind
+  /// the capsule it is supposed to be standing on.
+  Rect _moreItemAnchor(Rect? itemFrame) {
     final box = _navBarKey.currentContext?.findRenderObject() as RenderBox?;
     if (box != null && box.hasSize) {
       final bar = box.localToGlobal(Offset.zero) & box.size;
+      if (itemFrame != null) {
+        return Rect.fromLTWH(itemFrame.left, bar.top, itemFrame.width, bar.height);
+      }
       final slot = bar.width / navTabs.length;
       return Rect.fromLTWH(bar.right - slot, bar.top, slot, bar.height);
     }
+    if (itemFrame != null) return itemFrame;
     // The bar is mid-swap or offstage, so nothing can have tapped the item —
-    // but a missing anchor would mean no menu at all rather than a misplaced
-    // one, so fall back to the corner the item lives in.
+    // but a missing anchor would mean nothing opening at all rather than
+    // something slightly misplaced, so fall back to the corner the item lives
+    // in.
     final size = MediaQuery.sizeOf(context);
     return Rect.fromLTWH(size.width - 88, size.height - 120, 72, kNativeTabBarHeight);
   }
 
   Future<void> _switchTo(int i) async {
+    // Ahead of the repeat-tap check below, because a shelf left standing over
+    // another tab is the one way this is not a no-op: tapping Kalender while
+    // Mehr's buttons are up has to put them away even when Kalender is already
+    // the tab on screen.
+    _closeMoreShelf(null);
     if (i == _index) return;
     // A compacted bar belongs to the tab that compacted it and must not follow
     // the user out: reset here as well as gating on the index below, so the tab
@@ -439,6 +508,9 @@ class _AppShellState extends ConsumerState<AppShell>
     // is the tab on screen.
     final nav = ref.watch(navBarProvider);
     final compact = nav.compact && _compactingTabs.contains(_index);
+    // Which of Mehr's two buttons reads as the one in force. Only while that
+    // tab is the one on screen — anywhere else neither of them is.
+    final moreSection = ref.watch(moreProvider);
     return Scaffold(
       body: Stack(
         children: [
@@ -463,6 +535,11 @@ class _AppShellState extends ConsumerState<AppShell>
               onTap: _navigateTo,
               onExpand: _expandNav,
               onBarHeight: ref.read(navBarProvider.notifier).setBarHeight,
+              moreAnchor: _moreAnchor,
+              moreOpen: _moreShelf != null,
+              moreSection: _index == moreTabIndex ? moreSection : null,
+              onPickMore: _closeMoreShelf,
+              onDismissMore: () => _closeMoreShelf(null),
             ),
           ),
         ],
@@ -485,6 +562,19 @@ class _NavLayer extends StatefulWidget {
   /// the **Mehr** item is — see `_AppShellState._moreItemAnchor`.
   final GlobalKey barKey;
 
+  /// The **Mehr** item's rect, in screen coordinates, or null before the shelf
+  /// has ever been opened. Stays put after it closes so the buttons have
+  /// somewhere to leave from.
+  final Rect? moreAnchor;
+
+  /// Whether the shelf is being offered. It is still on screen for a breath
+  /// after this goes false — [MoreShelf] owns that.
+  final bool moreOpen;
+
+  final MoreSection? moreSection;
+  final ValueChanged<MoreSection> onPickMore;
+  final VoidCallback onDismissMore;
+
   final int index;
   final bool compact;
 
@@ -492,13 +582,15 @@ class _NavLayer extends StatefulWidget {
   /// [navRowBottom]. Reported back up through [onBarHeight] rather than kept
   /// here, because Kalender's "Heute" button needs the same number.
   final double? barHeight;
+
   final bool keyboardOpen;
 
   /// Awaited by [NativeTabBar], which has to know whether a tap actually
   /// changed the tab: UIKit selects the item it was tapped on by itself, and a
-  /// **Mehr** menu the user backs out of leaves that selection pointing at a
-  /// tab the app never went to.
-  final Future<void> Function(int) onTap;
+  /// **Mehr** shelf the user backs out of leaves that selection pointing at a
+  /// tab the app never went to. The rect is where the bar had the tapped item;
+  /// see [NativeTabBar.onTap].
+  final Future<void> Function(int index, Rect? itemFrame) onTap;
 
   final VoidCallback onExpand;
   final ValueChanged<double> onBarHeight;
@@ -512,6 +604,11 @@ class _NavLayer extends StatefulWidget {
     required this.onTap,
     required this.onExpand,
     required this.onBarHeight,
+    required this.moreAnchor,
+    required this.moreOpen,
+    required this.moreSection,
+    required this.onPickMore,
+    required this.onDismissMore,
   });
 
   @override
@@ -554,6 +651,19 @@ class _NavLayerState extends State<_NavLayer> with SingleTickerProviderStateMixi
       // content underneath stays tappable everywhere the two shapes aren't.
       child: Stack(
         children: [
+          // Tapping anywhere else puts the shelf away, which is what a menu
+          // did. Painted **before** the bars so both stay visible and live
+          // underneath it: unlike a `UIMenu` this does not take the screen
+          // over, so switching straight to another tab from here is one tap
+          // rather than two. No dim, either — the buttons are real glass and
+          // what they refract is the screen the reader was already on.
+          if (widget.moreOpen)
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: widget.onDismissMore,
+              ),
+            ),
           if (native)
             Positioned(
               left: 0,
@@ -583,7 +693,21 @@ class _NavLayerState extends State<_NavLayer> with SingleTickerProviderStateMixi
               child: _NavShape(
                 t: _t,
                 compactShape: false,
-                child: AppBottomNav(key: widget.barKey, index: widget.index, onTap: widget.onTap),
+                // Centred rather than stretched, exactly like the native bar
+                // above: [AppBottomNav] hugs its five items and takes the
+                // margins as a ceiling, so a capsule is what lands on screen
+                // and not a bar pinned to both edges.
+                //
+                // Nothing to measure either: the items are equal width, so the
+                // shell's own division of the bar rect is the item, not an
+                // approximation of it.
+                child: Center(
+                  child: AppBottomNav(
+                    key: widget.barKey,
+                    index: widget.index,
+                    onTap: (i) => widget.onTap(i, null),
+                  ),
+                ),
               ),
             ),
           Positioned(
@@ -597,6 +721,27 @@ class _NavLayerState extends State<_NavLayer> with SingleTickerProviderStateMixi
               child: CompactNavButton(icon: navTabs[widget.index].compactIcon, onTap: widget.onExpand),
             ),
           ),
+          // Last, so the buttons sit over the bar's glass rather than under
+          // it. This layer fills the `Scaffold` body and nothing sits above it,
+          // so the anchor's screen rect is also its rect in here.
+          if (widget.moreAnchor case final anchor?)
+            Positioned(
+              // The **circles** stand centred on the bar item; the labels run
+              // off to the left of them, which is why this is pinned by its
+              // right edge rather than laid out around the centre. The clamp
+              // only bites if a future bar puts the last item hard against the
+              // edge of the display.
+              right: math.max(
+                MediaQuery.sizeOf(context).width - anchor.center.dx - kCompactNavSize / 2,
+                14,
+              ),
+              bottom: MediaQuery.sizeOf(context).height - anchor.top + kMoreShelfGap,
+              child: MoreShelf(
+                open: widget.moreOpen,
+                current: widget.moreSection,
+                onPick: widget.onPickMore,
+              ),
+            ),
         ],
       ),
     );

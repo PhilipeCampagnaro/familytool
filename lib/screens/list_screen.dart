@@ -11,6 +11,7 @@ import '../models/event_link.dart';
 import '../models/grocery_unit.dart';
 import '../models/shopping_list.dart';
 import '../services/external_links.dart';
+import '../services/list_planner.dart';
 import '../services/media_picker.dart';
 import '../state/auth_state.dart';
 import '../state/family_state.dart';
@@ -19,6 +20,8 @@ import '../state/nav_state.dart';
 import '../state/sharing_state.dart';
 import '../theme/tokens.dart';
 import 'calendar_screen.dart';
+import 'list/list_island.dart';
+import 'list/planner_card.dart';
 import '../widgets/paywall_sheet.dart';
 import '../widgets/anchored_menu.dart';
 import '../widgets/app_sheet.dart';
@@ -120,10 +123,11 @@ class _ListOverview extends ConsumerWidget {
 
   const _ListOverview({required this.state});
 
-  /// First-frame estimate only — just the search pill, Listen having no stat
-  /// tiles. [CollapsingHeaderScreen] re-measures the real thing once it's laid
-  /// out.
-  static const _extraHeight = 74.0;
+  /// First-frame estimate only — the island's row plus the gap above it, and
+  /// nothing at all in a build without Vorhaben, which leaves Listen with no
+  /// collapsing block. [CollapsingHeaderScreen] re-measures the real thing once
+  /// it's laid out.
+  static double get _extraHeight => plannerAvailable ? 16 + ListIsland.rowHeight : 0;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -132,8 +136,21 @@ class _ListOverview extends ConsumerWidget {
       searchHint: L.s.searchListsAndItems,
       searchPrompt: L.s.searchListsAndItemsLong,
       onAdd: () => openListSheet(context, ref),
+      addLabel: L.s.newList,
+      // The one line under the title, and the way into Vorhaben. Absent
+      // entirely when no key was compiled in, which is every build nobody
+      // deliberately configured — see `plannerAvailable`. An invitation to a
+      // sheet that can only fail is worse than no invitation. Not `const`: it
+      // reads the palette in its own build, see `tool/check_const_palette.dart`.
+      headerExtra: plannerAvailable
+          ? SizedBox(height: ListIsland.rowHeight, child: Row(children: [Expanded(child: ListIsland())]))
+          : null,
       extraHeight: _extraHeight,
       body: (context) => [
+        // Vorhaben, unfolding from the island above it. Always in the tree so
+        // it can size and fade in both directions (see the expand/collapse rule
+        // in docs/design-system.md); it draws nothing at all while closed.
+        if (plannerAvailable) PlannerCard(),
         if (_loadFailed)
           Padding(
             padding: const EdgeInsets.only(bottom: 18),
@@ -249,7 +266,7 @@ class _ListOverview extends ConsumerWidget {
                   // The article's own picture only where the list shows one;
                   // a Sonstige hit wears its list's icon, which is what says
                   // where the row was found anyway.
-                  leading: IconTile(iconKey: (list.kind == ListKind.grocery ? hit.iconKey : null) ?? list.iconKey, size: 38, imageSize: 26),
+                  leading: IconTile(iconKey: (list.kind == ListKind.grocery ? hit.iconKey : null) ?? list.iconKey, size: AppText.rowMark, imageSize: AppText.markImage(AppText.rowMark)),
                   title: hit.text,
                   subtitle: hit.done ? L.s.doneInList(list.name) : (hit.sub ?? L.s.inList(list.name)),
                   onTap: () => open(list.id),
@@ -489,7 +506,7 @@ class _ListRow extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 15),
       child: Row(
         children: [
-          IconTile(iconKey: list.iconKey, size: 38, imageSize: 26),
+          IconTile(iconKey: list.iconKey, size: AppText.rowMark, imageSize: AppText.markImage(AppText.rowMark)),
           const SizedBox(width: 13),
           Expanded(
             child: Column(
@@ -574,13 +591,21 @@ class _ItemIcon extends StatelessWidget {
   /// line draws it at the size of the check circle it stands in for.
   final double size;
 
+  /// How much of [size] the picture itself gets. The pictures are re-framed to
+  /// a consistent ~86% subject fill (tool/icon_gen/normalize.py), so the only
+  /// padding still needed is what keeps a photo's own corners off the dark
+  /// mode `ClipOval` — the subject lands at 0.92 × 0.86 ≈ 79% of the circle,
+  /// and a round subject's widest point is horizontal, where the circle is
+  /// widest too. Anything nearer 1.0 starts clipping the contact shadow.
+  static const _imageRatio = 0.92;
+
   final double? imageSize;
 
   const _ItemIcon({super.key, required this.iconKey, this.size = 42, this.imageSize});
 
   @override
   Widget build(BuildContext context) {
-    final image = IconImage(asset: resolveIcon(iconKey)?.asset ?? generalGroceryAsset, size: imageSize ?? size * 0.81);
+    final image = IconImage(asset: resolveIcon(iconKey)?.asset ?? generalGroceryAsset, size: imageSize ?? size * _imageRatio);
     if (!AppColors.isDark) {
       return SizedBox(width: size, height: size, child: Center(child: image));
     }
@@ -634,7 +659,7 @@ class _ListDetail extends ConsumerWidget {
             collapsedIcon: IconTile(iconKey: open.iconKey, size: 24, imageSize: 17),
             t: t,
             expandedAlignment: Alignment.center,
-            expandedFontSize: 19,
+            expandedFontSize: AppText.pageTitle,
             fontWeight: FontWeight.w500,
             leadingWidth: 48,
             trailingWidth: 48,
@@ -686,7 +711,7 @@ class _ListDetail extends ConsumerWidget {
               const SizedBox(height: 16),
               Row(
                 children: [
-                  IconTile(iconKey: open.iconKey, size: 44, imageSize: 30),
+                  IconTile(iconKey: open.iconKey, size: AppText.headerMark, imageSize: AppText.markImage(AppText.headerMark)),
                   const SizedBox(width: 13),
                   Expanded(
                     child: Column(

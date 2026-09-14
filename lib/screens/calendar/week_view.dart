@@ -168,8 +168,10 @@ class _WeekViewState extends ConsumerState<_WeekView> with SingleTickerProviderS
   static const _collapsedGap = 14.0;
   static const _collapsedHeaderHeight = 48.0 + _collapsedGap;
   // 16 top + 48 island row + 14 + 44 chip row + 12 + the strip + 4 bottom,
-  // rounded up so a font-metric wobble leaves slack rather than clipping.
-  static const _baseExtraHeight = 294.0;
+  // rounded up so a font-metric wobble leaves slack rather than clipping. The
+  // strip is the only term that moves with the type scale, so it is the only
+  // one not folded into the constant — at the shipped scale this is still 294.
+  static double get _baseExtraHeight => 142.0 + _stripHeight;
 
   /// The header's extent, panel included. **Not a constant any more**: Home's
   /// first-steps checklist opens *inside* the header rather than over the top
@@ -308,9 +310,10 @@ class _WeekViewState extends ConsumerState<_WeekView> with SingleTickerProviderS
   /// [_TitleRow.trailingWidth] wants for Home's own trailing widget.
   static const _avatarSlot = 52.0;
 
-  // The forecast + gap + the rounded day tile (weekday letter, 34pt day
-  // circle, dots) — see the arithmetic on [_DayStripCell].
-  static const _stripHeight = 152.0;
+  // The forecast + gap + the rounded day tile (weekday letter, day circle,
+  // dots) — see the arithmetic on [_DayStripCell] — plus 4 points of slack, so
+  // a font-metric wobble leaves room rather than clipping.
+  static double get _stripHeight => _DayStripCell.cellHeight + 4;
 
   Widget _buildDayStrip(CalendarScreenState state, Color accent) {
     return LayoutBuilder(
@@ -644,9 +647,13 @@ class _DayStripCell extends ConsumerWidget {
   //
   //   _weatherBand 48  ( _weatherIcon 30 over _weatherTemp 18 )
   //   _weatherGap   8
-  //   tile          92  ( 8 + _letterBand 20 + 6 + circle 34 + 8 + _dotBand 8 + 8 )
+  //   tile             ( 8 + _letterBand + 6 + circle + 8 + _dotBand 8 + 8 )
   //   ---------------
-  //                148, and _stripHeight leaves a little over it.
+  //   cellHeight, and _stripHeight leaves a little over it.
+  //
+  // The two variables in that sum — the letter band and the circle — come from
+  // the installed AppTypeScale, so the shipped scale still adds up to the
+  // 92-point tile and the 148-point cell it always did.
 
   /// The forecast, and it sits **outside the tile**, where the weekday letter
   /// used to.
@@ -676,9 +683,19 @@ class _DayStripCell extends ConsumerWidget {
   static const _weatherGap = 8.0;
 
   /// The weekday letter, now the tile's top band. Sized for
-  /// `AppText.rowTitle`'s own line box at 15pt rather than left to it, so the
-  /// day numbers below line up across cells whatever the font does.
-  static const _letterBand = 20.0;
+  /// [AppText.weekdayLetter]'s own line box rather than left to it, so the day
+  /// numbers below line up across cells whatever the font does — and **derived
+  /// from the installed scale rather than written down**, because a band typed
+  /// out beside a size is exactly the coupling that clips the letter the day
+  /// somebody changes the scale. At the shipped 15pt it is still the 20 it
+  /// always was.
+  static double get _letterBand => AppText.lineBox(AppText.scale.weekdayLetter.size);
+
+  /// The tile, and above it the whole cell. Both follow the circle and the
+  /// band, so the strip re-measures itself when the scale moves instead of
+  /// being re-counted by hand.
+  static double get _tileHeight => 38.0 + _letterBand + AppText.dayCircle;
+  static double get cellHeight => _weatherBand + _weatherGap + _tileHeight;
 
   /// The bottom band, where the calendars' dots and the to-do ring sit. They
   /// stay with the number: the dots are what is *in* the day, where the
@@ -726,7 +743,7 @@ class _DayStripCell extends ConsumerWidget {
                 SizedBox(
                   height: _letterBand,
                   child: Center(
-                    child: Text(letter, style: AppText.rowTitle.copyWith(color: isSel ? AppColors.ink : AppColors.muted)),
+                    child: Text(letter, style: AppText.weekdayLetter.copyWith(color: isSel ? AppColors.ink : AppColors.muted)),
                   ),
                 ),
                 const SizedBox(height: 6),

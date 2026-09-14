@@ -65,25 +65,34 @@ class StatusIsland extends StatelessWidget {
 /// ink so it explains without competing — the sentence above it is still the
 /// thing being read.
 ///
-/// The tone lives on the glyph and never on the words. A red sentence where the
-/// screen's other headings are black would shout across the whole page for
-/// something that is one overdue to-do; the warning glyph beside it says the
-/// same thing to the eye that is looking at it. Most states have no tone worth
-/// spending and pass ink.
+/// **The glyph is ink, in every state, and there is no way to tint it.** Red on
+/// the warning mark and green on the finished one were the two that looked
+/// earned, and they were the two that read worst: a red triangle at the top of
+/// Home is the shape every app uses for *something went wrong*, so a household
+/// with one late to-do saw an app reporting a fault. The sentence beside it
+/// already says which of the seven things this is, and the reader is looking at
+/// the sentence. So the colour is gone rather than parameterised — a knob for
+/// it is an invitation to put the red back.
 ///
-/// The chevron is the one place a caret belongs here. Everywhere else the line
-/// either goes somewhere or says something that has no destination, and a caret
-/// on the second would promise a screen that does not exist.
+/// A caret belongs here only when the line answers a tap. The disclosure one
+/// folds a checklist out below ([expanded]); [navigates] is the right-pointing
+/// one, for a line whose tap leaves the screen — Listen's Vorhaben invitation.
+/// On a line that only says something, a caret would promise a screen that does
+/// not exist, so neither is the default.
 class IslandLine extends StatelessWidget {
   final IconData icon;
   final String label;
   final String hint;
   final String? trailingLabel;
-  final Color tone;
   final VoidCallback? onTap;
 
   /// Non-null only in setup mode, where the line is a disclosure control.
   final bool? expanded;
+
+  /// Whether the tap goes somewhere else, which earns a right-pointing caret
+  /// after the label. Only meaningful with [onTap], and never together with
+  /// [expanded] — the same line cannot both open here and leave.
+  final bool navigates;
 
   /// How the wave behaves on this line — see [IslandSweep].
   final IslandSweep sweep;
@@ -93,12 +102,12 @@ class IslandLine extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.hint,
-    required this.tone,
     this.trailingLabel,
     this.onTap,
     this.expanded,
+    this.navigates = false,
     this.sweep = IslandSweep.once,
-  });
+  }) : assert(!(navigates && expanded != null));
 
   @override
   Widget build(BuildContext context) {
@@ -114,7 +123,7 @@ class IslandLine extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            AppIcon(icon, size: 21, color: tone),
+            AppIcon(icon, size: 21, color: AppColors.inkSecondary),
             const SizedBox(width: 8),
             // Bounded so a long appointment name shortens instead of running
             // under the profile avatar.
@@ -137,6 +146,10 @@ class IslandLine extends StatelessWidget {
                       if (trailingLabel case final count?) ...[
                         const SizedBox(width: 8),
                         Text(count, style: AppText.microLabel.copyWith(color: AppColors.muted)),
+                      ],
+                      if (navigates) ...[
+                        const SizedBox(width: 6),
+                        AppIcon(AppIcons.caretRight, size: 14, color: AppColors.mutedLight, flat: true),
                       ],
                       if (expanded case final open?) ...[
                         const SizedBox(width: 2),

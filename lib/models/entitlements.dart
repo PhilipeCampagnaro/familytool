@@ -68,7 +68,7 @@ enum Feature {
   ///
   /// **Two independent questions, and both must say yes.** This one is about
   /// the plan; `spendAvailable` in `lib/services/spend_intent.dart` is about the
-  /// platform, and is false on Android whatever the household has paid.
+  /// platform, and is false on the web whatever the household has paid.
   spend,
 }
 

@@ -113,6 +113,13 @@ class AppPalette {
   /// circle. iOS does the same for app icons in dark mode.
   final Color brandTile;
 
+  /// What is drawn *on* [brandTile] when there is no logo to draw — a shop's
+  /// initials, a category's glyph. **Dark in both palettes, for the same reason
+  /// the tile is white in both**: the tile does not follow the theme, so
+  /// anything set on it cannot either, and `ink` on dark is a pale grey that
+  /// disappears against it.
+  final Color brandTileInk;
+
   /// Dimming behind a modal sheet.
   final Color scrim;
 
@@ -205,6 +212,7 @@ class AppPalette {
     required this.menuSurface,
     required this.menuSeparator,
     required this.brandTile,
+    required this.brandTileInk,
     required this.scrim,
     required this.grabHandle,
     required this.idleRing,
@@ -264,6 +272,7 @@ class AppPalette {
     menuSurface: Color(0xFAFBFBFD),
     menuSeparator: Color(0x1F3C3C43),
     brandTile: Color(0xFFFFFFFF),
+    brandTileInk: Color(0xFF0D0D0D),
     scrim: Color(0x760B1220),
     grabHandle: Color(0xFFD7DBE3),
     idleRing: Color(0xFFC7CBD3),
@@ -301,7 +310,33 @@ class AppPalette {
       WeatherSkin(Color(0xFFE6F2FC), Color(0xFFC9E1F5), Color(0xFF2C5A7A)),
       WeatherSkin(Color(0xFFE8E7F5), Color(0xFFD0CEE9), Color(0xFF433F7A)),
     ],
-    shadowCard: [BoxShadow(color: Color(0x0F112A2B), blurRadius: 10, offset: Offset(0, 2))],
+    // **Two layers, because on Home a card is white on white.** That screen's
+    // page is `surface`, not `screenBg` — the day card inverts the usual
+    // ordering and is the grey object — so the sections under its bottom edge
+    // had nothing but a single 6% blur between them and the paper, and read as
+    // rows floating under a heading rather than as cards. The tight layer is the
+    // contact edge that gives the card a bottom; the wide one is the lift.
+    // Together they carry a white card on white, which is the hardest case the
+    // token has to survive, and no border is needed: a rim around a card whose
+    // rows are already split by hairlines reads as a table rather than an
+    // object.
+    //
+    // **The negative spread is what stops the corners looking square**, and it
+    // is not a nicety. At spread 0 the lift's rounded rect is exactly the
+    // card's, so a 20 blur against a 6 offset put a grey pool roughly twelve
+    // points out on *every* side — above the card as much as below it. The
+    // card's own corner then cuts a quarter circle out of a much larger, much
+    // blurrier rounded rect, and what is left standing beside each corner is a
+    // right angle: you see a square shadow behind a round card and cannot say
+    // why. Pulling the shadow in by the offset tucks it under the card, so the
+    // top edge keeps only the contact layer, and shrinking its rect also
+    // *tightens* its own corners relative to its size, which is the other half
+    // of the roundness. Every card in the app wears this, so it was visible on
+    // Kalender's event cards and Listen's Vorhaben card at the same time.
+    shadowCard: [
+      BoxShadow(color: Color(0x0D112A2B), blurRadius: 2, offset: Offset(0, 1)),
+      BoxShadow(color: Color(0x1A112A2B), blurRadius: 20, offset: Offset(0, 6), spreadRadius: -6),
+    ],
     shadowNavBar: [BoxShadow(color: Color(0x4D0A0F1E), blurRadius: 30, offset: Offset(0, 14))],
     shadowFloatingPill: [BoxShadow(color: Color(0x1A0A0F1E), blurRadius: 14, offset: Offset(0, 4))],
     shadowSheet: [BoxShadow(color: Color(0x3D0A1428), blurRadius: 40, offset: Offset(0, -14))],
@@ -361,6 +396,7 @@ class AppPalette {
     menuSurface: Color(0xFA24272E),
     menuSeparator: Color(0x33FFFFFF),
     brandTile: Color(0xFFFFFFFF),
+    brandTileInk: Color(0xFF0D0D0D),
     scrim: Color(0x99000000),
     grabHandle: Color(0xFF3A3E48),
     idleRing: Color(0xFF4A4F5A),
@@ -398,7 +434,12 @@ class AppPalette {
       WeatherSkin(Color(0xFF202D3A), Color(0xFF293A4A), Color(0xFFC2DCF2)),
       WeatherSkin(Color(0xFF262340), Color(0xFF2E2B4D), Color(0xFFC6C1EE)),
     ],
-    shadowCard: [BoxShadow(color: Color(0x33000000), blurRadius: 10, offset: Offset(0, 2))],
+    // One layer here — on dark a card is lighter than its page, so the lift is
+    // doing less work — with the same negative spread as light, for the same
+    // reason: see the note over the light palette's.
+    shadowCard: [
+      BoxShadow(color: Color(0x33000000), blurRadius: 10, offset: Offset(0, 2), spreadRadius: -3),
+    ],
     shadowNavBar: [BoxShadow(color: Color(0x8C000000), blurRadius: 30, offset: Offset(0, 14))],
     shadowFloatingPill: [BoxShadow(color: Color(0x59000000), blurRadius: 14, offset: Offset(0, 4))],
     shadowSheet: [BoxShadow(color: Color(0x99000000), blurRadius: 40, offset: Offset(0, -14))],
@@ -454,6 +495,21 @@ class AppColors {
   static Color get surface => _palette.surface;
   static Color get surfaceAlt => _palette.surfaceAlt;
   static Color get screenBg => _palette.screenBg;
+
+  /// A card drawn on a page that is itself [surface] — which on Home is the
+  /// whole page below the day card, because that screen inverts the usual
+  /// ordering and gives the *day* the grey.
+  ///
+  /// On light this is still white, and [AppShadows.card] is what separates it
+  /// from the paper. On dark a shadow separates nothing, so the card takes the
+  /// lift instead, exactly as the palette's dark rule says: screen < card <
+  /// fill, one step at a time.
+  static Color get cardOnSurface => isDark ? surfaceAlt : surface;
+
+  /// The row separator inside a [cardOnSurface]. [divider] is a tone of the
+  /// card it normally sits in; on dark that card is a step lighter, and the
+  /// normal one is then the same colour as the card it is meant to divide.
+  static Color get cardOnSurfaceDivider => isDark ? hairline2 : divider;
   static Color get divider => _palette.divider;
   static Color get hairline => _palette.hairline;
   static Color get hairline2 => _palette.hairline2;
@@ -482,6 +538,7 @@ class AppColors {
   static Color get menuSurface => _palette.menuSurface;
   static Color get menuSeparator => _palette.menuSeparator;
   static Color get brandTile => _palette.brandTile;
+  static Color get brandTileInk => _palette.brandTileInk;
   static Color get scrim => _palette.scrim;
   static Color get grabHandle => _palette.grabHandle;
   static Color get idleRing => _palette.idleRing;
@@ -655,10 +712,271 @@ class AppShadows {
   static List<BoxShadow> get thumb => AppColors.palette.shadowThumb;
 }
 
+/// One rung of a scale: the size and weight of a single role.
+///
+/// Deliberately *not* a `TextStyle`. A scale answers "how big, how heavy" and
+/// nothing else — the family, the letter-spacing, the leading and the colour
+/// belong to the token, are the same in every scale, and would be three more
+/// things to keep in sync across three lists if they lived here.
+class TypeStep {
+  final double size;
+  final FontWeight weight;
+
+  const TypeStep(this.size, this.weight);
+}
+
+/// One complete set of sizes for the app's type roles.
+///
+/// Every size and weight below comes from the [AppTypeScale] in [AppText.scale],
+/// exactly as every colour comes from the [AppPalette] in [AppColors.palette].
+/// The token still names the role and still owns everything *else* about the
+/// style — the family, the letter-spacing, the leading, the colour — so a scale
+/// is a short list of sizes rather than a second copy of the type system.
+///
+/// That indirection exists for one reason: the app is set about one step below
+/// the sizes iOS uses for the same roles (a list row is 15 here and 17 in
+/// Settings, Mail and Telefon), and finding the right step is something you
+/// have to *see*, on a phone, in both languages. Swapping one line here and
+/// hot-reloading is how that comparison gets made; see [AppTypeScale.actual]
+/// for what the three candidates are.
+///
+/// | Role | Actual | Plan B | Plan A |
+/// |---|---|---|---|
+/// | [screenTitle] | 26 w600 | 27 w600 | 28 w600 |
+/// | [statValue] | 24 w600 | 25 w600 | 26 w600 |
+/// | [detailTitle] | 23 w600 | 23 w600 | 24 w600 |
+/// | [cardTitle] | 18 w600 | 18 w600 | 19 w600 |
+/// | [sheetTitle] | 17 w600 | 17 w600 | 18 w600 |
+/// | [inputTitle] | 17 w500 | 17 w500 | 18 w500 |
+/// | [sectionHeading] | 16 w500 | 16 w600 | 17 w600 |
+/// | [searchInput] | 16 w300 | 16 w400 | 17 w400 |
+/// | [buttonLarge] | 16 w600 | 16 w600 | 17 w600 |
+/// | [itemTitle] | 15 w600 | 16 w500 | 17 w500 |
+/// | [rowTitle] | 15 w500 | 16 w500 | 17 w500 |
+/// | [input] | 15 w400 | 16 w400 | 17 w400 |
+/// | [buttonSmall] | 14 w500 | 14 w500 | 15 w500 |
+/// | [body] | 14 w300 | 14 w400 | 15 w400 |
+/// | [groupHeading] | 13 w600 | 13 w600 | 13 w600 |
+/// | [caption] | 13 w500 | 13 w500 | 13 w500 |
+/// | [label] | 12.5 w300 | 13 w400 | 13 w400 |
+/// | [microLabel] | 11.5 w500 | 12 w500 | 12 w500 |
+/// | [AppText.pageTitle] | 19 w600 | 19 w600 | 20 w600 |
+/// | [weekdayLetter] | 15 w500 | 14 w500 | 13 w500 |
+/// | [dayNumber] | 14 w400 | 16 w600 | 16 w600 |
+///
+/// ## The three
+///
+/// - [actual] — what has shipped. A list row is 15pt, every subtitle is 12.5pt
+///   at Light, and the week strip's weekday letter (15) is *larger* than the
+///   date under it (14).
+/// - [planB] — the half step. Row titles to 16, subtitles to 13, and every
+///   Light weight lifted to Regular. Chosen so that **nothing around it has to
+///   move**: the day circle keeps its 34 points and the month cell its 38, so
+///   no band, height budget or header constant is recalculated.
+/// - [planA] — the full step, onto the sizes iOS uses for the same roles. Row
+///   titles to 17, titles up a step with them so the hierarchy keeps its
+///   spacing, and the day circle to 36 so the date outweighs its own label.
+///
+/// Both plans lift the Light weights identically, so the only variable between
+/// them is size. Apple does not set a Light weight below roughly 20pt, because
+/// the stroke thins faster than the size drops, and the app had w300 carrying
+/// body prose, every row subtitle and the search field.
+///
+/// ## What a scale may not contain
+///
+/// Only sizes and weights that some plan actually changes. A number that is the
+/// same in all three is not a scale value — it is a constant, and it stays
+/// wherever it already lives. The two circle diameters are here because the day
+/// number cannot grow inside a circle that cannot, and the week strip's bands
+/// are derived from these rather than typed out beside them.
+class AppTypeScale {
+  final String name;
+
+  // Titles
+  final TypeStep screenTitle;
+  final TypeStep statValue;
+  final TypeStep detailTitle;
+  final TypeStep cardTitle;
+  final TypeStep sheetTitle;
+  final TypeStep sectionHeading;
+
+  // Rows
+  final TypeStep itemTitle;
+  final TypeStep rowTitle;
+
+  // Inputs
+  final TypeStep inputTitle;
+  final TypeStep input;
+  final TypeStep searchInput;
+
+  // Actions
+  final TypeStep buttonLarge;
+  final TypeStep buttonSmall;
+
+  // Body & captions
+  final TypeStep body;
+  final TypeStep groupHeading;
+  final TypeStep caption;
+  final TypeStep label;
+  final TypeStep microLabel;
+
+  /// The name under a glyph in the bottom nav bar.
+  ///
+  /// **Its own rung, and smaller than [microLabel], because it is a name rather
+  /// than a line of text.** Five of them sit in a fixed-height capsule under
+  /// five 28pt glyphs, so this is the one label in the app whose size is
+  /// decided by the control around it: the glyph says which tab it is and the
+  /// word confirms it, which is the opposite of the weighting everywhere else.
+  /// It follows UIKit's own tab-bar label, the way [AppBottomNav]'s glyph
+  /// follows UIKit's symbol size. Borrowing `microLabel` is what made the
+  /// names read as loud as the glyphs they were labelling.
+  final TypeStep navLabel;
+
+  /// The title of a *pushed* page's collapsing header at rest — one box, one
+  /// list, one tracker. Its own rung because it was a bare `19` in four files,
+  /// which on a larger scale would have left a detail header a single point
+  /// clear of the rows beneath it.
+  final TypeStep pageTitle;
+
+  /// The weekday letter above a day in the week strip.
+  ///
+  /// **It has its own rung rather than borrowing [rowTitle], which is what it
+  /// used to do.** That coupling is why a bigger Settings row would have
+  /// dragged the calendar's letter up with it, and it is also how the letter
+  /// came to outweigh the date underneath: a row title grew for reasons that
+  /// had nothing to do with the calendar, and the day number stayed where it
+  /// was. A label must not be heavier than the thing it labels.
+  final TypeStep weekdayLetter;
+
+  /// The day number, and the circle it is drawn in — **one rung for both
+  /// views**.
+  ///
+  /// It used to be two, on the grounds that the month grid has more room, and
+  /// what that bought was a date that changed size when you moved between Home
+  /// and Kalender: 14 in a 34pt circle on one tab, 15 in a 38pt circle on the
+  /// other, for the same day of the same week. A day is the same object in both
+  /// views and the cells are the same seventh of the same width, so there was
+  /// never a second measurement to make — only a second place to forget.
+  final TypeStep dayNumber;
+  final double dayCircle;
+
+  const AppTypeScale({
+    required this.name,
+    required this.screenTitle,
+    required this.statValue,
+    required this.detailTitle,
+    required this.cardTitle,
+    required this.sheetTitle,
+    required this.sectionHeading,
+    required this.itemTitle,
+    required this.rowTitle,
+    required this.inputTitle,
+    required this.input,
+    required this.searchInput,
+    required this.buttonLarge,
+    required this.buttonSmall,
+    required this.body,
+    required this.groupHeading,
+    required this.caption,
+    required this.label,
+    required this.microLabel,
+    required this.navLabel,
+    required this.pageTitle,
+    required this.weekdayLetter,
+    required this.dayNumber,
+    required this.dayCircle,
+  });
+
+  /// What ships today.
+  static const actual = AppTypeScale(
+    name: 'actual',
+    screenTitle: TypeStep(26, FontWeight.w600),
+    statValue: TypeStep(24, FontWeight.w600),
+    detailTitle: TypeStep(23, FontWeight.w600),
+    cardTitle: TypeStep(18, FontWeight.w600),
+    sheetTitle: TypeStep(17, FontWeight.w600),
+    sectionHeading: TypeStep(16, FontWeight.w500),
+    itemTitle: TypeStep(15, FontWeight.w600),
+    rowTitle: TypeStep(15, FontWeight.w500),
+    inputTitle: TypeStep(17, FontWeight.w500),
+    input: TypeStep(15, FontWeight.w400),
+    searchInput: TypeStep(16, FontWeight.w300),
+    buttonLarge: TypeStep(16, FontWeight.w600),
+    buttonSmall: TypeStep(14, FontWeight.w500),
+    body: TypeStep(14, FontWeight.w300),
+    groupHeading: TypeStep(13, FontWeight.w600),
+    caption: TypeStep(13, FontWeight.w500),
+    label: TypeStep(12.5, FontWeight.w300),
+    microLabel: TypeStep(11.5, FontWeight.w500),
+    navLabel: TypeStep(9.5, FontWeight.w500),
+    pageTitle: TypeStep(19, FontWeight.w600),
+    weekdayLetter: TypeStep(15, FontWeight.w500),
+    dayNumber: TypeStep(14, FontWeight.w400),
+    dayCircle: 34,
+  );
+
+  /// The half step. Costs no layout constant anywhere — see the class doc.
+  static const planB = AppTypeScale(
+    name: 'planB',
+    screenTitle: TypeStep(27, FontWeight.w600),
+    statValue: TypeStep(25, FontWeight.w600),
+    detailTitle: TypeStep(23, FontWeight.w600),
+    cardTitle: TypeStep(18, FontWeight.w600),
+    sheetTitle: TypeStep(17, FontWeight.w600),
+    sectionHeading: TypeStep(16, FontWeight.w600),
+    itemTitle: TypeStep(16, FontWeight.w500),
+    rowTitle: TypeStep(16, FontWeight.w500),
+    inputTitle: TypeStep(17, FontWeight.w500),
+    input: TypeStep(16, FontWeight.w400),
+    searchInput: TypeStep(16, FontWeight.w400),
+    buttonLarge: TypeStep(16, FontWeight.w600),
+    buttonSmall: TypeStep(14, FontWeight.w500),
+    body: TypeStep(14, FontWeight.w400),
+    groupHeading: TypeStep(13, FontWeight.w600),
+    caption: TypeStep(13, FontWeight.w500),
+    label: TypeStep(13, FontWeight.w400),
+    microLabel: TypeStep(12, FontWeight.w500),
+    navLabel: TypeStep(10, FontWeight.w500),
+    pageTitle: TypeStep(19, FontWeight.w600),
+    weekdayLetter: TypeStep(14, FontWeight.w500),
+    dayNumber: TypeStep(16, FontWeight.w600),
+    dayCircle: 34,
+  );
+
+  /// The full step, onto the sizes iOS uses for the same roles.
+  static const planA = AppTypeScale(
+    name: 'planA',
+    screenTitle: TypeStep(28, FontWeight.w600),
+    statValue: TypeStep(26, FontWeight.w600),
+    detailTitle: TypeStep(24, FontWeight.w600),
+    cardTitle: TypeStep(19, FontWeight.w600),
+    sheetTitle: TypeStep(18, FontWeight.w600),
+    sectionHeading: TypeStep(17, FontWeight.w600),
+    itemTitle: TypeStep(17, FontWeight.w500),
+    rowTitle: TypeStep(17, FontWeight.w500),
+    inputTitle: TypeStep(18, FontWeight.w500),
+    input: TypeStep(17, FontWeight.w400),
+    searchInput: TypeStep(17, FontWeight.w400),
+    buttonLarge: TypeStep(17, FontWeight.w600),
+    buttonSmall: TypeStep(15, FontWeight.w500),
+    body: TypeStep(15, FontWeight.w400),
+    groupHeading: TypeStep(13, FontWeight.w600),
+    caption: TypeStep(13, FontWeight.w500),
+    label: TypeStep(13, FontWeight.w400),
+    microLabel: TypeStep(12, FontWeight.w500),
+    navLabel: TypeStep(10, FontWeight.w500),
+    pageTitle: TypeStep(20, FontWeight.w600),
+    weekdayLetter: TypeStep(13, FontWeight.w500),
+    dayNumber: TypeStep(16, FontWeight.w600),
+    dayCircle: 36,
+  );
+}
+
 /// The app's type scale. **Every piece of text goes through one of these** —
 /// there is no hand-written `TextStyle` left in `lib/screens/` or
 /// `lib/widgets/`, and a new one is almost always a sign that an existing role
-/// fits.
+/// fits. The sizes themselves are not here: they come from the installed
+/// [AppTypeScale], the way colours come from the installed [AppPalette].
 ///
 /// It is a *closed* scale on purpose. It replaced 139 hand-written styles that
 /// had drifted to 22 sizes and 5 weights for about 17 real roles: the same list
@@ -673,26 +991,11 @@ class AppShadows {
 ///   is expected — a token names a *role*, and the same role is ink here and
 ///   accent or danger there. `.copyWith(fontSize:)` / `.copyWith(fontWeight:)`
 ///   is how the drift started; the only legitimate use is an animated size (see
-///   [screenTitle]'s use in the collapsing headers).
+///   [screenTitle]'s use in the collapsing headers), and that one now reads its
+///   two ends off [scale] rather than naming 26 and 17.
 /// - **A new weight needs a new .ttf.** `pubspec.yaml` ships only w300/400/500/
 ///   600/800; asking for w700 gets a synthesised or snapped weight, not Poppins
 ///   Bold.
-///
-/// ### The scale
-///
-/// | Role | Size / weight |
-/// |---|---|
-/// | [screenTitle] | 26 w600 |
-/// | [statValue] | 24 w600 |
-/// | [detailTitle] | 23 w600 |
-/// | [cardTitle] | 18 w600 |
-/// | [sheetTitle] / [inputTitle] | 17 w600 / w500 |
-/// | [sectionHeading] / [buttonLarge] / [searchInput] | 16 w500 / w600 / w300 |
-/// | [itemTitle] / [rowTitle] / [input] | 15 w600 / w500 / w400 |
-/// | [body] / [buttonSmall] | 14 w300 / w500 |
-/// | [groupHeading] / [caption] | 13 w600 / w500 |
-/// | [label] | 12.5 w300 |
-/// | [microLabel] | 11.5 w500 |
 class AppText {
   AppText._();
 
@@ -700,15 +1003,56 @@ class AppText {
   /// comment there for why the distinction matters.
   static const _family = 'Poppins';
 
+  /// The file each bundled weight lives in, for the one caller that cannot let
+  /// Flutter do the drawing: a **native** Liquid Glass button's title
+  /// (`native_glass_buttons.dart`). Flutter resolves a family plus a weight to
+  /// a file itself; UIKit has to be handed the file.
+  ///
+  /// Kept beside [_family] rather than re-derived from `pubspec.yaml`, so a
+  /// typeface swap moves both at once — the same arrangement `app_icons.dart`
+  /// makes for the icon fonts.
+  static const Map<int, String> _weightAssets = {
+    300: 'assets/fonts/Poppins-Light.ttf',
+    400: 'assets/fonts/Poppins-Regular.ttf',
+    500: 'assets/fonts/Poppins-Medium.ttf',
+    600: 'assets/fonts/Poppins-SemiBold.ttf',
+    800: 'assets/fonts/Poppins-ExtraBold.ttf',
+  };
+
+  /// The font file [style] is drawn from — the nearest bundled weight, which is
+  /// what Flutter would land on too. A style is never drawn in two different
+  /// files depending on who is doing the drawing.
+  static String fontAsset(TextStyle style) {
+    final target = (style.fontWeight ?? FontWeight.w400).value;
+    var best = _weightAssets.keys.first;
+    for (final weight in _weightAssets.keys) {
+      if ((weight - target).abs() < (best - target).abs()) best = weight;
+    }
+    return _weightAssets[best]!;
+  }
+
+  /// The installed scale. **Change this one line and hot-reload to try a
+  /// different size across the whole app**, which is the entire reason the
+  /// indirection exists — see [AppTypeScale].
+  ///
+  /// Mutable and global for the same reason [AppColors.palette] is: the tokens
+  /// are read in notifiers, models and repositories where there is no
+  /// `BuildContext`, so there is nowhere to hang an `InheritedWidget`. Unlike
+  /// the palette, nothing writes this at runtime — it is a build-time choice
+  /// until a scale earns a place in Settings.
+  static AppTypeScale scale = AppTypeScale.planB;
+
+  static AppTypeScale get _s => scale;
+
   // ---------------------------------------------------------------- Titles
 
   /// A tab's own title, the largest type in the app. The collapsing headers
-  /// animate its `fontSize` down to [sheetTitle]'s 17 as the header pins, which
-  /// is the one sanctioned `copyWith(fontSize:)`.
+  /// animate its `fontSize` down to [sheetTitle]'s as the header pins, which is
+  /// the one sanctioned `copyWith(fontSize:)`.
   static TextStyle get screenTitle => TextStyle(
     fontFamily: _family,
-    fontSize: 26,
-    fontWeight: FontWeight.w600,
+    fontSize: _s.screenTitle.size,
+    fontWeight: _s.screenTitle.weight,
     letterSpacing: -0.3,
     color: AppColors.ink,
   );
@@ -718,8 +1062,8 @@ class AppText {
   /// number sitting directly on its own caption.
   static TextStyle get statValue => TextStyle(
     fontFamily: _family,
-    fontSize: 24,
-    fontWeight: FontWeight.w600,
+    fontSize: _s.statValue.size,
+    fontWeight: _s.statValue.weight,
     letterSpacing: -0.5,
     height: 1.1,
     color: AppColors.ink,
@@ -729,44 +1073,54 @@ class AppText {
   /// below [screenTitle]: it names a thing you opened, not a tab.
   static TextStyle get detailTitle => TextStyle(
     fontFamily: _family,
-    fontSize: 23,
-    fontWeight: FontWeight.w600,
+    fontSize: _s.detailTitle.size,
+    fontWeight: _s.detailTitle.weight,
     letterSpacing: -0.4,
     color: AppColors.ink,
   );
 
   static TextStyle get cardTitle => TextStyle(
     fontFamily: _family,
-    fontSize: 18,
-    fontWeight: FontWeight.w600,
+    fontSize: _s.cardTitle.size,
+    fontWeight: _s.cardTitle.weight,
     letterSpacing: -0.2,
     color: AppColors.ink,
   );
 
   static TextStyle get sheetTitle => TextStyle(
     fontFamily: _family,
-    fontSize: 17,
-    fontWeight: FontWeight.w600,
+    fontSize: _s.sheetTitle.size,
+    fontWeight: _s.sheetTitle.weight,
     letterSpacing: -0.2,
     color: AppColors.ink,
   );
 
   static TextStyle get sectionHeading => TextStyle(
     fontFamily: _family,
-    fontSize: 16,
-    fontWeight: FontWeight.w500,
+    fontSize: _s.sectionHeading.size,
+    fontWeight: _s.sectionHeading.weight,
     color: AppColors.ink,
   );
 
   // ------------------------------------------------------------------ Rows
 
   /// The title of a row you *act on* — a list or box card, a task, a search
-  /// hit, an event. Deliberately one weight above [rowTitle]: content the user
-  /// created should carry more weight than the settings that configure it.
+  /// hit, an event.
+  ///
+  /// **It used to be one weight above [rowTitle]**, on the theory that content
+  /// the household created should carry more weight than the settings that
+  /// configure it. The Ausgaben page is where that theory was tested and lost:
+  /// the category card is set in this token and the payments card below it in
+  /// [rowTitle], the two sit one above the other on the same screen, and the
+  /// heavier one reads as shouting rather than as content. The lighter of the
+  /// two is the standard for a list row now, everywhere.
+  ///
+  /// The two tokens still name different roles and still stand apart in the
+  /// shipped [AppTypeScale.actual]; on the newer scales they happen to agree.
   static TextStyle get itemTitle => TextStyle(
     fontFamily: _family,
-    fontSize: 15,
-    fontWeight: FontWeight.w600,
+    fontSize: _s.itemTitle.size,
+    fontWeight: _s.itemTitle.weight,
     color: AppColors.ink,
   );
 
@@ -774,8 +1128,8 @@ class AppText {
   /// than [itemTitle] on purpose — see there.
   static TextStyle get rowTitle => TextStyle(
     fontFamily: _family,
-    fontSize: 15,
-    fontWeight: FontWeight.w500,
+    fontSize: _s.rowTitle.size,
+    fontWeight: _s.rowTitle.weight,
     color: AppColors.ink,
   );
 
@@ -786,8 +1140,8 @@ class AppText {
   /// and Kalender, 16/w400 in Listen and Box) for what is the same field.
   static TextStyle get inputTitle => TextStyle(
     fontFamily: _family,
-    fontSize: 17,
-    fontWeight: FontWeight.w500,
+    fontSize: _s.inputTitle.size,
+    fontWeight: _s.inputTitle.weight,
     color: AppColors.ink,
   );
 
@@ -796,8 +1150,8 @@ class AppText {
   /// [rowTitle] at the same size.
   static TextStyle get input => TextStyle(
     fontFamily: _family,
-    fontSize: 15,
-    fontWeight: FontWeight.w400,
+    fontSize: _s.input.size,
+    fontWeight: _s.input.weight,
     color: AppColors.ink,
   );
 
@@ -805,20 +1159,20 @@ class AppText {
   /// live field in the search sheet, so the two read as the same control.
   static TextStyle get searchInput => TextStyle(
     fontFamily: _family,
-    fontSize: 16,
-    fontWeight: FontWeight.w300,
+    fontSize: _s.searchInput.size,
+    fontWeight: _s.searchInput.weight,
     color: AppColors.ink,
   );
 
   // --------------------------------------------------------------- Actions
 
   /// A full-width primary call to action (Anmelden, Weiter). Buttons at
-  /// [rowTitle]'s 15/w500 are the common case; this is for the one button a
+  /// [rowTitle]'s weight are the common case; this is for the one button a
   /// screen is *about*.
   static TextStyle get buttonLarge => TextStyle(
     fontFamily: _family,
-    fontSize: 16,
-    fontWeight: FontWeight.w600,
+    fontSize: _s.buttonLarge.size,
+    fontWeight: _s.buttonLarge.weight,
     color: AppColors.ink,
   );
 
@@ -826,8 +1180,8 @@ class AppText {
   /// button.
   static TextStyle get buttonSmall => TextStyle(
     fontFamily: _family,
-    fontSize: 14,
-    fontWeight: FontWeight.w500,
+    fontSize: _s.buttonSmall.size,
+    fontWeight: _s.buttonSmall.weight,
     color: AppColors.ink,
   );
 
@@ -839,8 +1193,8 @@ class AppText {
   /// outside Settings than in it.
   static TextStyle get body => TextStyle(
     fontFamily: _family,
-    fontSize: 14,
-    fontWeight: FontWeight.w300,
+    fontSize: _s.body.size,
+    fontWeight: _s.body.weight,
     height: 1.55,
     color: AppColors.inkSecondary,
   );
@@ -849,8 +1203,8 @@ class AppText {
   /// name above its items, a Settings group.
   static TextStyle get groupHeading => TextStyle(
     fontFamily: _family,
-    fontSize: 13,
-    fontWeight: FontWeight.w600,
+    fontSize: _s.groupHeading.size,
+    fontWeight: _s.groupHeading.weight,
     letterSpacing: 0.3,
     color: AppColors.muted,
   );
@@ -859,24 +1213,106 @@ class AppText {
   /// "Erledigt (3)" bar and the inline action beside it, a week range.
   static TextStyle get caption => TextStyle(
     fontFamily: _family,
-    fontSize: 13,
-    fontWeight: FontWeight.w500,
+    fontSize: _s.caption.size,
+    fontWeight: _s.caption.weight,
     color: AppColors.muted,
   );
 
   /// The secondary line *under* a row's title.
   static TextStyle get label => TextStyle(
     fontFamily: _family,
-    fontSize: 12.5,
-    fontWeight: FontWeight.w300,
+    fontSize: _s.label.size,
+    fontWeight: _s.label.weight,
     color: AppColors.muted,
   );
 
   /// The smallest type in the app — a timeline hour, an all-day pill.
   static TextStyle get microLabel => TextStyle(
     fontFamily: _family,
-    fontSize: 11.5,
-    fontWeight: FontWeight.w500,
+    fontSize: _s.microLabel.size,
+    fontWeight: _s.microLabel.weight,
     color: AppColors.muted,
   );
+
+  /// The name under a glyph in the bottom nav bar — see [AppTypeScale.navLabel]
+  /// for why it is smaller than [microLabel] rather than borrowing it. Takes
+  /// its colour from the item (`AppColors.ink`, or the accent on the tab in
+  /// force), so unlike the captions above it does not carry one.
+  static TextStyle get navLabel => TextStyle(
+    fontFamily: _family,
+    fontSize: _s.navLabel.size,
+    fontWeight: _s.navLabel.weight,
+  );
+
+  /// The two ends of a collapsing header's title, and the title of a pushed
+  /// page at rest. Sizes rather than styles, because the header interpolates
+  /// between them every scroll frame — that interpolation is the one sanctioned
+  /// `copyWith(fontSize:)` in the app, and this is where its two ends live so
+  /// that no screen has to name a number.
+  static double get headerExpanded => _s.screenTitle.size;
+  static double get headerCollapsed => _s.sheetTitle.size;
+  static double get pageTitle => _s.pageTitle.size;
+
+  // ------------------------------------------------------------- Row marks
+
+  /// The round mark at the head of a **two-line row** — a list, a box, a box
+  /// item, a spend. Derived from the text block beside it rather than written
+  /// down, because that is the only thing it has ever been measured against:
+  /// a disc shorter than the words it leads stops reading as the row's subject
+  /// and starts reading as a bullet.
+  ///
+  /// Writing it down is how the three screens came to disagree about the same
+  /// row — 34 in Ausgaben, 38 in Listen, 44 in Box — and how raising the type
+  /// left all three behind at once. At the shipped scale this still comes out
+  /// at the 38 Listen used.
+  ///
+  /// Rounded down to an even number so the disc has a whole-pixel centre at
+  /// 1× and 2×; a 39pt circle puts its own hairline on a half pixel.
+  static double get rowMark =>
+      ((lineBox(_s.itemTitle.size) + lineBox(_s.label.size) + 2) / 2).floorToDouble() * 2;
+
+  /// The same mark where it names a whole page rather than a row — a list's or
+  /// a tracker's own header. One step up, which at the shipped scale is the 44
+  /// those headers used.
+  static double get headerMark => rowMark + 6;
+
+  /// What goes *inside* a mark, as a fraction of it.
+  ///
+  /// **These are not the thing to grow when a mark feels small.** The inset a
+  /// logo gets is what keeps full-colour artwork off the hairline, and several
+  /// merchant marks bleed to their own edge and are clipped by the disc — push
+  /// the art out and those lose their edges rather than gaining presence. The
+  /// disc is what tracks the type; the ratios inside it are fixed.
+  static double markImage(double mark) => mark * 0.68;
+  static double markGlyph(double mark) => mark * 0.5;
+  static double markInitials(double mark) => mark * 0.36;
+
+  // -------------------------------------------------------------- Calendar
+
+  /// The weekday letter above a day in the week strip. Its own role rather than
+  /// [rowTitle]'s — see [AppTypeScale.weekdayLetter] for why that mattered.
+  static TextStyle get weekdayLetter => TextStyle(
+    fontFamily: _family,
+    fontSize: _s.weekdayLetter.size,
+    fontWeight: _s.weekdayLetter.weight,
+    color: AppColors.muted,
+  );
+
+  /// The day number, per view. The colour and the weight are the *day's* — a
+  /// selected or today's number is set heavier by `DaySelectorCircle` — so what
+  /// these two carry is the resting size and the resting weight.
+  static TypeStep get dayNumber => _s.dayNumber;
+
+  /// The diameter each of those is drawn in. Here rather than at the call site
+  /// because a number cannot grow inside a circle that cannot, and the week
+  /// strip's bands are measured off this.
+  static double get dayCircle => _s.dayCircle;
+
+  /// The line box a run of Poppins occupies at [size], to the nearest point.
+  ///
+  /// Used where a band is reserved for one line of text and the cells either
+  /// side of it have to agree on the baseline — the week strip's weekday letter
+  /// is the case that made it necessary. The factor is measured from Poppins'
+  /// own metrics: at 15pt it gives the 20 that band was hand-written as.
+  static double lineBox(double size) => (size * 1.34).roundToDouble();
 }

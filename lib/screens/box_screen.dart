@@ -66,9 +66,9 @@ class _BoxOverview extends ConsumerWidget {
 
   const _BoxOverview({required this.state});
 
-  /// First-frame estimate only — the search pill plus the stat tiles.
+  /// First-frame estimate only — the two stat tiles plus the gap above them.
   /// [CollapsingHeaderScreen] re-measures the real thing once it's laid out.
-  static const _extraHeight = 163.0;
+  static const _extraHeight = 105.0;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -86,6 +86,7 @@ class _BoxOverview extends ConsumerWidget {
           if (context.mounted) openBoxSheet(context, ref);
         }
       },
+      addLabel: L.s.newBox,
       extraHeight: _extraHeight,
       headerExtra: Row(
         children: [
@@ -198,9 +199,9 @@ class _BoxOverview extends ConsumerWidget {
                   leading: IconTile(
                     iconKey: hit.iconKey,
                     photoUrl: state.photoUrl(hit.photoPath),
-                    size: 38,
-                    imageSize: 24,
-                    glyphSize: 18,
+                    size: AppText.rowMark,
+                    imageSize: AppText.markImage(AppText.rowMark),
+                    glyphSize: AppText.markGlyph(AppText.rowMark),
                     fallbackIcon: AppIcons.clipboardText,
                   ),
                   title: hit.name,
@@ -457,7 +458,7 @@ class _BoxDetail extends ConsumerWidget {
         collapsedIcon: _BoxBadge(box: box, size: 24, iconSize: 13),
         t: t,
         expandedAlignment: Alignment.center,
-        expandedFontSize: 19,
+        expandedFontSize: AppText.pageTitle,
         fontWeight: FontWeight.w500,
         leadingWidth: 48,
         trailingWidth: 48,
@@ -502,7 +503,7 @@ class _BoxDetail extends ConsumerWidget {
           const SizedBox(height: 16),
           Row(
             children: [
-              _BoxBadge(box: box, size: 44, iconSize: 20),
+              _BoxBadge(box: box, size: AppText.rowMark, iconSize: AppText.markGlyph(AppText.rowMark)),
               const SizedBox(width: 13),
               // Unfolds when the name is longer than the line, exactly as a
               // list's does — see [ExpandableTitle].
@@ -592,7 +593,7 @@ class _ItemIcon extends StatelessWidget {
   final String? iconKey;
   final String? photoUrl;
 
-  static const double _slot = 44;
+  static double get _slot => AppText.rowMark;
 
   const _ItemIcon({required this.iconKey, this.photoUrl});
 
@@ -604,8 +605,8 @@ class _ItemIcon extends StatelessWidget {
         iconKey: iconKey,
         photoUrl: photoUrl,
         size: _slot,
-        imageSize: 28,
-        glyphSize: 20,
+        imageSize: AppText.markImage(_slot),
+        glyphSize: AppText.markGlyph(_slot),
         fallbackIcon: AppIcons.clipboardText,
       );
     }
@@ -1132,7 +1133,7 @@ class _BoxRow extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 15),
       child: Row(
         children: [
-          _BoxBadge(box: box, size: 44, iconSize: 20),
+          _BoxBadge(box: box, size: AppText.rowMark, iconSize: AppText.markGlyph(AppText.rowMark)),
           const SizedBox(width: 13),
           Expanded(
             child: Column(

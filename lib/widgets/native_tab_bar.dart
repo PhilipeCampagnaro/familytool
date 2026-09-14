@@ -3,6 +3,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../l10n/l10n.dart';
+import '../state/nav_state.dart';
 import '../theme/tokens.dart';
 import 'bottom_nav.dart';
 import 'native_occlusion.dart';
@@ -26,7 +27,12 @@ class NativeTabBar extends StatefulWidget {
   /// is picked, so a dismissed menu would leave the bar highlighting a tab
   /// nobody is on. Once [onTap] has settled, the app's index is pushed back
   /// down and the two agree again.
-  final Future<void> Function(int) onTap;
+  ///
+  /// The rect is where UIKit had laid the tapped item out, in screen
+  /// coordinates, and it is only ever asked for and answered for **Mehr** — the
+  /// one item whose tap stands a control on it rather than changing tab. Null
+  /// everywhere else, and null on Mehr too if UIKit would not say.
+  final Future<void> Function(int index, Rect? itemFrame) onTap;
 
   /// Reports the height UIKit laid the bar out at, once it has one. Nothing
   /// in Dart can predict it — an iOS 26 capsule is a good deal taller than the
@@ -114,14 +120,58 @@ class _NativeTabBarState extends State<NativeTabBar> {
   ///
   /// The re-push is a no-op in the ordinary case — the tab changed, so
   /// [didUpdateWidget] has already sent the same index — and it is the whole
-  /// point in the one case that isn't: a **Mehr** menu that was dismissed.
+  /// point in the one case that isn't: a **Mehr** shelf that was dismissed.
   Future<void> _tapped(int index) async {
     // Reported even when it is the tab already on screen: the shell drops a
     // repeat tap on an ordinary tab, and **Mehr** wants it, because tapping it
     // again is how you swap Boxen for Ausgaben.
-    await widget.onTap(index);
+    await widget.onTap(index, index == moreTabIndex ? await _moreItemFrame() : null);
     if (!mounted || widget.index == index) return;
     _channel?.invokeMethod('setSelectedIndex', {'index': widget.index});
+  }
+
+  /// Where UIKit has the **Mehr** item, in screen coordinates, or null if it
+  /// would not say.
+  ///
+  /// Asked on the tap and nowhere else. UIKit lays the items out again whenever
+  /// the selection moves — the iOS 26 pill changes the selected item's width —
+  /// so an answer kept from earlier is an answer about a bar in a different
+  /// state, and there is exactly one moment this is wanted. A `frame` read
+  /// during UIKit's own pill animation is the value being animated *to*, which
+  /// is the bar as it will look while the shelf stands on it.
+  Future<Rect?> _moreItemFrame() async {
+    final channel = _channel;
+    if (channel == null) return null;
+    // Caught, and it has to be: this is a **Swift** method, so a hot reload or
+    // hot restart over a binary built before it existed answers
+    // `MissingPluginException`. Thrown, that would escape through `onTap` and
+    // the shelf would never open at all — the one failure here has to be a
+    // shelf a few points off its item, never no shelf.
+    final Map<String, Object?>? answer;
+    try {
+      answer = await channel.invokeMapMethod<String, Object?>('getMoreItemFrame');
+    } on PlatformException {
+      return null;
+    } on MissingPluginException {
+      return null;
+    }
+    if (answer == null || !mounted) return null;
+    double? number(String key) => (answer![key] as num?)?.toDouble();
+    final width = number('width') ?? 0;
+    assert(() {
+      debugPrint(
+        '[tab-bar-item] Mehr from ${answer!['found']}: '
+        'x ${number('x')?.toStringAsFixed(1)}, width ${width.toStringAsFixed(1)}, '
+        'bar ${number('barWidth')?.toStringAsFixed(1)}, '
+        'view ${number('containerWidth')?.toStringAsFixed(1)}',
+      );
+      return true;
+    }());
+    if (width <= 1) return null;
+    final box = context.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) return null;
+    final origin = box.localToGlobal(Offset(number('x') ?? 0, number('y') ?? 0));
+    return Rect.fromLTWH(origin.dx, origin.dy, width, number('height') ?? 0);
   }
 
   @override

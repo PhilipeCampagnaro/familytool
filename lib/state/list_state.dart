@@ -354,6 +354,7 @@ class ListNotifier extends StateNotifier<ListScreenState> {
     required ListKind kind,
     String? iconKey,
     EventLink? eventLink,
+    String? withId,
   }) async {
     final trimmed = name.trim();
     if (trimmed.isEmpty) return false;
@@ -367,7 +368,10 @@ class ListNotifier extends StateNotifier<ListScreenState> {
     // for the rows inside it — see [suggestIcon]. This is the icon that is
     // actually stored, so it has to agree with the preview the sheet showed.
     final icon = iconKey ?? suggestIcon(trimmed, subject: IconSubject.list)?.key;
-    final id = newUuidV4();
+    // The caller's own uuid where it has one — [createListWithItems] has to know
+    // the list's id before the insert answers, so it can fill it. Minted here
+    // otherwise, which is every other caller.
+    final id = withId ?? newUuidV4();
     final visibility = state.newVisibility;
     final sharedWith = {...state.newSharedWith};
     final optimistic = ShoppingList(
@@ -427,6 +431,97 @@ class ListNotifier extends StateNotifier<ListScreenState> {
       );
       _fail(L.s.listSaveFailed);
       return false;
+    }
+  }
+
+  /// A list and the articles that belong on it, in one action — the
+  /// "Liste erstellen" a Vorhaben stamps out.
+  ///
+  /// One method rather than two calls from the screen, because the id is the
+  /// hinge: `lists` is inserted with a **client-side uuid and no read-back** (see
+  /// the "Writing containers from the client" section of docs/backend.md — the
+  /// SELECT policy is a `stable` function that cannot see the row being
+  /// inserted, so `insert … returning` is rejected), which is what makes filling
+  /// it possible at all. Minting that uuid is this file's business and not a
+  /// screen's.
+  ///
+  /// The articles go in only once the list itself has landed: `list_items` has a
+  /// real foreign key onto `lists`, so a child row that overtook its parent
+  /// would be rejected. False means the list failed and nothing was filled.
+  /// [items] carry a `unit` — a [GroceryUnit] key, or null for the default —
+  /// because a Vorhaben's articles arrive as *500* and *g* rather than as the
+  /// one string "500g". A caller with no unit to give passes null, and the
+  /// article is stored exactly as it was written.
+  Future<bool> createListWithItems({
+    required String name,
+    required ListKind kind,
+    required List<({String text, String? sub, String? unit})> items,
+  }) async {
+    final id = newUuidV4();
+    if (!await createList(name: name, kind: kind, withId: id)) return false;
+    await _fillList(id, items);
+    return true;
+  }
+
+  /// Fills a list nobody has typed into yet — a Vorhaben's articles, stamped
+  /// out behind the list itself.
+  ///
+  /// **Addressed by [listId] rather than by the open list**, which is the whole
+  /// difference from [addItem]: this runs from the Board, where Listen has no
+  /// list open, and `_targetListId()` would file a craft list's articles into
+  /// whichever list happened to be showing. Positions count *up* from zero for
+  /// the same kind of reason — these arrive in the order somebody wrote them,
+  /// and [addItem]'s newest-first rule would stand them on their head.
+  ///
+  /// Each article's icon comes off its own name through [suggestIcon], exactly
+  /// as a typed one's does, so a stamped-out list arrives looking like a list
+  /// somebody made by hand.
+  ///
+  /// **Silent about failure, deliberately.** The list is what the confirmation
+  /// chip is reporting on; an article that did not land leaves five rows where
+  /// there should be six, which the next load corrects, and that is a smaller
+  /// thing than an error over a list the user is already looking at.
+  Future<void> _fillList(String listId, List<({String text, String? sub, String? unit})> rows) async {
+    if (rows.isEmpty) return;
+    final grocery = _isGrocery(listId);
+    final subject = grocery ? IconSubject.groceryArticle : IconSubject.article;
+
+    final drafts = <ShoppingListItem>[];
+    for (var i = 0; i < rows.length; i++) {
+      final text = rows[i].text.trim();
+      if (text.isEmpty) continue;
+      drafts.add(
+        ShoppingListItem(
+          id: _tempId(),
+          listId: listId,
+          text: text,
+          sub: rows[i].sub,
+          unit: rows[i].unit,
+          iconKey: suggestIcon(text, subject: subject)?.key,
+          createdBy: _userId,
+          position: drafts.length,
+        ),
+      );
+    }
+    if (drafts.isEmpty) return;
+    _putItem(listId, [...state.itemsByList[listId] ?? const [], ...drafts]);
+
+    for (final draft in drafts) {
+      try {
+        final saved = await _repo.addItem(
+          listId: listId,
+          text: draft.text,
+          sub: draft.sub,
+          unit: draft.unit,
+          iconKey: draft.iconKey,
+          position: draft.position,
+        );
+        if (!mounted) return;
+        _replaceItem(listId, draft.id, saved);
+      } catch (_) {
+        if (!mounted) return;
+        _removeItemLocally(listId, draft.id);
+      }
     }
   }
 

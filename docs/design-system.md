@@ -50,7 +50,9 @@ that have none.
 - **`Colors.white` is still correct for foreground on a filled accent** — a button label, the
   selected day number, a check mark, a swipe action's icon. Those stay white in both palettes. A
   white *surface* is what has to become `AppColors.surface`. `AppColors.brandTile` is deliberately
-  white in both: it backs third-party logos drawn for a light background.
+  white in both: it backs third-party logos drawn for a light background, and
+  `AppColors.brandTileInk` is its foreground for the same reason — a tile that does not follow the
+  theme cannot have contents that do, and `ink` on dark is a pale grey that vanishes on it.
 - **Every iOS platform view** (`UITabBar`, `UISearchBar`/`UISearchTextField`, `UISwitch`, and the
   `UIGlassEffect` behind `NativeGlassView`) takes a `dark` creation arg *and* a `setBrightness`
   channel call. Both halves are needed: the theme is an in-app setting, so there's no device
@@ -113,6 +115,117 @@ reach for the neighbouring token instead of adding one back.
 Apple "Liquid Glass": a real native `UIGlassEffect` on iOS via `native_glass_view.dart`, a
 Flutter-drawn blur+tint approximation everywhere else.
 
+- **A glass *button* is a real `UIButton`, not a piece of glass with a glyph on it**
+  (`native_glass_buttons.dart` + `ios/Runner/GlassButtonPlatformView.swift`). `GlassIconButton`
+  and `GlassIconGroup` were built out of `GlassSurface` — the raw material, a Flutter glyph laid
+  over it, a Flutter shadow under it and a Flutter gesture detector on top — which is the app
+  re-implementing a control the system ships, and it showed: no press response the system would
+  recognise, a drop shadow the material then refracted, and a rim that read as painted rather than
+  lensed. Apple's guidance for the new design is *prefer system views and controls*, and for a
+  button that is `UIButton.Configuration.glass()` (or `.prominentGlass()` for an accent). Same
+  bargain the bottom bar already makes by being a real `UITabBar` and every menu makes by being a
+  real `UIMenu`. The button brings its own material, press behaviour, shadow, metrics and
+  accessibility.
+  - **A group is one glass capsule with plain buttons on it**, which is what UIKit's own grouped
+    `UIBarButtonItem`s are: image buttons *share* a background with the image buttons beside them.
+    Any number of segments works; two and three are what the app uses.
+    - **Not `UIGlassContainerEffect`**, which is what this was built as first. That effect is for
+      glass that comes apart and back together — a toolbar that splits as it moves — and at rest
+      two 50×40 capsules two points apart do not union into a 100×40 one: each keeps its own round
+      ends and the pair renders as a **peanut with a pinched waist**. (Closing the waist needs an
+      overlap of a full height, which then puts the tap targets somewhere other than where the
+      glyphs are drawn.) The merge was working exactly as designed; it was the wrong effect for a
+      control that never moves.
+    - A segment is therefore `.plain()`, not `.glass()` — glass on glass is the one thing the
+      material's own guidance rules out. What a segment gives up is the per-press lensing, because
+      the glass belongs to the group; that is true of Apple's grouped bar buttons too.
+  - **The glyphs stay Phosphor.** SF Symbols is what a `UIMenu` row has to take, but a menu row is
+    a list item where a header button is the *same* glyph the rest of the screen draws — two icon
+    families on one screen. So `PhosphorGlyphs` reads the font straight out of the Flutter bundle
+    with CoreText and rasterises a **template** image, which UIKit then tints and gives the glass's
+    own vibrancy. The font is resolved by the file's own PostScript name, never by the
+    `PhosphorBold` family name in `pubspec.yaml` (that is Flutter's name for it).
+  - **Send `flatIcon(icon)`, never the `AppIcons` constant** — codepoint *and* font asset, because
+    a codepoint only means something alongside the file it is a codepoint in. **The two Phosphor
+    weights do not share a codepoint space**: a duotone glyph is a pair of layers, so
+    `Phosphor-Duotone.ttf` holds 3022 glyphs where `Phosphor-Bold.ttf` holds 1513, at different
+    positions. `_flat`'s *values* are the same number in Regular, Bold or Thin — that is what the
+    note on it means, and it is about the values, not the keys. Handing an `AppIcons` constant's
+    own codepoint to the Bold font drew a missing-glyph box in every single button. `flatIcon()`
+    and `iconFontAsset()` in `app_icons.dart` are the resolution `AppIcon` already did internally,
+    exposed for the one caller that cannot let Flutter do the drawing.
+  - **A labelled button keeps the app's typeface.** `GlassPillButton` ("Fertig", "Überspringen"),
+    `FloatingGlassPill` ("Heute", "Rückgängig") and the `MoreShelf` buttons are native too, and
+    their titles are set in **Poppins**, loaded from the Flutter bundle exactly like the icon font
+    (`AppText.fontAsset` resolves a `TextStyle`'s weight to a file). A native button saying
+    "Fertig" in SF Pro beside a screen set in Poppins would be the one place the app changed
+    voice — a worse trade than the one the material is being adopted for.
+    - The title carries its **own colour**, not the button's tint. On "Heute" the tint is the
+      accent and belongs to the glyph alone; one `tintColor` for both repaints the word accent and
+      the pill reads as a filled accent control rather than a neutral one carrying an accent mark.
+  - **A platform view has no intrinsic size, so `NativeGlassButtons.sizer` gives it one.** The
+    Flutter widget the native button replaces is built at zero opacity to size the `Stack`, and the
+    button fills it. One source of truth: a `TextPainter` measurement would have to be kept in step
+    with the fallback path's padding and type by hand and would drift the first time either moved.
+    The sizer is built *first*, so it lands in the base surface rather than an overlay above the
+    platform view.
+  - **`symbol:` beats `icon:` where the row is already Apple's set.** The `Mehr` shelf stands over
+    a real `UITabBar` drawing real SF Symbols, and `navRowIcon` already swaps Phosphor out for
+    `CupertinoIcons` there — which is a *package* asset with no path UIKit can be handed, and needs
+    none, since a `UIButton` takes a symbol by name. Validate a name against the runtime's own list
+    first (`CoreGlyphs.bundle/name_availability.plist`).
+    - **A symbol's `pointSize` is a type size, not a box**, and it is `symbolSize`, never
+      `iconSize`. `kNavRowIconSize` is 28 because that is the *em* a Phosphor glyph is drawn at,
+      and an icon font puts well under an em of ink inside it; a symbol fills its own metrics, so
+      the same 28 came back as a 35×35 image for `shippingbox` and 40×28 for `creditcard` and the
+      shelf towered over the identical glyphs on the bar below it. The default is
+      `kNavBarSymbolPointSize`, which is UIKit's own — what `TabBarPlatformView` gets by passing no
+      configuration at all — so a symbol beside the bar is the bar's size by construction.
+    - **Weight is the one thing that does not follow the bar**, and is `symbolWeight` for that
+      reason. The bar draws its glyphs *on the bar*, where `.regular` is right; the shelf draws the
+      same glyph on a 62pt glass circle floating over a screen, where `.regular` reads thin beside
+      the Phosphor **Bold** every other control is set in. `.medium` — one step, not two;
+      `.semibold` at this size starts to look like a different icon set.
+  - **Push everything an item carries, not just its word.** A `UiKitView` reads `creationParams`
+    once, and *two* things on a button change under a live view: the label follows the language
+    picked in Settings, and the title's **colour** follows the palette, since `AppText`'s styles
+    resolve to `AppColors.ink`. Baked into the `AttributedString` at creation, "Fertig" stayed
+    black in a dark app until something else tore the view down. One `setItems` push covers both
+    so they cannot fall out of step — the same contract `setTint` and `setBrightness` already have,
+    and the same trap `NativeGlassView._syncTint` documents at the other end.
+  - Still `GlassSurface` on the fallback paths: off iOS, and on iOS for as long as a sheet covers
+    the screen (`occludedByRoute`). And still `GlassSurface` for `GlassAccentButton`, the
+    accent-filled labelled pill, which is not yet converted.
+- **`GlassSurface` remains the right thing for a *surface*** — the nav bar's backing capsule, the
+  floating pill, the `Mehr` shelf, a sheet's material. The rules below are about those.
+- **The press belongs to UIKit where the material is real.** `UIGlassEffect.isInteractive` is the
+  material's *own* response to a finger — the lensing that gathers under it — and it only runs for
+  touches UIKit itself delivers into the effect view. It shipped set to `true` on every glass
+  surface in the app and could never once fire: `GlassPlatformView` held
+  `isUserInteractionEnabled = false` and a Flutter `GestureDetector` layered over the platform view
+  took every touch, so what a press actually did was shrink the whole control 10% — which is not
+  the gesture language of iOS 26 glass, and is why the buttons read as "not active". So a tappable
+  surface now passes `GlassSurface.regions` (fractions of its own box, one per segment) and the
+  native side hangs invisible `UIControl`s inside `effectView.contentView`; only the *tap* comes
+  back over the channel. `nativeGlassActive(context)` is the one question both sides ask, so the
+  surface and its caller can never disagree about who is detecting the gesture. The
+  `AnimatedScale` survives on the approximation path only, which has no response of its own.
+  - This needs `PlatformViewHitTestBehavior.opaque` + an `EagerGestureRecognizer`, the same
+    bargain the tab bar and switch already make. The cost: a drag that *starts* on a glass button
+    no longer scrolls what's behind it. That is what a nav-bar button does natively too.
+  - A surface with **no** regions (the nav bar's backing capsule, the `Mehr` shelf, the floating
+    pill) keeps `isUserInteractionEnabled = false` and takes no touches at all, so nothing that
+    was never a button starts swallowing gestures.
+  - The platform view publishes no Flutter semantics, so a native-path control wraps itself in a
+    `Semantics(button: true, …)` node — `GlassIconGroup`'s segments carry `onTap` there as well.
+- **Nothing may be painted *underneath* real glass, and a `boxShadow` is the easy thing to forget.**
+  Flutter paints a `DecoratedBox`'s shadow into the surface *below* the platform view, which is
+  exactly what `UIGlassEffect` samples — so a 35%-black blur sized to sit behind the control got
+  pulled up through the material and smeared across its rim, with the rest hanging outside the
+  capsule as a grey halo. That halo is what made the header capsule look painted rather than
+  refracted. `GlassSurface` therefore drops `boxShadow` on the native path entirely; the material
+  carries its own shadow, and the token is for the Flutter drawing, which has none. The same
+  applies to `AppShadows.accentGlass` under the accent buttons.
 - **Leave `tint` null.** It's forwarded straight to `UIGlassEffect.tintColor`, and a near-opaque
   one floods the material so it stops reading as glass at all. Reserve `tint` for a deliberate
   accent, e.g. the sheet's blue confirm button.
@@ -185,7 +298,7 @@ at 15–22px, where that difference reads as a button whose icon has gone faint 
 lighter style. Apple does not draw a bar button's symbol at a text weight either. **Every Phosphor
 weight shares one codepoint per glyph**, so the weight is chosen in exactly one place: the
 `_flatFamily` constant and the matching `pubspec.yaml` font entry. Changing those two lines moves
-all 164 flat glyphs, and the `_flat` table never has to be touched.
+all 171 flat glyphs, and the `_flat` table never has to be touched.
 
 **By glyph.** Fourteen bare marks are flat everywhere regardless — `check`, `x`, `plus`, `minus`,
 `dotsThreeVertical`, four arrows and five carets — because Phosphor has no honest duotone for
@@ -257,6 +370,14 @@ passes under it blurred instead of reading through. Deliberately **not** a `Glas
 liquid glass's specular highlight and edge refraction read as a floating control, wrong for an
 edge-to-edge bar. Two things are load-bearing, both learned by shipping the naive version first:
 
+- **Its tint is also what the header's glass buttons refract, which is why `tintOpacity` is
+  0.46 and not the 0.62 it shipped at.** A `GlassIconGroup` or `GlassIconButton` on the title row
+  is real `UIGlassEffect` sitting on this bar, and glass shows you whatever is behind it: behind a
+  near-opaque tint there is nothing left to lens, so the control rendered as a flat grey pill with
+  a hard rim — the look of a painted approximation. Apple's own scroll-edge effect is mostly
+  *blur* with a very light tint for the same reason, and the five bands below already do that
+  work. One knob: raise it if a title loses its footing over scrolled content, lower it if the
+  buttons go flat again.
 - **Progressive blur, not uniform.** Five stacked top-anchored `BackdropFilter` bands of
   increasing sigma plus a tint gradient, both ramping to zero at the bottom edge — the
   variable-blur treatment Apple uses under nav bars. A uniform bar ends in a hard step (sharp
@@ -349,10 +470,36 @@ Non-obvious bits, each one a bug that shipped first:
 
 ## Other shared widgets
 
+- **`AppFilterChip` (`filter_chip.dart`)** — the rounded, tappable word: Kalender's people row and
+  Listen's Vorhaben suggestions are the same chip. It was Kalender's private `_CalendarChip` first,
+  and the extraction is the point — a second chip that resembles the first is how two rows on
+  adjacent tabs end up with different radii, a different lit colour or a different height.
+  - **The lit ring sits outside the fill**, so the chip keeps its size when it is selected. A border
+    drawn inside would make the row twitch as chips light and go out, and the outer ring is what
+    lets the fill stay a pale accent rather than a solid one the label then has to fight.
+  - `leading` and `trailing` are drawn exactly as given, **gap included**. The calendar's face,
+    colour dot and glyph each sit a different distance from the word, and three knobs on the chip
+    is worse than one `Padding` at the call site.
+  - `rowHeight` (44) and `gap` (8) live on the class, so a second chip row cannot be a point
+    shorter than the first.
+  - **Three tones, and which one to use follows from what the row is *for*.** `ChipTone.lit` and
+    `ChipTone.muted` are a pair and only mean anything against each other: a filter row is a set of
+    answers to one question and needs a difference between the answer in force and the rest. A
+    *suggestion* row is not answering anything — every chip is an offer — so neither half works
+    alone: muted is four grey blobs that read as disabled buttons, lit is four accent chips
+    claiming a selection nobody made. `ChipTone.outlined` is the third thing: white, ink label,
+    hairline rim, which reads as *press me* without reading as *on*.
+
 - **`StatusIsland` / `IslandLine` (`status_island.dart`)** — a screen's one-line status: a glyph, a
   sentence, and a second line saying what the sentence counts. Home's `DayIsland` and Ausgaben's
-  `SpendIsland` are both a ladder of cases handing the first match to an `IslandLine`; this file is
+  `SpendIsland` are both a ladder of cases handing the first match to an `IslandLine`; Listen's
+  `ListIsland` is the same shape with a single case in it, the invitation to Vorhaben — and its
+  disclosure caret unfolds `PlannerCard` at the top of the body below. This file is
   the sentence, the crossfade between two of them and the wave that says one has just changed.
+  - **A caret only on a line that answers a tap**, and the direction says which kind: `expanded`
+    is the disclosure one, folding a checklist out below it; `navigates` points right, for a line
+    whose tap leaves the screen. A caret on a line that merely says something promises a screen
+    that does not exist, so neither is the default and the two are mutually exclusive.
   - **The crossfade belongs here, not in the row that hosts the island.** A switcher one level up
     compares the widget it is handed — always a keyless `DayIsland` — so it never sees one state
     become another and every change lands as an instant swap. The keys are on what the ladder
@@ -473,11 +620,43 @@ Non-obvious bits, each one a bug that shipped first:
       the iOS 26 glass platter inset inside those bounds) or a narrower capsule; both are handled.
       The measurement is deliberately taken against the width the view already has, since
       `sizeThatFits` will hand back an unbounded width if you ask it to fit one.
+    - **Once, and nothing forces a layout.** A `UITabBarItem`'s title keeps the width it was
+      *first* laid out at, and Flutter creates a platform view before it gives it a frame — so a
+      `layoutIfNeeded` anywhere in the creation path lays five items out in zero width and clips
+      every one of their titles for the life of the bar. The bar then looks perfectly spread and
+      reads `Home Ka… Li… Bo… Me…`, coming right only when a tab is selected, which invalidates
+      the labels. Left alone, UIKit lays it out for the first time with the frame Flutter gave it
+      and the labels are right. Asking repeatedly is the same trap from the other end: Dart
+      resizes the view to each answer, so a second measurement taken inside the new bounds
+      measures the first answer, and the bar walks itself narrower until it truncates its own
+      labels. Ask once, don't force layout, and don't add machinery to undo either.
     - It needs an `EagerGestureRecognizer`, or touch-down reaches UIKit too late for the press
-      shimmer. Note this is the opposite of `GlassPlatformView`, which takes no touches at all.
+      shimmer. `GlassPlatformView` now makes the same bargain for the same reason — see the glass
+      section — but only for a surface that was given touch regions.
     - Not available without a `UITabBarController`: the iOS 26 *minimize-on-scroll* behaviour.
-  - **Everywhere else: `AppBottomNav` (`bottom_nav.dart`)** — the floating glass pill from the
-    handoff.
+  - **Everywhere else: `AppBottomNav` (`bottom_nav.dart`)** — the same bar drawn in Flutter, and
+    deliberately **not** Material's `NavigationBar`. Aporah is one app with one shape language: an
+    edge-to-edge surface with its own selection indicator is a second one, and every screen above
+    it is laid out to float clear of a capsule rather than to end at a bar. So this is a
+    `GlassSurface` capsule **hugging its five items** clear of the bottom of the display, with a
+    rounded `AppColors.surface` highlight that slides to the tapped item (`AnimatedPositioned`,
+    `_selectionDuration`).
+    - **The material and the glyphs are `MoreShelf`'s**, because the shelf comes out of this bar:
+      the same `GlassSurface`, the same flat Phosphor Bold at `kNavRowIconSize` through the same
+      `navRowIcon` helper, `AppColors.ink` at rest and `AppColors.accent` on the item in force.
+      A different treatment in either place makes the shelf read as a control from somewhere else
+      that happened to appear there.
+    - **Every item carries its name.** The handoff's pill labelled the selected item only and
+      filled its glyph's circle with the accent — four unlabelled dots and one wide chip is a
+      different control in each state, and the accent circle was the loudest thing on any screen
+      it floated over. Labels cost width, so `LayoutBuilder` gives items `_maxNavItemWidth` where
+      there is room and shares out what there is where there isn't; the bar then hugs the result
+      and is **centred, never pinned to both margins** (`_NavLayer` in `main.dart`) — a capsule
+      stretched edge to edge is the bar shape this exists instead of. The label alone is clamped
+      to 1.2× text scaling, because the item is a fixed box inside a bar whose height the
+      compacted nav button lines up against.
+    - `kFlutterNavBarHeight` is that height and `navRowBottom` reads it, so the bar and
+      `CompactNavButton` keep one centre line. Never hardcode 70 again.
   - **Compacting on scroll (Kalender only)** — scrolling the agenda down collapses the bar to
     `CompactNavButton`, a glass circle at the bottom-left carrying the **active tab's** icon;
     tapping it brings the bar back, as does scrolling to the top. This is our answer to the iOS 26
@@ -500,6 +679,107 @@ Non-obvious bits, each one a bug that shipped first:
     `navBarProvider` rather than passing callbacks down. That provider also publishes the
     measured bar height, because Kalender's "Heute" button hangs off the same centre line from a
     different subtree.
+  - **The `Mehr` shelf (`more_shelf.dart`)** — the fifth item is the one tap that is not a tab
+    change: it stands a column of two labelled glass buttons on top of the bar item, Boxen and
+    Ausgaben, and the shell switches tab only once one is pressed. `AppShell` holds it as a `Completer<MoreSection?>`
+    rather than a route, because it is two widgets in `_NavLayer` and not a layer of its own; the
+    future is what `NativeTabBar.onTap` awaits, so UIKit keeps **Mehr** highlighted for exactly as
+    long as the shelf is up and snaps back when it is dismissed.
+    - It replaced a `UIMenu` anchored on the same item, and the swap is **not** a walk-back of
+      "every menu is the system's own". That rule is about menus, and this is not one: **Mehr**
+      names two *places* where a "..." lists verbs for the row beside it, and two labelled lines
+      put a text list where the other four tabs answer with a glyph. Nor is glass beside the bar a
+      compromise — `GlassSurface` embeds the real `UIGlassEffect`, so these are the bar's own
+      material, not an approximation of it.
+    - The buttons are `CompactNavButton`'s twins deliberately: `kCompactNavSize`, `AppShadows.navBar`,
+      the accent glyph. The nav row already puts a glass circle of that size on screen when
+      Kalender collapses the bar, so the shelf reads as the same family of control. Two circles
+      rather than a `GlassIconGroup` capsule — `kMoreShelfSpacing` is what keeps them from being
+      the one cracked capsule that widget exists to avoid — because each is a target and the
+      selected one wears the opaque accent.
+    - **Everything on the nav row is one size, and its glyphs are UIKit's own.**
+      `kCompactNavSize` is the diameter of the collapsed nav button, Kalender's "Heute" and these
+      two buttons alike, and `kNavRowIconSize` is the size UIKit draws a tab-bar symbol at (28pt).
+      The glyph size is not ours to pick: the collapsed button *is* the selected tab with the
+      other four folded away, and the shelf stands a finger's width above five SF Symbols that are
+      still on screen. A circle carrying a glyph under the bar's glyph size reads as a smaller,
+      quieter control that appeared in the bar's place rather than as the bar itself — which is
+      what a 54pt circle and a 22pt glyph were doing. The circles grew to make room for the glyph
+      rather than the glyph shrinking to fit them.
+    - **UIKit is asked where the item actually is, once, on the tap.**
+      `TabBarPlatformView.lastItemFrame` walks the bar for its item views and reports the
+      rightmost one — Mehr is the last tab on both bars — and `NativeTabBar.onTap` carries that
+      rect up with the tap for `AppShell._moreItemAnchor` to stand the shelf on. A
+      `UITabBarItem` is a *description*, not a view, so there is no public frame to ask it for.
+      - **The obvious substitute is wrong by tens of points.** An iOS 26 bar reports the **whole
+        display width** from `sizeThatFits` and then draws its floating glass platter inset inside
+        those bounds, so the last fifth of the bar's rect lands to the right of the item the
+        reader is looking at. That is where the shelf standing right of **Mehr** came from. The
+        fifth is still the fallback, and off iOS it is not an approximation at all: the Flutter
+        pill really does spread five items evenly across its own width.
+      - **On the tap, and not cached.** UIKit lays the items out again whenever the selection
+        moves, because the iOS 26 pill changes the selected item's width, so an answer kept from
+        earlier describes a bar in a different state. There is exactly one moment the rect is
+        wanted. A `frame` read during UIKit's own pill animation is the value being animated *to*,
+        which is the bar as it will look while the shelf stands on it.
+      - **It reads and changes nothing, and that is the whole design.** No `layoutIfNeeded`, no
+        items rebuilt, no sizing. **A `UITabBarItem`'s title keeps the width it was first laid out
+        at**, and Flutter creates a platform view before it gives it a frame — so forcing this bar
+        to lay itself out during creation lays five items out in zero width and clips every title,
+        and the bar then looks perfectly spread while reading `Home Ka… Li… Bo… Me…` until a tab
+        is selected. Left alone, UIKit lays the bar out for the first time when it has its real
+        frame and the labels are simply right. **Don't add a layout or a measurement pass to this
+        control**; the whole `Home Ka… Li… Bo… Me…` episode was one `layoutIfNeeded` called too
+        early, and every mechanism added to compensate for it was treating a self-inflicted wound.
+      - **Only the horizontal half of the anchor comes from the item.** The shelf is parked a gap
+        above the *bar*, not above the glyph: an iOS 26 item view sits inset inside the glass
+        platter, which is itself inset inside the bar's bounds, so taking the item's top tucks the
+        bottom button behind the capsule it is standing on.
+      - **Three rungs, in Swift, and it says which one answered.** The item view by class name
+        (`UITabBarButton` / `UITabBarItem`, stable across every version of the bar until iOS 26
+        reworked its insides for Liquid Glass); failing that, by shape, any real-sized `UIControl`,
+        since a bar of five items and no accessories has only the five; failing that, the
+        **platter** split into as many slots as there are items. The two item passes are kept
+        apart, name winning outright, so a stray control on the platter cannot out-rank a real
+        item. The last rung is openly a guess and is there for scale: a fifth of the platter is
+        wrong by the padding inside it, where Dart's fifth of the whole *bar* is wrong by the
+        entire inset — tens of points on an iOS 26 capsule, which is the misplacement this whole
+        mechanism exists to fix.
+      - The answer carries a **`found`** string (`named:5`, `shape:5`, `platter/5`) and the bar and
+        view widths, printed in debug as `[tab-bar-item]`. A shelf standing in the wrong place
+        then says *why* in one console line; without it, "UIKit moved the item" and "we measured
+        something that is not an item" look identical from Dart.
+      - With nothing at all to go on it answers **nil** rather than guessing, and Dart splits the
+        bar. It is a **Swift** method, so a hot reload over an older binary doesn't have it; the
+        call catches that rather than throwing, because the one failure allowed here is a shelf a
+        few points off its item, never no shelf at all.
+    - **A column, and that is what lets it stand centred on the bar item** (`_moreItemAnchor`).
+      Mehr is the outermost slot on both bars, so a *row* of two bar-sized circles would be twice the
+      width of the slot and have to be pushed inward off the item it grew out of. Stacked, the
+      circles sit on the slot's centre line and the labels run left from them, which is why the
+      shelf is pinned by its right edge rather than laid out around a centre. Nearest button
+      first, bottom-up (`VerticalDirection.up`) — the way UIKit reverses a menu it has to present
+      above its anchor.
+    - **Offstage when closed, never removed**, for `_NavShape`'s reason: each button is a platform
+      view on iOS, and one at zero opacity still sits over the pixels and the touches behind it.
+      It rises and fades, staggered from the bar item outwards; it never **scales**, because
+      scaling a platform view smears it.
+    - The scrim behind it paints *before* both bars, so the bar stays visible and live underneath:
+      unlike a `UIMenu` the shelf does not take the screen over, and going straight to another tab
+      from it is one tap. `_switchTo` closes it ahead of its own repeat-tap check for that reason.
+    - **The name rides in front of the button, on a glass capsule of its own**, and the pair is
+      one tap target. Beside the glyph the column is still two buttons read left to right; *under*
+      it, it is the list of menu rows again. The capsule rather than bare text because the shelf
+      floats over a box's photographs or a screen of Ausgaben, which is exactly where loose
+      letters stop being readable. `AppShadows.floatingPill` on it, not `navBar` — that lift is
+      sized for a circle and smudges under something this wide.
+    - **`AppColors.ink` at rest** — black on the light palette, white on the dark one, the same
+      weight as the label capsule beside it — and `AppColors.accent` only for the section in
+      force. The bar's own `unselectedTint` was tried and is wrong here: `AppColors.muted` is one
+      grey for *both* palettes, which reads on the bar's material and goes soft and half-disabled
+      on a glass circle floating over a screen. Not the accent-*filled* circle this started as
+      either, which was louder than anything it stands over and put blue on a control that is at
+      rest nine taps in ten.
   - Flutter-drawn controls on that row take their icons through `navRowIcon` — Cupertino glyphs
     on iOS, the handoff's own ones elsewhere. The iOS bar draws real SF Symbols, so an app-set
     calendar in the button that replaces it reads as a second, subtly different calendar.
@@ -510,7 +790,8 @@ Non-obvious bits, each one a bug that shipped first:
     control *parked* above the bar needs air or the two glass surfaces touch and it reads as
     hiding behind the bar.
 - `GlassIconGroup` (`glass.dart`) — two or more icon buttons in **one** glass capsule: iOS 26's
-  grouped bar buttons. **No separator between the segments** — one was tried and the capsule read
+  grouped bar buttons. On iOS these are real `UIButton`s merged by a `UIGlassContainerEffect` —
+  see the glass section; everything below describes the Flutter fallback. **No separator between the segments** — one was tried and the capsule read
   as a button that had cracked down the middle. The glass carries no line of its own, so a
   hairline is the only hard edge inside it and the eye lands on it; Apple's own grouped items have
   none either. Spacing does the work instead, including padding at the ends so the outer icons
@@ -519,7 +800,13 @@ Non-obvious bits, each one a bug that shipped first:
     control is tall because two icons this close are otherwise easy to mis-hit.
   - Same material arguments as the "Heute" pill: no forced `tint`, no `fallbackTint`, and
     `AppShadows.floatingPill` rather than `glassButton`, whose lift is sized for a 40pt circle and
-    smudges under something ~100pt wide.
+    smudges under something ~100pt wide. On the native path the shadow is dropped altogether —
+    see the "nothing painted underneath real glass" rule above.
+  - **One capsule, several touch targets.** `_regions` derives each segment's fraction from the
+    same three numbers the `Row` is laid out from, so the target and the glyph under a finger
+    cannot drift apart. The material lenses the whole capsule (that is what it is); the *icon*
+    still scales, because the lensing says the capsule was touched and nothing about which of two
+    icons it was under.
   - On the iOS Simulator this renders flat: a grey fill and a hard rim, with none of the
     refraction. That is the Simulator, not the code — judge any glass surface on a device. Kalender's header uses it for "verbinden" + "neuer
   Termin". Reach for it rather than two `GlassIconButton`s side by side, which read as one button
@@ -753,15 +1040,19 @@ Non-obvious bits, each one a bug that shipped first:
   the pages made each provider look like a different screen with nowhere obvious to press; keeping
   the *list* of providers in a sheet made the household guess what Aporah could read before
   opening anything.
-- `HeaderSearchBar` / `SearchTriggerField` / `HeaderSearchButton` (`search.dart`) — Listen's and
-  Boxen's search, which happens **in place, never in a sheet**. Two ways in: the flat pill in the
-  resting header (`SearchTriggerField`) and the glass magnifier that replaces it once the header
-  has collapsed (`HeaderSearchButton`, fading in on the same late curve as the collapsed title —
-  pass `leadingWidth: 0` so it doesn't shift the expanded heading). `HeaderSearchBar` wraps the
-  screen's whole title row: it fades that row out and grows the system search field out of the
-  magnifier's own footprint, over to a glass X that closes search again. Search reaches *into* the
-  detail screens — articles inside a list, contents of a box — so a hit is grouped under whatever
-  holds it and tapping it opens that list/box.
+- `HeaderSearchBar` (`search.dart`) — Listen's and Boxen's search, which happens **in place, never
+  in a sheet**. **One way in: the magnifier sharing the `+`'s glass capsule**, always in the same
+  spot on the title row. It was two — a flat pill filling the collapsing header plus a glass button
+  that faded in once the pill had scrolled away — which spent a whole row of the block saying a
+  second time what the capsule says once, and left the resting screen a search box above a heading
+  above a card. `HeaderSearchBar` wraps the screen's whole title row: it fades that row out and
+  grows the system search field **leftward out of the magnifier's own footprint** (right edge
+  pinned, left edge travelling) over to a glass X that lands where the `+` was and closes search
+  again. A control that never moves is what makes that possible — a pill that scrolls away cannot
+  be grown out of, and a field unrolling from the opposite margin read as a separate thing arriving
+  rather than as that button opening. Closing runs the same movement backwards. Search reaches
+  *into* the detail screens — articles inside a list, contents of a box — so a hit is grouped under
+  whatever holds it and tapping it opens that list/box.
 - **Opening search is one movement, and `SearchableOverviewScreen` owns it, not `HeaderSearchBar`.**
   Four things happen at once — the field grows, the title row and its `+` give way to the X, the
   collapsing block folds up, and the body crossfades to the hits — and the screen holds the single
@@ -1103,6 +1394,26 @@ one.
   a smeared, half-drawn slab. Scale the **panel**, inside `buildPage`, not the page in
   `buildTransitions`: that layer is screen-sized, so scaling it slides the panel across the
   display instead of growing it out of its own corner.
+- **The `Mehr` shelf** (`more_shelf.dart`): 420ms in / 260ms out on one controller, with each
+  button given a later slice of it (`_stagger`) so the column unfolds upward out of the tap and
+  winds back down the same way — one window read in both directions, not two sequences to keep in
+  step. Going in, the rise overshoots and settles (`Curves.easeOutBack`); coming out it falls back
+  the way it came (`easeInCubic`), because an overshoot on the way to nowhere is a wobble. The
+  label capsule unfurls **leftward from behind its circle** a third of the way through that button's
+  own arrival — an animated `Align.widthFactor` inside a `ClipRect`, so the circle never moves.
+  - **Both of those stay in the tree once the label is out; the clip only switches to `Clip.none`.**
+    Returning the bare capsule at full reveal is the obvious saving and it flashes, every time, at
+    the end of the open: the capsule is a real `UIGlassEffect` platform view, so changing the
+    widgets above it moves its element and the view is torn down and recreated, showing the screen
+    behind it for a frame before it is covered again. **The rule generalises** — never swap the
+    widgets wrapping a platform view as an animation lands. Turn the effect off in place instead.
+  - It never **scales**: the buttons are `UIGlassEffect` platform views and scaling one smears it.
+    Rise, fade and clip are all the entrance there is, which is why the rise is a generous 30pt.
+  - It goes `Offstage` at zero rather than leaving the tree, so the platform views survive between
+    openings — but the controller still **starts at zero and is driven forward**, including the
+    first time, when the shell mounts the widget and opens it in the same breath. Seeding the
+    controller at 1 for that case is what made the first tap of a session snap the buttons on with
+    no animation while every tap after it animated, which reads as a dropped frame.
 - **Deliberate exception**: the week view's day strip has no transition of its own — the user
   asked for standard scrolling over week-at-a-time paging. Its only motion is `_revealDate`'s
   `animateTo` (420ms, `Curves.easeOutCubic`) when something *else* moves the strip.

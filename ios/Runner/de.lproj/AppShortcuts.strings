@@ -1,0 +1,13 @@
+/* Siri phrases for AporahShortcuts in SpendAppIntent.swift.
+
+   The KEY is the phrase exactly as written in `AppShortcut(phrases:)`, with
+   `\(.applicationName)` spelled `${applicationName}`. At least one phrase per
+   language must contain it, or the provider fails to build.
+
+   Not `AppShortcuts.xcstrings`: that format is iOS 17+ only, and this app's
+   deployment target is 15.0. Raising the target to use it would drop iOS 15 and
+   16 for three strings. */
+
+"Ausgabe in ${applicationName} erfassen" = "Ausgabe in ${applicationName} erfassen";
+"Zahlung in ${applicationName} speichern" = "Zahlung in ${applicationName} speichern";
+"Log a spend in ${applicationName}" = "Ausgabe in ${applicationName} eintragen";

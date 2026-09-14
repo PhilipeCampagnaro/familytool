@@ -12,8 +12,8 @@ import '../theme/tokens.dart';
 /// hits for what was typed.
 ///
 /// Both screens had a verbatim copy of this — the `_searching`/`_query` pair,
-/// the two ways into search, the rule that the resting header content is
-/// dropped while searching, the body panel and its padding. The copies had
+/// the way into search, the rule that the resting header content is dropped
+/// while searching, the body panel and its padding. The copies had
 /// already drifted (one dropped the stat tiles while searching, the other had
 /// nothing to drop), which is exactly how two screens that are meant to feel
 /// like one app stop doing so.
@@ -24,8 +24,8 @@ class SearchableOverviewScreen extends StatefulWidget {
   /// The large heading at rest — `Listen`, `Boxen`.
   final String title;
 
-  /// Placeholder for both the resting pill and the live field, so the screen
-  /// doesn't get to phrase the same prompt two ways.
+  /// Placeholder for the live field, and the accessible name of the magnifier
+  /// that opens it — the screen doesn't get to phrase the same prompt two ways.
   final String searchHint;
 
   /// Shown in place of results while search is open but nothing has been typed
@@ -35,13 +35,20 @@ class SearchableOverviewScreen extends StatefulWidget {
   /// The `+` in the pinned bar.
   final VoidCallback onAdd;
 
-  /// Header content below the search pill at rest — the stat tiles on Boxen,
-  /// nothing on Listen. Dropped entirely while searching: it says nothing about
-  /// the query, and dropping it gives the results the screen.
+  /// The `+`'s accessible name — "Neue Liste", "Neue Box". A lone
+  /// [GlassIconButton] carries none, but a [GlassIconAction] does, and the
+  /// screen is the only thing that knows what the plus adds.
+  final String addLabel;
+
+  /// Header content below the title at rest — the status island on Listen, the
+  /// stat tiles on Boxen, nothing at all if a screen has neither. Dropped
+  /// entirely while searching: it says nothing about the query, and dropping it
+  /// gives the results the screen.
   final Widget? headerExtra;
 
-  /// First-frame estimate of [headerExtra] plus the search pill above it;
-  /// [CollapsingHeaderScreen] re-measures the real thing once it's laid out.
+  /// First-frame estimate of [headerExtra] plus the gap above it, and 0 for a
+  /// screen that has none; [CollapsingHeaderScreen] re-measures the real thing
+  /// once it's laid out.
   /// Never hardcode this as the header's collapsing-block height — see
   /// docs/design-system.md.
   final double extraHeight;
@@ -64,6 +71,7 @@ class SearchableOverviewScreen extends StatefulWidget {
     required this.searchHint,
     required this.searchPrompt,
     required this.onAdd,
+    required this.addLabel,
     required this.extraHeight,
     required this.body,
     required this.results,
@@ -141,36 +149,39 @@ class _SearchableOverviewScreenState extends State<SearchableOverviewScreen> wit
         hint: widget.searchHint,
         onChanged: (v) => setState(() => _query = v),
         onClose: _closeSearch,
-        // No `leadingWidth` even though there's a leading button: it only fades
-        // in once the header is collapsed (see [HeaderSearchButton]), and
-        // reserving room for it at rest would push the big heading off the left
-        // margin.
+        // Nothing leading: both screens' verbs are on the right, and the big
+        // heading gets the whole left margin.
         child: CollapsingScreenTitle(
           title: widget.title,
           t: t,
-          trailingWidth: 48,
-          leading: HeaderSearchButton(t: t, onTap: _openSearch),
-          trailing: GlassIconButton(icon: AppIcons.plus, onTap: widget.onAdd),
+          // Two 44pt segments plus the capsule's end padding, with a little
+          // slack, so the title stops short of it rather than sliding under.
+          trailingWidth: 108,
+          // **Search and the `+` share one capsule**, the way Kalender carries
+          // "verbinden" beside "neuer Termin" — not two circles of glass side by
+          // side, which each refract their own rim and read as one button that
+          // failed to draw. Search leads, because the field grows out of it (see
+          // [HeaderSearchBar]) and the `+` keeps the outer end it already had.
+          trailing: GlassIconGroup(
+            actions: [
+              GlassIconAction(icon: AppIcons.magnifyingGlass, label: widget.searchHint, onTap: _openSearch),
+              GlassIconAction(icon: AppIcons.plus, label: widget.addLabel, onTap: widget.onAdd),
+            ],
+          ),
         ),
       ),
-      // While searching the header is only the field: the trigger pill would be
-      // a second search box for the same query, and the stat tiles say nothing
-      // about the query. The block stays in the tree and is folded away instead
-      // of being swapped for an empty one, so the header travels the distance
-      // rather than jumping it.
+      // While searching the header is only the field: neither the island nor the
+      // stat tiles say anything about the query, and the results want the
+      // screen. The block stays in the tree and is folded away instead of being
+      // swapped for an empty one, so the header travels the distance rather than
+      // jumping it.
       extraCollapse: a,
       estimatedExtraHeight: widget.extraHeight,
-      extra: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 16),
-          SearchTriggerField(hint: widget.searchHint, onTap: _openSearch),
-          if (widget.headerExtra != null) ...[
-            const SizedBox(height: 14),
-            widget.headerExtra!,
-          ],
-        ],
-      ),
+      // The gap belongs here rather than to the screen, so the island on one
+      // tab and the stat tiles on the other start on the same line.
+      extra: widget.headerExtra == null
+          ? const SizedBox.shrink()
+          : Padding(padding: const EdgeInsets.only(top: 16), child: widget.headerExtra!),
       body: ScreenBodyPanel(
         child: Stack(
           children: [

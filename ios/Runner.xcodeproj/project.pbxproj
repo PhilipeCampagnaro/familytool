@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A0B1C2F11F0000000000A001 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = A0B1C2F01F0000000000A001 /* Localizable.xcstrings */; };
+		A0B1C2F31F0000000000A001 /* AppShortcuts.strings in Resources */ = {isa = PBXBuildFile; fileRef = A0B1C2F21F0000000000A001 /* AppShortcuts.strings */; };
 		1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */ = {isa = PBXBuildFile; fileRef = 1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */; };
 		331C808B294A63AB00263BE5 /* RunnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331C807B294A618700263BE5 /* RunnerTests.swift */; };
 		3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */ = {isa = PBXBuildFile; fileRef = 3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */; };
@@ -23,6 +25,7 @@
 		A0B1C2DB1F0000000000A001 /* MediaPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0B1C2DA1F0000000000A001 /* MediaPicker.swift */; };
 		A0B1C2DD1F0000000000A001 /* MapSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0B1C2DC1F0000000000A001 /* MapSnapshot.swift */; };
 		A0B1C2DF1F0000000000A001 /* NativeMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0B1C2DE1F0000000000A001 /* NativeMenu.swift */; };
+		A0B1C2E11F0000000000A002 /* GlassButtonPlatformView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0B1C2E01F0000000000A002 /* GlassButtonPlatformView.swift */; };
 		A0B1C2E31F0000000000A001 /* SpendAppIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0B1C2E21F0000000000A001 /* SpendAppIntent.swift */; };
 		A0B1C2E11F0000000000A001 /* SpendCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0B1C2E01F0000000000A001 /* SpendCapture.swift */; };
 /* End PBXBuildFile section */
@@ -51,6 +54,11 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		A0B1C2F01F0000000000A001 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
+		A0B1C2F41F0000000000A001 /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/AppShortcuts.strings; sourceTree = "<group>"; };
+		A0B1C2F51F0000000000A001 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/AppShortcuts.strings; sourceTree = "<group>"; };
+		A0B1C2F61F0000000000A001 /* pt */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = pt; path = pt.lproj/AppShortcuts.strings; sourceTree = "<group>"; };
+		A0B1C2F71F0000000000A001 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/AppShortcuts.strings; sourceTree = "<group>"; };
 		1498D2321E8E86230040F4C2 /* GeneratedPluginRegistrant.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GeneratedPluginRegistrant.h; sourceTree = "<group>"; };
 		1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GeneratedPluginRegistrant.m; sourceTree = "<group>"; };
 		331C807B294A618700263BE5 /* RunnerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunnerTests.swift; sourceTree = "<group>"; };
@@ -75,6 +83,7 @@
 		A0B1C2DA1F0000000000A001 /* MediaPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaPicker.swift; sourceTree = "<group>"; };
 		A0B1C2DC1F0000000000A001 /* MapSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapSnapshot.swift; sourceTree = "<group>"; };
 		A0B1C2DE1F0000000000A001 /* NativeMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeMenu.swift; sourceTree = "<group>"; };
+		A0B1C2E01F0000000000A002 /* GlassButtonPlatformView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassButtonPlatformView.swift; sourceTree = "<group>"; };
 		A0B1C2E21F0000000000A001 /* SpendAppIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpendAppIntent.swift; sourceTree = "<group>"; };
 		A0B1C2E01F0000000000A001 /* SpendCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpendCapture.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -135,6 +144,8 @@
 			children = (
 				97C146FA1CF9000F007C117D /* Main.storyboard */,
 				97C146FD1CF9000F007C117D /* Assets.xcassets */,
+				A0B1C2F01F0000000000A001 /* Localizable.xcstrings */,
+				A0B1C2F21F0000000000A001 /* AppShortcuts.strings */,
 				97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */,
 				97C147021CF9000F007C117D /* Info.plist */,
 				1498D2321E8E86230040F4C2 /* GeneratedPluginRegistrant.h */,
@@ -147,6 +158,7 @@
 				A0B1C2DA1F0000000000A001 /* MediaPicker.swift */,
 				A0B1C2DC1F0000000000A001 /* MapSnapshot.swift */,
 				A0B1C2DE1F0000000000A001 /* NativeMenu.swift */,
+				A0B1C2E01F0000000000A002 /* GlassButtonPlatformView.swift */,
 				A0B1C2E21F0000000000A001 /* SpendAppIntent.swift */,
 				A0B1C2E01F0000000000A001 /* SpendCapture.swift */,
 				7884E8672EC3CC0400C636F2 /* SceneDelegate.swift */,
@@ -225,6 +237,9 @@
 			knownRegions = (
 				en,
 				Base,
+				de,
+				pt,
+				es,
 			);
 			mainGroup = 97C146E51CF9000F007C117D;
 			packageReferences = (
@@ -256,6 +271,8 @@
 				3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */,
 				97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */,
 				97C146FC1CF9000F007C117D /* Main.storyboard in Resources */,
+				A0B1C2F11F0000000000A001 /* Localizable.xcstrings in Resources */,
+				A0B1C2F31F0000000000A001 /* AppShortcuts.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -316,6 +333,7 @@
 				A0B1C2DB1F0000000000A001 /* MediaPicker.swift in Sources */,
 				A0B1C2DD1F0000000000A001 /* MapSnapshot.swift in Sources */,
 				A0B1C2DF1F0000000000A001 /* NativeMenu.swift in Sources */,
+				A0B1C2E11F0000000000A002 /* GlassButtonPlatformView.swift in Sources */,
 				A0B1C2E31F0000000000A001 /* SpendAppIntent.swift in Sources */,
 				A0B1C2E11F0000000000A001 /* SpendCapture.swift in Sources */,
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
@@ -348,6 +366,17 @@
 				97C147001CF9000F007C117D /* Base */,
 			);
 			name = LaunchScreen.storyboard;
+			sourceTree = "<group>";
+		};
+		A0B1C2F21F0000000000A001 /* AppShortcuts.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				A0B1C2F41F0000000000A001 /* de */,
+				A0B1C2F51F0000000000A001 /* en */,
+				A0B1C2F61F0000000000A001 /* pt */,
+				A0B1C2F71F0000000000A001 /* es */,
+			);
+			name = AppShortcuts.strings;
 			sourceTree = "<group>";
 		};
 /* End PBXVariantGroup section */

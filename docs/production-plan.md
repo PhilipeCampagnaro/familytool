@@ -49,7 +49,7 @@ conclusions that bind code are here.
 - One connected calendar account, plus Ferien and Abfall (shared feeds, near-zero marginal cost)
 - All of Kalender, Home and Board, including **creating, editing and deleting events**
 - Three trackers, unlimited lists and articles, one Box, up to four people
-- Weather, the German holidays, both languages
+- Weather, the German holidays, all four languages
 
 **Plus:**
 
@@ -419,7 +419,9 @@ longer than the engineering.
       stays true for neither; both verify their own signature, which makes this the third and
       fourth pinned exception and each needs the same comment in `config.toml` explaining why.
 - [ ] Restore purchases, and a household that already has Plus not being charged twice.
-- [ ] Store listings, screenshots and privacy labels in German and English.
+- [ ] Store listings, screenshots and privacy labels in German, English, Portuguese and Spanish.
+      **Four sets of screenshots is now the standing cost of every UI change** — that is the tax the
+      extra two languages bought, and it is worth stating before the next redesign.
 
 ---
 

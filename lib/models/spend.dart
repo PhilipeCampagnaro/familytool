@@ -329,6 +329,7 @@ String _symbol(String currency) => switch (currency) {
   'USD' => r'$',
   'GBP' => '£',
   'CHF' => 'CHF',
+  'BRL' => r'R$',
   _ => currency,
 };
 
