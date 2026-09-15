@@ -245,7 +245,96 @@ GroceryIcon? matchGroceryIcon(String text, {bool strict = false}) {
     if (hits.isEmpty || (strict && hits.first.rank >= 3)) continue;
     return hits.first.icon;
   }
+  // A name found *inside* the word is weaker still than one the word is found
+  // inside, and a misspelt one weaker than that, so a strict caller gets neither.
+  return strict ? null : (_compoundMatch(full) ?? _typoMatch(full));
+}
+
+/// Shortest word, and shortest name, a one-letter slip is forgiven on. Below
+/// this a single letter is too much of the word: *Reis* is one away from *Eis*.
+const _minTypo = 7;
+
+/// A name one keystroke away from a typed word — a letter swapped, dropped or
+/// added. On a German keyboard **T and Z sit side by side**, so *Gewürtmischung*
+/// is what *Gewürzmischung* looks like typed quickly, and a missed *h* turns
+/// *Hähnchen* into *Hänchen*. Aliasing every such slip one by one never ends.
+///
+/// Whole words only, and only after the compound step has found nothing, so a
+/// correctly spelt article can never be pulled onto a neighbour's icon.
+GroceryIcon? _typoMatch(String folded) {
+  for (final word in folded.split(' ')) {
+    if (word.length < _minTypo) continue;
+    for (final entry in _index) {
+      for (final term in entry.terms) {
+        if (term.length >= _minTypo && !term.contains(' ') && _oneEditApart(word, term)) {
+          return entry.icon;
+        }
+      }
+    }
+  }
   return null;
+}
+
+/// Whether one substitution, insertion or deletion turns [a] into [b].
+bool _oneEditApart(String a, String b) {
+  if (a == b) return false;
+  final (shorter, longer) = a.length <= b.length ? (a, b) : (b, a);
+  if (longer.length - shorter.length > 1) return false;
+  var i = 0;
+  while (i < shorter.length && shorter[i] == longer[i]) {
+    i++;
+  }
+  // Same length: skip the one differing letter on both. Otherwise skip it on
+  // the longer only. Either way the rest must line up exactly.
+  final skip = shorter.length == longer.length ? 1 : 0;
+  return shorter.substring(i + skip) == longer.substring(i + 1);
+}
+
+/// Shortest word worth splitting, and shortest catalog name worth finding in it.
+const _minCompound = 5;
+const _minPart = 4;
+
+/// Shorter than this, a name found inside a word that doesn't *end* it is more
+/// likely the modifier than the thing: *Kaffee* in *Kaffeefilter* (6) is not
+/// the article, *Hähnchenbrust* in *Hähnchenbrustfilet* (13) is.
+const _minInfix = 8;
+
+/// Every other step asks whether the query is a piece of a name; German asks
+/// the reverse just as often. It glues words together, so *Rinderhackfleisch*,
+/// *Kinderjoghurt* and *Hähnchenbrustfilet* are longer than every name we hold
+/// and contain one — `Hackfleisch`, `Joghurt`, `Hähnchenbrust` — and no prefix
+/// or substring test in that direction can see it.
+///
+/// A German compound's head noun comes **last**, so a name the word ends with
+/// wins: *Kinderjoghurt* is a yoghurt. Only when no name ends the word does a
+/// long one inside it count (`_minInfix`), which
+/// is what still finds *Hähnchenbrustfilet* — the filet is the head and we have
+/// no picture called that. The longest name wins either way, so *Rinderhack*
+/// beats *Hack*.
+///
+/// Last resort only: reached when nothing matched the ordinary way, so it can
+/// never take a query away from an icon that answers it directly.
+GroceryIcon? _compoundMatch(String folded) {
+  _Hit? best;
+  var bestSuffix = false;
+  for (final word in folded.split(' ')) {
+    if (word.length < _minCompound) continue;
+    for (final entry in _index) {
+      for (final term in entry.terms) {
+        if (term.length < _minPart || term.length >= word.length || term.contains(' ')) continue;
+        final suffix = word.endsWith(term);
+        if (!suffix && (term.length < _minInfix || !word.contains(term))) continue;
+        final better = best == null ||
+            (suffix && !bestSuffix) ||
+            (suffix == bestSuffix && term.length > best.length);
+        if (better) {
+          best = _Hit(entry.icon, 0, term.length);
+          bestSuffix = suffix;
+        }
+      }
+    }
+  }
+  return best?.icon;
 }
 
 /// Autocomplete for the "Artikel hinzufügen" field: up to [limit] icons,
@@ -254,12 +343,19 @@ GroceryIcon? matchGroceryIcon(String text, {bool strict = false}) {
 /// chips on one thing — and so the dedupe follows whichever language is on,
 /// since two files can collide in one language and not the other.
 List<GroceryIcon> groceryIconSuggestions(String query, {int limit = 8}) {
+  final folded = foldItemText(query);
   final seen = <String>{};
   final out = <GroceryIcon>[];
-  for (final hit in _search(foldItemText(query), matchCategory: true)) {
+  for (final hit in _search(folded, matchCategory: true)) {
     if (!seen.add(foldTerm(hit.icon.label))) continue;
     out.add(hit.icon);
     if (out.length == limit) break;
+  }
+  // Typed a compound the catalog only holds a piece of — offer that piece
+  // rather than an empty row of chips.
+  if (out.isEmpty && folded.length >= _minCompound) {
+    final fallback = _compoundMatch(folded) ?? _typoMatch(folded);
+    if (fallback != null) out.add(fallback);
   }
   return out;
 }

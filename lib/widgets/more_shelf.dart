@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/material.dart';
 
@@ -118,6 +120,14 @@ double moreShelfTop(BuildContext context, {double? barHeight}) {
   final n = _entries.length;
   return barTop + kMoreShelfGap + n * kCompactNavSize + (n - 1) * kMoreShelfSpacing;
 }
+
+/// Distance from the right of the screen to the right edge of the shelf's
+/// circles, which stand centred on [anchor]. One function for the shelf and
+/// for Kalender's "Heute" above it, so the two can't drift apart: the pill
+/// hangs off the same edge the labels do. The clamp only bites if a future bar
+/// puts the last item hard against the edge of the display.
+double moreShelfRight(BuildContext context, Rect anchor) =>
+    math.max(MediaQuery.sizeOf(context).width - anchor.center.dx - kCompactNavSize / 2, 14);
 
 /// How far each button rises into place. Generous, because the rise is all the
 /// entrance there is: the one thing a piece of real glass may not do on its way

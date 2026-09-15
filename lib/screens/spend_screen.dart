@@ -21,6 +21,7 @@ import '../widgets/settings_chrome.dart';
 import '../widgets/step_dots.dart';
 import '../widgets/swipe_actions.dart';
 import '../widgets/toast_chip.dart';
+import 'settings/wallet_capture_page.dart';
 import 'spend/spend_charts.dart';
 import 'spend/spend_breakdown.dart';
 import 'spend/spend_island.dart';
@@ -110,13 +111,11 @@ class SpendScreen extends ConsumerWidget {
           _TransactionList(rows: summary.rows),
         ],
 
-        // The way through to Apple Pay capture — one row saying whether this
-        // iPhone files payments by itself, leading to the Settings page that
-        // holds the switch, the steps and the household's other phones. Last,
-        // because it is setup rather than content, and present even on a full
-        // month, since a second parent's phone is enrolled long after the
-        // first one's.
-        const SizedBox(height: AppSpacing.blockGap),
+        // The way through to Apple Pay capture — one row, only while this phone
+        // is not set up, leading to the Settings page that holds the switch,
+        // the steps and the household's other phones. Last, because it is setup
+        // rather than content. It carries its own gap, so a hidden one leaves
+        // no space behind.
         WalletSetupCard(),
       ],
     );
@@ -151,6 +150,14 @@ class _Shell extends StatelessWidget {
   /// False on the page a member sees, which has no rows to say anything about.
   final bool showIsland;
 
+  /// [GlassIconGroup.width] for two actions plus the gap the title keeps from
+  /// it — the same 100 Kalender's header reserves for its pair.
+  static const _groupWidth = 100.0;
+
+  /// Whether there is a capture page to lead to. `SpendScreen` only ships where
+  /// there is, so this is the belt to that braces, as in [WalletSetupCard].
+  bool get _hasWallet => ref.read(spendIntentsProvider).isSupported;
+
   const _Shell({
     required this.ref,
     required this.showAdd,
@@ -164,13 +171,38 @@ class _Shell extends StatelessWidget {
       titleRowBuilder: (context, t) => CollapsingScreenTitle(
         title: L.s.spendTitle,
         t: t,
-        trailingWidth: 48,
-        trailing: showAdd
-            ? GlassIconButton(
+        trailingWidth: showAdd && _hasWallet ? _groupWidth : 48,
+        trailing: !showAdd
+            ? null
+            : _hasWallet
+            // Kalender's pair: the setup place beside the daily verb, in one
+            // glass capsule. The wallet opens the page that holds the switch,
+            // the steps and the household's phones — the same page the card at
+            // the bottom leads to while this phone is not set up yet.
+            ? GlassIconGroup(
+                actions: [
+                  GlassIconAction(
+                    icon: AppIcons.wallet,
+                    label: ref.read(spendIntentsProvider).usesNotificationAccess
+                        ? L.s.settingsWalletCapture
+                        : L.s.settingsApplePay,
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => WalletCapturePage(parentTitle: L.s.spendTitle),
+                      ),
+                    ),
+                  ),
+                  GlassIconAction(
+                    icon: AppIcons.plus,
+                    label: L.s.spendAdd,
+                    onTap: () => showSpendSheet(context, ref),
+                  ),
+                ],
+              )
+            : GlassIconButton(
                 icon: AppIcons.plus,
                 onTap: () => showSpendSheet(context, ref),
-              )
-            : null,
+              ),
       ),
       // First frame only — the block re-measures itself once laid out, and a
       // constant here would clip it on a phone with large text. See

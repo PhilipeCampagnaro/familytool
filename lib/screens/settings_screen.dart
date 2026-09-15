@@ -9,6 +9,7 @@ import '../state/auth_state.dart';
 import '../state/calendar_connections_state.dart';
 import '../state/entitlement_state.dart';
 import '../state/family_state.dart';
+import '../state/list_planner_state.dart';
 import '../state/onboarding_state.dart';
 import '../state/settings_state.dart';
 import '../state/spend_state.dart';
@@ -210,9 +211,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               // Two names for one page, because it is two mechanisms: Apple Pay
               // is what the user set up in Shortcuts, and on Android there is no
               // Apple Pay to name at all.
-              title: spendUsesNotificationAccess
-                  ? L.s.settingsWalletCapture
-                  : L.s.settingsApplePay,
+              title: spendUsesNotificationAccess ? L.s.settingsWalletCapture : L.s.settingsApplePay,
               value: _deviceSummary(ref.watch(spendProvider).devices.length),
               onTap: () => _push(context, WalletCapturePage()),
             ),
@@ -268,11 +267,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         if (storeReviewUrl != null)
           (
             terms: L.s.searchTermsRate,
-            row: SettingsRow(
-              icon: AppIcons.star,
-              title: L.s.rateApp,
-              onTap: openStoreReview,
-            ),
+            row: SettingsRow(icon: AppIcons.star, title: L.s.rateApp, onTap: openStoreReview),
           ),
         // **Debug builds only, and it grants nothing.** Every screen from here
         // to launch has a free state and a Plus state, and the alternative to
@@ -302,6 +297,29 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   Plan.free => Plan.plus,
                   Plan.plus => null,
                 };
+                ref.read(plannerProvider.notifier).refreshUsage();
+              },
+            ),
+          ),
+        // **Debug builds only, and it only asks.** Lifts the Vorhaben limits so
+        // the card can be tested past thirty — but `list-plan` honours the
+        // request solely for an account in `plan_limit_exemptions`, so for
+        // anybody else this row changes nothing. Re-reads the count on the way
+        // out so the line under the field shows the effect straight away. See
+        // `plannerLimitsLiftedProvider`.
+        if (kDebugMode)
+          (
+            terms: 'vorhaben limit debug',
+            row: SettingsRow(
+              icon: AppIcons.lightbulb,
+              title: L.s.debugPlannerLimitsTitle,
+              value: ref.watch(plannerLimitsLiftedProvider)
+                  ? L.s.debugPlannerLimitsLifted
+                  : L.s.debugPlannerLimitsEnforced,
+              onTap: () {
+                final lifted = ref.read(plannerLimitsLiftedProvider.notifier);
+                lifted.state = !lifted.state;
+                ref.read(plannerProvider.notifier).refreshUsage();
               },
             ),
           ),
@@ -368,4 +386,3 @@ String _connectionSummary(CalendarConnectionsState state) {
   final n = state.connections.length;
   return L.s.calendarCount(n);
 }
-

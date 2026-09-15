@@ -307,6 +307,8 @@ class StringsDe extends AppStrings {
   @override
   String get trackersTitle => 'Tracker';
   @override
+  String get tasksTitle => 'To-dos';
+  @override
   String weekProgressLabel(int done, int target) => '$done von $target diese Woche';
   @override
   String streakDays(int days) => days == 1 ? '1 Tag in Folge' : '$days Tage in Folge';
@@ -1480,11 +1482,11 @@ class StringsDe extends AppStrings {
   String get homeAllDone => 'Alles erledigt';
   @override
   String homeDayOffset(int days) => switch (days) {
-        1 => 'Morgen',
-        -1 => 'Gestern',
-        > 1 => 'In $days Tagen',
-        _ => 'Vor ${-days} Tagen',
-      };
+    1 => 'Morgen',
+    -1 => 'Gestern',
+    > 1 => 'In $days Tagen',
+    _ => 'Vor ${-days} Tagen',
+  };
   @override
   String get homeHintBackToToday => 'Tippen für heute';
   @override
@@ -1810,6 +1812,15 @@ class StringsDe extends AppStrings {
       : '$count Geräte';
   @override
   String get spendWalletRevoke => 'Entfernen';
+  @override
+  String get spendWalletRenameTitle => 'Gerät umbenennen';
+  @override
+  String get spendWalletRenameBody =>
+      'Unter diesem Namen steht das Gerät in der Liste — damit ihr eure Handys auseinanderhaltet.';
+  @override
+  String get spendWalletDeviceNameHint => 'z. B. iPhone von Anna';
+  @override
+  String get spendWalletThisDevice => 'Dieses Gerät';
 
   @override
   String get spendCatGroceries => 'Lebensmittel';
@@ -1988,9 +1999,29 @@ class StringsDe extends AppStrings {
   @override
   String get plannerNotConfigured => 'Vorhaben ist gerade nicht eingerichtet.';
   @override
-  String get plannerMonthlyLimit => 'Die Vorhaben für diesen Monat sind aufgebraucht. Am Monatsersten geht es weiter.';
+  String get plannerMonthlyLimit =>
+      'Die Vorhaben für diesen Monat sind aufgebraucht. Am Monatsersten geht es weiter.';
   @override
   String get plannerDailyLimit => 'Für heute sind es genug Vorhaben. Morgen geht es weiter.';
+  @override
+  String plannerLeft(int left, int limit) => 'Noch $left von $limit Vorhaben diesen Monat';
+  @override
+  String plannerNoneLeft(int day, String month) => 'Keine Vorhaben mehr – ab $day. $month wieder';
+  @override
+  String plannerMonthlyLimitUntil(int day, String month) =>
+      'Die Vorhaben für diesen Monat sind aufgebraucht. Ab dem $day. $month geht es weiter.';
+  @override
+  String plannerDailyLimitAt(String time, {required bool tomorrow}) => tomorrow
+      ? 'Für heute sind es genug Vorhaben. Morgen ab $time geht es weiter.'
+      : 'Für den Moment sind es genug Vorhaben. Ab $time geht es weiter.';
+  @override
+  String get plannerLimitsLifted => 'Limits aufgehoben (Test)';
+  @override
+  String get debugPlannerLimitsTitle => 'Vorhaben-Limits (Debug)';
+  @override
+  String get debugPlannerLimitsEnforced => 'Aktiv';
+  @override
+  String get debugPlannerLimitsLifted => 'Aufgehoben';
   @override
   String get plannerIslandLine => 'Sag, was du vorhast.';
   @override
@@ -2066,9 +2097,8 @@ class StringsDe extends AppStrings {
   @override
   String noticeTaskDue(String time) => 'Fällig um $time';
   @override
-  String joinAnd(List<String> parts) => parts.length < 2
-      ? parts.join()
-      : '${parts.sublist(0, parts.length - 1).join(', ')} und ${parts.last}';
+  String joinAnd(List<String> parts) =>
+      parts.length < 2 ? parts.join() : '${parts.sublist(0, parts.length - 1).join(', ')} und ${parts.last}';
   @override
   String get rateApp => 'Aporah bewerten';
   @override

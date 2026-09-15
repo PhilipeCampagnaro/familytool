@@ -10,6 +10,7 @@ import '../../theme/app_icons.dart';
 import '../../theme/tokens.dart';
 import '../../widgets/anchored_menu.dart';
 import '../../widgets/app_sheet.dart';
+import '../../widgets/rename_sheet.dart';
 import '../../widgets/settings_chrome.dart';
 import '../../widgets/toast_chip.dart';
 
@@ -149,7 +150,8 @@ class _WalletCapturePageState extends ConsumerState<WalletCapturePage>
                       _DeviceRow(
                         device: device,
                         isThisDevice:
-                            state.thisDeviceEnrolled && _isThisDevice(device, state),
+                            state.thisDeviceEnrolled &&
+                            device.deviceUid == state.thisDeviceUid,
                       ),
                   ],
           ),
@@ -208,15 +210,6 @@ class _WalletCapturePageState extends ConsumerState<WalletCapturePage>
       onTap: () => openExternalUrl('shortcuts://'),
     );
   }
-
-  /// Best effort, and it only decides whether the local token copy is also
-  /// cleared. The server list cannot tell this phone from another one with the
-  /// same name, so the answer is "this phone holds a token and exactly one row
-  /// carries that name". Getting it wrong in one direction leaves a dead token on
-  /// a phone whose row is gone — harmless, because the server refuses it — and in
-  /// the other clears a token this phone was about to stop using anyway.
-  static bool _isThisDevice(SpendDevice device, SpendState state) =>
-      state.devices.where((d) => d.label == device.label).length == 1;
 }
 
 /// This phone's own state, and what is left to do about it — the card the pinned
@@ -443,6 +436,12 @@ class _DeviceRowState extends ConsumerState<_DeviceRow> {
       title: widget.device.label,
       items: [
         AnchoredMenuItem(
+          label: L.s.rename,
+          icon: AppIcons.pencilSimple,
+          symbol: 'pencil',
+          onSelected: _rename,
+        ),
+        AnchoredMenuItem(
           label: L.s.spendWalletRevoke,
           icon: AppIcons.trash,
           symbol: 'trash',
@@ -452,6 +451,26 @@ class _DeviceRowState extends ConsumerState<_DeviceRow> {
               .revokeDevice(widget.device.id, isThisDevice: widget.isThisDevice),
         ),
       ],
+    );
+  }
+
+  void _rename() {
+    showRenameSheet(
+      context: context,
+      icon: AppIcons.deviceMobile,
+      title: L.s.spendWalletRenameTitle,
+      headline: widget.device.label,
+      message: L.s.spendWalletRenameBody,
+      initialName: widget.device.label,
+      fieldHint: L.s.spendWalletDeviceNameHint,
+      busyLabel: L.s.savingEllipsis,
+      successLabel: L.s.nameChanged,
+      onConfirm: (name) async {
+        final ok = await ref.read(spendProvider.notifier).renameDevice(widget.device.id, name);
+        // The sheet's contract: a throw keeps it open with the message under
+        // the field.
+        if (!ok) throw StateError('refused');
+      },
     );
   }
 
@@ -472,7 +491,7 @@ class _DeviceRowState extends ConsumerState<_DeviceRow> {
     return SettingsRow(
       icon: AppIcons.deviceMobile,
       title: widget.device.label,
-      subtitle: _lastUsed,
+      subtitle: widget.isThisDevice ? '${L.s.spendWalletThisDevice} · $_lastUsed' : _lastUsed,
       // Anchored on the dots rather than the row, so the menu grows out of the
       // thing that was tapped — which is the whole reason this app puts up a
       // `UIMenu` beside the control instead of a sheet at the bottom.

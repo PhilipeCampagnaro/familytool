@@ -102,8 +102,7 @@ class StringsPt extends AppStrings {
   @override
   String dateRange(String from, String to) => '$from – $to';
   @override
-  String dayRangeSameMonth(int fromDay, int toDay, int month) =>
-      '$fromDay – $toDay de ${monthNames[month]}';
+  String dayRangeSameMonth(int fromDay, int toDay, int month) => '$fromDay – $toDay de ${monthNames[month]}';
   @override
   String dayRangeCrossMonth(int fromDay, int fromMonth, int toDay, int toMonth) =>
       '$fromDay de ${monthNames[fromMonth]} – $toDay de ${monthNames[toMonth]}';
@@ -322,13 +321,14 @@ class StringsPt extends AppStrings {
   @override
   String get howOften => 'Com que frequência?';
   @override
-  String timesPerWeekValue(int times) =>
-      times == 1 ? 'Uma vez por semana' : '$times vezes por semana';
+  String timesPerWeekValue(int times) => times == 1 ? 'Uma vez por semana' : '$times vezes por semana';
   @override
   String get timesPerWeekExplainer =>
       'O que conta é a semana, não o dia. Nada vence num dia específico — a conta é feita quando a semana fecha, no domingo.';
   @override
   String get trackersTitle => 'Rotinas';
+  @override
+  String get tasksTitle => 'Tarefas';
   @override
   String weekProgressLabel(int done, int target) => '$done de $target esta semana';
   @override
@@ -396,8 +396,7 @@ class StringsPt extends AppStrings {
   @override
   String get saveFailed => 'Não foi possível salvar.';
   @override
-  String get someDoneTasksNotDeleted =>
-      'Não foi possível excluir todas as tarefas concluídas.';
+  String get someDoneTasksNotDeleted => 'Não foi possível excluir todas as tarefas concluídas.';
   @override
   String get doneTasksDeleteFailed => 'Não foi possível excluir as tarefas concluídas.';
   @override
@@ -423,8 +422,7 @@ class StringsPt extends AppStrings {
   @override
   String get items => 'Itens';
   @override
-  String get noBoxesYet =>
-      'Ainda não há caixas.\nCrie uma para achar de novo o que você guardou.';
+  String get noBoxesYet => 'Ainda não há caixas.\nCrie uma para achar de novo o que você guardou.';
   @override
   String matchCount(int count) => count == 1 ? '1 resultado' : '$count resultados';
   @override
@@ -542,8 +540,7 @@ class StringsPt extends AppStrings {
   @override
   String get removeItemLink => 'Remover o link';
   @override
-  String get itemLinkMessage =>
-      'A página onde dá para comprar este item. Tocar no link abre no navegador.';
+  String get itemLinkMessage => 'A página onde dá para comprar este item. Tocar no link abre no navegador.';
   @override
   String get itemLinkHint => 'ex.: amazon.com.br/dp/B0C…';
   @override
@@ -565,8 +562,7 @@ class StringsPt extends AppStrings {
   @override
   String get listRestoreFailed => 'Não foi possível restaurar a lista.';
   @override
-  String get someDoneItemsNotDeleted =>
-      'Não foi possível excluir todos os itens concluídos.';
+  String get someDoneItemsNotDeleted => 'Não foi possível excluir todos os itens concluídos.';
   @override
   String get doneItemsDeleteFailed => 'Não foi possível excluir os itens concluídos.';
 
@@ -610,13 +606,11 @@ class StringsPt extends AppStrings {
   @override
   String get repeats => 'Se repete';
   @override
-  String get repeatNotEditable =>
-      'A regra de repetição não muda aqui — só na própria agenda.';
+  String get repeatNotEditable => 'A regra de repetição não muda aqui — só na própria agenda.';
   @override
   String get repeatingEvent => 'Evento repetido';
   @override
-  String get changeRepeatingEventBody =>
-      'Aplicar esta alteração só a este evento ou a toda a série?';
+  String get changeRepeatingEventBody => 'Aplicar esta alteração só a este evento ou a toda a série?';
   @override
   String get deleteRepeatingEventBody => 'Excluir só este evento ou toda a série?';
   @override
@@ -743,8 +737,7 @@ class StringsPt extends AppStrings {
   @override
   String get noHouseholdFound => 'Nenhuma família encontrada.';
   @override
-  String get eventSaveFailedRemote =>
-      'Não foi possível salvar o evento na agenda conectada.';
+  String get eventSaveFailedRemote => 'Não foi possível salvar o evento na agenda conectada.';
 
   @override
   String get allDayDuration => 'Dia inteiro';
@@ -791,8 +784,7 @@ class StringsPt extends AppStrings {
       'Veja os compromissos da sua família no app — escola, coleta de lixo e '
       'agendas pessoais num lugar só.';
   @override
-  String get connectCalendarsAdminNote =>
-      'Um adulto da família é quem conecta as agendas.';
+  String get connectCalendarsAdminNote => 'Um adulto da família é quem conecta as agendas.';
   @override
   String get noCalendarsConnected => 'Nenhuma agenda conectada ainda.';
   @override
@@ -840,11 +832,9 @@ class StringsPt extends AppStrings {
   @override
   String get accessRevokedToo => 'O acesso também será revogado no provedor.';
   @override
-  String get accountStaysConnected =>
-      'A conta continua conectada — e as outras agendas dela também.';
+  String get accountStaysConnected => 'A conta continua conectada — e as outras agendas dela também.';
   @override
-  String get householdOnlyOthersKeep =>
-      'Só para a sua família — os outros continuam com a agenda.';
+  String get householdOnlyOthersKeep => 'Só para a sua família — os outros continuam com a agenda.';
   @override
   String get credentialsDeleted => 'Suas credenciais serão excluídas.';
   @override
@@ -872,16 +862,14 @@ class StringsPt extends AppStrings {
   String calendarsFoundPickThem(int count) =>
       'Encontramos $count agendas. Escolha as que você quer ver no Aporah.';
   @override
-  String get nameYourCalendarBody =>
-      'É assim que a agenda se chama no Aporah. Você pode renomeá-la agora.';
+  String get nameYourCalendarBody => 'É assim que a agenda se chama no Aporah. Você pode renomeá-la agora.';
   @override
   String get nameEachCalendarBody =>
       'É assim que as agendas se chamam no Aporah. Você pode renomeá-las agora.';
   @override
   String get whichCalendars => 'Agendas';
   @override
-  String get whichCalendarsHint =>
-      'Só as que você marcar aparecem no Aporah. Dá para mudar isso depois.';
+  String get whichCalendarsHint => 'Só as que você marcar aparecem no Aporah. Dá para mudar isso depois.';
   @override
   String get readOnlyCalendar => 'Somente leitura';
   @override
@@ -891,8 +879,7 @@ class StringsPt extends AppStrings {
   @override
   String get deselectAll => 'Desmarcar tudo';
   @override
-  String calendarsSelected(int count) =>
-      count == 1 ? '1 agenda selecionada' : '$count agendas selecionadas';
+  String calendarsSelected(int count) => count == 1 ? '1 agenda selecionada' : '$count agendas selecionadas';
   @override
   String get loadingCalendarsEllipsis => 'Carregando as agendas …';
   @override
@@ -981,8 +968,7 @@ class StringsPt extends AppStrings {
   @override
   String get uploadCalendarFile => 'Enviar um arquivo de agenda';
   @override
-  String get uploadCalendarFileHint =>
-      'Para uma agenda publicada como download em vez de link.';
+  String get uploadCalendarFileHint => 'Para uma agenda publicada como download em vez de link.';
   @override
   String get calendarFileNote =>
       'Um arquivo é uma foto do momento: ele tem exatamente os eventos que tinha '
@@ -990,8 +976,7 @@ class StringsPt extends AppStrings {
   @override
   String get checkingFileEllipsis => 'Verificando o arquivo …';
   @override
-  String get calendarFileUnreadable =>
-      'Não foi possível ler esse arquivo. Escolha um arquivo .ics.';
+  String get calendarFileUnreadable => 'Não foi possível ler esse arquivo. Escolha um arquivo .ics.';
   @override
   String calendarFileCoversTo(String date) => 'Os eventos vão até $date.';
   @override
@@ -1001,20 +986,17 @@ class StringsPt extends AppStrings {
   @override
   String get pasteCalendarLink => 'Link da agenda';
   @override
-  String get pasteCalendarLinkHint =>
-      'A gente busca na hora, para você saber logo se funciona.';
+  String get pasteCalendarLinkHint => 'A gente busca na hora, para você saber logo se funciona.';
   @override
   String get whoseCalendar => 'De quem é esta conta?';
   @override
-  String get whoseCalendarHint =>
-      'Aparece depois no filtro da agenda, ex.: "IServ · Ana".';
+  String get whoseCalendarHint => 'Aparece depois no filtro da agenda, ex.: "IServ · Ana".';
   @override
   String get whoseCalendarPlaceholder => 'Nome da criança';
   @override
   String get linkedCalendarName => 'Nome da agenda';
   @override
-  String get linkedCalendarNameHint =>
-      'Provas, tarefas ou a agenda da turma, por exemplo.';
+  String get linkedCalendarNameHint => 'Provas, tarefas ou a agenda da turma, por exemplo.';
   @override
   String get nameThisCalendarFirst => 'Dê um nome à agenda.';
   @override
@@ -1030,8 +1012,7 @@ class StringsPt extends AppStrings {
   @override
   String get removeCalendar => 'Remover agenda';
   @override
-  String get linkStaysAtSchool =>
-      ' O link continua na plataforma da escola — a gente só para de guardá-lo.';
+  String get linkStaysAtSchool => ' O link continua na plataforma da escola — a gente só para de guardá-lo.';
   @override
   String get connectWithLogin => 'Conectar com login e senha';
   @override
@@ -1043,22 +1024,18 @@ class StringsPt extends AppStrings {
       'O Aporah só lê estas agendas. Continue alterando os eventos na plataforma '
       'da escola.';
   @override
-  String eventsFoundAtLink(int count) =>
-      count == 1 ? '1 evento encontrado' : '$count eventos encontrados';
+  String eventsFoundAtLink(int count) => count == 1 ? '1 evento encontrado' : '$count eventos encontrados';
   @override
-  String get noEventsAtLinkYet =>
-      'O link funciona mas não tem eventos agora. Isso é normal nas férias.';
+  String get noEventsAtLinkYet => 'O link funciona mas não tem eventos agora. Isso é normal nas férias.';
 
   @override
   String get calendarLinkIcs => 'Link da agenda (ICS)';
   @override
-  String get calendarLinkHint =>
-      'Costuma terminar em .ics — o link por trás de "Assinar agenda".';
+  String get calendarLinkHint => 'Costuma terminar em .ics — o link por trás de "Assinar agenda".';
   @override
   String get pasteLinkHere => 'Cole o link da agenda aqui.';
   @override
-  String get noEventsAtThatLink =>
-      'Nenhum evento encontrado nesse link. É mesmo o link da agenda?';
+  String get noEventsAtThatLink => 'Nenhum evento encontrado nesse link. É mesmo o link da agenda?';
   @override
   String get yourAddress => 'Endereço';
   @override
@@ -1078,8 +1055,7 @@ class StringsPt extends AppStrings {
   @override
   String foundVendor(String where) => 'Encontrada: $where';
   @override
-  String get noVendorFoundTapForLink =>
-      'Nenhuma empresa encontrada — toque para informar o link da agenda';
+  String get noVendorFoundTapForLink => 'Nenhuma empresa encontrada — toque para informar o link da agenda';
   @override
   String get askingNearbyVendors => 'Consultando as empresas da região …';
   @override
@@ -1091,8 +1067,7 @@ class StringsPt extends AppStrings {
   @override
   String get calendarConnected => 'Agenda conectada';
   @override
-  String get calendarNameInAporah =>
-      'É assim que a agenda se chama no Aporah. Você pode renomeá-la depois.';
+  String get calendarNameInAporah => 'É assim que a agenda se chama no Aporah. Você pode renomeá-la depois.';
 
   // -------------------------------------------------------- provider meta --
   @override
@@ -1106,18 +1081,15 @@ class StringsPt extends AppStrings {
   @override
   String get providerOutlookDesc => 'Conectar o Outlook ou o Microsoft 365.';
   @override
-  String get providerIcloudDesc =>
-      'Conectar o iCloud com uma senha específica do app.';
+  String get providerIcloudDesc => 'Conectar o iCloud com uma senha específica do app.';
   @override
   String get providerGmxDesc => 'Conectar a agenda do GMX — os eventos voltam também.';
   @override
-  String get providerWebdeDesc =>
-      'Conectar a agenda do WEB.DE — os eventos voltam também.';
+  String get providerWebdeDesc => 'Conectar a agenda do WEB.DE — os eventos voltam também.';
   @override
   String get providerIservDesc => 'Tarefas, provas e agendas de turma do IServ.';
   @override
-  String get providerWebuntisDesc =>
-      'Mostrar o horário do WebUntis, pelo link iCal do perfil.';
+  String get providerWebuntisDesc => 'Mostrar o horário do WebUntis, pelo link iCal do perfil.';
   @override
   String get providerIcalDesc =>
       'Adicionar qualquer agenda que você possa assinar — um clube, uma creche, o trabalho.';
@@ -1130,8 +1102,7 @@ class StringsPt extends AppStrings {
   @override
   String get shareTitle => 'Compartilhar';
   @override
-  String shareIntro(String resource) =>
-      'Compartilhe “$resource” com gente de fora da família. ';
+  String shareIntro(String resource) => 'Compartilhe “$resource” com gente de fora da família. ';
   @override
   String shareIntroSecond(String noun) => 'Elas veem $noun e mais nada do que é seu.';
   @override
@@ -1145,8 +1116,7 @@ class StringsPt extends AppStrings {
   @override
   String get activeLinks => 'Links ativos';
   @override
-  String get notSharedYet =>
-      'Ainda não está compartilhado.\nCrie um link para deixar alguém entrar.';
+  String get notSharedYet => 'Ainda não está compartilhado.\nCrie um link para deixar alguém entrar.';
   @override
   String get newLink => 'Novo link';
   @override
@@ -1188,16 +1158,14 @@ class StringsPt extends AppStrings {
   @override
   String peopleCount(int count) => '$count pessoas';
   @override
-  String wholeFamilySees(String noun) =>
-      'Para a família toda — todo mundo pode ver e editar $noun.';
+  String wholeFamilySees(String noun) => 'Para a família toda — todo mundo pode ver e editar $noun.';
   @override
   String onlyYouSee(String noun) => 'Só você vê — mais ninguém vê $noun.';
   @override
   String youAndOthersSee(String names, String noun) => 'Só você e $names veem $noun.';
   @override
-  String joinNames(List<String> names) => names.length == 1
-      ? names.first
-      : '${names.sublist(0, names.length - 1).join(', ')} e ${names.last}';
+  String joinNames(List<String> names) =>
+      names.length == 1 ? names.first : '${names.sublist(0, names.length - 1).join(', ')} e ${names.last}';
 
   // ------------------------------------------------------------ icon pick --
   @override
@@ -1263,8 +1231,7 @@ class StringsPt extends AppStrings {
   @override
   String get avatarRemoveFailed => 'Não foi possível remover a foto de perfil.';
   @override
-  String get adminsManageFamily =>
-      'Os administradores cuidam da família e de todas as conexões.';
+  String get adminsManageFamily => 'Os administradores cuidam da família e de todas as conexões.';
   @override
   String get familyMembersDesc =>
       'Defina o papel de cada membro da família. Os administradores cuidam da '
@@ -1284,8 +1251,7 @@ class StringsPt extends AppStrings {
   @override
   String get inviteFamilyMember => 'Convidar um membro da família';
   @override
-  String get inviteValidity =>
-      'O convite vale 14 dias. Quem aceitar sai da família anterior.';
+  String get inviteValidity => 'O convite vale 14 dias. Quem aceitar sai da família anterior.';
   @override
   String get inviteSending => 'Enviando o convite…';
   @override
@@ -1314,8 +1280,7 @@ class StringsPt extends AppStrings {
       '“$name” perde o acesso à sua família. O conteúdo compartilhado fica, o '
       'conteúdo privado é excluído.';
   @override
-  String get languagePageDesc =>
-      'Define o idioma do app. Menus, botões e datas mudam na hora.';
+  String get languagePageDesc => 'Define o idioma do app. Menus, botões e datas mudam na hora.';
   @override
   String get setUpProfile => 'Configurar o perfil';
   @override
@@ -1356,11 +1321,9 @@ class StringsPt extends AppStrings {
   String get searchTermsLanguage =>
       'idioma língua português inglês alemão espanhol tradução language sprache';
   @override
-  String get searchTermsDarkMode =>
-      'modo escuro aparência claro escuro noite tema dunkelmodus dark mode';
+  String get searchTermsDarkMode => 'modo escuro aparência claro escuro noite tema dunkelmodus dark mode';
   @override
-  String get searchTermsTour =>
-      'tour boas-vindas introdução repetir ajuda onboarding willkommenstour';
+  String get searchTermsTour => 'tour boas-vindas introdução repetir ajuda onboarding willkommenstour';
   @override
   String get searchTermsSignOut => 'sair logout conta trocar desconectar abmelden sign out';
 
@@ -1382,8 +1345,7 @@ class StringsPt extends AppStrings {
   @override
   String get onboardInviteTitle => 'Convide a sua família';
   @override
-  String get onboardInviteBody =>
-      'Todo mundo da família pode ver e acrescentar eventos, caixas e listas.';
+  String get onboardInviteBody => 'Todo mundo da família pode ver e acrescentar eventos, caixas e listas.';
   @override
   String get adult => 'Adulto';
   @override
@@ -1411,8 +1373,7 @@ class StringsPt extends AppStrings {
   @override
   String get onboardNotFoundHere => 'Não encontrado para este endereço';
   @override
-  String get onboardRenameLater =>
-      'Dá para renomear as agendas depois em Configurações → Agenda.';
+  String get onboardRenameLater => 'Dá para renomear as agendas depois em Configurações → Agenda.';
   @override
   String get onboardConnectMoreHint => 'Adicionar Google, Outlook, iCloud ou IServ';
   @override
@@ -1478,8 +1439,7 @@ class StringsPt extends AppStrings {
   @override
   String get passwordTooShort => 'Essa senha é curta demais.';
   @override
-  String get passwordLeaked =>
-      'Esta senha aparece em vazamentos conhecidos. Escolha outra.';
+  String get passwordLeaked => 'Esta senha aparece em vazamentos conhecidos. Escolha outra.';
   @override
   String get tooManyAttempts => 'Tentativas demais. Espere um pouco.';
   @override
@@ -1531,8 +1491,7 @@ class StringsPt extends AppStrings {
   @override
   String get renameFamily => 'Renomear a família';
   @override
-  String get renameFamilyBody =>
-      'O nome aparece na aba da família na Agenda e no Quadro.';
+  String get renameFamilyBody => 'O nome aparece na aba da família na Agenda e no Quadro.';
   @override
   String get familyRenameFailed => 'Não foi possível mudar o nome.';
 
@@ -1549,11 +1508,11 @@ class StringsPt extends AppStrings {
   String get homeAllDone => 'Tudo pronto';
   @override
   String homeDayOffset(int days) => switch (days) {
-        1 => 'Amanhã',
-        -1 => 'Ontem',
-        > 1 => 'Em $days dias',
-        _ => 'Há ${-days} dias',
-      };
+    1 => 'Amanhã',
+    -1 => 'Ontem',
+    > 1 => 'Em $days dias',
+    _ => 'Há ${-days} dias',
+  };
   @override
   String get homeHintBackToToday => 'Toque para voltar a hoje';
   @override
@@ -1774,11 +1733,9 @@ class StringsPt extends AppStrings {
       ? 'Um pagamento precisa de você um instante'
       : '$count pagamentos precisam de você um instante';
   @override
-  String get spendReviewBody =>
-      'A Apple não passou a loja ou o valor. Toque na linha e preencha.';
+  String get spendReviewBody => 'A Apple não passou a loja ou o valor. Toque na linha e preencha.';
   @override
-  String get spendReviewDetail =>
-      'A Apple não passou a loja ou o valor. Toque no lápis acima e preencha.';
+  String get spendReviewDetail => 'A Apple não passou a loja ou o valor. Toque no lápis acima e preencha.';
 
   @override
   String get spendLoadFailed => 'Não foi possível carregar os gastos.';
@@ -1816,8 +1773,7 @@ class StringsPt extends AppStrings {
   @override
   String get spendWalletStep3 => 'Escolha seus cartões e marque Executar imediatamente.';
   @override
-  String get spendWalletStep4 =>
-      'Escolha a ação "Registrar gasto" — ela já está na lista.';
+  String get spendWalletStep4 => 'Escolha a ação "Registrar gasto" — ela já está na lista.';
   @override
   String get spendWalletStep5 =>
       'Na ação, toque em Loja e Valor e insira a variável correspondente da automação — senão o atalho para e pergunta, e nada é registrado.';
@@ -1847,17 +1803,14 @@ class StringsPt extends AppStrings {
   @override
   String get spendWalletAndroidStepsTitle => 'Duas chavinhas e está funcionando';
   @override
-  String get spendWalletAndroidStep1 =>
-      'Ative este aparelho — é isso que deixa ele arquivar gastos.';
+  String get spendWalletAndroidStep1 => 'Ative este aparelho — é isso que deixa ele arquivar gastos.';
   @override
   String get spendWalletAndroidStep2 =>
       'Ligue o acesso às notificações para o Aporah nas configurações do sistema.';
   @override
-  String get spendWalletAndroidStep3 =>
-      'Pague com o celular — o gasto aparece aqui sozinho.';
+  String get spendWalletAndroidStep3 => 'Pague com o celular — o gasto aparece aqui sozinho.';
   @override
-  String get spendWalletAndroidNoDevicesHint =>
-      'Use o botão abaixo para ativar este aparelho.';
+  String get spendWalletAndroidNoDevicesHint => 'Use o botão abaixo para ativar este aparelho.';
   @override
   String get spendWalletGrantAccess => 'Permitir o acesso às notificações';
   @override
@@ -1872,8 +1825,7 @@ class StringsPt extends AppStrings {
       'e sem contar. O que sai do aparelho é a loja, o valor, os últimos dígitos '
       'do cartão e o horário. Nunca o texto de uma notificação.';
   @override
-  String get spendWalletAndroidSources =>
-      'A Google Wallet, o Google Pay e a Samsung Wallet são detectados.';
+  String get spendWalletAndroidSources => 'A Google Wallet, o Google Pay e a Samsung Wallet são detectados.';
   @override
   String get settingsApplePay => 'Apple Pay';
   @override
@@ -1894,10 +1846,19 @@ class StringsPt extends AppStrings {
   String spendWalletDeviceCount(int count) => count == 0
       ? 'Nenhum'
       : count == 1
-          ? '1 aparelho'
-          : '$count aparelhos';
+      ? '1 aparelho'
+      : '$count aparelhos';
   @override
   String get spendWalletRevoke => 'Remover';
+  @override
+  String get spendWalletRenameTitle => 'Renomear aparelho';
+  @override
+  String get spendWalletRenameBody =>
+      'É com este nome que o aparelho aparece na lista — para vocês distinguirem os celulares.';
+  @override
+  String get spendWalletDeviceNameHint => 'ex.: iPhone da Ana';
+  @override
+  String get spendWalletThisDevice => 'Este aparelho';
 
   @override
   String get spendCatGroceries => 'Mercado';
@@ -2094,6 +2055,27 @@ class StringsPt extends AppStrings {
   @override
   String get plannerDailyLimit => 'Por hoje já deu. Tente de novo amanhã.';
   @override
+  String plannerLeft(int left, int limit) =>
+      left == 1 ? 'Resta 1 de $limit planos este mês' : 'Restam $left de $limit planos este mês';
+  @override
+  String plannerNoneLeft(int day, String month) =>
+      'Sem planos restantes: mais no dia $day de ${month.toLowerCase()}';
+  @override
+  String plannerMonthlyLimitUntil(int day, String month) =>
+      'Os planos deste mês acabaram. No dia $day de ${month.toLowerCase()} tem mais.';
+  @override
+  String plannerDailyLimitAt(String time, {required bool tomorrow}) => tomorrow
+      ? 'Por hoje já deu. Amanhã, a partir das $time, tem mais.'
+      : 'Por enquanto já deu. A partir das $time tem mais.';
+  @override
+  String get plannerLimitsLifted => 'Limites desativados (teste)';
+  @override
+  String get debugPlannerLimitsTitle => 'Limites de planos (debug)';
+  @override
+  String get debugPlannerLimitsEnforced => 'Ativos';
+  @override
+  String get debugPlannerLimitsLifted => 'Desativados';
+  @override
   String get plannerIslandLine => 'Diga o que você está planejando.';
   @override
   String get plannerIslandHint => 'A lista é por nossa conta';
@@ -2168,9 +2150,8 @@ class StringsPt extends AppStrings {
   @override
   String noticeTaskDue(String time) => 'Para as $time';
   @override
-  String joinAnd(List<String> parts) => parts.length < 2
-      ? parts.join()
-      : '${parts.sublist(0, parts.length - 1).join(', ')} e ${parts.last}';
+  String joinAnd(List<String> parts) =>
+      parts.length < 2 ? parts.join() : '${parts.sublist(0, parts.length - 1).join(', ')} e ${parts.last}';
   @override
   String get rateApp => 'Avaliar o Aporah';
   @override

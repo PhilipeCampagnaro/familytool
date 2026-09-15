@@ -720,6 +720,10 @@ Non-obvious bits, each one a bug that shipped first:
       `Offstage`, not removed, so the native bar keeps its geometry and its channel.
     - The scroll test is on the **delta**, not the position: the week view is a `NestedScrollView`
       and its inner list reports `pixels == 0` for the whole time the header is collapsing.
+    - **A tap on the circle holds the bar open until the next drag starts**
+      (`expand(holdOpen: true)` / `dragStarted`). A flick keeps the list gliding after the finger
+      lifts, and every frame of that glide is a downward scroll: without the hold, the tap expanded
+      the bar and the next frame collapsed it, so it took two or three taps.
   - The bar is the **shell's**, so a screen never builds one; drive it through
     `navBarProvider` rather than passing callbacks down. That provider also publishes the
     measured bar height, because Kalender's "Heute" button hangs off the same centre line from a
@@ -790,7 +794,14 @@ Non-obvious bits, each one a bug that shipped first:
         wrong by the padding inside it, where Dart's fifth of the whole *bar* is wrong by the
         entire inset — tens of points on an iOS 26 capsule, which is the misplacement this whole
         mechanism exists to fix.
-      - The answer carries a **`found`** string (`named:5`, `shape:5`, `platter/5`) and the bar and
+      - **Then the title overrides the centre, whichever rung answered.** A `UILabel` whose text is
+        the last item's title is the item on any version of the bar, because the text is ours
+        rather than UIKit's, and the glyph is centred over it. It was added when iOS 26 found no
+        item view at all and the platter split answered: the selected item's pill is wider than
+        the rest, so the capsule's items are **not evenly spread**, and the shelf stood ~30pt right
+        of the glyph. Only the centre comes from the label; the width and band stay the rung's.
+      - The answer carries a **`found`** string (`named:5`, `shape:5`, `platter/5`, each prefixed
+        `title/` when the label was found) and the bar and
         view widths, printed in debug as `[tab-bar-item]`. A shelf standing in the wrong place
         then says *why* in one console line; without it, "UIKit moved the item" and "we measured
         something that is not an item" look identical from Dart.

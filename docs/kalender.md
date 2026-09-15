@@ -244,7 +244,8 @@ a second card of them was the strip repeated in another shape. Tracker rows keep
 because a tracker you have to navigate to in order to tick is a tracker that stops being ticked, and
 ticked ones stay on the card rather than emptying it as the day goes on. Beside each tracker's name —
 on the same line, where it reads as the answer to the name rather than as a second fact about it —
-is `_WeekStrip`, **the last seven days and nothing more** — as much history as a summary row can
+is `TrackerWeekStrip` ([lib/screens/board/tracker_chart.dart](../lib/screens/board/tracker_chart.dart), the same
+widget the Board's tracker card draws beside each name), **the last seven days and nothing more** — as much history as a summary row can
 carry and still be glanced at, and the span somebody actually asks about; the months of record live
 on the tracker's own screen where the chart is tall enough to read. Its three marks are the detail
 chart's colour for colour, so a day the rhythm never named stays neutral rather than pale-missed (a
@@ -266,6 +267,13 @@ clears itself since no destination screen's listener will.
 Infinite bidirectional `CustomScrollView` anchored on the real "today" month via a `center`
 sliver key, so scrolling never runs out in either direction. Tapping a day toggles an inline
 expand/collapse detail card (`state.monthDetailExpanded`) showing that day's agenda, compact.
+
+**The card opens below the whole month, so opening it can lift the grid** (`_MonthViewState._selectDay`).
+A day in the last week of a month near the bottom of the display opened its card entirely off
+screen, and the tap looked like it did nothing. When the card's top would land below 55% of the
+viewport, the grid scrolls it up to about 40% — never further than keeps the tapped day on screen,
+and never down. If another month's card was open, the scroll waits for it to close first, because a
+closing card above pulls this one up as it goes.
 
 ## Calendar filter chips
 
@@ -1120,7 +1128,7 @@ through `parseIcs` — so the RRULE behind them never reaches the app. That sing
 whole feature:
 
 - `EventDraft.repeat` (`EventRepeat`: never / daily / weekly / biweekly / monthly / yearly) plus
-  `repeatUntil` are set in the repeat card, and go out under a `repeat` key on the wire.
+  `repeatUntil` are set from the "Wiederholen" row at the foot of the form's time card, and go out under a `repeat` key on the wire.
   **`toWire` omits the key rather than sending a null**, because on an update a null would read as
   "stop repeating" and a missing key reads as "leave the rule alone" — which is the only thing the
   app is in a position to say.

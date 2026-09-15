@@ -275,6 +275,10 @@ abstract class AppStrings {
   /// The Board's tracker card, above the dated sections.
   String get trackersTitle;
 
+  /// The Board's one card of open to-dos, whose dated sections are labels
+  /// inside it rather than cards of their own.
+  String get tasksTitle;
+
   /// "2 von 4 diese Woche" — a weekly tracker's whole state, since it is never
   /// due on any particular day.
   String weekProgressLabel(int done, int target);
@@ -1194,7 +1198,6 @@ abstract class AppStrings {
   String get homeListsSection;
   String get homeShowAll;
 
-
   /// How many articles on a shopping list are still unticked.
   String homeListOpenItems(int count);
 
@@ -1393,6 +1396,7 @@ abstract class AppStrings {
   String get spendWalletStep2;
   String get spendWalletStep3;
   String get spendWalletStep4;
+
   /// Linking the action's required fields to the trigger's variables. Left
   /// unlinked, Shortcuts stops to ask for them after the payment, nobody sees
   /// the question, and nothing is sent.
@@ -1449,6 +1453,15 @@ abstract class AppStrings {
   String spendWalletDeviceLastUsed(String date);
   String spendWalletDeviceCount(int count);
   String get spendWalletRevoke;
+
+  /// Renaming a capture device. Two phones both called "iPhone" is the ordinary
+  /// case, and the list is useless until one of them has a name of its own.
+  String get spendWalletRenameTitle;
+  String get spendWalletRenameBody;
+  String get spendWalletDeviceNameHint;
+
+  /// Marks the row that is the phone in the reader's hand.
+  String get spendWalletThisDevice;
 
   String get spendCatGroceries;
   String get spendCatDrugstore;
@@ -1561,6 +1574,27 @@ abstract class AppStrings {
   String get plannerNotConfigured;
   String get plannerMonthlyLimit;
   String get plannerDailyLimit;
+
+  /// Under the field: "Noch 27 von 30 Vorhaben diesen Monat".
+  String plannerLeft(int left, int limit);
+
+  /// Under the field once the month is used up. [month] is a month name from
+  /// `monthNames`, in the language's own case.
+  String plannerNoneLeft(int day, String month);
+
+  /// The monthly-limit refusal, with the day the count starts again.
+  String plannerMonthlyLimitUntil(int day, String month);
+
+  /// The daily-limit refusal. The window rolls, so it names a time, and
+  /// [tomorrow] says whether that time is today's or tomorrow's.
+  String plannerDailyLimitAt(String time, {required bool tomorrow});
+
+  /// Under the field while the debug switch has lifted the limits.
+  String get plannerLimitsLifted;
+
+  String get debugPlannerLimitsTitle;
+  String get debugPlannerLimitsEnforced;
+  String get debugPlannerLimitsLifted;
 
   /// Listen's island: the invitation to Vorhaben, and the promise under it.
   /// One line each — the island ellipsises, it does not wrap.

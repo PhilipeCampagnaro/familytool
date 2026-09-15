@@ -4,19 +4,20 @@ import '../../data/board_data.dart';
 import '../../data/calendar_data.dart';
 import '../../data/tracker_data.dart';
 import '../../models/tracker.dart';
+import '../../theme/app_icons.dart';
 import '../../theme/tokens.dart';
 import '../../l10n/l10n.dart';
 
 // The two charts on a tracker's own screen — one per kind of rhythm.
 //
-// Deliberately not the Board header's `BoardTrackerStrip`. That grid runs
-// consecutive days in five rows with no weekday alignment, because it is an
-// aggregate of every tracker the household keeps and a ragged last column would
-// read as a chart that had stopped working. One tracker is a different picture:
-// its rhythm *is* weekdays, so laying the days out in weekday rows is the whole
-// point — a Montag/Donnerstag tracker draws two lit rows, and nothing else says
-// that as quickly. A part week at the right-hand edge is fine here, because the
-// weekday letters down the left explain why it is short.
+// Read the way the Board header's `BoardTrackerStrip` reads — left to right,
+// then down, oldest at the top and today in the last row — so the two grids are
+// one gesture. Where it differs is weekday alignment: that grid is an aggregate
+// of every tracker and runs days straight through, while one tracker's rhythm
+// *is* weekdays, so each row here is one or more whole weeks under Mo–So
+// letters. A Montag/Donnerstag tracker draws two lit columns, and nothing else
+// says that as quickly. A part week at the end of the last row is fine, because
+// the letters above explain why it is short.
 //
 // A weekly count gets bars instead, one per week. It owes nothing on any
 // particular day, so a day grid of one would be a field of "nicht geplant" with
@@ -25,19 +26,25 @@ import '../../l10n/l10n.dart';
 /// Squares and the space between them. The square is measured from what the
 /// card leaves over, so the grid always lands flush against both edges; this is
 /// only the size it aims for and the ceiling it will not grow past.
-const double _gap = 4;
-const double _targetCell = 15;
-const double _maxCell = 20;
+/// Close to the Board header's 10pt squares and 3pt gaps, so the chart is a
+/// compact record — three weeks a row on a phone — rather than a board of
+/// tiles. The seven-day circles above it are the thumb-sized way to back-fill.
+const double _gap = 3;
+const double _targetCell = 10;
+// Room to grow past the target, so the squares stretch to fill the card rather
+// than stopping short of it and leaving the air all on the right.
+const double _maxCell = 18;
 
-/// The weekday letters down the left, and the air between them and the grid.
-const double _labelWidth = 14;
-const double _labelGap = 7;
+/// The weekday letters across the top, and the air between them and the grid.
+const double _labelGap = 6;
 
-/// One tracker's days, in weekday rows with one column per week.
+/// One tracker's days, in rows of whole weeks read left to right.
 ///
-/// The right-hand column is the week today is in, so today is always the last
-/// square drawn; the days after it in that column are simply absent, as are the
-/// days before the tracker started in the first.
+/// Each row holds as many weeks as fit the card at a readable square — two on a
+/// phone — with a little extra air between them so the week boundary shows. The
+/// last row ends with the week today is in, so today is always in the bottom
+/// row. Days after it, and days before the tracker started, are faint
+/// placeholders, so the grid is always a full rectangle.
 ///
 /// [onToggleDay] makes the squares pressable, which is the reason this chart
 /// exists rather than a picture: forgetting to tick on the evening is the
@@ -66,31 +73,44 @@ class TrackerDayChart extends StatelessWidget {
     this.onToggleDay,
   });
 
-  /// The most weeks the loaded checks can honestly cover. A column older than
-  /// the window would draw every day unticked whatever the database holds.
+  /// The most weeks the loaded checks can honestly cover. A row older than the
+  /// window would draw every day unticked whatever the database holds.
   static const _maxWeeks = trackerHistoryDays ~/ 7;
+
+  /// Rows of weeks, always — the Board header's five, so the chart has the same
+  /// shape from a tracker's first day as from its hundredth. Sizing it to the
+  /// tracker's age drew a week-old one as a single strip, which read as a
+  /// broken chart rather than as a young record.
+  static const _rows = 5;
 
   @override
   Widget build(BuildContext context) {
     final thisWeek = trackerWeekStart(today);
-    final firstWeek = trackerWeekStart(tracker.startsOn);
-    // The tracker's own age, in whole weeks including the part one it started
-    // in — there is nothing before it to draw.
-    final lived = thisWeek.difference(firstWeek).inDays ~/ 7 + 1;
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final grid = constraints.maxWidth - _labelWidth - _labelGap;
-        // The cell is sized from however many columns *fit*, then the chart is
-        // narrowed to however many it *has*. Sizing it from the second number
-        // would blow a one-week-old tracker up into a row of tiles.
-        final fits = ((grid + _gap) / (_targetCell + _gap)).floor().clamp(1, _maxWeeks);
-        final cell = (((grid - (fits - 1) * _gap) / fits).clamp(6.0, _maxCell)).toDouble();
-        final columns = fits < lived ? fits : lived;
-        final first = boardDaysAfter(thisWeek, -(columns - 1) * 7);
+        final width = constraints.maxWidth;
+        // Whole weeks per row, from how many squares fit at the size the chart
+        // aims for. Never a part week: a row that broke mid-week would put
+        // Montag under Freitag in the row below it.
+        final fits = ((width + _gap) / (_targetCell + _gap)).floor();
+        final weeksPerRow = (fits ~/ 7).clamp(1, _maxWeeks);
+        final perRow = weeksPerRow * 7;
+        // One extra gap between neighbouring weeks, so the boundary reads.
+        final gaps = (perRow - 1) * _gap + (weeksPerRow - 1) * _gap;
+        final cell = (((width - gaps) / perRow).clamp(6.0, _maxCell)).toDouble();
+        // Never more rows than the loaded window covers — an older day would
+        // look unticked whatever the database holds.
+        final rows = (_maxWeeks ~/ weeksPerRow).clamp(1, _rows);
+        // The last row ends on this week, so a young tracker's earlier rows
+        // start before it existed and draw those days as faint placeholders.
+        final first = boardDaysAfter(thisWeek, -(rows * weeksPerRow - 1) * 7);
+
+        Widget spacer(int column) =>
+            SizedBox(width: column % 7 == 0 ? _gap * 2 : _gap);
 
         var kept = 0, due = 0;
-        for (var i = 0; i < columns * 7; i++) {
+        for (var i = 0; i < rows * perRow; i++) {
           switch (trackerDayMark(tracker, checkedDays, boardDaysAfter(first, i), today)) {
             case TrackerDayMark.kept:
               kept++;
@@ -108,23 +128,36 @@ class TrackerDayChart extends StatelessWidget {
           children: [
             _ChartHeading(title: title, summary: L.s.trackerDaysDone(kept, due)),
             const SizedBox(height: 14),
-            for (var row = 0; row < 7; row++) ...[
-              if (row > 0) SizedBox(height: _gap),
-              Row(
-                children: [
+            // Mo–So over each week of a row, so every column says which
+            // weekday it is.
+            Row(
+              // Centred, like the rows under it: should a wide card hit the
+              // square's ceiling, the leftover air splits evenly on both sides.
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                for (var column = 0; column < perRow; column++) ...[
+                  if (column > 0) spacer(column),
                   SizedBox(
-                    width: _labelWidth,
+                    width: cell,
                     child: Text(
-                      dayLetters[row],
+                      dayLetters[column % 7],
                       textAlign: TextAlign.center,
                       style: AppText.microLabel.copyWith(color: AppColors.mutedLight),
                     ),
                   ),
-                  SizedBox(width: _labelGap),
-                  for (var column = 0; column < columns; column++) ...[
-                    if (column > 0) SizedBox(width: _gap),
+                ],
+              ],
+            ),
+            SizedBox(height: _labelGap),
+            for (var row = 0; row < rows; row++) ...[
+              if (row > 0) SizedBox(height: _gap),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  for (var column = 0; column < perRow; column++) ...[
+                    if (column > 0) spacer(column),
                     _DaySquare(
-                      day: boardDaysAfter(first, column * 7 + row),
+                      day: boardDaysAfter(first, row * perRow + column),
                       tracker: tracker,
                       checkedDays: checkedDays,
                       today: today,
@@ -179,7 +212,17 @@ class _DaySquare extends StatelessWidget {
       width: size,
       height: size,
       child: mark == TrackerDayMark.blank
-          ? null
+          // Before the tracker started or after today: a faint square, so the
+          // grid is always a full rectangle — a hole at the end of the last
+          // row read as squares gone missing. Fainter than "nicht geplant",
+          // because it is not a day of the rhythm at all, and today's outline
+          // still says where the record stops.
+          ? DecoratedBox(
+              decoration: BoxDecoration(
+                color: AppColors.hairline.withValues(alpha: .4),
+                borderRadius: BorderRadius.circular(size * 0.3),
+              ),
+            )
           : AnimatedContainer(
               // The same 280ms the Board's progress bar slides in, so a day
               // filled here lands with the same weight as one ticked there.
@@ -444,6 +487,84 @@ class _ChartHeading extends StatelessWidget {
   }
 }
 
+/// The last seven days of one rhythm as small squares, oldest on the left and
+/// today on the right — the strip beside a tracker's name on Home and on the
+/// Board's tracker card. One widget for both, so a row reads as a tracker the
+/// same way wherever it is: the squares, not just the title, say "rhythm".
+///
+/// **A week is as much history as a row can carry and still be read at a
+/// glance**, and it is the span somebody actually asks about: whether the thing
+/// is going well this week. The months of record live on the tracker's own
+/// screen, where the chart is tall enough to be read rather than glanced at.
+///
+/// The three marks are the detail chart's, colour for colour, because they mean
+/// exactly what they mean there — kept, asked for and missed, and a day the
+/// rhythm never named. **The last of those is never drawn as a miss**: a
+/// Montag/Donnerstag tracker with a perfect record would otherwise report five
+/// failures a week. Days before the tracker existed leave their space empty
+/// rather than filling it, so the strip starts where the tracker did without the
+/// squares shifting under the ones beside them.
+///
+/// Not tappable. The row's own circle already ticks today, and back-filling a
+/// day somebody forgot is the detail chart's job — a 9-point square on a
+/// summary row is a mis-tap waiting to write a day nobody meant.
+class TrackerWeekStrip extends StatelessWidget {
+  final Tracker tracker;
+
+  /// Every day this tracker was ticked. The whole set rather than the seven
+  /// days it draws: the caller holds it already, and slicing it there would be
+  /// a loop to save a loop.
+  final Set<DateTime> checkedDays;
+  final DateTime today;
+  final Color accent;
+
+  const TrackerWeekStrip({
+    super.key,
+    required this.tracker,
+    required this.checkedDays,
+    required this.today,
+    required this.accent,
+  });
+
+  static const _days = 7;
+  static const _size = 9.0;
+  static const _gap = 4.0;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (var back = _days - 1; back >= 0; back--) ...[
+          if (back < _days - 1) const SizedBox(width: _gap),
+          _mark(boardDaysAfter(today, -back)),
+        ],
+      ],
+    );
+  }
+
+  Widget _mark(DateTime day) {
+    final mark = trackerDayMark(tracker, checkedDays, day, today);
+    if (mark == TrackerDayMark.blank) return const SizedBox(width: _size, height: _size);
+    return AnimatedContainer(
+      // The same 280ms the detail chart fills a square in, so today's square
+      // lands with the same weight wherever it is ticked.
+      duration: const Duration(milliseconds: 280),
+      curve: Curves.easeOut,
+      width: _size,
+      height: _size,
+      decoration: BoxDecoration(
+        color: switch (mark) {
+          TrackerDayMark.kept => accent,
+          TrackerDayMark.missed => tint(accent, .82),
+          _ => AppColors.hairline,
+        },
+        borderRadius: BorderRadius.circular(3),
+      ),
+    );
+  }
+}
+
 /// The last seven days, one circle each, big enough to hit.
 ///
 /// The quarter grid above it can already be back-filled, but its squares are
@@ -560,6 +681,21 @@ class _DayChip extends StatelessWidget {
     final mark = trackerDayMark(tracker, checkedDays, day, today);
     final tappable = canToggleTrackerOn(tracker, day, today);
     final isToday = day == boardDay(today);
+    final kept = mark == TrackerDayMark.kept;
+
+    // Drawn as the Board's check circles rather than as the grid's squares,
+    // because this strip is the control and the grid is the record. Filled
+    // solid circles read as a finished picture — nothing about them said "tap".
+    // So: a day that can still be ticked is an **empty accent ring**, the same
+    // promise every unticked circle in the app makes; a ticked one is filled;
+    // a day that cannot be ticked has no ring at all and steps back, so the
+    // pressable ones are the only thing that looks pressable.
+    final Color fill = kept ? accent : Colors.transparent;
+    final Color? ring = kept
+        ? (isToday ? AppColors.ink : null)
+        : tappable
+        ? accent
+        : (mark == TrackerDayMark.blank ? null : AppColors.hairline);
 
     final circle = AnimatedContainer(
       // The grid's 280ms, so a day filled in here and a day filled in there
@@ -571,27 +707,19 @@ class _DayChip extends StatelessWidget {
       alignment: Alignment.center,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: switch (mark) {
-          TrackerDayMark.kept => accent,
-          TrackerDayMark.missed => tint(accent, .82),
-          TrackerDayMark.notDue => AppColors.hairline,
-          // Before the tracker existed: no fill at all, the way the grid draws
-          // nothing there. The date stays, or the week would lose its shape.
-          TrackerDayMark.blank => Colors.transparent,
-        },
-        border: isToday ? Border.all(color: AppColors.ink, width: 1) : null,
+        color: fill,
+        // Today's ring is the heavier one, whichever colour it is.
+        border: ring == null ? null : Border.all(color: ring, width: isToday ? 2.5 : 1.5),
       ),
-      child: Text(
-        '${day.day}',
-        style: AppText.microLabel.copyWith(
-          fontWeight: FontWeight.w600,
-          color: switch (mark) {
-            TrackerDayMark.kept => Colors.white,
-            TrackerDayMark.missed => AppColors.ink,
-            _ => AppColors.mutedLight,
-          },
-        ),
-      ),
+      child: kept
+          ? AppIcon(AppIcons.check, flat: true, size: size * 0.42, color: Colors.white)
+          : Text(
+              '${day.day}',
+              style: AppText.microLabel.copyWith(
+                fontWeight: FontWeight.w600,
+                color: tappable ? accent : AppColors.mutedLight,
+              ),
+            ),
     );
 
     final labelled = Column(

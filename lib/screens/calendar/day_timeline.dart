@@ -1674,6 +1674,16 @@ class _AllDayPill extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final ink = _blockInk(event.srcColor);
     final editable = ref.watch(_editableProvider(event.calendarId));
+    // A shared feed says what it is with a mark, as the Feiertag chip beside it
+    // does with its confetti. The same glyphs their tiles wear in Settings
+    // (`CalendarProvider.icon`), so a bin day reads as the Abfall calendar the
+    // family connected rather than as one more appointment.
+    final feedKind = ref.watch(calendarProvider.select((s) => s.sourceById(event.calendarId)?.feedKind ?? ''));
+    final feedIcon = switch (feedKind) {
+      'abfall' => AppIcons.recycle,
+      'ferien' => AppIcons.graduationCap,
+      _ => null,
+    };
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -1700,6 +1710,11 @@ class _AllDayPill extends ConsumerWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      // [_HolidayChip]'s size and gap, so the band's marks match.
+                      if (feedIcon != null) ...[
+                        AppIcon(feedIcon, size: 14, color: ink),
+                        const SizedBox(width: 6),
+                      ],
                       Flexible(
                         child: Text(
                           event.title,

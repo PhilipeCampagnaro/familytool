@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -353,7 +352,7 @@ class _AppShellState extends ConsumerState<AppShell>
     ref.read(noticeSchedulerProvider).poke();
   }
 
-  void _expandNav() => ref.read(navBarProvider.notifier).expand();
+  void _expandNav() => ref.read(navBarProvider.notifier).expand(holdOpen: true);
 
   /// A tap on the nav bar. Four of the five items are a tab; **Mehr** puts up
   /// two buttons and only becomes a tab change once one of them has been
@@ -408,7 +407,7 @@ class _AppShellState extends ConsumerState<AppShell>
       _moreAnchor = _moreItemAnchor(itemFrame);
       _moreShelf = completer;
     });
-    ref.read(moreShelfOpenProvider.notifier).state = true;
+    ref.read(moreShelfAnchorProvider.notifier).state = _moreAnchor;
     return completer.future;
   }
 
@@ -418,7 +417,7 @@ class _AppShellState extends ConsumerState<AppShell>
     final completer = _moreShelf;
     if (completer == null) return;
     setState(() => _moreShelf = null);
-    ref.read(moreShelfOpenProvider.notifier).state = false;
+    ref.read(moreShelfAnchorProvider.notifier).state = null;
     completer.complete(section);
   }
 
@@ -755,10 +754,7 @@ class _NavLayerState extends State<_NavLayer> with SingleTickerProviderStateMixi
               // right edge rather than laid out around the centre. The clamp
               // only bites if a future bar puts the last item hard against the
               // edge of the display.
-              right: math.max(
-                MediaQuery.sizeOf(context).width - anchor.center.dx - kCompactNavSize / 2,
-                14,
-              ),
+              right: moreShelfRight(context, anchor),
               bottom: MediaQuery.sizeOf(context).height - anchor.top + kMoreShelfGap,
               child: MoreShelf(
                 open: widget.moreOpen,

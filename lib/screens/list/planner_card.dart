@@ -17,6 +17,7 @@ import '../../widgets/app_sheet.dart';
 import '../../widgets/filter_chip.dart';
 import '../../widgets/glass.dart';
 import '../../widgets/icon_picker.dart';
+import '../../widgets/status_island.dart';
 import '../../widgets/toast_chip.dart';
 
 /// **Vorhaben: one goal in, one finished list out.**
@@ -78,7 +79,23 @@ class _PlannerCardState extends ConsumerState<PlannerCard> {
   /// "Nochmal" — the answer goes away and the goal comes back into the field to
   /// be edited. **Deliberately does not re-send**: a retry is another paid
   /// request, and a button that spends money on its own is one nobody trusts.
-  void _again() {
+  ///
+  /// **The card is scrolled back up before it shrinks, not while.** "Nochmal"
+  /// sits at the foot of an answer that is easily three screens tall, so the
+  /// card's top is far above the viewport when it is pressed. Shrinking it from
+  /// there left it stuck at a stale height — the list does not lay out a child
+  /// that is scrolled out of range, so the size animation never got the frames
+  /// it needed — and the chips under it froze half-grown for the same reason.
+  /// With the top in view every frame of the shrink is laid out, and the reader
+  /// is looking at the field the goal comes back into.
+  Future<void> _again() async {
+    await Scrollable.ensureVisible(
+      context,
+      duration: _grow,
+      curve: Curves.easeOutCubic,
+      alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtStart,
+    );
+    if (!mounted) return;
     ref.read(plannerProvider.notifier).editGoal();
     _controller.text = ref.read(plannerProvider).goal;
     _controller.selection = TextSelection.collapsed(offset: _controller.text.length);
@@ -136,7 +153,7 @@ class _PlannerCardState extends ConsumerState<PlannerCard> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     mainAxisSize: MainAxisSize.min,
                     children: switch (state.phase) {
-                      PlannerPhase.ask => _ask(),
+                      PlannerPhase.ask => _ask(state),
                       PlannerPhase.working => _working(state),
                       PlannerPhase.failed => _failed(state),
                       PlannerPhase.answer => _answer(state),
@@ -226,7 +243,7 @@ class _PlannerCardState extends ConsumerState<PlannerCard> {
 
   // ------------------------------------------------------------------- ask
 
-  List<Widget> _ask() => [
+  List<Widget> _ask(PlannerState state) => [
     Padding(
       padding: const EdgeInsets.fromLTRB(18, 16, 18, 0),
       child: TextField(
@@ -254,22 +271,34 @@ class _PlannerCardState extends ConsumerState<PlannerCard> {
     ),
     Padding(
       padding: const EdgeInsets.fromLTRB(18, 10, 14, 14),
-      child: Align(
-        alignment: Alignment.centerRight,
-        // The real accent glass, not a coloured circle: it is the one control
-        // on the card and it sits on the card's own white, where an opaque fill
-        // would read as a sticker. `enabled` keeps its place and its shape
-        // while there is nothing to send, so it reads as "not yet" rather than
-        // appearing under the reader's thumb the moment they type a letter.
-        //
-        // An up arrow rather than `paperPlaneTilt`, which in this app means
-        // sending something *to somebody* — it is the invite button in
-        // onboarding. Nothing is being sent to a person here.
-        child: GlassConfirmButton(
-          icon: AppIcons.arrowUp,
-          enabled: _controller.text.trim().isNotEmpty,
-          onTap: _send,
-        ),
+      child: Row(
+        children: [
+          // **How many are left, on the same row as the button that spends
+          // one.** Beside the send button rather than in the island or on the
+          // paywall: it is information about *this* press, and the reader sees
+          // it at the moment it matters instead of meeting a refusal after the
+          // wait. The number is the server's (see [PlannerUsage]).
+          Expanded(child: _UsageLine(usage: state.usage)),
+          const SizedBox(width: 12),
+          // The real accent glass, not a coloured circle: it is the one control
+          // on the card and it sits on the card's own white, where an opaque fill
+          // would read as a sticker. `enabled` keeps its place and its shape
+          // while there is nothing to send, so it reads as "not yet" rather than
+          // appearing under the reader's thumb the moment they type a letter.
+          //
+          // An up arrow rather than `paperPlaneTilt`, which in this app means
+          // sending something *to somebody* — it is the invite button in
+          // onboarding. Nothing is being sent to a person here.
+          //
+          // Off, too, once the month is used up: the line beside it says why,
+          // and a press that could only come back as a refusal is not one to
+          // offer.
+          GlassConfirmButton(
+            icon: AppIcons.arrowUp,
+            enabled: _controller.text.trim().isNotEmpty && !(state.usage?.usedUp ?? false),
+            onTap: _send,
+          ),
+        ],
       ),
     ),
   ];
@@ -277,7 +306,9 @@ class _PlannerCardState extends ConsumerState<PlannerCard> {
   // --------------------------------------------------------------- working
 
   List<Widget> _working(PlannerState state) => [
-    _GoalLine(goal: state.goal),
+    // The island's own wave, looping — the one loading signal the app already
+    // has, so the question reads as *being worked on* rather than as a caption.
+    _GoalLine(goal: state.goal, waving: true),
     // A skeleton rather than a spinner: it says what is coming — a list of
     // rows — so the wait reads as the list being written rather than as the app
     // having stopped.
@@ -290,31 +321,59 @@ class _PlannerCardState extends ConsumerState<PlannerCard> {
 
   // ---------------------------------------------------------------- failed
 
-  List<Widget> _failed(PlannerState state) => [
-    _GoalLine(goal: state.goal),
-    Padding(
-      padding: const EdgeInsets.fromLTRB(18, 6, 18, 18),
-      child: Column(
-        children: [
-          AppIcon(AppIcons.warning, size: 30, color: AppColors.muted),
-          const SizedBox(height: 10),
-          Text(
-            switch (state.failure) {
-              PlannerFailure.notConfigured => L.s.plannerNotConfigured,
-              PlannerFailure.unusable => L.s.plannerUnusable,
-              PlannerFailure.monthlyLimit => L.s.plannerMonthlyLimit,
-              PlannerFailure.dailyLimit => L.s.plannerDailyLimit,
-              _ => L.s.plannerUnavailable,
-            },
-            style: AppText.body.copyWith(color: AppColors.inkSecondary, height: 1.45),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 16),
-          GlassPillButton(label: L.s.plannerEditGoal, onTap: _again),
-        ],
+  List<Widget> _failed(PlannerState state) {
+    // **"Anders formulieren" only where different words could help.** A goal
+    // the model could not turn into a list may well work phrased another way,
+    // and a timeout may work the second time. A used-up month, a rate limit
+    // and a missing key will refuse the rephrased goal exactly as they refused
+    // this one, so a button offering it would be a small lie with a wait in
+    // it. Those three say when (or that) it will work instead, and the island's
+    // caret still folds the card away.
+    final canRephrase =
+        state.failure == PlannerFailure.unusable || state.failure == PlannerFailure.unavailable;
+    return [
+      _GoalLine(goal: state.goal),
+      Padding(
+        padding: const EdgeInsets.fromLTRB(18, 6, 18, 18),
+        child: Column(
+          children: [
+            AppIcon(AppIcons.warning, size: 30, color: AppColors.muted),
+            const SizedBox(height: 10),
+            Text(
+              _failureText(state),
+              style: AppText.body.copyWith(color: AppColors.inkSecondary, height: 1.45),
+              textAlign: TextAlign.center,
+            ),
+            if (canRephrase) ...[
+              const SizedBox(height: 16),
+              GlassPillButton(label: L.s.plannerEditGoal, onTap: _again),
+            ],
+          ],
+        ),
       ),
-    ),
-  ];
+    ];
+  }
+
+  /// The limits name the moment they lift rather than "tomorrow" or "on the
+  /// 1st": the daily window rolls, so "morgen" was wrong for most of the day,
+  /// and a date is what somebody planning Saturday's dinner can act on. Each
+  /// falls back to the old sentence when the function did not send the time.
+  String _failureText(PlannerState state) => switch (state.failure) {
+    PlannerFailure.notConfigured => L.s.plannerNotConfigured,
+    PlannerFailure.unusable => L.s.plannerUnusable,
+    PlannerFailure.monthlyLimit => switch (state.usage?.resetsAt) {
+      final at? => L.s.plannerMonthlyLimitUntil(at.day, monthNames[at.month]),
+      null => L.s.plannerMonthlyLimit,
+    },
+    PlannerFailure.dailyLimit => switch (state.retryAt) {
+      final at? => L.s.plannerDailyLimitAt(
+        formatTime(at),
+        tomorrow: !DateUtils.isSameDay(at, DateTime.now()),
+      ),
+      null => L.s.plannerDailyLimit,
+    },
+    _ => L.s.plannerUnavailable,
+  };
 
   // ---------------------------------------------------------------- answer
 
@@ -414,30 +473,78 @@ class _PlannerCardState extends ConsumerState<PlannerCard> {
 class _GoalLine extends StatelessWidget {
   final String goal;
 
-  const _GoalLine({required this.goal});
+  /// While the request is out. [WaveSweep] washes the bulb and the words with
+  /// the card's own white, so it reads the same on the dark palette; it is
+  /// dropped the moment the answer or the failure lands.
+  final bool waving;
+
+  const _GoalLine({required this.goal, this.waving = false});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(18, 16, 18, 14),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(top: 1),
-            child: AppIcon(AppIcons.lightbulb, size: 15, color: AppColors.accent),
+      child: WaveSweep(trigger: goal, mode: waving ? IslandSweep.loop : IslandSweep.none, child: _row()),
+    );
+  }
+
+  Widget _row() {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 1),
+          child: AppIcon(AppIcons.lightbulb, size: 15, color: AppColors.accent),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            goal,
+            style: AppText.label.copyWith(color: AppColors.inkSecondary),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              goal,
-              style: AppText.label.copyWith(color: AppColors.inkSecondary),
+        ),
+      ],
+    );
+  }
+}
+
+/// "Noch 27 von 30 Vorhaben diesen Monat", beside the send button.
+///
+/// **Nothing at all until the server has answered**, and nothing on a plan
+/// without a cap: a placeholder number would be a guess about money, and an
+/// empty row costs the card no height because the button sets it.
+class _UsageLine extends StatelessWidget {
+  final PlannerUsage? usage;
+
+  const _UsageLine({required this.usage});
+
+  @override
+  Widget build(BuildContext context) {
+    final u = usage;
+    final text = switch (u) {
+      null => null,
+      PlannerUsage(exempt: true) => L.s.plannerLimitsLifted,
+      // The date is read in UTC — see [PlannerUsage.resetsAt].
+      PlannerUsage(usedUp: true) => L.s.plannerNoneLeft(u.resetsAt.day, monthNames[u.resetsAt.month]),
+      PlannerUsage(:final left?, :final limit?) => L.s.plannerLeft(left, limit),
+      _ => null,
+    };
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 220),
+      layoutBuilder: (current, previous) =>
+          Stack(alignment: Alignment.centerLeft, children: [...previous, ?current]),
+      child: text == null
+          ? const SizedBox.shrink()
+          : Text(
+              text,
+              key: ValueKey(text),
               maxLines: 2,
-              overflow: TextOverflow.ellipsis,
+              style: AppText.caption.copyWith(
+                color: (u?.usedUp ?? false) ? AppColors.inkSecondary : AppColors.muted,
+              ),
             ),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -573,7 +680,15 @@ class _StepRow extends StatelessWidget {
   }
 }
 
-/// Four grey rows where the articles will be.
+/// Four grey rows where the articles will be, each trying on glyphs.
+///
+/// **The glyphs are the answer's own vocabulary** — a cart, a pot, a hammer, a
+/// cake — so the wait says *a list of things is being written* rather than
+/// *please hold*. They turn over a row at a time, top to bottom, which is what
+/// separates writing from blinking: four circles changing together would be a
+/// loading graphic again. Deliberately not a guess at this plan's articles —
+/// nothing is known about them until the answer lands, and a wrong guess
+/// drawn confidently is worse than an honest placeholder.
 class _Skeleton extends StatefulWidget {
   const _Skeleton();
 
@@ -581,38 +696,88 @@ class _Skeleton extends StatefulWidget {
   State<_Skeleton> createState() => _SkeletonState();
 }
 
-class _SkeletonState extends State<_Skeleton> with SingleTickerProviderStateMixin {
+class _SkeletonState extends State<_Skeleton> with TickerProviderStateMixin {
+  static const _glyphs = [
+    AppIcons.shoppingCart,
+    AppIcons.cookingPot,
+    AppIcons.hammer,
+    AppIcons.cake,
+    AppIcons.plant,
+    AppIcons.basket,
+    AppIcons.pizza,
+    AppIcons.paintRoller,
+    AppIcons.package,
+    AppIcons.egg,
+    AppIcons.tShirt,
+    AppIcons.forkKnife,
+  ];
+
+  /// How long each glyph stays before the next one.
+  static const _hold = Duration(milliseconds: 850);
+
   late final AnimationController _pulse = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 900),
   )..repeat(reverse: true);
 
+  /// One pass through every glyph; a row's position in it is offset by its
+  /// index, which is what makes the change ripple down the rows.
+  late final AnimationController _cycle = AnimationController(vsync: this, duration: _hold * _glyphs.length)
+    ..repeat();
+
   @override
   void dispose() {
     _pulse.dispose();
+    _cycle.dispose();
     super.dispose();
+  }
+
+  IconData _glyphFor(int row) {
+    final step = (_cycle.value * _glyphs.length + row * 0.22).floor();
+    return _glyphs[(step + row * 3) % _glyphs.length];
   }
 
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: _pulse,
-      builder: (context, _) => Opacity(
-        opacity: 0.45 + _pulse.value * 0.35,
-        child: Column(
-          children: dividedRows([
-            for (var i = 0; i < 4; i++)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 13),
-                child: Row(
-                  children: [
-                    Container(
-                      width: AppText.rowMark,
-                      height: AppText.rowMark,
-                      decoration: BoxDecoration(color: AppColors.surfaceAlt, shape: BoxShape.circle),
+      animation: Listenable.merge([_pulse, _cycle]),
+      builder: (context, _) => Column(
+        children: dividedRows([
+          for (var i = 0; i < 4; i++)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 13),
+              child: Row(
+                children: [
+                  Container(
+                    width: AppText.rowMark,
+                    height: AppText.rowMark,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(color: AppColors.surfaceAlt, shape: BoxShape.circle),
+                    // Keyed on the glyph, so the switcher only fades when a row
+                    // actually moves on — not on every frame of the pulse.
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 320),
+                      transitionBuilder: (child, animation) => FadeTransition(
+                        opacity: animation,
+                        child: ScaleTransition(
+                          scale: Tween<double>(begin: 0.6, end: 1).animate(animation),
+                          child: child,
+                        ),
+                      ),
+                      child: AppIcon(
+                        _glyphFor(i),
+                        key: ValueKey(_glyphFor(i)),
+                        size: AppText.rowMark * 0.52,
+                        color: AppColors.muted,
+                      ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    // Only the bar breathes. The glyph is already moving, and a
+                    // glyph that also pulsed would be two animations on one dot.
+                    child: Opacity(
+                      opacity: 0.45 + _pulse.value * 0.35,
                       child: Container(
                         height: 11,
                         // Staggered widths, or four identical bars read as a
@@ -624,11 +789,11 @@ class _SkeletonState extends State<_Skeleton> with SingleTickerProviderStateMixi
                         ),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-          ], inset: true),
-        ),
+            ),
+        ], inset: true),
       ),
     );
   }

@@ -28,16 +28,33 @@ class NavBarState {
 class NavBarNotifier extends StateNotifier<NavBarState> {
   NavBarNotifier() : super(const NavBarState());
 
+  /// Whether scrolling may collapse the bar. False from a tap on the compacted
+  /// button until a finger next starts a drag.
+  ///
+  /// **Momentum outlives the finger.** A flick keeps the list gliding for
+  /// seconds, and every frame of that glide is a downward scroll past the
+  /// threshold — so without this, the tap expanded the bar and the next frame
+  /// collapsed it again, and it took two or three taps to land one after the
+  /// glide had died. A deliberate tap wins over leftover motion; a new drag is
+  /// the reader asking again.
+  bool _compactArmed = true;
+
   /// Called from a scroll listener on every frame of a downward flick, so it
   /// must stay cheap and idempotent — the guard is what keeps it from
   /// rebuilding the shell sixty times a second.
   void compact() {
-    if (!state.compact) state = state.copyWith(compact: true);
+    if (_compactArmed && !state.compact) state = state.copyWith(compact: true);
   }
 
-  void expand() {
+  /// [holdOpen] is the tap on the compacted button — see [_compactArmed].
+  void expand({bool holdOpen = false}) {
+    if (holdOpen) _compactArmed = false;
     if (state.compact) state = state.copyWith(compact: false);
   }
+
+  /// A finger started dragging a vertical list, so scrolling may collapse the
+  /// bar again.
+  void dragStarted() => _compactArmed = true;
 
   void setBarHeight(double height) {
     if (state.barHeight != height) state = state.copyWith(barHeight: height);

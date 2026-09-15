@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show setEquals;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/icon_suggestions.dart';
@@ -238,6 +239,18 @@ void openBoxSheet(BuildContext context, WidgetRef ref, {StorageBox? box}) {
       // lands on the screen behind it, next to the row it is talking about.
       final confirm = confirmChipOf(context);
       if (box != null) {
+        // Opened and closed with the check, nothing touched: no write, and no
+        // "Box aktualisiert" for a change that never happened. The picture is
+        // not part of this — an existing box keeps a new one the moment it is
+        // picked, see [_BoxSheetBodyState._photoMenu].
+        final current = ref.read(boxProvider);
+        final typed = nameController.text.trim();
+        final unchanged = (typed.isEmpty || typed == box.name) &&
+            placeController.text.trim() == box.place.trim() &&
+            draft.picked == null &&
+            current.newVisibility == box.visibility &&
+            setEquals(current.newSharedWith, box.sharedWith.toSet());
+        if (unchanged) return;
         if (await notifier.updateBox(box.id, name: nameController.text, place: placeController.text, iconKey: draft.picked)) {
           confirm(L.s.boxUpdated);
         }

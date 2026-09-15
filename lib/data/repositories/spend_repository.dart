@@ -153,7 +153,7 @@ class SpendRepository {
   Future<List<SpendDevice>> fetchDevices() async {
     final rows = await _db
         .from('spend_ingest_devices')
-        .select('id, label, created_at, last_used_at, revoked_at')
+        .select('id, label, device_uid, created_at, last_used_at, revoked_at')
         .isFilter('revoked_at', null)
         .order('created_at', ascending: true);
 
@@ -162,6 +162,7 @@ class SpendRepository {
         SpendDevice(
           id: r['id'] as String,
           label: r['label'] as String,
+          deviceUid: r['device_uid'] as String,
           lastUsedAt: r['last_used_at'] == null
               ? null
               : DateTime.parse(r['last_used_at'] as String).toLocal(),
@@ -177,6 +178,12 @@ class SpendRepository {
         .from('spend_ingest_devices')
         .update({'revoked_at': DateTime.now().toUtc().toIso8601String()})
         .eq('id', id);
+  }
+
+  /// Gives a phone a name of its own. `label` and `revoked_at` are the only
+  /// columns `authenticated` may update, and the policy keeps it to admins.
+  Future<void> renameDevice(String id, String label) async {
+    await _db.from('spend_ingest_devices').update({'label': label}).eq('id', id);
   }
 
   /// Edge Functions answer a failure with `{ "error": "..." }` in German,
@@ -197,7 +204,18 @@ class SpendEnrolment {
 class SpendDevice {
   final String id;
   final String label;
+
+  /// The id `spend-enroll` keyed the row on — what tells this phone's row from
+  /// another phone with the same name. Two iPhones both called "iPhone" is the
+  /// ordinary case, not an edge one.
+  final String deviceUid;
+
   final DateTime? lastUsedAt;
 
-  const SpendDevice({required this.id, required this.label, this.lastUsedAt});
+  const SpendDevice({
+    required this.id,
+    required this.label,
+    required this.deviceUid,
+    this.lastUsedAt,
+  });
 }

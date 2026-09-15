@@ -305,6 +305,8 @@ class StringsEn extends AppStrings {
   @override
   String get trackersTitle => 'Trackers';
   @override
+  String get tasksTitle => 'To-dos';
+  @override
   String weekProgressLabel(int done, int target) => '$done of $target this week';
   @override
   String streakDays(int days) => days == 1 ? '1 day in a row' : '$days days in a row';
@@ -1473,11 +1475,11 @@ class StringsEn extends AppStrings {
   String get homeAllDone => 'All done';
   @override
   String homeDayOffset(int days) => switch (days) {
-        1 => 'Tomorrow',
-        -1 => 'Yesterday',
-        > 1 => 'In $days days',
-        _ => '${-days} days ago',
-      };
+    1 => 'Tomorrow',
+    -1 => 'Yesterday',
+    > 1 => 'In $days days',
+    _ => '${-days} days ago',
+  };
   @override
   String get homeHintBackToToday => 'Tap to go back to today';
   @override
@@ -1802,6 +1804,15 @@ class StringsEn extends AppStrings {
       : '$count devices';
   @override
   String get spendWalletRevoke => 'Remove';
+  @override
+  String get spendWalletRenameTitle => 'Rename device';
+  @override
+  String get spendWalletRenameBody =>
+      'This is the name the device goes by in the list — so you can tell your phones apart.';
+  @override
+  String get spendWalletDeviceNameHint => "e.g. Anna's iPhone";
+  @override
+  String get spendWalletThisDevice => 'This device';
 
   @override
   String get spendCatGroceries => 'Groceries';
@@ -1983,6 +1994,25 @@ class StringsEn extends AppStrings {
   @override
   String get plannerDailyLimit => "That's enough plans for today. Try again tomorrow.";
   @override
+  String plannerLeft(int left, int limit) => '$left of $limit plans left this month';
+  @override
+  String plannerNoneLeft(int day, String month) => 'No plans left – more on $month $day';
+  @override
+  String plannerMonthlyLimitUntil(int day, String month) =>
+      "This month's plans are used up. More on $month $day.";
+  @override
+  String plannerDailyLimitAt(String time, {required bool tomorrow}) => tomorrow
+      ? "That's enough plans for today. More tomorrow from $time."
+      : "That's enough plans for now. More from $time.";
+  @override
+  String get plannerLimitsLifted => 'Limits lifted (test)';
+  @override
+  String get debugPlannerLimitsTitle => 'Plan limits (debug)';
+  @override
+  String get debugPlannerLimitsEnforced => 'On';
+  @override
+  String get debugPlannerLimitsLifted => 'Lifted';
+  @override
   String get plannerIslandLine => 'Say what you are planning.';
   @override
   String get plannerIslandHint => 'We turn it into the list';
@@ -2057,9 +2087,8 @@ class StringsEn extends AppStrings {
   @override
   String noticeTaskDue(String time) => 'Due at $time';
   @override
-  String joinAnd(List<String> parts) => parts.length < 2
-      ? parts.join()
-      : '${parts.sublist(0, parts.length - 1).join(', ')} and ${parts.last}';
+  String joinAnd(List<String> parts) =>
+      parts.length < 2 ? parts.join() : '${parts.sublist(0, parts.length - 1).join(', ')} and ${parts.last}';
   @override
   String get rateApp => 'Rate Aporah';
   @override

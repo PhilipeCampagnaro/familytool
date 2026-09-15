@@ -451,10 +451,17 @@ class _CompactNavOnScroll extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return NotificationListener<ScrollUpdateNotification>(
+    return NotificationListener<ScrollNotification>(
       onNotification: (n) {
         if (n.metrics.axis != Axis.vertical) return false;
         final nav = ref.read(navBarProvider.notifier);
+        // Only a drag re-arms collapsing after the button was tapped; the
+        // glide left over from the last flick must not undo that tap.
+        if (n is ScrollStartNotification) {
+          if (n.dragDetails != null) nav.dragStarted();
+          return false;
+        }
+        if (n is! ScrollUpdateNotification) return false;
         final delta = n.scrollDelta ?? 0;
         // Both tests are on the *movement*, never on the resting position.
         // The week view is a `NestedScrollView`, so two positions report here
@@ -496,15 +503,16 @@ class _JumpToTodaySlot extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final nav = ref.watch(navBarProvider);
     // The Mehr shelf stands on the same side, so while it is up "Heute" rises
-    // over its top button instead of sitting beside the column.
-    final shelfOpen = ref.watch(moreShelfOpenProvider);
+    // over its top button and lines up with the column instead of sitting
+    // beside it.
+    final shelf = nav.compact ? null : ref.watch(moreShelfAnchorProvider);
     return AnimatedPositioned(
       duration: kNavSwapDuration,
       curve: Curves.easeInOutCubic,
-      right: AppSpacing.screenPad,
+      right: shelf != null ? moreShelfRight(context, shelf) : AppSpacing.screenPad,
       bottom: nav.compact
           ? navRowBottom(context, barHeight: nav.barHeight)
-          : shelfOpen
+          : shelf != null
               ? moreShelfTop(context, barHeight: nav.barHeight) + kMoreShelfSpacing
               : navContentInset(context, pill: 106, gap: 36),
       child: _JumpToTodayButton(visible: visible, accent: accent, onTap: onTap),

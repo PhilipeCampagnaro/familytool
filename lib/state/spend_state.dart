@@ -38,11 +38,21 @@ class SpendState {
   /// The phones allowed to file wallet transactions into this household.
   final List<SpendDevice> devices;
 
-  /// Whether *this* phone is one of them. Answered by the device's own token
-  /// store rather than by [devices]: the list says who may write, the token says
-  /// whether we hold the permission to do it, and only the second question can
-  /// be answered offline or tell this phone from the other parent's.
+  /// Whether *this* phone is one of them: it holds a token **and** [devices]
+  /// still has an active row for it. The token alone is not enough — a row
+  /// revoked from a device list that could not tell two "iPhone"s apart left the
+  /// token in the Keychain, and the page went on saying "active" while
+  /// `spend-ingest` refused every payment.
   final bool thisDeviceEnrolled;
+
+  /// This phone's `device_uid`, matched against [SpendDevice.deviceUid] to find
+  /// its own row. Null until the platform has answered.
+  final String? thisDeviceUid;
+
+  /// Whether [thisDeviceEnrolled] is an answer yet. False until the device list
+  /// and the token store have both been read once, so a card that only appears
+  /// for a phone *not* set up does not flash in on every cold start and vanish.
+  final bool devicesChecked;
 
   /// Android's second switch: whether the user has granted Aporah notification
   /// access, without which the listener is never bound and nothing is captured.
@@ -70,6 +80,8 @@ class SpendState {
     required this.windowTo,
     this.devices = const [],
     this.thisDeviceEnrolled = false,
+    this.thisDeviceUid,
+    this.devicesChecked = false,
     this.notificationAccess = false,
     this.enrolling = false,
     this.loading = true,
@@ -105,6 +117,8 @@ class SpendState {
     DateTime? windowTo,
     List<SpendDevice>? devices,
     bool? thisDeviceEnrolled,
+    String? thisDeviceUid,
+    bool? devicesChecked,
     bool? notificationAccess,
     bool? enrolling,
     bool? loading,
@@ -118,6 +132,8 @@ class SpendState {
     windowTo: windowTo ?? this.windowTo,
     devices: devices ?? this.devices,
     thisDeviceEnrolled: thisDeviceEnrolled ?? this.thisDeviceEnrolled,
+    thisDeviceUid: thisDeviceUid ?? this.thisDeviceUid,
+    devicesChecked: devicesChecked ?? this.devicesChecked,
     notificationAccess: notificationAccess ?? this.notificationAccess,
     enrolling: enrolling ?? this.enrolling,
     loading: loading ?? this.loading,
@@ -166,16 +182,34 @@ class SpendNotifier extends StateNotifier<SpendState> {
   /// The device list and this phone's own enrolment, which move together: a
   /// token revoked from another phone should stop this one claiming to be
   /// active.
+  ///
+  /// **A token with no active row is dead, and is cleared here.** `spend-ingest`
+  /// refuses it anyway, so keeping it buys nothing and costs the one thing that
+  /// matters: the page would say "active" and hide the button that fixes it,
+  /// while every payment is rejected in the background where nobody sees it.
+  /// Only reached after the list was actually fetched — an offline phone keeps
+  /// its token.
+  ///
+  /// The one false positive is a reinstall that reset `identifierForVendor`: the
+  /// token's row carries the old id, so this phone is asked to activate once
+  /// more, which upserts a fresh row. That is the honest answer, not a bug.
   Future<void> refreshDevices() async {
     if (!_isAdmin) return;
     try {
       final devices = await _repo.fetchDevices();
-      final mine = await _intents.hasToken();
+      final uid = (await _intents.describeDevice()).uid;
+      var mine = await _intents.hasToken();
+      if (mine && uid.isNotEmpty && !devices.any((d) => d.deviceUid == uid)) {
+        await _intents.clearToken();
+        mine = false;
+      }
       final access = await _intents.hasNotificationAccess();
       if (!mounted) return;
       state = state.copyWith(
         devices: devices,
         thisDeviceEnrolled: mine,
+        thisDeviceUid: uid.isEmpty ? null : uid,
+        devicesChecked: true,
         notificationAccess: access,
       );
     } catch (_) {
@@ -347,7 +381,7 @@ class SpendNotifier extends StateNotifier<SpendState> {
         apiKey: AporahSupabase.publishableKey,
       );
       if (!mounted) return true;
-      state = state.copyWith(enrolling: false, thisDeviceEnrolled: true);
+      state = state.copyWith(enrolling: false, thisDeviceEnrolled: true, devicesChecked: true);
       await refreshDevices();
       return true;
     } on StateError catch (e) {
@@ -379,6 +413,27 @@ class SpendNotifier extends StateNotifier<SpendState> {
   /// so this only gets the user to the right screen and the page says what to do
   /// once they are there.
   Future<void> openNotificationAccess() => _intents.openNotificationAccess();
+
+  /// Renames a phone in the list, on screen first. Answers whether it landed,
+  /// because the rename sheet stays open with the error when it did not.
+  Future<bool> renameDevice(String id, String label) async {
+    final before = state.devices;
+    state = state.copyWith(
+      devices: [
+        for (final d in before)
+          d.id == id
+              ? SpendDevice(id: d.id, label: label, deviceUid: d.deviceUid, lastUsedAt: d.lastUsedAt)
+              : d,
+      ],
+    );
+    try {
+      await _repo.renameDevice(id, label);
+      return true;
+    } catch (_) {
+      if (mounted) state = state.copyWith(devices: before);
+      return false;
+    }
+  }
 
   /// Stops a phone filing spends. When it is this one, the local copy goes
   /// too — leaving it would mean a device that still holds a credential the

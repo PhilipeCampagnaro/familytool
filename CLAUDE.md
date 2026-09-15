@@ -63,13 +63,14 @@ task:
   those rows carry **no check circle** — being listed is not being due. Tapping a row opens
   **that tracker's own screen** ([lib/screens/board/tracker_detail.dart](lib/screens/board/tracker_detail.dart)),
   a mode of Board keyed on `TrackerState.openId` the way Listen opens a list — not a route. Its chart
-  is weekday rows × week columns and its squares are **tappable, to back-fill a day somebody forgot
+  reads like the Board header's — left to right, then down, today in the last row — in rows of whole
+  weeks under Mo–So letters, and its squares are **tappable, to back-fill a day somebody forgot
   to tick**; a weekly count gets bars per week instead, because it owes no particular day. Keep the
   three states apart there: a day the rhythm never asked for is neutral, never a pale "missed", or a
   Mo/Do tracker reports five failures a week of a perfect record.
 - **Localization: German, English, Portuguese and Spanish, and every user-facing string goes
   through [lib/l10n/](lib/l10n/).** `AppStrings` declares them and `StringsDe`/`StringsEn`/
-  `StringsPt`/`StringsEs` answer them — 865 members each — and `L.s.someString` reads the live one.
+  `StringsPt`/`StringsEs` answer them — 866 members each — and `L.s.someString` reads the live one.
   Because `AppStrings` is abstract, a string you add to one language and forget in another **fails
   to compile** — that is the point, so don't work around it with a map or a `??`. Portuguese is
   **Brazilian (pt-BR)** and Spanish is peninsular (es-ES); `appSupportedLocales` carries bare

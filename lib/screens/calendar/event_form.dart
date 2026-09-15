@@ -72,6 +72,9 @@ Future<bool> _openEditEventSheet(BuildContext context, WidgetRef ref, CalendarEv
       // chip is the only thing on screen at all, and it stands for the re-read
       // behind the write as well as the write.
       final draft = form.result();
+      // Opened and closed with the check, nothing touched: no write to the
+      // provider, and no "Termin aktualisiert" for a change that never happened.
+      if (_sameDraft(draft, EventDraft.of(event))) return;
       final movingTo = draft.calendarId == event.calendarId
           ? null
           : ref.read(calendarProvider).sourceById(draft.calendarId)?.name;
@@ -95,6 +98,19 @@ Future<bool> _openEditEventSheet(BuildContext context, WidgetRef ref, CalendarEv
   );
   return deleted ?? false;
 }
+
+/// Whether the edit sheet's answer is the appointment it was opened on. Text is
+/// compared trimmed, because a stray space is not an edit anybody meant.
+bool _sameDraft(EventDraft a, EventDraft b) =>
+    a.calendarId == b.calendarId &&
+    a.title.trim() == b.title.trim() &&
+    a.location.trim() == b.location.trim() &&
+    a.notes.trim() == b.notes.trim() &&
+    a.allDay == b.allDay &&
+    a.start == b.start &&
+    a.end == b.end &&
+    a.repeat == b.repeat &&
+    a.repeatUntil == b.repeatUntil;
 
 /// The event being typed, held by reference.
 ///
@@ -307,6 +323,21 @@ class _EventFormBodyState extends ConsumerState<_EventFormBody> {
             ),
             CardDivider(),
             _LocationField(controller: widget.form.location, accent: accent),
+            CardDivider(),
+            // What the appointment is, in one card: the notes are content like
+            // the title and the place, so they sit beside them as another bare
+            // field rather than in a labelled card of their own — which was the
+            // fifth card in a form people read top to bottom before saving.
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              child: TextField(
+                controller: widget.form.notes,
+                maxLines: null,
+                textCapitalization: TextCapitalization.sentences,
+                style: AppText.input,
+                decoration: InputDecoration(border: InputBorder.none, hintText: L.s.addNotes, isDense: true),
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 14),
@@ -351,16 +382,26 @@ class _EventFormBodyState extends ConsumerState<_EventFormBody> {
               onPickDate: () => _pickDate(isStart: false),
               onPickTime: () => _pickTime(isStart: false),
             ),
+            // How often, and until when — the last row of the time card, the
+            // way the system calendar has it. Below the times on purpose: the
+            // rule is anchored to the start — "jeden Montag" *is* a Monday
+            // start plus weekly — so the day it repeats on is already settled
+            // by the time this row is read. One row carrying the whole answer,
+            // opening the sheet that asks it; the six rules and the end date
+            // used to unfold in here and pushed the rest of the form off the
+            // bottom.
+            if (widget.event?.repeats != true) ...[
+              CardDivider(),
+              _ValueRow(
+                label: L.s.eventRepeat,
+                value: _repeatSummary(_draft.repeat, _draft.repeatUntil, _draft.start),
+                onTap: _pickRepeat,
+              ),
+            ],
           ],
         ),
-        const SizedBox(height: 14),
-        // How often, and until when.
-        //
-        // Below the times rather than above them on purpose: the rule is
-        // anchored to the start — "jeden Montag" *is* a Monday start plus
-        // weekly — so the day it repeats on is already settled by the time this
-        // card is read.
-        if (widget.event?.repeats == true)
+        if (widget.event?.repeats == true) ...[
+          const SizedBox(height: 14),
           // An occurrence of an existing series. There is no rule to show: a
           // provider hands back expanded occurrences, so all the app knows is
           // that this one comes round. What it can ask instead is the only
@@ -385,21 +426,8 @@ class _EventFormBodyState extends ConsumerState<_EventFormBody> {
               CardDivider(),
               _CardNote(text: L.s.repeatNotEditable),
             ],
-          )
-        else
-          // One row carrying the whole answer, opening the sheet that asks it.
-          // The six rules and the end date used to unfold inside this card,
-          // which pushed the calendar, the notes and "Termin löschen" off the
-          // bottom of a form that is read as a whole before it is saved.
-          SectionCard(
-            children: [
-              _ValueRow(
-                label: L.s.eventRepeat,
-                value: _repeatSummary(_draft.repeat, _draft.repeatUntil, _draft.start),
-                onTap: _pickRepeat,
-              ),
-            ],
           ),
+        ],
         const SizedBox(height: 14),
         // Every writable calendar, listed. It used to be a row that opened a
         // second sheet on top of this one — two taps and a screen change to
@@ -437,28 +465,6 @@ class _EventFormBodyState extends ConsumerState<_EventFormBody> {
                     onTap: () => _draft = _draft.copyWith(calendarId: option.id),
                   ),
               ]),
-          ],
-        ),
-        const SizedBox(height: 14),
-        SectionCard(
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(L.s.notes, style: AppText.microLabel),
-                  const SizedBox(height: 6),
-                  TextField(
-                    controller: widget.form.notes,
-                    maxLines: null,
-                    textCapitalization: TextCapitalization.sentences,
-                    style: AppText.input,
-                    decoration: InputDecoration(border: InputBorder.none, hintText: L.s.addNotes, isDense: true),
-                  ),
-                ],
-              ),
-            ),
           ],
         ),
         // The foot of the sheet, the same place and the same widget as the task

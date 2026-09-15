@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../data/board_data.dart';
 import '../../data/calendar_data.dart';
-import '../../data/tracker_data.dart';
 import '../../l10n/l10n.dart';
 import '../../models/shopping_list.dart';
 import '../../models/tracker.dart';
@@ -14,6 +12,7 @@ import '../../theme/app_icons.dart';
 import '../../theme/tokens.dart';
 import '../../widgets/check_off.dart';
 import '../../widgets/icon_picker.dart';
+import '../board/tracker_chart.dart';
 
 /// Everything on Home that is **not** about the selected day.
 ///
@@ -199,7 +198,7 @@ class _TrackerRow extends ConsumerWidget {
             child: Text(tracker.text, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.itemTitle),
           ),
           const SizedBox(width: 12),
-          _WeekStrip(tracker: tracker, checkedDays: checkedDays, today: today, accent: accent),
+          TrackerWeekStrip(tracker: tracker, checkedDays: checkedDays, today: today, accent: accent),
           if (streak > 1) ...[
             const SizedBox(width: 10),
             AppIcon(AppIcons.flame, size: 13, color: AppColors.muted),
@@ -215,77 +214,6 @@ class _TrackerRow extends ConsumerWidget {
             onTap: () => ref.read(trackerProvider.notifier).toggleCheck(tracker, today),
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// The last seven days of one rhythm, oldest on the left and today on the
-/// right.
-///
-/// **A week is as much history as a row can carry and still be read at a
-/// glance**, and it is the span somebody actually asks about: whether the thing
-/// is going well this week. The months of record live on the tracker's own
-/// screen, where the chart is tall enough to be read rather than glanced at.
-///
-/// The three marks are the detail chart's, colour for colour, because they mean
-/// exactly what they mean there — kept, asked for and missed, and a day the
-/// rhythm never named. **The last of those is never drawn as a miss**: a
-/// Montag/Donnerstag tracker with a perfect record would otherwise report five
-/// failures a week. Days before the tracker existed leave their space empty
-/// rather than filling it, so the strip starts where the tracker did without the
-/// squares shifting under the ones beside them.
-///
-/// Not tappable. The circle at the end of the row already ticks today, and
-/// back-filling a day somebody forgot is the detail chart's job — a 9-point
-/// square on a summary row is a mis-tap waiting to write a day nobody meant.
-class _WeekStrip extends StatelessWidget {
-  final Tracker tracker;
-  final Set<DateTime> checkedDays;
-  final DateTime today;
-  final Color accent;
-
-  const _WeekStrip({
-    required this.tracker,
-    required this.checkedDays,
-    required this.today,
-    required this.accent,
-  });
-
-  static const _days = 7;
-  static const _size = 9.0;
-  static const _gap = 4.0;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        for (var back = _days - 1; back >= 0; back--) ...[
-          if (back < _days - 1) const SizedBox(width: _gap),
-          _mark(boardDaysAfter(today, -back)),
-        ],
-      ],
-    );
-  }
-
-  Widget _mark(DateTime day) {
-    final mark = trackerDayMark(tracker, checkedDays, day, today);
-    if (mark == TrackerDayMark.blank) return const SizedBox(width: _size, height: _size);
-    return AnimatedContainer(
-      // The same 280ms the detail chart fills a square in, so today's square
-      // lands with the same weight wherever it is ticked.
-      duration: const Duration(milliseconds: 280),
-      curve: Curves.easeOut,
-      width: _size,
-      height: _size,
-      decoration: BoxDecoration(
-        color: switch (mark) {
-          TrackerDayMark.kept => accent,
-          TrackerDayMark.missed => tint(accent, .82),
-          _ => AppColors.hairline,
-        },
-        borderRadius: BorderRadius.circular(3),
       ),
     );
   }

@@ -117,7 +117,7 @@ class IslandLine extends StatelessWidget {
       // No padding of its own: the two lines are a little under the row's
       // height and the row centres them, which keeps the sentence on roughly
       // the baseline the plain label sits on.
-      child: _Sweep(
+      child: WaveSweep(
         trigger: '$label|$hint',
         mode: sweep,
         child: Row(
@@ -149,7 +149,12 @@ class IslandLine extends StatelessWidget {
                       ],
                       if (navigates) ...[
                         const SizedBox(width: 6),
-                        AppIcon(AppIcons.caretRight, size: AppGlyph.caret, color: AppColors.mutedLight, flat: true),
+                        AppIcon(
+                          AppIcons.caretRight,
+                          size: AppGlyph.caret,
+                          color: AppColors.mutedLight,
+                          flat: true,
+                        ),
                       ],
                       if (expanded case final open?) ...[
                         const SizedBox(width: 2),
@@ -157,7 +162,12 @@ class IslandLine extends StatelessWidget {
                           turns: open ? 0.5 : 0,
                           duration: const Duration(milliseconds: 240),
                           curve: Curves.easeOutCubic,
-                          child: AppIcon(AppIcons.caretDown, size: AppGlyph.caret, color: AppColors.muted, flat: true),
+                          child: AppIcon(
+                            AppIcons.caretDown,
+                            size: AppGlyph.caret,
+                            color: AppColors.muted,
+                            flat: true,
+                          ),
                         ),
                       ],
                     ],
@@ -188,6 +198,9 @@ enum IslandSweep { none, once, loop }
 
 /// One pale wave crossing the words, left to right, when the sentence lands.
 ///
+/// Public because Vorhaben borrows it on a loop for the question it is working
+/// on — the one loading signal the app already has, rather than a second one.
+///
 /// **It plays once and then gets out of the way.** A line that shimmers for
 /// ever is a loading state, and this line is never loading — it is the answer.
 /// The sweep exists because the island's sentence changes while nobody is
@@ -203,7 +216,7 @@ enum IslandSweep { none, once, loop }
 ///
 /// The shader is dropped entirely once the wave is done — a [ShaderMask] left
 /// in place would put a save-layer under the header for the rest of the day.
-class _Sweep extends StatefulWidget {
+class WaveSweep extends StatefulWidget {
   final Widget child;
 
   /// What is being said. The sweep re-runs when this changes, which covers the
@@ -213,13 +226,13 @@ class _Sweep extends StatefulWidget {
 
   final IslandSweep mode;
 
-  const _Sweep({required this.child, required this.trigger, this.mode = IslandSweep.once});
+  const WaveSweep({super.key, required this.child, required this.trigger, this.mode = IslandSweep.once});
 
   @override
-  State<_Sweep> createState() => _SweepState();
+  State<WaveSweep> createState() => _WaveSweepState();
 }
 
-class _SweepState extends State<_Sweep> with SingleTickerProviderStateMixin {
+class _WaveSweepState extends State<WaveSweep> with SingleTickerProviderStateMixin {
   /// Slow enough that somebody who looks up mid-sweep still sees it travelling
   /// rather than catching the end of it. It was half this and read as a flicker
   /// — the wave has to be visibly on its way somewhere to say that the sentence
@@ -247,7 +260,7 @@ class _SweepState extends State<_Sweep> with SingleTickerProviderStateMixin {
   }
 
   @override
-  void didUpdateWidget(_Sweep old) {
+  void didUpdateWidget(WaveSweep old) {
     super.didUpdateWidget(old);
     if (old.trigger != widget.trigger || old.mode != widget.mode) _run();
   }

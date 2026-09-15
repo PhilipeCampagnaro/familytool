@@ -85,6 +85,63 @@ class _MonthViewState extends ConsumerState<_MonthView> {
     if (visible != _todayVisible) setState(() => _todayVisible = visible);
   }
 
+  /// The selected month's day card. Only the one block holding the selection
+  /// builds it, so there is never more than one.
+  final GlobalKey _detailKey = GlobalKey();
+
+  /// How long the day card takes to open or close — see [_MonthBlock].
+  static const _detailDuration = Duration(milliseconds: 280);
+
+  /// Selects a day, and lifts the grid when the card that opens would land
+  /// too low to see.
+  ///
+  /// The card opens *below the whole month*, not below the tapped row, so a
+  /// day in the last week of a month at the bottom of the display opened it
+  /// entirely off screen and the tap looked like it did nothing. Only ever up
+  /// and only when needed: a card already in reach stays where it is, and the
+  /// tapped day itself is never pushed off the top.
+  void _selectDay(BuildContext cellContext, int y, int m, int d) {
+    final before = widget.state;
+    ref.read(calendarProvider.notifier).selectDay(y, m, d);
+    if (!ref.read(calendarProvider).monthDetailExpanded) return;
+    // A card open in another month closes at the same time, and if it sat
+    // above this one it pulls this one up as it goes — so wait until it has
+    // before measuring. Otherwise the card's top is already where it will stay
+    // and the scroll can start with the card.
+    final otherCardClosing = before.monthDetailExpanded && (before.selected.y != y || before.selected.m != m);
+    void reveal() {
+      if (mounted && cellContext.mounted) _revealDetail(cellContext);
+    }
+
+    if (otherCardClosing) {
+      Future.delayed(_detailDuration, reveal);
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((_) => reveal());
+    }
+  }
+
+  void _revealDetail(BuildContext cellContext) {
+    final card = _detailKey.currentContext?.findRenderObject() as RenderBox?;
+    final viewport = _viewportKey.currentContext?.findRenderObject() as RenderBox?;
+    final cell = cellContext.findRenderObject() as RenderBox?;
+    if (card == null || viewport == null || cell == null || !_scrollController.hasClients) return;
+    final height = viewport.size.height;
+    // The cross-fade's top, plus the gap the card keeps above itself.
+    final cardTop = card.localToGlobal(Offset.zero, ancestor: viewport).dy + 16;
+    if (cardTop <= height * 0.55) return;
+    final cellTop = cell.localToGlobal(Offset.zero, ancestor: viewport).dy;
+    // The card's start to a little above the middle, but never so far that the
+    // day that was tapped goes out of the top.
+    final delta = math.min(cardTop - height * 0.4, cellTop - 8);
+    if (delta <= 0) return;
+    final position = _scrollController.position;
+    _scrollController.animateTo(
+      (position.pixels + delta).clamp(position.minScrollExtent, position.maxScrollExtent),
+      duration: const Duration(milliseconds: 380),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
   void _jumpToToday() {
     ref.read(calendarProvider.notifier).selectDayToday();
     if (_scrollController.hasClients) {
@@ -206,13 +263,13 @@ class _MonthViewState extends ConsumerState<_MonthView> {
                 slivers: [
                   SliverList(
                     delegate: SliverChildBuilderDelegate(
-                      (context, i) => _MonthBlock(monthOffset: -i - 1, state: state, accent: accent, todayCellKey: _todayCellKey),
+                      (context, i) => _MonthBlock(monthOffset: -i - 1, state: state, accent: accent, todayCellKey: _todayCellKey, detailKey: _detailKey, onSelectDay: _selectDay),
                     ),
                   ),
                   SliverList(
                     key: _centerKey,
                     delegate: SliverChildBuilderDelegate(
-                      (context, i) => _MonthBlock(monthOffset: i, state: state, accent: accent, todayCellKey: _todayCellKey),
+                      (context, i) => _MonthBlock(monthOffset: i, state: state, accent: accent, todayCellKey: _todayCellKey, detailKey: _detailKey, onSelectDay: _selectDay),
                     ),
                   ),
                 ],
@@ -236,7 +293,20 @@ class _MonthBlock extends ConsumerWidget {
   final Color accent;
   final GlobalKey? todayCellKey;
 
-  const _MonthBlock({required this.monthOffset, required this.state, required this.accent, this.todayCellKey});
+  /// On the day card, so [_MonthView] can find where it opened.
+  final GlobalKey detailKey;
+
+  /// A day was tapped; the cell hands over its own context to be measured.
+  final void Function(BuildContext cellContext, int y, int m, int d) onSelectDay;
+
+  const _MonthBlock({
+    required this.monthOffset,
+    required this.state,
+    required this.accent,
+    this.todayCellKey,
+    required this.detailKey,
+    required this.onSelectDay,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -288,13 +358,15 @@ class _MonthBlock extends ConsumerWidget {
                       accent: accent,
                       holidays: holidays,
                       ferien: ferien,
+                      onSelectDay: onSelectDay,
                     ),
                   ),
               ],
             ),
           if (isSelectedMonth)
             AnimatedCrossFade(
-              duration: const Duration(milliseconds: 280),
+              key: detailKey,
+              duration: _MonthViewState._detailDuration,
               sizeCurve: Curves.easeOutCubic,
               firstCurve: Curves.easeOut,
               secondCurve: Curves.easeIn,
@@ -400,7 +472,9 @@ class _MonthCell extends ConsumerWidget {
   /// This month's Schulferien days, from the subscribed Ferien feed.
   final Set<int> ferien;
 
-  const _MonthCell({super.key, required this.index, required this.lead, required this.len, required this.year, required this.month, required this.state, required this.accent, required this.holidays, required this.ferien});
+  final void Function(BuildContext cellContext, int y, int m, int d) onSelectDay;
+
+  const _MonthCell({super.key, required this.index, required this.lead, required this.len, required this.year, required this.month, required this.state, required this.accent, required this.holidays, required this.ferien, required this.onSelectDay});
 
   /// The circle, the gap under it and the dot band, plus 5 points of slack —
   /// derived rather than written down, so a scale that grows the day cannot
@@ -423,7 +497,7 @@ class _MonthCell extends ConsumerWidget {
         ref.watch(openTodoDaysProvider).contains(CalendarScreenState.key(year, month, n));
 
     return GestureDetector(
-      onTap: () => ref.read(calendarProvider.notifier).selectDay(year, month, n),
+      onTap: () => onSelectDay(context, year, month, n),
       child: SizedBox(
         height: _cellHeight,
         child: Column(

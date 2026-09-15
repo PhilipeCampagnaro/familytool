@@ -421,6 +421,21 @@ Future<void> _saveSpend(BuildContext context, WidgetRef ref, _SpendDraft draft) 
   final notifier = ref.read(spendProvider.notifier);
   final note = draft.note.text.trim();
 
+  // Opened and closed with the check, nothing touched: the sheet goes, with no
+  // write and no "Ausgabe aktualisiert". Except on a flagged row — saving that
+  // one *is* the review, and clears the flag, even with every field as it was.
+  if (draft.original case final original?
+      when !original.needsReview &&
+          merchant == original.merchant.trim() &&
+          cents == original.amountCents &&
+          draft.date == original.occurredAt &&
+          (draft.category ?? original.category) == original.category &&
+          draft.kind == original.kind &&
+          note == (original.note ?? '').trim()) {
+    navigator.pop();
+    return;
+  }
+
   draft.saving.value = true;
   final spend = draft.original;
   final saved = spend == null
@@ -719,8 +734,14 @@ class _CategoryField extends StatelessWidget {
 // The way through to Apple Pay capture
 // ---------------------------------------------------------------------------
 
-/// One row on the Ausgaben page, saying whether this iPhone files payments by
-/// itself and leading to the page where that is decided.
+/// One row on the Ausgaben page, drawn only while this phone does **not** file
+/// payments by itself, leading to the page where that is decided.
+///
+/// **Once the phone is set up the row is gone.** "Aktiv" under every month of
+/// spending is setup furniture reporting that nothing needs doing; the device
+/// list, the rename and the revoke all still live on the Settings page. It also
+/// stays away until the enrolment has actually been checked, or it would flash
+/// "noch nicht aktiviert" on every cold start before the answer arrived.
 ///
 /// **Setup does not live here any more.** The card this replaces carried the
 /// intro, the activate button, four numbered steps and a link into Shortcuts,
@@ -755,25 +776,30 @@ class WalletSetupCard extends ConsumerWidget {
     final ready = intents.usesNotificationAccess
         ? state.thisDeviceEnrolled && state.notificationAccess
         : state.thisDeviceEnrolled;
+    if (ready || !state.devicesChecked) return const SizedBox.shrink();
 
-    return SectionCard(
-      radius: AppRadii.card,
-      children: [
-        SettingsRow(
-          icon: AppIcons.wallet,
-          title: intents.usesNotificationAccess
-              ? L.s.spendWalletAndroidTitle
-              : L.s.spendWalletTitle,
-          subtitle: intents.usesNotificationAccess
-              ? (ready ? L.s.spendWalletAndroidActive : L.s.spendWalletAndroidInactive)
-              : (ready ? L.s.spendWalletActive : L.s.spendWalletInactive),
-          onTap: () => Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => WalletCapturePage(parentTitle: L.s.spendTitle),
+    return Padding(
+      // The gap above lives here so a hidden card leaves none behind.
+      padding: const EdgeInsets.only(top: AppSpacing.blockGap),
+      child: SectionCard(
+        radius: AppRadii.card,
+        children: [
+          SettingsRow(
+            icon: AppIcons.wallet,
+            title: intents.usesNotificationAccess
+                ? L.s.spendWalletAndroidTitle
+                : L.s.spendWalletTitle,
+            subtitle: intents.usesNotificationAccess
+                ? L.s.spendWalletAndroidInactive
+                : L.s.spendWalletInactive,
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => WalletCapturePage(parentTitle: L.s.spendTitle),
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

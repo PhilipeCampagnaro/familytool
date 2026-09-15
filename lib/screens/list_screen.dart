@@ -1,4 +1,5 @@
 
+import 'package:flutter/foundation.dart' show setEquals;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/brand_colors.dart';
@@ -344,6 +345,16 @@ void openListSheet(
       // the screen behind it, where the row it is talking about just changed.
       final confirm = confirmChipOf(context);
       if (list != null) {
+        // Opened and closed with the check, nothing touched: no write, and no
+        // "Liste aktualisiert" for a change that never happened.
+        final current = ref.read(listProvider);
+        final typed = nameController.text.trim();
+        final unchanged = (typed.isEmpty || typed == list.name) &&
+            kind == list.kind &&
+            draft.picked == null &&
+            current.newVisibility == list.visibility &&
+            setEquals(current.newSharedWith, list.sharedWith.toSet());
+        if (unchanged) return;
         if (await notifier.updateList(list.id, name: nameController.text, kind: kind, iconKey: draft.picked)) {
           confirm(L.s.listUpdated);
         }

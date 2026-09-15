@@ -11,10 +11,25 @@
 ///
 ///   1. who is calling — `callerId`, never a user id from the body;
 ///   2. which household — their membership row, never a family id from the body;
-///   3. the daily per-user abuse limit, then the monthly plan cap — both counted
-///      from `list_plan_runs`, which no client can write;
+///   3. the monthly plan cap — or, on a plan without one, the daily per-user
+///      abuse limit — counted from `list_plan_runs`, which no client can write;
 ///   4. only then the paid call, and the usage row only after it answered, so a
 ///      failed generation is never charged.
+///
+/// **Two request shapes.** `{goal, locale}` makes a plan. `{mode: "usage"}`
+/// makes nothing and costs nothing: it answers how much of the month is used,
+/// so the card can print "noch 27 von 30" before anybody types. Every answer
+/// that has the household in hand carries the same `usage` object, so the app
+/// never counts for itself.
+///
+/// **`ignoreLimits: true` is a request, not a grant.** It is what the debug
+/// switch in Settings sends, and it is honoured only for a caller listed in
+/// `public.plan_limit_exemptions`, which no client can read or write. From
+/// anybody else it is ignored without comment, so a patched build that sends it
+/// gains nothing. The usage row is still written — the call still cost money.
+/// `simulatePlan: "free" | "plus"` is the same kind of request, from the
+/// Settings plan switch, so a tester sees the free household's 3 counted and
+/// refused by the server rather than only relabelled by the app.
 ///
 /// **Neither the goal nor the answer is stored or logged.** A household's
 /// dinner plans are not ours to keep. Errors log the provider's status code and
@@ -24,12 +39,21 @@
 /// the app is in four languages and picks its own sentence from the code.
 
 import { callerId, corsHeaders, json, serviceClient } from "../_shared/http.ts";
-import { canRunListPlan } from "../_shared/entitlements.ts";
+import { listPlanUsage } from "../_shared/entitlements.ts";
+import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 
-/// Abuse, not plan: a stolen session or a scripted client is held to this many
-/// paid calls a day whatever the household pays for. The plan cap is separate —
-/// see `canRunListPlan`.
+/// Abuse, not plan — and **only on a plan with no monthly cap.** Both plans
+/// have one today, so this never answers; it is here so that a future unlimited
+/// tier cannot ship without a ceiling.
+///
+/// It used to apply to everybody, and that was two limits doing one job. A
+/// monthly cap already bounds what a stolen session can spend, so a lower daily
+/// wall on top of it stopped only the household it was not for: a Plus family
+/// allowed thirty a month met "enough for today" after ten, and could not have
+/// been told why the thirty did not mean thirty.
 const MAX_PLANS_PER_USER_PER_DAY = 10;
+
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 /// A goal is one sentence. Capped here, not only in the field, so a patched
 /// client cannot turn a pasted recipe into a 4,000-token prompt on our bill.
@@ -47,8 +71,8 @@ const MISTRAL_URL = "https://api.mistral.ai/v1/chat/completions";
 type Code = "unauthenticated" | "bad_request" | "no_household" | "rate_limited" | "limit_reached"
   | "not_configured" | "unavailable" | "unusable";
 
-function refuse(code: Code, error: string, status: number): Response {
-  return json({ code, error }, status);
+function refuse(code: Code, error: string, status: number, extra: Record<string, unknown> = {}): Response {
+  return json({ code, error, ...extra }, status);
 }
 
 Deno.serve(async (req) => {
@@ -58,21 +82,23 @@ Deno.serve(async (req) => {
   const uid = await callerId(req);
   if (!uid) return refuse("unauthenticated", "Nicht angemeldet.", 401);
 
-  let body: { goal?: unknown; locale?: unknown };
+  let body: { goal?: unknown; locale?: unknown; mode?: unknown; ignoreLimits?: unknown; simulatePlan?: unknown };
   try {
     body = await req.json();
   } catch {
     return refuse("bad_request", "Ungültige Anfrage.", 400);
   }
 
+  const usageOnly = body.mode === "usage";
   const goal = typeof body.goal === "string" ? body.goal.trim().slice(0, GOAL_MAX_LENGTH) : "";
-  if (!goal) return refuse("unusable", "Kein Vorhaben angegeben.", 400);
+  if (!usageOnly && !goal) return refuse("unusable", "Kein Vorhaben angegeben.", 400);
   const locale = typeof body.locale === "string" && LOCALES.has(body.locale) ? body.locale : "de";
 
   // Checked before any count, so a project without the secret answers the same
-  // way for everybody and costs no database round trips.
+  // way for everybody and costs no database round trips. A usage question
+  // needs no key.
   const apiKey = Deno.env.get("MISTRAL_API_KEY");
-  if (!apiKey) return refuse("not_configured", "Vorhaben ist nicht eingerichtet.", 503);
+  if (!usageOnly && !apiKey) return refuse("not_configured", "Vorhaben ist nicht eingerichtet.", 503);
 
   const db = serviceClient();
 
@@ -83,18 +109,42 @@ Deno.serve(async (req) => {
     .maybeSingle();
   if (!membership) return refuse("no_household", "Kein Haushalt gefunden.", 403);
 
-  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-  const { count: today } = await db
-    .from("list_plan_runs")
-    .select("id", { count: "exact", head: true })
-    .eq("created_by", uid)
-    .gte("created_at", since);
-  if ((today ?? 0) >= MAX_PLANS_PER_USER_PER_DAY) {
-    return refuse("rate_limited", "Für heute sind es genug Vorhaben. Morgen geht es weiter.", 429);
-  }
+  // Both test flags ride on the same list: from anybody not on it they are
+  // ignored, and the table is only read when one was actually sent.
+  const simulatePlan = body.simulatePlan === "free" || body.simulatePlan === "plus" ? body.simulatePlan : undefined;
+  const tester = (body.ignoreLimits === true || simulatePlan !== undefined) && await isLimitExempt(db, uid);
+  const exempt = tester && body.ignoreLimits === true;
+  const usage = await listPlanUsage(db, membership.family_id, tester ? simulatePlan : undefined);
+  const report = (used: number) => ({ used, limit: usage.limit, resetsAt: usage.resetsAt, exempt });
 
-  if (!await canRunListPlan(db, membership.family_id)) {
-    return refuse("limit_reached", "Die Vorhaben für diesen Monat sind aufgebraucht.", 402);
+  if (usageOnly) return json({ usage: report(usage.used) });
+
+  if (!exempt) {
+    if (usage.limit !== null) {
+      if (usage.used >= usage.limit) {
+        return refuse("limit_reached", "Die Vorhaben für diesen Monat sind aufgebraucht.", 402, {
+          usage: report(usage.used),
+        });
+      }
+    } else {
+      const since = new Date(Date.now() - DAY_MS).toISOString();
+      // The oldest run in the window is when the first slot frees up — the
+      // window rolls, so "tomorrow" would be a guess and this is the answer.
+      const { data: oldest, count } = await db
+        .from("list_plan_runs")
+        .select("created_at", { count: "exact" })
+        .eq("created_by", uid)
+        .gte("created_at", since)
+        .order("created_at", { ascending: true })
+        .limit(1);
+      if ((count ?? 0) >= MAX_PLANS_PER_USER_PER_DAY) {
+        const first = oldest?.[0]?.created_at;
+        return refuse("rate_limited", "Für heute sind es genug Vorhaben.", 429, {
+          usage: report(usage.used),
+          retryAt: first ? new Date(Date.parse(first) + DAY_MS).toISOString() : null,
+        });
+      }
+    }
   }
 
   let res: Response;
@@ -162,8 +212,19 @@ Deno.serve(async (req) => {
   });
   if (error) console.error("list-plan: usage row not written", error.code);
 
-  return json({ plan });
+  return json({ plan, usage: report(usage.used + (error ? 0 : 1)) });
 });
+
+/// Whether this caller may lift the limits. Read with `service_role`; the table
+/// has no grant for anybody else.
+async function isLimitExempt(db: SupabaseClient, uid: string): Promise<boolean> {
+  const { data } = await db
+    .from("plan_limit_exemptions")
+    .select("user_id")
+    .eq("user_id", uid)
+    .maybeSingle();
+  return data !== null;
+}
 
 function intOrNull(v: unknown): number | null {
   return typeof v === "number" && Number.isFinite(v) ? Math.trunc(v) : null;

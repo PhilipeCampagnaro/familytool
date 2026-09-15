@@ -15,7 +15,6 @@ import '../../widgets/bottom_nav.dart';
 import '../../widgets/collapsing_header.dart';
 import '../../widgets/expandable_title.dart';
 import '../../widgets/glass.dart';
-import '../../widgets/icon_picker.dart';
 import '../../widgets/toast_chip.dart';
 import '../../l10n/l10n.dart';
 import 'schedule_sheet.dart';
@@ -73,7 +72,6 @@ class TrackerDetailView extends ConsumerWidget {
       titleRowBuilder: (context, t) => CollapsingScreenTitle(
         title: L.s.trackerTitle,
         collapsedTitle: tracker.text,
-        collapsedIcon: IconTile(iconKey: tracker.iconKey, size: 24, imageSize: 17),
         t: t,
         expandedAlignment: Alignment.center,
         expandedFontSize: AppText.pageTitle,
@@ -109,33 +107,28 @@ class TrackerDetailView extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 16),
-          Row(
+          // The name and its streak, with no icon tile beside them: a tracker is
+          // a rhythm rather than a thing with a picture, and the Board's row
+          // draws none either — the tile here was the only place one showed.
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              IconTile(iconKey: tracker.iconKey, size: AppText.headerMark, imageSize: AppText.markImage(AppText.headerMark)),
-              const SizedBox(width: 13),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Unfolds when the name is longer than the line, exactly as
-                    // a list's and a box's do — see [ExpandableTitle].
-                    ExpandableTitle(text: tracker.text),
-                    const SizedBox(height: 3),
-                    Text(
-                      // The streak, and nothing else that could be mistaken for
-                      // a score. What the household is keeping up is the fact
-                      // worth putting under the name; a percentage would invite
-                      // the app to start grading them.
-                      streak > 0
-                          ? (dayBased ? L.s.streakDays(streak) : L.s.streakWeeks(streak))
-                          : scheduleSummary(tracker.schedule),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppText.label,
-                    ),
-                  ],
-                ),
+              // Unfolds when the name is longer than the line, exactly as a
+              // list's and a box's do — see [ExpandableTitle].
+              ExpandableTitle(text: tracker.text),
+              const SizedBox(height: 3),
+              Text(
+                // The streak, and nothing else that could be mistaken for a
+                // score. What the household is keeping up is the fact worth
+                // putting under the name; a percentage would invite the app to
+                // start grading them.
+                streak > 0
+                    ? (dayBased ? L.s.streakDays(streak) : L.s.streakWeeks(streak))
+                    : scheduleSummary(tracker.schedule),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppText.label,
               ),
             ],
           ),
@@ -270,15 +263,22 @@ class _FactRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
       child: Row(
         children: [
-          Expanded(child: Text(label, style: AppText.rowTitle)),
+          // The label sizes to itself and the answer takes the rest, flush
+          // right. `Expanded` + `Flexible` split the row in half and left a
+          // short answer like "Jeden Tag" starting in the middle, out of line
+          // with the avatar in the row between.
+          Text(label, style: AppText.rowTitle),
           const SizedBox(width: 12),
-          Flexible(
+          Expanded(
             child: Text(
               value,
               textAlign: TextAlign.right,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: AppText.label,
+              // The answer style of every other field row in the app — the
+              // event form's "Wiederholen", the Board sheet's "Fällig". The
+              // smaller label style read as a footnote beside the row title.
+              style: AppText.input.copyWith(color: AppColors.inkTertiary),
             ),
           ),
         ],
@@ -313,7 +313,7 @@ class _AssigneeRow extends ConsumerWidget {
           Semantics(
             label: w.label,
             excludeSemantics: true,
-            child: WhoAvatars(who: w, size: 24, fontSize: 10),
+            child: WhoAvatars(who: w, size: 28, fontSize: 11),
           ),
           VisibilityBadge(
             visibility: tracker.visibility,

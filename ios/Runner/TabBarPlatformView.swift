@@ -228,6 +228,27 @@ class TabBarPlatformView: NSObject, FlutterPlatformView, UITabBarDelegate {
     }
     walk(bar)
 
+    // **The item's own title, looked for on its own.** Both passes above guess
+    // at UIKit's private view tree, and on iOS 26 neither found the item: the
+    // platter split into equal slots answered instead, which stood the shelf
+    // ~30pt right of the glyph, because the selected item's pill is wider than
+    // the rest and the items are not spread evenly across the capsule. The
+    // title is text *we* set, so a `UILabel` saying it is the item on any
+    // version of the bar, and the glyph is centred over it. Its own walk,
+    // because the name pass does not descend into item views.
+    let title = bar.items?.last?.title
+    var titled: [CGRect] = []
+    func findTitles(_ view: UIView) {
+      for sub in view.subviews {
+        if let label = sub as? UILabel, let t = title, !t.isEmpty, label.text == t,
+           !label.isHidden, label.alpha > 0.01, label.bounds.width > 1 {
+          titled.append(container.convert(label.bounds, from: label))
+        }
+        findTitles(sub)
+      }
+    }
+    findTitles(bar)
+
     let platter = background.isNull ? glass : background
     let count = CGFloat(max(bar.items?.count ?? 0, 1))
     // **Nothing wider than an item is an item.** iOS 26 wraps the item views in
@@ -250,6 +271,21 @@ class TabBarPlatformView: NSObject, FlutterPlatformView, UITabBarDelegate {
       let slot = platter.width / count
       last = CGRect(x: platter.maxX - slot, y: platter.minY, width: slot, height: platter.height)
       found = "platter/\(Int(count))"
+    }
+
+    // Only the centre comes from the title — the item's width and the band it
+    // sits in stay whatever answered above, and Dart reads nothing but the
+    // horizontal centre anyway (`_moreItemAnchor`).
+    if let byTitle = titled.max(by: { $0.midX < $1.midX }) {
+      let known = !last.isNull && last.width > 1
+      let width = known ? last.width : max(byTitle.width, 44)
+      last = CGRect(
+        x: byTitle.midX - width / 2,
+        y: known ? last.minY : byTitle.minY,
+        width: width,
+        height: known ? last.height : byTitle.height
+      )
+      found = "title/\(found)"
     }
 
     guard !last.isNull, last.width > 1 else { return nil }

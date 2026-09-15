@@ -136,7 +136,16 @@ export async function canAddShareLink(
   return (count ?? 0) < limit;
 }
 
-/// Whether this household may make another Vorhaben this calendar month.
+/// How much of this month's Vorhaben a household has used, and its cap.
+export type ListPlanUsage = {
+  used: number;
+  /// Null when the plan has no monthly cap.
+  limit: number | null;
+  /// The first of next month, 00:00 UTC, as an ISO string.
+  resetsAt: string;
+};
+
+/// This household's Vorhaben for the calendar month, and what its plan allows.
 ///
 /// Counts `list_plan_runs`, which only `list-plan` writes and only after the
 /// model answered — so a failed generation is never charged. **Server-side only,
@@ -144,20 +153,32 @@ export async function canAddShareLink(
 /// patches its way past a Box limit costs us nothing, one that patches its way
 /// past this spends our money on every request.
 ///
+/// **Returned rather than judged**, unlike the `canAdd…` checks: the card
+/// prints "noch 27 von 30" from this same object, so the number on screen and
+/// the number that refuses the request cannot be two different counts.
+///
 /// The month is the UTC calendar month. A German household's quota therefore
 /// turns over at 01:00 or 02:00 on the 1st rather than at midnight, which
 /// nobody will ever notice and is not worth a timezone on the household.
-export async function canRunListPlan(db: SupabaseClient, familyId: string): Promise<boolean> {
-  const limit = LIMITS[await planOf(db, familyId)].listPlansPerMonth;
-  if (limit === null) return true;
+///
+/// [simulated] replaces the household's real plan, for a caller `list-plan` has
+/// already found in `plan_limit_exemptions` — the Settings plan switch, made to
+/// mean something to the server for the one account allowed to test with it.
+export async function listPlanUsage(
+  db: SupabaseClient,
+  familyId: string,
+  simulated?: Plan,
+): Promise<ListPlanUsage> {
+  const limit = LIMITS[simulated ?? await planOf(db, familyId)].listPlansPerMonth;
 
   const now = new Date();
   const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
+  const nextMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1)).toISOString();
   const { count } = await db
     .from("list_plan_runs")
     .select("id", { count: "exact", head: true })
     .eq("family_id", familyId)
     .gte("created_at", monthStart);
 
-  return (count ?? 0) < limit;
+  return { used: count ?? 0, limit, resetsAt: nextMonth };
 }

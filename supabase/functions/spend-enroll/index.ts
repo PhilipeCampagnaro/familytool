@@ -56,6 +56,16 @@ Deno.serve(async (req) => {
 
   const token = createToken();
 
+  // A name the household gave this phone in Settings outlives re-activation.
+  // The OS name is only the first answer; overwriting a chosen one would put
+  // two "iPhone"s back in the list every time a token is rotated.
+  const { data: existing } = await db
+    .from("spend_ingest_devices")
+    .select("label")
+    .eq("user_id", uid)
+    .eq("device_uid", deviceUid)
+    .maybeSingle();
+
   // Upsert on (user_id, device_uid). `revoked_at: null` is written explicitly so
   // that re-enrolling a phone the user previously revoked brings it back —
   // which is what pressing "Aktivieren" again plainly means.
@@ -66,7 +76,7 @@ Deno.serve(async (req) => {
         family_id: membership.family_id,
         user_id: uid,
         device_uid: deviceUid,
-        label,
+        label: existing?.label ?? label,
         token_hash: await hashToken(token),
         revoked_at: null,
       },

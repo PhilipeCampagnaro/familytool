@@ -1,3 +1,5 @@
+import 'dart:ui' show Rect;
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Which of the More tab's two screens is showing.
@@ -29,7 +31,9 @@ class MoreNotifier extends StateNotifier<MoreSection> {
 
 final moreProvider = StateNotifierProvider<MoreNotifier, MoreSection>((ref) => MoreNotifier());
 
-/// Whether the **Mehr** shelf is standing on the bar. Written only by the shell;
-/// read by Kalender's "Heute", which parks above the bar on the shelf's side
-/// and has to rise over the buttons rather than sit beside them.
-final moreShelfOpenProvider = StateProvider<bool>((ref) => false);
+/// The bar item the **Mehr** shelf is standing on, in screen coordinates, or
+/// null while it is down. Written only by the shell; read by Kalender's
+/// "Heute", which parks above the bar on the shelf's side and has to rise over
+/// the buttons — and line up with them, which is why this is the rect and not a
+/// bool (see `moreShelfRight`).
+final moreShelfAnchorProvider = StateProvider<Rect?>((ref) => null);

@@ -1762,6 +1762,638 @@
       ],
       "ref": "packaged",
       "subject": "a tall clear plastic squeeze bottle of golden syrup, straight sides tapering to a sloped shoulder and a plain white flip-top dispensing cap, filled with pale golden-amber translucent syrup, the bottle completely bare with no label, no sticker and no printing anywhere"
+    },
+    {
+      "file": "Canned_Goods_Canned_tuna.png",
+      "cat": "Konserven",
+      "de": "Thunfisch (Dose)",
+      "alias": [
+        "Thunfischdose",
+        "Thunfisch Dose",
+        "Dosenthunfisch"
+      ],
+      "pt": "Atum em lata",
+      "es": "Atún en lata",
+      "tier": 1,
+      "ref": "packaged",
+      "subject": "an opened round tin can of tuna chunks in oil, the pull-tab lid peeled half back, the tin plain unprinted silver metal"
+    },
+    {
+      "file": "Canned_Goods_Chopped_tomatoes.png",
+      "cat": "Konserven",
+      "de": "Gehackte Tomaten",
+      "alias": [
+        "Stückige Tomaten",
+        "Dosentomaten",
+        "Tomaten Dose"
+      ],
+      "pt": "Tomate pelado picado",
+      "es": "Tomate troceado",
+      "tier": 1,
+      "ref": "packaged",
+      "subject": "an opened round tin can filled to the rim with chopped red tomatoes in juice, the lid removed, the tin plain unprinted silver metal"
+    },
+    {
+      "file": "Meat_Bavarian_meatloaf.png",
+      "cat": "Fleisch & Fisch",
+      "de": "Leberkäse",
+      "alias": [
+        "Fleischkäse",
+        "Leberkas"
+      ],
+      "pt": "Bolo de carne bávaro",
+      "es": "Pastel de carne bávaro",
+      "tier": 1,
+      "ref": "meat",
+      "subject": "a rectangular loaf of Bavarian Leberkäse with a browned crust, one thick slice cut off and leaning against it showing the fine pink interior"
+    },
+    {
+      "file": "Meat_Whole_chicken.png",
+      "cat": "Fleisch & Fisch",
+      "de": "Ganzes Hähnchen",
+      "alias": [
+        "Brathähnchen",
+        "Suppenhuhn",
+        "Hähnchen ganz",
+        "Hendl"
+      ],
+      "pt": "Frango inteiro",
+      "es": "Pollo entero",
+      "tier": 1,
+      "ref": "meat",
+      "subject": "a whole raw chicken, trussed, pale pink skin, breast side up"
+    },
+    {
+      "file": "Meat_Pork_chop.png",
+      "cat": "Fleisch & Fisch",
+      "de": "Schweinekotelett",
+      "alias": [
+        "Kotelett",
+        "Nackenkotelett",
+        "Nackensteak",
+        "Schweinesteak"
+      ],
+      "pt": "Bisteca de porco",
+      "es": "Chuleta de cerdo",
+      "tier": 1,
+      "ref": "meat",
+      "subject": "two raw bone-in pork chops, one overlapping the other, pale pink meat with a white fat rim"
+    },
+    {
+      "file": "Meat_Pork_belly.png",
+      "cat": "Fleisch & Fisch",
+      "de": "Schweinebauch",
+      "alias": [
+        "Bauchfleisch",
+        "Wammerl",
+        "Pancetta"
+      ],
+      "pt": "Barriga de porco",
+      "es": "Panceta de cerdo",
+      "tier": 1,
+      "ref": "meat",
+      "subject": "a raw slab of pork belly showing distinct layers of meat and fat, skin on top"
+    },
+    {
+      "file": "Meat_Smoked_pork_loin.png",
+      "cat": "Fleisch & Fisch",
+      "de": "Kasseler",
+      "alias": [
+        "Kassler",
+        "Kasslerbraten",
+        "Kasseler Braten"
+      ],
+      "pt": "Lombo de porco defumado",
+      "es": "Lomo de cerdo ahumado",
+      "tier": 1,
+      "ref": "meat",
+      "subject": "a piece of German Kasseler smoked cured pork loin, rosy pink with a golden smoked edge, two slices cut and fanned in front"
+    },
+    {
+      "file": "Meat_Mackerel.png",
+      "cat": "Fleisch & Fisch",
+      "de": "Makrele",
+      "alias": [
+        "Räuchermakrele",
+        "Geräucherte Makrele",
+        "Makrelenfilet"
+      ],
+      "pt": "Cavala",
+      "es": "Caballa",
+      "tier": 1,
+      "ref": "meat",
+      "subject": "a whole hot-smoked mackerel with golden-bronze skin, lying on its side"
+    },
+    {
+      "file": "Dairy_Grated_cheese.png",
+      "cat": "Milchprodukte",
+      "de": "Reibekäse",
+      "alias": [
+        "Geriebener Käse",
+        "Pizzakäse",
+        "Streukäse",
+        "Gratinkäse"
+      ],
+      "pt": "Queijo ralado",
+      "es": "Queso rallado",
+      "tier": 1,
+      "ref": "packaged",
+      "subject": "a loose mound of freshly grated yellow cheese shreds"
+    },
+    {
+      "file": "Dairy_Drinking_yogurt.png",
+      "cat": "Milchprodukte",
+      "de": "Trinkjoghurt",
+      "alias": [
+        "Joghurtdrink",
+        "Joghurt Drink",
+        "Probiotischer Drink"
+      ],
+      "pt": "Iogurte para beber",
+      "es": "Yogur bebible",
+      "tier": 1,
+      "ref": "packaged",
+      "subject": "a small plain white plastic bottle of drinking yoghurt with a foil-sealed top, beside a short glass filled with pink strawberry drinking yoghurt"
+    },
+    {
+      "file": "Bread_Muffins.png",
+      "cat": "Brot & Backwaren",
+      "de": "Muffins",
+      "alias": [
+        "Muffin",
+        "Schokomuffins",
+        "Blaubeermuffins",
+        "Cupcakes"
+      ],
+      "pt": "Muffins",
+      "es": "Magdalenas",
+      "tier": 1,
+      "ref": "bakery",
+      "subject": "two baked muffins with domed golden tops, one blueberry and one chocolate chip, in plain white paper cases"
+    },
+    {
+      "file": "Snacks_Rice_cakes.png",
+      "cat": "Snacks & Knabbereien",
+      "de": "Reiswaffeln",
+      "alias": [
+        "Reiswaffel",
+        "Maiswaffeln",
+        "Maiswaffel"
+      ],
+      "pt": "Biscoito de arroz",
+      "es": "Tortitas de arroz",
+      "tier": 1,
+      "ref": "packaged",
+      "subject": "a short stack of round puffed rice cakes, one leaning against the stack"
+    },
+    {
+      "file": "Snacks_Peanut_puffs.png",
+      "cat": "Snacks & Knabbereien",
+      "de": "Erdnussflips",
+      "alias": [
+        "Flips",
+        "Erdnusslocken"
+      ],
+      "pt": "Salgadinho de amendoim",
+      "es": "Gusanitos de cacahuete",
+      "tier": 1,
+      "ref": "packaged",
+      "subject": "a loose heap of crunchy orange-golden peanut puffs, knobbly corn curls"
+    },
+    {
+      "file": "Snacks_Tortilla_chips.png",
+      "cat": "Snacks & Knabbereien",
+      "de": "Tortilla-Chips",
+      "alias": [
+        "Tortilla Chips",
+        "Nachos",
+        "Maischips"
+      ],
+      "pt": "Nachos",
+      "es": "Nachos",
+      "tier": 1,
+      "ref": "packaged",
+      "subject": "a heap of triangular golden corn tortilla chips"
+    },
+    {
+      "file": "Hygiene_Shower_gel.png",
+      "cat": "Hygiene",
+      "de": "Duschgel",
+      "alias": [
+        "Duschbad",
+        "Duschcreme",
+        "shower gel"
+      ],
+      "pt": "Gel de banho",
+      "es": "Gel de ducha",
+      "tier": 1,
+      "ref": "household",
+      "subject": "a plain unlabelled translucent blue plastic shower gel bottle standing upside down on its flip-top cap"
+    },
+    {
+      "file": "Noodles_&_Pasta_Tortellini.png",
+      "cat": "Nudeln & Pasta",
+      "de": "Tortellini",
+      "alias": [
+        "Tortelloni",
+        "Frische Tortellini"
+      ],
+      "pt": "Capeletti",
+      "es": "Tortellini",
+      "tier": 1,
+      "ref": "packaged",
+      "subject": "a loose pile of fresh uncooked egg tortellini, ring-shaped filled pasta"
+    },
+    {
+      "file": "Noodles_&_Pasta_Spaetzle.png",
+      "cat": "Nudeln & Pasta",
+      "de": "Spätzle",
+      "alias": [
+        "Knöpfle",
+        "Käsespätzle",
+        "Eierspätzle"
+      ],
+      "pt": "Spätzle",
+      "es": "Spätzle",
+      "tier": 1,
+      "ref": "packaged",
+      "subject": "a loose heap of uncooked dried Swabian egg spätzle, short irregular yellow noodle pieces"
+    },
+    {
+      "file": "Frozen_Foods_Maultaschen.png",
+      "cat": "Tiefkühlkost",
+      "de": "Maultaschen",
+      "alias": [
+        "Maultasche",
+        "Schwäbische Maultaschen"
+      ],
+      "pt": "Maultaschen",
+      "es": "Maultaschen",
+      "tier": 1,
+      "ref": "packaged",
+      "subject": "three fresh Swabian Maultaschen, large rectangular filled pasta pockets with pressed edges, overlapping"
+    },
+    {
+      "file": "Vegetables_Gherkins.png",
+      "cat": "Gemüse",
+      "de": "Gewürzgurken",
+      "alias": [
+        "Essiggurken",
+        "Cornichons",
+        "Saure Gurken",
+        "Gurken im Glas"
+      ],
+      "pt": "Pepino em conserva",
+      "es": "Pepinillos",
+      "tier": 1,
+      "ref": "packaged",
+      "subject": "a plain unlabelled glass jar of small pickled gherkins with dill and mustard seeds in brine, metal lid, one gherkin lying in front"
+    },
+    {
+      "file": "Baby_Food_&_Drinks_Fruit_pouch.png",
+      "cat": "Baby",
+      "de": "Quetschie",
+      "alias": [
+        "Quetschies",
+        "Quetschbeutel",
+        "Fruchtmus",
+        "Fruchtpüree"
+      ],
+      "pt": "Papinha de fruta em sachê",
+      "es": "Bolsita de fruta",
+      "tier": 1,
+      "ref": "packaged",
+      "subject": "a plain unprinted soft squeeze pouch of fruit puree with a coloured spout cap, a little apple puree beside it"
+    },
+    {
+      "file": "_Spices_and_Seasonings_Seasoning_blend.png",
+      "cat": "Gewürze",
+      "de": "Gewürzmischung",
+      "alias": [
+        "Gewürz",
+        "Gewürze",
+        "Grillgewürz",
+        "Gyrosgewürz",
+        "Hähnchengewürz",
+        "Fleischgewürz"
+      ],
+      "pt": "Tempero pronto",
+      "es": "Mezcla de especias",
+      "tier": 1,
+      "ref": "packaged",
+      "subject": "a small plain unlabelled glass spice jar with a metal lid, filled with a coarse red-orange seasoning blend with visible herbs and pepper, a little of the blend spilled in front"
+    },
+    {
+      "file": "_Spices_and_Seasonings_Chili_flakes.png",
+      "cat": "Gewürze",
+      "de": "Chiliflocken",
+      "alias": [
+        "Chili Flocken",
+        "Chili flakes",
+        "Pul Biber",
+        "Chilischoten"
+      ],
+      "pt": "Pimenta calabresa",
+      "es": "Guindilla en copos",
+      "tier": 1,
+      "ref": "packaged",
+      "subject": "a small plain unlabelled glass spice jar with a metal lid filled with crushed red chili flakes and seeds, a few flakes spilled in front"
+    },
+    {
+      "file": "Canned_Goods_Kidney_beans.png",
+      "cat": "Konserven",
+      "de": "Kidneybohnen",
+      "alias": [
+        "Rote Bohnen"
+      ],
+      "pt": "Feijão vermelho",
+      "es": "Alubias rojas",
+      "tier": 1,
+      "ref": "packaged",
+      "subject": "an opened round tin can filled with dark red kidney beans, lid removed, the tin plain unprinted silver metal"
+    },
+    {
+      "file": "Baking_Supplies_Marzipan.png",
+      "cat": "Backzutaten",
+      "de": "Marzipan",
+      "alias": [
+        "Marzipanrohmasse"
+      ],
+      "pt": "Marzipã",
+      "es": "Mazapán",
+      "tier": 2,
+      "ref": "packaged",
+      "subject": "a block of pale marzipan with one end cut, a thin slice lying in front"
+    },
+    {
+      "file": "Baking_Supplies_Desiccated_coconut.png",
+      "cat": "Backzutaten",
+      "de": "Kokosraspeln",
+      "alias": [
+        "Kokosflocken",
+        "Kokosnussraspeln"
+      ],
+      "pt": "Coco ralado",
+      "es": "Coco rallado",
+      "tier": 2,
+      "ref": "packaged",
+      "subject": "a loose mound of fine white desiccated coconut"
+    },
+    {
+      "file": "Baking_Supplies_Coconut_oil.png",
+      "cat": "Backzutaten",
+      "de": "Kokosöl",
+      "alias": [
+        "Kokosfett",
+        "Palmin"
+      ],
+      "pt": "Óleo de coco",
+      "es": "Aceite de coco",
+      "tier": 2,
+      "ref": "packaged",
+      "subject": "a plain unlabelled glass jar of solid white coconut oil with the lid off, a halved coconut beside it"
+    },
+    {
+      "file": "Baking_Supplies_Ready_rolled_pastry.png",
+      "cat": "Backzutaten",
+      "de": "Fertigteig",
+      "alias": [
+        "Blätterteig",
+        "Pizzateig",
+        "Mürbeteig",
+        "Quicheteig"
+      ],
+      "pt": "Massa pronta",
+      "es": "Masa refrigerada",
+      "tier": 2,
+      "ref": "bakery",
+      "subject": "a roll of ready-rolled raw pastry dough on plain parchment paper, partly unrolled flat"
+    },
+    {
+      "file": "Sauces_Worcestershire_sauce.png",
+      "cat": "Saucen & Aufstriche",
+      "de": "Worcestersauce",
+      "alias": [
+        "Worcester Sauce",
+        "Worcester"
+      ],
+      "pt": "Molho inglês",
+      "es": "Salsa Worcestershire",
+      "tier": 2,
+      "ref": "packaged",
+      "subject": "a slim plain unlabelled glass bottle of dark brown Worcestershire sauce with a small cap"
+    },
+    {
+      "file": "Sauces_Remoulade.png",
+      "cat": "Saucen & Aufstriche",
+      "de": "Remoulade",
+      "alias": [
+        "Aioli",
+        "Knoblauchsauce",
+        "Sauce Tartare"
+      ],
+      "pt": "Molho tártaro",
+      "es": "Salsa remoulade",
+      "tier": 2,
+      "ref": "packaged",
+      "subject": "a plain unlabelled glass jar of creamy pale yellow remoulade with visible chopped herbs and pickles, lid off"
+    },
+    {
+      "file": "Chocolate_Pralines.png",
+      "cat": "Schokolade & Süßes",
+      "de": "Pralinen",
+      "alias": [
+        "Praline",
+        "Konfekt",
+        "Trüffel"
+      ],
+      "pt": "Bombons",
+      "es": "Bombones",
+      "tier": 2,
+      "ref": "packaged",
+      "subject": "an assortment of six chocolate pralines and truffles arranged in a small cluster"
+    },
+    {
+      "file": "Snacks_Pistachios.png",
+      "cat": "Snacks & Knabbereien",
+      "de": "Pistazien",
+      "alias": [
+        "Pistazie"
+      ],
+      "pt": "Pistache",
+      "es": "Pistachos",
+      "tier": 2,
+      "ref": "produce",
+      "subject": "a loose heap of roasted pistachios in their split shells"
+    },
+    {
+      "file": "Vegetables_Chanterelles.png",
+      "cat": "Gemüse",
+      "de": "Pfifferlinge",
+      "alias": [
+        "Eierschwammerl",
+        "Pfifferling"
+      ],
+      "pt": "Cantarelos",
+      "es": "Rebozuelos",
+      "tier": 2,
+      "ref": "produce",
+      "subject": "a small heap of fresh golden-yellow chanterelle mushrooms"
+    },
+    {
+      "file": "Vegetables_Chestnuts.png",
+      "cat": "Gemüse",
+      "de": "Maronen",
+      "alias": [
+        "Maroni",
+        "Esskastanien",
+        "Kastanien"
+      ],
+      "pt": "Castanhas",
+      "es": "Castañas",
+      "tier": 2,
+      "ref": "produce",
+      "subject": "a small heap of glossy brown sweet chestnuts, two of them roasted and split open"
+    },
+    {
+      "file": "Vegetables_Bean_sprouts.png",
+      "cat": "Gemüse",
+      "de": "Sojasprossen",
+      "alias": [
+        "Bohnensprossen",
+        "Mungobohnensprossen",
+        "Mungbohnensprossen"
+      ],
+      "pt": "Broto de feijão",
+      "es": "Brotes de soja",
+      "tier": 2,
+      "ref": "produce",
+      "subject": "a loose tangle of fresh white mung bean sprouts"
+    },
+    {
+      "file": "Meat_Roast_beef.png",
+      "cat": "Fleisch & Fisch",
+      "de": "Roastbeef",
+      "alias": [
+        "Roastbeef Aufschnitt"
+      ],
+      "pt": "Rosbife",
+      "es": "Rosbif",
+      "tier": 2,
+      "ref": "meat",
+      "subject": "a piece of roast beef with a browned crust, cut to show the pink centre, thin slices fanned in front"
+    },
+    {
+      "file": "Meat_Leg_of_lamb.png",
+      "cat": "Fleisch & Fisch",
+      "de": "Lammkeule",
+      "alias": [
+        "Lammbraten",
+        "Lammhaxe"
+      ],
+      "pt": "Pernil de cordeiro",
+      "es": "Pierna de cordero",
+      "tier": 2,
+      "ref": "meat",
+      "subject": "a whole raw bone-in leg of lamb"
+    },
+    {
+      "file": "Pharmacy_Condoms.png",
+      "cat": "Apotheke",
+      "de": "Kondome",
+      "alias": [
+        "Kondom",
+        "Präservative"
+      ],
+      "pt": "Preservativos",
+      "es": "Preservativos",
+      "tier": 2,
+      "ref": "household",
+      "subject": "three sealed square foil condom wrappers in plain silver foil, overlapping, no printing"
+    },
+    {
+      "file": "Hygiene_Hair_ties.png",
+      "cat": "Hygiene",
+      "de": "Haargummis",
+      "alias": [
+        "Haargummi",
+        "Zopfgummi",
+        "Scrunchie"
+      ],
+      "pt": "Xuxinha",
+      "es": "Gomas del pelo",
+      "tier": 2,
+      "ref": "household",
+      "subject": "a small pile of elastic hair ties in assorted muted colours with one fabric scrunchie"
+    },
+    {
+      "file": "Hygiene_Hairspray.png",
+      "cat": "Hygiene",
+      "de": "Haarspray",
+      "alias": [
+        "Haarlack"
+      ],
+      "pt": "Laquê",
+      "es": "Laca",
+      "tier": 2,
+      "ref": "household",
+      "subject": "a plain unlabelled tall metallic aerosol can of hairspray with a clear cap"
+    },
+    {
+      "file": "Cleaning_Supplies_Stain_remover.png",
+      "cat": "Putzmittel",
+      "de": "Fleckentferner",
+      "alias": [
+        "Fleckenspray",
+        "Gallseife"
+      ],
+      "pt": "Tira-manchas",
+      "es": "Quitamanchas",
+      "tier": 2,
+      "ref": "household",
+      "subject": "a plain unlabelled white plastic trigger spray bottle of stain remover beside a bar of plain yellow gall soap"
+    },
+    {
+      "file": "Household_Coffee_filters.png",
+      "cat": "Haushalt",
+      "de": "Kaffeefilter",
+      "alias": [
+        "Filtertüten",
+        "Kaffeefiltertüten"
+      ],
+      "pt": "Filtro de café",
+      "es": "Filtros de café",
+      "tier": 2,
+      "ref": "household",
+      "subject": "a small stack of cone-shaped brown paper coffee filters"
+    },
+    {
+      "file": "Household_Clothes_pegs.png",
+      "cat": "Haushalt",
+      "de": "Wäscheklammern",
+      "alias": [
+        "Klammern",
+        "Wäscheklammer"
+      ],
+      "pt": "Prendedores de roupa",
+      "es": "Pinzas de la ropa",
+      "tier": 2,
+      "ref": "household",
+      "subject": "a small pile of wooden spring clothes pegs"
+    },
+    {
+      "file": "Frozen_Foods_Ice_cubes.png",
+      "cat": "Tiefkühlkost",
+      "de": "Eiswürfel",
+      "alias": [
+        "Crushed Ice",
+        "Eis Würfel"
+      ],
+      "pt": "Gelo",
+      "es": "Cubitos de hielo",
+      "tier": 2,
+      "ref": "packaged",
+      "subject": "a small heap of clear frosty ice cubes"
     }
   ]
 }

@@ -1,9 +1,11 @@
+import 'package:flutter/foundation.dart' show setEquals;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/board_data.dart';
 import '../models/event_link.dart';
 import '../models/task.dart';
 import '../models/tracker.dart';
+import '../models/visibility.dart';
 import '../models/who.dart';
 import '../state/auth_state.dart';
 import '../state/board_state.dart';
@@ -29,6 +31,7 @@ import '../widgets/visibility_picker.dart';
 import '../widgets/toast_chip.dart';
 import 'board/due_date_sheet.dart';
 import 'board/schedule_sheet.dart';
+import 'board/tracker_chart.dart';
 import 'board/tracker_detail.dart';
 import 'board/tracker_strip.dart';
 import '../state/tracker_state.dart';
@@ -191,26 +194,33 @@ class BoardScreen extends ConsumerWidget {
                     // former would be close enough to look right and wrong
                     // every time one was missed.
                     _TrackerCard(today: today, accent: accent, personFilter: state.personFilter),
-                    if (sections.isEmpty && !state.loading)
-                      _EmptyBoard(onAdd: () => _openNewTaskSheet(context, ref))
-                    else
-                      for (final section in sections) ...[
-                        _SectionHeading(
-                          title: _sectionTitle(section),
-                          overdue: section == BoardSection.overdue,
-                          count: tasksIn(section).length,
-                        ),
-                        if (tasksIn(section).isNotEmpty)
-                          SectionCard(
-                            // [dividedRows] rather than a border on the row itself:
-                            // the row used to sit under the day card's own header and
-                            // drew its own top rule, which at the top of a card of its
-                            // own would be a line against the card's edge.
-                            children: dividedRows([
-                              // The row plays the check-off animation first and only
-                              // then tells the notifier, so it strikes through in place
-                              // before moving to "Erledigt" — and an undone task slides
-                              // back in here from below.
+                    if (sections.isEmpty && !state.loading) ...[
+                      _EmptyBoard(onAdd: () => _openNewTaskSheet(context, ref)),
+                      if (done.isNotEmpty) const SizedBox(height: 14),
+                    ] else if (sections.isNotEmpty)
+                      _SectionHeading(
+                        title: L.s.tasksTitle,
+                        count: groups.fold(0, (n, g) => n + g.tasks.length),
+                      ),
+                    // Every open to-do in one card, the dated sections as labels
+                    // inside it. A card per section put five boxes on a busy
+                    // Board, and five boxes read as five different kinds of thing
+                    // when they are one list sorted by day.
+                    if (sections.isNotEmpty || done.isNotEmpty)
+                      SectionCard(
+                        children: [
+                          for (final (i, section) in sections.indexed) ...[
+                            if (i > 0) CardDivider(),
+                            _GroupLabel(
+                              title: _sectionTitle(section),
+                              count: tasksIn(section).length,
+                              overdue: section == BoardSection.overdue,
+                            ),
+                            ...dividedRows([
+                              // The row plays the check-off animation first and
+                              // only then tells the notifier, so it strikes through
+                              // in place before moving to "Erledigt" — and an
+                              // undone task slides back in here from below.
                               for (final task in tasksIn(section))
                                 CheckOffArrival(
                                   key: ValueKey(task.id),
@@ -234,7 +244,7 @@ class BoardScreen extends ConsumerWidget {
                                         accent: accent,
                                         strike: strike,
                                         onCheckOff: checkOff,
-                                        // Only where the heading doesn't already say
+                                        // Only where the label doesn't already say
                                         // it. "Heute" above a row stamped "13. Aug"
                                         // is the same fact printed twice.
                                         showDate: _sectionSpansDays(section),
@@ -244,55 +254,49 @@ class BoardScreen extends ConsumerWidget {
                                   ),
                                 ),
                             ]),
-                          ),
-                        const SizedBox(height: 18),
-                      ],
-                    if (done.isNotEmpty) ...[
-                      const SizedBox(height: 2),
-                      // The heading only pops into existence with the very first
-                      // done task — let it arrive with that row instead.
-                      CheckOffArrival(
-                        animate: done.length == 1 && done.first.id == state.justMoved,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(L.s.doneCountSeparator(done.length), style: AppText.caption),
-                              GestureDetector(
-                                onTap: notifier.clearDone,
-                                child: Text(L.s.delete, style: AppText.caption.copyWith(color: accent)),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      SectionCard(
-                        children: dividedRows([
-                          for (final task in done)
+                          ],
+                          if (done.isNotEmpty) ...[
+                            if (sections.isNotEmpty) CardDivider(),
+                            // The fold only pops into existence with the very
+                            // first done task — let it arrive with that row.
                             CheckOffArrival(
-                              key: ValueKey(task.id),
-                              animate: task.id == state.justMoved,
-                              // Undo runs the same animation backwards before the
-                              // task travels back up into the day card.
-                              child: CheckOffRow(
-                                undo: true,
-                                onCompleted: () => notifier.toggle(task),
-                                // Delete only, like a Listen article row: the whole
-                                // row already means "undo", and there is nothing
-                                // worth editing about a task that is finished. It
-                                // throws one away without clearing the lot.
-                                builder: (context, strike, undo) => SwipeToEditDelete(
-                                  identity: task.id,
-                                  onTap: undo,
-                                  onDelete: () => _deleteTask(context, ref, task),
-                                  child: _DoneRow(task: task, accent: accent, strike: strike, onUndo: undo),
-                                ),
+                              animate: done.length == 1 && done.first.id == state.justMoved,
+                              child: _DoneFoldRow(
+                                count: done.length,
+                                expanded: state.showDone,
+                                accent: accent,
+                                onTap: notifier.toggleShowDone,
+                                onClear: notifier.clearDone,
                               ),
                             ),
-                        ]),
+                            if (state.showDone)
+                              for (final task in done) ...[
+                                CardDivider(),
+                                CheckOffArrival(
+                                  key: ValueKey(task.id),
+                                  animate: task.id == state.justMoved,
+                                  // Undo runs the same animation backwards before
+                                  // the task travels back up into its section.
+                                  child: CheckOffRow(
+                                    undo: true,
+                                    onCompleted: () => notifier.toggle(task),
+                                    // Delete only, like a Listen article row: the
+                                    // whole row already means "undo", and there is
+                                    // nothing worth editing about a task that is
+                                    // finished. It throws one away without
+                                    // clearing the lot.
+                                    builder: (context, strike, undo) => SwipeToEditDelete(
+                                      identity: task.id,
+                                      onTap: undo,
+                                      onDelete: () => _deleteTask(context, ref, task),
+                                      child: _DoneRow(task: task, accent: accent, strike: strike, onUndo: undo),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                          ],
+                        ],
                       ),
-                    ],
                   ],
                 ),
               ),
@@ -417,7 +421,19 @@ class BoardScreen extends ConsumerWidget {
         final confirm = confirmChipOf(screen);
         final draft = ref.read(boardProvider);
 
+        // Opening a row and tapping the check without touching anything is
+        // "looked at it", not an edit: no write, and above all no
+        // "aktualisiert" chip reporting a change that never happened.
+        bool sameAudience(ItemVisibility visibility, List<String> sharedWith) =>
+            draft.newVisibility == visibility && setEquals(draft.newSharedWith, sharedWith.toSet());
+
         if (tracker != null) {
+          final unchanged = (_trimmedOrNull(text.text) ?? tracker.text) == tracker.text &&
+              _trimmedOrNull(notes.text) == _trimmedOrNull(tracker.meta) &&
+              ref.read(trackerProvider).newSchedule == tracker.schedule &&
+              draft.newAssigneeId == tracker.assigneeId &&
+              sameAudience(tracker.visibility, tracker.sharedWith);
+          if (unchanged) return;
           final saved = await trackerNotifier.updateTracker(
             tracker,
             text: text.text,
@@ -430,6 +446,13 @@ class BoardScreen extends ConsumerWidget {
           return;
         }
         if (task != null) {
+          final unchanged = (_trimmedOrNull(text.text) ?? task.text) == task.text &&
+              _trimmedOrNull(notes.text) == _trimmedOrNull(task.meta) &&
+              draft.newDueDate == task.dueDate &&
+              draft.newDueTime == task.dueTime &&
+              draft.newAssigneeId == task.assigneeId &&
+              sameAudience(task.visibility, task.sharedWith);
+          if (unchanged) return;
           if (await notifier.updateTask(task, text: text.text, meta: notes.text)) confirm(L.s.taskUpdated);
           return;
         }
@@ -517,6 +540,23 @@ class BoardScreen extends ConsumerWidget {
                     ),
                   ),
                   CardDivider(),
+                  // The notes, straight under the name they explain, as a bare
+                  // field like the title rather than a labelled card of their
+                  // own — the same move the event form made. Above the field
+                  // rows rather than below them: the two free-text answers stay
+                  // together, and a field that grows line by line pushes the
+                  // rows down instead of sitting under a chevron.
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    child: TextField(
+                      controller: notes,
+                      maxLines: null,
+                      textCapitalization: TextCapitalization.sentences,
+                      style: AppText.input,
+                      decoration: InputDecoration(border: InputBorder.none, hintText: L.s.addNotes, isDense: true),
+                    ),
+                  ),
+                  CardDivider(),
                   // Was a static row showing whatever day the week strip stood
                   // on — a chevron that did nothing, next to a date nobody could
                   // change. It asks the question properly now, and "—" is a real
@@ -581,28 +621,6 @@ class BoardScreen extends ConsumerWidget {
                       ),
                     ),
                   ],
-                ],
-              ),
-              const SizedBox(height: 14),
-              SectionCard(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(L.s.notes, style: AppText.microLabel),
-                        const SizedBox(height: 6),
-                        TextField(
-                          controller: notes,
-                          maxLines: null,
-                          textCapitalization: TextCapitalization.sentences,
-                          style: AppText.input,
-                          decoration: InputDecoration(border: InputBorder.none, hintText: L.s.addNotes, isDense: true),
-                        ),
-                      ],
-                    ),
-                  ),
                 ],
               ),
               const SizedBox(height: 14),
@@ -808,21 +826,17 @@ class _SectionHeading extends StatelessWidget {
   final String title;
   final int count;
 
-  /// The one heading that carries a colour — "Überfällig" is the only section
-  /// whose contents are a problem rather than a plan. Never a tracker: a rhythm
-  /// that slipped is not overdue, it is a gap.
-  final bool overdue;
-
-  const _SectionHeading({required this.title, required this.count, this.overdue = false});
+  // No "overdue" tint any more: "Überfällig" is a label inside the to-do card
+  // now, and carries the red itself — see [_GroupLabel].
+  const _SectionHeading({required this.title, required this.count});
 
   @override
   Widget build(BuildContext context) {
-    final tone = overdue ? AppColors.danger : AppColors.muted;
     return Padding(
       padding: const EdgeInsets.fromLTRB(6, 0, 6, 10),
       child: Row(
         children: [
-          Text(title, style: AppText.groupHeading.copyWith(letterSpacing: 0, color: tone)),
+          Text(title, style: AppText.groupHeading.copyWith(letterSpacing: 0, color: AppColors.muted)),
           const SizedBox(width: 7),
           Text(
             '$count',
@@ -996,6 +1010,17 @@ class _TrackerRow extends ConsumerWidget {
                         members: ref.watch(householdMembersProvider),
                         padding: const EdgeInsets.only(left: 6),
                       ),
+                    // The last week, the same strip Home draws beside a name —
+                    // here after the avatars, so the name keeps its whole line.
+                    // The squares are what make the row read as a rhythm rather
+                    // than one more to-do.
+                    const SizedBox(width: 10),
+                    TrackerWeekStrip(
+                      tracker: tracker,
+                      checkedDays: state.checksFor(tracker.id),
+                      today: today,
+                      accent: accent,
+                    ),
                   ],
                 ),
               ],
@@ -1052,6 +1077,89 @@ class _MoreTrackersRow extends StatelessWidget {
           children: [
             Text(L.s.moreTrackers(count), style: AppText.label.copyWith(color: accent)),
             const Spacer(),
+            AnimatedRotation(
+              turns: expanded ? 0.5 : 0,
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOut,
+              child: AppIcon(AppIcons.caretDown, size: 16, color: accent),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The text as the notifiers store it — trimmed, and empty meaning none — so
+/// the edit sheet can tell an untouched field from a changed one.
+String? _trimmedOrNull(String? value) {
+  final trimmed = value?.trim() ?? '';
+  return trimmed.isEmpty ? null : trimmed;
+}
+
+/// One dated section inside the to-do card — "Überfällig", "Heute", … — as a
+/// small label over its rows rather than a heading over a card of its own.
+class _GroupLabel extends StatelessWidget {
+  final String title;
+  final int count;
+
+  /// Red for "Überfällig" only, as the section headings were.
+  final bool overdue;
+
+  const _GroupLabel({required this.title, required this.count, this.overdue = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      child: Row(
+        children: [
+          Text(title, style: AppText.microLabel.copyWith(color: overdue ? AppColors.danger : null)),
+          const SizedBox(width: 6),
+          Text('$count', style: AppText.microLabel.copyWith(color: AppColors.mutedLight)),
+        ],
+      ),
+    );
+  }
+}
+
+/// "Erledigt · 4" at the foot of the to-do card, unfolding the finished rows
+/// under it. "Löschen" clears the lot, and is only offered while they are on
+/// screen — throwing away rows nobody is looking at would be a blind tap.
+class _DoneFoldRow extends StatelessWidget {
+  final int count;
+  final bool expanded;
+  final Color accent;
+  final VoidCallback onTap;
+  final VoidCallback onClear;
+
+  const _DoneFoldRow({
+    required this.count,
+    required this.expanded,
+    required this.accent,
+    required this.onTap,
+    required this.onClear,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 16),
+        child: Row(
+          children: [
+            Text(L.s.doneCountSeparator(count), style: AppText.label.copyWith(color: accent)),
+            const Spacer(),
+            if (expanded) ...[
+              GestureDetector(
+                onTap: onClear,
+                behavior: HitTestBehavior.opaque,
+                child: Text(L.s.delete, style: AppText.label.copyWith(color: accent)),
+              ),
+              const SizedBox(width: 14),
+            ],
             AnimatedRotation(
               turns: expanded ? 0.5 : 0,
               duration: const Duration(milliseconds: 180),

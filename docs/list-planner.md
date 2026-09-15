@@ -239,9 +239,12 @@ function is written; `claude-haiku-4-5` stands until something displaces it.
   other Plus value is `null` because unlimited costs us nothing. Thirty is a Vorhaben every day for
   a month, which no household will reach, and it is the ceiling that stops one scripted client from
   spending a hundred euros of somebody else's money.
-- **Plus a daily abuse limit in the function**, separate from the plan cap and for a different
-  reason. `create-share-link` already carries exactly this pair — a per-user daily rate limit
-  because people abuse things, and a plan cap because plans are plans. Copy it.
+- **A daily abuse limit only where there is no monthly cap — which today is nowhere.** It was built
+  for everybody first, copying `create-share-link`'s pair, and testing met it on day one: ten plans
+  in an afternoon on a Plus household with thirty a month got "genug für heute", and nothing on
+  screen could explain why thirty did not mean thirty. A monthly cap already bounds what a stolen
+  session can spend, so the second wall only ever stopped the household it was not for. It stays in
+  the function (10 per user per rolling 24 hours) so an unlimited tier cannot ship without one.
 - **A failed generation does not count.** The row is written after the model answers, the same rule
   the connect routes follow: *"verbunden" always means "we reached it just now"*.
 
@@ -338,8 +341,12 @@ per bucket, and a different four tomorrow), the remaining count, and one send bu
 affordance, and the difference between a parent typing something useful and turning back is
 knowing what shape of thing to type.
 
-**2. Working.** The field is replaced by one line showing what was asked. A skeleton where the answer
-will be, and a progress line that names the stage.
+**2. Working.** The field is replaced by one line showing what was asked, and that line carries the
+status island's wave on a loop (`WaveSweep`, `IslandSweep.loop`) — the app's one existing loading
+signal, so nothing new has to be learned. A skeleton where the answer will be, whose circles try on
+glyphs from the answer's own vocabulary (cart, pot, hammer, cake…) a row at a time, top to bottom, so
+the wait reads as a list being written. Not a guess at *this* plan's articles: nothing is known about
+them until the answer lands. And a progress line that names the stage.
 
 **Not streamed, in v1.** Streaming a *structured* answer means parsing partial JSON on the client to
 render anything at all, which is a lot of machinery to buy a progress bar; a fifteen-second wait for
@@ -361,7 +368,10 @@ returns a bool, so the caller has nothing to open, and awaiting the insert befor
 a visible pause on the one action the parent is watching. Worth doing — they are about to leave for
 the shop — but it is a change to `ListNotifier`'s signature, not to this card. One secondary,
 **Nochmal**, under it, puts the text back in the field for editing and says plainly that it costs
-another Vorhaben.
+another Vorhaben. **It scrolls the card's top back into view before the card shrinks.** The button
+sits at the foot of an answer several screens tall; shrinking from there left the card stuck at a
+stale height and the chips half-grown, because Listen's `ListView` does not lay out a child scrolled
+out of range and the size animations never got their frames.
 
 **No save, no history, no favourites.** The answer lives in the notifier and nowhere else; killing
 the app loses it. The artifact is the Liste, and the Liste is stored. Anything more turns a stamp
@@ -449,8 +459,9 @@ One new Edge Function, `list-plan`, and one new table. Nothing else in `supabase
 
 **The function.** Ordinary `verify_jwt = true` — there is a real session behind every call, so no
 entry in `config.toml`. It resolves the caller with `callerId`, reads their household from their
-membership row (**never from the request body**), checks the daily rate limit and then the plan cap
-through a new `canRunListPlan` in [_shared/entitlements.ts](../supabase/functions/_shared/entitlements.ts),
+membership row (**never from the request body**), checks the plan cap through `listPlanUsage` in
+[_shared/entitlements.ts](../supabase/functions/_shared/entitlements.ts) (or, on a plan without one,
+the daily rate limit),
 calls the model, validates the answer against the schema, writes the usage row and returns the typed
 object.
 
@@ -462,7 +473,29 @@ gate.
 **The table**, `public.list_plan_runs`: `id`, `family_id`, `created_by`, `created_at`, and the token
 counts for cost telemetry. **`authenticated` holds no INSERT grant** — only the function writes it,
 which is the same lock every other counted resource uses and the reason the count cannot be forged.
-SELECT is open to the household so the screen can print "noch 2 diesen Monat" without a second route.
+SELECT is open to the household, but the card does not use it: it prints what the function
+reports.
+
+**The count on the card is the server's.** `{mode: "usage"}` asks `list-plan` for the month without
+calling a model, and every real answer — plans and refusals alike — carries the same
+`usage: {used, limit, resetsAt, exempt}`. The card puts "Noch 27 von 30 Vorhaben diesen Monat"
+beside the send button, turns the button off at zero with the date it comes back, and never does
+the arithmetic itself: "3 free, 30 Plus" already exists in `_shared/entitlements.ts`, and a copy in
+Dart would be the one that drifts into offering a plan the function then refuses. `resetsAt` is
+the first of next month at 00:00 UTC and is **read in UTC**, or a household in São Paulo is told
+its plans come back on the 30th.
+
+**Limit refusals say when, and offer nothing to press.** "Anders formulieren" is shown only for an
+unusable answer or an unreachable provider, where other words or another try can help; a used-up
+month, a rate limit or a missing key refuse the rephrased goal the same way.
+
+**Lifting the limits for testing is a request the server may refuse.** A debug-only row in Settings
+(`plannerLimitsLiftedProvider`, in memory, off on every launch) makes the app send
+`ignoreLimits: true`. The function honours it only for a caller listed in
+`public.plan_limit_exemptions` — RLS on, no policies, `anon` and `authenticated` revoked, edited by
+hand in the SQL editor — and ignores it from everybody else, so the row in a patched build is worth
+nothing. Runs are still written while it is on; they cost money either way, and turning it off
+afterwards is exactly how the used-up state gets tested. The Settings **plan** switch travels the same way (`simulatePlan`): choosing Free there makes the server count and refuse at 3 for the exempt account, rather than only relabelling the app.
 
 **The prompt and the answer are not stored. Neither one, ever.** A household's dinner plans and
 their building projects are not ours to keep, the Liste is the artifact and it is already stored,
@@ -475,9 +508,9 @@ not store anybody's calendar*).
 never through `--dart-define`**. The first build did pass it through `--dart-define` "as a test
 path", which compiles it into the binary as plain text: anyone who unzips the `.ipa` or proxies
 their own phone reads it. No obfuscation fixes that, which is why the app now holds nothing but
-the user's session. Built as `supabase/functions/list-plan/` with `canRunListPlan` in
-`_shared/entitlements.ts` and `public.list_plan_runs` (`20260914130000_list_plan_runs.sql`); the
-daily abuse limit is 10 per user. The goal and the answer are neither stored nor logged — errors
+the user's session. Built as `supabase/functions/list-plan/` with `listPlanUsage` in
+`_shared/entitlements.ts`, `public.list_plan_runs` and `public.plan_limit_exemptions`; the daily
+abuse limit is 10 per user and applies only to a plan without a monthly cap. The goal and the answer are neither stored nor logged — errors
 log the provider's status code only.
 
 **Model and request shape — `claude-haiku-4-5`, decided 2026-09-13.** A strict schema via

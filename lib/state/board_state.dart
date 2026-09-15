@@ -72,6 +72,11 @@ class BoardState {
   /// somebody actually has at seven in the morning.
   final String? personFilter;
 
+  /// Whether "Erledigt" is unfolded at the foot of the to-do card. Folded by
+  /// default: finished rows are the least useful thing on the Board, and
+  /// listing them made a fifth card under the four that matter.
+  final bool showDone;
+
   final bool loading;
 
   /// German, and safe to render verbatim.
@@ -87,6 +92,7 @@ class BoardState {
     this.newDueDate,
     this.newDueTime,
     this.justMoved = '',
+    this.showDone = false,
     this.loading = true,
     this.error,
   });
@@ -105,6 +111,7 @@ class BoardState {
     String? justMoved,
     String? personFilter,
     bool clearPersonFilter = false,
+    bool? showDone,
     bool? loading,
     String? error,
     bool clearError = false,
@@ -119,6 +126,7 @@ class BoardState {
       newDueDate: clearDueDate ? null : (newDueDate ?? this.newDueDate),
       newDueTime: clearDueDate || clearDueTime ? null : (newDueTime ?? this.newDueTime),
       justMoved: justMoved ?? this.justMoved,
+      showDone: showDone ?? this.showDone,
       loading: loading ?? this.loading,
       error: clearError ? null : (error ?? this.error),
     );
@@ -237,6 +245,8 @@ class BoardNotifier extends StateNotifier<BoardState> {
   }
 
   void clearError() => state = state.copyWith(clearError: true);
+
+  void toggleShowDone() => state = state.copyWith(showDone: !state.showDone);
 
   void _fail(String message) {
     if (mounted) state = state.copyWith(error: message);
