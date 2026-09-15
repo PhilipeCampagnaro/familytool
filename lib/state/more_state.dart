@@ -28,3 +28,8 @@ class MoreNotifier extends StateNotifier<MoreSection> {
 }
 
 final moreProvider = StateNotifierProvider<MoreNotifier, MoreSection>((ref) => MoreNotifier());
+
+/// Whether the **Mehr** shelf is standing on the bar. Written only by the shell;
+/// read by Kalender's "Heute", which parks above the bar on the shelf's side
+/// and has to rise over the buttons rather than sit beside them.
+final moreShelfOpenProvider = StateProvider<bool>((ref) => false);

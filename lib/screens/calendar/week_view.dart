@@ -575,6 +575,13 @@ class _DayBody extends StatelessWidget {
 
   static const _radius = Radius.circular(26);
 
+  /// The glass '+' in the card's top-right corner, and the room
+  /// [_DayAgenda]'s title leaves for it.
+  static const addButtonSize = 32.0;
+  static const _addButtonTop = 14.0;
+  static const _addButtonRight = 12.0;
+  static const headingTrailingInset = addButtonSize + 8;
+
   @override
   Widget build(BuildContext context) {
     final below = this.below;
@@ -587,18 +594,45 @@ class _DayBody extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // **The day is clipped on its own, so the timeline's dot lattice
-          // stops at the divider.** `_DotCanvas` is sized by the hour grid — it
-          // has to be, because only the grid knows where an hour falls — and it
-          // overdraws in every direction so the dots carry on under the heading,
-          // under the all-day band and past the last hour. With the sections
-          // sharing this grey, an unclipped lattice would run on under them.
-          ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: _radius),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(14, 20, 16, 16),
-              child: child,
-            ),
+          Stack(
+            children: [
+              // **The day is clipped on its own, so the timeline's dot lattice
+              // stops at the divider.** `_DotCanvas` is sized by the hour grid —
+              // it has to be, because only the grid knows where an hour falls —
+              // and it overdraws in every direction so the dots carry on under
+              // the heading, under the all-day band and past the last hour. With
+              // the sections sharing this grey, an unclipped lattice would run on
+              // under them.
+              ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: _radius),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 20, 16, 16),
+                  child: child,
+                ),
+              ),
+              // Add an appointment without leaving Home — the same sheet as
+              // Kalender's '+', dated to whichever day the strip is on.
+              //
+              // **Here rather than in `_DayAgenda`'s title row**, because the
+              // day is an `AnimatedSwitcher` child that slides on every change
+              // of day, and a platform view smears when Flutter transforms it.
+              // Painted last so the native glass composites above the day.
+              Positioned(
+                top: _addButtonTop,
+                right: _addButtonRight,
+                child: Consumer(
+                  builder: (context, ref, _) => GlassIconButton(
+                    icon: AppIcons.plus,
+                    label: L.s.addEvent,
+                    size: addButtonSize,
+                    // One tier down from the header buttons' glyph, to suit the
+                    // smaller button.
+                    iconSize: AppGlyph.row,
+                    onTap: () => _openNewEventSheet(context, ref),
+                  ),
+                ),
+              ),
+            ],
           ),
           if (below != null) ...[
             Padding(
@@ -663,7 +697,8 @@ class _DayAgenda extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(left: 2, bottom: 14),
+          // Clear of `_DayBody`'s glass '+', which floats over this corner.
+          padding: const EdgeInsets.only(left: 2, right: _DayBody.headingTrailingInset, bottom: 14),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,

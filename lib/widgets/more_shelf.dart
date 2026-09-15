@@ -108,6 +108,17 @@ const kMoreShelfGap = 14.0;
 /// see `_NavLayer` in `main.dart`.
 const kMoreShelfSpacing = 12.0;
 
+/// Distance from the bottom of the screen to the top of the open shelf — for
+/// whatever else parks above the bar on its side and has to clear it
+/// (Kalender's "Heute").
+double moreShelfTop(BuildContext context, {double? barHeight}) {
+  final barTop = useNativeTabBar
+      ? nativeTabBarBottomInset(context) + (barHeight ?? kNativeTabBarHeight)
+      : 22.0 + kFlutterNavBarHeight;
+  final n = _entries.length;
+  return barTop + kMoreShelfGap + n * kCompactNavSize + (n - 1) * kMoreShelfSpacing;
+}
+
 /// How far each button rises into place. Generous, because the rise is all the
 /// entrance there is: the one thing a piece of real glass may not do on its way
 /// in is scale.

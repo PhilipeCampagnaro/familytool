@@ -325,19 +325,19 @@ class _MonthBlock extends ConsumerWidget {
                               ],
                             ),
                           ),
-                          // A bare glyph, the way every other dismiss in the
-                          // app is drawn. It sits inside the card rather than
-                          // over its corner: the card is a cross-fade child,
-                          // and [AnimatedCrossFade] clips to that child, so
-                          // anything hanging off the edge loses the half that
-                          // hangs. The padding is the tap target, not spacing.
-                          GestureDetector(
+                          // Glass, the same size as Home's '+' on its day card,
+                          // so the two grey day cards wear one control. It sits
+                          // inside the card rather than over its corner: the
+                          // card is a cross-fade child, and [AnimatedCrossFade]
+                          // clips to that child, so anything hanging off the
+                          // edge loses the half that hangs.
+                          const SizedBox(width: 8),
+                          GlassIconButton(
+                            icon: AppIcons.x,
+                            label: L.s.close,
+                            size: _DayBody.addButtonSize,
+                            iconSize: AppGlyph.row,
                             onTap: () => ref.read(calendarProvider.notifier).collapseMonthDetail(),
-                            behavior: HitTestBehavior.opaque,
-                            child: Padding(
-                              padding: const EdgeInsets.fromLTRB(12, 4, 2, 8),
-                              child: AppIcon(AppIcons.x, size: 17, color: AppColors.muted),
-                            ),
                           ),
                         ],
                       ),

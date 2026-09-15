@@ -228,9 +228,17 @@ class TabBarPlatformView: NSObject, FlutterPlatformView, UITabBarDelegate {
     }
     walk(bar)
 
-    let frames = named.isEmpty ? controls : named
     let platter = background.isNull ? glass : background
-    var found = named.isEmpty ? "shape:\(controls.count)" : "named:\(named.count)"
+    let count = CGFloat(max(bar.items?.count ?? 0, 1))
+    // **Nothing wider than an item is an item.** iOS 26 wraps the item views in
+    // a container whose class name matches the name pass too, and it spans the
+    // whole platter — so its midX is the middle of the bar, it out-ranked the
+    // real Mehr item, and the shelf stood in the middle of the screen.
+    let widest = (platter.isNull ? bar.bounds.width : platter.width) / count * 1.5
+    let plausible = { (frames: [CGRect]) in frames.filter { $0.width <= widest } }
+    let namedItems = plausible(named)
+    let frames = namedItems.isEmpty ? plausible(controls) : namedItems
+    var found = namedItems.isEmpty ? "shape:\(frames.count)" : "named:\(namedItems.count)"
     var last = frames.max(by: { $0.midX < $1.midX }) ?? .null
 
     // Neither pass found an item view, so the last resort: the band they were
@@ -239,7 +247,6 @@ class TabBarPlatformView: NSObject, FlutterPlatformView, UITabBarDelegate {
     // whole bar, which on an iOS 26 floating capsule is tens of points wrong
     // rather than a few.
     if last.isNull || last.width <= 1, !platter.isNull, platter.width > 1 {
-      let count = CGFloat(max(bar.items?.count ?? 0, 1))
       let slot = platter.width / count
       last = CGRect(x: platter.maxX - slot, y: platter.minY, width: slot, height: platter.height)
       found = "platter/\(Int(count))"

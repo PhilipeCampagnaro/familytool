@@ -34,9 +34,13 @@ Three more things differ per tab, all of them parameters rather than a flag on t
 - **The header's right-hand slot.** `_TitleRow.trailing` + `trailingWidth`, and it holds a
   different thing on each: Kalender's `_CalendarHeaderActions` capsule (100 wide), Home's profile
   avatar (52). Home carries **no header actions at all** — "Kalender verbinden" is a setup action
-  done a handful of times ever, and "neuer Termin" is something you do *to* the calendar rather
-  than something today asks of you; the only way to add an appointment from Home is the empty-day
-  state's own button. `_trailingSlot` is what the title clears at rest and is zero when the slot is
+  done a handful of times ever and does not belong in the header. Adding an appointment from Home
+  is a glass '+' in the day card's top-right corner (`_DayBody`), opening Kalender's own create
+  sheet dated to the selected day, so nobody has to leave Home to add one. It hangs on `_DayBody`
+  rather than in `_DayAgenda`'s title row because the day is an `AnimatedSwitcher` child that slides
+  on every change of day, and a platform view smears under a Flutter transform; the title leaves
+  `_DayBody.headingTrailingInset` clear for it. Kalender's day card closes with the same 32pt glass
+  control, an X. `_trailingSlot` is what the title clears at rest and is zero when the slot is
   empty, while `_collapsedSideInset` stays 108 on both tabs — at t == 1 what matters is that the
   two sides match, not that they are tight. Unlike `leading`, the slot is filled at every stage of
   the collapse, which is what keeps the one way into Settings on screen while the header is
@@ -335,32 +339,26 @@ the cross-account panel. Use
 `state.calendarFilterKey` in a `ValueKey` — a `Set` is identity-compared, so the key would never
 notice a filter change.
 
-`_CalendarPickerRoute` borrows `_FilterMenuSurface`'s material rather than a `GlassSurface`, for
-the reason recorded below: UIKit's own menus are a near-opaque vibrant material, and real glass
-over the month grid let the day numbers read straight through the rows.
+`_CalendarPickerRoute` and `_AllCalendarsPickerRoute` use a near-opaque material rather than a
+`GlassSurface`: UIKit's own menus are a near-opaque vibrant material, not liquid glass, and real
+glass over the month grid let the day numbers read straight through the rows.
 
 **Both** tabs show the chip row at rest and collapse it into the same compact glass dropdown
-(`_CalendarFilterButton`, opening `_FilterMenuRoute`) as the header scrolls away — the dropdown
-is *only* a collapsed-state stand-in, never shown alongside the chips. It lists the same accounts
-and indents each one's calendars underneath, so the one place a single calendar can be picked
-survives the header scrolling away. It's overlaid in
-`_TitleRow` via a `Stack` (not a `Row` child) so it can't push the expanded left-aligned title
-sideways, and fades in over the last 40% of the collapse (`_TitleRow._leadingOpacity`). Keep the
-two tabs' behaviour identical here.
+(`_CalendarFilterButton`) as the header scrolls away — the dropdown is *only* a collapsed-state
+stand-in, never shown alongside the chips. It's overlaid in `_TitleRow` via a `Stack` (not a `Row`
+child) so it can't push the expanded left-aligned title sideways, and fades in over the last 40% of
+the collapse (`_TitleRow._leadingOpacity`). Keep the two tabs' behaviour identical here. Its label
+("Alle", "3 Kalender") is set in `AppText.rowTitle`, the Heute pill's type, so the two floating
+glass controls on the screen read at one size.
 
-**On iOS the list is UIKit's own menu, not that panel.** `_openMenu` builds the rows once and
-hands them to `showNativeMenu` (`lib/services/native_menu.dart`); `_FilterMenuRoute` below is what
-everything else gets, and what iOS gets before 17.4. Three things carry across that the rows would
-be meaningless without: each calendar's colour as a filled dot (UIKit takes an SF Symbol or an
-image, and there is no symbol for "green"), the tick on the filter in force, and a "To-dos" row
-that toggles the overlay **without closing the menu** (`keepsOpen`, i.e. `.keepsMenuPresented`) —
-it flips its own checkmark natively, because the presented menu is a snapshot UIKit never re-asks
-for. What is lost is the indent: a UIKit menu has no margin, so an account and its calendars share
-a *section* — a hairline above the group — rather than a step into it.
-
-The menu panel (`_FilterMenuSurface`) is deliberately **not** a `GlassSurface` — UIKit's own
-menus are a near-opaque vibrant material, not liquid glass, and a glass panel let the month grid
-read straight through the rows.
+**Its menu is multi-select, and is the "Alle" chip's own list plus the to-do row.** It used to
+*replace* the filter with one row's worth and close, which made the only control left once the
+header had collapsed a single-choice picker standing in for a row of chips that can build any set.
+Every row now keeps the menu open and toggles (`toggleCalendarAnywhere`, `clearCalendarFilter`,
+`toggleTasks`) and pushes the whole tick set back with `updateNativeMenuSelection`, because one tick
+can move the others. On iOS 17.4+ that is UIKit's menu (`showNativeMenu`, `keepsOpen` →
+`.keepsMenuPresented`), each account a titled section with its calendars as coloured dots; everywhere
+else it is `_AllCalendarsPickerRoute` with `onToggleTasks` set, which adds the to-do row on top.
 
 ## The to-do overlay ("To-dos" chip)
 
@@ -420,8 +418,8 @@ something on it, which is what every other mark in the grid says.
 
 The detail box's header count stays `eventCount`, since it says "N Termine".
 
-The toggle survives the header collapsing: `_FilterMenuSurface` carries the same row at the bottom,
-behind the same rule, and it toggles in place rather than popping the route (`_FilterMenuRow.onTap`).
+The toggle survives the header collapsing: the collapsed dropdown carries the same row at the top,
+behind a rule, and it toggles in place like every other row there.
 The system menu keeps that promise with `keepsOpen` — see above.
 
 Session state, like `calendarFilter` — nothing on this screen is persisted, and one flag surviving

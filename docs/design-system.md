@@ -1436,7 +1436,7 @@ one.
   the divider above a row belongs *inside* the builder, so it folds away with the row instead of
   leaving a stray line; and a `StrikeThrough` under an `Expanded` needs an `Align` around it, or
   the line spans the whole row instead of stopping at the last glyph.
-- **Anchored menus** (`showAnchoredMenu`, and the Kalender filter's own `_FilterMenuRoute`): a
+- **Anchored menus** (`showAnchoredMenu`, and the Kalender filter's own `_AllCalendarsPickerRoute`): a
   custom `PopupRoute` that lays the finished panel out beside its anchor and fade +
   `ScaleTransition`s it out of the nearest corner (200ms in / 140ms out). Don't use `showMenu` —
   it grows the panel's height while staggering each item's fade, which over dense content reads as

@@ -22,6 +22,7 @@ import '../state/calendar_state.dart';
 import '../state/family_state.dart';
 import '../state/holidays_state.dart';
 import '../state/list_state.dart';
+import '../state/more_state.dart';
 import '../state/nav_state.dart';
 import '../state/notification_state.dart';
 import '../state/weather_state.dart';
@@ -35,6 +36,7 @@ import '../widgets/day_circle.dart';
 import '../widgets/event_dots.dart';
 import '../widgets/filter_chip.dart';
 import '../widgets/floating_pill.dart';
+import '../widgets/more_shelf.dart';
 import '../widgets/glass.dart';
 import '../widgets/native_glass_buttons.dart';
 import '../widgets/icon_picker.dart';
@@ -493,13 +495,18 @@ class _JumpToTodaySlot extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final nav = ref.watch(navBarProvider);
+    // The Mehr shelf stands on the same side, so while it is up "Heute" rises
+    // over its top button instead of sitting beside the column.
+    final shelfOpen = ref.watch(moreShelfOpenProvider);
     return AnimatedPositioned(
       duration: kNavSwapDuration,
       curve: Curves.easeInOutCubic,
       right: AppSpacing.screenPad,
       bottom: nav.compact
           ? navRowBottom(context, barHeight: nav.barHeight)
-          : navContentInset(context, pill: 106, gap: 36),
+          : shelfOpen
+              ? moreShelfTop(context, barHeight: nav.barHeight) + kMoreShelfSpacing
+              : navContentInset(context, pill: 106, gap: 36),
       child: _JumpToTodayButton(visible: visible, accent: accent, onTap: onTap),
     );
   }

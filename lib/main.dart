@@ -408,6 +408,7 @@ class _AppShellState extends ConsumerState<AppShell>
       _moreAnchor = _moreItemAnchor(itemFrame);
       _moreShelf = completer;
     });
+    ref.read(moreShelfOpenProvider.notifier).state = true;
     return completer.future;
   }
 
@@ -417,6 +418,7 @@ class _AppShellState extends ConsumerState<AppShell>
     final completer = _moreShelf;
     if (completer == null) return;
     setState(() => _moreShelf = null);
+    ref.read(moreShelfOpenProvider.notifier).state = false;
     completer.complete(section);
   }
 
@@ -447,10 +449,13 @@ class _AppShellState extends ConsumerState<AppShell>
     final box = _navBarKey.currentContext?.findRenderObject() as RenderBox?;
     if (box != null && box.hasSize) {
       final bar = box.localToGlobal(Offset.zero) & box.size;
-      if (itemFrame != null) {
+      final slot = bar.width / navTabs.length;
+      // A frame wider than an item, or not in the bar's right half, is not the
+      // Mehr item — an iOS 26 container view matched once and put the shelf in
+      // the middle of the screen. The fifth is a few points off; that was not.
+      if (itemFrame != null && itemFrame.width <= slot * 1.5 && itemFrame.center.dx > bar.center.dx) {
         return Rect.fromLTWH(itemFrame.left, bar.top, itemFrame.width, bar.height);
       }
-      final slot = bar.width / navTabs.length;
       return Rect.fromLTWH(bar.right - slot, bar.top, slot, bar.height);
     }
     if (itemFrame != null) return itemFrame;
