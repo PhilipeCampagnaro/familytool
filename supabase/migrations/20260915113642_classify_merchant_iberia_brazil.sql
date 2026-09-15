@@ -117,8 +117,9 @@ as $$
   end;
 $$;
 
--- Unchanged from the original grant, and restated because `create or replace`
--- keeps the old ACL only for a function it actually replaced in place. `private`
--- is what keeps this off the API; the revoke is not what was protecting it.
+-- Restated because `create or replace` keeps the old ACL only for a function it
+-- actually replaced in place — and it has to name `service_role` as well, which
+-- `grant_classify_merchant` found `spend-ingest` needs. `private` is what keeps
+-- this off the API; the revoke is not what was protecting it.
 revoke all on function private.classify_merchant(text) from public, anon;
-grant execute on function private.classify_merchant(text) to authenticated;
+grant execute on function private.classify_merchant(text) to authenticated, service_role;

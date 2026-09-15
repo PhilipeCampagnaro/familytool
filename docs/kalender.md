@@ -688,16 +688,23 @@ and the carousel that briefly replaced them are gone.
   - An **empty day** has no band, so there the Feiertag still stands alone — a day
     off with nothing planned is worth saying. Both day views carry that one
     conditional.
-  - **A chip carries a glyph**: a calendar page with the date on it
-    (`_DayPageMark`) for an all-day event, beside the Feiertag's confetti. That
-    one is **drawn rather than taken from the icon font**, which is the one place
+  - **The band shares the grid's gutter.** The row starts with a calendar page
+    with the date on it (`_DayPageMark`), right-aligned in `_gutter` where an
+    hour label would stand, so the chips start on the blocks' own left edge
+    instead of a gutter's width left of them. The page used to sit inside every
+    all-day chip; there it put the band and the grid on two different edges.
+    An all-day chip now carries the timeline block's **accent bar** instead, at
+    the block's radius rather than a capsule's (a capsule's corners cut a bar to
+    a sliver). The scroller is clipped on its left edge only
+    (`_ClipLeftEdge`), so a chip scrolled back doesn't slide over the page but
+    the row still runs off the right. The page is **drawn rather than taken from the icon font**, which is the one place
     in the app where that is right — every glyph in `AppIcons` is a shape that
     means something, and this has to *say* something, the date, which no font
     ships thirty-one of. Its number does not scale with the system text size: it
     is a glyph, and at an accessibility scale it would break out of a 17-point
-    page long before it helped anybody read it. Both are marks on a *day* rather than on an hour, and
-    with the chips at one size the glyph is what stops "Weihnachtsferien" and
-    "Altpapier" reading as two appointments that lost their times. A single-day
+    page long before it helped anybody read it. Standing in the gutter where the
+    hours are named, it is what says the row beside it is the whole day rather
+    than appointments that lost their times. A single-day
     all-day event prints no duration at all — a chip in this band already says it
     is all day, and "Ganztägig" beside the name was the band's own heading
     repeated once per chip.

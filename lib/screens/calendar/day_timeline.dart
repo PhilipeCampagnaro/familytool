@@ -300,22 +300,6 @@ class _HourGridState extends ConsumerState<_HourGrid> with SingleTickerProviderS
   static const _hourHeight = 68.0;
   static const _hourHeightCompact = 58.0;
 
-  /// The hour labels' column, and the gap to the blocks.
-  ///
-  /// **Sized to the widest label and not a point more.** It was 42, which is
-  /// what a gutter needs if it is going to hold "Ganztägig"; the band took that
-  /// word away and the number stayed behind, so nine points of every block's
-  /// width were being spent on empty gutter. 34 fits "12 PM" — wider than
-  /// "12:00" — at [AppText.microLabel], and the label shrinks rather than clips
-  /// past that.
-  ///
-  /// The labels stay **right-aligned**, hugging the rules the way every calendar
-  /// draws them. That also happens to be what lands them on the screen title's
-  /// own left edge: right-aligned in 34 from the card's 14, "15:00" starts at
-  /// about 24, which is exactly where the title starts.
-  static const _gutter = 34.0;
-  static const _gutterGap = 7.0;
-
   /// Between two blocks standing side by side.
   static const _blockGap = 4.0;
 
@@ -452,7 +436,29 @@ class _HourGridState extends ConsumerState<_HourGrid> with SingleTickerProviderS
   }
 }
 
-/// The stripe down a timeline block's left edge — see [_EventBlock].
+/// The hour labels' column, and the gap to the blocks — **and the all-day
+/// band's**, which is why they live out here rather than on the grid.
+///
+/// **Sized to the widest label and not a point more.** It was 42, which is
+/// what a gutter needs if it is going to hold "Ganztägig"; the band took that
+/// word away and the number stayed behind, so nine points of every block's
+/// width were being spent on empty gutter. 34 fits "12 PM" — wider than
+/// "12:00" — at [AppText.microLabel], and the label shrinks rather than clips
+/// past that.
+///
+/// The labels stay **right-aligned**, hugging the rules the way every calendar
+/// draws them. That also happens to be what lands them on the screen title's
+/// own left edge: right-aligned in 34 from the card's 14, "15:00" starts at
+/// about 24, which is exactly where the title starts.
+///
+/// The band above the clock keeps the same column: the day's page mark stands
+/// where an hour label would, so the all-day chips start on the blocks' own
+/// left edge rather than a gutter's width to the left of them.
+const _gutter = 34.0;
+const _gutterGap = 7.0;
+
+/// The stripe down a block's left edge — a timeline block's and an all-day
+/// chip's alike. See [_EventBlock].
 const _accentBar = 3.0;
 
 /// Nothing shorter than this, however short the appointment. A 10-minute block
@@ -1096,9 +1102,9 @@ class _EventBlock extends ConsumerWidget {
               // size whatever the clock gave it — a five-minute reminder and a
               // whole afternoon carry the same three points of it.
               //
-              // **Timeline blocks only.** The all-day pills above have no bar:
-              // they are chips, they sit in a band of their own, and a stripe
-              // down the side of a pill is a card pretending to be a row.
+              // The all-day chips above carry the same bar, and the day's
+              // calendar mark moved out of them into the gutter — so the band
+              // and the grid start on one edge and mark a calendar one way.
               Positioned(
                 left: 0,
                 top: 0,
@@ -1530,10 +1536,7 @@ class _DayBand extends StatelessWidget {
   final _DayPlan plan;
   final GermanHoliday? holiday;
 
-  /// The day being drawn — what the all-day chips put inside their calendar
-  /// mark. A Ferien block spans a fortnight and every one of those days draws
-  /// its own chip, so the number is the day you are looking at rather than the
-  /// one the event started on.
+  /// The day being drawn — the number on the calendar page in the gutter.
   final DateTime day;
 
   final String headingText;
@@ -1569,7 +1572,7 @@ class _DayBand extends StatelessWidget {
       for (final event in plan.allDay)
         ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: _maxChipWidth),
-          child: _AllDayPill(event: event, day: day, headingText: headingText),
+          child: _AllDayPill(event: event, headingText: headingText),
         ),
       for (final task in plan.untimedTodos)
         ConstrainedBox(
@@ -1584,20 +1587,43 @@ class _DayBand extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            // The row runs to the right edge and past it. No trailing inset: a
-            // chip cut by the screen is what says there is another one, exactly
-            // as the day strip above does it.
-            clipBehavior: Clip.none,
-            child: Row(
-              children: [
-                for (var i = 0; i < chips.length; i++) ...[
-                  if (i > 0) const SizedBox(width: _gap),
-                  chips[i],
-                ],
-              ],
-            ),
+          Row(
+            children: [
+              // **The day's page stands where an hour label would**, in the
+              // grid's own gutter and right-aligned like the labels, so the
+              // chips beside it start on the blocks' left edge. It is one mark
+              // for the whole band, where every all-day chip used to carry its
+              // own copy of the same date.
+              SizedBox(
+                width: _gutter,
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: _DayPageMark(day: day.day, ink: AppColors.muted),
+                ),
+              ),
+              const SizedBox(width: _gutterGap),
+              Expanded(
+                // Cut on the left only: a chip scrolled back must not slide
+                // over the page mark, but the right edge still runs past the
+                // card — a chip cut by the screen is what says there is another
+                // one, exactly as the day strip above does it.
+                child: ClipRect(
+                  clipper: const _ClipLeftEdge(),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    clipBehavior: Clip.none,
+                    child: Row(
+                      children: [
+                        for (var i = 0; i < chips.length; i++) ...[
+                          if (i > 0) const SizedBox(width: _gap),
+                          chips[i],
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
           // **One rule, where twelve were refused.** The hour lines came off
           // the day because a hairline drawn over and over is paper the
@@ -1621,14 +1647,28 @@ class _DayBand extends StatelessWidget {
   }
 }
 
-/// One all-day event in the band — [_HolidayChip]'s shape and scale, in its
-/// calendar's colour.
+/// Clips a band's left edge and nothing else. See [_DayBand].
+class _ClipLeftEdge extends CustomClipper<Rect> {
+  const _ClipLeftEdge();
+
+  /// Past the right, top and bottom by far more than a chip or the card's
+  /// padding — the clip is only there to stop at the gutter.
+  static const _reach = 10000.0;
+
+  @override
+  Rect getClip(Size size) => Rect.fromLTRB(0, -_reach, size.width + _reach, size.height + _reach);
+
+  @override
+  bool shouldReclip(_ClipLeftEdge oldClipper) => false;
+}
+
+/// One all-day event in the band — [_HolidayChip]'s scale, in its calendar's
+/// colour, with a timeline block's accent bar down the left.
 class _AllDayPill extends ConsumerWidget {
   final CalendarEvent event;
-  final DateTime day;
   final String headingText;
 
-  const _AllDayPill({required this.event, required this.day, required this.headingText});
+  const _AllDayPill({required this.event, required this.headingText});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -1642,48 +1682,58 @@ class _AllDayPill extends ConsumerWidget {
         _showEventDetailSheet(context, ref);
       },
       onLongPress: editable ? () => _openEventCardMenu(context, ref, event) : null,
+      // **The block's radius, not a capsule**: a bar down the side of a pill is
+      // cut to a sliver by its corners, and the chip and the blocks under it
+      // should read as the same object at two heights.
       child: Container(
-        padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
-        decoration: _blockChip(event.srcColor, radius: _chipRadius),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // A calendar page with the date on it, where the Feiertag chip
-            // beside it carries confetti. Both are marks on a *day* rather than
-            // on an hour, which is the whole of what the band is for — and with
-            // the chips now at one size, the glyph is what stops
-            // "Weihnachtsferien" and "Altpapier" reading as two appointments
-            // that happen to have lost their times.
-            _DayPageMark(day: day.day, ink: ink),
-            const SizedBox(width: 7),
-            Flexible(
-              child: Text(
-                event.title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppText.label.copyWith(color: ink, fontWeight: FontWeight.w600),
-              ),
-            ),
-            // "3 Tage" for a span, and nothing at all for a single day: a chip in
-            // the all-day band already says it is all day, and "Ganztägig"
-            // printed beside the name was the band's own heading repeated once
-            // per chip.
-            if (event.days.length > 1) ...[
-              const SizedBox(width: 8),
-              Text(
-                event.durationLabel,
-                maxLines: 1,
-                style: AppText.microLabel.copyWith(color: ink.withValues(alpha: 0.66)),
+        decoration: _blockChip(event.srcColor),
+        clipBehavior: Clip.hardEdge,
+        child: IntrinsicHeight(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SizedBox(width: _accentBar, child: ColoredBox(color: event.srcColor)),
+              Flexible(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(9, 6, 12, 6),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          event.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppText.label.copyWith(color: ink, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                      // "3 Tage" for a span, and nothing at all for a single
+                      // day: a chip in the all-day band already says it is all
+                      // day, and "Ganztägig" printed beside the name was the
+                      // band's own heading repeated once per chip.
+                      if (event.days.length > 1) ...[
+                        const SizedBox(width: 8),
+                        Text(
+                          event.durationLabel,
+                          maxLines: 1,
+                          style: AppText.microLabel.copyWith(color: ink.withValues(alpha: 0.66)),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
               ),
             ],
-          ],
+          ),
         ),
       ),
     );
   }
 }
 
-/// A calendar page with the date on it — the mark an all-day chip carries.
+/// A calendar page with the date on it — the mark the all-day band carries in
+/// the grid's gutter.
 class _DayPageMark extends StatelessWidget {
   final int day;
   final Color ink;
