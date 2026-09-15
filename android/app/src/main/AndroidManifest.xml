@@ -6,6 +6,22 @@
          with nothing on screen to explain it. Aporah is a backend app on both
          platforms, so the permission belongs here, in the manifest that ships. -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Scheduled notifications — see LocalNotifications.kt and
+         docs/notifications.md. POST_NOTIFICATIONS is the Android 13 runtime
+         permission, asked at the moment a reminder is set rather than at
+         launch. It is a different grant from the notification *access* the
+         wallet listener below needs: this one lets the app post, that one lets
+         it read, and the two are explained in different places on purpose.
+
+         SCHEDULE_EXACT_ALARM, not USE_EXACT_ALARM: the latter is granted
+         silently but Play restricts it to alarm-clock and calendar apps by
+         declaration. Without the grant alarms fall back to inexact, which is a
+         reminder a few minutes late rather than a missing one.
+
+         RECEIVE_BOOT_COMPLETED because a reboot clears every alarm. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <application
         android:label="Aporah"
         android:name="${applicationName}"
@@ -90,6 +106,18 @@
                 <action android:name="android.service.notification.NotificationListenerService"/>
             </intent-filter>
         </service>
+
+        <!-- Posts a scheduled notice, and re-arms the set after a reboot or an
+             update. Not exported: the alarms that fire it are ours, and the two
+             system broadcasts are delivered to unexported receivers regardless. -->
+        <receiver
+            android:name=".NoticeReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+            </intent-filter>
+        </receiver>
 
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->

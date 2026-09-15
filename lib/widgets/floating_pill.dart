@@ -66,7 +66,7 @@ class _FloatingGlassPillState extends State<FloatingGlassPill> {
       mainAxisSize: MainAxisSize.min,
       children: [
         if (icon != null) ...[
-          AppIcon(icon, size: rowShape ? 18 : 15, color: widget.accent, flat: true),
+          AppIcon(icon, size: rowShape ? AppGlyph.row : AppGlyph.inline, color: widget.accent, flat: true),
           const SizedBox(width: 7),
         ],
         Text(
@@ -115,7 +115,7 @@ class _FloatingGlassPillState extends State<FloatingGlassPill> {
               ),
             ],
             tint: widget.accent,
-            iconSize: widget.onNavRow ? 18 : 15,
+            iconSize: widget.onNavRow ? AppGlyph.row : AppGlyph.inline,
             sizer: _box,
           )
         : GestureDetector(

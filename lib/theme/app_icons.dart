@@ -49,7 +49,7 @@ import 'package:flutter/widgets.dart';
 /// the same set: [_family] is what an icon is *named* in, [_flatFamily] is
 /// what it is drawn in whenever the duotone is not wanted — see [_flat].
 const _family = 'PhosphorDuotone';
-const _flatFamily = 'PhosphorBold';
+const _flatFamily = 'PhosphorRegular';
 
 /// Every glyph the app draws, under Phosphor's own names.
 ///
@@ -428,7 +428,7 @@ const Map<int, IconData> _underLayers = {
   0xe4f9: IconData(0xe4f8, fontFamily: _family),
 };
 
-/// The **Bold** weight of each glyph, keyed by its duotone over-layer
+/// The **single-weight** (Regular) glyph, keyed by its duotone over-layer
 /// codepoint — the single-weight icon Phosphor draws when there is no second
 /// layer, which is a different drawing from the duotone's top layer and not
 /// merely the same one without a fill.
@@ -442,29 +442,37 @@ const Map<int, IconData> _underLayers = {
 /// `pencilSimple`, `trash`, `camera`, `qrCode`, `calendarPlus` are identical —
 /// but "most" is not something a button should depend on.
 ///
-/// ## Why Bold and not Regular
+/// ## Why Regular, and why it was Bold
 ///
-/// Phosphor's Regular is a lighter line than the Lucide it replaced — Lucide
-/// draws at 2px on a 24px grid, Phosphor Regular below that — and a control's
-/// glyph is small, so at the 15–22px these are drawn the difference reads as a
-/// button whose icon has gone faint. Apple's own bar buttons are not drawn at a
-/// text weight either. Bold is the set's next step up and lands roughly where
-/// an SF Symbol in a nav bar sits. **Every weight of Phosphor shares one
-/// codepoint per glyph**, so this is a font swap and not a table edit: the
-/// numbers below are the same for Regular, Bold or Thin, and changing
-/// [_flatFamily] changes all 171 at once.
+/// This was Bold, on the reading that Phosphor's Regular is a lighter line than
+/// the Lucide it replaced and went faint at the 15–22px a control is drawn at.
+/// Both halves of that are true and the conclusion was still wrong, because the
+/// *size* was wrong: a flat glyph was drawn at an em of 19, and a Phosphor
+/// glyph fills only 57–86% of its em, so about 15pt of ink landed where iOS's
+/// own bar button puts 21. Bold was a heavier stroke compensating for a glyph
+/// drawn too small — two errors that cancelled, which is exactly why it read as
+/// "small, and the weight is off" rather than as either one alone.
 ///
-/// So: **flat means the Bold weight**, not the duotone with its under-layer
+/// Measured against the real symbols: at `AppGlyph.button` the set's Regular
+/// draws a 21.4pt magnifier with a 1.63pt stroke, where SF at 17pt `.large`
+/// draws 21.0pt and 1.62pt. Bold at the same size is 2.25pt — 39% heavier than
+/// the symbol beside it. So the size moved and the weight came back down.
+///
+/// **Every weight of Phosphor shares one codepoint per glyph**, so this is a
+/// font swap and not a table edit: the numbers below are the same for Regular,
+/// Bold or Thin, and changing [_flatFamily] changes all 171 at once.
+///
+/// So: **flat means the Regular weight**, not the duotone with its under-layer
 /// left off. [AppIcon] reads this whenever it is not stacking two layers, which
 /// covers both `flat: true` controls and the fourteen bare marks.
 /// The glyph [icon] is actually drawn as when it is drawn flat — [_flat]'s
-/// entry, or the icon itself where the set has no Bold twin for it. Exactly
+/// entry, or the icon itself where the set has no flat twin for it. Exactly
 /// what [AppIcon] resolves internally, exposed for the one caller that cannot
 /// let Flutter do the drawing: the native Liquid Glass button hands its glyph
 /// to UIKit, so it needs the codepoint *and* the family that pair actually
-/// lives in. The two weights do **not** share a codepoint space — Bold holds
-/// 1513 glyphs where Duotone holds 3022, because a duotone glyph is a pair —
-/// so sending the [AppIcons] constant's own codepoint to a Bold font draws a
+/// lives in. The two weights do **not** share a codepoint space — Regular maps
+/// 1543 codepoints where Duotone maps 3025, because a duotone glyph is a pair —
+/// so sending the [AppIcons] constant's own codepoint to the flat font draws a
 /// missing-glyph box.
 IconData flatIcon(IconData icon) => _flat[icon.codePoint] ?? icon;
 
@@ -473,7 +481,7 @@ IconData flatIcon(IconData icon) => _flat[icon.codePoint] ?? icon;
 /// moves both at once.
 const Map<String, String> _fontAssets = {
   _family: 'assets/icons/Phosphor-Duotone.ttf',
-  _flatFamily: 'assets/icons/Phosphor-Bold.ttf',
+  _flatFamily: 'assets/icons/Phosphor-Regular.ttf',
 };
 
 /// The font file [icon] is drawn from — see [flatIcon].

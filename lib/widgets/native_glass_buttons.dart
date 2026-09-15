@@ -17,9 +17,11 @@ const kNavBarSymbolPointSize = 17.0;
 /// does — see [kNavBarSymbolPointSize] — but the bar draws its glyphs *on the
 /// bar*, where [regular] is right, and the `Mehr` shelf draws the same glyph on
 /// a 62pt glass circle floating over a screen, where it reads thin beside the
-/// Phosphor **Bold** every other control in the app is set in. One step up
-/// rather than two: [semibold] at this size starts to look like a different
-/// icon set.
+/// Phosphor every other control in the app is set in. Measured: at 17pt SF's
+/// own [regular] draws a 1.25–1.50pt line and [medium] a 1.44–1.75pt one, where
+/// Phosphor Regular at [AppGlyph.button] draws 1.63pt — so [medium] is the step
+/// that brackets it. One step up rather than two: [semibold] at this size
+/// starts to look like a different icon set.
 enum NativeSymbolWeight { light, regular, medium, semibold, bold }
 
 /// One button of a [NativeGlassButtons] row.
@@ -31,9 +33,9 @@ enum NativeSymbolWeight { light, regular, medium, semibold, bold }
 ///
 /// **It is `flatIcon(icon)` that goes over, never [icon] itself.** The two
 /// Phosphor weights do not share a codepoint space — a duotone glyph is a pair,
-/// so Duotone holds 3022 where Bold holds 1513 — and sending an [AppIcons]
-/// constant's own codepoint to the Bold font draws a missing-glyph box, which
-/// is exactly what the first version of this did.
+/// so Duotone maps 3025 codepoints where Regular maps 1543 — and sending an
+/// [AppIcons] constant's own codepoint to the flat font draws a missing-glyph
+/// box, which is exactly what the first version of this did.
 ///
 /// [label] is never drawn; it is the button's accessible name, which an icon
 /// hasn't got.
@@ -65,6 +67,10 @@ class NativeGlassButton {
   /// glass pills are set in.
   final TextStyle? titleStyle;
 
+  /// Puts the glyph *after* the [title] rather than before it — a dropdown's
+  /// caret, which reads as "opens" only when it trails the word it opens.
+  final bool iconTrailing;
+
   final VoidCallback onTap;
 
   const NativeGlassButton({
@@ -73,6 +79,7 @@ class NativeGlassButton {
     required this.label,
     this.title,
     this.titleStyle,
+    this.iconTrailing = false,
     required this.onTap,
   });
 
@@ -82,10 +89,11 @@ class NativeGlassButton {
       other.icon == icon &&
       other.symbol == symbol &&
       other.label == label &&
-      other.title == title;
+      other.title == title &&
+      other.iconTrailing == iconTrailing;
 
   @override
-  int get hashCode => Object.hash(icon, symbol, label, title);
+  int get hashCode => Object.hash(icon, symbol, label, title, iconTrailing);
 }
 
 /// **The real UIKit Liquid Glass button** — `UIButton.Configuration.glass()`,
@@ -121,6 +129,8 @@ class NativeGlassButtons extends StatefulWidget {
   /// button wants.
   final Color? tint;
 
+  /// The em a Phosphor glyph is drawn at — see [AppGlyph], which is where the
+  /// number comes from and why it is not the box the glyph fills.
   final double iconSize;
 
   /// The **type** size an SF Symbol is drawn at, which is not a box and not
@@ -153,7 +163,7 @@ class NativeGlassButtons extends StatefulWidget {
     required this.buttons,
     this.prominent = false,
     this.tint,
-    this.iconSize = 19,
+    this.iconSize = AppGlyph.button,
     this.symbolSize = kNavBarSymbolPointSize,
     this.symbolWeight = NativeSymbolWeight.medium,
     this.sizer,
@@ -247,6 +257,7 @@ class _NativeGlassButtonsState extends State<NativeGlassButtons> {
       'titleFont': ?(style == null ? null : AppText.fontAsset(style)),
       'titleSize': ?style?.fontSize,
       'titleColor': ?style?.color?.toARGB32(),
+      if (button.iconTrailing) 'iconTrailing': true,
     };
   }
 

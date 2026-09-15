@@ -530,7 +530,7 @@ class _ContextLine extends StatelessWidget {
       children: [
         // Carets rather than arrows: the set has no `arrowDown`, and a caret
         // pair is the mark a reader already knows means up and down.
-        AppIcon(up ? AppIcons.caretUp : AppIcons.caretDown, size: 12, flat: true, color: color),
+        AppIcon(up ? AppIcons.caretUp : AppIcons.caretDown, size: AppGlyph.inline, flat: true, color: color),
         const SizedBox(width: 4),
         Text(
           formatMoneyShort(change.abs(), currency: spendCurrency(summary.rows)),
@@ -552,7 +552,7 @@ class _ContextLine extends StatelessWidget {
         children: [
           // Ink, to match the dashed rule it is describing — which is ink
           // because the bars under it are now the accent.
-          AppIcon(AppIcons.chartBar, size: 13, flat: true, color: AppColors.ink),
+          AppIcon(AppIcons.chartBar, size: AppGlyph.inline, flat: true, color: AppColors.ink),
           const SizedBox(width: 5),
           Flexible(
             child: Text(
@@ -739,7 +739,7 @@ class _MetricChipState extends ConsumerState<_MetricChip> {
           children: [
             Text(widget.metric.label, style: AppText.buttonSmall.copyWith(color: AppColors.inkSecondary)),
             const SizedBox(width: 4),
-            AppIcon(AppIcons.caretUpDown, size: 12, flat: true, color: AppColors.muted),
+            AppIcon(AppIcons.caretUpDown, size: AppGlyph.inline, flat: true, color: AppColors.muted),
           ],
         ),
       ),
@@ -827,7 +827,7 @@ class _RangeSlicerState extends ConsumerState<_RangeSlicer> {
                 child: Center(
                   child: AppIcon(
                     AppIcons.calendarDots,
-                    size: 18,
+                    size: AppGlyph.row,
                     flat: true,
                     color: custom ? AppColors.accent : AppColors.inkSecondary,
                   ),
@@ -878,7 +878,7 @@ class _Card extends StatelessWidget {
         Flexible(child: Text(title, style: AppText.sectionHeading, maxLines: 1, overflow: TextOverflow.ellipsis)),
         if (onTitleTap != null) ...[
           const SizedBox(width: 5),
-          AppIcon(AppIcons.caretDown, size: 13, flat: true, color: AppColors.muted),
+          AppIcon(AppIcons.caretDown, size: AppGlyph.inline, flat: true, color: AppColors.muted),
         ],
       ],
     );
@@ -955,7 +955,7 @@ class _ShowAll extends StatelessWidget {
         children: [
           Text(label, style: AppText.buttonSmall.copyWith(color: AppColors.accent)),
           const SizedBox(width: 2),
-          AppIcon(AppIcons.caretRight, size: 13, flat: true, color: AppColors.accent),
+          AppIcon(AppIcons.caretRight, size: AppGlyph.inline, flat: true, color: AppColors.accent),
         ],
       ),
     );

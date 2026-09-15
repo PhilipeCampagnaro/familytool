@@ -14,6 +14,7 @@ import 'screens/list_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/start_screen.dart';
 import 'models/entitlements.dart';
+import 'services/app_review.dart';
 import 'services/spend_intent.dart';
 import 'services/supabase.dart';
 import 'state/auth_state.dart';
@@ -21,6 +22,8 @@ import 'state/calendar_state.dart';
 import 'state/family_state.dart';
 import 'state/more_state.dart';
 import 'state/nav_state.dart';
+import 'state/notification_scheduler.dart';
+import 'state/notification_state.dart';
 import 'state/settings_state.dart';
 import 'theme/app_icons.dart';
 import 'theme/app_theme.dart';
@@ -254,12 +257,12 @@ List<Widget> _buildScreens() => [
 
 /// The tabs whose scrolling compacts the nav bar (see [navBarProvider]).
 ///
-/// Both halves of the calendar: Home is its week view and Kalender its month
-/// grid. They are the screens where the rows are wide, dense and read for a
-/// while, so the bar has the most to gain by getting out of the way — and the
-/// least to lose, since nothing on either is a step in a flow that needs
-/// another tab. See [calendarTabIndex] for why the indices have names at all.
-const _compactingTabs = {homeTabIndex, calendarTabIndex};
+/// Kalender only. Its grid is wide, dense and read for a while, so the bar has
+/// the most to gain by getting out of the way. **Home did this too and no
+/// longer does**: it holds a day, a few to-dos and the trackers — too little to
+/// scroll far enough for a collapse to buy anything, so it was all motion and
+/// no room. See [calendarTabIndex] for why the indices have names at all.
+const _compactingTabs = {calendarTabIndex};
 
 class AppShell extends ConsumerStatefulWidget {
   const AppShell({super.key});
@@ -307,6 +310,15 @@ class _AppShellState extends ConsumerState<AppShell>
     super.initState();
     _controller.value = 1;
     WidgetsBinding.instance.addObserver(this);
+    // After the first frame, so neither competes with it. On iOS this is the
+    // quiet, dialog-free notification grant the morning brief and the bins ride
+    // on; the real prompt waits for a reminder somebody actually sets. And the
+    // household's shell being up is where "use" starts for the rating prompt.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      unawaited(ref.read(notificationSettingsProvider.notifier).requestQuietly());
+      unawaited(reviewPrompt.noteLaunch());
+    });
   }
 
   @override
@@ -335,6 +347,10 @@ class _AppShellState extends ConsumerState<AppShell>
     if (state != AppLifecycleState.resumed) return;
     if (!mounted) return;
     unawaited(ref.read(calendarProvider.notifier).refreshIfStale());
+    // The grant can have changed in system settings while we were away, and
+    // time has passed: this morning's brief is no longer pending.
+    unawaited(ref.read(notificationSettingsProvider.notifier).refreshAccess());
+    ref.read(noticeSchedulerProvider).poke();
   }
 
   void _expandNav() => ref.read(navBarProvider.notifier).expand();
@@ -465,6 +481,10 @@ class _AppShellState extends ConsumerState<AppShell>
 
   @override
   Widget build(BuildContext context) {
+    // Keeps the device's pending notifications equal to what is on screen, for
+    // as long as a household is. See [NoticeScheduler].
+    ref.watch(noticeSchedulerProvider);
+
     // A link tapped on another tab — the calendar icon on a task, the list card
     // in an event's sheet. The shell owns the tab and does that half; the
     // payload is left in place for the destination screen's own listener, which
@@ -504,8 +524,7 @@ class _AppShellState extends ConsumerState<AppShell>
     // `Offstage` rather than dropping it from the tree, so the native bar isn't
     // torn down and re-measured on every keystroke session.
     final keyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
-    // Only the two calendar tabs compact the bar, and only while one of them
-    // is the tab on screen.
+    // Only Kalender compacts the bar, and only while it is the tab on screen.
     final nav = ref.watch(navBarProvider);
     final compact = nav.compact && _compactingTabs.contains(_index);
     // Which of Mehr's two buttons reads as the one in force. Only while that
@@ -718,7 +737,7 @@ class _NavLayerState extends State<_NavLayer> with SingleTickerProviderStateMixi
             child: _NavShape(
               t: _t,
               compactShape: true,
-              child: CompactNavButton(icon: navTabs[widget.index].compactIcon, onTap: widget.onExpand),
+              child: CompactNavButton(tab: navTabs[widget.index], onTap: widget.onExpand),
             ),
           ),
           // Last, so the buttons sit over the bar's glass rather than under

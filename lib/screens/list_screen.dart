@@ -11,7 +11,6 @@ import '../models/event_link.dart';
 import '../models/grocery_unit.dart';
 import '../models/shopping_list.dart';
 import '../services/external_links.dart';
-import '../services/list_planner.dart';
 import '../services/media_picker.dart';
 import '../state/auth_state.dart';
 import '../state/family_state.dart';
@@ -123,11 +122,9 @@ class _ListOverview extends ConsumerWidget {
 
   const _ListOverview({required this.state});
 
-  /// First-frame estimate only — the island's row plus the gap above it, and
-  /// nothing at all in a build without Vorhaben, which leaves Listen with no
-  /// collapsing block. [CollapsingHeaderScreen] re-measures the real thing once
-  /// it's laid out.
-  static double get _extraHeight => plannerAvailable ? 16 + ListIsland.rowHeight : 0;
+  /// First-frame estimate only — the island's row plus the gap above it.
+  /// [CollapsingHeaderScreen] re-measures the real thing once it's laid out.
+  static double get _extraHeight => 16 + ListIsland.rowHeight;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -137,20 +134,18 @@ class _ListOverview extends ConsumerWidget {
       searchPrompt: L.s.searchListsAndItemsLong,
       onAdd: () => openListSheet(context, ref),
       addLabel: L.s.newList,
-      // The one line under the title, and the way into Vorhaben. Absent
-      // entirely when no key was compiled in, which is every build nobody
-      // deliberately configured — see `plannerAvailable`. An invitation to a
-      // sheet that can only fail is worse than no invitation. Not `const`: it
-      // reads the palette in its own build, see `tool/check_const_palette.dart`.
-      headerExtra: plannerAvailable
-          ? SizedBox(height: ListIsland.rowHeight, child: Row(children: [Expanded(child: ListIsland())]))
-          : null,
+      // The one line under the title, and the way into Vorhaben. Always drawn:
+      // the model is behind `list-plan` now, so no build is "unconfigured" —
+      // a project missing the secret says so in the card rather than hiding
+      // the feature. Not `const`: it reads the palette in its own build, see
+      // `tool/check_const_palette.dart`.
+      headerExtra: SizedBox(height: ListIsland.rowHeight, child: Row(children: [Expanded(child: ListIsland())])),
       extraHeight: _extraHeight,
       body: (context) => [
         // Vorhaben, unfolding from the island above it. Always in the tree so
         // it can size and fade in both directions (see the expand/collapse rule
         // in docs/design-system.md); it draws nothing at all while closed.
-        if (plannerAvailable) PlannerCard(),
+        PlannerCard(),
         if (_loadFailed)
           Padding(
             padding: const EdgeInsets.only(bottom: 18),
@@ -1641,6 +1636,11 @@ class _LinkLine extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // **The one flat glyph that is not on the [AppGlyph] scale**, and
+            // deliberately: the smallest tier there is sized against caption
+            // type, and this mark belongs to a domain set smaller than that.
+            // A glyph that out-measures its own word stops reading as part of
+            // it — see the note on [AppGlyph].
             AppIcon(AppIcons.link, size: 11, color: accent, flat: true),
             const SizedBox(width: 4),
             Flexible(

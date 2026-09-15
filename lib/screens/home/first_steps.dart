@@ -151,7 +151,7 @@ class _FirstStepRow extends ConsumerWidget {
     FirstStep.calendar => AppIcons.calendarPlus,
     FirstStep.family => AppIcons.userPlus,
     FirstStep.todo => AppIcons.checkCircle,
-    FirstStep.tracker => AppIcons.repeat,
+    FirstStep.tracker => AppIcons.circleDashed,
     FirstStep.list => AppIcons.listPlus,
   };
 
@@ -230,7 +230,7 @@ class _FirstStepRow extends ConsumerWidget {
               ),
             ),
             const SizedBox(width: 8),
-            AppIcon(AppIcons.caretRight, size: 15, color: AppColors.mutedLight, flat: true),
+            AppIcon(AppIcons.caretRight, size: AppGlyph.caret, color: AppColors.mutedLight, flat: true),
           ],
         ),
       ),

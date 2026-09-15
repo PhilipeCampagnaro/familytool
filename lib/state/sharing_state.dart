@@ -31,7 +31,6 @@ extension ShareableKindLabel on ShareableKind {
 /// revoked and replaced.
 class ShareLink {
   final String id;
-  final bool canEdit;
   final DateTime? expiresAt;
   final int useCount;
   final int? maxUses;
@@ -39,7 +38,6 @@ class ShareLink {
 
   const ShareLink({
     required this.id,
-    required this.canEdit,
     this.expiresAt,
     this.useCount = 0,
     this.maxUses,
@@ -57,7 +55,6 @@ class Guest {
   final String name;
   final String initials;
   final int tone;
-  final bool canEdit;
 
   /// A signed URL for their picture, like a member's — a guest on a shared list
   /// is a person the household is looking at, and there is no reason for them
@@ -69,7 +66,6 @@ class Guest {
     required this.name,
     required this.initials,
     required this.tone,
-    required this.canEdit,
     this.avatarUrl,
   });
 
@@ -138,7 +134,7 @@ class SharingNotifier extends StateNotifier<SharingState> {
       // to get it wrong.
       final linkRows = await _db
           .from('share_links')
-          .select('id, can_edit, expires_at, use_count, max_uses, created_at, revoked_at')
+          .select('id, expires_at, use_count, max_uses, created_at, revoked_at')
           .eq('resource_kind', _target.kind.wire)
           .eq('resource_id', _target.id)
           .isFilter('revoked_at', null)
@@ -146,7 +142,7 @@ class SharingNotifier extends StateNotifier<SharingState> {
 
       final guestRows = await _db
           .from('guest_access')
-          .select('user_id, can_edit')
+          .select('user_id')
           .eq('resource_kind', _target.kind.wire)
           .eq('resource_id', _target.id);
 
@@ -173,7 +169,6 @@ class SharingNotifier extends StateNotifier<SharingState> {
           for (final r in linkRows)
             ShareLink(
               id: r['id'] as String,
-              canEdit: r['can_edit'] as bool? ?? true,
               expiresAt: DateTime.tryParse((r['expires_at'] as String?) ?? '')?.toLocal(),
               useCount: (r['use_count'] as num?)?.toInt() ?? 0,
               maxUses: (r['max_uses'] as num?)?.toInt(),
@@ -191,7 +186,6 @@ class SharingNotifier extends StateNotifier<SharingState> {
                 name: (p?['display_name'] as String?) ?? L.s.guest,
                 initials: (p?['initials'] as String?) ?? '?',
                 tone: (p?['tone'] as num?)?.toInt() ?? 0,
-                canEdit: r['can_edit'] as bool? ?? true,
                 avatarUrl: avatarPath == null ? null : signed[avatarPath],
               );
             }(),
@@ -210,12 +204,19 @@ class SharingNotifier extends StateNotifier<SharingState> {
   /// Mints a link, and optionally mails it. The URL comes back **once** — it is
   /// put straight into [SharingState.freshUrl] so the sheet can show a copy
   /// button, and it is gone the next time the sheet is opened.
-  Future<void> createLink({bool canEdit = true, int? expiresInDays, String? email}) async {
+  ///
+  /// **Every share may edit, and there is no switch for it.** You share a
+  /// shopping list so the other person can tick "Milch" off; the read-only
+  /// variant the schema still allows was a promise no screen kept — nothing in
+  /// Listen, Box or Board ever asked `can_edit`, so a view-only guest saw the
+  /// check circles and the add button and had every tap refused by RLS.
+  /// `share_links.can_edit` stays, defaulted true, as the seam if a read-only
+  /// share ever earns its keep — see the sharing section of `docs/backend.md`.
+  Future<void> createLink({int? expiresInDays, String? email}) async {
     try {
       final res = await _db.functions.invoke('create-share-link', body: {
         'kind': _target.kind.wire,
         'resource_id': _target.id,
-        'can_edit': canEdit,
         'expires_in_days': ?expiresInDays,
         if (email != null && email.trim().isNotEmpty) 'email': email.trim(),
       });

@@ -144,14 +144,14 @@ Flutter-drawn blur+tint approximation everywhere else.
     families on one screen. So `PhosphorGlyphs` reads the font straight out of the Flutter bundle
     with CoreText and rasterises a **template** image, which UIKit then tints and gives the glass's
     own vibrancy. The font is resolved by the file's own PostScript name, never by the
-    `PhosphorBold` family name in `pubspec.yaml` (that is Flutter's name for it).
+    `PhosphorRegular` family name in `pubspec.yaml` (that is Flutter's name for it).
   - **Send `flatIcon(icon)`, never the `AppIcons` constant** — codepoint *and* font asset, because
     a codepoint only means something alongside the file it is a codepoint in. **The two Phosphor
     weights do not share a codepoint space**: a duotone glyph is a pair of layers, so
-    `Phosphor-Duotone.ttf` holds 3022 glyphs where `Phosphor-Bold.ttf` holds 1513, at different
+    `Phosphor-Duotone.ttf` maps 3025 codepoints where `Phosphor-Regular.ttf` maps 1543, at different
     positions. `_flat`'s *values* are the same number in Regular, Bold or Thin — that is what the
     note on it means, and it is about the values, not the keys. Handing an `AppIcons` constant's
-    own codepoint to the Bold font drew a missing-glyph box in every single button. `flatIcon()`
+    own codepoint to the flat font drew a missing-glyph box in every single button. `flatIcon()`
     and `iconFontAsset()` in `app_icons.dart` are the resolution `AppIcon` already did internally,
     exposed for the one caller that cannot let Flutter do the drawing.
   - **A labelled button keeps the app's typeface.** `GlassPillButton` ("Fertig", "Überspringen"),
@@ -184,8 +184,10 @@ Flutter-drawn blur+tint approximation everywhere else.
     - **Weight is the one thing that does not follow the bar**, and is `symbolWeight` for that
       reason. The bar draws its glyphs *on the bar*, where `.regular` is right; the shelf draws the
       same glyph on a 62pt glass circle floating over a screen, where `.regular` reads thin beside
-      the Phosphor **Bold** every other control is set in. `.medium` — one step, not two;
-      `.semibold` at this size starts to look like a different icon set.
+      the Phosphor every other control is set in. Measured: at 17pt SF's own `.regular` draws a
+      1.25–1.50pt line and `.medium` a 1.44–1.75pt one, where Phosphor Regular at `AppGlyph.button`
+      draws 1.63pt — so `.medium` is the step that brackets it. One step, not two; `.semibold` at
+      this size starts to look like a different icon set.
   - **Push everything an item carries, not just its word.** A `UiKitView` reads `creationParams`
     once, and *two* things on a button change under a live view: the label follows the language
     picked in Settings, and the title's **colour** follows the palette, since `AppText`'s styles
@@ -194,8 +196,20 @@ Flutter-drawn blur+tint approximation everywhere else.
     so they cannot fall out of step — the same contract `setTint` and `setBrightness` already have,
     and the same trap `NativeGlassView._syncTint` documents at the other end.
   - Still `GlassSurface` on the fallback paths: off iOS, and on iOS for as long as a sheet covers
-    the screen (`occludedByRoute`). And still `GlassSurface` for `GlassAccentButton`, the
-    accent-filled labelled pill, which is not yet converted.
+    the screen (`occludedByRoute`). Every glass *control* is now a real button on iOS, including
+    `GlassAccentButton` — `prominent: true` with the accent as its `tint`, and the grey it wears
+    while `enabled` is false passed the same way, so a disabled pill is still a filled pill.
+  - **The accent pill was the last one converted, and it converted because it was dropping taps.**
+    On the surface path a tappable glass control is an invisible `UIControl` hung inside an
+    *interactive* `UIGlassEffect`'s `contentView`, and the material's own touch handling competes
+    with that control for the gesture — the lensing is a recognizer on the effect view, and a
+    recognizer that wins cancels the touches underneath it. Fast taps got through and ordinary ones
+    did not, so "Verbinden" at the bottom of a calendar provider page took several tries. A glass
+    `UIButton` has no such contest: the press response and the action belong to one control, which
+    is the argument for system controls making itself for the third time. That leaves
+    `GlassSurface.regions` with no caller on the native path at all: it stays for a *surface* that
+    genuinely needs segments, but **a new tappable control belongs on `NativeGlassButtons`**, not
+    on a region.
 - **`GlassSurface` remains the right thing for a *surface*** — the nav bar's backing capsule, the
   floating pill, the `Mehr` shelf, a sheet's material. The rules below are about those.
 - **The press belongs to UIKit where the material is real.** `UIGlassEffect.isInteractive` is the
@@ -285,20 +299,48 @@ mass; the glyph only has to say which button it is.
 That is `AppIcon.flat`, and it is set **inside the control widgets**, not by their callers, so a
 button is flat wherever it is used and nobody has to remember.
 
-**Flat means Phosphor's Bold weight**, from a second vendored font, not the duotone with its
+**Flat means Phosphor's Regular weight**, from a second vendored font, not the duotone with its
 under-layer switched off. Those are not the same drawing. The duotone `caret-right` is a hollow
 *triangle*; the single-weight one is the *chevron* a disclosure row wants. `arrow-right` differs
 the same way, and the duotone `check` is shrunk to fit inside its placeholder box, so used alone it
 comes out visibly small. Most glyphs *are* identical across the two, but "most" is not something a
 button should depend on, so `_flat` maps every glyph to its single-weight twin.
 
-Bold rather than Regular because Phosphor's Regular is a lighter line than the Lucide it replaced
-— Lucide draws at 2px on a 24px grid and Phosphor Regular below that — and these glyphs are drawn
-at 15–22px, where that difference reads as a button whose icon has gone faint rather than as a
-lighter style. Apple does not draw a bar button's symbol at a text weight either. **Every Phosphor
-weight shares one codepoint per glyph**, so the weight is chosen in exactly one place: the
-`_flatFamily` constant and the matching `pubspec.yaml` font entry. Changing those two lines moves
-all 171 flat glyphs, and the `_flat` table never has to be touched.
+**Every Phosphor weight shares one codepoint per glyph**, so the weight is chosen in exactly one
+place: the `_flatFamily` constant and the matching `pubspec.yaml` font entry. Changing those two
+lines moves all 171 flat glyphs, and the `_flat` table never has to be touched.
+
+### How big a control's glyph is, and why it was wrong
+
+**Sizes come from `AppGlyph` (`tokens.dart`), never from a number written at the call site.** Four
+tiers, each calibrated against the ink of the SF Symbol the system would draw in the same place:
+`button` 26 (a glyph that *is* the control — a glass button, a swipe action, a row's "..."),
+`row` 21 (a glyph beside a `rowTitle`-sized word), `inline` 17 (beside smaller type), `caret` 18
+(a disclosure chevron).
+
+Two things make this a measurement rather than a preference:
+
+- **An em is not what lands on screen.** A Phosphor glyph carries an invisible full-em box and the
+  drawing fills only 57–86% of it, so `size: 19` puts about **15pt of ink** on a button. Lucide
+  filled about 88%, so the swap to Phosphor shrank every control in the app without a single number
+  changing.
+- **`UIBarButtonItem` applies `.large` on top of 17pt**, which is about +25%. Its symbol draws
+  **21.0pt of ink with a 1.62pt stroke** — not the ~14pt the unscaled number suggests, which is what
+  the old 19 was calibrated against.
+
+This is also why the flat weight is Regular again. Bold was chosen to stop a glyph that was too
+small from reading as faint — a heavier stroke compensating for a smaller drawing, two errors that
+cancelled, which is exactly why it read as "small *and* the weight is off". At `AppGlyph.button`,
+Phosphor Regular draws 21.4pt of ink with a 1.63pt stroke; Bold at the same size is 2.25pt, 39%
+heavier than the symbol next to it.
+
+The one glyph that needs saying out loud is `dotsThreeVertical`. Phosphor draws its dots about 30%
+smaller than SF does at a matched overall length, so a row's "..." takes `button` rather than `row`
+— at the row tier it is three specks. It was drawn at 15 in `mutedLight`, the smallest glyph in the
+faintest grey, and that combination is what made it invisible.
+
+Glyphs beside *micro* type sit below the scale and keep their own number; `list_screen.dart`'s 11pt
+link mark is the only one.
 
 **By glyph.** Fourteen bare marks are flat everywhere regardless — `check`, `x`, `plus`, `minus`,
 `dotsThreeVertical`, four arrows and five carets — because Phosphor has no honest duotone for
@@ -642,7 +684,7 @@ Non-obvious bits, each one a bug that shipped first:
     rounded `AppColors.surface` highlight that slides to the tapped item (`AnimatedPositioned`,
     `_selectionDuration`).
     - **The material and the glyphs are `MoreShelf`'s**, because the shelf comes out of this bar:
-      the same `GlassSurface`, the same flat Phosphor Bold at `kNavRowIconSize` through the same
+      the same `GlassSurface`, the same flat Phosphor at `kNavRowIconSize` through the same
       `navRowIcon` helper, `AppColors.ink` at rest and `AppColors.accent` on the item in force.
       A different treatment in either place makes the shelf read as a control from somewhere else
       that happened to appear there.
@@ -659,7 +701,10 @@ Non-obvious bits, each one a bug that shipped first:
       `CompactNavButton` keep one centre line. Never hardcode 70 again.
   - **Compacting on scroll (Kalender only)** — scrolling the agenda down collapses the bar to
     `CompactNavButton`, a glass circle at the bottom-left carrying the **active tab's** icon;
-    tapping it brings the bar back, as does scrolling to the top. This is our answer to the iOS 26
+    tapping it brings the bar back, as does scrolling to the top. On iOS the circle is a real
+    `UIButton` glass configuration (`NativeGlassButtons`, the tab's `sfSymbolSelected`), like the
+    header buttons and the `Mehr` shelf; `GlassSurface` + `AppIcon` is only the off-iOS fallback.
+    Home does **not** compact — it is too short for it. This is our answer to the iOS 26
     minimize-on-scroll behaviour listed above as unavailable: `_CompactNavOnScroll`
     (`calendar_screen.dart`) writes `navBarProvider` (`lib/state/nav_state.dart`), and
     `_NavLayer` / `_NavShape` in `main.dart` animate the swap. Four things there are load-bearing:
@@ -1368,8 +1413,12 @@ one.
 - **Content swap** (week-view agenda on day/filter change): `AnimatedSwitcher` with
   `FadeTransition` + slight upward `SlideTransition`, keyed `"$y-$m-$d-$calendarFilter"` via
   `KeyedSubtree`.
-- **Timeline rail fills** (`_EventAgendaRow`): `AnimatedContainer` / `AnimatedDefaultTextStyle`
-  (320ms, `Curves.easeOutCubic`) so the done/live color transitions instead of snapping.
+- **A day's blocks arriving** (`_HourGridState`, `day_timeline.dart`): one `AnimationController`
+  per day (460ms) with each block taking its own slice of it — fade plus a 10pt rise, staggered by
+  index and capped so a crowded day is still assembled inside half a second. A single controller
+  rather than a `TweenAnimationBuilder` per block, because the stagger has to be computed against
+  one clock; `AnimatedBuilder` takes the block as its `child` so the stagger animates a transform
+  and never rebuilds the block underneath it.
 - **Appearing floating controls** (`_JumpToTodayButton`): `AnimatedSlide` + `AnimatedOpacity`
   (220ms, `Curves.easeOutCubic`) inside `IgnorePointer` so the invisible widget can't eat taps,
   plus the `AnimatedScale` press feedback `GlassIconButton` uses.

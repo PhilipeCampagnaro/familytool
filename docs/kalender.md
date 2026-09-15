@@ -55,7 +55,8 @@ Three more things differ per tab, all of them parameters rather than a flag on t
 — the strip cells, the agenda rows, the chips, the event sheet — is a `part` of this library, and
 moving one out to be importable would drag the rest with it.
 
-**Both tabs compact the nav bar** (`_compactingTabs` in `main.dart`), and the calendar's
+**Only Kalender compacts the nav bar** (`_compactingTabs` in `main.dart`) — Home did too, and stopped
+once it held too little to scroll for a collapse to buy any room. The calendar's
 write-error listener now sits on `AppShell`: two always-mounted screens each running the same
 `ref.listen` would have shown every failed write twice.
 
@@ -131,10 +132,12 @@ Scrolling day strip + selected day's agenda list.
 Files: `lib/screens/home/day_island.dart`, `first_steps.dart`, `home_sections.dart`, and
 `lib/screens/start_screen.dart`, which is the assembly and nothing else.
 
-**The day card's bottom edge is a boundary in meaning, not only in paint.** Above it is whichever
-date the strip is on. Below it is the household as it stands right now. Tap a Thursday three weeks
-out and the top changes while the bottom does not — which is correct, and only readable because the
-card visibly ends. So **nothing in `belowDay` may be day-scoped**: an open to-do is open whatever
+**The divider under the day is a boundary in meaning, not only in paint.** Home's grey (`_DayBody`)
+runs from the day down to the bottom of the screen, rounded only at the top, and `belowDay` sits
+inside it under a hairline divider, inset 14/16 like the day itself so the section headings and cards
+share the calendar's margins. Above the divider is whichever date the strip is on. Below it is the
+household as it stands right now. Tap a Thursday three weeks out and the top changes while the bottom
+does not — which is correct, and only readable because the day visibly ends there. So **nothing in `belowDay` may be day-scoped**: an open to-do is open whatever
 date is selected, a tracker is owed today, a shopping list has no date at all. A "tomorrow" block
 would read as belonging to the strip and be wrong on every day but one.
 
@@ -180,10 +183,13 @@ under it reads state that arrives over the network, and printing "Dein Tag" and 
 a second later is a change nobody ever sees happen. It is also the one place a brain glyph belongs,
 and the one state whose wave repeats — there the sweep *is* the spinner. **The ladder is about today and only today** — a count of what is overdue *now* printed above next
 Thursday's agenda is a sentence about a different screen. Selecting another day drops all of it, but
-it does **not** fall back to the generic "Dein Tag": the header then said nothing about the day
-underneath it, and the strip is the only other place the date appears. The island names the selected
-day and how much is on it instead, counted through the same filtered `eventsFor` the card below
-uses, which is exactly what Kalender's label does on its own tab. That line carries no wave
+it does **not** fall back to the generic "Dein Tag". **Nor does it name the date and count the
+appointments any more**: the day card now carries that as its own title (`_DayAgenda`, the same
+`_dayHeading` + `eventCount` Kalender's day box prints, the count hidden at zero), and the island
+saying it too put one sentence twice a few centimetres apart. What the island says instead is the one
+thing the card cannot — how far the day is from today (`homeDayOffset`: "Morgen", "In 3 Tagen",
+"Vor 2 Tagen") — and a tap on it selects today, which the week view scrolls the strip back to. That
+line carries no wave
 (`_SweepMode.none`) and one stable key: the reader tapped the day themselves, so nothing changed on
 its own, and a 400ms swap plus a shimmer on every tap along the strip would be noise. "Next up" is deliberately not tappable: the appointment is the
 first card four centimetres below, and a second route to the same sheet from the same screen is a
@@ -227,11 +233,10 @@ does exist. Two steps (tracker, list) can only offer a tab, because neither crea
 door the way `openTaskSheet` does, and inventing one would mean a second entrance to keep in step
 with the first.
 
-`HomeSections` — the `belowDay` slot: **Offen**, **Heute dran**, **Listen**, each hidden entirely
-when it has nothing. The to-do rows use `CheckOffRow` — the Board's strike-hold-collapse — unlike
-the agenda row above them, which does not: there a ticked to-do stays put, because a day whose
-to-dos all vanished as they were done would read as a day that never had any, while here the
-section *is* the open list and the row's whole job is to leave it. Tracker rows keep their circle
+`HomeSections` — the `belowDay` slot: **Heute dran** and **Listen**, each hidden entirely when it
+has nothing. **There is no open-to-do section.** There was one (**Offen**, four rows, oldest
+deadline first), and it went because the week view above already draws every to-do on its due day —
+a second card of them was the strip repeated in another shape. Tracker rows keep their circle
 because a tracker you have to navigate to in order to tick is a tracker that stops being ticked, and
 ticked ones stay on the card rather than emptying it as the day goes on. Beside each tracker's name —
 on the same line, where it reads as the answer to the name rather than as a second fact about it —
@@ -287,6 +292,15 @@ One IServ account holding a child's Aufgaben, Klausurplan and Klassenkalender is
 chip, not three chips saying the same two words; a parent's work and private Google calendars are
 one face rather than two rows. Everything the household shares, Ferien and Abfall included, sits
 under the family chip.
+
+**A chip shows its own calendars and nothing else.** `filterToGroup` used to union a person's chip
+with the family group, so that a shared dentist appointment stayed on Alice's Thursday. It is gone:
+the extras were invisible (her popup lists only her calendars, so they could be neither seen nor
+unticked there), unticking one of her own calendars silently dropped them again, and "family" is
+also where an **unassigned** calendar lands — so the union quietly pulled in every calendar nobody
+had got round to assigning. A filter showing more than it was asked for reads as broken however
+good the reason. Alice *plus* the family is still expressible in the one place that means it: the
+"Alle" chip's cross-account picker.
 
 `groupId` is `member:<uuid>`, `person:<name>` or `family`, and `CalendarGroup.isPerson` is the
 first two. A group holding a single calendar is renamed after that calendar by `asSingle()` —
@@ -352,8 +366,8 @@ read straight through the rows.
 
 The last chip in the filter row lays the Board's dated to-dos over the agenda.
 `CalendarScreenState.showTasks` + `CalendarNotifier.toggleTasks`; `_todosDueOn` in
-`calendar_screen.dart` picks the rows, `_TodoAgendaRow`/`_TodoCard` in `week_view.dart` draw them,
-and both views use them (the month view in its day detail box, `compact: true`).
+`calendar_screen.dart` picks the rows, `_TodoBlock` in `day_timeline.dart` draws them, and both
+views use them (the month view in its day detail box, `compact: true`).
 
 **It is the one chip in that row that adds instead of narrowing**, so it sits behind a hairline
 (`_ChipRowDivider`) at the end of the row and never touches `calendarFilter`. Don't fold it into
@@ -370,22 +384,17 @@ under "Heute" because there a missed to-do is today's problem; a calendar cannot
 without drawing last Tuesday on today *and* leaving Tuesday empty. A tracker has no due date at
 all — `trackers` holds a rule, not a deadline — so there is no day to put one on.
 
-A ticked to-do **stays on its day**, muted and struck through. That is also why the card does not
+A ticked to-do **stays on its day**, muted and struck through. That is also why the block does not
 use `CheckOffRow`: that widget collapses the row away after the strike, which is right on the
 Board (the row travels to "Erledigt") and wrong here. The strike is driven off `task.done` through
 a `TweenAnimationBuilder` instead.
 
-`_agendaEntries` puts the day in reading order as one heterogeneous list — a `CalendarEvent` or a
-`BoardTask` per entry — in three bands: all-day events (context for the day, not appointments in
-it), then to-dos with **no** hour, then everything with a clock time, events and to-dos merged. An
-event wins a tie, because the agenda is a calendar first. The rail's line runs on through the whole
-column, `isFirst` is simply the first entry, and the empty state waits for events *and* to-dos to be
-empty.
-
 An untimed to-do is owed by the end of the day rather than at a point in it, which is why it sits
-above the clock instead of being given a slot. One that names an hour (`tasks.due_time`, optional —
-see [backend.md](backend.md)) is sorted in at that hour and its rail prints the time instead of
-"Fällig". Left in a block at the top, an 08:00 school run read as happening before the 07:30 train.
+in the band above the clock rather than being given an hour on the grid. One that names an hour
+(`tasks.due_time`, optional — see [backend.md](backend.md)) stands at that hour among the
+appointments and takes part in the same column layout. Left in a block at the top, an 08:00 school
+run read as happening before the 07:30 train. See the day-view section above for how the two are
+drawn apart.
 
 The card carries the Board's own 26pt `CheckOffButton`, which is both the thing that keeps it from
 reading as an appointment and the one deliberate exception to "a card is one tap target" — a to-do
@@ -545,26 +554,389 @@ family has to guess at. It sits *above* the timeline rather than in it: a Feiert
 of the day, and an agenda row would give it a time it doesn't have and a swipe-to-edit it can't
 honour. Ferien need no such chip — the feed's own all-day event is already in the list.
 
-## Agenda cards
+## The day view — a time grid
 
-- **Every card is white** (`_EventCard`). The live event used to take an accent fill; since an
-  all-day event is "live" for its whole span, a normal day read blue/white/blue. The rail beside
-  the card already carries the phase (filled dot, accent line, accent time) — don't put it back on
-  the card.
-- No body text means **no subtitle line at all**. An empty `Text` still occupies a line, which is
-  where the gap between a bare title and its chips came from.
-- The rail is `_railWidth` wide with the time label in a `FittedBox(scaleDown)`. A clock time fits
-  at full size; "Ganztägig" doesn't and used to wrap to two lines, which pushed that row's dot out
-  of line with its neighbours'.
-- **Weather sits where the avatar used to**, on the chip row: icon + temperature, and nothing at
-  all when there is no forecast (a past event, one past the 16-day horizon, or a household with no
-  address). The detail sheet shows the fuller card — icon, temperature, condition — beside the
-  date, and the date card takes the full width when there is none. Both go through `_weatherFor`
-  in [../lib/screens/calendar_screen.dart](../lib/screens/calendar_screen.dart), which keys the
-  lookup on the event **and the selected day** — that second half matters, because an all-day
-  event spanning a week is forecast per day. `_EventCard` itself stays a `StatelessWidget` and is
-  handed the reading by `_EventAgendaRow`, which has the `ref`. The service behind it is described
-  in the weather section of [ported-features.md](ported-features.md).
+**The day is a clock, not a list.** It was a rail of rounded cards in reading
+order, which said what was on but never what the day *looked* like: a morning
+packed solid and a free afternoon drew as six identical rows. It is now the grid
+every calendar the household already uses has — Apple's, Google's, Outlook's,
+Teams'. `calendar/day_timeline.dart` holds all of it; the rail, the agenda cards
+and the carousel that briefly replaced them are gone.
+
+- **`_dayPlan` splits the day into three piles** (`calendar_screen.dart`):
+  `allDay`, `untimedTodos`, and `timed` as `_TimedEntry`s. What sits on the clock
+  goes on the clock; what is true of the day as a whole goes in `_DayBand` above
+  it. Giving an all-day event or an undated to-do a position on a time grid would
+  be inventing one — which is what the old rail did when it printed "Ganztägig"
+  where a clock time belonged.
+- **Every timed entry is clipped to the day being drawn.** A 22:00–07:00 shift is
+  one provider row across two dates; `event.days` puts it on both and the clip is
+  what stops it running off the bottom of the first and never appearing on the
+  second. `_TimedEntry` carries minutes from that day's midnight, not `DateTime`s,
+  because every question the layout asks is "does this overlap that".
+- **`_placeBlocks` is the overlap layout, and it has three steps** — the third is
+  the one people leave out:
+  1. **Collision groups** in start order, closing when an entry begins after the
+     group's furthest end. Two groups never interact, so a quiet afternoon is not
+     made narrow by a crowded morning.
+  2. **Greedy columns** inside a group: first column whose last entry has
+     finished, else a new one. Entries are in start order, so a column's last
+     entry is always its latest-ending one and the check is exact.
+  3. **Spread right** into every column to the right that holds nothing
+     overlapping. Without it the layout is correct and unreadable — an 11:00
+     half-hour meeting would be a third of the width because the 08:45 pile-up
+     needed three columns.
+
+  Deliberately **not** Apple's own behaviour, which is undocumented and which its
+  own users describe as arbitrary. This is the deterministic version Google
+  Calendar, Outlook and Teams draw: no two blocks ever cover each other, and the
+  same day always lays out the same way.
+- **The day stands on a dot lattice, not on rules** (`_DotCanvas`). A full-width
+  hairline every hour drew twelve horizontal lines across the day and each one
+  asked to be read; the appointments then competed with the paper they were
+  printed on. A dot grid is what every tool that puts objects on a plane uses —
+  Figma, Power Automate, n8n — precisely because it says "this is a surface with
+  a scale" and then gets out of the way. It is still a *calendar's* lattice: the
+  rows land on the quarter hour (`_rowsPerHour`) and the hour's own row is drawn
+  at full strength while the three between it are faded, so the hour is findable
+  without a line being drawn through the day to find it. The lattice is square —
+  columns at the same step as rows — which is what keeps it reading as a canvas
+  rather than as a dashed rule. It runs the **whole grey card**, under the hour
+  labels, under the heading and under the all-day band as much as under the
+  blocks — stopping it where the blocks start drew a second left edge a finger
+  in from the card's own, and stopping it at the first and last hour drew two
+  more, which is exactly what a canvas is not supposed to have. One painter and
+  one `drawPoints` per strength, so fourteen hours cost two draw calls rather
+  than six hundred widgets.
+  - **Sized by the hour grid, clipped by the card**, which is the only
+    arrangement that gets both halves. The lattice has to be *phased* on the
+    grid, because only the grid knows where an hour falls and the hour's row is
+    the strong one; but it has to *reach* the card's edges or the dots stop
+    halfway up a grey panel and read as a texture somebody forgot to finish. So
+    `_DotCanvas` overdraws by `_dotBleed` in every direction and `_DayBody`
+    clips the day part on its own (`ClipRRect`, top corners rounded) so the
+    lattice stops at the divider rather than running on under Home's sections —
+    the month panel, which is still a whole card, carries `Clip.antiAlias` to
+    cut it at the corner. The bleed is comfortably more than anything standing
+    between the grid and that edge rather than measured from it, because a
+    canvas told the height of the heading above it goes wrong the day somebody
+    adds a chip; but not arbitrarily more, since every point of it is computed
+    on each paint and then thrown away.
+  - Nothing else in either card paints outside its box, so the clip costs
+    nothing: the blocks carry no shadow, by request.
+- **The gutter is sized to the widest label and not a point more.** It was 42,
+  which is what a gutter needs if it is going to hold "Ganztägig"; the band took
+  that word away and the number stayed behind, so nine points of every block's
+  width were being spent on empty gutter. `_gutter` is 34 — "12 PM", wider than
+  "12:00", at `AppText.microLabel` — and the label is in a scale-down `FittedBox`
+  so an accessibility scale shrinks it rather than clipping it. The labels stay
+  **right-aligned**, hugging the rules the way every calendar draws them, which
+  is also what lands them on the screen title's own left edge: right-aligned in
+  34 from the card's 14, "15:00" starts at about 24, and so does the title.
+- **`_dayWindow` draws the hours the day uses, not all twenty-four.** Apple shows
+  the whole day and scrolls it, which works when the day view *is* the screen;
+  here it sits under a collapsing day strip inside a page that already scrolls,
+  and a household opening the app would be looking at four empty hours before
+  breakfast. So: what the day uses, an hour of air either side, never less than
+  `_minWindowHours`, and today's own hour always inside it or the "now" line
+  would point at a strip that isn't drawn.
+- **The block stacks full width, in reading order, and cuts to what fits**
+  (`_EventBlock._detailLines`): title, then the note, the location and the
+  duration — each on its own line, each dropped from the bottom when the clock
+  did not give the block room. A half-hour appointment is its title and nothing
+  else, which is all a half-hour appointment has room to be.
+  - The line count is **measured against the room the block has**, not chosen
+    from a list of height thresholds: one number changing (`_hourHeight`, the
+    padding, the text scale) must not leave four `if`s disagreeing about what
+    fits. The scale comes from the context, because lines are taller for a
+    household that asked for larger type and fewer of them fit.
+  - **The duration is last on purpose.** It used to be pinned top-right, where it
+    competed with the name for the one line every block has. A block's *height*
+    is already the duration; the figure only names it exactly, so it is the last
+    to arrive and the first to go.
+  - That last line is the **time range** ("16:00 – 17:30 Uhr") wherever the block
+    is at least `_rangeWidth` wide, and the duration where it is not. A block only
+    gets narrow because something else starts inside it, and at that moment the
+    reader needs to know which of the two is which — not two clock times fighting
+    an ellipsis in half a column. The range wins whenever it fits, because the
+    block's *position* already gives the start and only the end has to be read off
+    the height.
+- **The band is one row of chips, and the Feiertag is the first of them**
+  (`_DayBand`). Each all-day event and untimed to-do used to take a full-width
+  row at `AppText.itemTitle`, so a day with Ferien and a bin pickup spent two
+  appointments' worth of height before the clock started — sitting directly under
+  a Feiertag chip drawn at half the size, which made two things of exactly the
+  same kind look like two different kinds of thing. They are all `_HolidayChip`'s
+  shape and scale now, and the row **scrolls sideways rather than wrapping**. A
+  `Wrap` was tried and it is not the same thing: on a day with a Feiertag, Ferien
+  and a bin pickup the chips fell onto a second and third line and the band went
+  back to costing an appointment's worth of height, which is the whole reason the
+  pills became chips. What scrolling costs is a chip off the right edge on a very
+  full day; what it buys is a band that is the same height on every day of the
+  year, which is what lets the day below it sit still as you move between days.
+  - **A hairline closes the band**, and it is the one rule on the card. The hour
+    lines came off the day because a hairline drawn twelve times is paper the
+    appointments have to compete with; a single one saying "above this is the
+    whole day, below it is the clock" is the opposite — read once, then quiet.
+    **Home needs it most**: it shares this view without the heading that names
+    the section on the calendar screen, so there the rule is the only thing
+    telling the two apart. It is inset to the card's content although the chips
+    above it scroll past both edges — a rule is a statement about the column it
+    divides, and a full-bleed one would be a statement about the card. Not drawn
+    at all when there is no grid under it (`divided`), or it would underline a
+    row rather than divide two.
+  - An **empty day** has no band, so there the Feiertag still stands alone — a day
+    off with nothing planned is worth saying. Both day views carry that one
+    conditional.
+  - **A chip carries a glyph**: a calendar page with the date on it
+    (`_DayPageMark`) for an all-day event, beside the Feiertag's confetti. That
+    one is **drawn rather than taken from the icon font**, which is the one place
+    in the app where that is right — every glyph in `AppIcons` is a shape that
+    means something, and this has to *say* something, the date, which no font
+    ships thirty-one of. Its number does not scale with the system text size: it
+    is a glyph, and at an accessibility scale it would break out of a 17-point
+    page long before it helped anybody read it. Both are marks on a *day* rather than on an hour, and
+    with the chips at one size the glyph is what stops "Weihnachtsferien" and
+    "Altpapier" reading as two appointments that lost their times. A single-day
+    all-day event prints no duration at all — a chip in this band already says it
+    is all day, and "Ganztägig" beside the name was the band's own heading
+    repeated once per chip.
+- **A block's title is set in the all-day chip's own type** — `AppText.label` at
+  w600, 12.5 points, where it used to be `AppText.itemTitle`'s 15. The band and
+  the grid are one surface read in one glance, and a name two points larger down
+  there made the band look like a caption over the real thing. Smaller also buys
+  the blocks what they are always short of: at 15 a half-hour block had room for
+  its name and nothing else, and its location and time never appeared. The timed
+  to-do block follows it for the same reason — the two stand on one grid.
+  - `_titleLine` came down with it (21 → 18), and `_titleRow` takes the **taller
+    of the title and the mark beside it**. The page mark is a drawing and does
+    not scale with the system text size, so at an accessibility scale the text
+    wins again and the mark stops mattering, which is right.
+  - **A name wraps into whatever height is left over, up to three lines**
+    (`_titleLines`). The order matters: `_detailLines` runs first on a one-line
+    title, because where the appointment is and when it ends are facts a name's
+    third line is not — a block too small for both spends its second line on the
+    place. Only what is *still* unspent comes back to the title. A half-hour
+    block therefore ellipses exactly as it did; a four-hour one stops reading
+    "Festakt 50 Ja…" over four centimetres of empty green. Three is the ceiling
+    because past a third line a name is a paragraph rather than something read
+    at a glance, and the air under a long appointment is not waste — it *is* the
+    appointment being long, which the grid says better than any label could.
+- **A repeating appointment carries a calendar page with *several* dates on
+  it** — six dots where the all-day chip's page carries the day's number. The
+  band above the grid and the blocks below it are one surface, so their two
+  marks are one drawing: `_CalendarPageMark` is the page, `_DayPageMark` writes
+  the date on it and `_RepeatPageMark` scatters them (`_RepeatDots`). It says
+  "this appointment has more days than the one you are looking at" with no
+  symbol anybody has to have learned.
+  - **The recurrence arrows could not be drawn heavily enough at this size**,
+    which is the other half of why they went. Phosphor's are one Regular
+    stroke — about 1.5% of the em, two thirds of a point inside a 17-point page,
+    a hairline beside the w700 number on the other page. Every fix was a
+    compromise: the duotone's filled layer welded on with `secondaryOpacity: 1`,
+    a third font vendored for one glyph, or the arrows drawn by hand. A filled
+    dot is as bold as its radius and nothing else.
+  - It stands on the **floor of the block**, bottom right, with the link badges
+    and the forecast — not at the end of the last line, where on a four-hour
+    appointment the text stops near the top and the marks stopped with it,
+    halfway up a block of empty colour. `_markRow` is reserved out of the height
+    *before* the detail lines are counted, which is what keeps the text off it:
+    the column is top-aligned and now ends above the row rather than under it.
+    On a tall block that reservation costs nothing — there are only three
+    candidate lines and they all fit anyway — and on a one-hour block it costs
+    the time range, which is the line the block's own geometry says best.
+  - On a block too short to hold that row at all the mark drops back into the
+    title, where it is a **`WidgetSpan` inside the text, not a widget beside
+    it** — which is why `_title` is a `Text.rich`. In a `Row` the mark takes a
+    column of its own and every wrapped line is indented under the first, a
+    hanging indent that is right for a bullet and wrong for a name that happens
+    to open with a symbol.
+  - **`AppIcons.repeat` is nobody's mark now.** It named recurrence here and a
+    Board Tracker over there — one symbol for two different promises, "this
+    comes back every Tuesday" and "this is a rhythm we keep". The Tracker had
+    already moved to `AppIcons.circleDashed`, the honest counterpart to the
+    to-do's `checkCircle` it sits beside; Kalender has since stopped using the
+    arrows too. Ausgaben's *recurring budget* still wears them, and should.
+  - The Tracker's own swap to `circleDashed` covers the create sheet, Home's
+    first steps, the day island and the paywall — a ring you tick shut beside a
+    ring that never closes, wherever the two stand together.
+- **A block says what is hung off it** — `_LinkBadges`, the glyph for a linked
+  shopping list and the one for a linked to-do. It is the only thing on a block
+  that is not already somewhere else on the grid: the name is in the calendar,
+  the hour is the block's position and the length is its height, but that the
+  Elternabend has a list against it existed nowhere, and finding out meant
+  opening the sheet to see whether there was anything to open it for.
+  - **It stands in `_markRow` with the forecast and the repeat mark**, pinned to
+    the block's floor. It shared the last line of text first, which cost no
+    height at all but put the marks wherever the text happened to stop — near
+    the top of anything longer than an hour.
+  - **Wide enough and it spells itself out** ("1 Liste"), because the count is
+    the useful half and a glyph cannot say *two*; narrower and the glyph stands
+    alone, which still answers what a glance is asking. `_badgeLabelWidth` is
+    measured the way `_rangeWidth` is and for the same reason — what decides the
+    form is the room left on the line it shares, not the block's height — and an
+    appointment carrying both a list and a to-do asks for `_badgeLabelStep` more
+    before *either* is spelled out, because two half-labels is the one outcome
+    worth avoiding.
+  - **Flat, not a pill.** The block is already a chip in its calendar's colour
+    and a second chip inside it is a card pretending to be a row — the same
+    reason the all-day pills carry no accent bar. It takes the ink and weight of
+    the line it shares. `linkedListCount`/`linkedTaskCount` already existed for
+    the detail sheet, so it needed no new string in any of the four languages.
+- **The forecast is back on the block** (`_BlockWeather`), in that same corner,
+  after the badges and before the repeat mark. It had been sent to the detail
+  sheet when the grid replaced the agenda, on the grounds that a half-hour block
+  is 34 points tall and a forecast icon alone is 26 of them — true, and the
+  answer is that it does not get its own line and does not get 26 points.
+  - **The drawing is rendered half again as large as the space it occupies**,
+    which is what makes it legible, and it is not a trick. A Meteocon is a
+    128-square with the weather in the middle: every cloud in the set spans
+    about 65 of those units, half its square, so a plain 18-point render put a
+    *nine-point* cloud on the block and the rest was transparent margin.
+    Rendering at `_art` (27) inside a box of `_box` (19) spends that margin
+    instead of the row's height — the ink roughly doubles and the mark still
+    stands exactly `_markRow` tall. 27 is bounded by the widest art rather than
+    by the box: `clear-day`'s rays span 93 units, which lands at 19.6 points and
+    just fills the row.
+  - Growing `_markRow` instead was the other way, and it costs more than it
+    looks: a one-hour block has about 38 points under its title, so five more
+    points of mark row is the difference between one detail line and none. The
+    place the appointment is at should not come off the block to make a cloud
+    bigger.
+  - **The temperature still carries the answer.** Several of these drawings are
+    pale by design — an overcast cloud, a snow cloud — and no size fixes a pale
+    grey cloud on a pale chip the way two digits do. The day strip stacks the
+    two and can afford 30 points.
+  - **It is the one mark down there that is decoration**, so it is the first to
+    yield: under `_weatherWidth` it comes off the block entirely, where the
+    list, the to-do and the repeat all stay.
+  - **It stands at the block's top edge, not in the bottom corner, because that
+    edge is the appointment's start.** The reading is one hour of forecast keyed
+    on where and *when* the appointment begins — that is what `eventWeatherKey`
+    keys on — so at the foot of a four-hour block it read as a claim about the
+    whole afternoon, an 18° honest at five and wrong by nine. Up there the
+    grid's own axis says which hour it means, since everything on a block is
+    drawn against time running down it. Capping it by duration instead was tried
+    and was worse: at two hours it vanished from the Kochnachmittag and the
+    Festakt, which is most of what a family weekend is made of.
+  - It is **the exception to the corner, and the only one.** The list, the to-do
+    and the repeat are facts about the appointment entire and have no hour to
+    stand at; this has nothing else. It costs the title the corner its longest
+    line would reach into — short names pay nothing, long ones wrap a word
+    earlier — which is a price the old duration chip was not worth paying and
+    this is: the duration was already the block's own height, and the forecast
+    is on the grid nowhere else.
+  - **Putting it in the hour gutter instead does not work today, and would be
+    misleading in a different way.** `WeatherState.readings` is keyed on a place
+    *and* an instant precisely because two appointments an hour apart in two
+    towns genuinely differ, and `daily` holds one reading per *day* at the
+    household's town — there is no hourly series for home. A mark in the gutter
+    would therefore have to borrow some event's reading and print it in a column
+    that is not that event's, so two 17:00 appointments in two towns would share
+    one icon that is right for one of them. Doing it honestly means fetching and
+    caching an hourly home series and drawing it as the *day's* weather rather
+    than any appointment's — a real feature, not a move. A past appointment, one beyond the
+    16-day horizon and a household with no address all resolve to no mark at
+    all, which is how every weather failure in this app resolves.
+- **A timeline block carries a `_accentBar` stripe in its calendar's undiluted
+  colour.** The fill is the same hue lightened, which is what makes a pale
+  calendar legible and also what makes two pale calendars take a second look to
+  tell apart; the bar is the colour at full strength, in the one place on a block
+  that is the same size whatever the clock gave it — a five-minute reminder and a
+  whole afternoon carry the same three points of it. **Timeline blocks only**:
+  the all-day pills above have no bar, because they are chips sitting in a band
+  of their own and a stripe down the side of a pill is a card pretending to be a
+  row.
+- **Two chips came off the card and neither is missed.** The duration chip became
+  that last line. The calendar chip is the **fill**: a dot beside "Familie" on a
+  block painted in Familie's colour was saying it twice. Weather and the
+  linked-list markers moved to the detail sheet; a half-hour block is 34 points
+  tall and a forecast icon alone is 26 of them.
+- **The day sits on grey** (`_DayBody`, and the month view's own panel). Both
+  calendar screens are `AppColors.surface`, so the grey is what gives the day an
+  edge instead of letting it run into the white. On Home it is a surface to the
+  bottom of the screen that also holds the sections, not a card that ends. It is only
+  safe because the chips are **opaque** — see below.
+- **A block is the same flat chip every other chip in the app is** (`_blockChip`):
+  the calendar's colour lightened, nothing around it, the colour itself carrying
+  the text — `_HolidayChip`'s treatment, in the calendar's colour instead of the
+  accent. In the all-day band it takes `_chipRadius` and is literally a pill,
+  because there a row really is a chip; a block standing on the clock keeps a
+  modest radius, since a capsule as tall as an afternoon is a lozenge whose
+  corners eat the title. `_TodoBlock` is the same chip on the neutral surface,
+  told apart by its check.
+  - **Lightened in HSL, never mixed with white** (`_blockFill`). This is the
+    whole difference between a vivid chip and a beige one: `tint` lerps toward
+    white, which raises lightness *and* drags saturation to zero, so a blue at
+    86% of the way to white is a grey-blue and a day of them reads as a set of
+    envelopes. `_fillLightness` is the one dial — down is more vivid, up is more
+    paper — and its ceiling is the text, since `_blockInk` draws the title in the
+    same hue. The title is deliberately not darkened to buy room: that trades the
+    colour of the type for the colour of the chip, and the type is what you are
+    reading.
+  - **Opaque, and that is what lets the day keep its grey card.** An alpha of the
+    colour was the other way to stay vivid, and it takes whatever is behind it
+    into its own colour — over grey every calendar drifted toward one dusty
+    register. Removing the card was tried as the fix for that (Apple's day view
+    is on white, which is the whole of its advantage) and the card won: opaque
+    means the chip looks the same whatever it stands on, which is the cheaper
+    half of the same bargain.
+  - **Saturation is scaled, never floored.** A small lift makes a colour that has
+    a hue read more strongly; a floor would invent one for a calendar that has
+    none, and the app does not pick colours on a household's behalf.
+  - **Three richer treatments were tried and each was louder than what it was
+    holding.** A coloured outline, at a full point and again at a tenth of one,
+    put a line around every hour of the day. A translucent fill could not keep a
+    shadow — a shadow paints *behind* the box, so a chip you can see through is a
+    chip you see the shadow through, and every block went muddy grey. The shadow
+    on its own lifted twenty chips off a card that is a background rather than a
+    surface. What separates a chip from the card is the dot lattice running under
+    it, not anything drawn on the chip.
+  - **The cost is named rather than designed around.** A calendar whose account
+    gave it a grey — iCloud does, for "Familie" — is a pale grey chip on a grey
+    card, and nothing here rescues it: the saturation lift is a scale, so it
+    lifts nothing. Substituting a legible colour was tried and rejected, because
+    a calendar's colour is what a household recognises it by in their own
+    calendar app as much as in ours. **The household picking its own colour is
+    what fixes it**, and that now ships — the swatch in "Kalender bearbeiten",
+    `calendar_connections.calendar_colors`, copied onto `calendars.color` by
+    `calendar-events` on the next read (`family_feeds.color` for Ferien and
+    Abfall, which already had a column of its own).
+- `_blockInk` clamps the calendar's colour to a lightness that reads as ink on
+  its own tinted fill, keeping the hue. A provider hands over whatever the
+  account picked, including pale yellows that vanish on a pale yellow ground, so
+  the colour is not trusted to survive being text.
+- **A timed to-do is an outline, not a fill** (`_TodoBlock`). Every appointment is
+  a filled rectangle in its calendar's colour, so a to-do drawn the same way
+  would be an appointment as far as a glance is concerned. It keeps the Board's
+  own check and the assignee's face — the one thing from the old card small
+  enough to survive the move. It takes `_todoSlotMinutes` of the grid because
+  `tasks.due_time` is a moment, not a span.
+- **Nothing shorter than `_minSlotMinutes` and nothing thinner than
+  `_minBlockHeight`.** The first keeps the *layout* honest (two five-minute
+  reminders at one moment still get two columns), the second keeps the block
+  readable and hittable. A block's height comes from the clock, so at a large
+  accessibility text scale the title is simply taller than the twenty minutes it
+  stands for — `_Unbounded` clips that instead of letting Flutter paint an
+  overflow stripe over the day.
+- **There is no cap and no fold.** `_maxEntries` and `homeMoreEntries` are gone: a
+  grid's height comes from the hours it covers, not from how many things stand on
+  them, so a day with forty appointments is exactly as tall as a day with four.
+- **Long-press, not swipe.** A block half a column wide has nowhere to swipe, so
+  Bearbeiten/Löschen come from the system menu through `_openEventCardMenu`. Tap
+  still opens the detail sheet.
+- The blocks fade and rise in on a staggered entrance keyed on the day
+  (`_HourGridState._stagger`), so changing day assembles the grid down the page
+  rather than snapping it into place. The day panel's own size animation carries
+  the rest.
+- **`calendar/agenda_demo.dart` is scaffolding and is meant to be deleted.** Flip
+  `_agendaDemo` to `true` and every day is replaced by a fixed set built to
+  exercise the grid rather than to look like a nice day: two all-day events,
+  three appointments on the same minute, a long workday that forces a second
+  column and lets the rest spread right, a five-minute reminder, and a title no
+  block can hold. Hooked at the two call sites (`_demoEvents`/`_demoTodos`)
+  rather than inside `_dayPlan`, which is handed no date on an empty day. **Leave
+  it `false` on `main`.**
 
 ## The event sheet's location card
 
@@ -698,13 +1070,14 @@ them back on startup — the "local storage now, Supabase later" layer.
 
 ## Real-time timeline
 
-The agenda's left-hand rail (time / dot / connecting line, in `_EventAgendaRow`) is driven by
-`phaseFor(y, m, d, start, end, now)` (`lib/data/calendar_data.dart`), which compares against the
-*actual* wall clock — not the static mock `CalendarEvent.phase` field (still on the model/seed
-data but no longer read by the UI). `CalendarNotifier` ticks `state.now` every 30s via an
-internal `Timer.periodic` so the rail advances (done → live → upcoming) on its own. Because of
-this, a day that hasn't happened yet in real time always renders fully unfilled, even if the mock
-seed data hardcodes it as "done"/"now".
+Where the day has got to is now **one mark instead of one per appointment**: `_NowLine`, a dot on
+the gutter's edge and a line across the hours, drawn only on today and only when the hour is inside
+`_dayWindow`. A finished appointment steps back to 55% opacity rather than leaving
+(`CalendarEvent.phaseAt`, against the *actual* wall clock — not the static mock
+`CalendarEvent.phase` field, which is still on the model but no longer read by the UI).
+`CalendarNotifier` ticks `state.now` every 30s via an internal `Timer.periodic` so the line
+advances on its own; `_HourGrid` watches `calendarProvider.select((s) => s.now)` rather than the
+whole notifier, so that tick moves a line instead of rebuilding a grid of blocks.
 
 Note the split: mock "today" is pinned to **2026-08-13** (`calTodayY/M/D`) and is for
 "is this today" badges/highlighting only — never reuse it for time-sensitive logic.
@@ -767,6 +1140,15 @@ How the three providers take it, and why one of them needed surgery, is the recu
 [backend.md](backend.md).
 
 ## "Heute" jump button (`_JumpToTodayButton`)
+
+**On Home (week view) it is not on the nav row at all**: `_WeekViewState._buildJumpToToday` hangs
+the small pill **at the right end of the status island's row** (`_MonthYearRow.trailing`, passed
+through `_MonthAndChipsRow.labelTrailing`). It is built only while the strip is away from today, so
+the island has the whole row otherwise and ellipsises against the pill when it is there. The row's
+`AnimatedSwitcher` slides it in from the right edge while its slot widens (360ms in, 240ms out), and
+reverses that on the way out so the island takes its width back smoothly. Being in the header's collapsing block, it fades out with the strip it
+refers to. Home no longer
+collapses the nav bar, so there is no row for it to drop onto. Everything below describes Kalender.
 
 A liquid-glass capsule at the **right end of the nav bar's row**, the same height as the compacted
 nav button at the left end, shown only when today isn't on screen. **The word only, no icon** —

@@ -108,11 +108,19 @@ class PendingChip {
 
   /// The write landed: the spinner becomes a tick, the line becomes the past
   /// tense, and the capsule starts the fade-out an ordinary confirmation gets.
-  void done(String message) {
-    if (!_handle.swap(_ToastContent(message, ToastKind.confirm), stay: _confirmStay)) {
+  ///
+  /// [undo] is for a delete, which is the write that most wants a spinner *and*
+  /// an undo: the row leaves the grid immediately, the provider takes its
+  /// seconds, and "Rückgängig" cannot be offered until there is something to
+  /// undo. It settles into the same capsule for the same reason every other
+  /// answer does — a fresh chip appearing beside the one that was already up
+  /// reads as two writes.
+  void done(String message, {UndoRestore? undo}) {
+    final content = _confirmContent(_handle, _overlay, _bottomInset, message, undo);
+    if (!_handle.swap(content, stay: undo != null ? _undoStay : _confirmStay)) {
       // Nothing up any more — the chip was displaced by another one, or never
       // got an overlay. The confirmation is still owed, so show a fresh one.
-      _show(_overlay, _bottomInset, message, ToastKind.confirm, null);
+      _show(_overlay, _bottomInset, message, ToastKind.confirm, undo);
       return;
     }
     HapticFeedback.lightImpact();
@@ -165,6 +173,56 @@ PendingChip showPendingChip(BuildContext context, String message) {
 const _confirmStay = Duration(milliseconds: 1900);
 const _errorStay = Duration(milliseconds: 4000);
 
+/// Long enough to read the line *and* reach for "Rückgängig"; a bare
+/// confirmation is gone before it can become clutter.
+const _undoStay = Duration(milliseconds: 5000);
+
+/// The settled line, with its undo wired up if it has one.
+///
+/// Shared by the two ways a confirmation reaches the screen — [_show] builds a
+/// fresh chip, [PendingChip.done] rewrites a spinner into one — so that the undo
+/// behaves identically either way. Tapping it keeps the capsule and turns it
+/// back into a spinner: the restore is a write of its own, and the chip is the
+/// only place its answer can land.
+_ToastContent _confirmContent(
+  _ToastHandle handle,
+  OverlayState? overlay,
+  double bottomInset,
+  String message,
+  UndoRestore? undo, {
+  ToastKind kind = ToastKind.confirm,
+}) {
+  if (undo == null) return _ToastContent(message, kind);
+  void onUndo() {
+    // **The restore is a write, and it takes the same seconds the one it undoes
+    // did.** So the capsule becomes a spinner in place rather than leaving
+    // altogether — a chip that vanished on the tap and reappeared saying
+    // "Wiederhergestellt" two seconds later left the tap looking like it had
+    // done nothing. The swap drops the undo label with it, which is right: it
+    // has already been used.
+    final holding = handle.swap(_ToastContent(L.s.beingRestored, ToastKind.pending));
+    undo().then((ok) {
+      if (!ok) {
+        // The notifier has already put the reason on `state.error` and every
+        // screen draws that itself.
+        handle.dismiss();
+        return;
+      }
+      // Confirm regardless of [kind]: whatever the chip the undo hung off was
+      // reporting, the restore landing is good news.
+      if (!holding ||
+          !handle.swap(_ToastContent(L.s.restored, ToastKind.confirm), stay: _confirmStay)) {
+        // The chip was gone or was displaced while the restore ran; the answer
+        // is still owed, so it gets a fresh one — [_show] taps for itself.
+        _show(overlay, bottomInset, L.s.restored, ToastKind.confirm, null);
+        return;
+      }
+      HapticFeedback.lightImpact();
+    });
+  }
+  return _ToastContent(message, kind, undo: undo, onUndo: onUndo);
+}
+
 /// The chip that is currently up, if any. Showing a second one takes the first
 /// down rather than stacking them — two capsules in the same place would cover
 /// each other's undo.
@@ -194,25 +252,14 @@ void _show(OverlayState? overlay, double bottomInset, String message, ToastKind 
   final handle = _ToastHandle();
   _current = handle;
 
-  void onUndo() {
-    handle.dismiss();
-    undo!().then((ok) {
-      if (ok) _show(overlay, bottomInset, L.s.restored, ToastKind.confirm, null);
-    });
-  }
-
   handle.insert(
     overlay,
     (context) => _ToastLayer(
       key: handle.key,
       bottomInset: bottomInset,
-      // Long enough to read the failure and to reach for "Rückgängig";
-      // a bare confirmation is gone before it can become clutter.
-      stay: undo != null
-          ? const Duration(milliseconds: 5000)
-          : (kind == ToastKind.error ? _errorStay : _confirmStay),
+      stay: undo != null ? _undoStay : (kind == ToastKind.error ? _errorStay : _confirmStay),
       onGone: handle.remove,
-      content: _ToastContent(message, kind, undo: undo, onUndo: undo == null ? null : onUndo),
+      content: _confirmContent(handle, overlay, bottomInset, message, undo, kind: kind),
     ),
   );
 }

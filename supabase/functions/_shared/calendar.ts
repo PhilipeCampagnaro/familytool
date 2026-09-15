@@ -109,6 +109,13 @@ export interface SyncedEvent {
   allDay: boolean;
   href?: string | null;
   etag?: string | null;
+
+  /// The alarm the provider itself holds on this event, in minutes before it
+  /// starts — the one that will ring on the phone's own calendar app. Absent
+  /// when there is none, and never set for a pasted feed, whose alarms ring on
+  /// no device of the household's. The app reads it only to tell a user who is
+  /// about to set a reminder that one is already coming.
+  reminderMinutes?: number | null;
 }
 
 export interface RemoteCalendar {

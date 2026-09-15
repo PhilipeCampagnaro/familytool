@@ -59,9 +59,36 @@ Future<bool> _openEditEventSheet(BuildContext context, WidgetRef ref, CalendarEv
     // appointment proxied from Google or Outlook may genuinely have no summary,
     // and somebody fixing its time should not be made to name it first.
     onSave: () async {
-      final confirm = confirmChipOf(context);
-      if (await notifier.saveEvent(event, form.result(), scope: form.scope)) {
-        confirm(L.s.eventUpdated);
+      // The create sheet's spinner, for the same reason and with one more: a
+      // single-occurrence edit is already drawn on the calendar behind this
+      // sheet, so what is left to wait for is `calendar-write` reaching Google,
+      // Outlook or a school's CalDAV server — the part that can fail and that
+      // nothing else on screen reports. A move is two providers and the longest
+      // of those waits, so it names where the appointment is going.
+      //
+      // **A whole series is the one save that is not drawn ahead of the
+      // answer** (see [CalendarNotifier.saveEvent]: there is no way to work out
+      // on the client which other days a changed series lands on). There the
+      // chip is the only thing on screen at all, and it stands for the re-read
+      // behind the write as well as the write.
+      final draft = form.result();
+      final movingTo = draft.calendarId == event.calendarId
+          ? null
+          : ref.read(calendarProvider).sourceById(draft.calendarId)?.name;
+      final chip = showPendingChip(
+        context,
+        form.scope == EventScope.series
+            ? L.s.seriesBeingSaved
+            : movingTo == null
+                ? L.s.eventBeingSaved
+                : L.s.eventBeingMovedTo(movingTo),
+      );
+      if (await notifier.saveEvent(event, draft, scope: form.scope)) {
+        chip.done(L.s.eventUpdated);
+      } else {
+        // Taken down rather than turned red, as on the create sheet: the screen
+        // listens on `state.error` and puts the failure up itself.
+        chip.dismiss();
       }
     },
     child: _EventFormBody(form: form, event: event),

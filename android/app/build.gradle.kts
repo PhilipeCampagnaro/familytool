@@ -90,3 +90,10 @@ kotlin {
 flutter {
     source = "../.."
 }
+
+dependencies {
+    // Play's in-app review flow, behind AppReviewChannel.kt. A Gradle
+    // dependency rather than a Flutter plugin, so nothing of it reaches the iOS
+    // build, which runs on Swift Package Manager with no Podfile.
+    implementation("com.google.android.play:review:2.0.2")
+}

@@ -1,7 +1,8 @@
 # Vorhaben — a goal in, a finished list out
 
-**Status: proposed, nothing built. Written 2026-09-13.** This is the analysis and the plan, with the
-open decisions marked as such. Nothing below has been agreed except where it says so.
+**Status: built on Mistral, behind the `list-plan` Edge Function (2026-09-14). Written 2026-09-13.**
+The first build called Mistral from the device with the key compiled in; that is gone — see "What the
+server does". Open decisions below are still marked as such.
 
 A parent types *"Butter Chicken für vier"* or *"Hochbeet aus Holz bauen"*, and gets back the method
 and — the part that matters — **the list of things to buy**, with the app's own pictures on it, one
@@ -469,8 +470,15 @@ and a table of everything every family has ever asked for is a thing that can le
 call the app makes about `list_items.link_url` (*nothing ever fetches it*) and about events (*we do
 not store anybody's calendar*).
 
-**The key** is `ANTHROPIC_API_KEY`, a function secret, exactly as `RESEND_API_KEY` and
-`GOOGLE_CLIENT_SECRET` are. It is never in the app.
+**The key** is `MISTRAL_API_KEY`, a function secret, exactly as `RESEND_API_KEY` and
+`GOOGLE_CLIENT_SECRET` are — set with `supabase secrets set` or in the dashboard, **never in `.env`,
+never through `--dart-define`**. The first build did pass it through `--dart-define` "as a test
+path", which compiles it into the binary as plain text: anyone who unzips the `.ipa` or proxies
+their own phone reads it. No obfuscation fixes that, which is why the app now holds nothing but
+the user's session. Built as `supabase/functions/list-plan/` with `canRunListPlan` in
+`_shared/entitlements.ts` and `public.list_plan_runs` (`20260914130000_list_plan_runs.sql`); the
+daily abuse limit is 10 per user. The goal and the answer are neither stored nor logged — errors
+log the provider's status code only.
 
 **Model and request shape — `claude-haiku-4-5`, decided 2026-09-13.** A strict schema via
 `output_config.format`, so what comes back is a typed object rather than text somebody has to parse

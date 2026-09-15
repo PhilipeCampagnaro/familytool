@@ -47,12 +47,11 @@ class CalendarScreenState {
   /// same move `ListNotifier` made.
   /// Which chip in the filter row is lit, or null for "Alle".
   ///
-  /// Tracked rather than derived from [calendarFilter], because filtering to a
-  /// person deliberately shows **more** than that person's own calendars: the
-  /// shared family ones come too, since a family dinner really is on Alice's
-  /// Thursday. Deriving "which chip is this" from the id set would then light
-  /// two chips at once — hers and the family's — and neither answer is the one
-  /// the row wants to give.
+  /// Tracked rather than derived from [calendarFilter], because the id set does
+  /// not say which chip put it there. A selection narrowed inside a chip's own
+  /// popup is a *subset* of that chip's calendars and must keep it lit (as a
+  /// partial), and a hand-picked set spanning two accounts belongs to no chip at
+  /// all — that is what [kPickedCalendarFilterId] is for.
   final String? filterGroupId;
 
   /// Whether the Board's to-dos are laid over the calendar.
@@ -561,24 +560,95 @@ class CalendarNotifier extends StateNotifier<CalendarScreenState> {
   /// are gone. An edit is both: the original hidden, the new one added.
   final Set<String> _pendingHides = {};
 
-  /// Overlay entries to retire the moment the **next** snapshot arrives.
+  /// Overlay entries waiting for a read to agree with them.
   ///
   /// Not dropped as soon as the write succeeds, which would blink the
   /// appointment out for the length of the read that follows, and not dropped
   /// after it either, which would show the provisional and the real one side by
   /// side for a frame. Retiring them *with* the snapshot is the only timing that
   /// is never wrong on screen.
+  ///
+  /// **And only against a snapshot that actually contains the change** — see
+  /// [_retire]. Retiring on the first read back was right for Google and Graph,
+  /// which are read-your-writes for the same credential, and wrong for CalDAV:
+  /// iCloud accepts the PUT and then serves a REPORT without the new event in it
+  /// for a few seconds more. The appointment blinked off the day it had just
+  /// been added to and did not come back until the next read — fifteen minutes
+  /// later, or the next launch, which is what "I have to restart the app" was.
   final Set<String> _retiring = {};
+
+  /// The provider's own id for each provisional event, once the write answered
+  /// with one. This is what a later read is checked against; an entry is dropped
+  /// with the overlay it belongs to.
+  final Map<String, String> _writtenUids = {};
 
   void _apply(CalendarSnapshot snapshot) {
     if (!snapshot.fromCache) _lastFetched = DateTime.now();
-    if (_retiring.isNotEmpty) {
-      _pendingAdds.removeWhere((e) => _retiring.contains(e.id));
-      _pendingHides.removeAll(_retiring);
-      _retiring.clear();
-    }
+    if (_retiring.isNotEmpty) _retire(snapshot);
     _snapshot = snapshot;
     _compose(clearError: true);
+  }
+
+  /// Drops the overlay entries this snapshot has caught up with, and **keeps the
+  /// ones it has not**.
+  ///
+  /// Settled means different things for the two halves, and they are settled
+  /// independently on purpose. An add is settled when the appointment itself
+  /// comes back; a hide when the row it suppresses is really gone. A move
+  /// between calendars is both at once and the two providers answer at their own
+  /// speed — retiring them as a pair would mean either showing the appointment
+  /// twice or not at all for as long as the slower one took.
+  void _retire(CalendarSnapshot snapshot) {
+    final live = <String, CalendarEvent>{};
+    for (final day in snapshot.eventsByDay.values) {
+      for (final event in day) {
+        live[event.id] = event;
+      }
+    }
+
+    _pendingAdds.removeWhere((provisional) {
+      if (!_retiring.contains(provisional.id)) return false;
+      final landed = _landed(provisional, live.values);
+      if (landed == null) return false;
+      _retiring.remove(provisional.id);
+      _writtenUids.remove(provisional.id);
+      // An edit that left the appointment's own id alone — a changed title,
+      // say — is hiding the very row that is now the answer. That hide goes
+      // with the overlay it belonged to: left standing, it would take the
+      // appointment off the day at the moment the provisional came down.
+      _pendingHides.remove(landed.id);
+      _retiring.remove(landed.id);
+      return true;
+    });
+
+    _pendingHides.removeWhere((id) {
+      if (!_retiring.contains(id)) return false;
+      final gone = !live.containsKey(id);
+      if (gone) _retiring.remove(id);
+      return gone;
+    });
+  }
+
+  /// The real appointment a provisional one turned into, or null while no read
+  /// has brought it back yet.
+  ///
+  /// Matched on the provider's id **and the title**: an update keeps the id, so
+  /// the id alone would settle an edit against the version it was meant to
+  /// replace. A write that reported no id of its own cannot be looked for at
+  /// all and settles on the first read the way every write used to — the
+  /// fallback, not the path, since all three providers do report one.
+  CalendarEvent? _landed(CalendarEvent provisional, Iterable<CalendarEvent> live) {
+    final uid = _writtenUids[provisional.id] ?? '';
+    if (uid.isEmpty) return provisional;
+    for (final event in live) {
+      if (event.uid == uid && event.title == provisional.title) return event;
+    }
+    return null;
+  }
+
+  /// Remembers what the provider called the appointment it just accepted.
+  void _noteUid(String provisionalId, String uid) {
+    if (uid.isNotEmpty) _writtenUids[provisionalId] = uid;
   }
 
   /// Puts the snapshot plus whatever is in flight into state.
@@ -670,6 +740,9 @@ class CalendarNotifier extends StateNotifier<CalendarScreenState> {
   void _rollBack({Iterable<String> adds = const [], Iterable<String> hides = const []}) {
     _pendingAdds.removeWhere((e) => adds.contains(e.id));
     _pendingHides.removeAll(hides);
+    for (final id in adds) {
+      _writtenUids.remove(id);
+    }
     _compose();
   }
 
@@ -723,7 +796,32 @@ class CalendarNotifier extends StateNotifier<CalendarScreenState> {
 
     _retiring.addAll(ids);
     await refresh(silent: true);
+
+    // **A CalDAV server is allowed to be slower than one read.** iCloud takes
+    // the PUT and then serves a REPORT without the event in it for a few
+    // seconds; the overlay now survives that ([_retire]), and these are what
+    // bring the real appointment back in seconds rather than at the next
+    // fifteen-minute refresh. Two extra reads at most, and none at all once
+    // everything has settled — which is every Google and Graph write, and most
+    // CalDAV ones.
+    for (final wait in _settleReads) {
+      if (!mounted || !ids.any(_retiring.contains)) return;
+      await Future<void>.delayed(wait);
+      if (!mounted) return;
+      await refresh(silent: true);
+    }
+    // Still not back. The overlay stays up rather than being forced down — the
+    // write was accepted, so the appointment exists, and showing it is the
+    // honest answer until an ordinary refresh finds it.
   }
+
+  /// How long to keep asking after a write before leaving the rest to an
+  /// ordinary refresh.
+  ///
+  /// Spaced rather than repeated: a `calendar-events` call fans out to every
+  /// connected provider, so this is the smallest number of reads that covers a
+  /// server taking a moment, not a poll.
+  static const _settleReads = [Duration(seconds: 6), Duration(seconds: 18)];
 
   /// Jumps the selection to the real current day — what the "Heute" button
   /// does. Kept here rather than resolved at each call site so every caller
@@ -754,24 +852,25 @@ class CalendarNotifier extends StateNotifier<CalendarScreenState> {
     if (state.monthDetailExpanded) state = state.copyWith(monthDetailExpanded: false);
   }
 
-  /// Tapping a chip: show exactly this account's calendars, or go back to
-  /// "Alle" when they are already the whole filter.
-  /// Filter to one person's chip — **plus the household's own calendars.**
+  /// Tapping a chip: show **exactly this chip's calendars** and nothing else.
   ///
-  /// The union is the whole point. A family calendar is on everybody's day: if
-  /// tapping "Alice" hid the shared one, her Thursday would lose the dentist
-  /// and Oma's birthday, and the filter would be answering a question nobody
-  /// asked ("which calendars are filed under Alice") instead of the one they
-  /// did ("what has Alice got on"). The family chip itself is the other
-  /// direction — only the shared things, for "what are we all doing".
+  /// It used to union a person's chip with the household's shared calendars, on
+  /// the reasoning that a family dinner really is on Alice's Thursday. It came
+  /// out because it made the row untrustworthy: tapping "Alice" showed
+  /// calendars that were visibly not hers, with no way to see where they had
+  /// come from — her own popup lists only her calendars, so the extras could
+  /// neither be found nor unticked there. A filter that shows more than it was
+  /// asked for reads as broken however good the reason.
+  ///
+  /// Worse, "family" is also where an **unassigned** calendar lands
+  /// (`groupFor` in `calendar-events`), so the union quietly pulled in every
+  /// calendar nobody had got round to assigning yet.
+  ///
+  /// Both calendars at once is still expressible, and in the one place that
+  /// means it: the "Alle" chip's picker, which is allowed to span accounts —
+  /// see [toggleCalendarAnywhere].
   void filterToGroup(CalendarGroup group) {
-    final ids = {...group.ids};
-    if (!group.isFamily) {
-      for (final g in state.activeGroups) {
-        if (g.isFamily) ids.addAll(g.ids);
-      }
-    }
-    state = state.copyWith(calendarFilter: ids, filterGroupId: group.id);
+    state = state.copyWith(calendarFilter: {...group.ids}, filterGroupId: group.id);
   }
 
   void setCalendarFilter(Set<String> calendarIds) {
@@ -926,7 +1025,10 @@ class CalendarNotifier extends StateNotifier<CalendarScreenState> {
     _addPending(provisional);
 
     try {
-      await _repo.writeExternal(action: 'create', calendarId: target.id, draft: clean);
+      _noteUid(
+        provisional.id,
+        await _repo.writeExternal(action: 'create', calendarId: target.id, draft: clean),
+      );
     } catch (e) {
       _rollBack(adds: [provisional.id]);
       return _failed(_message(e, L.s.eventSaveFailed));
@@ -1000,21 +1102,24 @@ class CalendarNotifier extends StateNotifier<CalendarScreenState> {
 
     try {
       if (clean.calendarId == event.calendarId) {
-        await _repo.writeExternal(
-          action: 'update',
-          calendarId: event.calendarId,
-          uid: event.uid,
-          draft: clean,
-          scope: scope,
-          seriesUid: event.seriesUid,
-          occurrence: event,
+        _noteUid(
+          provisional.id,
+          await _repo.writeExternal(
+            action: 'update',
+            calendarId: event.calendarId,
+            uid: event.uid,
+            draft: clean,
+            scope: scope,
+            seriesUid: event.seriesUid,
+            occurrence: event,
+          ),
         );
       } else {
         // Create first, delete second, on purpose: a failed create has lost
         // nothing, where deleting first and then failing would lose the
         // appointment outright. Only a single occurrence gets this far, so the
         // delete takes an EXDATE or one instance and leaves the series alone.
-        await _write(clean);
+        _noteUid(provisional.id, await _write(clean));
         await _remove(event);
       }
     } catch (e) {
@@ -1062,7 +1167,10 @@ class CalendarNotifier extends StateNotifier<CalendarScreenState> {
     _addPending(provisional);
 
     try {
-      await _repo.writeExternal(action: 'create', calendarId: target.id, draft: draft);
+      _noteUid(
+        provisional.id,
+        await _repo.writeExternal(action: 'create', calendarId: target.id, draft: draft),
+      );
     } catch (e) {
       _rollBack(adds: [provisional.id]);
       return _failed(_message(e, L.s.eventRestoreFailed));
@@ -1073,8 +1181,9 @@ class CalendarNotifier extends StateNotifier<CalendarScreenState> {
   }
 
   /// The one place an event is written, and there is only one route out: back to
-  /// the connected account that owns the calendar it was filed under.
-  Future<void> _write(EventDraft draft) async {
+  /// the connected account that owns the calendar it was filed under. Answers
+  /// with the provider's own id for it, which is what [_landed] looks for.
+  Future<String> _write(EventDraft draft) async {
     final target = state.sourceById(draft.calendarId);
 
     // Nothing behind the id. Either the household has no writable calendar at
@@ -1086,7 +1195,7 @@ class CalendarNotifier extends StateNotifier<CalendarScreenState> {
       );
     }
 
-    await _repo.writeExternal(action: 'create', calendarId: target.id, draft: draft);
+    return _repo.writeExternal(action: 'create', calendarId: target.id, draft: draft);
   }
 
   Future<void> _remove(CalendarEvent event, {EventScope scope = EventScope.single}) async {

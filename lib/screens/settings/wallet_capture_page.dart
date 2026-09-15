@@ -284,6 +284,7 @@ class _ThisDeviceCard extends StatelessWidget {
                   (L.s.spendWalletStep2, null),
                   (L.s.spendWalletStep3, null),
                   (L.s.spendWalletStep4, null),
+                  (L.s.spendWalletStep5, null),
                 ]),
             ],
           ),

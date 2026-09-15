@@ -4,7 +4,7 @@ Two ways a payment gets in, one table behind them, and one page that adds it up.
 
 ## The Apple Pay route, and what it can and cannot be
 
-An iOS **Personal Automation** with the **Transaction** trigger runs an **App Intent** that Aporah
+An iOS **Personal Automation** with the **Wallet** (formerly Transaction) trigger runs an **App Intent** that Aporah
 donates, and the intent posts the payment to `spend-ingest` from Swift. The phone is usually locked
 and the app is not on screen, so no Flutter engine is involved at any point.
 
@@ -23,7 +23,14 @@ What that buys against the old web app is the whole reason this was rebuilt:
 | Download a shortcut from an iCloud link, paste the token at an import prompt | nothing — the action is already there |
 | Automation runs "Get Contents of URL" with a hand-built JSON body | Automation runs our action |
 
-Setup is now: Shortcuts → Automation → **+** → Transaction → pick cards → **Ausgabe erfassen**.
+Setup is now: Shortcuts → Automation → **+** → **Wallet** → pick cards → Run Immediately →
+**Ausgabe erfassen** → fill **Händler** and **Betrag** with the trigger's variables.
+
+The trigger is called **Wallet** ("Wenn ich eine Wallet-Karte oder einen Pass verwende") in current
+iOS; "Transaction" is its old name, and the setup steps once sent people looking for it. **The
+last step is the one that fails silently**: both fields are required, so left unlinked Shortcuts
+stops to ask for them after the payment, on a phone nobody is looking at, and `spend-ingest` never
+hears a thing — no row, and no failed request in the logs either.
 
 ### Apple's Transaction trigger hands over holes, and we keep them
 

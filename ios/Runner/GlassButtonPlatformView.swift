@@ -38,14 +38,14 @@ class GlassButtonPlatformViewFactory: NSObject, FlutterPlatformViewFactory {
 /// it the glass's own vibrancy for free.
 ///
 /// The font is *not* looked up by family name. `pubspec.yaml` calls it
-/// `PhosphorBold`, which is Flutter's name for it and not the PostScript name
+/// `PhosphorRegular`, which is Flutter's name for it and not the PostScript name
 /// UIKit would need; the name is read off the file's own descriptor instead, so
 /// the two can never drift.
 /// A font Flutter ships as an asset, made usable by UIKit.
 ///
 /// Both fonts a native button draws with come from here: the Phosphor face for
 /// its glyph and Poppins for its title. Neither is looked up by family name —
-/// `pubspec.yaml` calls them `PhosphorBold` and `Poppins`, which are Flutter's
+/// `pubspec.yaml` calls them `PhosphorRegular` and `Poppins`, which are Flutter's
 /// names for them and not the PostScript names UIKit would need. The name is
 /// read off each file's own descriptor instead, so the two can never drift.
 enum BundledFonts {
@@ -85,8 +85,8 @@ enum PhosphorGlyphs {
   ///
   /// **Both halves of that pair come from Dart, and they have to.** The two
   /// Phosphor weights do not share a codepoint space — a duotone glyph is a
-  /// pair of layers, so `Phosphor-Duotone.ttf` holds 3022 glyphs where
-  /// `Phosphor-Bold.ttf` holds 1513, at different positions — so the codepoint
+  /// pair of layers, so `Phosphor-Duotone.ttf` maps 3025 codepoints where
+  /// `Phosphor-Regular.ttf` maps 1543, at different positions — so the codepoint
   /// only means anything alongside the file it is a codepoint *in*. Sending an
   /// `AppIcons` constant straight here drew a missing-glyph box in every
   /// button, which is what `flatIcon()` on the Dart side exists to prevent.
@@ -184,8 +184,10 @@ class GlassButtonPlatformView: NSObject, FlutterPlatformView {
   private var grouped = false
 
   /// Held so `setItems` can rebuild a configuration without being re-sent the
-  /// two numbers that never change under a live view.
-  private var iconSize: CGFloat = 19
+  /// two numbers that never change under a live view. The defaults mirror
+  /// `AppGlyph.button` and `kNavBarSymbolPointSize` on the Dart side; Dart
+  /// always sends both, so these only stand in if a param goes missing.
+  private var iconSize: CGFloat = 26
   private var symbolSize: CGFloat = 17
   private var symbolWeightName = "medium"
 
@@ -199,7 +201,7 @@ class GlassButtonPlatformView: NSObject, FlutterPlatformView {
     channel = FlutterMethodChannel(name: "aporah/glass_buttons_\(viewId)", binaryMessenger: messenger)
 
     let items = (args?["items"] as? [[String: Any]]) ?? []
-    let iconSize = (args?["iconSize"] as? NSNumber).map { CGFloat($0.doubleValue) } ?? 19
+    let iconSize = (args?["iconSize"] as? NSNumber).map { CGFloat($0.doubleValue) } ?? 26
     let symbolSize = (args?["symbolSize"] as? NSNumber).map { CGFloat($0.doubleValue) } ?? 17
     self.iconSize = iconSize
     self.symbolSize = symbolSize
@@ -248,7 +250,8 @@ class GlassButtonPlatformView: NSObject, FlutterPlatformView {
         title: item["title"] as? String,
         titleFont: item["titleFont"] as? String,
         titleSize: (item["titleSize"] as? NSNumber).map { CGFloat($0.doubleValue) } ?? 15,
-        titleARGB: (item["titleColor"] as? NSNumber)?.int64Value
+        titleARGB: (item["titleColor"] as? NSNumber)?.int64Value,
+        iconTrailing: (item["iconTrailing"] as? NSNumber)?.boolValue ?? false
       )
       button.accessibilityLabel = item["label"] as? String
       if let argb = tintARGB {
@@ -347,7 +350,8 @@ class GlassButtonPlatformView: NSObject, FlutterPlatformView {
         title: item["title"] as? String,
         titleFont: item["titleFont"] as? String,
         titleSize: (item["titleSize"] as? NSNumber).map { CGFloat($0.doubleValue) } ?? 15,
-        titleARGB: (item["titleColor"] as? NSNumber)?.int64Value
+        titleARGB: (item["titleColor"] as? NSNumber)?.int64Value,
+        iconTrailing: (item["iconTrailing"] as? NSNumber)?.boolValue ?? false
       )
       button.accessibilityLabel = item["label"] as? String
     }
@@ -361,6 +365,7 @@ class GlassButtonPlatformView: NSObject, FlutterPlatformView {
       configuration.image = button.configuration?.image
       configuration.attributedTitle = button.configuration?.attributedTitle
       configuration.imagePadding = GlassButtonPlatformView.imagePadding
+      configuration.imagePlacement = button.configuration?.imagePlacement ?? .leading
       configuration.contentInsets = .zero
       // Animated, because an accent that snaps on the instant a character is
       // typed reads as a flicker rather than as the button waking up.
@@ -419,7 +424,8 @@ class GlassButtonPlatformView: NSObject, FlutterPlatformView {
     title: String?,
     titleFont: String?,
     titleSize: CGFloat,
-    titleARGB: Int64?
+    titleARGB: Int64?,
+    iconTrailing: Bool
   ) -> UIButton.Configuration {
     var configuration = glassConfiguration(prominent: prominent, grouped: grouped)
     if let symbol = symbol {
@@ -454,6 +460,9 @@ class GlassButtonPlatformView: NSObject, FlutterPlatformView {
       }
       configuration.attributedTitle = attributed
       configuration.imagePadding = imagePadding
+      // A dropdown's caret trails the word it opens — Kalender's collapsed
+      // calendar filter.
+      configuration.imagePlacement = iconTrailing ? .trailing : .leading
     }
     // Flutter has already sized the box this button fills, padding included —
     // see `NativeGlassButtons.sizer`. UIKit's own insets on top of that would

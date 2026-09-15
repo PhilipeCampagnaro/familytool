@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/entitlements.dart';
 import '../services/spend_intent.dart';
+import '../services/app_review.dart';
+import '../services/local_notifications.dart';
 import '../state/auth_state.dart';
 import '../state/calendar_connections_state.dart';
 import '../state/entitlement_state.dart';
@@ -23,6 +25,7 @@ import 'onboarding_screen.dart';
 import 'settings/wallet_capture_page.dart';
 import 'settings/family_page.dart';
 import 'settings/language_page.dart';
+import 'settings/notifications_page.dart';
 import 'settings/profile_page.dart';
 import '../l10n/l10n.dart';
 import '../theme/app_icons.dart';
@@ -214,6 +217,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               onTap: () => _push(context, WalletCapturePage()),
             ),
           ),
+        // Absent where nothing can be scheduled, rather than a page of switches
+        // that do nothing.
+        if (localNotificationsAvailable)
+          (
+            terms: L.s.searchTermsNotifications,
+            row: SettingsRow(
+              icon: AppIcons.bell,
+              title: L.s.notificationsTitle,
+              onTap: () => _push(context, NotificationsPage()),
+            ),
+          ),
         (
           terms: L.s.searchTermsLanguage,
           row: SettingsRow(
@@ -248,6 +262,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ),
       ],
       [
+        // The store's own review form — what a *button* may open. The system
+        // prompt is never wired to a tap; see [ReviewPrompt]. Absent until the
+        // listing exists (`storeReviewUrl`).
+        if (storeReviewUrl != null)
+          (
+            terms: L.s.searchTermsRate,
+            row: SettingsRow(
+              icon: AppIcons.star,
+              title: L.s.rateApp,
+              onTap: openStoreReview,
+            ),
+          ),
         // **Debug builds only, and it grants nothing.** Every screen from here
         // to launch has a free state and a Plus state, and the alternative to
         // this row is a second test account, a sandbox purchase to move between

@@ -260,6 +260,7 @@ class _WeekViewState extends ConsumerState<_WeekView> with SingleTickerProviderS
                             accent: accent,
                             label: label,
                             labelHeight: _labelHeight,
+                            labelTrailing: _buildJumpToToday(accent),
                             // Sized by the same value the sliver was measured
                             // against, and clipped to it: the rows are built at
                             // their full height throughout and the panel shows
@@ -303,6 +304,30 @@ class _WeekViewState extends ConsumerState<_WeekView> with SingleTickerProviderS
           ],
         ),
       ],
+    );
+  }
+
+  /// "Heute", **at the right end of the status island's row** rather than
+  /// parked above the nav bar.
+  ///
+  /// It answers "the strip has been scrolled away from today", so it belongs in
+  /// the header with the strip. Above the bar it was a finger's width from the
+  /// bottom of a page that scrolls, and Home no longer collapses the bar, so
+  /// there was no nav row for it to drop onto either. Living in the header's
+  /// collapsing block, it fades and goes with the strip it refers to.
+  ///
+  /// Null while today is on the strip, so the island has the whole row. The
+  /// slide in from the right and back out is the row's — see
+  /// [_MonthYearRow.trailing].
+  ///
+  /// Kalender's month view keeps [_JumpToTodaySlot] on the nav row.
+  Widget? _buildJumpToToday(Color accent) {
+    if (_todayVisible) return null;
+    return _JumpToTodayButton(
+      visible: true,
+      accent: accent,
+      onNavRow: false,
+      onTap: _jumpToToday,
     );
   }
 
@@ -364,14 +389,14 @@ class _WeekViewState extends ConsumerState<_WeekView> with SingleTickerProviderS
     final accent = widget.accent;
     final sel = state.selected;
     final selDate = DateTime(sel.y, sel.m, sel.d);
-    final events = state.eventsFor(sel.y, sel.m, sel.d);
+    final events = _demoEvents(state.eventsFor(sel.y, sel.m, sel.d), selDate);
     // Only while the chip is lit — and unfiltered by the calendar row, which is
     // the whole point of it standing apart from those chips. See
     // [CalendarScreenState.showTasks].
-    final todos = state.showTasks ? _todosDueOn(ref, sel.y, sel.m, sel.d) : const <BoardTask>[];
-    // One list, in reading order — a to-do that names an hour sits at that hour
-    // among the appointments. See [_agendaEntries].
-    final entries = _agendaEntries(events, todos);
+    final todos = state.showTasks ? _demoTodos(_todosDueOn(ref, sel.y, sel.m, sel.d), selDate) : const <BoardTask>[];
+    // The day split the way the grid draws it: the band above, the clock below.
+    // See [_dayPlan].
+    final plan = _dayPlan(events, todos, selDate);
     final headingText = _dayHeading(selDate);
     final holiday = ref.watch(germanHolidaysProvider).on(sel.y, sel.m, sel.d);
 
@@ -416,10 +441,16 @@ class _WeekViewState extends ConsumerState<_WeekView> with SingleTickerProviderS
           // even on a day with one appointment and nothing else on screen. A
           // plain `CustomScrollView` would have left the header stuck open
           // whenever the content was shorter than the display.
-          body: ListView(
-            padding: EdgeInsets.only(bottom: navContentInset(context)),
+          body: LayoutBuilder(
+            builder: (context, viewport) => ListView(
+            padding: EdgeInsets.zero,
             children: [
-              _AgendaGrayBody(
+              _DayBody(
+                // At least the viewport, so the grey reaches the bottom of the
+                // screen on a short day rather than stopping mid-page.
+                minHeight: viewport.maxHeight,
+                bottomInset: navContentInset(context),
+                below: widget.belowDay,
                 child: AnimatedSwitcher(
                   duration: const Duration(milliseconds: 240),
                   switchInCurve: Curves.easeOutCubic,
@@ -441,21 +472,22 @@ class _WeekViewState extends ConsumerState<_WeekView> with SingleTickerProviderS
                     key: ValueKey('${sel.y}-${sel.m}-${sel.d}-${state.calendarFilterKey}-${state.showTasks}'),
                     child: _DayAgenda(
                       holiday: holiday,
-                      entries: entries,
+                      plan: plan,
+                      day: selDate,
                       headingText: headingText,
                       accent: accent,
                       // A day with only to-dos on it is not an empty day, so the
                       // empty state waits for both to be empty.
                       empty: events.isEmpty && todos.isEmpty,
+                      eventCount: events.length,
                     ),
                   ),
                 ),
               ),
-              ?widget.belowDay,
             ],
           ),
+          ),
         ),
-        _JumpToTodaySlot(visible: !_todayVisible, accent: accent, onTap: _jumpToToday),
       ],
     );
   }
@@ -500,91 +532,163 @@ class _EmptyDayActions extends ConsumerWidget {
   }
 }
 
-/// The selected day's card: full-width gray, and **rounded at the bottom as
-/// well as the top**.
+/// The grey surface under Home's page: the selected day at the top and, below a
+/// divider, [below] — the household as it stands (`HomeSections`) — running
+/// **all the way to the bottom of the screen**, rounded only at the top.
 ///
-/// That bottom edge is the whole reason Home can say anything else. While this
-/// was the viewport's floor it was a background, and anything put near it read
-/// as one more appointment; ending it makes it an object, and the white below
-/// it is visibly a different subject. What is above the edge is whichever date
-/// the strip is on. What is below it is the household as it stands — see
-/// `HomeSections`.
+/// It used to be a card that ended under the day, with the sections on white
+/// paper beneath it. One surface reads as one page; the divider is now the edge
+/// between "whichever date the strip is on" and "the household right now", and
+/// the section headings under it name what the new part is.
 ///
 /// Still full-bleed rather than inset like a card: the agenda rows inside it
 /// have a 54pt time rail, and pulling the whole thing in from both margins
 /// would cost the appointment names the width they actually need.
-class _AgendaGrayBody extends StatelessWidget {
+///
+/// Both calendar screens are `AppColors.surface`, so this is what gives the day
+/// an edge and keeps it from running into the white above it.
+///
+/// **It is only safe because the chips are opaque.** A translucent chip takes
+/// whatever is behind it into its own colour, so on grey every calendar drifted
+/// toward the same dusty register — which is why the fill is now a lightened
+/// version of the calendar's colour rather than an alpha of it. See
+/// `_blockFill`. The section cards below are `AppColors.cardOnSurface`, a step
+/// lighter than this grey on both palettes.
+class _DayBody extends StatelessWidget {
   final Widget child;
 
-  const _AgendaGrayBody({required this.child});
+  /// Under the divider. Null draws the day alone, still to the bottom.
+  final Widget? below;
+
+  /// The viewport's height, so the grey fills the screen on a short page.
+  final double minHeight;
+
+  /// Room left at the bottom so the last section clears the nav bar.
+  final double bottomInset;
+
+  const _DayBody({
+    required this.child,
+    required this.minHeight,
+    required this.bottomInset,
+    this.below,
+  });
+
+  static const _radius = Radius.circular(26);
 
   @override
   Widget build(BuildContext context) {
+    final below = this.below;
     return Container(
-      decoration: BoxDecoration(color: AppColors.screenBg, borderRadius: BorderRadius.circular(26)),
-      padding: const EdgeInsets.fromLTRB(14, 20, 16, 16),
-      child: child,
+      constraints: BoxConstraints(minHeight: minHeight),
+      decoration: BoxDecoration(
+        color: AppColors.screenBg,
+        borderRadius: const BorderRadius.vertical(top: _radius),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // **The day is clipped on its own, so the timeline's dot lattice
+          // stops at the divider.** `_DotCanvas` is sized by the hour grid — it
+          // has to be, because only the grid knows where an hour falls — and it
+          // overdraws in every direction so the dots carry on under the heading,
+          // under the all-day band and past the last hour. With the sections
+          // sharing this grey, an unclipped lattice would run on under them.
+          ClipRRect(
+            borderRadius: const BorderRadius.vertical(top: _radius),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(14, 20, 16, 16),
+              child: child,
+            ),
+          ),
+          if (below != null) ...[
+            Padding(
+              // The day's own 14/16 inset, so the divider and the sections
+              // under it share the calendar's margins.
+              padding: const EdgeInsets.fromLTRB(14, 4, 16, 0),
+              child: Divider(height: 1, thickness: 1, color: AppColors.hairline),
+            ),
+            below,
+          ],
+          SizedBox(height: bottomInset),
+        ],
+      ),
     );
   }
 }
 
-/// What is inside the day card: the Feiertag, then the day in reading order.
+/// What is inside the day card: its title, the Feiertag, then the day itself.
 ///
-/// **It grows with the day and stops at [_maxEntries].** A floor would have been
-/// the wrong instinct — the founding brief for this screen was that you open the
-/// app and see everything happening today, so truncating today's agenda on the
-/// one screen built to show it undoes the point. The cap is high enough that no
-/// real family day reaches it and exists only so that a calendar somebody has
-/// connected badly cannot push the sections below a thousand points down the
-/// page. Past it the rest unfolds in place; there is nowhere else to send
-/// anybody, because this *is* the day view.
-class _DayAgenda extends StatefulWidget {
+/// **The title names the date and counts the appointments, exactly as
+/// Kalender's day box does.** Without it the band's chips sat at the top of a
+/// grey card with nothing saying whose day they were — the strip's highlight
+/// was the only link. The island above says something else on purpose; see
+/// `DayIsland`.
+///
+/// **There is no cap and no fold any more.** The agenda was a column of cards,
+/// so a badly connected calendar could push the sections below it a thousand
+/// points down the page and `_maxEntries` existed to stop that. A grid cannot:
+/// its height comes from the hours it covers, not from how many things stand on
+/// them, so a day with forty appointments is exactly as tall as a day with four
+/// and the founding brief — open the app, see everything happening today — is
+/// finally met without an exception attached to it.
+class _DayAgenda extends StatelessWidget {
   final GermanHoliday? holiday;
-  final List<Object> entries;
+  final _DayPlan plan;
+  final DateTime day;
   final String headingText;
   final Color accent;
   final bool empty;
 
+  /// Appointments only, not to-dos — the same count Kalender prints.
+  final int eventCount;
+
   const _DayAgenda({
     required this.holiday,
-    required this.entries,
+    required this.plan,
+    required this.day,
     required this.headingText,
     required this.accent,
     required this.empty,
+    required this.eventCount,
   });
-
-  @override
-  State<_DayAgenda> createState() => _DayAgendaState();
-}
-
-class _DayAgendaState extends State<_DayAgenda> {
-  static const _maxEntries = 8;
 
   /// What an empty day is given so the card still reads as a card rather than
   /// as a gray stripe. The only place a height is asserted here — every other
   /// day is as tall as what is on it.
   static const _emptyHeight = 170.0;
 
-  bool _showAll = false;
-
   @override
   Widget build(BuildContext context) {
-    final entries = widget.entries;
-    final folded = !_showAll && entries.length > _maxEntries;
-    final shown = folded ? entries.take(_maxEntries).toList() : entries;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // The Feiertag sits above the agenda rather than in it — it is something
-        // about the day, not an appointment on it. A day off with nothing
-        // planned is still worth saying, so it shows over the empty state too.
-        if (widget.holiday case final holiday?)
+        Padding(
+          padding: const EdgeInsets.only(left: 2, bottom: 14),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Flexible(child: Text(headingText, overflow: TextOverflow.ellipsis, style: AppText.itemTitle)),
+              // No "0 Termine" on an empty day: the empty state below says it
+              // in a sentence.
+              if (eventCount > 0) ...[
+                const SizedBox(width: 8),
+                Text(L.s.eventCount(eventCount), style: AppText.label),
+              ],
+            ],
+          ),
+        ),
+        // On a day with something on it the Feiertag is the first chip in the
+        // band — it is a property of the date, so it belongs with the other
+        // things true of the whole day rather than in a row of its own above
+        // them. An empty day has no band to put it in, and a day off with
+        // nothing planned is still worth saying, so there it stands alone.
+        if (holiday case final holiday? when empty)
           Padding(
             padding: const EdgeInsets.only(bottom: 14),
-            child: _HolidayChip(holiday: holiday, accent: widget.accent),
+            child: _HolidayChip(holiday: holiday, accent: accent),
           ),
-        if (widget.empty)
+        if (empty)
           SizedBox(
             height: _emptyHeight,
             child: Center(
@@ -598,44 +702,17 @@ class _DayAgendaState extends State<_DayAgenda> {
               ),
             ),
           )
-        else ...[
-          for (var i = 0; i < shown.length; i++)
-            if (shown[i] case final BoardTask task)
-              _TodoAgendaRow(
-                key: ValueKey(task.id),
-                task: task,
-                isFirst: i == 0,
-                accent: widget.accent,
-              )
-            else if (shown[i] case final CalendarEvent event)
-              _EventAgendaRow(
-                event: event,
-                isFirst: i == 0,
-                headingText: widget.headingText,
-                accent: widget.accent,
-              ),
-          if (folded)
-            GestureDetector(
-              onTap: () => setState(() => _showAll = true),
-              behavior: HitTestBehavior.opaque,
-              child: Padding(
-                // Inset to where the cards start (the rail plus its gap), so the
-                // fold reads as the end of the column of cards rather than as a
-                // row of its own.
-                padding: const EdgeInsets.only(left: _EventAgendaRow._railWidth + 9, top: 2, bottom: 4),
-                child: Row(
-                  children: [
-                    Text(
-                      L.s.homeMoreEntries(entries.length - _maxEntries),
-                      style: AppText.caption.copyWith(color: widget.accent),
-                    ),
-                    const SizedBox(width: 4),
-                    AppIcon(AppIcons.caretDown, size: 13, color: widget.accent, flat: true),
-                  ],
-                ),
-              ),
+        else
+          SizedBox(
+            width: double.infinity,
+            child: _DayTimeline(
+              plan: plan,
+              holiday: holiday,
+              day: day,
+              headingText: headingText,
+              accent: accent,
             ),
-        ],
+          ),
       ],
     );
   }
@@ -850,507 +927,58 @@ class _DayWeather extends ConsumerWidget {
 /// left, paired with the event card. Used by both the week view's day agenda
 /// and the month view's per-day details box so the timeline isn't drawn
 /// twice with two different implementations.
-class _EventAgendaRow extends ConsumerWidget {
-  final CalendarEvent event;
-  final bool isFirst;
-  final String headingText;
-  final Color accent;
-  final bool compact;
-
-  const _EventAgendaRow({required this.event, required this.isFirst, required this.headingText, required this.accent, this.compact = false});
-
-  /// Wide enough for "Ganztägig" at a legible scale — see the [FittedBox] on
-  /// the label. A rail sized to a clock time alone left the all-day rows
-  /// hyphenating across two lines.
-  static const _railWidth = 54.0;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(calendarProvider);
-    final phase = event.phaseAt(state.now);
-    final past = phase == EventPhase.done;
-    final live = phase == EventPhase.now;
-    final rail = AppColors.hairline2;
-    final timeColor = past ? AppColors.muted : (live ? accent : AppColors.inkTertiary);
-    // Ferien, Abfall and any calendar the connected account can only read stay
-    // untouchable — offering the swipe action there would be a lie. Everything
-    // else is editable, including a Google event, which travels back out to
-    // Google rather than being changed in a row of ours.
-    final editable = state.sourceById(event.calendarId)?.editable ?? false;
-    const railAnim = Duration(milliseconds: 320);
-    const railCurve = Curves.easeOutCubic;
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 0),
-      child: IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            SizedBox(
-              width: _railWidth,
-              child: Column(
-                children: [
-                  AnimatedContainer(duration: railAnim, curve: railCurve, width: 2, height: 10, color: isFirst ? Colors.transparent : (past || live ? accent : rail)),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 2),
-                    child: AnimatedDefaultTextStyle(
-                      duration: railAnim,
-                      curve: railCurve,
-                      style: AppText.groupHeading.copyWith(letterSpacing: -0.3, color: timeColor),
-                      // A clock time fits the rail at full size; "Ganztägig"
-                      // does not, and wrapped to "Ganzt-/ägig" over two lines it
-                      // also pushed this row's dot out of line with its
-                      // neighbours'. Scaling down is the one treatment that
-                      // holds for every label in both languages — the rail is
-                      // sized for a time, and anything longer simply shrinks to
-                      // the single line it has.
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text(event.timeLabel, maxLines: 1, softWrap: false),
-                      ),
-                    ),
-                  ),
-                  AnimatedContainer(
-                    duration: railAnim,
-                    curve: railCurve,
-                    width: 10,
-                    height: 10,
-                    decoration: BoxDecoration(color: past ? accent : AppColors.surface, shape: BoxShape.circle, border: Border.all(color: past || live ? accent : rail, width: 2.5)),
-                  ),
-                  Expanded(child: AnimatedContainer(duration: railAnim, curve: railCurve, width: 2, color: past ? accent : rail)),
-                ],
-              ),
-            ),
-            const SizedBox(width: 9),
-            Expanded(
-              child: Padding(
-                padding: EdgeInsets.only(bottom: compact ? 10 : 14),
-                // Swipe-left on a card reveals Edit/Delete, so fixing a title
-                // or removing an event doesn't always require opening the full
-                // detail sheet first.
-                child: SwipeActionsRow(
-                  // Keyed on the event, so a deleted row takes its open swipe
-                  // with it instead of handing it to whichever appointment
-                  // moves up into its place in the agenda.
-                  key: ValueKey(event.id),
-                  borderRadius: BorderRadius.circular(compact ? 16 : 20),
-                  onTap: () {
-                    ref.read(calendarProvider.notifier).openEvent(event, headingText);
-                    _showEventDetailSheet(context, ref);
-                  },
-                  actions: [
-                    if (editable) ...[
-                      SwipeAction(
-                        icon: AppIcons.pencilSimple,
-                        color: accent,
-                        // No need to open the event first: the edit sheet is
-                        // seeded from the row it was swiped on.
-                        onTap: () => _openEditEventSheet(context, ref, event),
-                      ),
-                      SwipeAction(
-                        icon: AppIcons.trash,
-                        color: AppColors.danger,
-                        // The confirm dialog and the removal own what happens
-                        // next; snapping the row shut under it just fights that.
-                        closesRow: false,
-                        onTap: () => _confirmDeleteEvent(context, ref, event),
-                      ),
-                    ],
-                  ],
-                  child: _EventCard(
-                    event: event,
-                    compact: compact,
-                    weather: _weatherFor(ref, event),
-                    linkedLists: _linkedListsFor(ref, event).length,
-                    linkedTasks: _linkedTasksFor(ref, event).length,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// One to-do's row in the agenda — the rail on the left, its card on the right.
+/// Bearbeiten and Löschen for a card inside a carousel, where the swipe that
+/// normally reveals them is turning pages instead.
 ///
-/// Deliberately the same rail as [_EventAgendaRow] so the day stays one column
-/// with one line running down it, and deliberately a different card, so no row
-/// of it can be mistaken for an appointment. The rail says [AppStrings.dueRailLabel]
-/// where an event says a clock time: a due date carries no time, and "Ganztägig"
-/// would claim the to-do occupies the day rather than merely being owed by the
-/// end of it.
-///
-/// The dot follows *done*, not the clock. An event's dot fills as the day passes
-/// it; a to-do's fills when somebody ticks it, which is the only thing about a
-/// to-do that a calendar can honestly show as having happened.
-class _TodoAgendaRow extends ConsumerWidget {
-  final BoardTask task;
-  final bool isFirst;
-  final Color accent;
-  final bool compact;
-
-  const _TodoAgendaRow({super.key, required this.task, required this.isFirst, required this.accent, this.compact = false});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final rail = AppColors.hairline2;
-    final done = task.done;
-    final at = task.dueTime;
-    const railAnim = Duration(milliseconds: 320);
-    const railCurve = Curves.easeOutCubic;
-
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          SizedBox(
-            width: _EventAgendaRow._railWidth,
-            child: Column(
-              children: [
-                AnimatedContainer(duration: railAnim, curve: railCurve, width: 2, height: 10, color: isFirst ? Colors.transparent : (done ? accent : rail)),
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 2),
-                  child: AnimatedDefaultTextStyle(
-                    duration: railAnim,
-                    curve: railCurve,
-                    style: AppText.groupHeading.copyWith(
-                      letterSpacing: -0.3,
-                      color: done ? AppColors.muted : AppColors.inkTertiary,
-                    ),
-                    // The hour where the to-do names one — it is then sorted
-                    // in among the appointments and the rail has to say why it
-                    // is there — and "Fällig" where it does not.
-                    //
-                    // Same treatment as the event rail's: the rail is sized for
-                    // a clock time, and any word longer than one shrinks to the
-                    // single line it has rather than hyphenating.
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(
-                        at == null ? L.s.dueRailLabel : formatTimeOfDay(at.hour, at.minute),
-                        maxLines: 1,
-                        softWrap: false,
-                      ),
-                    ),
-                  ),
-                ),
-                AnimatedContainer(
-                  duration: railAnim,
-                  curve: railCurve,
-                  width: 10,
-                  height: 10,
-                  decoration: BoxDecoration(color: done ? accent : AppColors.surface, shape: BoxShape.circle, border: Border.all(color: done ? accent : rail, width: 2.5)),
-                ),
-                Expanded(child: AnimatedContainer(duration: railAnim, curve: railCurve, width: 2, color: done ? accent : rail)),
-              ],
-            ),
-          ),
-          const SizedBox(width: 9),
-          Expanded(
-            child: Padding(
-              padding: EdgeInsets.only(bottom: compact ? 10 : 14),
-              // **No swipe actions, unlike the event card beside it.** There
-              // the swipe reveals Bearbeiten and Löschen because the card's own
-              // tap opens a *detail* sheet and editing is a second thing. A
-              // to-do has no detail sheet — its tap already opens the editor —
-              // so a swipe could only offer the same sheet a second way.
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () => openTaskSheet(context, ref, task: task),
-                // **Not [CheckOffRow].** That plays the strike and then
-                // collapses the row to nothing, because on the Board a ticked
-                // to-do leaves the open list and travels to "Erledigt". Here it
-                // stays exactly where it is — a day whose to-dos all vanished as
-                // they were done would end up reading like a day that never had
-                // any. So the strike is driven off the row's own state instead,
-                // and animates because the value it is given changes.
-                child: TweenAnimationBuilder<double>(
-                  tween: Tween<double>(end: done ? 1 : 0),
-                  duration: const Duration(milliseconds: 260),
-                  curve: Curves.easeOut,
-                  builder: (context, strike, _) => _TodoCard(
-                    task: task,
-                    accent: accent,
-                    compact: compact,
-                    strike: strike,
-                    onCheckOff: () => ref.read(boardProvider.notifier).toggle(task),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
+/// Anchored on the card itself rather than on the press point, so UIKit's menu
+/// grows out of the thing it acts on the way every other menu in the app does.
+Future<void> _openEventCardMenu(BuildContext context, WidgetRef ref, CalendarEvent event) async {
+  final box = context.findRenderObject() as RenderBox?;
+  if (box == null || !box.hasSize) return;
+  await showAnchoredMenuAt(
+    context: context,
+    anchor: box.localToGlobal(Offset.zero) & box.size,
+    title: event.title,
+    items: [
+      AnchoredMenuItem(
+        label: L.s.edit,
+        icon: AppIcons.pencilSimple,
+        symbol: 'pencil',
+        onSelected: () => _openEditEventSheet(context, ref, event),
       ),
-    );
-  }
-}
-
-/// One to-do's card in the agenda.
-///
-/// **It carries the check, and that is what keeps it from reading as an
-/// appointment.** No event card in the agenda has one, so the circle at the
-/// right-hand end is the whole signal — no coloured fill, no second label
-/// saying "To-do", nothing that would make the day a two-tone list.
-///
-/// The check is also the one place this breaks the rule the event card's link
-/// chips follow. Those are markers because a 12pt glyph is too small to aim at;
-/// this is the Board's own 26pt button, the same size and in the same corner as
-/// on the Board itself. A to-do you can see and cannot tick is the calendar
-/// showing you your day and making you leave it to change anything.
-class _TodoCard extends ConsumerWidget {
-  final BoardTask task;
-  final Color accent;
-  final bool compact;
-
-  /// 0 → 1 as the row is checked off, 1 → 0 as it is undone. Drives the strike
-  /// and the ink at once, so the text fades to the done colour as the line
-  /// crosses it.
-  final double strike;
-  final VoidCallback onCheckOff;
-
-  const _TodoCard({required this.task, required this.accent, required this.compact, required this.strike, required this.onCheckOff});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final who = whoBadge(
-      assigneeId: task.assigneeId,
-      visibility: task.visibility,
-      sharedWith: task.sharedWith,
-      members: ref.watch(householdMembersProvider),
-    );
-    final note = task.meta?.trim() ?? '';
-
-    return Container(
-      padding: EdgeInsets.fromLTRB(16, compact ? 12 : 14, 14, compact ? 12 : 14),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(compact ? 16 : 20),
-        boxShadow: AppShadows.card,
+      AnchoredMenuItem(
+        label: L.s.delete,
+        icon: AppIcons.trash,
+        symbol: 'trash',
+        destructive: true,
+        onSelected: () => _confirmDeleteEvent(context, ref, event),
       ),
-      child: Row(
-        children: [
-          // The face first, where an event card starts with its title. Whose
-          // to-do it is, is the question a household asks of one of these
-          // before it asks what it says.
-          Semantics(
-            label: who.label,
-            excludeSemantics: true,
-            child: WhoAvatars(who: who, size: 26, fontSize: 10.5),
-          ),
-          const SizedBox(width: 11),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                StrikeThrough(
-                  progress: strike,
-                  color: AppColors.doneInk,
-                  child: Text(
-                    task.text,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppText.itemTitle.copyWith(color: Color.lerp(AppColors.ink, AppColors.doneInk, strike)),
-                  ),
-                ),
-                // Skipped whole rather than rendered empty — an empty `Text`
-                // still takes a line, which is what put a gap under the title of
-                // a note-less card.
-                if (!compact && note.isNotEmpty) ...[
-                  const SizedBox(height: 3),
-                  Opacity(
-                    opacity: 1 - 0.45 * strike,
-                    child: Text(note, maxLines: 2, overflow: TextOverflow.ellipsis, style: AppText.label),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          const SizedBox(width: 10),
-          CheckOffButton(progress: strike, accent: accent, onTap: onCheckOff, size: 26, filled: true),
-        ],
-      ),
-    );
-  }
-}
-
-/// One event's card in the agenda.
-///
-/// **Every card is white.** The live event used to be filled with the accent
-/// tint, which put a blue card between two white ones for as long as it ran —
-/// and since an all-day event is "live" for its whole span, a day with Ferien
-/// and a bin pickup on it was blue/white/blue before anything had even started.
-/// The rail beside the card already says where the day is (filled dot, accent
-/// line, accent time), so the fill was saying it a second time and louder.
-class _EventCard extends StatelessWidget {
-  final CalendarEvent event;
-  final bool compact;
-
-  /// Resolved by the row, which has the `ref` — the card stays a pure render of
-  /// what it is handed. Null when there is no forecast for this event, which is
-  /// the common case for anything in the past.
-  ///
-  /// The card takes no accent any more: the forecast icon used to be tinted
-  /// with it, and it is the one thing here that draws itself.
-  final WeatherReading? weather;
-
-  /// How many lists and how many tasks were made from this appointment. Counts
-  /// rather than the rows themselves: the card shows a marker, and the sheet
-  /// behind it is where they can be read and opened.
-  final int linkedLists;
-  final int linkedTasks;
-
-  const _EventCard({
-    required this.event,
-    this.compact = false,
-    this.weather,
-    this.linkedLists = 0,
-    this.linkedTasks = 0,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    // An event with nothing typed under its title gets no subtitle line at all
-    // — an empty `Text` still occupies a full line, which is where the gap
-    // between title and chips on a bare card was coming from.
-    final subtitle = event.body.trim();
-    final showSubtitle = !compact && subtitle.isNotEmpty;
-
-    return Container(
-      padding: EdgeInsets.fromLTRB(16, compact ? 13 : 16, 16, compact ? 14 : 18),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(compact ? 16 : 20),
-        boxShadow: AppShadows.card,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(event.title, style: AppText.itemTitle),
-          if (showSubtitle) ...[
-            const SizedBox(height: 5),
-            Text(subtitle, maxLines: 2, overflow: TextOverflow.ellipsis, style: AppText.body.copyWith(color: AppColors.inkTertiary)),
-          ],
-          const SizedBox(height: 11),
-          Row(
-            children: [
-              // Takes the avatar's old spot, so the title above no longer
-              // reserves corner space for it. An event with no forecast — one
-              // in the past, or further out than Open-Meteo reaches — shows no
-              // placeholder at all rather than an empty slot.
-              if (weather != null) ...[
-                // Bigger than the 18 the Lucide glyph sat at: a Meteocons file
-                // carries its own padding inside a 128 viewBox, so the drawing
-                // fills about two thirds of whatever it is given.
-                SvgPicture.asset(weather!.iconAsset, width: 26, height: 26),
-                const SizedBox(width: 5),
-                Text(weather!.temperatureLabel, style: AppText.groupHeading.copyWith(letterSpacing: 0, color: AppColors.ink)),
-                const SizedBox(width: 8),
-              ],
-              Expanded(
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      _Chip(bg: AppColors.surfaceAlt, child:Row(children: [
-                        Container(width: 7, height: 7, decoration: BoxDecoration(color: event.srcColor, shape: BoxShape.circle)),
-                        const SizedBox(width: 6),
-                        Text(event.source, style: AppText.microLabel.copyWith(color: AppColors.inkSecondary)),
-                      ])),
-                      const SizedBox(width: 7),
-                      _Chip(bg: AppColors.surfaceAlt, child:Text(event.durationLabel, style: AppText.microLabel)),
-                      // The lists and tasks hung off this appointment: a
-                      // marker, not a button — the card is already one tap
-                      // target and the detail sheet behind it is where they can
-                      // actually be read. An icon small enough to fit here is
-                      // far too small to aim at inside a card this size. It carries the tab's
-                      // own icon so the row says *where* the thing is without a
-                      // word — which is the whole job of a 12pt glyph on a card
-                      // you read at arm's length while getting three people out
-                      // of the door.
-                      //
-                      // Two chips rather than one summed count: "2" over a
-                      // clipboard means two lists, and pooling them would make
-                      // the packing list and the dentist reminder into a number
-                      // that names neither.
-                      if (linkedLists > 0) ...[
-                        const SizedBox(width: 7),
-                        _Chip(
-                          bg: AppColors.surfaceAlt,
-                          child: Row(children: [
-                            AppIcon(AppIcons.listChecks, size: 12, color: AppColors.inkSecondary),
-                            const SizedBox(width: 5),
-                            Text(
-                              L.s.linkedListCount(linkedLists),
-                              style: AppText.microLabel.copyWith(color: AppColors.inkSecondary),
-                            ),
-                          ]),
-                        ),
-                      ],
-                      if (linkedTasks > 0) ...[
-                        const SizedBox(width: 7),
-                        _Chip(
-                          bg: AppColors.surfaceAlt,
-                          child: Row(children: [
-                            // The check the Board create sheet puts on
-                            // "To-do", not the Board tab's grid: the chip
-                            // counts tasks, and a grid beside a clipboard read
-                            // as a table rather than as a to-do.
-                            AppIcon(AppIcons.checkCircle, size: 12, color: AppColors.inkSecondary),
-                            const SizedBox(width: 5),
-                            Text(
-                              L.s.linkedTaskCount(linkedTasks),
-                              style: AppText.microLabel.copyWith(color: AppColors.inkSecondary),
-                            ),
-                          ]),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Chip extends StatelessWidget {
-  final Color bg;
-  final Widget child;
-
-  const _Chip({required this.bg, required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(14)),
-      child: child,
-    );
-  }
+    ],
+  );
 }
 
 /// Liquid-glass "Heute" button shown whenever today's date has scrolled out of
 /// view (week view: today isn't in the displayed week; month view: today's day
 /// cell isn't in the viewport). Tapping it re-selects today and (in month
-/// view) scrolls back to it. [_JumpToTodaySlot] places it.
+/// view) scrolls back to it. Kalender's [_JumpToTodaySlot] puts it on the nav
+/// row; Home's week view puts it at the right end of the status island's row
+/// ([_WeekViewState._buildJumpToToday]).
 ///
-/// A [FloatingGlassPill] in its nav-row shape, and **the word on its own** —
-/// the come-and-go is shared with Board's and Listen's "Rückgängig", but this
-/// one stands a finger's width from the bar's calendar icon, and any calendar
-/// glyph on it reads as a duplicate of that icon rather than as a different
-/// offer. The word is also the shorter of the two, in both languages.
+/// A [FloatingGlassPill] — the nav-row shape on Kalender, the small one under
+/// Home's strip — and **the word on its own**: on Kalender it stands a finger's
+/// width from the bar's calendar icon, and any calendar glyph on it reads as a
+/// duplicate of that icon rather than as a different offer. The word is also
+/// the shorter of the two, in every language.
 class _JumpToTodayButton extends StatelessWidget {
   final bool visible;
   final Color accent;
   final VoidCallback onTap;
 
-  const _JumpToTodayButton({required this.visible, required this.accent, required this.onTap});
+  /// The taller capsule that matches the nav bar's row. False for the small
+  /// pill that sits under Home's day strip.
+  final bool onNavRow;
+
+  const _JumpToTodayButton({required this.visible, required this.accent, required this.onTap, this.onNavRow = true});
 
   @override
   Widget build(BuildContext context) {
@@ -1358,7 +986,7 @@ class _JumpToTodayButton extends StatelessWidget {
       visible: visible,
       label: L.s.today,
       accent: accent,
-      onNavRow: true,
+      onNavRow: onNavRow,
       onTap: onTap,
     );
   }

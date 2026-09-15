@@ -1,3 +1,5 @@
+import '../services/app_review.dart';
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -914,6 +916,13 @@ class ListNotifier extends StateNotifier<ListScreenState> {
       final saved = await _repo.setDone(itemId, next);
       if (!mounted) return;
       _replaceItem(listId, itemId, saved);
+      // The last article ticked on a list of any size is the errand done — one
+      // of the few moments the rating prompt may consider. [ReviewPrompt]
+      // decides whether it actually asks.
+      if (next) {
+        final items = state.itemsByList[listId] ?? const <ShoppingListItem>[];
+        if (items.length >= 3 && items.every((i) => i.done)) unawaited(reviewPrompt.maybeAsk());
+      }
     } catch (_) {
       if (!mounted) return;
       _patchItem(listId, itemId, (_) => before);

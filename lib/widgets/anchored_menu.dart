@@ -410,6 +410,14 @@ class _RowMenuButtonState extends State<RowMenuButton> {
 /// what says a row has more behind it than the tap that opens it — but they
 /// hang off this rather than off [RowMenuButton], so both kinds of row wear the
 /// same mark at the same size and the geometry lives in one place.
+///
+/// **[AppGlyph.button], not [AppGlyph.row], and it is the one glyph in the app
+/// that needs saying out loud.** `dotsThreeVertical` is the narrowest drawing
+/// in the set: Phosphor's dots come out about 30% smaller than SF's at a
+/// matched overall length, so the tier a row's controls take leaves three
+/// specks. At the button tier the mark is 16.4pt tall with 2.7pt dots, which is
+/// where the system's own row ellipsis sits. It was drawn at 15 — 1.6pt dots —
+/// and that is what "the three dots are too thin to see" was.
 class RowMoreButton extends StatelessWidget {
   final VoidCallback onTap;
 
@@ -418,14 +426,19 @@ class RowMoreButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      // Without this only the glyph itself takes the tap — a 15px icon is a
-      // hard target, so the padding around it has to count too.
+      // Without this only the glyph itself takes the tap — the mark is a few
+      // points wide however big the em is, so the padding around it has to
+      // count too.
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
       child: SizedBox(
         width: 32,
         height: 36,
-        child: AppIcon(AppIcons.dotsThreeVertical, size: 15, color: AppColors.mutedLight),
+        // [AppColors.muted] rather than [AppColors.mutedLight]: the dots were
+        // the faintest grey in the palette *and* the smallest glyph, and the
+        // two compounded. One step in is still plainly secondary to the row's
+        // own words.
+        child: AppIcon(AppIcons.dotsThreeVertical, size: AppGlyph.button, color: AppColors.muted),
       ),
     );
   }

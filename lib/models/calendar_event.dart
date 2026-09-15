@@ -79,6 +79,11 @@ class CalendarSource {
   factory CalendarSource.fromMap(Map<String, dynamic> map) => CalendarSource(
     id: map['id'] as String,
     name: map['name'] as String? ?? L.s.calendar,
+    // **Exactly as the account gave it.** A calendar's colour is what a
+    // household recognises it by, in their own calendar app as much as in this
+    // one, so nothing here second-guesses it — not even Apple's system grey for
+    // "Familie", which the day grid draws legibly by giving every block a rim
+    // rather than by choosing a different colour. See `_blockRim`.
     color: Color((map['color'] as num?)?.toInt().toUnsigned(32) ?? 0xff1668ff),
     readOnly: map['is_read_only'] == true,
     feedKind: map['feed_kind'] as String? ?? '',
@@ -114,8 +119,13 @@ class CalendarGroup {
   String get ownerMemberId => calendars.first.ownerMemberId;
 
   /// True for the household's own chip — the shared calendars, Ferien and
-  /// Abfall. It wears the family picture rather than a member's, and it is the
-  /// one group whose calendars also show up under everybody else.
+  /// Abfall, and anything nobody has assigned yet. It wears the family picture
+  /// rather than a member's.
+  ///
+  /// It is an ordinary chip otherwise: its calendars show under it and nowhere
+  /// else. They used to be folded into every person's filter as well, so that a
+  /// family dinner landed on Alice's Thursday — see
+  /// `CalendarNotifier.filterToGroup` for why that came out.
   bool get isFamily => id == 'family';
 
   /// True where this chip stands for somebody: a household member
@@ -358,7 +368,16 @@ class CalendarEvent {
   final String locSub;
   final bool online;
   final String url;
-  final String reminder;
+
+  /// The alarm **the provider itself** holds on this appointment, in minutes
+  /// before it starts, or null when there is none — Google's reminder, Outlook's,
+  /// a CalDAV `VALARM`. Read so the reminder row can say that the phone's own
+  /// calendar will already ring, and nobody sets a second one by accident.
+  ///
+  /// Not Aporah's reminder: that one is this person's, on this device, and lives
+  /// in `notificationSettingsProvider`. It used to be a German string read off a
+  /// column of the dead `public.events` table, which is to say always empty.
+  final int? providerReminderMinutes;
 
   /// Who created it. Empty for anything synced — a Ferien entry has no author,
   /// and inventing one would put a stranger's initials on a public holiday.
@@ -393,7 +412,7 @@ class CalendarEvent {
     this.locSub = '',
     this.online = false,
     this.url = '',
-    this.reminder = '',
+    this.providerReminderMinutes,
     this.owner = '',
     this.ownerInitial = '',
     this.ownerTone = 0,
@@ -517,7 +536,6 @@ class CalendarEvent {
     String? loc,
     String? locSub,
     bool? online,
-    String? reminder,
     String? source,
     Color? srcColor,
   }) {
@@ -535,7 +553,7 @@ class CalendarEvent {
       locSub: locSub ?? this.locSub,
       online: online ?? this.online,
       url: url,
-      reminder: reminder ?? this.reminder,
+      providerReminderMinutes: providerReminderMinutes,
       owner: owner,
       ownerInitial: ownerInitial,
       ownerTone: ownerTone,
@@ -583,7 +601,7 @@ class CalendarEvent {
       locSub: map['location_sub'] as String? ?? '',
       online: map['online'] == true,
       url: map['url'] as String? ?? '',
-      reminder: minutes == null ? '' : L.s.reminderMinutesBefore(minutes),
+      providerReminderMinutes: minutes,
       owner: owner,
       ownerInitial: ownerInitial,
       ownerTone: ownerTone,

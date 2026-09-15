@@ -9,7 +9,6 @@ import 'avatar.dart';
 import 'copy_link_card.dart';
 import 'empty_state.dart';
 import 'error_note.dart';
-import 'native_switch.dart';
 import '../l10n/l10n.dart';
 import '../theme/app_icons.dart';
 
@@ -54,10 +53,6 @@ class _ShareSheetBody extends ConsumerStatefulWidget {
 class _ShareSheetBodyState extends ConsumerState<_ShareSheetBody> {
   final _email = TextEditingController();
 
-  /// What a redeemer will be allowed to do. Defaults to true: the case this
-  /// exists for is a shopping list somebody else is meant to tick off.
-  bool _canEdit = true;
-
   bool _busy = false;
 
   @override
@@ -71,7 +66,7 @@ class _ShareSheetBodyState extends ConsumerState<_ShareSheetBody> {
     setState(() => _busy = true);
     await ref
         .read(sharingProvider(widget.target).notifier)
-        .createLink(canEdit: _canEdit, email: _email.text);
+        .createLink(email: _email.text);
     if (!mounted) return;
     _email.clear();
     setState(() => _busy = false);
@@ -126,31 +121,6 @@ class _ShareSheetBodyState extends ConsumerState<_ShareSheetBody> {
                   hintText: L.s.emailOptional,
                   isDense: true,
                 ),
-              ),
-            ),
-            CardDivider(),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(L.s.editingAllowed, style: AppText.rowTitle),
-                        const SizedBox(height: 2),
-                        Text(
-                          _canEdit ? L.s.canCheckAndAdd : L.s.canOnlyView,
-                          style: AppText.label.copyWith(fontSize: 12),
-                        ),
-                      ],
-                    ),
-                  ),
-                  // The real control, like every other on/off row in the app
-                  // — see [NativeSwitch] on why a sheet body may hold one
-                  // again, and what to watch for if it may not.
-                  NativeSwitch(value: _canEdit, onChanged: (v) => setState(() => _canEdit = v)),
-                ],
               ),
             ),
           ],
@@ -229,15 +199,11 @@ class _GuestRow extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(guest.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.rowTitle),
-                Text(
-                  guest.canEdit ? L.s.mayEdit : L.s.viewOnly,
-                  style: AppText.label.copyWith(fontSize: 12),
-                ),
-              ],
+            child: Text(
+              guest.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppText.rowTitle,
             ),
           ),
           GestureDetector(
@@ -262,7 +228,6 @@ class _LinkRow extends StatelessWidget {
 
   String get _subtitle {
     final parts = <String>[
-      link.canEdit ? L.s.edit : L.s.viewOnly,
       if (link.useCount >= 1) L.s.usedTimes(link.useCount),
       if (link.expired) L.s.linkExpired else if (link.usedUp) L.s.linkUsedUp,
     ];
@@ -284,7 +249,10 @@ class _LinkRow extends StatelessWidget {
                 // No URL: only the hash is stored, so there is nothing to print
                 // here. That is the point of storing it that way.
                 Text(L.s.shareLink, style: AppText.rowTitle),
-                Text(_subtitle, style: AppText.label.copyWith(fontSize: 12)),
+                // A fresh, unused, unexpired link has nothing to say about
+                // itself — every share may edit, so that is not news either.
+                if (_subtitle.isNotEmpty)
+                  Text(_subtitle, style: AppText.label.copyWith(fontSize: 12)),
               ],
             ),
           ),

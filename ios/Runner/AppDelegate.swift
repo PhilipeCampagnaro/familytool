@@ -10,6 +10,9 @@ import UIKit
   private var mapChannel: FlutterMethodChannel?
   private var menuChannel: FlutterMethodChannel?
   private var spendChannel: FlutterMethodChannel?
+  private var notificationsChannel: FlutterMethodChannel?
+  private var reviewChannel: FlutterMethodChannel?
+  private let localNotifications = LocalNotifications()
   private let mediaPicker = MediaPicker()
   private let mapSnapshot = MapSnapshot()
   private let nativeMenu = NativeMenu()
@@ -18,6 +21,9 @@ import UIKit
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
+    // Before launch finishes, or a tap on the notification that launched the
+    // app is delivered to nobody.
+    localNotifications.install()
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 
@@ -112,6 +118,25 @@ import UIKit
         SpendChannel.handle(call, result)
       }
       spendChannel = channel
+    }
+    // Scheduled, on-device notifications — appointment reminders, the bins the
+    // evening before, the morning brief. See LocalNotifications.swift and
+    // lib/services/local_notifications.dart.
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "AporahNotifications") {
+      let channel = FlutterMethodChannel(name: "aporah/notifications", binaryMessenger: registrar.messenger())
+      channel.setMethodCallHandler { [localNotifications] call, result in
+        localNotifications.handle(call, result: result)
+      }
+      notificationsChannel = channel
+    }
+    // The system rating prompt — see AppReview.swift and
+    // lib/services/app_review.dart, which decides who is asked and when.
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "AporahReview") {
+      let channel = FlutterMethodChannel(name: "aporah/review", binaryMessenger: registrar.messenger())
+      channel.setMethodCallHandler { call, result in
+        AppReview.handle(call, result: result)
+      }
+      reviewChannel = channel
     }
   }
 }

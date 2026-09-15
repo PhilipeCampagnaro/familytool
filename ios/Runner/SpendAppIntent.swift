@@ -14,7 +14,9 @@ import Foundation
 ///
 /// An `AppShortcutsProvider` donation appears in Shortcuts **on install**, with
 /// nothing downloaded and nothing pasted. What remains is the automation itself:
-/// Shortcuts → Automation → Transaction → pick cards → pick "Ausgabe erfassen".
+/// Shortcuts → Automation → Wallet → pick cards → pick "Ausgabe erfassen" → fill
+/// Händler and Betrag with the trigger's variables. The trigger was called
+/// "Transaction" before iOS renamed it; the setup steps in `lib/l10n/` name it.
 ///
 /// ## What could not be removed, and why
 ///
@@ -58,7 +60,7 @@ struct LogSpendIntent: AppIntent {
   static var title: LocalizedStringResource = "Ausgabe erfassen"
 
   static var description = IntentDescription(
-    "Speichert eine Apple-Pay-Zahlung in Aporah. Am besten mit einer Kurzbefehl-Automation „Transaktion\" verbinden."
+    "Speichert eine Apple-Pay-Zahlung in Aporah. Am besten mit einer Kurzbefehl-Automation „Wallet\" verbinden."
   )
 
   /// Runs in the background. Opening the app for this would put Aporah on screen

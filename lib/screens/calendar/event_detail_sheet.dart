@@ -248,6 +248,14 @@ void _showEventDetailSheet(BuildContext context, WidgetRef ref) {
               const SizedBox(height: 12),
               _EventLocationCard(event: e, accent: accent),
             ],
+            // Under the when and the where, because it is about both: how long
+            // before *this* appointment *this* phone rings. Absent once it is
+            // over, and for an appointment still on its way to the provider —
+            // it has no uid yet to key a reminder on.
+            if (_reminderOffered(e, state.now)) ...[
+              const SizedBox(height: 12),
+              _ReminderCard(event: e),
+            ],
             // Notes, on the other hand, are shown empty on purpose: every event
             // has this card, so the sheet has one shape and "there are no notes
             // on this one" is something you can read off it.
@@ -370,6 +378,99 @@ void _showEventDetailSheet(BuildContext context, WidgetRef ref) {
       },
     ),
   );
+}
+
+bool _reminderOffered(CalendarEvent e, DateTime now) =>
+    localNotificationsAvailable && e.uid.isNotEmpty && e.endsAt.isAfter(now);
+
+/// "Erinnerung" — this person's reminder for this appointment, on this phone.
+///
+/// **Offered on read-only calendars too.** A reminder writes nothing to the
+/// provider, so a Ferien day or a school feed takes one as happily as a Google
+/// appointment — the write permission that hides the edit button has nothing to
+/// say about it.
+///
+/// When the provider already has an alarm and we have none, the subtitle says
+/// so, which is the whole defence against one appointment ringing twice.
+class _ReminderCard extends ConsumerStatefulWidget {
+  final CalendarEvent event;
+
+  const _ReminderCard({required this.event});
+
+  @override
+  ConsumerState<_ReminderCard> createState() => _ReminderCardState();
+}
+
+class _ReminderCardState extends ConsumerState<_ReminderCard> {
+  final _anchor = GlobalKey();
+
+  @override
+  Widget build(BuildContext context) {
+    final e = widget.event;
+    final settings = ref.watch(notificationSettingsProvider);
+    final current = settings.reminderFor(e);
+    final provider = e.providerReminderMinutes;
+
+    final String? subtitle;
+    if (current != null && settings.loaded && settings.access == NotificationAccess.denied) {
+      subtitle = L.s.reminderDenied;
+    } else if (current == null && provider != null) {
+      subtitle = L.s.reminderCalendarAlready(reminderLabel(provider, allDay: e.allDay));
+    } else {
+      subtitle = null;
+    }
+
+    return KeyedSubtree(
+      key: _anchor,
+      child: SectionCard(
+        children: [
+          SettingsRow(
+            icon: AppIcons.bell,
+            title: L.s.reminder,
+            subtitle: subtitle,
+            value: current == null ? L.s.reminderNone : reminderLabel(current.minutesBefore, allDay: e.allDay),
+            onTap: _openMenu,
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _openMenu() {
+    final e = widget.event;
+    final current = ref.read(notificationSettingsProvider).reminderFor(e)?.minutesBefore;
+
+    Future<void> pick(int? minutes) async {
+      final access = await ref.read(notificationSettingsProvider.notifier).setReminder(e, minutes);
+      if (!mounted || minutes == null) return;
+      if (access == NotificationAccess.denied) {
+        showToast(context, L.s.reminderDenied, kind: ToastKind.error);
+      }
+    }
+
+    showAnchoredMenu(
+      context: context,
+      anchorKey: _anchor,
+      title: L.s.reminder,
+      items: [
+        AnchoredMenuItem(
+          label: L.s.reminderNone,
+          icon: current == null ? AppIcons.check : AppIcons.x,
+          symbol: 'bell.slash',
+          selected: current == null,
+          onSelected: () => pick(null),
+        ),
+        for (final minutes in reminderChoicesFor(e))
+          AnchoredMenuItem(
+            label: reminderLabel(minutes, allDay: e.allDay),
+            icon: current == minutes ? AppIcons.check : AppIcons.clock,
+            symbol: 'bell',
+            selected: current == minutes,
+            onSelected: () => pick(minutes),
+          ),
+      ],
+    );
+  }
 }
 
 /// The forecast at the appointment, beside the date it happens on.
@@ -738,19 +839,36 @@ void _confirmDeleteEvent(BuildContext context, WidgetRef ref, CalendarEvent even
     context: context,
     builder: (dialogContext) {
       Future<void> remove(EventScope scope) async {
-        // Before [onDeleted]: [context] is the sheet's own when the delete
-        // came from inside it, and that route is about to go.
-        final confirm = confirmChipOf(context);
+        // A spinner, not a bare confirmation, for the same reason the create
+        // sheet has one: the row is off the grid before this line runs —
+        // `deleteEvent` hides it first — but the removal in Google, Outlook or
+        // the CalDAV server takes a couple of seconds, and until it answers
+        // there is nothing to offer "Rückgängig" on. Without the chip those
+        // seconds were the app saying nothing at all after the sheet had closed,
+        // and then a confirmation arriving out of nowhere.
+        //
+        // Taken *before* [onDeleted]: [context] is the sheet's own when the
+        // delete came from inside it, and that route is about to go.
+        final chip = showPendingChip(
+          context,
+          scope == EventScope.series ? L.s.seriesBeingDeleted : L.s.eventBeingDeleted,
+        );
         final notifier = ref.read(calendarProvider.notifier);
         final deleting = notifier.deleteEvent(event, scope: scope);
         Navigator.of(dialogContext).pop();
         onDeleted?.call();
-        if (!await deleting) return;
+        if (!await deleting) {
+          // Taken down rather than turned red, as on the create sheet: the
+          // screen puts `state.error` up itself and two messages about one
+          // failure is one too many.
+          chip.dismiss();
+          return;
+        }
         // No undo on a series. [CalendarNotifier.restoreEvent] writes the one
         // occurrence back out as a fresh appointment, which after "Ganze Serie"
         // would put a single Monday where a term of them used to be and call it
         // restored. Better to offer nothing than to offer that.
-        confirm(
+        chip.done(
           L.s.eventDeleted,
           undo: scope == EventScope.series ? null : () => notifier.restoreEvent(event),
         );

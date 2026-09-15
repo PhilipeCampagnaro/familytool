@@ -575,6 +575,30 @@ class AppTones {
 /// impossible to compare, which is most of what anybody does with this page.
 /// The last slot is deliberately the grey one, and that is where "Sonstige"
 /// lands.
+/// The colours a household may give one of its calendars.
+///
+/// **The one colour list in the app that is not per-theme, and that is the
+/// point.** Every other palette here swaps with light and dark because it is
+/// ours to choose; a calendar's colour is the *account's*, and Google's does not
+/// change when the phone goes dark. These sit in the same slot as one, so they
+/// cannot either — a household that recognises a calendar by its colour would
+/// otherwise stop recognising it at sunset. Mid-lightness and mid-saturation
+/// precisely so one set holds against a white card and a near-black one.
+///
+/// Twelve, and deliberately including a grey: the day grid draws a chip at low
+/// alpha over a grey card, so a grey calendar really is the hardest one to see —
+/// but "you may not pick that" is a worse answer than letting a family file the
+/// calendar they barely use in the colour that stays out of the way.
+class AppCalendarColors {
+  AppCalendarColors._();
+
+  static const choices = <Color>[
+    Color(0xFF4A7FDC), Color(0xFF2D9CDB), Color(0xFF1FA894), Color(0xFF63A83F),
+    Color(0xFFC9B227), Color(0xFFE0912A), Color(0xFFE2653C), Color(0xFFDC4F78),
+    Color(0xFFB0479E), Color(0xFF8A63DE), Color(0xFF8A6A4B), Color(0xFF7C8794),
+  ];
+}
+
 class AppSpendColors {
   AppSpendColors._();
 
@@ -686,6 +710,67 @@ class AppSpacing {
   /// two pages of the same shape stop drifting apart.
   static const blockGap = 14.0;
 }
+
+/// **How big a control's glyph is drawn.**
+///
+/// Every number here is an *em* handed to [AppIcon], and an em is not what
+/// lands on screen: a Phosphor glyph carries an invisible full-em box and the
+/// drawing fills only 57–86% of it, so `size: 19` puts about 15pt of ink on a
+/// button. Lucide, which Phosphor replaced, filled about 88% — which is how the
+/// swap shrank every control in the app without a single number changing.
+///
+/// So these are calibrated against **rendered ink**, measured off the real SF
+/// Symbols the system draws beside them, rather than against a design grid:
+///
+/// | | ink | stroke |
+/// |---|---|---|
+/// | iOS bar button — SF 17pt, `.large` | 21.0pt | 1.62pt |
+/// | Phosphor Regular at [button] | 21.4pt | 1.63pt |
+///
+/// The `.large` scale step is the part that is easy to miss. `UIBarButtonItem`
+/// does not draw its symbol at plain 17pt; it applies `.large` on top, which is
+/// about +25%, and the old 19 was calibrated against the unscaled number.
+///
+/// **Sizing these correctly is also what let the flat weight go back to
+/// Regular.** The glyph was too small and Bold was how it was kept from reading
+/// as faint; at the right size Bold is 39% heavier than the symbol next to it.
+/// The two errors were cancelling. See `_flatFamily` in `app_icons.dart`.
+///
+/// Only *controls* take these — the glyph you press, which is the same set
+/// `AppIcon.flat` covers. An icon that names a thing is duotone, is sized
+/// against the text beside it, and uses [AppText.markGlyph] or its own number.
+///
+/// A glyph beside *micro* type sits below the scale and keeps its own number —
+/// `list_screen.dart`'s 11pt link mark is the one that does. Reaching for
+/// [inline] there would put the glyph above the words it marks.
+class AppGlyph {
+  AppGlyph._();
+
+  /// The glyph on a button of its own: a glass icon button, a sheet's X and
+  /// check, the "..." at a row's trailing edge. iOS's bar button.
+  ///
+  /// The "..." is on this tier rather than [row] despite living in a row,
+  /// because `dotsThreeVertical` is the narrowest glyph in the set — Phosphor
+  /// draws its dots about 30% smaller than SF does at a matched length — and
+  /// at a row's tier it comes out as three specks.
+  static const button = 26.0;
+
+  /// A control glyph that shares its space with a word of [AppText.rowTitle]'s
+  /// size: a segment of a segmented control, the glyph on a pill beside its
+  /// label, a sheet's full-width action. Apple's SF 17pt at `.medium`, which is
+  /// ~16.5pt of ink.
+  static const row = 21.0;
+
+  /// The same, beside *smaller* type — a caption, a count, a delta on a stat.
+  /// A glyph that out-measures the word it belongs to stops reading as part of
+  /// it.
+  static const inline = 17.0;
+
+  /// A disclosure caret at a row's trailing edge. Sized to the system's own
+  /// table-row indicator, which is ~12.5pt of chevron.
+  static const caret = 18.0;
+}
+
 
 class AppShadows {
   AppShadows._();

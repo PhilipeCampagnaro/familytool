@@ -227,7 +227,7 @@ class _SegButton extends StatelessWidget {
                   tween: ColorTween(end: ink),
                   duration: duration,
                   curve: Curves.easeOutCubic,
-                  builder: (context, tone, _) => AppIcon(glyph, size: 15, color: tone ?? ink, flat: true),
+                  builder: (context, tone, _) => AppIcon(glyph, size: AppGlyph.row, color: tone ?? ink, flat: true),
                 ),
               if (icon != null && label != null) const SizedBox(width: 7),
               if (label case final text?)

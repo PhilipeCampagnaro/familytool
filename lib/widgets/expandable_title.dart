@@ -48,7 +48,6 @@ class ExpandableTitle extends StatefulWidget {
 class _ExpandableTitleState extends State<ExpandableTitle> {
   bool _open = false;
 
-  static const _caretSize = 18.0;
   static const _caretGap = 6.0;
 
   @override
@@ -109,7 +108,7 @@ class _ExpandableTitleState extends State<ExpandableTitle> {
                         // Flat: a caret is a control, not a name for a thing,
                         // and the duotone under-layer would draw it as a hollow
                         // triangle.
-                        child: AppIcon(AppIcons.caretDown, size: _caretSize, flat: true, color: AppColors.mutedLight),
+                        child: AppIcon(AppIcons.caretDown, size: AppGlyph.caret, flat: true, color: AppColors.mutedLight),
                       ),
                     ),
                   ),

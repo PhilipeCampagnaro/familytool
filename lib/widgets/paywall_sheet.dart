@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../l10n/l10n.dart';
 import '../models/entitlements.dart';
+import '../services/app_review.dart';
 import '../state/entitlement_state.dart';
 import '../theme/app_icons.dart';
 import '../theme/tokens.dart';
@@ -26,6 +27,8 @@ import 'app_sheet.dart';
 /// The copy comes from [paywallTitle] and [paywallBody], so a paywall that
 /// names the wrong feature is not expressible.
 Future<void> showPaywallSheet(BuildContext context, Feature feature) {
+  // Somebody who has just been shown a price is not who to ask for a rating.
+  reviewPrompt.notePaywall();
   return showAppSheet<void>(
     context: context,
     title: L.s.plusName,
@@ -162,7 +165,7 @@ class _PaywallBody extends ConsumerWidget {
   /// is recognisably about the thing they just tapped.
   IconData get _icon => switch (feature) {
     Feature.calendarAccounts => AppIcons.calendarDots,
-    Feature.trackers => AppIcons.repeat,
+    Feature.trackers => AppIcons.circleDashed,
     Feature.boxes => AppIcons.package,
     Feature.members => AppIcons.users,
     Feature.shareLinks => AppIcons.link,

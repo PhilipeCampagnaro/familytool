@@ -1,0 +1,13 @@
+-- Give the classifier back to the two roles that insert spends.
+--
+-- `revoke all … from public` does not leave `authenticated` its EXECUTE, as
+-- `20260911100000_spend_tracking.sql` assumed: EXECUTE on a function reaches a
+-- role *through* `public`, so revoking it there took it from everyone but the
+-- owner. And `service_role` — what `spend-ingest` runs as — was never granted it
+-- at all. `spends_classify` is not SECURITY DEFINER, so the call inside it runs
+-- as the inserting role, and every insert into `spends` failed with
+-- `42501 permission denied for function classify_merchant`: the Apple Pay
+-- automation, the Shortcuts manual entry and the app's own form alike.
+--
+-- `private` is still what keeps the function off the API; this grant is not.
+grant execute on function private.classify_merchant(text) to authenticated, service_role;

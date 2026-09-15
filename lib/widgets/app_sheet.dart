@@ -913,7 +913,7 @@ class OutlinedSheetAction extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            AppIcon(icon, size: 17, color: color, flat: true),
+            AppIcon(icon, size: AppGlyph.row, color: color, flat: true),
             const SizedBox(width: 9),
             Text(
               label,

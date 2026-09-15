@@ -6,9 +6,7 @@ import '../../data/calendar_data.dart';
 import '../../data/tracker_data.dart';
 import '../../l10n/l10n.dart';
 import '../../models/shopping_list.dart';
-import '../../models/task.dart';
 import '../../models/tracker.dart';
-import '../../state/board_state.dart';
 import '../../state/list_state.dart';
 import '../../state/nav_state.dart';
 import '../../state/tracker_state.dart';
@@ -16,20 +14,22 @@ import '../../theme/app_icons.dart';
 import '../../theme/tokens.dart';
 import '../../widgets/check_off.dart';
 import '../../widgets/icon_picker.dart';
-import '../board_screen.dart';
 
 /// Everything on Home that is **not** about the selected day.
 ///
-/// This is the half of the screen below the day card's bottom edge, and that
-/// edge is the whole point of it: above it is whichever date the strip is on,
-/// below it is the household as it stands right now. Tap a Thursday three weeks
-/// out and the card changes while none of this does — which is correct, and only
-/// stays legible because the card is visibly an object that ends.
+/// This is the part of Home's grey surface below the divider under the day, and
+/// that divider is the whole point of it: above it is whichever date the strip
+/// is on, below it is the household as it stands right now. Tap a Thursday
+/// three weeks out and the day changes while none of this does — which is
+/// correct, and only stays legible because the day visibly ends there.
 ///
-/// So nothing here may be day-scoped. An open to-do is open whatever date is
-/// selected; a tracker is owed today; a shopping list has no date at all. A
-/// "tomorrow" block would read as belonging to the strip and would be wrong on
-/// every day but one.
+/// So nothing here may be day-scoped. A tracker is owed today; a shopping list
+/// has no date at all. A "tomorrow" block would read as belonging to the strip
+/// and would be wrong on every day but one.
+///
+/// **Open to-dos are deliberately absent too.** The week view above already
+/// draws each to-do on its due day, so a second card of them repeated the strip
+/// in a different shape.
 ///
 /// **Boxen is deliberately absent.** A box answers "where did we put the winter
 /// coats", which is a question you already know you have when you go looking. It
@@ -40,18 +40,21 @@ class HomeSections extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.screenPad, 22, AppSpacing.screenPad, 0),
+      // The day's own inset inside the grey (`_DayBody`), not the screen's
+      // margin: these sit on the same surface as the calendar above them, so
+      // their headings and cards line up with its heading and time rail.
+      padding: const EdgeInsets.fromLTRB(14, 22, 16, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        // **Not `const`.** Each of the three reads a design token while it
+        // **Not `const`.** Each of them reads a design token while it
         // builds, and a const instance is canonical: the parent handing back an
         // identical widget is how Flutter knows it can skip the subtree, so
-        // these three went on painting the palette they were born in. The
+        // these went on painting the palette they were born in. The
         // heading above each card refreshed anyway — `_Section` depends on
         // `Theme.of(context)`, which marks it dirty across the skip — which is
         // why this showed up as light-ink list names under a white section
         // title on the dark palette. See `tool/check_const_palette.dart`.
-        children: [_OpenTodos(), _TrackersToday(), _ListsOverview()],
+        children: [_TrackersToday(), _ListsOverview()],
       ),
     );
   }
@@ -87,12 +90,11 @@ class _Section extends StatelessWidget {
             ],
           ),
         ),
-        // **[AppColors.cardOnSurface], not [AppColors.surface].** Home's page is
-        // white — the day card above takes the grey — so these three were a
-        // white card on white paper held apart by a 6% blur, which is to say
-        // not held apart at all; on dark the card and the page were the same
-        // colour outright. The light half of the fix is in the shadow token,
-        // the dark half is here.
+        // **[AppColors.cardOnSurface], not [AppColors.surface].** These sit on
+        // Home's grey surface (`_DayBody`), and on dark `surface` is *darker*
+        // than nothing much — `cardOnSurface` takes the lift there, one step
+        // above the grey on both palettes, with the shadow token doing the
+        // separating on light.
         Container(
           decoration: BoxDecoration(
             color: AppColors.cardOnSurface,
@@ -111,116 +113,6 @@ class _Section extends StatelessWidget {
         ),
         const SizedBox(height: 22),
       ],
-    );
-  }
-}
-
-/// What is still chasing the household, oldest deadline first.
-///
-/// **Overdue, then today, then whatever is next** — the same order the Board
-/// groups by, arrived at here by sorting on the date rather than by rebuilding
-/// its sections, because four rows do not need headings. Undated to-dos come
-/// last and only when there is room: "irgendwann" is never what somebody opened
-/// the app to be told.
-class _OpenTodos extends ConsumerWidget {
-  const _OpenTodos();
-
-  static const _max = 4;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final tasks = ref.watch(boardProvider.select((s) => s.tasks));
-    final accent = Theme.of(context).colorScheme.primary;
-
-    final dated = [
-      for (final t in tasks)
-        if (!t.done && t.dueDate != null) t,
-    ]..sort((a, b) => a.dueDate!.compareTo(b.dueDate!));
-    final undated = [
-      for (final t in tasks)
-        if (!t.done && t.dueDate == null) t,
-    ];
-    final shown = [...dated, ...undated].take(_max).toList();
-    if (shown.isEmpty) return const SizedBox.shrink();
-
-    return _Section(
-      title: L.s.homeOpenSection,
-      onShowAll: () => ref.read(tabJumpProvider.notifier).toTab(boardTabIndex),
-      rows: [for (final task in shown) _TodoRow(key: ValueKey(task.id), task: task, accent: accent)],
-    );
-  }
-}
-
-class _TodoRow extends ConsumerWidget {
-  final BoardTask task;
-  final Color accent;
-
-  const _TodoRow({super.key, required this.task, required this.accent});
-
-  /// "Überfällig" in the danger ink, "Heute", "Morgen", then a weekday and a
-  /// date. The word is what the reader is actually scanning for; the date is
-  /// the fallback for everything a word cannot name.
-  (String, Color)? _due() {
-    final due = task.dueDate;
-    if (due == null) return null;
-    final day = boardDay(due);
-    final today = calToday();
-    if (day.isBefore(today)) return (L.s.sectionOverdue, AppColors.danger);
-    if (day == today) return (L.s.sectionToday, AppColors.muted);
-    if (day == boardDaysAfter(today, 1)) return (L.s.sectionTomorrow, AppColors.muted);
-    return ('${weekdayShort[day.weekday % 7]}, ${day.day}. ${monthShort[day.month]}', AppColors.muted);
-  }
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final due = _due();
-    // **[CheckOffRow], the same as on the Board — and unlike the agenda row
-    // above it.** There a ticked to-do stays put, because a day whose to-dos all
-    // vanished as they were done would read as a day that never had any. Here
-    // the section *is* the open list: the row's whole job is to leave it, so it
-    // gets the strike, the beat, and the collapse rather than blinking out from
-    // under the finger that tapped it.
-    return CheckOffRow(
-      onCompleted: () => ref.read(boardProvider.notifier).toggle(task),
-      builder: (context, strike, toggle) => GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        // The sheet, not the Board. A to-do tapped here opens over Home the same
-        // way one tapped in the agenda does, so closing it lands the reader back
-        // where they were rather than on a tab they never asked for.
-        onTap: () => openTaskSheet(context, ref, task: task),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    StrikeThrough(
-                      progress: strike,
-                      color: AppColors.doneInk,
-                      child: Text(
-                        task.text,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppText.itemTitle.copyWith(
-                          color: Color.lerp(AppColors.ink, AppColors.doneInk, strike),
-                        ),
-                      ),
-                    ),
-                    if (due case (final label, final colour)) ...[
-                      const SizedBox(height: 2),
-                      Text(label, style: AppText.microLabel.copyWith(color: colour)),
-                    ],
-                  ],
-                ),
-              ),
-              const SizedBox(width: 10),
-              CheckOffButton(progress: strike, accent: accent, size: 26, onTap: toggle),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

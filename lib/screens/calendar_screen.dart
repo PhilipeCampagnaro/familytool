@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
-import 'dart:ui' show ImageFilter;
+import 'dart:ui' show ImageFilter, PointMode;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -15,6 +15,7 @@ import '../models/who.dart';
 import '../models/weather.dart';
 import '../services/external_links.dart';
 import '../services/map_snapshot.dart';
+import '../services/local_notifications.dart';
 import '../services/native_menu.dart';
 import '../state/board_state.dart';
 import '../state/calendar_state.dart';
@@ -22,6 +23,7 @@ import '../state/family_state.dart';
 import '../state/holidays_state.dart';
 import '../state/list_state.dart';
 import '../state/nav_state.dart';
+import '../state/notification_state.dart';
 import '../state/weather_state.dart';
 import '../theme/tokens.dart';
 import '../widgets/anchored_menu.dart';
@@ -34,11 +36,11 @@ import '../widgets/event_dots.dart';
 import '../widgets/filter_chip.dart';
 import '../widgets/floating_pill.dart';
 import '../widgets/glass.dart';
+import '../widgets/native_glass_buttons.dart';
 import '../widgets/icon_picker.dart';
 import '../widgets/native_occlusion.dart';
 import '../widgets/native_switch.dart';
 import '../widgets/settings_chrome.dart';
-import '../widgets/swipe_actions.dart';
 import '../widgets/toast_chip.dart';
 import '../l10n/l10n.dart';
 import 'board_screen.dart';
@@ -52,6 +54,9 @@ part 'calendar/calendar_filter.dart';
 part 'calendar/week_view.dart';
 part 'calendar/month_view.dart';
 part 'calendar/event_detail_sheet.dart';
+part 'calendar/day_timeline.dart';
+// Scaffolding for designing the agenda — see [_agendaDemo]. Delete with the file.
+part 'calendar/agenda_demo.dart';
 
 /// The forecast for the event the sheet or the row is showing, on the day it is
 /// being shown on.
@@ -144,62 +149,105 @@ List<BoardTask> _todosDueOn(WidgetRef ref, int y, int m, int d) {
     (t.done ? done : open).add(t);
   }
   // Done last, so the day reads as what is still owed followed by what is not.
-  // Only the untimed ones keep this order — see [_agendaEntries], which sorts
+  // Only the untimed ones keep this order — see [_dayPlan], which sorts
   // the ones carrying an hour into the day's own stream instead.
   return [...open, ...done];
 }
 
-/// The day in reading order, events and to-dos together.
+/// A day split the way the grid draws it.
 ///
-/// Entries are a [CalendarEvent] or a [BoardTask]; the rows tell them apart.
-/// A heterogeneous list rather than two lists drawn one after the other,
-/// because **a to-do that names an hour belongs at that hour** — sitting above
-/// the day in a block of its own, the 08:00 school run reads as something
-/// happening before the 07:30 train.
-///
-/// Three bands, in this order:
-///
-/// 1. **All-day events.** Context for the day rather than appointments in it —
-///    Ferien, the bin — which is why the repository already sorts them to the
-///    front.
-/// 2. **To-dos with no hour.** Owed by the end of the day and not at a point in
-///    it, so there is no slot to put them in; above the clock is the honest
-///    place. This is most of them.
-/// 3. **Everything with a time**, events and to-dos merged by the clock.
-///
-/// An event wins a tie, because the agenda is a calendar first: at 14:00 the
-/// appointment is the fixed thing and the to-do is what has to fit around it.
-List<Object> _agendaEntries(List<CalendarEvent> events, List<BoardTask> todos) {
-  final timed = <(int, int, Object)>[];
-  final head = <Object>[];
-  final untimed = <Object>[];
+/// **Three piles, and the split is the whole design.** What sits on the clock
+/// goes on the clock; what is true of the day as a whole goes in the band above
+/// it. Giving an all-day event or an undated to-do a position on a time grid
+/// would be inventing one, which is exactly what the old rail did when it
+/// printed "Ganztägig" where a clock time belonged.
+class _DayPlan {
+  /// Context for the day rather than appointments in it — Ferien, the bin, a
+  /// birthday. The repository already sorts these to the front.
+  final List<CalendarEvent> allDay;
 
-  for (final e in events) {
-    if (e.allDay) {
-      head.add(e);
-    } else {
-      timed.add((e.startsAt.hour * 60 + e.startsAt.minute, 0, e));
-    }
+  /// Owed by the end of the day and not at a point in it. Most to-dos.
+  final List<BoardTask> untimedTodos;
+
+  /// Appointments and timed to-dos, clipped to this day and in start order.
+  final List<_TimedEntry> timed;
+
+  const _DayPlan({required this.allDay, required this.untimedTodos, required this.timed});
+
+  bool get isEmpty => allDay.isEmpty && untimedTodos.isEmpty && timed.isEmpty;
+}
+
+/// Splits a day's events and to-dos into the band and the clock.
+///
+/// Every timed entry is **clipped to the day being drawn**: an overnight shift
+/// or a multi-day appointment is one row from the provider covering two dates,
+/// and each date draws only its own share. `event.days` already puts the row on
+/// both days; this is what stops it running off the bottom of the first one.
+///
+/// A to-do that names an hour is given [_todoSlotMinutes] on the grid. It has no
+/// end — `tasks.due_time` is a moment, not a span — so the block is a nominal
+/// size that reads as "around then" rather than a claim about how long it takes.
+_DayPlan _dayPlan(List<CalendarEvent> events, List<BoardTask> todos, DateTime day) {
+  final allDay = <CalendarEvent>[];
+  final untimed = <BoardTask>[];
+  final timed = <_TimedEntry>[];
+
+  final dayStart = DateTime(day.year, day.month, day.day);
+  final dayEnd = dayStart.add(const Duration(days: 1));
+
+  int minutesInto(DateTime at) {
+    if (!at.isAfter(dayStart)) return 0;
+    if (!at.isBefore(dayEnd)) return 1440;
+    return at.difference(dayStart).inMinutes;
   }
-  for (final t in todos) {
-    final at = t.dueTime;
+
+  for (final event in events) {
+    if (event.allDay) {
+      allDay.add(event);
+      continue;
+    }
+    final from = minutesInto(event.startsAt);
+    final to = minutesInto(event.endsAt);
+    timed.add(_TimedEntry(
+      entry: event,
+      from: from,
+      to: math.max(to, from),
+      slotTo: math.min(1440, math.max(to, from + _minSlotMinutes)),
+    ));
+  }
+
+  for (final task in todos) {
+    final at = task.dueTime;
     if (at == null) {
-      untimed.add(t);
-    } else {
-      timed.add((at.minutes, 1, t));
+      untimed.add(task);
+      continue;
     }
+    final from = math.min(1440, at.hour * 60 + at.minute);
+    timed.add(_TimedEntry(
+      entry: task,
+      from: from,
+      to: math.min(1440, from + _todoSlotMinutes),
+      slotTo: math.min(1440, from + _todoSlotMinutes),
+    ));
   }
 
-  // The second element is the tie-break, so a 14:00 appointment precedes a to-do
-  // owed by 14:00. `sort` is not stable in Dart, hence carrying it explicitly
-  // rather than relying on insertion order.
   timed.sort((a, b) {
-    final byClock = a.$1.compareTo(b.$1);
-    return byClock != 0 ? byClock : a.$2.compareTo(b.$2);
+    final byClock = a.from.compareTo(b.from);
+    // An appointment wins a tie, because the day view is a calendar first: at
+    // 14:00 the appointment is the fixed thing and the to-do is what has to fit
+    // around it. Ordering decides which of them takes the leftmost column.
+    if (byClock != 0) return byClock;
+    final aEvent = a.entry is CalendarEvent ? 0 : 1;
+    final bEvent = b.entry is CalendarEvent ? 0 : 1;
+    return aEvent.compareTo(bEvent);
   });
 
-  return [...head, ...untimed, for (final entry in timed) entry.$3];
+  return _DayPlan(allDay: allDay, untimedTodos: untimed, timed: timed);
 }
+
+/// How much of the grid a to-do with an hour on it takes. Half an hour: long
+/// enough to read, short enough not to imply the day is booked.
+const _todoSlotMinutes = 30;
 
 /// "Heute · 14. Sep" / "Montag · 14. Sep" — the line over a day's agenda, and
 /// the one the detail sheet prints under the event's name.
@@ -360,17 +408,16 @@ class CalendarWeekScreen extends ConsumerWidget {
       backgroundColor: AppColors.surface,
       body: SafeArea(
         bottom: false,
-        child: _CompactNavOnScroll(
-          child: _WeekView(
-            state: state,
-            accent: accent,
-            title: L.s.navHome,
-            trailing: trailing,
-            label: label,
-            underLabel: underLabel,
-            underLabelHeight: underLabelHeight,
-            belowDay: belowDay,
-          ),
+        // No `_CompactNavOnScroll`: Home keeps its bar — see `_compactingTabs`.
+        child: _WeekView(
+          state: state,
+          accent: accent,
+          title: L.s.navHome,
+          trailing: trailing,
+          label: label,
+          underLabel: underLabel,
+          underLabelHeight: underLabelHeight,
+          belowDay: belowDay,
         ),
       ),
     );
@@ -646,12 +693,17 @@ class _MonthAndChipsRow extends ConsumerWidget {
   /// it lays the header out at all.
   final Widget? underLabel;
 
+  /// At the right end of the label's row — Home's "Heute" pill. See
+  /// [_MonthYearRow.trailing].
+  final Widget? labelTrailing;
+
   const _MonthAndChipsRow({
     required this.state,
     required this.accent,
     required this.label,
     this.labelHeight = _MonthYearRow.monthHeight,
     this.underLabel,
+    this.labelTrailing,
   });
 
   @override
@@ -659,7 +711,7 @@ class _MonthAndChipsRow extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _MonthYearRow(height: labelHeight, child: label),
+        _MonthYearRow(height: labelHeight, trailing: labelTrailing, child: label),
         ?underLabel,
         const SizedBox(height: 14),
         SizedBox(
@@ -727,7 +779,12 @@ class _MonthYearRow extends StatelessWidget {
   final Widget child;
   final double height;
 
-  const _MonthYearRow({required this.child, this.height = monthHeight});
+  /// Rides at the right end of the row, outside the crossfade — Home puts its
+  /// "Heute" pill here while the strip is away from today. The label keeps the
+  /// rest of the width and ellipsises against it.
+  final Widget? trailing;
+
+  const _MonthYearRow({required this.child, this.height = monthHeight, this.trailing});
 
   /// What the row occupied when it held the view toggle (3 + 34 + 3), kept as a
   /// fixed height rather than let go: both views' `_extraHeaderHeight` are
@@ -770,6 +827,40 @@ class _MonthYearRow extends StatelessWidget {
             ),
             child: child,
           ),
+        ),
+        // Always mounted, so [trailing] animates both ways: it slides in from
+        // the right edge while its slot opens, and slides back out while the
+        // label takes the width back.
+        //
+        // The slot's width is what grows (the size transition), and the pill
+        // is pinned to its right edge inside it and travels in from the right
+        // over the top of that — clipped at the row's edge, so it reads as
+        // coming out from the side rather than appearing in place.
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 360),
+          reverseDuration: const Duration(milliseconds: 240),
+          switchInCurve: Curves.easeOutCubic,
+          switchOutCurve: Curves.easeInCubic,
+          layoutBuilder: (current, previous) => Stack(
+            alignment: Alignment.centerRight,
+            children: [...previous, ?current],
+          ),
+          transitionBuilder: (child, animation) => SizeTransition(
+            sizeFactor: animation,
+            axis: Axis.horizontal,
+            alignment: Alignment.centerRight,
+            child: SlideTransition(
+              position: Tween<Offset>(begin: const Offset(0.6, 0), end: Offset.zero).animate(animation),
+              child: FadeTransition(opacity: animation, child: child),
+            ),
+          ),
+          child: trailing == null
+              ? const SizedBox.shrink(key: ValueKey('noTrailing'))
+              : Padding(
+                  key: const ValueKey('trailing'),
+                  padding: const EdgeInsets.only(left: 12),
+                  child: trailing,
+                ),
         ),
       ],
       ),
@@ -1266,9 +1357,9 @@ class _CalendarGroupChipState extends ConsumerState<_CalendarGroupChip> {
   Widget build(BuildContext context) {
     final group = widget.group;
     final shown = _shown;
-    // Which chip is lit is tracked rather than inferred: filtering to a person
-    // also brings the household's shared calendars in, so an id-set comparison
-    // would light their chip and the family's together.
+    // Which chip is lit is tracked rather than inferred: a selection narrowed
+    // inside this chip's popup is a subset of its calendars and must keep it
+    // lit, which an id-set comparison would not.
     final active = widget.state.filterGroupId == group.id;
 
     return KeyedSubtree(

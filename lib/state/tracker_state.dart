@@ -1,3 +1,5 @@
+import '../services/app_review.dart';
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/board_data.dart';
@@ -333,6 +335,10 @@ class TrackerNotifier extends StateNotifier<TrackerState> {
     _setCheck(tracker.id, at, !was);
     try {
       await _repo.setChecked(tracker.id, tracker.familyId, at, !was);
+      // A rhythm kept for a week — a win the household made, and a moment the
+      // rating prompt may consider. Exactly seven, so it is the tick that got
+      // there and not every tick after.
+      if (!was && state.streakOf(tracker, DateTime.now()) == 7) unawaited(reviewPrompt.maybeAsk());
       return true;
     } catch (_) {
       if (!mounted) return false;

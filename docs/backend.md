@@ -31,6 +31,16 @@ out loud: *"Zugewiesen an Lea — für alle sichtbar."* The backend splits it in
 External sharing is deliberately **not** part of the "Für wen?" picker. Mixing outsiders into the
 family avatar row would make a mis-tap leak family data; it gets its own "Teilen" sheet.
 
+**Every external share may edit, and the sheet no longer asks.** `share_links.can_edit` and
+`guest_access.can_edit` are still there, still enforced by `private.can_edit_guest` inside
+`can_write_list` / `can_write_box` / `can_write_task`, and every row now carries the column
+default `true` — the app stopped sending the field and `create-share-link` still defaults it.
+The switch went because read-only was a promise only the database kept: no screen ever asked
+`can_edit`, so a view-only guest was shown the check circles, the add button and the swipe
+actions, and every tap came back refused. You share a shopping list so somebody else can tick
+"Milch" off. The column stays as the seam — reinstating the mode means building the read-only
+*UI* first (Listen, Box and Board), not adding a toggle back.
+
 ## Board: To-dos and Tracker are two tables
 
 `public.tasks` is the one-off to-do it always was. `public.trackers` is the rhythm beside it, and
@@ -126,7 +136,7 @@ Child rows (`list_items`, `box_items`, `events`, attachments) never restate any 
 | Mitglied einladen / Rolle ändern / entfernen | ✅ | ❌ | ❌ | ❌ |
 | Haushalt umbenennen, Adresse ändern | ✅ | ❌ | ❌ | ❌ |
 | Liste / Box / To-do / Kalender anlegen | ✅ | ✅ | ✅ | ❌ |
-| Einträge anlegen / abhaken | ✅ | ✅ | ✅ | ✅ wenn `can_edit` |
+| Einträge anlegen / abhaken | ✅ | ✅ | ✅ | ✅ (`can_edit`, immer `true`) |
 | Eigene Einträge bearbeiten/löschen | ✅ | ✅ | ✅ | ✅ |
 | Fremde Einträge löschen | ✅ | ❌ | ❌ | ❌ |
 | Container löschen | eigene + sichtbare | nur eigene | nur eigene | ❌ |

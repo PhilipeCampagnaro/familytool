@@ -11,7 +11,9 @@ import '../models/who.dart';
 import '../services/external_links.dart';
 import '../services/media_picker.dart';
 import '../state/calendar_connections_state.dart';
+import '../state/calendar_state.dart';
 import '../state/family_state.dart';
+import '../state/notification_state.dart';
 import '../theme/tokens.dart';
 import '../widgets/paywall_sheet.dart';
 import '../widgets/anchored_menu.dart';
@@ -847,6 +849,14 @@ class _CalendarDetailBodyState extends ConsumerState<_CalendarDetailBody> {
   bool _savingName = false;
   String? _error;
 
+  /// Whether the swatch row under the name card is open.
+  ///
+  /// **Unfolded in place rather than opened as a second sheet.** Everything else
+  /// in here acts where it stands — the name on its own tick, the owner on the
+  /// tap that picks it — and a sheet stacked on a sheet to choose one of twelve
+  /// circles would be the only decision in this screen that needed a journey.
+  bool _pickingColor = false;
+
   @override
   void dispose() {
     _name.dispose();
@@ -897,6 +907,53 @@ class _CalendarDetailBodyState extends ConsumerState<_CalendarDetailBody> {
     }
   }
 
+  Future<void> _saveColor(Color color) async {
+    final entry = _entry;
+    setState(() {
+      _pickingColor = false;
+      _error = null;
+    });
+
+    try {
+      await ref.read(calendarConnectionsProvider.notifier).setCalendarColor(
+            entry.connection,
+            entry.externalId,
+            // The signed 32-bit ARGB the column holds, which is also what
+            // `calendars.color` is and what `CalendarSource.fromMap` reads back.
+            color.toARGB32(),
+          );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _error = connectErrorText(e));
+    }
+  }
+
+  /// What the swatch shows: the household's own pick where there is one, and the
+  /// colour Kalender is actually drawing otherwise.
+  ///
+  /// The pick comes first so the circle answers the tap immediately — the real
+  /// colour only changes on the next `calendar-events` read, which fans out
+  /// across every connected account, and a swatch that waited for that would
+  /// look like it had ignored you.
+  ///
+  /// The live colour is matched **by name**, which is exact rather than lucky:
+  /// the name in the field above is the one `calendar-events` writes onto
+  /// `calendars.name`. Two calendars sharing a name would share a swatch until
+  /// the read lands, which is a cosmetic tie in a circle nobody is reading for
+  /// identity.
+  Color _swatchColor(ConnectedCalendar entry) {
+    if (entry.chosenColor case final argb?) return Color(argb);
+    for (final source in ref.watch(calendarProvider).calendars) {
+      if (source.name == entry.name) return source.color;
+    }
+    // Neither picked nor read yet — a calendar connected moments ago, before
+    // the first `calendar-events` call has created a row for it. The accent is
+    // a placeholder for one frame rather than a claim about the calendar; the
+    // provider's own colours live in the Edge Function and the app has never
+    // needed them.
+    return AppColors.accent;
+  }
+
   @override
   Widget build(BuildContext context) {
     final entry = _entry;
@@ -937,6 +994,15 @@ class _CalendarDetailBodyState extends ConsumerState<_CalendarDetailBody> {
                       onSubmitted: (_) => _saveName(),
                     ),
                   ),
+                  // The colour, where the name's own tick also lives. They
+                  // never collide: the tick only exists once the name has been
+                  // edited, and it appears to the right of this rather than in
+                  // its place.
+                  _ColorSwatchButton(
+                    color: _swatchColor(entry),
+                    open: _pickingColor,
+                    onTap: () => setState(() => _pickingColor = !_pickingColor),
+                  ),
                   _NameSaveButton(
                     name: _name,
                     current: entry.name,
@@ -947,6 +1013,21 @@ class _CalendarDetailBodyState extends ConsumerState<_CalendarDetailBody> {
               ),
             ),
           ],
+        ),
+        AnimatedCrossFade(
+          duration: const Duration(milliseconds: 240),
+          sizeCurve: Curves.easeOutCubic,
+          firstCurve: Curves.easeOut,
+          secondCurve: Curves.easeIn,
+          crossFadeState: _pickingColor ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+          firstChild: const SizedBox(width: double.infinity, height: 0),
+          secondChild: Padding(
+            padding: const EdgeInsets.only(top: 10),
+            child: _ColorChoices(
+              selected: _swatchColor(entry),
+              onPick: _saveColor,
+            ),
+          ),
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(4, 8, 4, 0),
@@ -990,6 +1071,126 @@ class _CalendarDetailBodyState extends ConsumerState<_CalendarDetailBody> {
 /// It listens to the controller rather than being rebuilt with the sheet, so
 /// the button appears as the name is typed without the owner list below it
 /// rebuilding on every keystroke.
+/// The filled circle beside the name: what colour this calendar is drawn in,
+/// and the way to change it.
+///
+/// **Solid, not a ring.** A ring shows an outline and a hole, and the hole is
+/// the card behind it — so the control was drawing the calendar's colour at its
+/// thinnest while a white centre took the middle of the circle. A swatch's whole
+/// job is to *be* the colour.
+///
+/// Open state is a halo around it rather than a change to the circle itself:
+/// the swatch has one thing to say and it should not have to say it differently
+/// while the choices are showing.
+class _ColorSwatchButton extends StatelessWidget {
+  final Color color;
+
+  /// Whether the choices are unfolded below. The ring thickens rather than
+  /// rotating or changing glyph: it is the same control either way, and the
+  /// row underneath is what says it is open.
+  final bool open;
+
+  final VoidCallback onTap;
+
+  const _ColorSwatchButton({required this.color, required this.open, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        // The tap target, not spacing — the circle itself is 22 and nobody can
+        // aim at that.
+        padding: const EdgeInsets.all(8),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOut,
+          width: 22,
+          height: 22,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: color,
+            // The halo: a ring of the same colour, faded, standing off the
+            // swatch. `spreadRadius` with a zero blur draws exactly that and
+            // costs no extra widget.
+            boxShadow: open
+                ? [BoxShadow(color: color.withValues(alpha: 0.3), spreadRadius: 4)]
+                : null,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The colours a calendar may be given, unfolded under the name card.
+///
+/// **Twelve circles and no colour names.** A menu of named colours would need
+/// forty-eight translations to say what a swatch says by being the colour, and
+/// "Beerenrot" is a worse answer to "which one is this" than the circle itself.
+///
+/// The tick sits on the colour in force, which is the household's pick where
+/// they have made one and the colour Kalender is drawing otherwise — so a
+/// calendar still wearing its account's own colour shows no tick at all unless
+/// that colour happens to be one of these, and that is honest: they have not
+/// chosen yet.
+class _ColorChoices extends StatelessWidget {
+  final Color selected;
+  final ValueChanged<Color> onPick;
+
+  const _ColorChoices({required this.selected, required this.onPick});
+
+  @override
+  Widget build(BuildContext context) {
+    return SectionCard(
+      radius: AppRadii.card,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(15, 13, 15, 14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(L.s.calendarColor, style: AppText.microLabel),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 14,
+                runSpacing: 14,
+                children: [
+                  for (final color in AppCalendarColors.choices)
+                    GestureDetector(
+                      onTap: () => onPick(color),
+                      behavior: HitTestBehavior.opaque,
+                      child: Container(
+                        width: 30,
+                        height: 30,
+                        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+                        child: color.toARGB32() == selected.toARGB32()
+                            ? Center(
+                                child: AppIcon(
+                                  AppIcons.check,
+                                  size: AppGlyph.inline,
+                                  // Always white: these are mid-lightness by
+                                  // design, so one ink holds on all twelve and
+                                  // a per-swatch contrast rule would be twelve
+                                  // chances to get one wrong.
+                                  color: Colors.white,
+                                  flat: true,
+                                ),
+                              )
+                            : null,
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _NameSaveButton extends StatelessWidget {
   final TextEditingController name;
   final String current;
@@ -1027,7 +1228,7 @@ class _NameSaveButton extends StatelessWidget {
                   child: Center(
                     child: AppIcon(
                       AppIcons.check,
-                      size: 20,
+                      size: AppGlyph.row,
                       flat: true,
                       color: Theme.of(context).colorScheme.primary,
                     ),
@@ -1389,7 +1590,7 @@ class _NewPersonRow extends StatelessWidget {
             height: 40,
             decoration: BoxDecoration(color: AppColors.surfaceAlt, shape: BoxShape.circle),
             child: Center(
-              child: AppIcon(AppIcons.plus, size: 18, flat: true, color: AppColors.muted),
+              child: AppIcon(AppIcons.plus, size: AppGlyph.button, flat: true, color: AppColors.muted),
             ),
           ),
           const SizedBox(width: 13),
@@ -2256,6 +2457,10 @@ class _ConnectFlow extends ChangeNotifier {
         return;
       }
     }
+    // Taken before any await, so no BuildContext crosses one. Used only if an
+    // Abfall calendar connects — see below.
+    final notices = ProviderScope.containerOf(context, listen: false)
+        .read(notificationSettingsProvider.notifier);
     try {
       if (isFerien) {
         await notifier.connectFerien(region!, displayName: label);
@@ -2266,12 +2471,20 @@ class _ConnectFlow extends ChangeNotifier {
           houseNumber: houseNumber,
           displayName: label,
         );
+        // The evening-before reminder is what makes a bin calendar worth
+        // having, and this is the moment it starts being worth something — so
+        // this, not launch, is where the notification prompt goes.
+        unawaited(notices.ensureAccess());
       } else if (isAbfall) {
         await notifier.connectIcs(
           url: icsUrl.text.trim(),
           label: address!.label,
           displayName: label,
         );
+        // The evening-before reminder is what makes a bin calendar worth
+        // having, and this is the moment it starts being worth something — so
+        // this, not launch, is where the notification prompt goes.
+        unawaited(notices.ensureAccess());
       } else if (isLink) {
         // One call does the lot: the function stores the link, ticks it and
         // names it, because all three are the same decision and none of the

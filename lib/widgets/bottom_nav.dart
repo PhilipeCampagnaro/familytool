@@ -7,6 +7,7 @@ import '../l10n/l10n.dart';
 import '../services/spend_intent.dart';
 import '../theme/tokens.dart';
 import 'glass.dart';
+import 'native_glass_buttons.dart';
 import '../theme/app_icons.dart';
 
 class NavTab {
@@ -168,18 +169,25 @@ const kCompactNavSize = 62.0;
 const kNavRowIconSize = 28.0;
 
 /// The bottom nav collapsed to a single glass circle, parked at the left edge.
-/// Kalender scrolls into this so the agenda has the whole width of the screen;
+/// Kalender scrolls into this so the grid has the whole width of the screen;
 /// tapping it brings the bar back (see `AppShell`).
 ///
-/// [icon] is the *active* tab's, straight off [navTabs], so the circle is the
+/// [tab] is the *active* one, straight off [navTabs], so the circle is the
 /// bar's selected item with everything else folded away — which is what makes
 /// the collapse read as one control shrinking rather than as a second one
 /// taking over.
+///
+/// **On iOS it is a real `UIButton` on the glass configuration**
+/// ([NativeGlassButtons]), the same control as the header buttons and the
+/// `Mehr` shelf's circles, carrying the bar's own SF Symbol — it stands where a
+/// real `UITabBar` just was, so it wears that bar's glyph and material rather
+/// than a Flutter copy of either. The button brings its own press response and
+/// shadow, so the Flutter scale and [AppShadows.navBar] are the fallback's only.
 class CompactNavButton extends StatefulWidget {
-  final IconData icon;
+  final NavTab tab;
   final VoidCallback onTap;
 
-  const CompactNavButton({super.key, required this.icon, required this.onTap});
+  const CompactNavButton({super.key, required this.tab, required this.onTap});
 
   @override
   State<CompactNavButton> createState() => _CompactNavButtonState();
@@ -194,6 +202,28 @@ class _CompactNavButtonState extends State<CompactNavButton> {
 
   @override
   Widget build(BuildContext context) {
+    if (nativeGlassActive(context)) {
+      return Semantics(
+        button: true,
+        label: L.s.navExpand,
+        excludeSemantics: true,
+        child: SizedBox(
+          width: kCompactNavSize,
+          height: kCompactNavSize,
+          child: NativeGlassButtons(
+            buttons: [
+              NativeGlassButton(
+                symbol: widget.tab.sfSymbolSelected,
+                label: L.s.navExpand,
+                onTap: widget.onTap,
+              ),
+            ],
+            tint: AppColors.accent,
+            iconSize: kNavRowIconSize,
+          ),
+        ),
+      );
+    }
     return Semantics(
       button: true,
       label: L.s.navExpand,
@@ -217,7 +247,7 @@ class _CompactNavButtonState extends State<CompactNavButton> {
               width: kCompactNavSize,
               height: kCompactNavSize,
               child: AppIcon(
-                widget.icon,
+                widget.tab.compactIcon,
                 size: kNavRowIconSize,
                 color: AppColors.accent,
                 flat: true,

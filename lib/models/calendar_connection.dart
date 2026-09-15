@@ -341,6 +341,20 @@ class CalendarConnection {
   /// the migration for why it does not live on that table directly.
   final Map<String, String> calendarOwners;
 
+  /// Provider id -> the colour this household chose for that calendar, as an
+  /// ARGB int, with `'*'` standing for every calendar on the account.
+  ///
+  /// **Empty is the normal state and means the account's own colour stands.** A
+  /// calendar's colour is what a family recognises it by, in their own calendar
+  /// app as much as in this one, so the app never picks a different one on their
+  /// behalf — not even for Apple's system grey, which iCloud gives "Familie" and
+  /// which is nearly invisible on the day grid. That is what this column is for:
+  /// the household says so, or nobody does.
+  ///
+  /// `calendar-events` copies the choice onto `calendars.color` on the next
+  /// read; see the migration for why it cannot be written there directly.
+  final Map<String, int> calendarColors;
+
   /// The account's own owner — the default every calendar it produces starts
   /// with, and what [ownerOf] falls back to.
   ///
@@ -365,6 +379,7 @@ class CalendarConnection {
     this.selectedCalendars,
     this.calendarNames = const {},
     this.calendarOwners = const {},
+    this.calendarColors = const {},
     this.ownerMemberId,
     this.ownerLabel,
   });
@@ -439,6 +454,19 @@ class CalendarConnection {
     ];
   }
 
+  /// The same shape as [_namesFrom], for the one map whose values are numbers.
+  /// Postgres hands a `jsonb` number back as an `int` or a `double` depending on
+  /// how it was written, so both are accepted and anything else is dropped
+  /// rather than crashing a screen over one bad row.
+  static Map<String, int> _colorsFrom(Object? raw) {
+    if (raw is! Map) return const {};
+    return {
+      for (final entry in raw.entries)
+        if (entry.key is String && entry.value is num)
+          entry.key as String: (entry.value as num).toInt(),
+    };
+  }
+
   static Map<String, String> _namesFrom(Object? raw) {
     if (raw is! Map) return const {};
     return {
@@ -469,6 +497,7 @@ class CalendarConnection {
       selectedCalendars: _selectedFrom(map['selected_calendars']),
       calendarNames: _namesFrom(map['calendar_names']),
       calendarOwners: _namesFrom(map['calendar_owners']),
+      calendarColors: _colorsFrom(map['calendar_colors']),
       ownerMemberId: map['owner_member_id'] as String?,
       ownerLabel: map['owner_label'] as String?,
     );
@@ -530,6 +559,15 @@ class ConnectedCalendar {
   /// Unique across the list — a connection id alone repeats once an account
   /// contributes more than one row.
   String get key => externalId == null ? connection.id : '${connection.id}#$externalId';
+
+  /// The colour this household picked for this calendar, or null where they
+  /// have not picked one and the account's own stands.
+  ///
+  /// Falls back to the `'*'` entry the way [CalendarConnection.ownerOf] does:
+  /// a connection that yields one calendar is coloured from the row that stands
+  /// for the whole account.
+  int? get chosenColor =>
+      connection.calendarColors[externalId ?? '*'] ?? connection.calendarColors['*'];
 
   /// True when removing this row means disconnecting the whole account: either
   /// it stands for the connection, or it is the last calendar left on it.

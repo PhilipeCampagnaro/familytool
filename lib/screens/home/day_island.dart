@@ -44,11 +44,11 @@ import 'first_steps.dart';
 /// **The ladder is about today, and only today.** A count of what is overdue
 /// *now* printed above next Thursday's agenda is a sentence about a different
 /// screen, so selecting another day drops all of it. What it does **not** do is
-/// fall back to the generic "Dein Tag": the header then said nothing at all
-/// about the day underneath it, and the strip is the only other place the date
-/// appears. So the island names the selected day and says how much is on it —
-/// which is exactly what Kalender's label does on the other tab, a header
-/// naming what is below it.
+/// fall back to the generic "Dein Tag". **Nor does it name the date and count
+/// the appointments** — it did, until the day card got a title that says
+/// exactly that, and two lines a few centimetres apart then printed the same
+/// sentence. What the island adds instead is the one thing the card cannot: how
+/// far the selected day is from today ("In 3 Tagen"), and a tap back to it.
 class DayIsland extends ConsumerWidget {
   const DayIsland({super.key});
 
@@ -65,8 +65,9 @@ class DayIsland extends ConsumerWidget {
     final today = calToday();
     final sel = ref.watch(calendarProvider.select((s) => s.selected));
     if (sel.y != today.year || sel.m != today.month || sel.d != today.day) {
-      final count = ref.watch(calendarProvider).eventsFor(sel.y, sel.m, sel.d).length;
-      final date = DateTime(sel.y, sel.m, sel.d);
+      // In UTC, so a clock change between the two days cannot make 3 days read
+      // as 2 days and 23 hours.
+      final offset = DateTime.utc(sel.y, sel.m, sel.d).difference(DateTime.utc(today.year, today.month, today.day)).inDays;
       return IslandLine(
         // One key for every date, so tapping along the strip changes the words
         // in place instead of playing a 400ms swap on each tap.
@@ -74,8 +75,10 @@ class DayIsland extends ConsumerWidget {
         // The same glyph Settings puts on "Kalender" — one mark for the
         // calendar wherever the app names it.
         icon: AppIcons.calendarDots,
-        label: L.s.weekdayWithDateShort(date.weekday % 7, sel.d, sel.m),
-        hint: count == 0 ? L.s.homeDayEmpty : L.s.homeDayEntries(count),
+        label: L.s.homeDayOffset(offset),
+        hint: L.s.homeHintBackToToday,
+        // The week view scrolls the strip to a selection it did not make.
+        onTap: () => ref.read(calendarProvider.notifier).selectDayToday(),
         // No wave: the reader just tapped the day, so nothing here changed on
         // its own and there is nothing to point out.
         sweep: IslandSweep.none,
@@ -168,7 +171,7 @@ class DayIsland extends ConsumerWidget {
     if (trackersLeft > 0) {
       return IslandLine(
         key: const ValueKey('trackers'),
-        icon: AppIcons.repeat,
+        icon: AppIcons.circleDashed,
         label: L.s.homeTrackersLeft(trackersLeft),
         hint: L.s.homeHintTrackers,
         onTap: toBoard,

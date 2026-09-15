@@ -28,6 +28,9 @@ task:
 - [docs/ported-features.md](docs/ported-features.md) — knowledge captured from the old web app
   (grocery lists, onboarding, Settings, weather, calendar connections). Read the one section for
   the feature you're building; each says whether it is built or still groundwork.
+- [docs/notifications.md](docs/notifications.md) — what the app notifies about and why the list is
+  short, the local scheduler and its 64-request ceiling, the rating prompt's rules. **Read before
+  adding a notification of any kind.**
 - [docs/production-plan.md](docs/production-plan.md) — **the road to both stores, and the record of
   where we stopped.** The free/Plus split and the €4.99 price, the four iOS-only method channels
   Android still needs, the three separate mechanisms behind a live calendar, and the two legal
@@ -66,7 +69,7 @@ task:
   Mo/Do tracker reports five failures a week of a perfect record.
 - **Localization: German, English, Portuguese and Spanish, and every user-facing string goes
   through [lib/l10n/](lib/l10n/).** `AppStrings` declares them and `StringsDe`/`StringsEn`/
-  `StringsPt`/`StringsEs` answer them — 835 members each — and `L.s.someString` reads the live one.
+  `StringsPt`/`StringsEs` answer them — 865 members each — and `L.s.someString` reads the live one.
   Because `AppStrings` is abstract, a string you add to one language and forget in another **fails
   to compile** — that is the point, so don't work around it with a map or a `??`. Portuguese is
   **Brazilian (pt-BR)** and Spanish is peninsular (es-ES); `appSupportedLocales` carries bare
@@ -231,7 +234,11 @@ task:
   [lib/models/who.dart](lib/models/who.dart) renders the badge from the first two together.
   External sharing is its own action ([lib/widgets/share_sheet.dart](lib/widgets/share_sheet.dart)),
   reached from a row menu and **never** from the "Für wen?" picker: mixing outsiders into the
-  family avatar row would make a mis-tap leak household data.
+  family avatar row would make a mis-tap leak household data. **A share always may edit and the
+  sheet does not ask** — `can_edit` survives on the rows and in the policies, defaulted `true`,
+  but read-only was a mode the database enforced and no screen ever drew, so the guest saw every
+  control and had every tap refused. Bringing it back means building the read-only UI, not
+  restoring a switch.
 - **A list or a task can point at an event, and the pointer carries no event in it.** Three columns
   on `lists`/`tasks` — `event_calendar_id`, `event_uid`, `event_starts_at` — read as
   [lib/models/event_link.dart](lib/models/event_link.dart). The reference is the
@@ -290,6 +297,16 @@ task:
   transfer and the direct debit that no wallet notification ever will; it was considered and declined
   on cost** (a licensed AISP contract, KYB, 90-day consent re-auth). Read
   [docs/spend.md](docs/spend.md) before touching any of it.
+- **Notifications are local and derived, not added.** Everything the app says today — a reminder
+  on an appointment, the bins at 19:00 the evening before, a to-do's hour, the morning brief — is
+  scheduled on the device by `composeNotices`
+  ([lib/state/notification_scheduler.dart](lib/state/notification_scheduler.dart)), which rebuilds
+  the whole pending set from what is on screen and swaps it in over `aporah/notifications`. Never
+  schedule a single notice from a screen. **A notification needs a deadline or somebody's name on
+  it; creating a list or a box has neither**, and iOS silently drops everything past the 64 soonest
+  requests. An appointment reminder is this person's, on this device, and has no table. The rating
+  prompt is `ReviewPrompt` and is never wired to a button. Read
+  [docs/notifications.md](docs/notifications.md) first.
 - Don't filter content by `family_id` in Dart. RLS already decides what "my lists" means, and a
   client-side family filter would hide exactly the rows a guest is meant to see. (Edge Functions
   are the exception and must filter — `service_role` bypasses RLS, so there the family filter *is*
@@ -355,13 +372,20 @@ task:
   so a bare `Icon` renders half of it, which looks thin and hollow rather than broken. Both
   codepoints are named in [lib/theme/app_icons.dart](lib/theme/app_icons.dart) and both must be
   `const`, or `--tree-shake-icons` fails the release build. **A glyph that names a thing is
-  duotone; a glyph that *is* a control is flat, and flat means the set's Bold weight from a
+  duotone; a glyph that *is* a control is flat, and flat means the set's Regular weight from a
   second vendored font** — not the duotone minus its under-layer, which for a caret is a hollow
-  triangle rather than a chevron, and not Regular, whose line is lighter than the Lucide it
-  replaced and reads as faint on a 19px glass button. Every Phosphor weight shares one codepoint
-  per glyph, so `_flatFamily` picks the weight for all of them at once. Pass `flat: true`, which the glass buttons,
-  the segmented control, the check-off, the swipe actions and the nav pill already do for their
-  callers. Fourteen bare marks (`check`, `x`, `plus`, `minus`, the three-dot menu, the arrows and
+  triangle rather than a chevron. Every Phosphor weight shares one codepoint per glyph, so
+  `_flatFamily` picks the weight for all of them at once. Pass `flat: true`, which the glass
+  buttons, the segmented control, the check-off, the swipe actions and the nav pill already do for
+  their callers.
+  **A control's *size* comes from `AppGlyph` in [lib/theme/tokens.dart](lib/theme/tokens.dart), and
+  the numbers in it are measured rather than chosen** — four tiers calibrated against the ink of
+  the SF Symbol the system would draw in the same place. Two facts drive them: a Phosphor glyph
+  fills only 57–86% of its em (Lucide filled 88%, so the swap shrank every control without a number
+  changing), and `UIBarButtonItem` applies `.large` on top of 17pt, so its symbol is 21pt of ink
+  rather than the ~14 the bare number suggests. **This is also why the flat weight is Regular and
+  was Bold**: the glyph was drawn too small and Bold was a heavier stroke compensating for it, two
+  errors that cancelled into "small, and the weight is off". Don't write a size at a call site. Fourteen bare marks (`check`, `x`, `plus`, `minus`, the three-dot menu, the arrows and
   the carets) are flat everywhere regardless, because Phosphor gives them a placeholder box or a
   hollow outline instead of a real second layer. Lucide is **gone**: it is one monoline
   stroke weight by design and has no duotone, and `phosphor_flutter` could not be used either
@@ -385,7 +409,7 @@ task:
   Maps by trying their URL scheme and falling back to their website; `native_menu.dart` puts up
   the system's own menu beside the control that opened it (`aporah/menu`,
   `ios/Runner/NativeMenu.swift`). **The iOS
-  deployment target is 13.0** — new system API needs an `if #available` guard and a fallback, not a
+  deployment target is 15.0** — new system API needs an `if #available` guard and a fallback, not a
   raised target.
 - **Every menu in the app is the system's own where the system has one.** `showAnchoredMenu` is
   still the one function every "..." goes through, but it now asks `showNativeMenu` first and only

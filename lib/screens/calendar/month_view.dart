@@ -251,16 +251,19 @@ class _MonthBlock extends ConsumerWidget {
     final isSelectedMonth = sel.y == year && sel.m == month;
     final selDate = DateTime(sel.y, sel.m, sel.d);
     final headingText = _dayHeading(selDate);
-    final dayEvents = isSelectedMonth ? state.eventsFor(sel.y, sel.m, sel.d) : const <CalendarEvent>[];
+    final dayEvents = _demoEvents(
+      isSelectedMonth ? state.eventsFor(sel.y, sel.m, sel.d) : const <CalendarEvent>[],
+      selDate,
+    );
     // The same overlay the week agenda draws, in the same order — the detail box
     // is that agenda, compact. The grid above it stays untouched: its dots are
     // calendars, and a day counting to-dos among them would be the Board's own
     // day grid mistake made a second time (see CLAUDE.md).
     final dayTodos = isSelectedMonth && state.showTasks
-        ? _todosDueOn(ref, sel.y, sel.m, sel.d)
+        ? _demoTodos(_todosDueOn(ref, sel.y, sel.m, sel.d), selDate)
         : const <BoardTask>[];
-    // The same reading order the week agenda uses — see [_agendaEntries].
-    final dayEntries = _agendaEntries(dayEvents, dayTodos);
+    // The same split the week view uses — see [_dayPlan].
+    final plan = _dayPlan(dayEvents, dayTodos, selDate);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(AppSpacing.screenPad, 20, AppSpacing.screenPad, 0),
@@ -301,6 +304,10 @@ class _MonthBlock extends ConsumerWidget {
                 padding: const EdgeInsets.only(top: 16),
                 child: Container(
                   decoration: BoxDecoration(color: AppColors.screenBg, borderRadius: BorderRadius.all(Radius.circular(20))),
+                  // Same reason as `_DayBody`: the timeline's dot lattice is
+                  // sized by the hour grid and overdraws past it so the dots
+                  // reach the panel's edges. This corner is what cuts them.
+                  clipBehavior: Clip.antiAlias,
                   padding: const EdgeInsets.fromLTRB(12, 14, 12, 12),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -334,7 +341,10 @@ class _MonthBlock extends ConsumerWidget {
                           ),
                         ],
                       ),
-                      if (isSelectedMonth && holidays[sel.d] != null)
+                      // Only where there is no band to put it in — see the week
+                      // view's copy of this rule. On any other day the Feiertag
+                      // is the first chip in [_DayBand].
+                      if (isSelectedMonth && holidays[sel.d] != null && dayEvents.isEmpty && dayTodos.isEmpty)
                         Padding(
                           padding: const EdgeInsets.only(top: 8),
                           child: _HolidayChip(holiday: holidays[sel.d]!, accent: accent),
@@ -352,23 +362,14 @@ class _MonthBlock extends ConsumerWidget {
                           ),
                         )
                       else
-                        for (var i = 0; i < dayEntries.length; i++)
-                          if (dayEntries[i] case final BoardTask task)
-                            _TodoAgendaRow(
-                              key: ValueKey(task.id),
-                              task: task,
-                              isFirst: i == 0,
-                              accent: accent,
-                              compact: true,
-                            )
-                          else if (dayEntries[i] case final CalendarEvent event)
-                            _EventAgendaRow(
-                              event: event,
-                              isFirst: i == 0,
-                              headingText: headingText,
-                              accent: accent,
-                              compact: true,
-                            ),
+                        _DayTimeline(
+                          plan: plan,
+                          holiday: isSelectedMonth ? holidays[sel.d] : null,
+                          day: selDate,
+                          headingText: headingText,
+                          accent: accent,
+                          compact: true,
+                        ),
                     ],
                   ),
                 ),

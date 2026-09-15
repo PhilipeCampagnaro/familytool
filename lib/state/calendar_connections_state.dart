@@ -285,6 +285,26 @@ class CalendarConnectionsNotifier extends StateNotifier<CalendarConnectionsState
     await _settle();
   }
 
+  /// Gives one calendar the colour the household wants it in.
+  ///
+  /// Like [setCalendarOwner] and for the same reason, this does **not** wait for
+  /// `_settle`: the colour reaches Kalender on the next `calendar-events` read,
+  /// which fans out across every account the household has connected, and a
+  /// picker where each tap sits through that is a picker nobody plays with. What
+  /// can fail is the update, and that is what the caller awaits.
+  Future<void> setCalendarColor(
+    CalendarConnection connection,
+    String? externalId,
+    int color,
+  ) async {
+    await _repo.setCalendarColor(
+      connection: connection,
+      externalId: externalId,
+      color: color,
+    );
+    unawaited(_settle());
+  }
+
   /// Says whose calendar this row is — the person its chip appears under in
   /// Kalender and on the Board.
   ///

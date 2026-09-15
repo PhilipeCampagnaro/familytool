@@ -30,9 +30,17 @@ export type Plan = "free" | "plus";
 /// because Deno and Flutter have no common module, and a mismatch shows up as
 /// the app offering something the server then refuses, which is a visible bug
 /// rather than a silent hole.
-const LIMITS: Record<Plan, { calendarAccounts: number | null; shareLinks: number | null }> = {
-  free: { calendarAccounts: 1, shareLinks: 2 },
-  plus: { calendarAccounts: null, shareLinks: null },
+const LIMITS: Record<
+  Plan,
+  { calendarAccounts: number | null; shareLinks: number | null; listPlansPerMonth: number | null }
+> = {
+  free: { calendarAccounts: 1, shareLinks: 2, listPlansPerMonth: 3 },
+  // **The first non-null number in the Plus column, on purpose.** Every other
+  // Plus value is unlimited because unlimited costs us nothing; a Vorhaben is a
+  // paid model call, and thirty a month is a plan every day that no household
+  // reaches — it is the ceiling that stops one scripted client spending somebody
+  // else's money. See "The recommendation" in docs/list-planner.md.
+  plus: { calendarAccounts: null, shareLinks: null, listPlansPerMonth: 30 },
 };
 
 /// Apple's billing retry runs up to 16 days and Google's up to 30, and a
@@ -124,6 +132,32 @@ export async function canAddShareLink(
     .eq("family_id", familyId)
     .is("revoked_at", null)
     .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`);
+
+  return (count ?? 0) < limit;
+}
+
+/// Whether this household may make another Vorhaben this calendar month.
+///
+/// Counts `list_plan_runs`, which only `list-plan` writes and only after the
+/// model answered — so a failed generation is never charged. **Server-side only,
+/// and unlike the others there is no argument about it**: a household that
+/// patches its way past a Box limit costs us nothing, one that patches its way
+/// past this spends our money on every request.
+///
+/// The month is the UTC calendar month. A German household's quota therefore
+/// turns over at 01:00 or 02:00 on the 1st rather than at midnight, which
+/// nobody will ever notice and is not worth a timezone on the household.
+export async function canRunListPlan(db: SupabaseClient, familyId: string): Promise<boolean> {
+  const limit = LIMITS[await planOf(db, familyId)].listPlansPerMonth;
+  if (limit === null) return true;
+
+  const now = new Date();
+  const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
+  const { count } = await db
+    .from("list_plan_runs")
+    .select("id", { count: "exact", head: true })
+    .eq("family_id", familyId)
+    .gte("created_at", monthStart);
 
   return (count ?? 0) < limit;
 }

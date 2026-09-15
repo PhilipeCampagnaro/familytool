@@ -37,7 +37,7 @@ class CalendarConnectionRepository {
   static const _columns =
       'id, provider, auth_type, external_account, display_name, status, status_detail, '
       'last_synced_at, created_by, position, selected_calendars, calendar_names, calendar_owners, '
-      'owner_member_id, owner_label';
+      'calendar_colors, owner_member_id, owner_label';
 
   // -------------------------------------------------------------------------
   // Read
@@ -194,6 +194,54 @@ class CalendarConnectionRepository {
           'calendar_names': {...connection.calendarNames, externalId: trimmed},
         })
         .eq('id', connection.id);
+  }
+
+  /// Gives one calendar the colour this household wants it in.
+  ///
+  /// **The app never picks a colour on a household's behalf, so this is the only
+  /// way one changes.** A calendar's colour belongs to the account it came from
+  /// — it is what a family recognises the calendar by in their own calendar app
+  /// as much as in ours — and that holds even when the account's answer is
+  /// unhelpful: iCloud calls "Familie" Apple's system grey, which is nearly
+  /// invisible on the day grid. Substituting something legible was tried and
+  /// rejected; letting them choose is the honest fix.
+  ///
+  /// A merge into the same kind of map [renameCalendar] and [setCalendarOwner]
+  /// write, for the same reason: the other calendars on this account keep their
+  /// colour, and nobody else writes this column. [externalId] is null for a row
+  /// that stands for the whole connection, stored under `'*'`.
+  ///
+  /// `calendar-events` copies it onto the `calendars` row — the app holds no
+  /// grant on that table at all — so **the new colour appears on the next
+  /// calendar read**, not on this call.
+  Future<void> setCalendarColor({
+    required CalendarConnection connection,
+    required String? externalId,
+    required int color,
+  }) async {
+    if (connection.isFeed) return _setFeedColor(connection, color);
+
+    await _db
+        .from('calendar_connections')
+        .update({
+          'calendar_colors': {...connection.calendarColors, externalId ?? '*': color},
+        })
+        .eq('id', connection.id);
+  }
+
+  /// The same for a Ferien or Abfall subscription, which has no connection row
+  /// to hold a map.
+  ///
+  /// A feed is one calendar, so there is nothing to key on and the colour has a
+  /// column of its own. It goes on **this household's** `family_feeds` row and
+  /// never on the shared `public_feeds` one: the street reads that row too, and
+  /// recolouring your bin calendar must not recolour it for the neighbours.
+  ///
+  /// Scoped by `feed_id` alone, exactly like [_setFeedOwner] beside it — RLS is
+  /// what decides which family's subscription row this can reach, and a client
+  /// filter would be the tenant check written twice in the weaker place.
+  Future<void> _setFeedColor(CalendarConnection connection, int color) async {
+    await _db.from('family_feeds').update({'color': color}).eq('feed_id', connection.id);
   }
 
   /// Says whose calendar one of an account's calendars is.

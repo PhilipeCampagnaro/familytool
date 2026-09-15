@@ -101,6 +101,10 @@ interface WireEvent {
   all_day: boolean;
   location: string | null;
   notes: string | null;
+
+  /// The provider's own alarm, minutes before the start, or null. Read by the
+  /// app's reminder row only, to say a reminder is already coming.
+  reminder_minutes: number | null;
 }
 
 Deno.serve(async (req) => {
@@ -155,7 +159,7 @@ Deno.serve(async (req) => {
   const { data: connections } = await db
     .from("calendar_connections")
     .select(
-      "id, family_id, provider, auth_type, external_account, display_name, config, selected_calendars, calendar_names, calendar_owners, is_read_only, created_by, owner_member_id, owner_label",
+      "id, family_id, provider, auth_type, external_account, display_name, config, selected_calendars, calendar_names, calendar_owners, calendar_colors, is_read_only, created_by, owner_member_id, owner_label",
     )
     .eq("family_id", membership.familyId)
     .eq("status", "active");
@@ -273,6 +277,7 @@ function toWire(
     allDay: boolean;
     location: string | null;
     notes: string | null;
+    reminderMinutes?: number | null;
   },
 ): WireEvent {
   return {
@@ -286,6 +291,7 @@ function toWire(
     all_day: e.allDay,
     location: e.location,
     notes: e.notes ? e.notes.slice(0, MAX_NOTES) : e.notes,
+    reminder_minutes: e.reminderMinutes ?? null,
   };
 }
 
@@ -501,13 +507,20 @@ async function upsertCalendar(
     const ownerMemberId = chosen ? chosen.member_id : (existing.owner_member_id as string | null);
     const ownerLabel = chosen ? chosen.label : (existing.owner_label as string | null);
 
+    // The household's own colour where they have picked one, and whatever the
+    // row already says otherwise. The second half is not a fallback — it is the
+    // rule: `color` has never been overwritten on a read, because position and
+    // visibility live beside it and re-deciding those every hour is the kind of
+    // thing that makes a family stop trusting a calendar.
+    const picked = chosenColor(connection, remote.externalId);
+    const color = picked ?? (existing.color as number);
+
     // Name follows the household's own choice, and the provider's only where
-    // there isn't one; colour, position and visibility belong to the user.
-    // Overwriting those on every read is the kind of thing that makes a family
-    // stop trusting a calendar.
+    // there isn't one.
     const patch: Record<string, unknown> = {};
     if (existing.name !== name) patch.name = name;
     if (existing.is_read_only !== readOnly) patch.is_read_only = readOnly;
+    if (color !== (existing.color as number)) patch.color = color;
     if (ownerMemberId !== (existing.owner_member_id as string | null)) patch.owner_member_id = ownerMemberId;
     if (ownerLabel !== (existing.owner_label as string | null)) patch.owner_label = ownerLabel;
     if (Object.keys(patch).length) await db.from("calendars").update(patch).eq("id", existing.id);
@@ -515,7 +528,7 @@ async function upsertCalendar(
     return {
       id: existing.id,
       name,
-      color: existing.color as number,
+      color,
       is_read_only: readOnly,
       position: (existing.position as number) ?? 0,
       ...groupFor(ownerMemberId, ownerLabel, owners),
@@ -529,7 +542,7 @@ async function upsertCalendar(
 
   // `| 0` wraps the ARGB value into a signed 32-bit integer, which is what the
   // column is. Without it every colour with alpha 0xff overflows.
-  const color = defaultColor(connection.provider, index);
+  const color = chosenColor(connection, remote.externalId) ?? defaultColor(connection.provider, index);
 
   const { data: created, error } = await db
     .from("calendars")
@@ -565,6 +578,34 @@ async function upsertCalendar(
     position: (created.position as number) ?? 0,
     ...groupFor(owner.member_id, owner.label, owners),
   };
+}
+
+/// The household's own colour for one calendar, or null where they have not
+/// picked one and the account's default stands.
+///
+/// **A calendar's colour is the account's until the family says otherwise.**
+/// iCloud calls "Familie" `#8E8E93` — Apple's system grey, which is a fine
+/// colour on Apple's white calendar and a grey chip on a grey card in ours. The
+/// app deliberately does not substitute a legible colour on the household's
+/// behalf, because the colour is what a family recognises a calendar by in their
+/// own calendar app as much as in this one. So they pick, and this is where the
+/// pick is read.
+///
+/// Keyed exactly like `calendar_owners`, `"*"` included, so a connection that
+/// yields one calendar can be coloured from the row that stands for the whole
+/// account.
+///
+/// Client-written, so nothing here is trusted: anything that is not a finite
+/// number is ignored rather than written into an integer column, and the value
+/// is wrapped into the signed 32-bit ARGB the column holds — the same `| 0`
+/// [defaultColor] ends on, and for the same reason.
+function chosenColor(connection: Connection, externalId: string): number | null {
+  const map = connection.calendar_colors;
+  if (!map || typeof map !== "object") return null;
+
+  const raw = map[externalId] ?? map["*"];
+  if (typeof raw !== "number" || !Number.isFinite(raw)) return null;
+  return raw | 0;
 }
 
 /// The household's explicit choice for one calendar, or null when they have not

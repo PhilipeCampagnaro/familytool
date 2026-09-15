@@ -149,7 +149,7 @@ class IslandLine extends StatelessWidget {
                       ],
                       if (navigates) ...[
                         const SizedBox(width: 6),
-                        AppIcon(AppIcons.caretRight, size: 14, color: AppColors.mutedLight, flat: true),
+                        AppIcon(AppIcons.caretRight, size: AppGlyph.caret, color: AppColors.mutedLight, flat: true),
                       ],
                       if (expanded case final open?) ...[
                         const SizedBox(width: 2),
@@ -157,7 +157,7 @@ class IslandLine extends StatelessWidget {
                           turns: open ? 0.5 : 0,
                           duration: const Duration(milliseconds: 240),
                           curve: Curves.easeOutCubic,
-                          child: AppIcon(AppIcons.caretDown, size: 15, color: AppColors.muted, flat: true),
+                          child: AppIcon(AppIcons.caretDown, size: AppGlyph.caret, color: AppColors.muted, flat: true),
                         ),
                       ],
                     ],

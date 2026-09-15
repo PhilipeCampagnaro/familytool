@@ -76,6 +76,10 @@ export interface Connection {
   /// Apple ID routinely carries the family's calendar and one parent's work
   /// calendar — see the migration.
   calendar_owners?: Record<string, string> | null;
+
+  /// The household's own colour per calendar, keyed the same way — see
+  /// `chosenColor` in calendar-events.
+  calendar_colors?: Record<string, number> | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -329,6 +333,7 @@ export async function readRemoteEvents(
         allDay: p.allDay,
         href: p.href,
         etag: p.etag,
+        reminderMinutes: p.reminderMinutes ?? null,
       }));
     }
   }
@@ -364,6 +369,16 @@ async function readGoogle(
     if (!res.ok) throw new Error(`events ${res.status}`);
 
     const body = await res.json();
+    // A popup reminder is what rings on the phone; an e-mail reminder does not.
+    // `useDefault` means the calendar's own defaults, which come on the page.
+    const popupMinutes = (list: unknown): number | null => {
+      if (!Array.isArray(list)) return null;
+      const minutes = list
+        .filter((r) => r?.method === "popup" && typeof r?.minutes === "number")
+        .map((r) => r.minutes as number);
+      return minutes.length ? Math.max(...minutes) : null;
+    };
+    const defaultMinutes = popupMinutes(body.defaultReminders);
     for (const item of body.items ?? []) {
       if (item.status === "cancelled") continue;
 
@@ -386,6 +401,9 @@ async function readGoogle(
         endsAt: new Date(end ?? start).toISOString(),
         allDay,
         etag: item.etag ?? null,
+        reminderMinutes: item.reminders?.useDefault === false
+          ? popupMinutes(item.reminders?.overrides)
+          : defaultMinutes,
       });
     }
     pageToken = body.nextPageToken;
@@ -405,7 +423,7 @@ async function readOutlook(
     `?startDateTime=${encodeURIComponent(window.from.toISOString())}` +
     `&endDateTime=${encodeURIComponent(window.to.toISOString())}` +
     "&$top=500&$select=id,subject,bodyPreview,location,start,end,isAllDay,isCancelled" +
-    ",type,seriesMasterId";
+    ",type,seriesMasterId,isReminderOn,reminderMinutesBeforeStart";
   let guard = 0;
 
   const toIso = (value: string | null | undefined): string | null =>
@@ -435,6 +453,8 @@ async function readOutlook(
       isCancelled?: boolean;
       type?: string;
       seriesMasterId?: string;
+      isReminderOn?: boolean;
+      reminderMinutesBeforeStart?: number;
     }> = await res.json();
     for (const item of body.value ?? []) {
       if (item.isCancelled) continue;
@@ -452,6 +472,9 @@ async function readOutlook(
         startsAt: start,
         endsAt: toIso(item.end?.dateTime) ?? start,
         allDay: !!item.isAllDay,
+        reminderMinutes: item.isReminderOn && typeof item.reminderMinutesBeforeStart === "number"
+          ? item.reminderMinutesBeforeStart
+          : null,
       });
     }
     next = body["@odata.nextLink"];

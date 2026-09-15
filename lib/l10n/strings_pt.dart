@@ -137,6 +137,8 @@ class StringsPt extends AppStrings {
   @override
   String get restored => 'Restaurado';
   @override
+  String get beingRestored => 'Restaurando …';
+  @override
   String get reload => 'Recarregar';
 
   @override
@@ -716,6 +718,16 @@ class StringsPt extends AppStrings {
   @override
   String get eventBeingCreated => 'Adicionando o evento …';
   @override
+  String get eventBeingDeleted => 'Excluindo o evento …';
+  @override
+  String get seriesBeingDeleted => 'Excluindo a série …';
+  @override
+  String get eventBeingSaved => 'Salvando a alteração …';
+  @override
+  String eventBeingMovedTo(String calendar) => 'Movendo o evento para $calendar …';
+  @override
+  String get seriesBeingSaved => 'Salvando a série …';
+  @override
   String get eventCreated => 'Evento criado';
   @override
   String get eventUpdated => 'Evento atualizado';
@@ -806,6 +818,8 @@ class StringsPt extends AppStrings {
   String calendarCount(int count) => count == 1 ? '1 agenda' : '$count agendas';
   @override
   String get calendarSettings => 'Editar agenda';
+  @override
+  String get calendarColor => 'Cor';
   @override
   String get renameCalendar => 'Renomear agenda';
   @override
@@ -1123,12 +1137,6 @@ class StringsPt extends AppStrings {
   @override
   String get emailOptional => 'E-mail (opcional)';
   @override
-  String get editingAllowed => 'Pode editar';
-  @override
-  String get canCheckAndAdd => 'Pode marcar e adicionar';
-  @override
-  String get canOnlyView => 'Só pode ver';
-  @override
   String get createLink => 'Criar link';
   @override
   String get sendInvite => 'Enviar convite';
@@ -1147,10 +1155,6 @@ class StringsPt extends AppStrings {
   String get copyLink => 'Copiar link';
   @override
   String get linkShownOnce => 'Este link só aparece agora — a gente não guarda ele.';
-  @override
-  String get mayEdit => 'Pode editar';
-  @override
-  String get viewOnly => 'Só ver';
   @override
   String usedTimes(int count) => count == 1 ? 'usado 1×' : 'usado $count×';
   @override
@@ -1544,9 +1548,14 @@ class StringsPt extends AppStrings {
   @override
   String get homeAllDone => 'Tudo pronto';
   @override
-  String homeDayEntries(int count) => count == 1 ? '1 compromisso' : '$count compromissos';
+  String homeDayOffset(int days) => switch (days) {
+        1 => 'Amanhã',
+        -1 => 'Ontem',
+        > 1 => 'Em $days dias',
+        _ => 'Há ${-days} dias',
+      };
   @override
-  String get homeDayEmpty => 'Nada planejado';
+  String get homeHintBackToToday => 'Toque para voltar a hoje';
   @override
   String get homeThinking => 'Um instante';
   @override
@@ -1564,15 +1573,12 @@ class StringsPt extends AppStrings {
   @override
   String get homeHintDone => 'Não falta mais nada hoje';
   @override
-  String get homeOpenSection => 'Pendentes';
   @override
   String get homeTrackerSection => 'Para hoje';
   @override
   String get homeListsSection => 'Listas';
   @override
   String get homeShowAll => 'Ver tudo';
-  @override
-  String homeMoreEntries(int count) => 'mais $count';
   @override
   String homeListOpenItems(int count) => '$count para comprar';
 
@@ -1806,12 +1812,15 @@ class StringsPt extends AppStrings {
   @override
   String get spendWalletStep1 => 'Abra os Atalhos e toque em Automação, embaixo.';
   @override
-  String get spendWalletStep2 => 'Toque em + e escolha Transação.';
+  String get spendWalletStep2 => 'Toque em + e escolha Carteira.';
   @override
   String get spendWalletStep3 => 'Escolha seus cartões e marque Executar imediatamente.';
   @override
   String get spendWalletStep4 =>
       'Escolha a ação "Registrar gasto" — ela já está na lista.';
+  @override
+  String get spendWalletStep5 =>
+      'Na ação, toque em Loja e Valor e insira a variável correspondente da automação — senão o atalho para e pergunta, e nada é registrado.';
   @override
   String get spendWalletOpenShortcuts => 'Abrir os Atalhos';
   @override
@@ -2005,7 +2014,7 @@ class StringsPt extends AppStrings {
   // ------------------------------------------------------------- Vorhaben
   //
   // Só a moldura. A *resposta* é conteúdo no idioma em que o modelo foi
-  // perguntado — veja `_systemPrompt` em lib/services/list_planner.dart.
+  // perguntado — veja `systemPrompt` em supabase/functions/list-plan/index.ts.
   @override
   String get plannerTitle => 'Plano';
   @override
@@ -2079,9 +2088,91 @@ class StringsPt extends AppStrings {
       'Não conseguimos montar uma lista com isso. Tente algo mais concreto: um '
       'prato, um projeto ou uma ocasião.';
   @override
-  String get plannerNotConfigured => 'O plano não está configurado nesta versão.';
+  String get plannerNotConfigured => 'O plano não está configurado no momento.';
+  @override
+  String get plannerMonthlyLimit => 'Os planos deste mês acabaram. No dia 1º tem mais.';
+  @override
+  String get plannerDailyLimit => 'Por hoje já deu. Tente de novo amanhã.';
   @override
   String get plannerIslandLine => 'Diga o que você está planejando.';
   @override
   String get plannerIslandHint => 'A lista é por nossa conta';
+
+  // -------------------------------------------------------- notifications --
+  @override
+  String get notificationsTitle => 'Notificações';
+  @override
+  String get notificationsPageDesc => 'O que o Aporah envia para o seu celular, e quando.';
+  @override
+  String get searchTermsNotifications =>
+      'notificações lembretes alertas push resumo do dia lixo coleta mitteilungen';
+  @override
+  String get notificationsAllowTitle => 'Permitir notificações';
+  @override
+  String get notificationsAllowBody => 'Sem permissão, nenhum lembrete chega.';
+  @override
+  String get notificationsDeniedBody => 'As notificações estão desativadas nos ajustes do sistema.';
+  @override
+  String get notificationsAllow => 'Permitir';
+  @override
+  String get notificationsOpenSettings => 'Ajustes';
+  @override
+  String get notificationsQuietTitle => 'Entregues em silêncio';
+  @override
+  String get notificationsQuietBody => 'As notificações chegam sem som na Central de Notificações.';
+  @override
+  String get notifyBriefTitle => 'Resumo do dia';
+  @override
+  String get notifyBriefSubtitle => 'Toda manhã, o que tem para hoje';
+  @override
+  String get notifyAbfallTitle => 'Coleta de lixo';
+  @override
+  String get notifyAbfallSubtitle => 'Na noite anterior à coleta';
+  @override
+  String get notifyTaskTimesTitle => 'Tarefas com horário';
+  @override
+  String get notifyTaskTimesSubtitle => 'No horário que você definiu';
+  @override
+  String get notifyTime => 'Horário';
+  @override
+  String get notificationsEventNote =>
+      'O lembrete de um evento é definido no próprio evento. Vale só neste aparelho.';
+  @override
+  String get reminderNone => 'Nenhum';
+  @override
+  String get reminderAtStart => 'No início';
+  @override
+  String reminderHoursBefore(int hours) => hours == 1 ? '1 hora antes' : '$hours horas antes';
+  @override
+  String reminderDaysBefore(int days) => days == 1 ? '1 dia antes' : '$days dias antes';
+  @override
+  String reminderDayBefore(String time) => 'Na véspera às $time';
+  @override
+  String reminderMorningOf(String time) => 'No dia às $time';
+  @override
+  String reminderCalendarAlready(String label) => 'Seu calendário já lembra: $label';
+  @override
+  String get reminderDenied => 'As notificações estão desativadas – permita nos ajustes.';
+  @override
+  String get noticeBriefTitle => 'Seu dia';
+  @override
+  String briefEvents(int count) => count == 1 ? '1 evento' : '$count eventos';
+  @override
+  String briefFirstAt(String time) => 'a partir das $time';
+  @override
+  String briefTasks(int count) => count == 1 ? '1 tarefa pendente' : '$count tarefas pendentes';
+  @override
+  String noticeAbfallTitle(String bins) => 'Já colocou $bins para fora?';
+  @override
+  String get noticeAbfallBody => 'A coleta é amanhã cedo.';
+  @override
+  String noticeTaskDue(String time) => 'Para as $time';
+  @override
+  String joinAnd(List<String> parts) => parts.length < 2
+      ? parts.join()
+      : '${parts.sublist(0, parts.length - 1).join(', ')} e ${parts.last}';
+  @override
+  String get rateApp => 'Avaliar o Aporah';
+  @override
+  String get searchTermsRate => 'avaliar avaliação estrelas app store bewerten rate';
 }

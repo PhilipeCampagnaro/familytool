@@ -491,7 +491,7 @@ class BoardScreen extends ConsumerWidget {
                   },
                   options: [
                     SegmentedOption(value: BoardItemKind.task, label: L.s.kindTask, icon: AppIcons.checkCircle),
-                    SegmentedOption(value: BoardItemKind.tracker, label: L.s.kindTracker, icon: AppIcons.repeat),
+                    SegmentedOption(value: BoardItemKind.tracker, label: L.s.kindTracker, icon: AppIcons.circleDashed),
                   ],
                 ),
                 const SizedBox(height: 14),

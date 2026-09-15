@@ -302,6 +302,8 @@ class _PlannerCardState extends ConsumerState<PlannerCard> {
             switch (state.failure) {
               PlannerFailure.notConfigured => L.s.plannerNotConfigured,
               PlannerFailure.unusable => L.s.plannerUnusable,
+              PlannerFailure.monthlyLimit => L.s.plannerMonthlyLimit,
+              PlannerFailure.dailyLimit => L.s.plannerDailyLimit,
               _ => L.s.plannerUnavailable,
             },
             style: AppText.body.copyWith(color: AppColors.inkSecondary, height: 1.45),
@@ -520,7 +522,7 @@ class _PlanItemRow extends StatelessWidget {
             // rather than deleted from it afterwards.
             AppIcon(
               dropped ? AppIcons.x : AppIcons.checkCircle,
-              size: 21,
+              size: AppGlyph.row,
               flat: true,
               color: dropped ? AppColors.mutedLight : AppColors.accent,
             ),

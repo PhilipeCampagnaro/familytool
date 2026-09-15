@@ -35,6 +35,9 @@ export interface ParsedEvent {
   allDay: boolean;
   href: string | null;
   etag: string | null;
+  /// The event's first relative `VALARM`, in minutes before the start. See
+  /// `SyncedEvent.reminderMinutes`.
+  reminderMinutes?: number | null;
 }
 
 const USER_AGENT = "Aporah/1.0 (CalDAV)";
@@ -1009,6 +1012,28 @@ function registerOffsetZones(component: any): void {
 /// time. `relateException` is what joins them, and since Aporah's own
 /// "nur dieser Termin" edits are written as exactly that kind of override, every
 /// one of them would otherwise show double the moment it was saved.
+/// Minutes before the start of a component's first relative alarm, or null.
+///
+/// Only a `TRIGGER` that is a duration counted from the start: an absolute
+/// date-time or one `RELATED=END` is a different question, and a wrong "your
+/// calendar already reminds you" is worse than none.
+// deno-lint-ignore no-explicit-any
+function alarmMinutes(component: any): number | null {
+  try {
+    for (const alarm of component?.getAllSubcomponents?.("valarm") ?? []) {
+      const prop = alarm.getFirstProperty("trigger");
+      if (!prop) continue;
+      if (String(prop.getParameter("related") ?? "START").toUpperCase() !== "START") continue;
+      const value = prop.getFirstValue();
+      if (typeof value?.toSeconds !== "function") continue;
+      const seconds = value.toSeconds();
+      if (seconds > 0) continue;
+      return Math.round(-seconds / 60);
+    }
+  } catch { /* an alarm we cannot read is an alarm we do not claim */ }
+  return null;
+}
+
 export function parseIcs(ics: string, from: Date, to: Date): Omit<ParsedEvent, "href" | "etag">[] {
   const out: Omit<ParsedEvent, "href" | "etag">[] = [];
 
@@ -1093,6 +1118,7 @@ export function parseIcs(ics: string, from: Date, to: Date): Omit<ParsedEvent, "
             startsAt: startDate.toISOString(),
             endsAt: endDate.toISOString(),
             allDay,
+            reminderMinutes: alarmMinutes(item?.component ?? vevent),
           };
         };
 

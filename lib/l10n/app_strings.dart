@@ -105,6 +105,11 @@ abstract class AppStrings {
   /// would only repeat the noun the same chip already named.
   String get undo;
   String get restored;
+
+  /// The chip's own line while "Rückgängig" is running. The restore is a write
+  /// like any other and takes the same seconds; the capsule turns back into a
+  /// spinner rather than vanishing and leaving nothing.
+  String get beingRestored;
   String get notes;
   String get addNotes;
   String get name;
@@ -624,6 +629,28 @@ abstract class AppStrings {
   String eventBeingCreatedIn(String calendar);
   String get eventBeingCreated;
 
+  /// The same line for a delete, which is silent for exactly as long and was
+  /// the one write that said nothing while it ran. The row leaves the grid at
+  /// once — `_hidePending` — but the removal in Google, Outlook or the CalDAV
+  /// server takes its seconds, and the "Rückgängig" the user is owed cannot be
+  /// offered until it has landed.
+  ///
+  /// A series gets its own line because it is a different promise: one tap is
+  /// removing every occurrence, and the chip should say so while it does.
+  String get eventBeingDeleted;
+  String get seriesBeingDeleted;
+
+  /// And for a save. [eventBeingMovedTo] is the cross-calendar case, which is a
+  /// create on the far side and a delete on this one — two providers, so the
+  /// slowest wait of the three and the one most worth naming.
+  ///
+  /// [seriesBeingSaved] covers more than the others: a whole series is the one
+  /// write that is *not* drawn on the calendar ahead of the answer, so the chip
+  /// is the only thing on screen for both the write and the re-read behind it.
+  String get eventBeingSaved;
+  String eventBeingMovedTo(String calendar);
+  String get seriesBeingSaved;
+
   String get eventCreated;
   String get eventUpdated;
   String get eventDeleted;
@@ -693,6 +720,9 @@ abstract class AppStrings {
   /// and the way to take it away. Names the *calendar*, not an action, because
   /// it is all three at once.
   String get calendarSettings;
+
+  /// The swatch row in the calendar's own sheet.
+  String get calendarColor;
 
   String get renameCalendar;
   String get renameCalendarBody;
@@ -873,9 +903,6 @@ abstract class AppStrings {
   String shareIntro(String resource);
   String shareIntroSecond(String noun);
   String get emailOptional;
-  String get editingAllowed;
-  String get canCheckAndAdd;
-  String get canOnlyView;
   String get createLink;
   String get sendInvite;
   String get guests;
@@ -885,8 +912,6 @@ abstract class AppStrings {
   String get copied;
   String get copyLink;
   String get linkShownOnce;
-  String get mayEdit;
-  String get viewOnly;
   String usedTimes(int count);
   String get linkExpired;
   String get linkUsedUp;
@@ -1141,10 +1166,11 @@ abstract class AppStrings {
   /// nothing at all, which falls back to [yourDay].
   String get homeAllDone;
 
-  /// What the island says on a day that is not today: how much is on it. The
-  /// date itself comes from [weekdayWithDateShort].
-  String homeDayEntries(int count);
-  String get homeDayEmpty;
+  /// What the island says on a day that is not today: how far it is from today,
+  /// never zero ("Morgen", "Vor 2 Tagen"). The date and the count are the day
+  /// card's own title, so the island does not repeat them.
+  String homeDayOffset(int days);
+  String get homeHintBackToToday;
 
   /// What the island says while the day is still arriving — the state before
   /// every one of the above, and the only one that is about the app rather than
@@ -1164,13 +1190,10 @@ abstract class AppStrings {
   String get homeHintDone;
 
   // The sections below the day card.
-  String get homeOpenSection;
   String get homeTrackerSection;
   String get homeListsSection;
   String get homeShowAll;
 
-  /// The day card's fold, on a day with more entries than it shows at once.
-  String homeMoreEntries(int count);
 
   /// How many articles on a shopping list are still unticked.
   String homeListOpenItems(int count);
@@ -1370,6 +1393,10 @@ abstract class AppStrings {
   String get spendWalletStep2;
   String get spendWalletStep3;
   String get spendWalletStep4;
+  /// Linking the action's required fields to the trigger's variables. Left
+  /// unlinked, Shortcuts stops to ask for them after the payment, nobody sees
+  /// the question, and nothing is sent.
+  String get spendWalletStep5;
   String get spendWalletOpenShortcuts;
 
   /// **Android's capture is a different mechanism, so it gets its own copy.**
@@ -1481,7 +1508,7 @@ abstract class AppStrings {
   // --- Vorhaben (the list planner) --------------------------------------
   //
   // The chrome only. The *answer* is content in whatever language the model was
-  // asked in — see `_systemPrompt` in lib/services/list_planner.dart, which is
+  // asked in — see `systemPrompt` in supabase/functions/list-plan/index.ts, which is
   // told `localeCode` — exactly as the content catalogs carry their own
   // translations while the screen around them goes through here.
   String get plannerTitle;
@@ -1532,9 +1559,69 @@ abstract class AppStrings {
   String get plannerUnavailable;
   String get plannerUnusable;
   String get plannerNotConfigured;
+  String get plannerMonthlyLimit;
+  String get plannerDailyLimit;
 
   /// Listen's island: the invitation to Vorhaben, and the promise under it.
   /// One line each — the island ellipsises, it does not wrap.
   String get plannerIslandLine;
   String get plannerIslandHint;
+
+  // -------------------------------------------------------- notifications --
+  /// Settings → Mitteilungen. Also the name Android's own settings screen gives
+  /// the channel every notice is posted on, so it follows the language too.
+  String get notificationsTitle;
+  String get notificationsPageDesc;
+  String get searchTermsNotifications;
+  String get notificationsAllowTitle;
+  String get notificationsAllowBody;
+  String get notificationsDeniedBody;
+  String get notificationsAllow;
+  String get notificationsOpenSettings;
+
+  /// iOS's provisional grant: delivered, but silently.
+  String get notificationsQuietTitle;
+  String get notificationsQuietBody;
+  String get notifyBriefTitle;
+  String get notifyBriefSubtitle;
+  String get notifyAbfallTitle;
+  String get notifyAbfallSubtitle;
+  String get notifyTaskTimesTitle;
+  String get notifyTaskTimesSubtitle;
+  String get notifyTime;
+  String get notificationsEventNote;
+
+  /// The reminder row on an appointment. [reminderMinutesBefore] above covers
+  /// the minute values; these are the rest.
+  String get reminderNone;
+  String get reminderAtStart;
+  String reminderHoursBefore(int hours);
+  String reminderDaysBefore(int days);
+
+  /// An all-day event's two choices, which are clock times rather than offsets.
+  String reminderDayBefore(String time);
+  String reminderMorningOf(String time);
+
+  /// The provider already has an alarm on this appointment — said so the user
+  /// does not set a second one by accident.
+  String reminderCalendarAlready(String label);
+  String get reminderDenied;
+
+  /// The notices themselves. Rendered when scheduled, in the language of then.
+  String get noticeBriefTitle;
+  String briefEvents(int count);
+  String briefFirstAt(String time);
+  String briefTasks(int count);
+
+  /// [bins] is the vendor's own word for the bin, joined by [joinAnd] — it is
+  /// what is printed on the calendar, so it stays as the vendor wrote it.
+  String noticeAbfallTitle(String bins);
+  String get noticeAbfallBody;
+  String noticeTaskDue(String time);
+
+  /// "A, B und C".
+  String joinAnd(List<String> parts);
+
+  String get rateApp;
+  String get searchTermsRate;
 }

@@ -475,7 +475,7 @@ class GlassIconButton extends StatelessWidget {
     required this.icon,
     required this.onTap,
     this.size = 40,
-    this.iconSize = 19,
+    this.iconSize = AppGlyph.button,
     this.iconColor,
     this.tint,
     this.fallbackTint,
@@ -550,7 +550,7 @@ class GlassIconGroup extends StatefulWidget {
   final double size;
   final double iconSize;
 
-  const GlassIconGroup({super.key, required this.actions, this.size = 40, this.iconSize = 19});
+  const GlassIconGroup({super.key, required this.actions, this.size = 40, this.iconSize = AppGlyph.button});
 
   /// Each segment's tap target, wider than the capsule is tall: the icons are
   /// a finger's width apart in a control that is only 40pt high, and at the
@@ -840,6 +840,69 @@ class GlassAccentButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final accent = enabled ? Theme.of(context).colorScheme.primary : AppColors.mutedLight;
+    final titleStyle = AppText.rowTitle.copyWith(fontSize: fontSize, color: Colors.white);
+    // Both paths are laid out from this one widget: the Flutter drawing *is*
+    // it, and the native button is handed it as a [NativeGlassButtons.sizer] so
+    // the two pills are the same size by construction. See [GlassPillButton],
+    // which is the same bargain for the neutral one.
+    final body = Padding(
+      padding: padding,
+      child: SizedBox(
+        width: expand ? double.infinity : null,
+        child: Row(
+          mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (icon case final glyph?) ...[
+              // Tied to the word beside it rather than pinned, since
+              // [fontSize] is a parameter — at its default this is exactly
+              // [AppGlyph.row], the tier for a glyph sharing its space.
+              AppIcon(glyph, size: fontSize * 1.4, color: Colors.white, flat: true),
+              const SizedBox(width: 9),
+            ],
+            Flexible(
+              child: Text(
+                label,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: titleStyle,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (nativeGlassActive(context)) {
+      // **A real `UIButton`, for the same reason the icon buttons are one** —
+      // and here for one more: the surface path hangs an invisible `UIControl`
+      // inside an *interactive* `UIGlassEffect`'s `contentView`, and the
+      // material's own touch handling competes with that control for the
+      // gesture. It won often enough that the primary action of a Settings page
+      // — "Verbinden" at the bottom of a provider — had to be tapped several
+      // times before one got through. A glass `UIButton` has no such contest:
+      // the press response and the action are the same control's.
+      return NativeGlassButtons(
+        buttons: [
+          NativeGlassButton(
+            icon: icon,
+            label: label,
+            title: label,
+            titleStyle: titleStyle,
+            // Still swallowed rather than absent while disabled — see [enabled].
+            onTap: enabled ? onTap : () {},
+          ),
+        ],
+        // Always the filled treatment: this pill is the accent even when it is
+        // grey, which is what "not yet" looks like rather than "not a button".
+        prominent: true,
+        tint: accent,
+        iconSize: fontSize * 1.4,
+        sizer: body,
+      );
+    }
+
     return _PressableGlass(
       onTap: enabled ? onTap : () {},
       // A capsule regardless of height: it's what iOS renders anyway (the
@@ -850,31 +913,7 @@ class GlassAccentButton extends StatelessWidget {
       tint: accent,
       fallbackTint: accent,
       boxShadow: enabled ? AppShadows.accentGlass(accent) : null,
-      child: Padding(
-        padding: padding,
-        child: SizedBox(
-          width: expand ? double.infinity : null,
-          child: Row(
-            mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (icon case final glyph?) ...[
-                AppIcon(glyph, size: fontSize + 3, color: Colors.white, flat: true),
-                const SizedBox(width: 9),
-              ],
-              Flexible(
-                child: Text(
-                  label,
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppText.rowTitle.copyWith(fontSize: fontSize, color: Colors.white),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+      child: body,
     );
   }
 }

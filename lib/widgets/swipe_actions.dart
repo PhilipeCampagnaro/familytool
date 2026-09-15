@@ -227,7 +227,7 @@ class _SwipeActionButton extends StatelessWidget {
         width: width,
         alignment: Alignment.center,
         color: action.color,
-        child: AppIcon(action.icon, size: 18, color: Colors.white, flat: true),
+        child: AppIcon(action.icon, size: AppGlyph.button, color: Colors.white, flat: true),
       ),
     );
   }

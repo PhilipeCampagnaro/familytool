@@ -112,6 +112,24 @@ class _CalendarFilterButton extends ConsumerWidget {
     }
   }
 
+  /// The header's control height — the same as [_CalendarHeaderActions]'
+  /// capsule on the other side, so the two read as one bar.
+  static const _height = 40.0;
+
+  /// Also the native button's gap between the word and the caret
+  /// (`imagePadding` in GlassButtonPlatformView.swift), so the sizer below
+  /// measures what UIKit draws.
+  static const _gap = 7.0;
+
+  /// The same tier as the link and + glyphs in [_CalendarHeaderActions], so
+  /// the controls on both sides of the title draw their glyphs at one size.
+  static const _caretSize = AppGlyph.button;
+
+  /// The picked calendar's dot. The native button draws it as a "●" in the
+  /// title, at [_dotFontSize] — a bullet's ink is roughly 0.55 of its em.
+  static const _dotSize = 12.0;
+  static const _dotFontSize = 22.0;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final filter = state.calendarFilter;
@@ -120,43 +138,78 @@ class _CalendarFilterButton extends ConsumerWidget {
     // would claim it is filtered to that one calendar. It counts itself, the
     // same way its chip does once the header is open.
     final picked = state.filterGroupId == kPickedCalendarFilterId;
-    return GestureDetector(
-      onTap: () => _openMenu(context, ref),
-      child: SizedBox(
-        height: 40,
-        child: Center(
-          child: GlassSurface(
-            borderRadius: BorderRadius.circular(18),
-            // No forced `tint`: on iOS this is a real UIGlassEffect, and
-            // pinning its tintColor to a near-opaque grey made it render as a
-            // flat pill instead of glass. The Flutter approximation takes the
-            // default light material, which keeps the chevron legible.
-            blurSigma: 16,
-            boxShadow: AppShadows.glassButton,
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: isAll || picked ? 13 : 12, vertical: 10),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // "Alle" is spelled out — a plain gray dot doesn't read as
-                  // "everything" the way a source's own colour reads as that
-                  // source. Once a specific calendar is picked, its dot alone
-                  // is unambiguous, so the label drops back to just that.
-                  if (isAll)
-                    Text(L.s.all, style: AppText.caption)
-                  else if (picked)
-                    Text(L.s.calendarCount(filter.length), style: AppText.caption)
-                  else
-                    Container(width: 9, height: 9, decoration: BoxDecoration(color: _dotColor, shape: BoxShape.circle)),
-                  const SizedBox(width: 7),
-                  AppIcon(AppIcons.caretDown, size: 15, color: AppColors.inkTertiary),
-                ],
-              ),
-            ),
-          ),
+    // "Alle" is spelled out — a plain gray dot doesn't read as "everything"
+    // the way a source's own colour reads as that source. Once a specific
+    // calendar is picked, its dot alone is unambiguous, so the label drops
+    // back to just that.
+    final word = isAll ? L.s.all : (picked ? L.s.calendarCount(filter.length) : null);
+    final wordStyle = AppText.caption.copyWith(color: AppColors.ink);
+    final caretColor = AppColors.inkTertiary;
+    const padding = EdgeInsets.symmetric(horizontal: 14);
+
+    final body = SizedBox(
+      height: _height,
+      child: Padding(
+        padding: padding,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (word != null)
+              Text(word, maxLines: 1, style: wordStyle)
+            else
+              Container(width: _dotSize, height: _dotSize, decoration: BoxDecoration(color: _dotColor, shape: BoxShape.circle)),
+            const SizedBox(width: _gap),
+            AppIcon(AppIcons.caretDown, size: _caretSize, color: caretColor, flat: true),
+          ],
         ),
       ),
     );
+
+    if (nativeGlassActive(context)) {
+      // **A real glass `UIButton`, like the link and + beside the title.** The
+      // `GlassSurface` this was — the material with a Flutter row laid over it
+      // — sat next to two real buttons and read as a different control. A
+      // `UIButton` takes one image, so the dot is a coloured bullet in the
+      // title rather than a drawn circle.
+      return NativeGlassButtons(
+        buttons: [
+          NativeGlassButton(
+            icon: AppIcons.caretDown,
+            iconTrailing: true,
+            label: word ?? _pickedName ?? L.s.all,
+            title: word ?? '●',
+            titleStyle: word != null ? wordStyle : wordStyle.copyWith(color: _dotColor, fontSize: _dotFontSize, height: 1),
+            onTap: () => _openMenu(context, ref),
+          ),
+        ],
+        // A plain button's tint is its glyph colour — the caret.
+        tint: caretColor,
+        iconSize: _caretSize,
+        sizer: body,
+      );
+    }
+
+    return GestureDetector(
+      onTap: () => _openMenu(context, ref),
+      child: GlassSurface(
+        borderRadius: BorderRadius.circular(_height / 2),
+        // No forced `tint`: the Flutter approximation takes the default light
+        // material, which keeps the chevron legible.
+        blurSigma: 16,
+        boxShadow: AppShadows.glassButton,
+        child: body,
+      ),
+    );
+  }
+
+  /// The accessible name when the button shows only a dot.
+  String? get _pickedName {
+    final filter = state.calendarFilter;
+    if (filter == null) return null;
+    for (final src in state.calendars) {
+      if (filter.contains(src.id)) return src.name;
+    }
+    return null;
   }
 }
 

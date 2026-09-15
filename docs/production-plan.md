@@ -322,6 +322,19 @@ worst interaction in the app and it is the one the product is sold on.
       about. `onProgress` and the `calendarsUpdating` string are gone with the two-stage wait.
 - [x] `_readAfterWrite` refuses to join a read already in the air — it left before the write did,
       so its answer cannot contain it.
+- [x] **An overlay retires only against a read that actually contains the change** (`_retire`,
+      `_landed`). Retiring on the first read back was right for Google and Graph, which are
+      read-your-writes for the same credential, and wrong for CalDAV: iCloud accepts the PUT and
+      then serves a REPORT without the new event for several seconds. The appointment blinked off
+      the day it had just been added to and did not return until the next read — fifteen minutes
+      later, or the next launch, which is what "I have to restart the app to see it" was. The write
+      now keeps the uid `calendar-write` answers with (it was being discarded) and the add settles
+      on that uid plus the title; a hide settles when the row it suppresses is really gone, each
+      half on its own so a move between calendars can't show the appointment twice or not at all
+      while the slower provider catches up. `_settleReads` adds at most two spaced re-reads so the
+      real event arrives in seconds rather than at the next refresh, and an overlay that still has
+      not landed stays up rather than being forced down — the write was accepted, so the
+      appointment exists.
 - [ ] **A series edit is deliberately still synchronous.** The app is handed expanded occurrences
       and never the rule behind them, so the client cannot know which other days a changed series
       lands on. Revisit only if `calendar-write` starts returning the new occurrence set.
@@ -376,6 +389,48 @@ Neither optimistic writes nor Realtime help here; the change happened outside ou
       an Edge Function that broadcasts on the same family channel. Note the renewal burden — Graph
       calendar subscriptions cap at about three days, Google's at about a week — so this needs a
       scheduled renewal job and should not be started until 2a and 2b are in.
+
+### 2d — The household's own calendar colours
+
+**A calendar's colour is the account's, and the app does not second-guess it.** iCloud gives
+"Familie" Apple's system grey `#8E8E93`, which is a fine colour on Apple's white calendar and a grey
+rectangle on a grey rectangle here. The first fix tried was substituting a legible colour when the
+account's had no hue left; that was wrong, because the colour is what a household recognises a
+calendar by in *their own calendar app* as much as in ours, and an app that quietly renames the
+thing you are looking for is not helping. The real fix is a rendering one — every block gets a rim
+clamped into a visible band (`_blockRim`, see the day-view section of [kalender.md](kalender.md)) —
+and it holds for any colour an account can produce, grey included.
+
+- [x] **A block is the same flat chip the rest of the app uses**, in the calendar's colour, with
+      nothing drawn around it. A coloured outline (at a full point and at a tenth of one), a
+      translucent fill, and a drop shadow were each tried and each lost — see the day-view section
+      of [kalender.md](kalender.md). What separates a chip from the card is the dot lattice running
+      under it.
+- [x] **The household picks the colour, in the calendar's own sheet.** A grey calendar on a grey
+      card cannot be rescued by a rim, a lift or a saturation floor, and the app will not choose a
+      different colour on a family's behalf — so they choose. `calendar_connections.calendar_colors`
+      is the third map of the same shape as `calendar_names` and `calendar_owners`, merged by the
+      client and copied onto `calendars.color` by `calendar-events` on the next read (the app holds
+      no grant on `calendars`). Ferien and Abfall needed no schema at all: `family_feeds.color`
+      already existed with an UPDATE grant, and it is this household's subscription row, never the
+      shared `public_feeds` one the street reads. Twelve swatches, grey included — "you may not pick
+      that" is a worse answer than a calendar a family files in the colour that stays out of the
+      way.
+- [ ] **A colour per calendar, set in Settings.** One row per calendar on the Settings calendar
+      page with a swatch that opens a picker.
+      - Store it in a **new `family_calendar_colors` table keyed on (`family_id`, `calendar_id`)**,
+        not in `calendar_connections.calendar_names`' shape. The id is a `calendars.id` for a
+        connected calendar and a `public_feeds.id` for Ferien/Abfall, so a column on the connection
+        cannot cover the feeds — and recolouring the bin calendar is exactly the case a household
+        will want. One table covers both; there is no FK for the same reason `event_link` has none.
+      - RLS: readable by the household, written by any member (a colour is not admin-shaped — it is
+        a preference about how the family's own calendar looks). Unlike the connection tables this
+        one **can** take a client INSERT: there is nothing to prove reachable first.
+      - Applied in `CalendarSource.fromMap`, the one place the colour is resolved, so every surface
+        picks it up at once and nothing else has to learn about it.
+      - **A full picker, including grey.** The rim makes any colour legible, so there is no colour
+        the household has to be protected from — and "you may not pick that one" is a worse answer
+        than a block they can see. Offer the account's own colour as a reset.
 
 ---
 
@@ -434,3 +489,18 @@ longer than the engineering.
   are what make the free tier worth recommending.
 - **An Android equivalent of Ausgaben.** Google's Wallet API issues passes and reads no
   transactions. There is nothing to build.
+
+---
+
+## Notifications and the rating prompt
+
+The plan, the principle and the record live in [notifications.md](notifications.md); this is the
+pointer, so the checklist here stays the one place that says what is finished.
+
+- [x] Local notifications (appointment reminders, Abfall the evening before, to-dos with a time,
+      the morning brief), Settings → Mitteilungen, and the rating prompt. Analyze-clean, not yet
+      run on a device, Android never compiled.
+- [ ] Deploy `calendar-events` with the provider's own alarm (`reminder_minutes`). Written, not
+      type-checked.
+- [ ] Fill in the App Store id in `lib/services/app_review.dart` once the listing exists.
+- [ ] Push (APNs + FCM) and the family triggers that need it.
