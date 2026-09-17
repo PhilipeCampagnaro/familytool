@@ -1386,11 +1386,14 @@ class AppText {
 
   /// What goes *inside* a mark, as a fraction of it.
   ///
-  /// **These are not the thing to grow when a mark feels small.** The inset a
-  /// logo gets is what keeps full-colour artwork off the hairline, and several
-  /// merchant marks bleed to their own edge and are clipped by the disc — push
-  /// the art out and those lose their edges rather than gaining presence. The
-  /// disc is what tracks the type; the ratios inside it are fixed.
+  /// **These are not the thing to grow when a mark feels small.** The inset is
+  /// what keeps art drawn for paper off the hairline; the disc is what tracks
+  /// the type, and the ratios inside it are fixed.
+  ///
+  /// **A shop logo is not one of these any more.** It fills its disc edge to
+  /// edge and is clipped round — `BrandMark`, which is the only frame a
+  /// merchant mark is drawn in and takes no size from here. What is left on
+  /// these numbers is the grocery art and the symbols.
   static double markImage(double mark) => mark * 0.68;
   static double markGlyph(double mark) => mark * 0.5;
 

@@ -15,6 +15,11 @@ library;
 
 const merchantAssetDir = 'assets/merchants/';
 
+/// Whether [asset] is one of the shop logos — the question `BrandMark` is
+/// the answer to, asked by the screens that draw a grocery picture and a shop
+/// mark down the same column.
+bool isMerchantAsset(String? asset) => asset != null && asset.startsWith(merchantAssetDir);
+
 /// Every logo in `assets/merchants/`, minus two kinds of file that would only
 /// show up as a duplicate or a blank tile: the ` copy` twins, and the SVGs
 /// (`Image.asset` can't draw those — the one place an SVG logo is used goes

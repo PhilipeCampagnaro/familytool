@@ -24,6 +24,43 @@ const kNavBarSymbolPointSize = 17.0;
 /// starts to look like a different icon set.
 enum NativeSymbolWeight { light, regular, medium, semibold, bold }
 
+/// A stack of colour dots drawn beside a button's glyph — Kalender's collapsed
+/// filter, which says *which* calendars are showing by wearing their colours.
+///
+/// It rides with the glyph rather than beside it because a
+/// `UIButton.Configuration` has exactly one image slot: UIKit is handed one
+/// picture holding the dots and the glyph together. Two consequences, both
+/// deliberate. The dots each carry their own colour, so that image cannot be a
+/// **template** — which is how a glyph normally takes the button's tint and the
+/// glass's vibrancy — so a button with dots also passes
+/// [NativeGlassButton.glyphColor] and gives up the vibrancy on that one glyph.
+/// And the gap between two dots is **cleared** rather than filled with a
+/// background colour: the button is glass, so the material itself is what shows
+/// through the overlap.
+@immutable
+class NativeGlassDots {
+  final List<Color> colors;
+
+  /// One dot's diameter.
+  final double size;
+
+  /// How far each dot sits *inside* the one before it. The stack is [size] +
+  /// ([size] - [overlap]) per further dot, which is what the sizer draws.
+  final double overlap;
+
+  const NativeGlassDots({required this.colors, required this.size, required this.overlap});
+
+  @override
+  bool operator ==(Object other) =>
+      other is NativeGlassDots &&
+      listEquals(other.colors, colors) &&
+      other.size == size &&
+      other.overlap == overlap;
+
+  @override
+  int get hashCode => Object.hash(Object.hashAll(colors), size, overlap);
+}
+
 /// One button of a [NativeGlassButtons] row.
 ///
 /// [icon] is drawn by UIKit, not by Flutter — the codepoint and the font asset
@@ -71,6 +108,14 @@ class NativeGlassButton {
   /// caret, which reads as "opens" only when it trails the word it opens.
   final bool iconTrailing;
 
+  /// Colour dots drawn beside the glyph — see [NativeGlassDots].
+  final NativeGlassDots? dots;
+
+  /// Bakes the glyph in this colour instead of letting the button's tint paint
+  /// it. Only for a glyph that has to share its image with something coloured
+  /// — i.e. [dots], which is what stops that image being a template.
+  final Color? glyphColor;
+
   final VoidCallback onTap;
 
   const NativeGlassButton({
@@ -80,6 +125,8 @@ class NativeGlassButton {
     this.title,
     this.titleStyle,
     this.iconTrailing = false,
+    this.dots,
+    this.glyphColor,
     required this.onTap,
   });
 
@@ -90,10 +137,12 @@ class NativeGlassButton {
       other.symbol == symbol &&
       other.label == label &&
       other.title == title &&
-      other.iconTrailing == iconTrailing;
+      other.iconTrailing == iconTrailing &&
+      other.dots == dots &&
+      other.glyphColor == glyphColor;
 
   @override
-  int get hashCode => Object.hash(icon, symbol, label, title, iconTrailing);
+  int get hashCode => Object.hash(icon, symbol, label, title, iconTrailing, dots, glyphColor);
 }
 
 /// **The real UIKit Liquid Glass button** — `UIButton.Configuration.glass()`,
@@ -258,6 +307,13 @@ class _NativeGlassButtonsState extends State<NativeGlassButtons> {
       'titleSize': ?style?.fontSize,
       'titleColor': ?style?.color?.toARGB32(),
       if (button.iconTrailing) 'iconTrailing': true,
+      'glyphColor': ?button.glyphColor?.toARGB32(),
+      if (button.dots != null)
+        'dots': {
+          'colors': [for (final c in button.dots!.colors) c.toARGB32()],
+          'size': button.dots!.size,
+          'overlap': button.dots!.overlap,
+        },
     };
   }
 

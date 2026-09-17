@@ -90,6 +90,13 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
+  # The variable-blur kernel behind `FrostedHeaderBackground`. A *shader*, not an
+  # asset: `FragmentProgram.fromAsset` resolves it from this list, and it is
+  # compiled to the platform's own shader format at build time rather than
+  # shipped as source.
+  shaders:
+    - shaders/progressive_blur.frag
+
   assets:
     - assets/grocery/
     - assets/merchants/

@@ -335,13 +335,16 @@ class CalendarConnectionRepository {
     return DateTime.tryParse(value);
   }
 
-  /// Adds one calendar link — to a new account when [connectionId] is null, and
-  /// to an existing one otherwise.
+  /// Adds one calendar link, to whichever account it belongs to.
   ///
-  /// [account] names the person the account belongs to ("Alice") and is only
-  /// read when a new one is created; it is what makes two children at the same
+  /// [account] names the person the account belongs to ("Alice"), and the school
+  /// plus that name **is** the account: the function matches on the pair, so the
+  /// second link typed under "Alice" joins the calendars already on her card and
+  /// a link typed under "Bob" starts his. That is what makes two children at one
   /// school two connections rather than one, and what the chip in Kalender ends
-  /// up saying.
+  /// up saying. There is no id to pass — a client that had to know which
+  /// connection a link belonged to would be answering a question the name
+  /// already answers.
   ///
   /// [ics] replaces [url] for an uploaded file. Re-uploading a file the account
   /// already holds under the same name **replaces** it rather than adding a
@@ -354,7 +357,6 @@ class CalendarConnectionRepository {
     String? ics,
     String? fileName,
     String? account,
-    String? connectionId,
   }) async {
     final body = await _invoke('calendar-link', {
       'action': 'add',
@@ -363,7 +365,6 @@ class CalendarConnectionRepository {
       'file_name': ?fileName,
       'name': name.trim(),
       if (account != null && account.trim().isNotEmpty) 'account': account.trim(),
-      'connection_id': ?connectionId,
     });
     return (connectionId: body['connection_id'] as String?, externalId: body['external_id'] as String?);
   }
@@ -437,6 +438,17 @@ class CalendarConnectionRepository {
   Future<AbfallCoverage> resolveAddress(GeoAddress address) async {
     final body = await _invoke('abfall-lookup', {'action': 'resolve', 'address': address.toMap()});
     return AbfallCoverage.fromMap(Map<String, dynamic>.from(body['result'] as Map));
+  }
+
+  /// Files the town of an address no vendor serves, so the map grows from what
+  /// households ask for. `stateCode` is the Bundesland for grouping the queue;
+  /// the street never leaves the device — a vendor is found per municipality.
+  Future<void> requestAbfall(GeoAddress address, {String? stateCode}) async {
+    await _invoke('abfall-lookup', {
+      'action': 'request',
+      'address': address.toMap(),
+      'state': ?stateCode,
+    });
   }
 
   /// Validates a pasted ICS link by counting the events in it. A link that

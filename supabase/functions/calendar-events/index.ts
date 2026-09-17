@@ -156,13 +156,23 @@ Deno.serve(async (req) => {
   // ---- Personal accounts: Google, Outlook, iCloud, IServ ---------------------
   // The family filter is the whole tenant boundary — service_role sees every
   // row, so this scoping is what stops one household reading another's.
+  //
+  // `error` is read alongside `active`, and that is the whole difference between
+  // a bad afternoon and a dead calendar. A school server that answers 502 once
+  // flips its connection to `error` — and a filter of `active` alone then never
+  // looked at it again, so a transient failure became permanent and no button in
+  // the app could undo it: "Jetzt aktualisieren" runs this same function, and it
+  // was skipping exactly the connection the user was trying to repair. `error`
+  // means "this failed, try later", so trying later is the one thing it has to
+  // do. `reconnect_required` stays out on purpose: that one says the credential
+  // is gone, and re-asking a revoked token every quarter hour answers nobody.
   const { data: connections } = await db
     .from("calendar_connections")
     .select(
       "id, family_id, provider, auth_type, external_account, display_name, config, selected_calendars, calendar_names, calendar_owners, calendar_colors, is_read_only, created_by, owner_member_id, owner_label",
     )
     .eq("family_id", membership.familyId)
-    .eq("status", "active");
+    .in("status", ["active", "error"]);
 
   for (const connection of (connections ?? []) as unknown as Connection[]) {
     try {

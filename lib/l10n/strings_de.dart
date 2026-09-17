@@ -920,6 +920,18 @@ class StringsDe extends AppStrings {
       'Entsorgers nach „Abfuhrkalender" oder „Kalender abonnieren" und setz '
       'den Link hier ein.';
   @override
+  String get wasteRequestHint => 'Noch nicht dabei — wir richten den Kalender in ein paar Tagen für euch ein.';
+  @override
+  String get wasteRequestAction => 'Anfragen';
+  @override
+  String get wasteRequested => 'Angefragt — wir melden uns, sobald er da ist.';
+  @override
+  String get wasteRequestFailed => 'Die Anfrage ist nicht angekommen. Versuch es gleich noch einmal.';
+  @override
+  String get wasteNeedsHouseNumber => 'Bitte mit Hausnummer eingeben — hier gilt der Abfuhrplan pro Haus.';
+  @override
+  String get pickHouseNumberHint => 'Hier gilt der Abfuhrplan pro Haus — bitte eure Hausnummer wählen.';
+  @override
   String get checkingLinkEllipsis => 'Link wird geprüft …';
   @override
   List<String> get iservLinkSteps => const [
@@ -979,24 +991,12 @@ class StringsDe extends AppStrings {
   @override
   String get whoseCalendarFirst => 'Sag noch, für wen dieser Zugang ist.';
   @override
-  String get addAnotherCalendar => 'Kalender hinzufügen';
-  @override
-  String get addAnotherCalendarBody =>
-      'Für jeden Kalender gibt es in der Schulplattform einen eigenen Link. '
-      'Alle Links dieses Zugangs landen unter einem Filter im Kalender.';
-  @override
   String get schoolCalendars => 'Kalender';
   @override
   String get removeCalendar => 'Kalender entfernen';
   @override
   String get linkStaysAtSchool =>
       ' Der Link bleibt in der Schulplattform bestehen — wir merken ihn uns nur nicht mehr.';
-  @override
-  String get connectWithLogin => 'Stattdessen mit Zugangsdaten anmelden';
-  @override
-  String get connectWithLoginBody =>
-      'Nur sinnvoll, wenn eure Schule CalDAV freigegeben hat. Aufgaben und '
-      'Klausuren stehen dort nicht – dafür braucht es die Links oben.';
   @override
   String get linkedCalendarsNote =>
       'Aporah liest diese Kalender nur. Termine ändert ihr weiterhin in der Schulplattform.';
@@ -1328,8 +1328,14 @@ class StringsDe extends AppStrings {
   String get onboardSetUpFamily => 'Richten wir deine Familie ein';
   @override
   String get onboardSetUpFamilyBody =>
-      'In wenigen Schritten lädst du deine Familie ein und verbindest die Kalender, '
-      'die für euren Alltag wichtig sind.';
+      'Gib eurer Familie einen Namen und ein Bild. Beides kannst du später jederzeit '
+      'ändern.';
+  @override
+  String get onboardJoinExistingFamily => 'Nutzt deine Familie Aporah schon?';
+  @override
+  String get onboardJoinExistingFamilyBody =>
+      'Dann richte hier keine neue ein, sondern bitte jemanden aus der Familie, dich '
+      'einzuladen.';
   @override
   String get onboardInviteTitle => 'Lade deine Familie ein';
   @override
@@ -2045,6 +2051,8 @@ class StringsDe extends AppStrings {
   @override
   String get plannerHowTo => 'SO GEHT’S';
   @override
+  String get plannerShowMethod => 'Alles anzeigen';
+  @override
   String get plannerRecipe => 'REZEPT';
   @override
   String get adLabel => 'Anzeige';
@@ -2118,11 +2126,11 @@ class StringsDe extends AppStrings {
   @override
   String get notifyBriefTitle => 'Tagesüberblick';
   @override
-  String get notifyBriefSubtitle => 'Morgens, was heute ansteht';
+  String get notifyBriefSubtitle => 'Was an dem Tag ansteht';
   @override
   String get notifyAbfallTitle => 'Müllabfuhr';
   @override
-  String get notifyAbfallSubtitle => 'Am Abend vor der Abholung';
+  String get notifyAbfallSubtitle => 'Am Tag vor der Abholung';
   @override
   String get notifyTaskTimesTitle => 'To-dos mit Uhrzeit';
   @override

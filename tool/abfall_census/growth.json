@@ -1,0 +1,789 @@
+{
+ "candidates": [
+  {
+   "name": "✓ München — AWM",
+   "scope": "Stadt · 1,5 Mio. · seit 17.09.2026 live",
+   "state": "BY",
+   "pattern": "TYPO3-Formular: GET der Seite (alle 5.834 Straßen + signierte Formularfelder), POST Straße + Hausnummer, der ICS-Link kommt zurück. Kein Key, keine Session.",
+   "effort": "erledigt",
+   "effortClass": "ok",
+   "why": "Drittgrößte Stadt. Pro Haus wie Berlin und Frankfurt. Der Link trägt einen cHash, lässt sich also nicht selbst bauen — der Formularlauf wird bei jeder Aktualisierung wiederholt, was nebenbei einen geänderten Leerungsrhythmus automatisch mitnimmt."
+  },
+  {
+   "name": "✓ Frankfurt am Main — FES",
+   "scope": "Stadt · 0,8 Mio. · seit 17.09.2026 live",
+   "state": "HE",
+   "pattern": "GET /api/addresses/search?query=… → Adress-id; GET /abfallkalender/<id>/ical. Zwei keylose JSON-Aufrufe, Hausnummern über street_code.",
+   "effort": "erledigt",
+   "effortClass": "ok",
+   "why": "Fünftgrößte Stadt. Plant pro Haus wie Berlin, deshalb fragt die App nach der Hausnummer. Die PLZ wird geprüft, sonst bekäme Frankfurt (Oder) hessische Tonnentage."
+  },
+  {
+   "name": "abfall.io v3 (GraphQL)",
+   "scope": "Plattform · Essen (EBE), Duisburg (WBD), Göttingen, Böblingen, Reutlingen-Land, Märkisch-Oderland, Nordsachsen, Leipzig-Land, Schwarzwald-Baar, ASO Osterholz",
+   "state": "NW · NI · BW · BB · SN",
+   "pattern": "GET api.abfall.io?key=… → apiKey; POST widgets.abfall.io/graphql (cities → streets → houseNumbers → appointments). Öffentlicher Service-Key pro Anbieter, JSON.",
+   "effort": "1 Adapter, 10 Anbieter",
+   "effortClass": "ok",
+   "why": "Holt Osterholz zurück (Legacy-Key 401) und bringt zwei Großstädte. Sauberstes JSON der Liste; Origin/Referer-Header nötig."
+  },
+  {
+   "name": "Insert IT „BmsAbfallkalender“",
+   "scope": "Plattform · Mannheim, Kassel, Krefeld, Lübeck, Herne, Hattingen, Offenbach",
+   "state": "BW · HE · NW · SH",
+   "pattern": "GET …/Main/GetStreets?text= → GetLocations?streetId&houseNumber → Calender?bmsLocationId&year (ICS). Drei GETs, keyless.",
+   "effort": "1 Adapter, 7 Städte",
+   "effortClass": "ok",
+   "why": "Kleinster Aufwand pro Stadt in der ganzen Liste."
+  },
+  {
+   "name": "✓ Köln — AWB",
+   "scope": "Stadt · 1,1 Mio. · seit 17.09.2026 live",
+   "state": "NW",
+   "pattern": "GET awbkoeln.de/api/streets?street_name&building_number → street_code des Stellplatzes; GET /api/calendar?street_code&building_number&start_year&end_year (JSON).",
+   "effort": "erledigt",
+   "effortClass": "ok",
+   "why": "Viertgrößte Stadt. Die Suche sagt nie „nicht gefunden“ — auf „Quatschstraße“ antwortet sie „Quatermarkt“ —, also wird jede Antwort gegen die Anfrage geprüft. Ihre Liste führt Stellplätze, nicht Häuser, deshalb fehlen einzelne Hausnummern."
+  },
+  {
+   "name": "✓ Hamburg — Stadtreinigung",
+   "scope": "Stadtstaat · 1,9 Mio. · seit 17.09.2026 live",
+   "state": "HH",
+   "pattern": "POST des TYPO3-Formulars (Straße → asId → hnId), dann GET backend.stadtreinigung.hamburg/kalender/abholtermine.ics?hnIds=…",
+   "effort": "erledigt",
+   "effortClass": "ok",
+   "why": "Zweitgrößte Stadt. Die Suche faltet nichts: „Fränkelstraße“ findet nichts, wo die Stadt „Fraenkelstraße“ schreibt — der Name wird in jeder Schreibweise neu gefragt."
+  },
+  {
+   "name": "Leipzig — Stadtreinigung",
+   "scope": "Stadt · 0,6 Mio.",
+   "state": "SN",
+   "pattern": "GET /rest/Navision/Streets?search= (Straße → Hausnummern → position_no); GET …/ical.ics?position_nos= (ICS).",
+   "effort": "1 Adapter",
+   "effortClass": "ok",
+   "why": "Erste Stadt in Sachsen; zwei GETs."
+  },
+  {
+   "name": "✓ Stuttgart — AWS",
+   "scope": "Stadt · 0,6 Mio. · seit 17.09.2026 live",
+   "state": "BW",
+   "pattern": "GET service.stuttgart.de/lhs-services/aws/strassennamen?street= → Schreibweise der Stadt; GET …/api/ical?street=&streetnr= .",
+   "effort": "erledigt",
+   "effortClass": "ok",
+   "why": "Der Feed trifft auf Straße UND Hausnummer per Präfix: „Königstr. 1“ liefert den Kalender der Kleinen Königstr. 1. X-WR-CALDESC nennt die tatsächlich getroffene Adresse und wird bei jedem Abruf mit der Anfrage verglichen."
+  },
+  {
+   "name": "✓ Düsseldorf — AWISTA Kommunal",
+   "scope": "Stadt · 0,65 Mio. · seit 17.09.2026 live",
+   "state": "NW",
+   "pattern": "Next.js Server Action: POST /abfallkalender mit Next-Action-Header und [\"Straße Nr\"] → Kalender-UUID; GET /abfallkalender/<uuid>/calendar.ics.",
+   "effort": "erledigt",
+   "effortClass": "ok",
+   "why": "Siebtgrößte Stadt und die letzte der sieben größten. Die Suche sagt nie nein — auf „Quatschstraße 1“ antwortet sie „Kuhstraße 10“ —, also muss jede Zeile ihren eigenen Titel gegen die Anfrage halten; danach nennt jeder Termin im ICS per LOCATION noch einmal die Adresse."
+  },
+  {
+   "name": "Kiel — ABK",
+   "scope": "Stadt · 0,25 Mio.",
+   "state": "SH",
+   "pattern": "Vier GET-JSON-Schritte (strassennamen → streetnumber → leerungen-data → ical).",
+   "effort": "1 Adapter",
+   "effortClass": "ok",
+   "why": "Klein, aber sauber; SH hat sonst nur Pinneberg/Norderstedt."
+  },
+  {
+   "name": "aha Region Hannover",
+   "scope": "Region · 21 Gemeinden, 1,2 Mio.",
+   "state": "NI",
+   "pattern": "HTML-Selects (Gemeinde + Anfangsbuchstabe → Straße → Hausnr → Ladeort) → ICS.",
+   "effort": "1 Adapter, mehrstufig",
+   "effortClass": "warn",
+   "why": "Eine Region mit einer Million Menschen hinter einem Formular."
+  },
+  {
+   "name": "Müllmax",
+   "scope": "Plattform · Münster, Mainz, Bochum, Hamm, Darmstadt, Remscheid, Kaiserslautern, Hanau, EVS Saarland …",
+   "state": "NW · RP · HE · SL",
+   "pattern": "Acht sequentielle POSTs mit mm_ses-Session → ICS.",
+   "effort": "1 Adapter, 13 Dienste",
+   "effortClass": "bad",
+   "why": "Sperrt die IP für 24 h bei zu vielen Abfragen — bei einer geteilten Edge-Function-IP ein echtes Risiko. Nur mit täglichem Cache."
+  },
+  {
+   "name": "Abfall+ App-Backend (app.abfallplus.de)",
+   "scope": "Plattform · 126 Apps / 146 Regionen, u. a. Bonn, Augsburg, Dortmund, Freiburg, Würzburg, Kitzingen",
+   "state": "bundesweit",
+   "pattern": "~12 sequentielle Requests, onclick-JSON aus HTML, registriert pro Abruf einen Wegwerf-Client.",
+   "effort": "1 Adapter, schwer",
+   "effortClass": "bad",
+   "why": "Größte Reichweite der Liste, aber das fragilste Muster. Erst wenn die Anfragen es verlangen."
+  },
+  {
+   "name": "ATHOS WasteManagementServlet",
+   "scope": "Muster · Saarbrücken, Pforzheim, Bielefeld, Städteregion Aachen, EDG Dortmund, Ludwigsburg …",
+   "state": "SL · BW · NW",
+   "pattern": "CITYCHANGED → STREETCHANGED → forward → filedownload_ICAL, Session-Cookies, versteckte Felder.",
+   "effort": "1 Adapter pro Host-Variante",
+   "effortClass": "warn",
+   "why": "Ein Muster, viele Hosts; Bielefeld braucht Legacy-TLS, das Deno nicht spricht."
+  },
+  {
+   "name": "Nur per ID (ohne Adresssuche)",
+   "scope": "Wiesbaden (ELW), Dresden, Rostock, Schwerin",
+   "state": "HE · SN · MV",
+   "pattern": "ICS-URL mit einer ID, die nur die Website des Entsorgers verrät.",
+   "effort": "kein Adapter — ICS-Link-Fallback",
+   "effortClass": "muted",
+   "why": "Der bestehende „Link einsetzen\"-Weg deckt sie ab; ein Adapter bräuchte Reverse-Engineering der Suche. Frankfurt gehörte hierher und ist seit 17.09. ein eigener Adapter."
+  }
+ ],
+ "cities": [
+  {
+   "city": "Berlin",
+   "state": "BE",
+   "pop": 3780,
+   "status": "covered",
+   "via": "BSR Berliner Stadtreinigung",
+   "note": ""
+  },
+  {
+   "city": "Hamburg",
+   "state": "HH",
+   "pop": 1890,
+   "status": "covered",
+   "via": "Stadtreinigung Hamburg",
+   "note": ""
+  },
+  {
+   "city": "München",
+   "state": "BY",
+   "pop": 1510,
+   "status": "covered",
+   "via": "AWM Abfallwirtschaftsbetrieb München",
+   "note": ""
+  },
+  {
+   "city": "Köln",
+   "state": "NW",
+   "pop": 1090,
+   "status": "covered",
+   "via": "AWB Abfallwirtschaftsbetriebe Köln",
+   "note": ""
+  },
+  {
+   "city": "Frankfurt am Main",
+   "state": "HE",
+   "pop": 775,
+   "status": "covered",
+   "via": "FES Frankfurt am Main",
+   "note": ""
+  },
+  {
+   "city": "Stuttgart",
+   "state": "BW",
+   "pop": 635,
+   "status": "covered",
+   "via": "Abfallwirtschaft Stuttgart",
+   "note": ""
+  },
+  {
+   "city": "Düsseldorf",
+   "state": "NW",
+   "pop": 630,
+   "status": "covered",
+   "via": "AWISTA Kommunal Düsseldorf",
+   "note": ""
+  },
+  {
+   "city": "Leipzig",
+   "state": "SN",
+   "pop": 620,
+   "status": "missing",
+   "via": "",
+   "note": "Stadtreinigung Leipzig REST"
+  },
+  {
+   "city": "Dortmund",
+   "state": "NW",
+   "pop": 600,
+   "status": "missing",
+   "via": "",
+   "note": "Abfall+ App-Backend"
+  },
+  {
+   "city": "Essen",
+   "state": "NW",
+   "pop": 585,
+   "status": "missing",
+   "via": "",
+   "note": "abfall.io v3 (GraphQL)"
+  },
+  {
+   "city": "Bremen",
+   "state": "HB",
+   "pop": 570,
+   "status": "covered",
+   "via": "Bremer Stadtreinigung",
+   "note": ""
+  },
+  {
+   "city": "Dresden",
+   "state": "SN",
+   "pop": 565,
+   "status": "missing",
+   "via": "",
+   "note": "nur ICS-ID (kein Adapter)"
+  },
+  {
+   "city": "Hannover",
+   "state": "NI",
+   "pop": 550,
+   "status": "missing",
+   "via": "",
+   "note": "aha Region Hannover"
+  },
+  {
+   "city": "Nürnberg",
+   "state": "BY",
+   "pop": 525,
+   "status": "covered",
+   "via": "Stadt Nürnberg (ASN Abfallwirtschaft)",
+   "note": ""
+  },
+  {
+   "city": "Duisburg",
+   "state": "NW",
+   "pop": 505,
+   "status": "missing",
+   "via": "",
+   "note": "abfall.io v3 (GraphQL)"
+  },
+  {
+   "city": "Bochum",
+   "state": "NW",
+   "pop": 365,
+   "status": "missing",
+   "via": "",
+   "note": "Müllmax (IP-Sperre!)"
+  },
+  {
+   "city": "Wuppertal",
+   "state": "NW",
+   "pop": 360,
+   "status": "missing",
+   "via": "",
+   "note": "AWG Wuppertal"
+  },
+  {
+   "city": "Bielefeld",
+   "state": "NW",
+   "pop": 340,
+   "status": "missing",
+   "via": "",
+   "note": "ATHOS-Servlet"
+  },
+  {
+   "city": "Bonn",
+   "state": "NW",
+   "pop": 335,
+   "status": "missing",
+   "via": "",
+   "note": "Abfall+ App-Backend"
+  },
+  {
+   "city": "Münster",
+   "state": "NW",
+   "pop": 320,
+   "status": "missing",
+   "via": "",
+   "note": "Müllmax (IP-Sperre!)"
+  },
+  {
+   "city": "Mannheim",
+   "state": "BW",
+   "pop": 315,
+   "status": "missing",
+   "via": "",
+   "note": "Insert IT"
+  },
+  {
+   "city": "Karlsruhe",
+   "state": "BW",
+   "pop": 310,
+   "status": "missing",
+   "via": "",
+   "note": "Karlsruhe (TLS defekt) / Müllmann-App"
+  },
+  {
+   "city": "Augsburg",
+   "state": "BY",
+   "pop": 300,
+   "status": "missing",
+   "via": "",
+   "note": "Abfall+ App-Backend"
+  },
+  {
+   "city": "Wiesbaden",
+   "state": "HE",
+   "pop": 280,
+   "status": "missing",
+   "via": "",
+   "note": "nur ICS-ID (kein Adapter)"
+  },
+  {
+   "city": "Mönchengladbach",
+   "state": "NW",
+   "pop": 265,
+   "status": "missing",
+   "via": "",
+   "note": ""
+  },
+  {
+   "city": "Gelsenkirchen",
+   "state": "NW",
+   "pop": 265,
+   "status": "missing",
+   "via": "",
+   "note": ""
+  },
+  {
+   "city": "Aachen",
+   "state": "NW",
+   "pop": 255,
+   "status": "covered",
+   "via": "Stadt Aachen (Aachener Stadtbetrieb), ZEW Zweckverband Entsorgungsregion West (StädteRegion Aachen, Kreis Düren)",
+   "note": ""
+  },
+  {
+   "city": "Braunschweig",
+   "state": "NI",
+   "pop": 250,
+   "status": "missing",
+   "via": "",
+   "note": ""
+  },
+  {
+   "city": "Chemnitz",
+   "state": "SN",
+   "pop": 245,
+   "status": "missing",
+   "via": "",
+   "note": "hausmuell.info"
+  },
+  {
+   "city": "Kiel",
+   "state": "SH",
+   "pop": 250,
+   "status": "missing",
+   "via": "",
+   "note": "ABK Kiel JSON"
+  },
+  {
+   "city": "Halle (Saale)",
+   "state": "ST",
+   "pop": 240,
+   "status": "missing",
+   "via": "",
+   "note": ""
+  },
+  {
+   "city": "Magdeburg",
+   "state": "ST",
+   "pop": 240,
+   "status": "missing",
+   "via": "",
+   "note": "Magdeburg smart-village ICS"
+  },
+  {
+   "city": "Freiburg im Breisgau",
+   "state": "BW",
+   "pop": 235,
+   "status": "missing",
+   "via": "",
+   "note": "Abfall+ App-Backend"
+  },
+  {
+   "city": "Krefeld",
+   "state": "NW",
+   "pop": 230,
+   "status": "covered",
+   "via": "MüllALARM / Schönmackers (Niederrhein, Eifel)",
+   "note": ""
+  },
+  {
+   "city": "Mainz",
+   "state": "RP",
+   "pop": 220,
+   "status": "missing",
+   "via": "",
+   "note": "Müllmax (IP-Sperre!)"
+  },
+  {
+   "city": "Lübeck",
+   "state": "SH",
+   "pop": 220,
+   "status": "missing",
+   "via": "",
+   "note": "Insert IT"
+  },
+  {
+   "city": "Erfurt",
+   "state": "TH",
+   "pop": 215,
+   "status": "missing",
+   "via": "",
+   "note": "hausmuell.info"
+  },
+  {
+   "city": "Oberhausen",
+   "state": "NW",
+   "pop": 210,
+   "status": "covered",
+   "via": "Stadt Oberhausen (WBO)",
+   "note": ""
+  },
+  {
+   "city": "Rostock",
+   "state": "MV",
+   "pop": 210,
+   "status": "missing",
+   "via": "",
+   "note": "nur ICS-ID (kein Adapter)"
+  },
+  {
+   "city": "Kassel",
+   "state": "HE",
+   "pop": 205,
+   "status": "missing",
+   "via": "",
+   "note": "Insert IT"
+  },
+  {
+   "city": "Hagen",
+   "state": "NW",
+   "pop": 190,
+   "status": "missing",
+   "via": "",
+   "note": "Abfall+ App-Backend"
+  },
+  {
+   "city": "Potsdam",
+   "state": "BB",
+   "pop": 185,
+   "status": "missing",
+   "via": "",
+   "note": "Stadt Potsdam (Rhythmus-Rechnung)"
+  },
+  {
+   "city": "Saarbrücken",
+   "state": "SL",
+   "pop": 180,
+   "status": "missing",
+   "via": "",
+   "note": "ATHOS-Servlet"
+  },
+  {
+   "city": "Hamm",
+   "state": "NW",
+   "pop": 180,
+   "status": "missing",
+   "via": "",
+   "note": "Müllmax (IP-Sperre!)"
+  },
+  {
+   "city": "Ludwigshafen am Rhein",
+   "state": "RP",
+   "pop": 175,
+   "status": "covered",
+   "via": "Stadt Ludwigshafen am Rhein",
+   "note": ""
+  },
+  {
+   "city": "Mülheim an der Ruhr",
+   "state": "NW",
+   "pop": 170,
+   "status": "covered",
+   "via": "Stadt Mülheim an der Ruhr",
+   "note": ""
+  },
+  {
+   "city": "Oldenburg",
+   "state": "NI",
+   "pop": 170,
+   "status": "missing",
+   "via": "",
+   "note": "Abfall+ App-Backend"
+  },
+  {
+   "city": "Osnabrück",
+   "state": "NI",
+   "pop": 165,
+   "status": "missing",
+   "via": "",
+   "note": ""
+  },
+  {
+   "city": "Leverkusen",
+   "state": "NW",
+   "pop": 165,
+   "status": "missing",
+   "via": "",
+   "note": "Abfall+ App-Backend"
+  },
+  {
+   "city": "Darmstadt",
+   "state": "HE",
+   "pop": 160,
+   "status": "covered",
+   "via": "MyMüll App (bundesweit, per Ort)",
+   "note": ""
+  },
+  {
+   "city": "Heidelberg",
+   "state": "BW",
+   "pop": 160,
+   "status": "missing",
+   "via": "",
+   "note": ""
+  },
+  {
+   "city": "Solingen",
+   "state": "NW",
+   "pop": 160,
+   "status": "covered",
+   "via": "Stadt Solingen (Technische Betriebe)",
+   "note": ""
+  },
+  {
+   "city": "Regensburg",
+   "state": "BY",
+   "pop": 155,
+   "status": "covered",
+   "via": "Stadt Regensburg",
+   "note": ""
+  },
+  {
+   "city": "Herne",
+   "state": "NW",
+   "pop": 155,
+   "status": "missing",
+   "via": "",
+   "note": "Insert IT"
+  },
+  {
+   "city": "Paderborn",
+   "state": "NW",
+   "pop": 155,
+   "status": "covered",
+   "via": "MyMüll App (bundesweit, per Ort)",
+   "note": ""
+  },
+  {
+   "city": "Neuss",
+   "state": "NW",
+   "pop": 155,
+   "status": "missing",
+   "via": "",
+   "note": ""
+  },
+  {
+   "city": "Ingolstadt",
+   "state": "BY",
+   "pop": 140,
+   "status": "covered",
+   "via": "Stadt Ingolstadt",
+   "note": ""
+  },
+  {
+   "city": "Offenbach am Main",
+   "state": "HE",
+   "pop": 130,
+   "status": "missing",
+   "via": "",
+   "note": "Insert IT"
+  },
+  {
+   "city": "Fürth",
+   "state": "BY",
+   "pop": 130,
+   "status": "missing",
+   "via": "",
+   "note": ""
+  },
+  {
+   "city": "Würzburg",
+   "state": "BY",
+   "pop": 130,
+   "status": "missing",
+   "via": "",
+   "note": "Abfall+ App-Backend"
+  },
+  {
+   "city": "Ulm",
+   "state": "BW",
+   "pop": 125,
+   "status": "covered",
+   "via": "MyMüll App (bundesweit, per Ort)",
+   "note": ""
+  },
+  {
+   "city": "Heilbronn",
+   "state": "BW",
+   "pop": 125,
+   "status": "missing",
+   "via": "",
+   "note": ""
+  },
+  {
+   "city": "Pforzheim",
+   "state": "BW",
+   "pop": 125,
+   "status": "missing",
+   "via": "",
+   "note": "ATHOS-Servlet"
+  },
+  {
+   "city": "Wolfsburg",
+   "state": "NI",
+   "pop": 125,
+   "status": "missing",
+   "via": "",
+   "note": ""
+  },
+  {
+   "city": "Göttingen",
+   "state": "NI",
+   "pop": 120,
+   "status": "missing",
+   "via": "",
+   "note": "abfall.io v3 (GraphQL)"
+  },
+  {
+   "city": "Bottrop",
+   "state": "NW",
+   "pop": 120,
+   "status": "missing",
+   "via": "",
+   "note": ""
+  },
+  {
+   "city": "Reutlingen",
+   "state": "BW",
+   "pop": 115,
+   "status": "missing",
+   "via": "",
+   "note": "abfall.io v3 (GraphQL)"
+  },
+  {
+   "city": "Koblenz",
+   "state": "RP",
+   "pop": 115,
+   "status": "missing",
+   "via": "",
+   "note": ""
+  },
+  {
+   "city": "Bremerhaven",
+   "state": "HB",
+   "pop": 115,
+   "status": "missing",
+   "via": "",
+   "note": ""
+  },
+  {
+   "city": "Recklinghausen",
+   "state": "NW",
+   "pop": 110,
+   "status": "covered",
+   "via": "ZBH Kommunale Servicebetriebe Recklinghausen",
+   "note": ""
+  },
+  {
+   "city": "Bergisch Gladbach",
+   "state": "NW",
+   "pop": 110,
+   "status": "covered",
+   "via": "Abfallwirtschaftsbetrieb Bergisch Gladbach",
+   "note": ""
+  },
+  {
+   "city": "Erlangen",
+   "state": "BY",
+   "pop": 115,
+   "status": "missing",
+   "via": "",
+   "note": ""
+  },
+  {
+   "city": "Remscheid",
+   "state": "NW",
+   "pop": 110,
+   "status": "missing",
+   "via": "",
+   "note": "Müllmax (IP-Sperre!)"
+  },
+  {
+   "city": "Jena",
+   "state": "TH",
+   "pop": 110,
+   "status": "missing",
+   "via": "",
+   "note": ""
+  },
+  {
+   "city": "Trier",
+   "state": "RP",
+   "pop": 110,
+   "status": "missing",
+   "via": "",
+   "note": ""
+  },
+  {
+   "city": "Salzgitter",
+   "state": "NI",
+   "pop": 105,
+   "status": "covered",
+   "via": "MyMüll App (bundesweit, per Ort)",
+   "note": ""
+  },
+  {
+   "city": "Moers",
+   "state": "NW",
+   "pop": 105,
+   "status": "missing",
+   "via": "",
+   "note": ""
+  },
+  {
+   "city": "Siegen",
+   "state": "NW",
+   "pop": 105,
+   "status": "missing",
+   "via": "",
+   "note": ""
+  },
+  {
+   "city": "Hildesheim",
+   "state": "NI",
+   "pop": 100,
+   "status": "missing",
+   "via": "",
+   "note": ""
+  },
+  {
+   "city": "Cottbus",
+   "state": "BB",
+   "pop": 100,
+   "status": "covered",
+   "via": "Stadt Cottbus",
+   "note": ""
+  },
+  {
+   "city": "Gütersloh",
+   "state": "NW",
+   "pop": 100,
+   "status": "covered",
+   "via": "AWG Kreis Warendorf (mit GEG Kreis Gütersloh)",
+   "note": ""
+  }
+ ]
+}

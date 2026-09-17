@@ -5,6 +5,11 @@ import 'package:flutter/material.dart';
 
 import '../data/icon_suggestions.dart';
 import '../theme/tokens.dart';
+import 'brand_mark.dart';
+// IconImage lives beside [BrandMark] so the mark can draw one without
+// importing this file back; every caller of the tile still gets it from here.
+export 'icon_image.dart';
+import 'icon_image.dart';
 import 'anchored_menu.dart';
 import 'app_sheet.dart';
 import '../l10n/l10n.dart';
@@ -59,19 +64,11 @@ class IconDraft {
 /// it keeps the white [AppPalette.brandTile] under it, because the art is drawn
 /// for white paper; that is the rule the grocery rows in Listen follow too.
 ///
-/// **A shop logo gets a white disc**, and it is the disc that is doing the work,
-/// not the picture. Brand marks share no shape: REWE is a full-bleed red square,
-/// IKEA a wide wordmark, ALDI a tall one. Drawn bare they normalise to
-/// *nothing* — the square fills its slot edge to edge while the wordmark shrinks
-/// to a sliver of it, and the column reads as unrelated coloured rectangles. The
-/// disc is what gives every one of them the same footprint: white ground in both
-/// palettes (these logos are printed for paper), a hairline edge, a fixed inset,
-/// and a clip, so a full-bleed mark ends at the circle instead of squaring off
-/// inside it.
-///
-/// The inset is a shade under the square that fits inside a circle (0.707 of
-/// its width), which is what a round frame costs a wide mark: it is smaller
-/// than a squircle would allow, and round is the shape the app is built out of.
+/// **A shop logo is [BrandMark]'s**, in every one of the tile's shapes — the
+/// chip, the disc, the picker's grid — because a shop framed one way here and
+/// another way in Ausgaben is the same logo drawn twice. The reasoning for the
+/// white ground and the edge-to-edge fill lives there; [imageSize] does not
+/// reach it.
 ///
 /// A caller that names its own [background] is asking for the disc and gets it.
 class IconTile extends StatelessWidget {
@@ -109,8 +106,8 @@ class IconTile extends StatelessWidget {
   /// ink a logo would sit at.
   final Color? glyphColor;
 
-  /// Overrides the fill the tile would pick for itself — the white disc for art,
-  /// the [AppPalette.surfaceAlt] one for a glyph.
+  /// Overrides the fill the tile would pick for itself — [AppPalette.brandTile]
+  /// for art, [AppPalette.surface] for a glyph.
   ///
   /// For the one case where the fill is carrying a *distinction* rather than
   /// making a picture readable: the event sheet draws what already hangs off the
@@ -127,12 +124,24 @@ class IconTile extends StatelessWidget {
   /// [background] with the choosing left here, so a caller asking for the ground
   /// does not also have to know that a logo's is white and a glyph's is grey.
   ///
-  /// **It marks a *place*, not a kind of icon: the disc belongs to a list's own
-  /// name.** The header of an open list and the collapsed title above it wear
-  /// it; the articles inside that list do not, in any of the four kinds. A
-  /// container is a heading and its contents are a column of rows, and giving
-  /// every row a disc turns the column into a strip of buttons — which is the
-  /// shape the grocery photographs are deliberately drawn bare to avoid.
+  /// **It marks a *place*, not a kind of icon: the disc belongs to a
+  /// container's own name.** A list or a box wears it wherever it is named —
+  /// its row on the overview, the header of it once open, the collapsed title
+  /// above that — and the articles *inside* it do not, in any of the four
+  /// kinds. A container is a heading and its contents are a column of rows, and
+  /// giving every row of contents a disc turns that column into a strip of
+  /// buttons — which is the shape the grocery photographs are deliberately
+  /// drawn bare to avoid. The overview is the other case: there every row *is*
+  /// a heading, so the disc marks them all and marks nothing out.
+  ///
+  /// **The fill is [AppPalette.surface], not [AppPalette.surfaceAlt]** — the
+  /// card's own white on light, one step darker than the card on dark. It was
+  /// the grey fill, which on a white card drew a second tone into a row that
+  /// already has a title, a subtitle and a chevron in three greys of their own;
+  /// what marks the container is the *ring*, and the ring is what stays. On the
+  /// header, where the disc sits on [AppPalette.screenBg] rather than on a
+  /// card, the white then reads as a lift off the page instead of blending into
+  /// the grey behind it, which is the place the disc is doing the most work.
   final bool disc;
 
   const IconTile({
@@ -181,7 +190,7 @@ class IconTile extends StatelessWidget {
         width: size,
         height: size,
         decoration: BoxDecoration(
-          color: background ?? AppColors.surfaceAlt,
+          color: background ?? AppColors.surface,
           shape: BoxShape.circle,
           border: border ? Border.all(color: AppColors.hairline) : null,
         ),
@@ -194,19 +203,7 @@ class IconTile extends StatelessWidget {
       // is normally given on a white card, and the clip is for the full-bleed
       // ones, which end at the chip's corners instead of squaring them off.
       if (choice?.kind == IconKind.merchant) {
-        return Container(
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
-            color: AppColors.brandTile,
-            shape: BoxShape.circle,
-            border: border ? Border.all(color: AppColors.hairline) : null,
-          ),
-          clipBehavior: Clip.antiAlias,
-          alignment: Alignment.center,
-          padding: EdgeInsets.all(size * 0.14),
-          child: IconImage(asset: asset, size: size * 0.72),
-        );
+        return BrandMark(size: size, asset: asset, border: border);
       }
       // A grocery picture, bare — but not on dark, where the white disc below
       // is what keeps art drawn for paper visible.
@@ -238,11 +235,15 @@ class IconTile extends StatelessWidget {
         ),
       );
     }
+    // A shop on the disc is a shop anywhere else — same frame, one widget.
+    if (!hasPhoto && background == null && choice?.kind == IconKind.merchant && asset != null) {
+      return BrandMark(size: size, asset: asset, border: border);
+    }
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: background ?? (asset != null ? AppColors.brandTile : AppColors.surfaceAlt),
+        color: background ?? (asset != null ? AppColors.brandTile : AppColors.surface),
         shape: BoxShape.circle,
         border: border ? Border.all(color: AppColors.hairline) : null,
       ),
@@ -341,30 +342,6 @@ class PhotoThumbnail extends StatelessWidget {
   /// Flutter's grey exception box. The row around it still says what the thing
   /// is called.
   Widget _broken(double size) => AppIcon(AppIcons.image, size: size * 0.45, color: AppColors.mutedLight);
-}
-
-/// An icon asset at a bounded decode size. The shop logos are full-size
-/// downloads and the picker puts 160 of them on screen at once; without
-/// `cacheWidth` every one of them is decoded at its native resolution.
-class IconImage extends StatelessWidget {
-  final String asset;
-  final double size;
-
-  const IconImage({super.key, required this.asset, required this.size});
-
-  @override
-  Widget build(BuildContext context) {
-    final scale = MediaQuery.maybeDevicePixelRatioOf(context) ?? 3.0;
-    return Image.asset(
-      asset,
-      width: size,
-      height: size,
-      fit: BoxFit.contain,
-      cacheWidth: (size * scale).round(),
-      // A logo that was deleted from `assets/` shouldn't take the row with it.
-      errorBuilder: (context, _, _) => AppIcon(AppIcons.image, size: size * 0.8, color: AppColors.mutedLight),
-    );
-  }
 }
 
 /// The symbol row on a create/edit sheet: the icon as it stands, what it is

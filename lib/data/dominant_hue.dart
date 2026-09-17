@@ -35,10 +35,25 @@ const _noise = 1.0;
 /// field doesn't outvote the small saturated mark that is the actual brand.
 ///
 /// [minShare] is how much of the strongest bucket's weight a *further* colour
-/// has to carry to count — for a caller taking several, which otherwise fills
-/// the tail of its list with the two dozen pixels where a red streamer is
-/// antialiased against a yellow cone.
-List<Color> dominantHues(Uint8List rgba, {int take = 1, double minShare = 0}) {
+/// has to carry to count — a floor under the tail of a caller's list.
+///
+/// [minHueGap] is the least a further colour may resemble one already taken, in
+/// degrees of hue, and **it is what lets [minShare] be small enough to see the
+/// streamers.** The two guard the same thing from opposite ends. A party
+/// popper's cone is forty-odd percent of the glyph and a streamer is three, so
+/// a share floor high enough to exclude the seam where they meet excludes the
+/// streamer as well — and the seam is the problem, not the size: it is
+/// genuinely a few hundred opaque pixels of orange between the gold and the
+/// red, and it outweighs the red it came from. Rejecting a hue that is merely
+/// a neighbour of one already chosen throws the seam out on the grounds that
+/// make it useless — it is the same colour again — and leaves the floor free
+/// to be low enough for a small, genuinely different colour to pass.
+///
+/// Compared on the *resolved* colours rather than on bucket indices, because
+/// the buckets are 30° wide and a gold at 45° with a red at 355° are two
+/// buckets apart while a gold at 45° and an orange at 25° are one: the
+/// boundaries fall in the wrong places for the question being asked.
+List<Color> dominantHues(Uint8List rgba, {int take = 1, double minShare = 0, double minHueGap = 0}) {
   final weight = List.filled(_buckets, 0.0);
   final sumR = List.filled(_buckets, 0.0);
   final sumG = List.filled(_buckets, 0.0);
@@ -76,16 +91,32 @@ List<Color> dominantHues(Uint8List rgba, {int take = 1, double minShare = 0}) {
   if (weight[ranked.first] < _noise) return const [];
 
   final floor = [_noise, weight[ranked.first] * minShare].reduce((a, b) => a > b ? a : b);
-  return [
-    for (final bucket in ranked.take(take))
-      if (weight[bucket] >= floor)
-        Color.from(
-          alpha: 1,
-          red: sumR[bucket] / weight[bucket],
-          green: sumG[bucket] / weight[bucket],
-          blue: sumB[bucket] / weight[bucket],
-        ),
-  ];
+
+  final chosen = <Color>[];
+  final hues = <double>[];
+  for (final bucket in ranked) {
+    if (chosen.length == take) break;
+    // `ranked` is heaviest first, so the first bucket under the floor means
+    // every bucket after it is too.
+    if (weight[bucket] < floor) break;
+    final color = Color.from(
+      alpha: 1,
+      red: sumR[bucket] / weight[bucket],
+      green: sumG[bucket] / weight[bucket],
+      blue: sumB[bucket] / weight[bucket],
+    );
+    final hue = HSLColor.fromColor(color).hue;
+    if (hues.any((taken) => _hueGap(taken, hue) < minHueGap)) continue;
+    chosen.add(color);
+    hues.add(hue);
+  }
+  return chosen;
+}
+
+/// The shorter way round the colour wheel between two hues, in degrees.
+double _hueGap(double a, double b) {
+  final apart = (a - b).abs() % 360;
+  return apart > 180 ? 360 - apart : apart;
 }
 
 /// Pulls a colour read off artwork into the band the palette's own brand tokens

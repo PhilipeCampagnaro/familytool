@@ -571,9 +571,30 @@ class _TitleRow extends StatelessWidget {
   });
 
   /// The filter dropdown duplicates the chip row, so it stays hidden until
-  /// those chips are essentially gone — it fades in over the last 40% of the
+  /// those chips are essentially gone — it fades in near the end of the
   /// collapse rather than cross-fading against the control it replaces.
-  double get _leadingOpacity => ((t - 0.6) / 0.4).clamp(0.0, 1.0);
+  ///
+  /// **The last fifth, not the last two fifths.** [_collapsedSideInset] is the
+  /// room the title keeps clear for it, and that room only arrives *at* t == 1:
+  /// at t == 0.6 the title is still most of the way to the left and most of its
+  /// expanded size, so a control fading in beside it was fading in underneath
+  /// it. Nothing is lost by waiting — the chips it stands in for are gone well
+  /// before then either way.
+  ///
+  /// **The ends are written out rather than left to the arithmetic, because
+  /// this number also decides whether the control can be *tapped*.** The
+  /// dropdown below is inert until it is fully in (see the [IgnorePointer]), and
+  /// `(1.0 - 0.8) / 0.2` is 0.9999999999999998 in binary floating point — a
+  /// difference of no ink at all, and a filter button that looked completely
+  /// normal and ignored every tap. The window this replaced divided by 0.4,
+  /// which happens to land on 1 exactly; that was luck, not design.
+  double get _leadingOpacity {
+    if (t <= _leadingFadeStart) return 0;
+    if (t >= 1) return 1;
+    return (t - _leadingFadeStart) / (1 - _leadingFadeStart);
+  }
+
+  static const _leadingFadeStart = 0.8;
 
   /// Horizontal breathing room reserved on both sides of the collapsed title.
   /// Both sides get the *same* inset at t == 1 even though the two flanking

@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../l10n/l10n.dart';
+import '../state/nav_state.dart';
 import '../theme/tokens.dart';
 import 'bottom_nav.dart';
 import 'glass.dart';
@@ -37,6 +39,31 @@ enum ToastKind { confirm, error, pending }
 /// which every screen turns into an error chip of its own.
 typedef UndoRestore = Future<bool> Function();
 
+/// How high the chip floats above the nav bar's own top edge.
+///
+/// Small on purpose: the chip is the bar's answer to what was just tapped, and
+/// the gap is what says so. It used to be derived from [navContentInset], which
+/// is the clearance *scrolling* content needs — a bar's height plus a generous
+/// 22 — and which was also being added to the home indicator a second time. That
+/// parked the capsule the better part of a bar's height clear of it, reading as
+/// something that had drifted in from elsewhere on the screen.
+const _chipGap = 14.0;
+
+/// Where the chip's bottom edge sits, measured from the bottom of the display.
+///
+/// Read at the moment the chip is *ordered* rather than when it is shown, like
+/// everything else in this file: half the callers have no context left by then.
+/// The bar's measured height comes off [navBarProvider] through the container
+/// rather than a `ref`, because [confirmChipOf] is handed a bare context — the
+/// callers that need it most are `Future`s in notifiers and menu handlers, and
+/// the fallback constant is what put the chip *under* an iOS 26 capsule.
+double _chipBottom(BuildContext context) =>
+    navBarTop(
+      context,
+      barHeight: ProviderScope.containerOf(context, listen: false).read(navBarProvider).barHeight,
+    ) +
+    _chipGap;
+
 /// A confirmation bound to a context that may not survive the write.
 typedef ConfirmChip = void Function(String message, {UndoRestore? undo});
 
@@ -51,10 +78,8 @@ typedef ConfirmChip = void Function(String message, {UndoRestore? undo});
 /// this *before* starting the write, call it after.
 ConfirmChip confirmChipOf(BuildContext context, {ToastKind kind = ToastKind.confirm}) {
   final overlay = Overlay.maybeOf(context, rootOverlay: true);
-  // Parked clear of whichever nav bar is up, with the bigger gap a *stationary*
-  // floating control needs — see [navContentInset]. Read here rather than at
-  // show time, since the context may be gone by then.
-  final bottomInset = navContentInset(context, pill: 108, gap: 22);
+  // Parked just clear of whichever nav bar is up — see [_chipBottom].
+  final bottomInset = _chipBottom(context);
 
   void show(String message, {UndoRestore? undo}) => _show(overlay, bottomInset, message, kind, undo);
 
@@ -66,7 +91,7 @@ ConfirmChip confirmChipOf(BuildContext context, {ToastKind kind = ToastKind.conf
 void showToast(BuildContext context, String message, {ToastKind kind = ToastKind.confirm}) {
   _show(
     Overlay.maybeOf(context, rootOverlay: true),
-    navContentInset(context, pill: 108, gap: 22),
+    _chipBottom(context),
     message,
     kind,
     null,
@@ -145,7 +170,7 @@ class PendingChip {
 /// the time there is anything to report.
 PendingChip showPendingChip(BuildContext context, String message) {
   final overlay = Overlay.maybeOf(context, rootOverlay: true);
-  final bottomInset = navContentInset(context, pill: 108, gap: 22);
+  final bottomInset = _chipBottom(context);
 
   _current?.dismiss();
   final handle = _ToastHandle();
@@ -407,8 +432,17 @@ class _ToastLayerState extends State<_ToastLayer> with SingleTickerProviderState
     // floating in the middle of the list it had just changed. While the
     // keyboard is up it is the only thing to clear, and the chip sits just
     // above it — close enough to read as the answer to what was typed.
+    //
+    // **And [bottomInset] is already measured from the bottom of the display**,
+    // which is the second thing that didn't add up: [_chipBottom] starts at the
+    // same screen edge the bar itself is positioned from ([navRowBottom],
+    // `barBottom` in `main.dart`) and counts the safe area in on the way past,
+    // so adding `viewPadding.bottom` to it put the home indicator in twice. On
+    // a 34pt indicator that is 34pt of daylight between the chip and the bar it
+    // belongs to, and the chip read as floating loose over the screen rather
+    // than as the bar's own answer.
     final keyboard = media.viewInsets.bottom;
-    final bottom = keyboard > 0 ? keyboard + 12 : media.viewPadding.bottom + widget.bottomInset;
+    final bottom = keyboard > 0 ? keyboard + 12 : widget.bottomInset;
     return Positioned(
       left: 16,
       right: 16,

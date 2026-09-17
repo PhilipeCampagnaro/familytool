@@ -144,6 +144,20 @@ double nativeTabBarBottomInset(BuildContext context) =>
 double navContentInset(BuildContext context, {double pill = 130, double gap = 12}) =>
     useNativeTabBar ? nativeTabBarBottomInset(context) + kNativeTabBarHeight + gap : pill;
 
+/// Distance from the bottom of the display to the **top edge of the nav bar** —
+/// the line anything parked above it has to clear.
+///
+/// [navContentInset] answers the same question for *scrolling* content and
+/// answers it with the [kNativeTabBarHeight] constant, which is fine there: a
+/// row that ends up a few points under the glass slides on past. Something
+/// parked has no such slack, and an iOS 26 capsule is a good deal taller than
+/// the constant — so anything stationary passes the height UIKit reported
+/// through [NativeTabBar.onHeight], exactly as [navRowBottom] does. Guessing it
+/// is what put the confirmation chip on top of the bar.
+double navBarTop(BuildContext context, {double? barHeight}) => useNativeTabBar
+    ? nativeTabBarBottomInset(context) + (barHeight ?? kNativeTabBarHeight)
+    : 22.0 + kFlutterNavBarHeight;
+
 /// How long the bar takes to collapse into [CompactNavButton] and back. Shared
 /// with anything that has to travel with it — Kalender's "Heute" button drops
 /// onto the nav row as the bar leaves it.

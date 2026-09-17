@@ -7,7 +7,6 @@ import '../../state/calendar_state.dart';
 import '../../state/family_state.dart';
 import '../../state/auth_state.dart';
 import '../../theme/tokens.dart';
-import '../../widgets/anchored_menu.dart';
 import '../../widgets/app_sheet.dart';
 import '../../widgets/avatar.dart';
 import '../../widgets/confirmation.dart';
@@ -15,6 +14,7 @@ import '../../widgets/empty_state.dart';
 import '../../widgets/error_note.dart';
 import '../../widgets/family_avatar_button.dart';
 import '../../widgets/glyph_tile.dart';
+import '../../widgets/inline_dropdown.dart';
 import '../../widgets/rename_sheet.dart';
 import '../../widgets/settings_chrome.dart';
 import '../../l10n/l10n.dart';
@@ -592,28 +592,19 @@ class _MemberRow extends ConsumerWidget {
   }
 }
 
-/// The bordered role dropdown on a member row and in the invite sheet.
+/// The role dropdown on a member row and in the invite sheet: [InlineDropdown]
+/// with the three roles in it.
 ///
-/// Goes through [showAnchoredMenu] like every other menu in the app, so on iOS
-/// the choice is UIKit's own glass menu growing out of this control rather
-/// than a Material popup — which is what it used to be, back when the menu
-/// this opens had no system half to hand it to.
-///
-/// The role in force is the menu's ticked row ([AnchoredMenuItem.selected]),
-/// which is the system's way of saying it; the panel Flutter draws off iOS has
-/// no tick, so there the button's own label is what says which one is on.
-class _RolePicker extends StatefulWidget {
+/// A wrapper rather than the control itself, because the *list* is what differs
+/// between callers — the onboarding invite step asks the same question with two
+/// options and its own wording — while every one of them wants the same
+/// hairline box opening the same system menu. Kept under this name because its
+/// two call sites here read as what they are.
+class _RolePicker extends StatelessWidget {
   final FamilyRole role;
   final ValueChanged<FamilyRole> onChanged;
 
   const _RolePicker({required this.role, required this.onChanged});
-
-  @override
-  State<_RolePicker> createState() => _RolePickerState();
-}
-
-class _RolePickerState extends State<_RolePicker> {
-  final GlobalKey _anchorKey = GlobalKey();
 
   /// The glyph a role carries in the menu — Phosphor for the app's own panel,
   /// an SF Symbol for UIKit's.
@@ -623,50 +614,16 @@ class _RolePickerState extends State<_RolePicker> {
     FamilyRole.kid => (AppIcons.baby, 'figure.child'),
   };
 
-  void _open() {
-    showAnchoredMenu(
-      context: context,
-      anchorKey: _anchorKey,
-      title: L.s.role,
-      width: 200,
-      items: [
-        for (final r in FamilyRole.values)
-          AnchoredMenuItem(
-            label: r.label,
-            icon: _glyph(r).$1,
-            symbol: _glyph(r).$2,
-            selected: r == widget.role,
-            onSelected: () {
-              if (r != widget.role) widget.onChanged(r);
-            },
-          ),
-      ],
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    return KeyedSubtree(
-      key: _anchorKey,
-      child: GestureDetector(
-        onTap: _open,
-        behavior: HitTestBehavior.opaque,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppRadii.iconTile),
-            border: Border.all(color: AppColors.hairline2),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(widget.role.label, style: AppText.rowTitle),
-              const SizedBox(width: 8),
-              AppIcon(AppIcons.caretUpDown, size: 14, color: AppColors.mutedLight),
-            ],
-          ),
-        ),
-      ),
+    return InlineDropdown<FamilyRole>(
+      value: role,
+      menuTitle: L.s.role,
+      onChanged: onChanged,
+      choices: [
+        for (final r in FamilyRole.values)
+          DropdownChoice(value: r, label: r.label, icon: _glyph(r).$1, symbol: _glyph(r).$2),
+      ],
     );
   }
 }

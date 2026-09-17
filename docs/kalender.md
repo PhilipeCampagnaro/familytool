@@ -369,10 +369,25 @@ glass over the month grid let the day numbers read straight through the rows.
 **Both** tabs show the chip row at rest and collapse it into the same compact glass dropdown
 (`_CalendarFilterButton`) as the header scrolls away — the dropdown is *only* a collapsed-state
 stand-in, never shown alongside the chips. It's overlaid in `_TitleRow` via a `Stack` (not a `Row`
-child) so it can't push the expanded left-aligned title sideways, and fades in over the last 40% of
-the collapse (`_TitleRow._leadingOpacity`). Keep the two tabs' behaviour identical here. Its label
-("Alle", "3 Kalender") is set in `AppText.rowTitle`, the Heute pill's type, so the two floating
-glass controls on the screen read at one size.
+child) so it can't push the expanded left-aligned title sideways, and fades in over the last **20%**
+of the collapse (`_TitleRow._leadingOpacity`). Keep the two tabs' behaviour identical here.
+**That opacity also decides whether the control can be tapped** — it is wrapped in an
+`IgnorePointer` until it is fully in, so the ramp has to *land* on 1 exactly. Written as
+`(t - 0.8) / 0.2` it lands on 0.9999999999999998, which is no ink at all and a filter button that
+looks perfectly normal and ignores every tap; the ends are written out for that reason.
+
+**It says how many and whose, not "3 Kalender".** The words were the half carrying no information —
+what a reader wants back from a filter is which calendars survived it — and they made the one
+control to the *left* of a centred title wide enough to reach it: `_TitleRow._collapsedSideInset`
+(108) is the room the title keeps clear, and "1 Kalender" overran it. So a selection is its **count
+beside up to three of the calendars' own colours**, overlapping the way `WhoAvatars` overlaps a
+household, in the order the calendars are *listed* (a `Set` has no order, and reading the dots out
+of it would reshuffle them on an unrelated rebuild). One calendar is its dot alone; "Alle" stays
+spelled out, because no set of colours stands for "everything". The full wording survives as the
+button's **accessibility label** — a stack of colours names nothing out loud. Its count is set in
+`AppText.rowTitle`, the Heute pill's type, so the two floating glass controls on the screen read at
+one size, and its horizontal padding is 12 rather than the usual 14 to keep the two-digit case
+inside that inset.
 
 **Its menu is multi-select, and is the "Alle" chip's own list plus the to-do row.** It used to
 *replace* the filter with one row's worth and close, which made the only control left once the
@@ -502,7 +517,7 @@ more than a title, and its doc comment says the same.
 ## All-day events are dates, not instants
 
 Every source writes an all-day event as **midnight UTC** — Google's `start.date`, OpenHolidays'
-Ferien block, all six Abfall vendors, a DATE-valued `DTSTART` over CalDAV. `CalendarEvent._readAt`
+Ferien block, all seven Abfall vendors, a DATE-valued `DTSTART` over CalDAV. `CalendarEvent._readAt`
 therefore reads the UTC calendar date and rebuilds it as a *local* midnight; `_writeAt` is its
 inverse for our own rows. **Don't `.toLocal()` an all-day timestamp.** East of UTC it shifts the
 exclusive end onto the next day, `days` then lists that day too, and every waste pickup rendered on

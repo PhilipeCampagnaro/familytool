@@ -1,0 +1,308 @@
+// abfall/core.ts — the vocabulary every vendor adapter shares.
+//
+// Types, the HTTP helpers, the German street/town normalisers, and the
+// VendorAdapter contract. A vendor module imports from here and from nothing else
+// in this directory, so adding a vendor never means editing a file another vendor
+// depends on.
+
+import type { AbfallProvider } from "../abfall_providers.ts";
+import { parseIcs } from "../caldav.ts";
+import type { SyncedEvent } from "../calendar.ts";
+import { fetchUntrusted, fetchWithTimeout } from "../net.ts";
+
+export { fetchUntrusted, fetchWithTimeout, parseIcs };
+export type { AbfallProvider, SyncedEvent };
+
+// A house number a street can be split into, as the client's dropdown wants it.
+export interface HausNr { id: string | number; nr: string }
+
+// What `calendar_connections.config` holds for an abfall connection. It is a
+// jsonb column here, not the JSON *string* the old web app kept in `account`,
+// so nothing parses it on the way in or out.
+export interface AbfallConfig {
+  vendor: 'regioit' | 'awido' | 'jumomind' | 'abfallio' | 'ctrace' | 'ics' | 'awgbassum' | 'bsr' | 'fes' | 'awm' | 'awbkoeln' | 'srh'
+    | 'awsstuttgart' | 'awista'
+  label?: string          // human address label, for display / event location
+  // regioit (AbfallNavi):
+  region?: string         // host slug, e.g. 'aachen'
+  ortId?: number
+  strasseId?: number | string   // regioit: numeric; abfallio: form option value
+  // house-number refinement, merged onto the config by the client when the user
+  // picks one from hausNrList. regioit: numeric id. awido: the addon GUID (it
+  // replaces the street oid). jumomind: "nr|areaId" (the area id replaces
+  // areaId). abfallio: the f_id_strasse_hnr option value. bsr: the AddrKey of
+  // the house, which is the whole address as far as BSR is concerned. fes: the
+  // numeric address id frankfurtplus.de hangs its ICS off. awista: the uuid
+  // AWISTA Kommunal's calendar page and ICS are both addressed by.
+  hnrId?: number | string
+  // abfallio (abfall.io / AbfallPlus legacy widget):
+  key?: string            // per-authority widget key (32-hex)
+  kommuneId?: string
+  bezirkId?: string       // district step, only where the authority uses one
+  // awbkoeln (AWB Köln): `strasseId`/`hnr` are the **Stellplatz** the calendar is
+  // keyed on, `street` the household's own street, and `stellplatz` the written
+  // address of the collection point when it is not their own door.
+  stellplatz?: string
+  // ctrace (C-Trace ASP.NET calendar; also uses service + host + street):
+  ort?: string            // Ort= param ('' where the service wants it empty)
+  hnr?: string            // Hausnr= param (required by the server)
+  icalFile?: string       // 'cal' (default) or 'downloadcal'
+  // ics (manual ICS link fallback for unsupported areas):
+  url?: string            // the user's pasted ICS/webcal link
+  // awido (AWIDO Online / Cubefour):
+  client?: string         // customer slug, e.g. 'rmk'
+  oid?: string            // street key (GUID) for getData
+  // jumomind (Jumomind / MyMuell app API; `service` shared with ctrace):
+  service?: string        // jumomind: host id, e.g. 'mymuell'; ctrace: service path
+  cityId?: string
+  areaId?: string
+  // awgbassum (per-street ICS template):
+  host?: string           // domain, e.g. 'www.awg-bassum.de'
+  city?: string           // ?city= value
+  street?: string         // ?street= display value
+  slug?: string           // ?slug= value (the site's street key)
+}
+
+// Some vendor endpoints (e.g. AWG Bassum's /ajax/ street search) 406 a request
+// whose Accept is the bare `application/json` — they only negotiate against a list
+// that includes `*/*`. A browser-like Accept + User-Agent satisfies them and is
+// harmless to the regio-iT JSON API.
+export const UA = 'Mozilla/5.0 (compatible; AporahCalendar/1.0)'
+
+export const JSON_HEADERS = {
+  Accept: 'application/json, text/javascript, */*; q=0.01',
+  'User-Agent': UA,
+}
+
+export async function getJson(url: string, extraHeaders?: Record<string, string>): Promise<unknown> {
+  const res = await fetchWithTimeout(url, { headers: { ...JSON_HEADERS, ...extraHeaders } })
+  if (!res.ok) throw new Error(`abfall upstream ${res.status}`)
+  return res.json()
+}
+
+export function decodeEntities(s: string): string {
+  return (s || '')
+    .replace(/&quot;/g, '"').replace(/&#0?39;/g, "'")
+    .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&')
+}
+
+// A selectable town. Carries whatever the vendor family needs to resolve streets.
+export interface Town {
+  vendor: 'regioit' | 'awido' | 'jumomind' | 'abfallio' | 'ctrace' | 'awgbassum' | 'bsr' | 'fes' | 'awm' | 'awbkoeln' | 'srh'
+    | 'awsstuttgart' | 'awista'
+  name: string            // display name (town / city)
+  provider: string        // provider id, for debugging / de-dup
+  region?: string         // regioit
+  ortId?: number          // regioit
+  client?: string         // awido
+  placeKey?: string       // awido (getPlaces key for the town)
+  service?: string        // jumomind + ctrace
+  cityId?: string         // jumomind
+  areaId?: string         // jumomind (city-level area; authoritative when !hasStreets)
+  hasStreets?: boolean    // jumomind (false = one schedule for the whole town)
+  key?: string            // abfallio
+  kommuneId?: string      // abfallio
+  bezirkId?: string       // abfallio (set when the "town" is a district/village)
+  icalFile?: string       // ctrace
+  host?: string           // awgbassum + ctrace
+  city?: string           // awgbassum (?city= value) / ctrace (Ort= value, may be '')
+}
+
+// A selectable street. `config` is the base connection config (vendor-specific);
+// the client merges a label (and an optional house number pick) onto it.
+export interface StreetOption {
+  name: string
+  hausNrList?: Array<{ id: number | string; nr: string }>
+  config: AbfallConfig
+}
+
+// A geocoded address the user can pick. Opaque to the client except for `label`
+// and `prefix`; the client passes the whole object back to resolveAddress().
+export interface GeoAddress {
+  label: string           // "Weyher Straße 100, 28816 Stuhr"
+  street: string
+  houseNumber?: string
+  town: string            // municipality / city
+  postcode?: string
+  state?: string          // Bundesland ("Niedersachsen") — lets the client offer the matching school-holiday (Ferien) calendar
+  // A bare-postcode suggestion ("28213 Bremen"): not a resolvable address — the
+  // client prefills the search field with it so the user keeps typing the street.
+  prefix?: boolean
+  name?: string           // POI/venue name (worldwide mode only) — a restaurant, office, etc.
+}
+
+// The outcome of checking whether a picked address is served by a known vendor.
+export interface ResolveResult {
+  supported: boolean
+  town: string            // the town we looked up (for the "not supported" message)
+  street?: string         // the vendor's street name (canonical spelling)
+  // `id` is only numeric for regio-iT. AWIDO sends an addon GUID, abfall.io a
+  // form option value and jumomind a packed "nr|areaId" — all strings, and all
+  // of them fed straight back into AbfallConfig.hnrId. The old web app declared
+  // this `number` and got away with it because nothing typechecked its edge
+  // functions; a client that believed the declaration would drop every house
+  // number outside regio-iT.
+  hausNrList?: Array<{ id: number | string; nr: string }>
+  config?: AbfallConfig
+  // The vendor plans per house and the address came without a number (or with
+  // one it does not know): `config` is the street and cannot be read yet. The
+  // client asks for the number instead of connecting a calendar that would
+  // fail on its first sync — or, worse, show the neighbour's bins.
+  needsHouseNumber?: boolean
+}
+
+// Fold a name to plain a–z so that two spellings of the same street compare
+// equal. Every letter a German street name can carry has two written forms and
+// the vendor and the geocoder rarely pick the same one: ä/ae, ö/oe, ü/ue, ß/ss,
+// and the accents on the handful named after people (Francéstraße, Désirée-,
+// Gluckstraße/Glückstraße). Deleting them instead — which is what the bare
+// character class here used to do — is the one thing that cannot work: it turns
+// "Francéstraße" into "francstr" and the vendor's "Francestr." into
+// "francestr", two strings that match nothing, not even each other.
+export function foldGerman(s: string): string {
+  return (s || '')
+    .toLowerCase()
+    .replace(/ä/g, 'ae')
+    .replace(/ö/g, 'oe')
+    .replace(/ü/g, 'ue')
+    .replace(/ß/g, 'ss')
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')      // é -> e, and every other accent
+}
+
+// Normalise a street name for fuzzy comparison across spelling variants:
+// "Weyher Straße" / "Weyher Str." / "Weyher Str. [Brinkum]" -> "weyherstr".
+export function normStreet(s: string): string {
+  return foldGerman(s)
+    .replace(/\[[^\]]*\]/g, ' ')          // drop district tags like "[Brinkum]"
+    .replace(/\([^)]*\)/g, ' ')           // ...and "(Altenmittlau)" (jumomind style)
+    .replace(/strasse/g, 'str')           // "straße" is already "strasse" here
+    .replace(/str\.?/g, 'str')
+    .replace(/[^a-z0-9]/g, '')
+}
+
+// The distinctive part of a street name (drops a trailing Straße/Str. word) so we
+// can narrow the vendor's street list before fuzzy-matching. "Weyher Straße" ->
+// "weyher", "Hauptstraße" -> "haupt".
+export function streetStem(s: string): string {
+  const stem = (s || '').toLowerCase().replace(/\s*(stra(ß|ss)e|str\.?)\s*$/, '').trim()
+  return stem || (s || '').toLowerCase()
+}
+
+// Do a covered town's name and a geocoded town's name refer to the same place?
+// Exact, or one appears inside the other AT A WORD BOUNDARY — which covers both
+// "Gießen" in "Landkreis Gießen" and "Freigericht" in "Freigericht-Bernbach",
+// because a hyphen is not a name character.
+//
+// The boundary is load-bearing, and this function has now been wrong twice in
+// the same way. The old web app used a bare `includes`, which matched "Hain"
+// inside "Friedrichshain" and gave a Berlin address a village's bin days
+// 400 km away. The rewrite fixed that and then kept a bare prefix test for the
+// "Freigericht-Bernbach" case — so **"München" matched "Münchenhof"**, a hamlet
+// in the Landkreis Harz whose whole-town schedule accepts any street at all,
+// and a München household was handed Saxony-Anhalt's Hausmüll, Papier and Gelbe
+// Säcke. Found in the running app on 2026-09-17, by a reader who knew their own
+// city has no Gelber Sack.
+//
+// The prefix test was also redundant: `containsWord` already accepts a prefix
+// that ends on a separator, which is exactly the Freigericht case and exactly
+// not the Münchenhof one. Two towns whose names merely start alike are two
+// towns.
+export function townMatches(candidate: string, target: string): boolean {
+  if (candidate === target) return true
+  return containsWord(candidate, target) || containsWord(target, candidate)
+}
+
+export function containsWord(haystack: string, needle: string): boolean {
+  // Below three characters nothing is distinctive enough to be evidence.
+  if (needle.length < 3) return false
+  for (let from = 0;;) {
+    const at = haystack.indexOf(needle, from)
+    if (at < 0) return false
+    const before = at === 0 ? '' : haystack[at - 1]
+    const after = haystack[at + needle.length] ?? ''
+    if (!isNameChar(before) && !isNameChar(after)) return true
+    from = at + 1
+  }
+}
+
+export function isNameChar(ch: string): boolean {
+  return !!ch && /[a-z0-9äöüß]/.test(ch)
+}
+
+// "Königstraße" → ["Königstraße", "Königstr."]; "Königstr." → ["Königstr.",
+// "Königstraße"]; anything without the word stays alone.
+export function streetSpellings(street: string): string[] {
+  const s = street.trim()
+  const out = [s]
+  if (/stra(ß|ss)e$/i.test(s)) out.push(s.replace(/stra(ß|ss)e$/i, 'str.'))
+  else if (/str\.?$/i.test(s)) out.push(s.replace(/str\.?$/i, 'straße'))
+  return out
+}
+
+// Read a user-pasted ICS link. Kept inside the abfall family (vendor 'ics') so
+// the pickup overlay, bin colours, and sync flow all apply unchanged. Also
+// used by abfall-lookup's ics-check action to validate the link at setup time.
+// Tiny stable fingerprint (djb2) so two manual ICS links in one family never
+// share event uids (colliding uids would merge their events into one).
+export function shortHash(s: string): string {
+  let h = 5381
+  for (let i = 0; i < s.length; i++) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0
+  return h.toString(36)
+}
+
+// Every way a German street name might be written, most likely first.
+//
+// German has two written forms of each umlaut and of ß, and which one a street
+// sign carries is a local decision no rule predicts: Hamburg writes
+// "Fraenkelstraße" and "Mönckebergstraße", one folded and one not, in the same
+// list. The geocoder is no more consistent, so both directions are generated.
+//
+// This exists because some vendor searches fold NOTHING — they are literal
+// prefix matches — and for those, normalising both sides afterwards is too late:
+// the request itself has to carry the spelling the vendor holds. Nonsense falls
+// out of it ("Neue" -> "Nü"), costing one request that returns nothing; the cap
+// keeps that bounded. Lower-cased throughout, which is safe because every search
+// that needs this is case-insensitive.
+export function germanSpellings(street: string): string[] {
+  const out = [street.trim().toLowerCase()]
+  const swaps: Array<[RegExp, string]> = [
+    [/ä/g, 'ae'], [/ö/g, 'oe'], [/ü/g, 'ue'], [/ß/g, 'ss'],
+    [/ae/g, 'ä'], [/oe/g, 'ö'], [/ue/g, 'ü'], [/ss/g, 'ß'],
+  ]
+  for (const [re, to] of swaps) {
+    for (const s of [...out]) {
+      const v = s.replace(re, to)
+      if (v !== s && !out.includes(v)) out.push(v)
+      if (out.length >= 8) return out
+    }
+  }
+  return out
+}
+
+// ── The vendor contract ──────────────────────────────────────────────────────
+//
+// One adapter per waste-vendor family. Everything the resolver knows how to do
+// with a vendor is declared here, so adding a city is adding ONE file plus one
+// line in registry.ts — never an edit to four dispatch chains.
+//
+// Only `family` and `read` are required. Each optional member answers one
+// question, and leaving one out is a statement about the vendor rather than an
+// omission:
+//   towns         which towns this provider contributes. Left out: none — the
+//                 vendor is reached by a pasted link, not by an address.
+//   searchStreets street autocomplete inside a town. Left out: the vendor has no
+//                 street list to offer (C-Trace validates server-side instead).
+//   probe         resolve a whole address at once. When present it REPLACES the
+//                 generic "search the street list and fuzzy-match" path, because
+//                 the vendor needs the house number to name a schedule at all.
+//   houseNumbers  extra numbers for a street matched the generic way, when the
+//                 vendor keeps them behind a further call.
+export interface VendorAdapter {
+  family: string
+  towns?(p: AbfallProvider): Town[] | Promise<Town[]>
+  searchStreets?(town: Town, query: string, hint?: string): Promise<StreetOption[]>
+  probe?(town: Town, addr: GeoAddress): Promise<ResolveResult | null>
+  houseNumbers?(opt: StreetOption): Promise<HausNr[] | undefined>
+  read(cfg: AbfallConfig): Promise<SyncedEvent[]>
+}

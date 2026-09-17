@@ -394,14 +394,17 @@ class _PlannerCardState extends ConsumerState<PlannerCard> {
     final plan = state.plan!;
     final kept = state.keptItems.length;
     return [
-      _GoalLine(goal: state.goal),
-      Padding(
-        padding: const EdgeInsets.fromLTRB(18, 2, 18, 12),
-        child: Text(plan.title, style: AppText.detailTitle),
-      ),
+      // **The question does not come back with the answer.** A [_GoalLine]
+      // reading "Silvesterabend für 10 Personen" sat directly above a title
+      // reading "Silvesterparty für 10": the same sentence twice, in two sizes,
+      // spending the top of the card telling the reader what they typed thirty
+      // seconds ago. The bulb was the part worth keeping, so it moves onto the
+      // title and the wave that used to wash the question washes the answer
+      // instead. The goal is not lost — "Nochmal" puts it straight back into
+      // the field, which is the only place it can still be edited.
+      _PlanTitle(title: plan.title),
 
-      // **The list first, because the list is the point.** The method is worth
-      // reading; the shopping is why the card was opened.
+      // **The list first, because the list is the point.**
       _AnswerLabel(label: L.s.plannerWhatToBuy, trailing: L.s.plannerItemCount(kept)),
       ...dividedRows([
         for (final (i, item) in plan.items.indexed)
@@ -413,11 +416,12 @@ class _PlannerCardState extends ConsumerState<PlannerCard> {
           ),
       ], inset: true),
 
-      // **One block, folded, between the articles and the button.** The method
-      // used to be printed in full here and pushed "Liste erstellen" off the
-      // bottom of a card the reader had already decided about — by the second
-      // Vorhaben you know how this works, and scrolling past twelve steps to
-      // reach the only button is a toll paid on every plan afterwards.
+      // **A second section under the first, not a line above it.** It was tried
+      // directly under the title and that was worse than invisible: a heading
+      // sitting above the articles is read as the heading *of* the articles, so
+      // "REZEPT" over a column of Sekt and Weißwein said the shopping was the
+      // recipe. Below the list, after a full-bleed rule, it is plainly a second
+      // thing — and the peek under it is what says so without being opened.
       if (plan.steps.isNotEmpty || plan.recipe != null)
         _MethodDisclosure(
           steps: plan.steps,
@@ -535,6 +539,50 @@ class _GoalLine extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// The plan's own name, wearing the bulb that used to head the question.
+///
+/// **One title, not two.** The card carried the goal and the title as separate
+/// lines, and for a plan they are near enough the same words — the second one
+/// was a heading about the first. So the bulb comes down onto the title, at the
+/// title's own weight rather than a caption's, and there is one thing at the
+/// top of the card saying what this is.
+///
+/// [WaveSweep] on arrival for the same reason it ran on the question: the wash
+/// is how this card says a sentence is new, and the sentence that is new now is
+/// the answer.
+class _PlanTitle extends StatelessWidget {
+  final String title;
+
+  const _PlanTitle({required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 2),
+      child: WaveSweep(
+        trigger: title,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // **Measured against the title's ink, not taken from [AppGlyph].**
+            // Those four tiers size *controls*; this is a mark naming the
+            // thing, and a duotone glyph fills only about seven tenths of the
+            // box it is given, so it takes a larger number than the type it
+            // stands beside to weigh the same. The point of padding sits it on
+            // the first line's cap height when the title wraps to two.
+            Padding(
+              padding: const EdgeInsets.only(top: 1),
+              child: AppIcon(AppIcons.lightbulb, size: 26, color: AppColors.accent),
+            ),
+            const SizedBox(width: 10),
+            Expanded(child: Text(title, style: AppText.detailTitle)),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -692,11 +740,33 @@ class _PlanItemRow extends StatelessWidget {
 /// The method — the overview steps and, when there is one, the full recipe —
 /// folded behind its own label.
 ///
-/// **The label row is the control.** It is the same `microLabel` every other
-/// section of the answer is headed with, plus the caret the rest of the app
-/// uses for a disclosure, so the block reads as one of the card's sections
-/// rather than as a widget borrowed from somewhere else. No "anzeigen"
-/// sentence: the caret already says it, in four languages, in no words.
+/// **Nothing that only says a thing exists can make anybody open it.** This was
+/// a label and a caret — twice, in fact: a grey `microLabel`, then a rung
+/// larger and heavier, then an accent pill. All three were invisible or worse,
+/// and the size was never what was wrong with them. A word is a promise about
+/// content, and a promise is easy to decline; the reader has the list they came
+/// for and nothing on screen contradicts the feeling that they are done.
+///
+/// So the method **shows itself instead of announcing itself**. The first
+/// [_peek] points of it are simply there, under the heading, faded out at the
+/// bottom, and **Alles anzeigen** takes the lid off. What is visible is a
+/// sentence of the actual recipe, which nobody has to take on trust.
+///
+/// **The fade is load-bearing, not decoration.** A fixed height cuts prose
+/// mid-word, and in four languages there is no height that does not; the
+/// gradient is what turns that cut into an edge. It is [BlendMode.dstIn] over
+/// an [OverflowBox], so the text is laid out at its true height and *clipped*
+/// rather than squeezed into [_peek] points.
+///
+/// **Whether it peeks at all is decided from the content, not from a
+/// measurement** — see [_peeks]. Getting it wrong is cheap in both directions:
+/// a short method that peeks anyway fades over its own last line, which is what
+/// the fade is for, and a long one drawn in full is the behaviour this had
+/// before.
+///
+/// **An [AnimatedSize] rather than an `if`**, so opening it grows the card the
+/// way every other disclosure in this file does instead of teleporting the
+/// create button down the screen.
 ///
 /// **An [AnimatedSize] rather than an `if`**, so opening it grows the card the
 /// way every other disclosure in this file does instead of teleporting the
@@ -722,38 +792,113 @@ class _MethodDisclosure extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // A plan with a recipe is a plan about cooking, and "Rezept" is the truer
-    // name for what is inside than "So geht's" is.
-    final label = recipe == null ? L.s.plannerHowTo : L.s.plannerRecipe;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: onToggle,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(18, 14, 18, 8),
-            child: Row(
-              children: [
-                Expanded(child: Text(label, style: AppText.microLabel)),
-                AppIcon(
-                  open ? AppIcons.caretUp : AppIcons.caretDown,
-                  size: AppGlyph.caret,
-                  flat: true,
-                  color: AppColors.muted,
-                ),
-              ],
-            ),
-          ),
-        ),
+        // **Full-bleed, where the articles above it are parted by
+        // [InsetDivider]s.** The heavier of the app's two rules is what makes
+        // this read as the end of one block rather than the gap between two
+        // rows of the same one.
+        Padding(padding: const EdgeInsets.only(top: 8), child: CardDivider()),
+
+        // The articles' own heading style, deliberately: now that the peek and
+        // the "Alles anzeigen" row do the inviting, this is a caption again and
+        // has nothing to prove. A plan with a recipe is a plan about cooking,
+        // and "Rezept" is the truer name for what is inside than "So geht's".
+        _AnswerLabel(label: recipe == null ? L.s.plannerHowTo : L.s.plannerRecipe),
+
         AnimatedSize(
           duration: const Duration(milliseconds: 280),
           curve: Curves.easeOutCubic,
           alignment: Alignment.topCenter,
-          child: SizedBox(width: double.infinity, child: !open ? const SizedBox.shrink() : _body()),
+          child: SizedBox(
+            width: double.infinity,
+            child: open || !_peeks ? _body() : _peeked(),
+          ),
         ),
+
+        if (_peeks) _more(),
       ],
+    );
+  }
+
+  /// How much of the method is simply there while it is shut — about a heading
+  /// and three lines, so what shows is a real stage of the plan rather than a
+  /// teasing strip of one.
+  static const _peek = 132.0;
+
+  /// **Is there enough behind this to be worth hiding?**
+  ///
+  /// Decided from the shape of the content rather than from a laid-out height:
+  /// measuring means rendering the prose twice, or a render object, to answer a
+  /// question whose wrong answers both cost nothing. A recipe always overflows
+  /// [_peek]; `steps[0]` is the plan's `#` title and every entry after it is a
+  /// titled stage of about three lines, so three entries is the point where a
+  /// method reliably does too. Below that it is drawn in full, with no fade and
+  /// no row under it, because there would be nothing behind them.
+  bool get _peeks => recipe != null || steps.length > 2;
+
+  /// The top of the method, cut off and faded out.
+  ///
+  /// [OverflowBox] is what makes this a *cut*: the column inside it is laid out
+  /// against an unbounded height, exactly as it will be when open, so the words
+  /// do not reflow when the lid comes off — the box around it is simply shorter
+  /// than they are, and [ClipRect] takes the rest away.
+  Widget _peeked() => ClipRect(
+    child: SizedBox(
+      height: _peek,
+      child: ShaderMask(
+        blendMode: BlendMode.dstIn,
+        // Only the alpha of these colours is read. Opaque for the first sixty
+        // percent so the fade reads as an edge at the bottom rather than as
+        // prose that was printed too faintly.
+        shaderCallback: (rect) => const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Colors.white, Colors.white, Colors.transparent],
+          stops: [0, 0.6, 1],
+        ).createShader(rect),
+        // `minHeight: 0` explicitly: left null it inherits the [SizedBox]'s
+        // tight 132, which would stretch a body shorter than the peek instead
+        // of letting it end where it ends.
+        child: OverflowBox(
+          alignment: Alignment.topCenter,
+          minHeight: 0,
+          maxHeight: double.infinity,
+          child: _body(),
+        ),
+      ),
+    ),
+  );
+
+  /// The app's own "there is more behind this" row — the same centred accent
+  /// label and caret the icon picker puts under a shortened list of shops. Its
+  /// place at the foot of the block is the point: it is the first thing below
+  /// the fade, so the gesture the fade asks for is directly under the hand.
+  Widget _more() {
+    final accent = AppColors.accent;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onToggle,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 15),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              open ? L.s.showLess : L.s.plannerShowMethod,
+              style: AppText.buttonSmall.copyWith(color: accent),
+            ),
+            const SizedBox(width: 6),
+            AppIcon(
+              open ? AppIcons.caretUp : AppIcons.caretDown,
+              size: AppGlyph.caret,
+              flat: true,
+              color: accent,
+            ),
+          ],
+        ),
+      ),
     );
   }
 

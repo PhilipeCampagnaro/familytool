@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../data/icon_suggestions.dart';
 import '../../theme/app_icons.dart';
 import '../../theme/tokens.dart';
-import '../../widgets/icon_picker.dart';
+import '../../widgets/brand_mark.dart';
 
 /// The round mark at the head of every Ausgaben row.
 ///
@@ -21,8 +21,10 @@ import '../../widgets/icon_picker.dart';
 /// as a sticker on the wrong background — so the mark takes the same white tile
 /// the app already gives a brand in Listen and on the calendar providers, with
 /// the hairline that is the only reason a white circle is visible on a white
-/// card. What is set on that tile is [AppColors.brandTileInk] rather than
-/// `ink`: the tile does not follow the theme, so its contents cannot either.
+/// card. That tile is [BrandMark], shared with Listen, Box and the icon picker
+/// so a shop is framed the same wherever it is named, and a logo fills it edge
+/// to edge. What is set on it is [AppColors.brandTileInk] rather than `ink`:
+/// the tile does not follow the theme, so its contents cannot either.
 ///
 /// **A business is drawn as itself where we know it.** A logo says "REWE"
 /// faster than any word does, and `assets/merchants/` already holds two hundred
@@ -47,22 +49,11 @@ class SpendMark extends StatelessWidget {
     final asset = shop == null || shop.isEmpty ? null : merchantLogoAsset(shop);
     final initials = asset != null || shop == null ? null : initialsOf(shop);
 
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        color: AppColors.brandTile,
-        shape: BoxShape.circle,
-        border: Border.all(color: AppColors.hairline),
-      ),
-      alignment: Alignment.center,
-      // The logos are drawn for paper and a few of them bleed to their own
-      // edge; the clip is what keeps one of those a circle.
-      clipBehavior: Clip.antiAlias,
-      padding: asset == null ? EdgeInsets.zero : EdgeInsets.all(size * 0.16),
-      child: switch ((asset, initials)) {
-        (final logo?, _) => IconImage(asset: logo, size: AppText.markImage(size)),
-        (_, final letters?) => Text(
+    return BrandMark(
+      size: size,
+      asset: asset,
+      fallback: switch (initials) {
+        final letters? => Text(
           letters,
           // Sized against the circle, like an avatar's initials.
           style: AppText.itemTitle.copyWith(

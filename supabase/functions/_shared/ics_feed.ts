@@ -182,6 +182,17 @@ export function redact(url: string): string {
   }
 }
 
+/// A link that answered, and answered "no".
+///
+/// Separated from every other failure because the two ask for different things:
+/// a school server that times out is worth retrying on the next refresh, while a
+/// revoked token will answer the same way for ever and the only fix is the user
+/// pasting a new link. [readLinkedFeed] turns this one into a ReconnectRequired,
+/// which is the banner that asks for exactly that; the message is unchanged, so
+/// the connect path — where the user is looking at the field they just pasted
+/// into — reads the same as before.
+export class FeedLinkInvalid extends Error {}
+
 /// Fetches one feed and returns its body.
 ///
 /// Throws a German, user-facing message: this runs on the connect path, where
@@ -201,9 +212,9 @@ export async function fetchFeed(url: string): Promise<string> {
   // revoked in IServ or WebUntis, or it was copied from the browser address bar
   // rather than from the share dialog.
   if (res.status === 401 || res.status === 403) {
-    throw new Error("Dieser Link ist nicht mehr gültig. Bitte erstelle ihn neu.");
+    throw new FeedLinkInvalid("Dieser Link ist nicht mehr gültig. Bitte erstelle ihn neu.");
   }
-  if (res.status === 404) throw new Error("Unter diesem Link liegt kein Kalender.");
+  if (res.status === 404) throw new FeedLinkInvalid("Unter diesem Link liegt kein Kalender.");
   if (!res.ok) throw new Error("Der Kalender war nicht erreichbar. Bitte prüfe den Link.");
 
   const length = Number(res.headers.get("content-length") ?? "0");
@@ -220,7 +231,7 @@ export async function fetchFeed(url: string): Promise<string> {
   // read as "this calendar is empty", which is the exact confusion this whole
   // feature exists to end.
   if (!body.includes("BEGIN:VCALENDAR")) {
-    throw new Error(
+    throw new FeedLinkInvalid(
       "Dieser Link liefert keinen Kalender. Bitte kopiere die ICS-Adresse aus der Freigabe.",
     );
   }

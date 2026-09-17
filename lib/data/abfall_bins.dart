@@ -6,7 +6,7 @@
 /// colour, so the colour is the answer, and the dot in the month grid carries it
 /// without anyone reading a word.
 ///
-/// **Classified, not looked up.** The six vendor families in
+/// **Classified, not looked up.** The thirteen vendor families in
 /// `supabase/functions/_shared/abfall.ts` name the same four fractions a dozen
 /// ways — "Restabfall", "Restmüll", "Graue Tonne", "Hausmüll 14-täglich",
 /// "Bioabfall", "Biotonne", "Grünabfall", "Altpapier", "Blaue Tonne", "PPK",
@@ -52,6 +52,10 @@ const _rules = <(String, Color)>[
   ('grünabfall', BinColors.bio),
   ('grüngut', BinColors.bio),
   ('gartenabfall', BinColors.bio),
+  // Hamburg collects autumn leaves in their own sacks, on their own dates.
+  // Spelled out both ways rather than as a bare "laub", which "Urlaub" contains.
+  ('laubsack', BinColors.bio),
+  ('laubsäcke', BinColors.bio),
   ('braune tonne', BinColors.bio),
   ('bio', BinColors.bio),
 

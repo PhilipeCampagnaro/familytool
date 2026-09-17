@@ -307,6 +307,20 @@ client cannot see, which is the same reason `invite-member` exists. See the Cale
 section of [docs/ported-features.md](ported-features.md) for the provider details and the
 credentials to obtain.
 
+One more sits beside them without a credential in it: `abfall-lookup`, the address search, the
+vendor coverage check and the ICS probe behind Ferien and Abfall setup. It is a function rather
+than client-side fetches because no municipal waste server sends CORS headers. It also holds the
+**one write the Abfall flow has for a town nobody serves**: `{action: "request"}` files the town,
+postcode and Bundesland in `public.abfall_requests` (`20260917073307_abfall_requests.sql`), and
+`resolve` reports `requested: true` on the next visit so the row says "angefragt" instead of
+offering the button twice. `authenticated` holds no INSERT grant — the same lock as
+`list_plan_runs` — and the row carries no street: a vendor is found per municipality, and the
+household's street already lives on `families.address`. The queue is read by hand,
+`select * from abfall_requests where status = 'open' order by created_at`, and a row is moved to
+`done` with `resolved_provider` set to the id from `abfall_providers.ts` once the vendor ships. Set
+`APORAH_REQUESTS_TO` on the function to also get a mail per new request; without it the table is
+the whole record.
+
 **No calendar event is ever stored — from a connected account or from anywhere else.**
 `calendar-events` proxies Google, Outlook, iCloud, IServ and WebUntis on every refresh and returns
 them; the

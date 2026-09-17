@@ -109,9 +109,7 @@ const kMoreShelfSpacing = 12.0;
 /// whatever else parks above the bar on its side and has to clear it
 /// (Kalender's "Heute").
 double moreShelfTop(BuildContext context, {double? barHeight}) {
-  final barTop = useNativeTabBar
-      ? nativeTabBarBottomInset(context) + (barHeight ?? kNativeTabBarHeight)
-      : 22.0 + kFlutterNavBarHeight;
+  final barTop = navBarTop(context, barHeight: barHeight);
   final n = _entries.length;
   return barTop + kMoreShelfGap + n * kCompactNavSize + (n - 1) * kMoreShelfSpacing;
 }

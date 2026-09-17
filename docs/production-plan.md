@@ -505,3 +505,122 @@ pointer, so the checklist here stays the one place that says what is finished.
       type-checked.
 - [ ] Fill in the App Store id in `lib/services/app_review.dart` once the listing exists.
 - [ ] Push (APNs + FCM) and the family triggers that need it.
+
+## Abfall coverage — the map, the queue and the next vendor
+
+The live census of what the Müllabfuhr-Kalender can connect from an address — per Bundesland,
+per provider, per big city, with the vendor survey and the order of work — is the **Abfall
+Coverage artifact**: <https://claude.ai/artifact/H4BjoKubN585C8rUFSmQTa>. It is built from three
+JSON files by the scripts in [tool/abfall_census/](../tool/abfall_census/); rebuild it after
+touching `abfall_providers.ts`. 2026-09-17: 132 providers, 3,707 towns, 14 of 16 Länder with at
+least one town, 130 providers delivering dates live, and 25 of the 81 largest cities — **including
+the seven largest: Berlin, Hamburg, München, Köln, Frankfurt, Stuttgart and Düsseldorf, all added
+that day**. Leipzig, Dortmund and Essen are the biggest still out, and Mecklenburg-Vorpommern and
+the Saarland have no town at all. The page's **Jahreswechsel** section is the answer to "does next
+year arrive by itself": nothing is stored, so it does — 27 of the 130 already reach into 2027, and
+the rest publish one calendar year at a time. Three shapes: Köln takes a free year range, München's
+link is signed per year and the vendor decides, and Hamburg and Stuttgart have no year at all — a
+rolling window of four and three months that never has a year-end. Düsseldorf is the fourth kind
+and the tidiest: a calendar year, but keyed on a uuid that demonstrably survives the rollover.
+
+- [x] **Ferien for Berlin and Hamburg** (2026-09-17). Photon has no `state` for the Stadtstaaten;
+      `geocode` fills it from the city and `ferienStateOf` does the same on the client.
+- [x] **"Anfragen" on the Müllabfuhr row** (2026-09-17), onboarding and connect flow, filing the
+      town in `public.abfall_requests` through `abfall-lookup`; the row says "angefragt" on every
+      later visit. Migration applied and the three functions deployed the same day.
+- [x] **Stuttgart (AWS), and `abfall.ts` split into a vendor registry** (2026-09-17). The feed is
+      addressed by the street name and house number themselves — no ids — so the whole adapter is
+      the question "is this calendar about the address we asked for?". Often it is not: the server
+      prefix-matches on both axes and answers `Königstr. 1` with **Kleine Königstr. 1** and
+      `Badstr. 1` with **Badstr. 11**, full calendars either way. `X-WR-CALDESC` echoes what it
+      actually resolved, so every fetch is checked against the request, and a shared collection
+      point (which echoes no address at all) is confirmed against the street's house list instead.
+      Verified live at 25 real addresses across every Bezirk — streets and numbers both taken from
+      the vendor's own lists — 23 resolved, **0 matched wrongly, 0 unsupported**; the two refusals
+      are genuine vendor mis-resolutions where asking is the only honest answer. Both links the
+      household started from reproduce exactly, 33 and 32 events. The 2,294-line `abfall.ts` became
+      a 63-line facade over `abfall/` — core, geo, registry, resolve and one file per family — so a
+      city is now one new file plus four lines instead of an edit to four dispatch chains. Proved
+      behaviour-preserving by diffing the full 130-provider probe against a pre-refactor baseline:
+      identical, line for line.
+- [x] **Düsseldorf — AWISTA Kommunal** (2026-09-17), the thirteenth family and the last of the
+      seven largest cities, again from an ICS a household had downloaded. The uuid in that file is
+      the whole address, and nothing in the file says how to get one: the city's site is a Next.js
+      app whose address search is a **Server Action**, so the lookup is a POST to an ordinary page
+      URL with the function's id in a `Next-Action` header and `["Straße Nr"]` as the body. The id
+      is build-specific, so a stale one (`404 Server action not found.`) sends the adapter back to
+      the page's own JavaScript to re-read it. **The search never says no** — "Quatschstraße 1"
+      comes back as *Kuhstraße 10*, "Königsallee 56" as *Berliner Allee 56* — so every row is held
+      against its own title, and then every VEVENT's `LOCATION` is held against the request too. An
+      address can also resolve to a real uuid and an **empty** calendar (Venloer Str. 1, Grafenberger
+      Allee 302), which is refused rather than connected. Verified live at 49 real addresses drawn
+      from OpenStreetMap, not invented: **30 resolved with the right address echoed back, 19 asked
+      for a house number, 0 matched wrongly**. Of the 24 that were residential buildings, 20
+      resolved; the misses are houses AWISTA's own address list does not hold (Zeisigweg has 1, 10,
+      11, 13, 14 — no 12), which is why no house-number dropdown is offered. The site is behind
+      Vercel's rate limiter and answers 429 to a burst, so the adapter waits and retries twice: a
+      429 leaking out of the probe would read as "Düsseldorf wird noch nicht unterstützt" for a city
+      that is covered.
+- [ ] **Redeploy after the AWB Köln, Hamburg, Stuttgart and Düsseldorf adapters, the `abfall.ts`
+      split and the `normStreet` fix**: `abfall-lookup`,
+      `calendar-feed` and `calendar-events` all carry `abfall.ts` at runtime, so all three ship
+      together or the new cities resolve and then never refresh. `npx supabase functions deploy
+      abfall-lookup calendar-feed calendar-events --project-ref uzhzrwakrtwbpuuupccu`.
+      (The FES/AWM deploy went out at 10:25 on 2026-09-17; this is the next one.)
+- [x] **Berlin — BSR** (2026-09-17), the seventh family, per house and refusing to guess without
+      the number. Verified live at four addresses.
+- [x] **Frankfurt am Main — FES** (2026-09-17), the eighth, found from an ICS link a household
+      already had: `frankfurtplus.de` exposes `/api/addresses/search` and one ICS per address id.
+      Per house as well, and it checks the postcode so Frankfurt (Oder) cannot collect Hessen's bin
+      days. Verified live at four addresses plus the Brandenburg negative.
+- [x] **München — AWM** (2026-09-17), the ninth, from an ICS a household had downloaded. A TYPO3
+      form walk: the page carries all 5,834 streets and the signed form fields, the POST answers
+      with the ICS link. Reproduces that household's own file exactly. Per house as well.
+- [x] **Köln — AWB** (2026-09-17), the tenth, again from an ICS a household had downloaded. Two
+      keyless JSON GETs and no signature anywhere. Three things are peculiar to it and all three
+      are guarded: the address search **never says "no"** (it answers "Quatschstraße" with
+      "Quatermarkt"), a row's `user_*` fields are the household's address while `street_name` is
+      the **Stellplatz** the bins actually go to, and the list is Stellplätze rather than houses,
+      so it is full of holes — Sülzburgstr. has 5 and 100 but no 50. `supported` therefore also
+      checks that dates exist, because two of six test addresses are in the list with an empty
+      calendar behind them. Verified live at eleven addresses.
+- [x] **Hamburg — Stadtreinigung** (2026-09-17), the eleventh, and the fifth of Germany's five
+      largest cities. Built from nothing but the `webcal://…abholtermine.ics?hnIds=139014` link a
+      household was already subscribed to: one unsigned POST turns a street into every house on it
+      with its `hnId`, and the ICS hangs off that id alone — the same TYPO3 that forces a form walk
+      in München answers here without its `cHash`. Two guards. The street search **folds nothing**
+      — it is a literal prefix match, so "Fränkelstraße" finds nothing where the city writes
+      "Fraenkelstraße" — so the name is re-asked in each written form until one answers; folding
+      both sides afterwards, the way every other vendor is matched, is too late. And the house
+      spans overlap: Winterhuder Weg lists "4-10" **and** "7a-7c", two different collection points
+      that both contain number 7, so a letter decides where it can and the household is asked where
+      it cannot — which costs only a dropdown, because this is the one vendor that hands over every
+      house on the street. Verified live at twenty-five addresses across every Bezirk: every street
+      was found, nothing matched wrongly, and the three that asked for a number genuinely lack one
+      (Große Bergstraße starts at 139). hnId 139014 comes back as the feed that started it, all 48
+      events identical.
+- [x] **The street normaliser deleted letters it did not know** (2026-09-17). `normStreet` ended in
+      a `[^a-z0-9äöü]` class, so `é` and `ß` were dropped rather than folded and "Francéstraße"
+      could never meet AWM's "Francestr." — München reported "kein Entsorger" two minutes after the
+      deploy that added it. `foldGerman` now folds ä/ö/ü/ß and NFD-strips accents first.
+- [x] Gütersloh removed (AbfallNavi shell, no dates), Landau's abbreviated streets retried.
+- [x] **Two wrong-town bugs, both found the same day** (2026-09-17). A München address in the
+      running app came back with a Saxony-Anhalt hamlet's bins, because `townMatches` still had a
+      bare prefix test: "München" matched "Münchenhof". Removed — seven of the eighty largest
+      cities were mis-routing that way. And because 37 town names are served in more than one
+      Bundesland, every provider now carries the state it serves and a candidate contradicting the
+      address's own is dropped. See the Abfall section of
+      [ported-features.md](ported-features.md).
+- [ ] Set `APORAH_REQUESTS_TO` on `abfall-lookup` to get a mail per request; until then the queue
+      is `select * from abfall_requests where status = 'open'`.
+- [ ] Next vendors, in the order the census suggests: abfall.io v3 GraphQL (Essen, Duisburg,
+      Göttingen, Osterholz back), Insert IT (Mannheim, Kassel, Krefeld, Lübeck), Leipzig,
+      Kiel — all keyless JSON in ≤3 requests. München was a form walk;
+      Müllmax bans the egress IP for 24 h and needs a daily cache first. Let `abfall_requests`
+      reorder this. **The FES and AWM routes are the pattern to copy**: the vendor's own site was
+      read for its address endpoints rather than a third-party list, which is how two cities nobody
+      had catalogued turned out to be two JSON calls and one form POST — and Köln and Hamburg
+      then fell the same way, the second of them from nothing but a household's own webcal link.
+- [ ] Two abfall.io keys are dead (Osterholz, Kitzingen) and stay listed as dead until the v3
+      family replaces them.
+

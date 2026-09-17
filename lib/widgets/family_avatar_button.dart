@@ -36,7 +36,9 @@ import 'icon_picker.dart';
 ///
 /// Without a picture the circle is the household's initials on a tone derived
 /// from its id — a complete answer that every family starts with, and what the
-/// "Familie" chip in Kalender and Board falls back to as well.
+/// "Familie" chip in Kalender and Board falls back to as well. A household with
+/// no name at all gets the family glyph rather than the "?" [initialsOf] would
+/// hand back; see [build].
 ///
 /// [ringColor] is what the little camera badge is ringed in, so it separates
 /// from whatever is behind it: the card's surface on the family page, the
@@ -46,7 +48,23 @@ class FamilyAvatarButton extends ConsumerStatefulWidget {
   final double size;
   final Color? ringColor;
 
-  const FamilyAvatarButton({super.key, required this.canEdit, this.size = 40, this.ringColor});
+  /// The name currently being **typed**, for the one caller that draws this
+  /// circle beside a field rather than beside a saved row: the onboarding
+  /// welcome step. Its letters then follow the keystrokes, so the family
+  /// watches the circle become theirs before anything is written.
+  ///
+  /// Null everywhere else, where the household's saved name is the only truth
+  /// there is — and null is not the same as empty: an emptied field is a name
+  /// of no words, which [initialsOf] answers with "?".
+  final String? previewName;
+
+  const FamilyAvatarButton({
+    super.key,
+    required this.canEdit,
+    this.size = 40,
+    this.ringColor,
+    this.previewName,
+  });
 
   @override
   ConsumerState<FamilyAvatarButton> createState() => _FamilyAvatarButtonState();
@@ -102,11 +120,23 @@ class _FamilyAvatarButtonState extends ConsumerState<FamilyAvatarButton> {
     if (household == null) return GlyphTile(icon: AppIcons.users, size: widget.size);
 
     final tone = AppTones.list[household.tone % AppTones.list.length];
+    // The name being typed where there is one, the saved name otherwise. Both
+    // go through [initialsOf], so the preview cannot disagree with the letters
+    // the row shows once the name is written.
+    final name = widget.previewName ?? household.name;
+    // **A household with no name is a household, not a question mark.**
+    // [initialsOf] answers '?' for a name of no words, which is the right
+    // answer for a *person* whose profile is half-written and the wrong one
+    // here: the circle is being watched while somebody clears the field to
+    // type a new name, and a lone "?" reads as an error rather than as an
+    // empty field. The family glyph says the same thing and says it calmly.
+    final unnamed = name.trim().isEmpty;
     final avatar = Avatar(
       size: widget.size,
       bg: tone.bg,
       fg: tone.fg,
-      initials: household.initials,
+      initials: unnamed ? null : initialsOf(name),
+      icon: unnamed ? AppIcons.users : null,
       fontSize: widget.size * 0.35,
       imageUrl: household.avatarUrl,
       imageFile: _uploading,

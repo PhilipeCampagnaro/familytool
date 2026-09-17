@@ -809,6 +809,17 @@ abstract class AppStrings {
   String wasteFor(String street);
   String wasteForTown(String town);
   String noVendorForTown(String town);
+  /// The Müllabfuhr row when no vendor serves the address: the sentence that
+  /// replaces "nicht gefunden", the button, and what the row says once it is
+  /// tapped. See the request queue in docs/backend.md.
+  String get wasteRequestHint;
+  String get wasteRequestAction;
+  String get wasteRequested;
+  String get wasteRequestFailed;
+  /// A vendor that plans per house (Berlin's BSR) and an address that came
+  /// without the number, or with one in several postcodes.
+  String get wasteNeedsHouseNumber;
+  String get pickHouseNumberHint;
   String get checkingLinkEllipsis;
 
   // -- calendars connected by a pasted link (IServ, WebUntis, any iCal feed)
@@ -865,13 +876,9 @@ abstract class AppStrings {
   String get linkedCalendarNameHint;
   String get nameThisCalendarFirst;
   String get whoseCalendarFirst;
-  String get addAnotherCalendar;
-  String get addAnotherCalendarBody;
   String get schoolCalendars;
   String get removeCalendar;
   String get linkStaysAtSchool;
-  String get connectWithLogin;
-  String get connectWithLoginBody;
   String get linkedCalendarsNote;
   String eventsFoundAtLink(int count);
   String get noEventsAtLinkYet;
@@ -1066,6 +1073,8 @@ abstract class AppStrings {
   // ----------------------------------------------------------- onboarding --
   String get onboardSetUpFamily;
   String get onboardSetUpFamilyBody;
+  String get onboardJoinExistingFamily;
+  String get onboardJoinExistingFamilyBody;
   String get onboardInviteTitle;
   String get onboardInviteBody;
   String get adult;
@@ -1637,6 +1646,12 @@ abstract class AppStrings {
   String get plannerWhatToBuy;
   String plannerItemCount(int count);
   String get plannerHowTo;
+
+  /// Under the faded peek of the method on the planner card. "Alles", not
+  /// "Alle" — what is behind it is one piece of prose, not a set of rows, so
+  /// [homeShowAll] and [spendShowAll] are the wrong word here rather than a
+  /// string to reuse. Collapsing again reuses [showLess].
+  String get plannerShowMethod;
 
   /// The disclosure that folds the full method away on a cooking plan.
   String get plannerRecipe;

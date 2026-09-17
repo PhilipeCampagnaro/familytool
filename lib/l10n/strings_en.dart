@@ -917,6 +917,18 @@ class StringsEn extends AppStrings {
       'dates themselves: look on your provider\'s website for "Abfuhrkalender" or '
       '"Kalender abonnieren" and paste the link here.';
   @override
+  String get wasteRequestHint => 'Not covered yet — ask us and we\'ll set it up for you within a few days.';
+  @override
+  String get wasteRequestAction => 'Request';
+  @override
+  String get wasteRequested => 'Requested — we\'ll let you know as soon as it\'s there.';
+  @override
+  String get wasteRequestFailed => 'The request didn\'t go through. Please try again in a moment.';
+  @override
+  String get wasteNeedsHouseNumber => 'Please enter the address with its house number — collection here is planned per house.';
+  @override
+  String get pickHouseNumberHint => 'Collection here is planned per house — pick your house number.';
+  @override
   String get checkingLinkEllipsis => 'Checking the link …';
   @override
   List<String> get iservLinkSteps => const [
@@ -974,23 +986,11 @@ class StringsEn extends AppStrings {
   @override
   String get whoseCalendarFirst => 'Say whose account this is.';
   @override
-  String get addAnotherCalendar => 'Add calendar';
-  @override
-  String get addAnotherCalendarBody =>
-      'The school platform makes a separate link for each calendar. Every link '
-      'on this account ends up under one filter in Kalender.';
-  @override
   String get schoolCalendars => 'Calendars';
   @override
   String get removeCalendar => 'Remove calendar';
   @override
   String get linkStaysAtSchool => ' The link stays in the school platform — we simply stop remembering it.';
-  @override
-  String get connectWithLogin => 'Sign in with credentials instead';
-  @override
-  String get connectWithLoginBody =>
-      'Only worth it if your school has enabled CalDAV. Homework and exams are '
-      'not there — those need the links above.';
   @override
   String get linkedCalendarsNote =>
       'Aporah only reads these calendars. Keep changing events in the school platform.';
@@ -1323,8 +1323,12 @@ class StringsEn extends AppStrings {
   String get onboardSetUpFamily => 'Let\'s set up your family';
   @override
   String get onboardSetUpFamilyBody =>
-      'In a few steps you\'ll invite your family and connect the calendars that '
-      'matter for your everyday life.';
+      'Give your family a name and a picture. You can change both later, any time.';
+  @override
+  String get onboardJoinExistingFamily => 'Is your family already on Aporah?';
+  @override
+  String get onboardJoinExistingFamilyBody =>
+      'Then don\'t set up a new one here — ask someone in the family to invite you instead.';
   @override
   String get onboardInviteTitle => 'Invite your family';
   @override
@@ -2037,6 +2041,8 @@ class StringsEn extends AppStrings {
   @override
   String get plannerHowTo => 'HOW TO';
   @override
+  String get plannerShowMethod => 'Show everything';
+  @override
   String get plannerRecipe => 'RECIPE';
   @override
   String get adLabel => 'Ad';
@@ -2109,11 +2115,11 @@ class StringsEn extends AppStrings {
   @override
   String get notifyBriefTitle => 'Morning brief';
   @override
-  String get notifyBriefSubtitle => 'What today holds, each morning';
+  String get notifyBriefSubtitle => 'What the day holds';
   @override
   String get notifyAbfallTitle => 'Bin collection';
   @override
-  String get notifyAbfallSubtitle => 'The evening before pickup';
+  String get notifyAbfallSubtitle => 'The day before pickup';
   @override
   String get notifyTaskTimesTitle => 'To-dos with a time';
   @override

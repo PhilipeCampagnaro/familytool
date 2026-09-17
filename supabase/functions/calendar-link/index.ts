@@ -217,14 +217,34 @@ async function add(
   const fallback = payload.kind === "file" ? payload.fileName : host;
   const name = (body.name?.trim() || probedName || fallback || LABELS[provider]).slice(0, 80);
 
-  // Adding to an existing account — the "+ Kalender hinzufügen" case, which is
-  // the whole reason a connection holds a list. The family filter is the tenant
-  // boundary: service_role sees every connection.
-  if (body.connection_id) {
+  // `external_account` is what makes two children at one school two connections
+  // rather than an upsert collision, so it carries the label the user gave as
+  // well as the host.
+  const account = (body.account?.trim() || "").slice(0, 60);
+  const key = `${host}/${slug(account) || "kalender"}`;
+
+  // Adding to an account the household already has — the whole reason a
+  // connection holds a list.
+  //
+  // **The school and the name are what decide that, not an id from the client.**
+  // It used to be `connection_id`, sent by a "+ Kalender hinzufügen" row on the
+  // account's own card, and the row is gone: a second IServ link is pasted the
+  // same way the first one was, and typing "Alice" again is what says which
+  // account it joins. Without this lookup that paste would take the *new
+  // account* path below, whose upsert conflicts on the very same key and
+  // **replaces** `config.feeds` wholesale — Alice's Klausurplan silently
+  // replaced by her Aufgaben, its sealed URL dropped with it. The id is still
+  // honoured when one is sent, so an older build keeps working.
+  //
+  // The family filter is the tenant boundary: service_role sees every
+  // connection.
+  const target = body.connection_id ?? await accountWithKey(db, familyId, provider, key);
+
+  if (target) {
     const { data: found } = await db
       .from("calendar_connections")
       .select("id, config, selected_calendars, calendar_names, calendar_owners")
-      .eq("id", body.connection_id)
+      .eq("id", target)
       .eq("family_id", familyId)
       .maybeSingle();
 
@@ -318,11 +338,7 @@ async function add(
     return json({ connection_id: existing.id, external_id: id, name });
   }
 
-  // A new account. `external_account` is what makes two children at one school
-  // two connections rather than an upsert collision, so it carries the label
-  // the user gave as well as the host.
-  const account = (body.account?.trim() || "").slice(0, 60);
-  const key = `${host}/${slug(account) || "kalender"}`;
+  // A new account: nothing here answers to this school under this name.
   const label = LABELS[provider];
   const displayName = account
     ? `${label} · ${account}`
@@ -426,6 +442,28 @@ async function add(
 /// `kind` is written explicitly even for a link, where it is the default the
 /// reader would have assumed. An entry that says what it is costs one key and
 /// removes the only question the read path would otherwise have to guess at.
+/// The connection this household already has for that school and that name, if
+/// any.
+///
+/// The same `(family_id, provider, external_account)` triple the upsert below
+/// conflicts on — asked as a question first, so the answer can be "join it"
+/// instead of "overwrite it".
+async function accountWithKey(
+  db: SupabaseClient,
+  familyId: string,
+  provider: string,
+  key: string,
+): Promise<string | null> {
+  const { data } = await db
+    .from("calendar_connections")
+    .select("id")
+    .eq("family_id", familyId)
+    .eq("provider", provider)
+    .eq("external_account", key)
+    .maybeSingle();
+  return (data?.id as string | undefined) ?? null;
+}
+
 function entryFor(id: string, name: string, host: string, payload: Payload): FeedEntry {
   const base: FeedEntry = { id, name, host, added_at: new Date().toISOString() };
   if (payload.kind === "url") return { ...base, kind: "url" };

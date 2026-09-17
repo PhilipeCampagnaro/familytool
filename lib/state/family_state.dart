@@ -189,15 +189,12 @@ class Household {
   /// Up to two letters for the fallback circle — "Familie Campagnaro" -> "FC",
   /// "Zuhause" -> "ZU". Same shape as `profiles.initials`, computed rather than
   /// stored because nobody should have to type it.
-  String get initials {
-    final words = name.trim().split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
-    if (words.isEmpty) return '?';
-    if (words.length == 1) {
-      final one = words.first;
-      return (one.length == 1 ? one : one.substring(0, 2)).toUpperCase();
-    }
-    return (words.first.substring(0, 1) + words[1].substring(0, 1)).toUpperCase();
-  }
+  ///
+  /// Through [initialsOf] rather than open-coded, which it was: the onboarding
+  /// welcome step derives the same letters from the name being *typed*, and two
+  /// implementations of "the first letters of the first two words" would drift
+  /// into the preview disagreeing with what the row shows once it is saved.
+  String get initials => initialsOf(name);
 
   /// Index into `AppTones.list`, stable for the life of the household: derived
   /// from the id so the circle is the same colour on every device and after

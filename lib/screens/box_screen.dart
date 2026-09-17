@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart' show setEquals;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/icon_suggestions.dart';
+import '../data/merchant_logos.dart';
 import '../models/box_item.dart';
 import '../state/auth_state.dart';
 import '../state/box_state.dart';
@@ -21,6 +22,7 @@ import '../widgets/empty_state.dart';
 import '../widgets/error_note.dart';
 import '../widgets/expandable_title.dart';
 import '../widgets/glass.dart';
+import '../widgets/brand_mark.dart';
 import '../widgets/icon_picker.dart';
 import '../widgets/overview_screen.dart';
 import '../widgets/search.dart';
@@ -583,8 +585,12 @@ class _BoxDetail extends ConsumerWidget {
 }
 
 /// The box's round icon badge — full size next to the name, small alongside the
-/// collapsed title in the header bar. Draws whatever the box's name produced
-/// (or was overridden to), falling back to the plain carton.
+/// collapsed title in the header bar, and the mark at the head of its row on the
+/// overview. Draws whatever the box's name produced (or was overridden to),
+/// falling back to the plain carton.
+///
+/// All three are the same thing — *this box, named* — so all three wear the
+/// disc, which is what [IconTile.disc] is for.
 class _BoxBadge extends ConsumerWidget {
   final StorageBox box;
   final double size;
@@ -604,6 +610,11 @@ class _BoxBadge extends ConsumerWidget {
       imageSize: iconSize * 1.5,
       glyphSize: iconSize,
       fallbackIcon: AppIcons.package,
+      // The badge is the box's own name wherever it is drawn — the row on the
+      // overview, the header of the open box, the collapsed title above it —
+      // and that is the place [IconTile.disc] marks. The items inside the box
+      // are the column that stays bare; see [_ItemIcon].
+      disc: true,
     );
   }
 }
@@ -625,7 +636,7 @@ Future<void> _deleteItem(BuildContext context, WidgetRef ref, BoxItem item) asyn
 /// The picture in front of one item inside a box.
 ///
 /// Deliberately *not* an [IconTile]: the box's own badge at the top of the
-/// screen is a blue glyph on a disc, and repeating that treatment down every
+/// screen is a glyph on a filled disc, and repeating that treatment down every
 /// row made a shelf of things read as a shelf of boxes. A row's symbol is the
 /// plain mark in the theme's ink inside an empty hairline ring — the ring holds
 /// the column and keeps the row looking built, the missing fill is what stops it
@@ -646,6 +657,12 @@ class _ItemIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final asset = resolveIcon(iconKey)?.asset;
+    // A shop is framed by [BrandMark] here as it is everywhere else: the ring
+    // this row draws is for a symbol, and a logo left inside it was a square in
+    // a circle.
+    if (photoUrl == null && isMerchantAsset(asset)) {
+      return BrandMark(size: _slot, asset: asset);
+    }
     if (photoUrl != null || (asset != null && AppColors.isDark)) {
       return IconTile(
         iconKey: iconKey,

@@ -163,6 +163,16 @@ Flutter-drawn blur+tint approximation everywhere else.
     - The title carries its **own colour**, not the button's tint. On "Heute" the tint is the
       accent and belongs to the glyph alone; one `tintColor` for both repaints the word accent and
       the pill reads as a filled accent control rather than a neutral one carrying an accent mark.
+  - **`dots:` puts a stack of colour dots beside the glyph, in the same image.** A
+    `UIButton.Configuration` has exactly one image slot, so `NativeGlassDots` travels *with* the
+    glyph rather than beside it (Kalender's collapsed filter, which wears the colours of the
+    calendars it is showing). Two consequences. Each dot has its own colour, so that image cannot
+    be a **template** — which is how a glyph normally takes the button's tint and the glass's
+    vibrancy — so a button with dots also passes `glyphColor:` and gives that vibrancy up on that
+    one glyph. And the overlap between two dots is **cleared** out of the image rather than filled
+    with a background colour, so the glass itself shows through it; the Flutter sizer draws the
+    `AvatarStack` ring in `AppColors.surface` instead, which is the one place the two drawings
+    differ.
   - **A platform view has no intrinsic size, so `NativeGlassButtons.sizer` gives it one.** The
     Flutter widget the native button replaces is built at zero opacity to size the `Stack`, and the
     button fills it. One source of truth: a `TextPainter` measurement would have to be kept in step
@@ -409,33 +419,56 @@ and an ink glyph on it would disappear on dark.
 
 ## `FrostedHeaderBackground` (`glass.dart`)
 
-Progressive blur + translucent white; the material behind a collapsing header so scrolled content
-passes under it blurred instead of reading through. Deliberately **not** a `GlassSurface` —
+A **variable blur** under a translucent wash, both ramping to nothing at the bottom edge — the
+material behind a collapsing header, so scrolled content passes under it blurred instead of reading
+through. It is what Apple's `.soft` scroll-edge effect does; deliberately **not** a `GlassSurface` —
 liquid glass's specular highlight and edge refraction read as a floating control, wrong for an
-edge-to-edge bar. Two things are load-bearing, both learned by shipping the naive version first:
+edge-to-edge bar.
 
+- **The blur is one `FragmentShader`, run twice, and the ramp is continuous.**
+  `shaders/progressive_blur.frag` computes a Gaussian whose sigma is `smoothstep` of how far down
+  the bar the fragment sits — peak at the top, zero (with zero slope) at the bottom. It runs
+  vertically, then horizontally over that result, because a separable pair of 17-tap passes is the
+  same Gaussian as one 289-tap kernel. `main()` awaits `loadFrostedHeaderShader()` before
+  `runApp`, so the first header ever drawn already has it.
+- **Don't go back to stacked bands.** This shipped first as five `BackdropFilter`s in hard
+  `ClipRect`s with rising sigmas, and every clip was an edge — the user saw them as lines drawn
+  across the screen, and the smearing as the header being "frozen":
+  - blur **stepped** at each of the four interior boundaries, and a step in blur reads as a line;
+  - the full-height band was still at sigma 3 when it stopped dead, so the bar's own bottom edge
+    was the sharpest line of the lot — the tint ramped out, the blur never did;
+  - a band's kernel was wider than the band was tall (sigma 11 in a ~29pt box), so it ran out of
+    pixels and **edge-clamped**: rows stretched rather than blurred;
+  - each band filtered the output of the ones below it, so the sigmas **compounded** to
+    √(3²+4.5²+6²+8²+11²) ≈ 15.8 where 11 was written down;
+  - and the saturation `ColorFilter` was flat over a band that ended, putting a colour step at the
+    same edge.
+  None of that is tunable — a hard-clipped band *is* an edge. `_BandedFrost` survives only as the
+  non-Impeller fallback (`ImageFilter.isShaderFilterSupported`), at gentler sigmas; leave it alone.
+- **`peakSigma` (12 logical px) is the "too strong / not enough" knob**, and the ramp's shape stays
+  in the shader. It reads lower than the old stack's nominal 11 because that stack compounded: 12
+  is what actually reaches the glass.
 - **Its tint is also what the header's glass buttons refract, which is why `tintOpacity` is
   0.46 and not the 0.62 it shipped at.** A `GlassIconGroup` or `GlassIconButton` on the title row
   is real `UIGlassEffect` sitting on this bar, and glass shows you whatever is behind it: behind a
   near-opaque tint there is nothing left to lens, so the control rendered as a flat grey pill with
   a hard rim — the look of a painted approximation. Apple's own scroll-edge effect is mostly
-  *blur* with a very light tint for the same reason, and the five bands below already do that
-  work. One knob: raise it if a title loses its footing over scrolled content, lower it if the
-  buttons go flat again.
-- **Progressive blur, not uniform.** Five stacked top-anchored `BackdropFilter` bands of
-  increasing sigma plus a tint gradient, both ramping to zero at the bottom edge — the
-  variable-blur treatment Apple uses under nav bars. A uniform bar ends in a hard step (sharp
-  content and a flat tone change at the same y), and the user read that edge as the header being
-  "a square, another layer over it" rather than content blurring as it slid under. Fade both out
-  and there's no edge left to see. Each band needs its own `ClipRect` or its `BackdropFilter`
-  reaches the whole enclosing layer.
-- **Keep the tint's peak alpha low (~62%).** Content is white cards on `#F7F8FA`, so the blurred
-  backdrop is already nearly white; at the 82% this first shipped with, the bar was
-  indistinguishable from solid white — the effect ran, it just had nothing to show. Most visible
-  contrast has to come from the content itself. A saturation-boost `ColorFilter` is composed onto
-  the **first band only** (composing it onto all five would compound it), same reason Apple's
-  materials do it: colored chips/dots keep their color instead of graying out.
-
+  *blur* with a very light tint for the same reason. Content here is white cards on `#F7F8FA`, so
+  the blurred backdrop is already nearly white; at the 82% this first shipped with, the bar was
+  indistinguishable from solid white — the effect ran, it just had nothing to show.
+- **The wash eases out in six stops, not three.** A linear fade to zero ends in a corner — alpha
+  stops changing all at once — and the eye picks that corner up as a faint band even where nothing
+  is drawn. The stops follow the same ease the shader ramps the blur on, so tint and blur die
+  together.
+- **Saturation is boosted at the top and ramped down with the blur**, inside the shader's second
+  pass (`uSaturation`), the way Apple's materials do it: a coloured chip or source dot passing
+  under the bar keeps its colour instead of washing out to the same grey as everything else. Ramped
+  rather than flat, or it is one more step at the bar's edge.
+- **The private route was considered and declined.** A true variable blur in UIKit means the
+  undocumented `CAFilter` named `variableBlur` with an `inputMaskImage` on a `UIVisualEffectView`'s
+  backdrop layer — private API, and a review risk for no gain now that `ImageFilter.shader` gives
+  the same effect in public Dart. `UIScrollEdgeEffect` (iOS 26) is the public one and attaches to a
+  native `UIScrollView`, which we don't have: our scroll views are Flutter's.
 ## Collapsing headers (`collapsing_header.dart`)
 
 Board, Box and Listen all scroll the same way: `CollapsingHeaderScreen` (a `NestedScrollView` +
@@ -901,6 +934,14 @@ Non-obvious bits, each one a bug that shipped first:
 - `showAppSheet` / `SectionCard` / `CardDivider` (`app_sheet.dart`) — shared bottom-sheet chrome
   (grab handle, X/title/check header or a custom `header`, scrolling body). **Every** modal sheet
   should go through this rather than a bespoke `showModalBottomSheet`.
+  - **`SectionCard(onSurface: true)` for a card whose page is itself `AppColors.surface`** — the
+    onboarding steps, anything built the way Home is below its day card. On light it changes
+    nothing and `AppShadows.card` does the lifting; **on dark a shadow separates nothing**, so
+    without it a `surface` card on a `surface` page is invisible — which is what the whole welcome
+    tour looked like. It swaps in `AppColors.cardOnSurface`, and the rows need it too
+    (`dividedRows(..., onSurface: true)`, `CardDivider(onSurface: true)`): `AppColors.divider` is a
+    tone of the card it normally sits in, so on a lifted card it comes out the same colour as the
+    card it is meant to divide.
   - **The grab handle doubles as the countdown on a sheet that dismisses itself.** Anything
     inside the sheet can set `SheetCountdown.of(context)?.value = duration` (from a post-frame
     callback — setting it during build rebuilds a sibling mid-pass) and the pill's fill drains
@@ -1218,6 +1259,33 @@ Non-obvious bits, each one a bug that shipped first:
   the glass "..." in a detail screen's title row (Listen and Boxen both use it for Bearbeiten /
   Löschen), opening the same anchored menu. A separate widget rather than a flag, since
   `RowMenuButton` is a bare 15px glyph sized for a list row.
+- `BrandMark` (`brand_mark.dart`) — **the one frame a shop logo is drawn in**, for Listen, Box,
+  Ausgaben and the icon picker alike. Brand marks share no shape (REWE is a full-bleed red square,
+  IKEA a wide wordmark, ALDI a tall one), so fitted straight into a slot they normalise to nothing
+  and a column of them reads as unrelated coloured rectangles; the white `brandTile` disc — white in
+  both palettes, because these logos are printed for paper — is what gives all of them one
+  footprint, and the hairline is the only reason a white logo is visible on a white card.
+  - **The logo fills the disc and is clipped round.** It sat at `AppText.markImage` (0.68, the
+    square that fits inside a circle) until 2026-09-17, which left a red square floating on a white
+    circle: that reads as a sticker put on the row rather than as the shop's own mark. Drawn edge to
+    edge, REWE *is* the disc. A badge that fills it hides the hairline, which is what the hairline is
+    for.
+  - **The artwork is what makes that safe, not the clip.** A circle keeps 79% of its square, so a
+    badge whose lettering runs to its own edge loses the ends of it — ALDI NORD did, AliExpress lost
+    two fifths of its logotype. `tool/icon_gen/frame_merchants.py` fixes that in the *asset*,
+    alongside the `normalize.py` that re-frames the grocery pictures: a badge's flat edge colour is
+    extended to fill the frame and its logotype scaled to fit the inscribed circle, a mark on
+    transparency is scaled until its bounding box touches the circle (which makes a wide wordmark
+    *bigger* than the old inset allowed), and a logo with a gradient at its edges is left fitting
+    inside, because there is no flat colour to extend and inventing one puts a seam across the mark.
+    **Run it after dropping a logo into `assets/merchants/`.** The widget draws what it is given at
+    full width and has no per-logo inset to fall back on, deliberately: a table of those in Dart is
+    exactly what a new PNG would silently miss — the same reasoning that makes `brand_colors.dart`
+    read a logo's hue off the file rather than tabulate it.
+  - `fallback:` is what goes on the identical disc when there is no logo — Ausgaben's initials for a
+    shop `assets/merchants/` has never heard of, its category glyph on a fold. One disc, several
+    fillings, so the eye can go down the *names*.
+
 - `IconTile` / `IconFieldRow` / `PhotoFieldRow` / `showIconPicker` / `IconDraft` (`icon_picker.dart`) — the one place
   a list/box/item icon is **drawn** and the one place it is **chosen**. Both sides speak the same
   `iconKey` string from `data/icon_suggestions.dart`: an `assets/` path, `lucide:<name>`, or
@@ -1236,21 +1304,23 @@ Non-obvious bits, each one a bug that shipped first:
     had it by hand. **A grocery picture is drawn bare** at `size * 0.88`, since it
     arrives already sized and centred on nothing — except on dark, where it keeps the white
     `brandTile` under it because the art is drawn for paper (the same rule `_ItemIcon` in
-    `list_screen.dart` follows). **A shop logo gets a white disc**: `brandTile` ground in
-    both palettes, hairline edge, `size * 0.14` inset, clipped. That is not
-    decoration — brand marks share no shape (REWE is a full-bleed square, IKEA a wide wordmark), so
-    fitted straight into a slot they normalise to nothing: the square fills it while the wordmark
-    shrinks to a sliver, and the row reads as unrelated coloured rectangles. The chip is what gives
-    them one footprint. Its `IconImage` bounds the decode with `cacheWidth` — the picker puts 160
-    full-size logo PNGs on screen at once. **An emoji is the fourth kind**, drawn as text at 0.56 of
+    `list_screen.dart` follows). **A shop logo is handed to `BrandMark`** (see below), in
+    every one of the tile's shapes. `IconImage` (`icon_image.dart`) bounds the decode with
+    `cacheWidth` — the picker puts 160 full-size logo PNGs on screen at once. **An emoji is the fourth kind**, drawn as text at 0.56 of
     the slot (0.52 on a disc, since an emoji fills its em box where a Phosphor mark leaves air) —
     `emoji:⛺`, which only a Vorhaben writes; see [list-planner.md](list-planner.md).
-  - **The disc came back in one place: a list's own name.** `IconTile.disc` asks for the ground
-    without naming a colour for it, and the open list's header and its collapsed title are what pass
-    it. The rule it encodes is about *place, not kind*: a container is a heading and its contents are
-    a column of rows, so the name at the top wears the disc and none of the articles under it do —
-    which is the same observation that took the disc off every row above, read from the other end.
-    Don't hand it to a row.
+  - **The disc came back where a container is named.** `IconTile.disc` asks for the ground without
+    naming a colour for it, and a list or a box passes it wherever it says its own name: its row on
+    the Listen/Boxen overview, its header once open, the collapsed title above that (Box does it
+    through `_BoxBadge`, which is all three at once). The rule it encodes is about *place, not
+    kind*: a container is a heading and its contents are a column of rows, so the name wears the
+    disc and none of the articles under it do — which is the same observation that took the disc off
+    every row above, read from the other end. An overview row is a heading too, so the disc there
+    marks every row and therefore marks none of them out; hand it to a row of *contents* and it
+    starts meaning something it can't deliver. **The fill is `surface`, not `surfaceAlt`** — the
+    card's own white on light. A grey one drew a second tone into a row that already carries three
+    greys of type, and on the header, where the disc sits on `screenBg` rather than on a card, white
+    lifts off the page where grey blended into it. What marks the container is the hairline ring.
   - **A symbol that names a thing is drawn in ink, never in the accent, and `glyphColor` is
     therefore left alone.** The app has one accent and it already carries a meaning — a check-off
     circle, a done count, an attachment line, an empty state's call to action — so colouring a box

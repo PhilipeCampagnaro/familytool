@@ -925,13 +925,32 @@ class SectionCard extends StatelessWidget {
   final List<Widget> children;
   final double radius;
 
-  const SectionCard({super.key, required this.children, this.radius = AppRadii.cardSmall});
+  /// **Set this on a card whose page is itself [AppColors.surface]** — the
+  /// onboarding steps, anything built the way Home is below its day card.
+  ///
+  /// On light it changes nothing: the card is white either way and
+  /// [AppShadows.card] is what lifts it off the paper. **On dark a shadow
+  /// separates nothing**, so a `surface` card on a `surface` page is invisible
+  /// — which is exactly what the whole welcome tour looked like — and the card
+  /// takes the palette's lift instead. See [AppColors.cardOnSurface].
+  ///
+  /// The rows inside need it too, so it is passed to [dividedRows] /
+  /// [CardDivider]: [AppColors.divider] is a tone of the card it normally sits
+  /// in, and on a lifted card it comes out the same colour as the card.
+  final bool onSurface;
+
+  const SectionCard({
+    super.key,
+    required this.children,
+    this.radius = AppRadii.cardSmall,
+    this.onSurface = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: onSurface ? AppColors.cardOnSurface : AppColors.surface,
         borderRadius: BorderRadius.circular(radius),
         boxShadow: AppShadows.card,
       ),
@@ -988,21 +1007,30 @@ class OutlinedSheetAction extends StatelessWidget {
 
 /// A single divider-topped row used inside [SectionCard]s.
 class CardDivider extends StatelessWidget {
-  const CardDivider({super.key});
+  /// The card this divides is a [SectionCard.onSurface] one — see there.
+  final bool onSurface;
+
+  const CardDivider({super.key, this.onSurface = false});
 
   @override
-  Widget build(BuildContext context) => Divider(height: 1, thickness: 1, color: AppColors.divider);
+  Widget build(BuildContext context) =>
+      Divider(height: 1, thickness: 1, color: onSurface ? AppColors.cardOnSurfaceDivider : AppColors.divider);
 }
 
 /// [CardDivider] inset from the card's edges — the separator between
 /// [FieldGroup]s and member rows, where a full-bleed rule cuts the card in
 /// half.
 class InsetDivider extends StatelessWidget {
-  const InsetDivider({super.key});
+  /// The card this divides is a [SectionCard.onSurface] one — see there.
+  final bool onSurface;
+
+  const InsetDivider({super.key, this.onSurface = false});
 
   @override
-  Widget build(BuildContext context) =>
-      Padding(padding: const EdgeInsets.symmetric(horizontal: 18), child: CardDivider());
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 18),
+    child: CardDivider(onSurface: onSurface),
+  );
 }
 
 /// [rows] with a divider dropped between every neighbouring pair — the body of
@@ -1013,6 +1041,9 @@ class InsetDivider extends StatelessWidget {
 /// only ever goes wrong in one direction: a card that grows a second row and
 /// keeps rendering it flush against the first. Passing an empty list yields an
 /// empty card rather than a stray rule.
-List<Widget> dividedRows(List<Widget> rows, {bool inset = false}) => [
-  for (var i = 0; i < rows.length; i++) ...[if (i > 0) inset ? InsetDivider() : CardDivider(), rows[i]],
+List<Widget> dividedRows(List<Widget> rows, {bool inset = false, bool onSurface = false}) => [
+  for (var i = 0; i < rows.length; i++) ...[
+    if (i > 0) inset ? InsetDivider(onSurface: onSurface) : CardDivider(onSurface: onSurface),
+    rows[i],
+  ],
 ];

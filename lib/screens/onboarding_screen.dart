@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/calendar_connection.dart';
-import '../state/calendar_connections_state.dart';
 import '../state/family_state.dart';
 import '../state/onboarding_state.dart';
 import '../theme/tokens.dart';
@@ -9,7 +8,9 @@ import '../widgets/action_bar.dart';
 import '../widgets/app_sheet.dart';
 import '../widgets/confirmation.dart';
 import '../widgets/error_note.dart';
+import '../widgets/family_avatar_button.dart';
 import '../widgets/glass.dart';
+import '../widgets/inline_dropdown.dart';
 import '../widgets/native_switch.dart';
 import '../widgets/settings_chrome.dart';
 import '../widgets/step_dots.dart';
@@ -47,7 +48,14 @@ class OnboardingScreen extends ConsumerWidget {
             // widget would keep the one it was born in (see
             // tool/check_const_palette.dart).
             Positioned(top: 0, left: 0, right: 0, child: CelebrationGlow()),
+          // **`top: false`**, so the frost in [_StepChrome] runs edge to edge
+          // and an illustration scrolls away under the notch instead of
+          // stopping at a hard white band — the same reasoning
+          // `CollapsingHeaderScreen` absorbs its own status-bar strip for. Each
+          // step leaves the room itself: [_stepTopInset], and the last step,
+          // which has no nav row, the bare inset.
           SafeArea(
+            top: false,
             child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 260),
               transitionBuilder: (child, animation) => FadeTransition(
@@ -117,6 +125,13 @@ class _TopBar extends StatelessWidget {
 
   const _TopBar({required this.step, this.onBack, this.onSkip});
 
+  /// The bar's own height — 6 above a 44pt row, 2 below — and the one number
+  /// [_StepChrome] and every step's scroll padding have to agree on, since the
+  /// body rests below the bar and scrolls *under* it. A constant rather than a
+  /// measurement because it genuinely is one: the row is a fixed [SizedBox],
+  /// and the dots and the pill are laid out inside it rather than setting it.
+  static const height = 6 + 44 + 2.0;
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -151,6 +166,81 @@ class _TopBar extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// The room a step's scroll body leaves at the top: the status-bar strip the
+/// wizard no longer hands to a `SafeArea`, plus the nav row standing on it.
+///
+/// Read at the call site rather than threaded through [_StepChrome] — every
+/// `bodyBuilder` already has a `BuildContext`, and one number computed the same
+/// way in both halves is what keeps the bar and the content it rests below in
+/// step.
+double _stepTopInset(BuildContext context) => MediaQuery.paddingOf(context).top + _TopBar.height;
+
+/// The chrome every asking step wears: its scrolling body under the nav row,
+/// on the same frosted material as every other screen in the app.
+///
+/// **The body runs to the top of the safe area, not to the bottom of the bar.**
+/// Each step used to be a `Column` of [_TopBar] over its content, which meant
+/// the scroll viewport began below the bar — so the illustration was sliced by
+/// a hard white edge the moment anything scrolled, and the hero read as
+/// cropped. Here the body fills the whole area and passes *under* the bar
+/// blurred, which is both what the rest of the app does and what the dots and
+/// "Überspringen" need in order to stay legible over a picture.
+///
+/// The band is exactly [_stepTopInset] tall — the notch strip plus the row —
+/// because the blur ramps to nothing at its bottom edge (see
+/// [FrostedHeaderBackground]): a taller one would put that vanishing point in
+/// the middle of the content rather than on the bar's own edge, and a shorter
+/// one would leave the status bar as the hard edge instead.
+///
+/// **Not `const`, like the material it stands on**: it reads [AppColors] inside
+/// `build`, and a canonicalised instance would keep the palette it was born in.
+/// See the rule on [AppColors] and `tool/check_const_palette.dart`.
+class _StepChrome extends StatelessWidget {
+  final int step;
+  final VoidCallback? onBack;
+  final VoidCallback? onSkip;
+
+  /// The step's own [PinnedActionLayout], already built. It is handed over
+  /// whole rather than assembled here because each step has its own rules about
+  /// when its action is there at all.
+  final Widget body;
+
+  // ignore: prefer_const_constructors_in_immutables
+  _StepChrome({required this.step, required this.body, this.onBack, this.onSkip});
+
+  @override
+  Widget build(BuildContext context) {
+    final statusBar = MediaQuery.paddingOf(context).top;
+    return Stack(
+      // Expand rather than the loose default, for the same reason
+      // [PinnedActionLayout] does it: the body is a scroll view, and a loose
+      // stack would shrink-wrap it and leave the bar sitting on the content.
+      fit: StackFit.expand,
+      children: [
+        body,
+        // The band covers the status bar as well as the row, which is the whole
+        // point: the blur has to reach the top of the display or the notch
+        // strip becomes the hard white edge the frost was there to remove.
+        Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          height: _stepTopInset(context),
+          child: FrostedHeaderBackground(),
+        ),
+        // Last, so the glass pill and the caret are composited above the
+        // material they refract rather than behind it.
+        Positioned(
+          top: statusBar,
+          left: 0,
+          right: 0,
+          child: _TopBar(step: step, onBack: onBack, onSkip: onSkip),
+        ),
+      ],
     );
   }
 }
@@ -222,37 +312,302 @@ class _StepButton extends StatelessWidget {
   }
 }
 
-class _WelcomeStep extends ConsumerWidget {
+/// The first step, and the one place the household gets its own name and face.
+///
+/// **Every signup already has a household**: `handle_new_user` creates one and
+/// makes the new user its admin, so this step is not "create a family" — it is
+/// the family that already exists being introduced to itself. That is why the
+/// field arrives *prefilled* rather than empty, and why there is no save
+/// button: the name is written on the way out of the step.
+///
+/// The avatar and the name are one row, the same row the Settings family page
+/// draws (see `family_page.dart`) and for the same reason — a household's
+/// picture and its name are one thing to change, not two places to find. It is
+/// literally the same [FamilyAvatarButton], which uploads on the pick and needs
+/// nothing from this step.
+///
+/// **And it says what to do if you are in the wrong place.** A second parent who
+/// downloads the app and works through this wizard ends up admin of a household
+/// of one, next to the household they meant to join — and nothing on screen
+/// ever told them. Joining is somebody else's invitation, so the note points at
+/// the person who can send one rather than at a control this screen could
+/// offer.
+class _WelcomeStep extends ConsumerStatefulWidget {
   final bool replay;
 
   const _WelcomeStep({required this.replay});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _TopBar(step: 0, onSkip: () => _leaveTour(context, ref, replay)),
-        Expanded(
-          child: PinnedActionLayout(
-            fadeInto: AppColors.surface,
-            action: _StepButton(label: L.s.letsGo, onTap: () => ref.read(onboardingProvider.notifier).next()),
-            bodyBuilder: (context, bottomInset) => SingleChildScrollView(
-              padding: EdgeInsets.fromLTRB(AppSpacing.screenPad, 12, AppSpacing.screenPad, bottomInset),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+  ConsumerState<_WelcomeStep> createState() => _WelcomeStepState();
+}
+
+class _WelcomeStepState extends ConsumerState<_WelcomeStep> {
+  late final TextEditingController _nameController;
+  final _focusNode = FocusNode();
+
+  /// Mirrors "the field has something in it", kept as state so the button
+  /// follows the typing. An empty household name is worse than the default one
+  /// it replaced — it is the label on the "Familie" chip in Kalender and on the
+  /// Board — so the step holds rather than saving a blank.
+  bool _hasName = false;
+
+  /// The letters the circle beside the field is showing, held so that the step
+  /// rebuilds on a keystroke that *changes* them and not on the dozen that
+  /// don't. [initialsOf] is cheap; the row it sits in is a platform view and a
+  /// photograph.
+  String _initials = '';
+
+  /// A rename is in flight. Holds the button so a second tap can't send the
+  /// same name twice, and so the step can't be left mid-write.
+  bool _saving = false;
+
+  /// The field has the keyboard. See [build] for what the button does about it.
+  bool _typing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Read, not watched: this is the starting value of a field the user is
+    // about to edit, and rebuilding it from the provider would fight their
+    // typing. `handle_new_user` has always put something here.
+    _nameController = TextEditingController(text: ref.read(familyProvider).household?.name ?? '');
+    _hasName = _nameController.text.trim().isNotEmpty;
+    _initials = initialsOf(_nameController.text);
+    _nameController.addListener(_nameChanged);
+    _focusNode.addListener(_focusChanged);
+  }
+
+  @override
+  void dispose() {
+    _nameController.removeListener(_nameChanged);
+    _nameController.dispose();
+    _focusNode.removeListener(_focusChanged);
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  /// **This is what makes the circle follow the typing.** A household's
+  /// `initials` are derived from its *saved* name, which does not change until
+  /// the step is left — so without this the avatar sat on the old name's
+  /// letters while a new one was being typed beside it, and only caught up
+  /// after the write.
+  ///
+  /// Guarded on both counts, because it fires on every keystroke and almost
+  /// none of them change either answer.
+  void _nameChanged() {
+    final text = _nameController.text;
+    final has = text.trim().isNotEmpty;
+    final initials = initialsOf(text);
+    if (has == _hasName && initials == _initials) return;
+    setState(() {
+      _hasName = has;
+      _initials = initials;
+    });
+  }
+
+  void _focusChanged() {
+    if (_focusNode.hasFocus != _typing) setState(() => _typing = _focusNode.hasFocus);
+  }
+
+  /// Writes the name, and answers whether the step may be left.
+  ///
+  /// [HouseholdNotifier.renameFamily] is optimistic and returns `true` when
+  /// there is nothing to write — which is the common path, since the field
+  /// arrives prefilled — so the round trip only happens for a name that was
+  /// actually changed. It is also the only case worth holding the step for: a
+  /// refused write reverts the household to the name the user just replaced,
+  /// and advancing would lose what they typed without saying so.
+  Future<bool> _saveName() async {
+    if (_saving) return false;
+    final name = _nameController.text.trim();
+    if (name.isEmpty) return false;
+    if (name == ref.read(familyProvider).household?.name) return true;
+
+    setState(() => _saving = true);
+    final ok = await ref.read(familyProvider.notifier).renameFamily(name);
+    if (!mounted) return false;
+    setState(() => _saving = false);
+    if (!ok) showToast(context, L.s.familyRenameFailed, kind: ToastKind.error);
+    return ok;
+  }
+
+  Future<void> _next() async {
+    FocusScope.of(context).unfocus();
+    if (await _saveName() && mounted) ref.read(onboardingProvider.notifier).next();
+  }
+
+  /// **Skipping the tour still keeps the name.** It says "skip the rest of
+  /// this", not "throw away the one field I filled in", and unlike [_next] it
+  /// leaves even if the write is refused — there is nowhere left to hold.
+  Future<void> _skip() async {
+    FocusScope.of(context).unfocus();
+    await _saveName();
+    if (mounted) await _leaveTour(context, ref, widget.replay);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _StepChrome(
+      step: 0,
+      onSkip: _skip,
+      body: PinnedActionLayout(
+        fadeInto: AppColors.surface,
+        // **The accent pill steps aside while a field has the keyboard, and it
+        // now does so on all three steps.** It is pinned to the bottom of a
+        // viewport the keyboard has already shortened, and Flutter scrolls a
+        // focused field into view by the *smallest* amount that works — which
+        // parks the field exactly behind the button. The invitations and the
+        // address step already gave that strip of screen back for the same
+        // reason; this one held on to it because it is the control that
+        // *saves* what you are typing, and the result was a blue pill sitting
+        // on the field.
+        //
+        // Nothing the user still needs goes away with it: Return submits the
+        // field (`onSubmitted` below), a drag on the body drops the focus and
+        // brings the button back, and so does a tap on anything else.
+        action: _typing ? null : _StepButton(label: L.s.letsGo, onTap: _next, enabled: _hasName && !_saving),
+        bodyBuilder: (context, bottomInset) => SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          padding: EdgeInsets.fromLTRB(
+            AppSpacing.screenPad,
+            _stepTopInset(context) + 12,
+            AppSpacing.screenPad,
+            bottomInset,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const _Hero('assets/onboarding/hero_welcome.png'),
+              const SizedBox(height: 28),
+              Text(L.s.onboardSetUpFamily, style: AppText.screenTitle),
+              const SizedBox(height: 10),
+              Text(L.s.onboardSetUpFamilyBody, style: AppText.body),
+              const SizedBox(height: 16),
+              SectionCard(
+                // The wizard's pages are `AppColors.surface`, so the card has to
+                // take the lift on dark or it vanishes — see [SectionCard.onSurface].
+                onSurface: true,
                 children: [
-                  const _Hero('assets/onboarding/hero_welcome.png'),
-                  const SizedBox(height: 28),
-                  Text(L.s.onboardSetUpFamily, style: AppText.screenTitle),
-                  const SizedBox(height: 10),
-                  Text(L.s.onboardSetUpFamilyBody, style: AppText.body),
+                  // The Settings row's own metrics — 15/13 inset, a 40pt
+                  // leading, 13 to the text — rather than `SettingsRow`
+                  // itself, whose title is a `String` and cannot hold a
+                  // field. The two rows are the same control either way.
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 13),
+                    child: Row(
+                      children: [
+                        // An admin by construction: `handle_new_user` makes
+                        // the signing-up user their household's admin, and
+                        // `_RootGate` only reaches this wizard through it.
+                        // [previewName] is what makes the letters follow the
+                        // keystrokes rather than the saved name — see
+                        // [_nameChanged].
+                        FamilyAvatarButton(canEdit: true, previewName: _nameController.text),
+                        const SizedBox(width: 13),
+                        Expanded(
+                          child: TextField(
+                            controller: _nameController,
+                            focusNode: _focusNode,
+                            textCapitalization: TextCapitalization.words,
+                            textInputAction: TextInputAction.done,
+                            onSubmitted: (_) => _next(),
+                            style: AppText.searchInput,
+                            // **What keeps "Los geht's" off the field.**
+                            // `scrollPadding` is the room the field asks
+                            // to be given when it is scrolled into view on
+                            // focus, and the default 20 knows nothing
+                            // about a bar pinned over the bottom of the
+                            // viewport. [bottomInset] is that bar's
+                            // measured height, which is exactly the
+                            // number, plus a line so the row clears it
+                            // rather than touching it.
+                            scrollPadding: EdgeInsets.only(bottom: bottomInset + 16),
+                            decoration: InputDecoration(
+                              border: InputBorder.none,
+                              hintText: L.s.familyName,
+                              isDense: true,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
-            ),
+              const SizedBox(height: 14),
+              _JoinHint(),
+            ],
           ),
         ),
-      ],
+      ),
+    );
+  }
+}
+
+/// The answer to "I am not the first in my family", **folded to its question**.
+///
+/// It has to be on this step — a second parent who works through the wizard
+/// ends up admin of a household of one, beside the household they meant to
+/// join — but it is the one thing on the page that most readers do not need,
+/// and spelled out in full it was three lines under a two-line title and a
+/// two-line blurb. So the question is the row and the answer is behind it:
+/// somebody in the wrong place recognises their own situation in one line, and
+/// everybody else reads past it.
+///
+/// Guidance rather than a control, so it stays a line of text under the card
+/// and not a second card competing with it — the caret is the only affordance
+/// it needs. [AnimatedCrossFade] per the expand/collapse rule in
+/// docs/design-system.md, with the collapsed side full-width so the block does
+/// not shrink-wrap the answer's text.
+class _JoinHint extends StatefulWidget {
+  // ignore: prefer_const_constructors_in_immutables
+  _JoinHint();
+
+  @override
+  State<_JoinHint> createState() => _JoinHintState();
+}
+
+class _JoinHintState extends State<_JoinHint> {
+  bool _open = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final style = AppText.caption.copyWith(color: AppColors.inkTertiary);
+    return GestureDetector(
+      onTap: () => setState(() => _open = !_open),
+      behavior: HitTestBehavior.opaque,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              AppIcon(AppIcons.info, size: 15, color: AppColors.mutedLight),
+              const SizedBox(width: 7),
+              Expanded(child: Text(L.s.onboardJoinExistingFamily, style: style)),
+              const SizedBox(width: 6),
+              AnimatedRotation(
+                turns: _open ? -0.25 : 0.25,
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeOutCubic,
+                child: AppIcon(AppIcons.caretRight, size: 14, color: AppColors.mutedLight),
+              ),
+            ],
+          ),
+          AnimatedCrossFade(
+            firstChild: const SizedBox(width: double.infinity),
+            secondChild: Padding(
+              // Indented past the info glyph, so the answer hangs off the
+              // question rather than starting a new column of text.
+              padding: const EdgeInsets.only(left: 22, top: 6),
+              child: Text(L.s.onboardJoinExistingFamilyBody, style: style),
+            ),
+            crossFadeState: _open ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+            duration: const Duration(milliseconds: 220),
+            sizeCurve: Curves.easeOutCubic,
+            alignment: Alignment.topCenter,
+          ),
+        ],
+      ),
     );
   }
 }
@@ -267,7 +622,20 @@ class _FamilyStep extends ConsumerStatefulWidget {
 class _FamilyStepState extends ConsumerState<_FamilyStep> {
   final _emailController = TextEditingController();
   final _nameController = TextEditingController();
-  bool _isChild = false;
+
+  /// The role the invitation being typed will carry, and **Erwachsener is what
+  /// it starts as** — the commonest invitation by far is the other parent.
+  ///
+  /// A [FamilyRole] rather than the `bool _isChild` this was, now that the
+  /// control is a role dropdown: the two-way translation on every read was one
+  /// more place for the row and the invitation to disagree about which of them
+  /// meant "child".
+  ///
+  /// **Admin is deliberately not on the list.** The dropdown offers the two the
+  /// chips did, because handing somebody full control of the household is a
+  /// decision to take once the family is in it — Settings › Familie is where
+  /// the third option lives, on a row that can also take it away again.
+  FamilyRole _role = FamilyRole.member;
 
   /// One invitation is in flight. Holds the send button *and* "Weiter", so a
   /// second tap can't send the same address twice.
@@ -329,7 +697,7 @@ class _FamilyStepState extends ConsumerState<_FamilyStep> {
     setState(() => _sending = true);
     final outcome = await ref
         .read(familyProvider.notifier)
-        .inviteMember(email: email, name: name, role: _isChild ? FamilyRole.kid : FamilyRole.member);
+        .inviteMember(email: email, name: name, role: _role);
     if (!mounted) return false;
     setState(() => _sending = false);
 
@@ -343,7 +711,7 @@ class _FamilyStepState extends ConsumerState<_FamilyStep> {
 
     ref
         .read(onboardingProvider.notifier)
-        .addInvite(OnboardingInvite(email: email, name: name, isChild: _isChild));
+        .addInvite(OnboardingInvite(email: email, name: name, isChild: _role == FamilyRole.kid));
     // Same distinction the Settings confirmation draws: an invitation whose
     // mail didn't go out is still an invitation, and it says so rather than
     // claiming a delivery that didn't happen.
@@ -358,7 +726,7 @@ class _FamilyStepState extends ConsumerState<_FamilyStep> {
     setState(() {
       _emailController.clear();
       _nameController.clear();
-      _isChild = false;
+      _role = FamilyRole.member;
     });
     return true;
   }
@@ -381,186 +749,200 @@ class _FamilyStepState extends ConsumerState<_FamilyStep> {
     final invites = ref.watch(onboardingProvider.select((s) => s.invites));
     final accent = Theme.of(context).colorScheme.primary;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _TopBar(
-          step: 1,
-          onBack: () => ref.read(onboardingProvider.notifier).back(),
-          onSkip: () => ref.read(onboardingProvider.notifier).next(),
-        ),
-        Expanded(
-          child: PinnedActionLayout(
-            fadeInto: AppColors.surface,
-            // **"Weiter" steps aside while a field has the keyboard**, which is
-            // the opposite of what the sign-in screen does — and the difference
-            // is what the button is *for*. There, it submits the field being
-            // typed, so keeping it above the keyboard is the same courtesy as
-            // an iOS input accessory. Here it leaves the step, while the thing
-            // that submits the address is the send button on the row itself. A
-            // control that does not act on what you are typing has no claim on
-            // the strip of screen the keyboard left over — and this one is
-            // *disabled* for as long as the address is unsent, so it would be a
-            // dead button holding the best real estate on the step. The hint
-            // pointing at the send button lives in the scroll body, so nothing
-            // the user still needs goes away with it.
-            action: _typing
-                ? null
-                : _StepButton(label: L.s.next, onTap: _goNext, enabled: !_hasUnsentEmail && !_sending),
-            bodyBuilder: (context, bottomInset) => SingleChildScrollView(
-              // The second way back out of the keyboard, for the address that
-              // won't send and the field that was tapped by mistake: a drag on
-              // the body drops the focus, which brings "Weiter" back.
-              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-              padding: EdgeInsets.fromLTRB(AppSpacing.screenPad, 4, AppSpacing.screenPad, bottomInset),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const _Hero('assets/onboarding/hero_members.png'),
-                  const SizedBox(height: 24),
-                  Text(L.s.onboardInviteTitle, style: AppText.screenTitle),
-                  const SizedBox(height: 8),
-                  Text(L.s.onboardInviteBody, style: AppText.body),
-                  const SizedBox(height: 16),
-                  // The role is a property of the invitation being typed, so it
-                  // reads before the fields rather than under them — and moving
-                  // it out of the card lets the card's last row carry the send
-                  // button, which is what the separate "Hinzufügen" button used
-                  // to be. Two rows of the step's height come back that way.
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _RoleChip(
-                          label: L.s.adult,
-                          selected: !_isChild,
-                          accent: accent,
-                          onTap: () => setState(() => _isChild = false),
+    return _StepChrome(
+      step: 1,
+      onBack: () => ref.read(onboardingProvider.notifier).back(),
+      onSkip: () => ref.read(onboardingProvider.notifier).next(),
+      body: PinnedActionLayout(
+        fadeInto: AppColors.surface,
+        // **"Weiter" steps aside while a field has the keyboard**, which is
+        // the opposite of what the sign-in screen does — and the difference
+        // is what the button is *for*. There, it submits the field being
+        // typed, so keeping it above the keyboard is the same courtesy as
+        // an iOS input accessory. Here it leaves the step, while the thing
+        // that submits the address is the send button on the row itself. A
+        // control that does not act on what you are typing has no claim on
+        // the strip of screen the keyboard left over — and this one is
+        // *disabled* for as long as the address is unsent, so it would be a
+        // dead button holding the best real estate on the step. The hint
+        // pointing at the send button lives in the scroll body, so nothing
+        // the user still needs goes away with it.
+        action: _typing
+            ? null
+            : _StepButton(label: L.s.next, onTap: _goNext, enabled: !_hasUnsentEmail && !_sending),
+        bodyBuilder: (context, bottomInset) => SingleChildScrollView(
+          // The second way back out of the keyboard, for the address that
+          // won't send and the field that was tapped by mistake: a drag on
+          // the body drops the focus, which brings "Weiter" back.
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          padding: EdgeInsets.fromLTRB(
+            AppSpacing.screenPad,
+            _stepTopInset(context) + 4,
+            AppSpacing.screenPad,
+            bottomInset,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const _Hero('assets/onboarding/hero_members.png'),
+              const SizedBox(height: 24),
+              Text(L.s.onboardInviteTitle, style: AppText.screenTitle),
+              const SizedBox(height: 8),
+              Text(L.s.onboardInviteBody, style: AppText.body),
+              const SizedBox(height: 16),
+              // **Name, Rolle, E-Mail — one card, in the order the sentence
+              // is spoken.** The role was a pair of chips above the card, which
+              // put the invitation's own property outside the form that holds
+              // the rest of it and spent a full row of the step's height saying
+              // what one row now says. It is the same [InlineDropdown] the
+              // Settings invite sheet and the member rows use, so a role is
+              // chosen the same way everywhere — see `family_page.dart`.
+              //
+              // Same fields as that sheet, too, so they are typed the same
+              // way: [AppText.searchInput] in a 56pt row. [AppText.inputTitle]
+              // belongs to the *headline* field of a create sheet — a task's
+              // text, an event's title — not to an ordinary form field like
+              // these.
+              //
+              // The [Focus] asks the focus tree rather than each field:
+              // `hasFocus` on this node is true while anything under it holds
+              // the keyboard, so moving from the name to the address is not a
+              // moment with no focus in which the bar flickers back.
+              Focus(
+                canRequestFocus: false,
+                skipTraversal: true,
+                onFocusChange: (has) {
+                  if (has != _typing) setState(() => _typing = has);
+                },
+                child: SectionCard(
+                  // The wizard's pages are `AppColors.surface`, so the card has to
+                  // take the lift on dark or it vanishes — see [SectionCard.onSurface].
+                  onSurface: true,
+                  children: [
+                    _InviteFieldRow(
+                      child: TextField(
+                        controller: _nameController,
+                        textInputAction: TextInputAction.next,
+                        style: AppText.searchInput,
+                        decoration: InputDecoration(
+                          border: InputBorder.none,
+                          hintText: L.s.nameOptional,
+                          isDense: true,
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _RoleChip(
-                          label: L.s.child,
-                          selected: _isChild,
-                          accent: accent,
-                          onTap: () => setState(() => _isChild = true),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  // Same two fields as the Settings invite sheet, so they are
-                  // typed the same way: [AppText.searchInput] in a 56pt row.
-                  // [AppText.inputTitle] belongs to the *headline* field of a
-                  // create sheet — a task's text, an event's title — not to an
-                  // ordinary form field like these.
-                  // Asks the focus tree rather than each field: `hasFocus` on
-                  // this node is true while anything under it holds the
-                  // keyboard, so moving between the two rows is not a moment
-                  // with no focus in which the bar flickers back.
-                  Focus(
-                    canRequestFocus: false,
-                    skipTraversal: true,
-                    onFocusChange: (has) {
-                      if (has != _typing) setState(() => _typing = has);
-                    },
-                    child: SectionCard(
-                      children: [
-                        _InviteFieldRow(
-                          child: TextField(
-                            controller: _nameController,
-                            textInputAction: TextInputAction.next,
-                            style: AppText.searchInput,
-                            decoration: InputDecoration(
-                              border: InputBorder.none,
-                              hintText: L.s.nameOptional,
-                              isDense: true,
-                            ),
-                          ),
-                        ),
-                        CardDivider(),
-                        _InviteFieldRow(
-                          // Inset on the right for the send button, which is taller
-                          // than the text it sits beside.
-                          trailingPad: 8,
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: TextField(
-                                  controller: _emailController,
-                                  keyboardType: TextInputType.emailAddress,
-                                  autocorrect: false,
-                                  textInputAction: TextInputAction.done,
-                                  onSubmitted: (_) => _sendInvite(),
-                                  style: AppText.searchInput,
-                                  decoration: InputDecoration(
-                                    border: InputBorder.none,
-                                    hintText: L.s.emailAddress,
-                                    isDense: true,
-                                  ),
-                                ),
+                    ),
+                    CardDivider(onSurface: true),
+                    _InviteFieldRow(
+                      child: Row(
+                        children: [
+                          Expanded(child: Text(L.s.role, style: AppText.rowTitle)),
+                          // Erwachsener/Kind rather than the role *names*: this
+                          // is the first thing a household is asked about
+                          // anybody, and "Mitglied" answers a question about
+                          // permissions that nobody has been asked yet.
+                          InlineDropdown<FamilyRole>(
+                            value: _role,
+                            menuTitle: L.s.role,
+                            onChanged: (r) => setState(() => _role = r),
+                            choices: [
+                              DropdownChoice(
+                                value: FamilyRole.member,
+                                label: L.s.adult,
+                                icon: AppIcons.user,
+                                symbol: 'person',
                               ),
-                              const SizedBox(width: 10),
-                              // The spinner takes the button's place rather than
-                              // sitting over it, so the row doesn't reflow while an
-                              // invitation is on its way out.
-                              if (_sending)
-                                const SizedBox(
-                                  width: 36,
-                                  height: 36,
-                                  child: Center(
-                                    child: SizedBox(
-                                      width: 16,
-                                      height: 16,
-                                      child: CircularProgressIndicator(strokeWidth: 2),
-                                    ),
-                                  ),
-                                )
-                              else
-                                GlassConfirmButton(
-                                  icon: AppIcons.paperPlaneTilt,
-                                  size: 36,
-                                  onTap: _sendInvite,
-                                ),
+                              DropdownChoice(
+                                value: FamilyRole.kid,
+                                label: L.s.child,
+                                icon: AppIcons.baby,
+                                symbol: 'figure.child',
+                              ),
                             ],
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  // Points at the button that is being overlooked, in the accent
-                  // that button is drawn in, and only while there is something to
-                  // send. It says what to do rather than what went wrong: nothing
-                  // has gone wrong yet, which is the whole idea.
-                  if (_hasUnsentEmail) ...[
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        AppIcon(AppIcons.arrowUp, size: 14, color: accent),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(L.s.tapSendToInvite, style: AppText.caption.copyWith(color: accent)),
-                        ),
-                      ],
+                    CardDivider(onSurface: true),
+                    _InviteFieldRow(
+                      // Inset on the right for the send button, which is taller
+                      // than the text it sits beside.
+                      trailingPad: 8,
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _emailController,
+                              keyboardType: TextInputType.emailAddress,
+                              autocorrect: false,
+                              textInputAction: TextInputAction.done,
+                              onSubmitted: (_) => _sendInvite(),
+                              style: AppText.searchInput,
+                              decoration: InputDecoration(
+                                border: InputBorder.none,
+                                hintText: L.s.emailAddress,
+                                isDense: true,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          // The spinner takes the button's place rather than
+                          // sitting over it, so the row doesn't reflow while an
+                          // invitation is on its way out.
+                          if (_sending)
+                            const SizedBox(
+                              width: 36,
+                              height: 36,
+                              child: Center(
+                                child: SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                ),
+                              ),
+                            )
+                          else
+                            GlassConfirmButton(
+                              icon: AppIcons.paperPlaneTilt,
+                              size: 36,
+                              onTap: _sendInvite,
+                            ),
+                        ],
+                      ),
                     ),
                   ],
-                  if (invites.isNotEmpty) ...[
-                    const SizedBox(height: 14),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        for (final invite in invites)
-                          Chip(label: Text(invite.name.isNotEmpty ? invite.name : invite.email)),
-                      ],
-                    ),
-                  ],
-                ],
+                ),
               ),
-            ),
+              // Points at the button that is being overlooked, in the accent
+              // that button is drawn in, and only while there is something to
+              // send. It says what to do rather than what went wrong: nothing
+              // has gone wrong yet, which is the whole idea.
+              if (_hasUnsentEmail) ...[
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    AppIcon(AppIcons.arrowUp, size: 14, color: accent),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(L.s.tapSendToInvite, style: AppText.caption.copyWith(color: accent)),
+                    ),
+                  ],
+                ),
+              ],
+              if (invites.isNotEmpty) ...[
+                const SizedBox(height: 14),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final invite in invites)
+                      Chip(label: Text(invite.name.isNotEmpty ? invite.name : invite.email)),
+                  ],
+                ),
+              ],
+            ],
           ),
         ),
-      ],
+      ),
     );
   }
 }
@@ -580,32 +962,6 @@ class _InviteFieldRow extends StatelessWidget {
       child: Padding(
         padding: EdgeInsets.fromLTRB(16, 0, trailingPad, 0),
         child: Center(child: child),
-      ),
-    );
-  }
-}
-
-class _RoleChip extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final Color accent;
-  final VoidCallback onTap;
-
-  const _RoleChip({required this.label, required this.selected, required this.accent, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 11),
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: selected ? shade(accent, .12) : AppColors.surfaceAlt,
-          borderRadius: BorderRadius.circular(AppRadii.chip),
-          border: Border.all(color: selected ? accent : Colors.transparent),
-        ),
-        child: Text(label, style: AppText.buttonSmall.copyWith(color: selected ? accent : AppColors.muted)),
       ),
     );
   }
@@ -680,72 +1036,131 @@ class _AddressStepState extends ConsumerState<_AddressStep> {
   Widget build(BuildContext context) {
     final state = ref.watch(onboardingProvider);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _TopBar(step: 2, onBack: () => _onboarding.back(), onSkip: () => _onboarding.next()),
-        Expanded(
-          child: PinnedActionLayout(
-            fadeInto: AppColors.surface,
-            // The lookup replaces the button with its spinner rather than
-            // greying it out, same as it always did — the bar keeps the height
-            // either way, so the step doesn't jump while an address resolves.
-            //
-            // **"Weiter" steps aside while the address field has the
-            // keyboard**, for the same reason it does on the invitations: the
-            // button leaves the step, while the thing that submits an address
-            // is the suggestion row under the field. Held above the keyboard it
-            // covered both the field and the first suggestions — the one strip
-            // of screen the step still needed — so a control that does not act
-            // on what is being typed gives it back.
-            action: state.connecting
-                ? _InlineBusy()
-                : (_typing ? null : _StepButton(label: L.s.next, onTap: _continue)),
-            bodyBuilder: (context, bottomInset) => SingleChildScrollView(
-              // A drag on the body drops the focus, which brings "Weiter" back
-              // for the address that was typed and never picked.
-              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-              padding: EdgeInsets.fromLTRB(AppSpacing.screenPad, 4, AppSpacing.screenPad, bottomInset),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const _Hero('assets/onboarding/hero_address.png'),
-                  const SizedBox(height: 24),
-                  Text(L.s.onboardAddressTitle, style: AppText.screenTitle),
-                  const SizedBox(height: 8),
-                  Text(L.s.onboardAddressBody, style: AppText.body),
-                  const SizedBox(height: 20),
-                  // Asks the focus tree rather than the field itself, exactly
-                  // as the invitations do: the card's rows come and go as the
-                  // lookup answers, and a rebuilt field must not read as a
-                  // moment with no focus in which the bar flickers back.
-                  Focus(
-                    canRequestFocus: false,
-                    skipTraversal: true,
-                    onFocusChange: (has) {
-                      if (has != _typing) setState(() => _typing = has);
-                    },
-                    child: SectionCard(
-                      radius: AppRadii.card,
-                      children: dividedRows(_addressRows(state), inset: true),
-                    ),
-                  ),
-                  if (state.found case final found?) ...[
-                    const SizedBox(height: 16),
-                    _FoundCalendars(found: found, state: state),
-                    const SizedBox(height: 10),
-                    SettingsNote(found.any ? L.s.onboardRenameLater : L.s.onboardNothingForAddress),
+    return _StepChrome(
+      step: 2,
+      onBack: () => _onboarding.back(),
+      onSkip: () => _onboarding.next(),
+      body: PinnedActionLayout(
+        fadeInto: AppColors.surface,
+        // The lookup replaces the button with its spinner rather than
+        // greying it out, same as it always did — the bar keeps the height
+        // either way, so the step doesn't jump while an address resolves.
+        //
+        // **"Weiter" steps aside while the address field has the
+        // keyboard**, for the same reason it does on the invitations: the
+        // button leaves the step, while the thing that submits an address
+        // is the suggestion row under the field. Held above the keyboard it
+        // covered both the field and the first suggestions — the one strip
+        // of screen the step still needed — so a control that does not act
+        // on what is being typed gives it back.
+        action: state.connecting
+            ? _InlineBusy()
+            : (_typing ? null : _StepButton(label: L.s.next, onTap: _continue)),
+        bodyBuilder: (context, bottomInset) => SingleChildScrollView(
+          // A drag on the body drops the focus, which brings "Weiter" back
+          // for the address that was typed and never picked.
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          padding: EdgeInsets.fromLTRB(
+            AppSpacing.screenPad,
+            _stepTopInset(context) + 4,
+            AppSpacing.screenPad,
+            bottomInset,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // **The step becomes a search screen while the field has the
+              // keyboard**, the way an iOS search field slides to the top of
+              // its own screen and hands the rest of the display to the
+              // results: the illustration, the title and the blurb fold up
+              // under the header, the card rises to the top, and all six
+              // suggestions the geocoder can return fit above the keyboard
+              // instead of one and a half.
+              //
+              // They fold rather than vanish, and back down again when an
+              // address is picked or the field is left, so the step the
+              // household was reading is the step they come back to.
+              //
+              // [AnimatedCrossFade] rather than an `if`, per the
+              // expand/collapse rule in docs/design-system.md — it keeps both
+              // states around so the block sizes *and* fades in both
+              // directions — and the collapsed side is a
+              // `SizedBox(width: double.infinity)` so the stack it builds
+              // keeps full width rather than shrink-wrapping the hero.
+              AnimatedCrossFade(
+                firstChild: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const _Hero('assets/onboarding/hero_address.png'),
+                    const SizedBox(height: 24),
+                    Text(L.s.onboardAddressTitle, style: AppText.screenTitle),
+                    const SizedBox(height: 8),
+                    Text(L.s.onboardAddressBody, style: AppText.body),
+                    const SizedBox(height: 20),
                   ],
-                  if (state.addressError case final message?) ...[
-                    const SizedBox(height: 12),
-                    ErrorNote(message: message),
-                  ],
-                ],
+                ),
+                secondChild: const SizedBox(width: double.infinity),
+                crossFadeState: _typing ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+                duration: const Duration(milliseconds: 260),
+                sizeCurve: Curves.easeOutCubic,
+                // Bottom-aligned, so the block slides up out of sight under
+                // the frosted header instead of collapsing towards its own
+                // middle and squashing the illustration on the way.
+                alignment: Alignment.bottomCenter,
               ),
-            ),
+              // Asks the focus tree rather than the field itself, exactly
+              // as the invitations do: the card's rows come and go as the
+              // lookup answers, and a rebuilt field must not read as a
+              // moment with no focus in which the bar flickers back.
+              Focus(
+                canRequestFocus: false,
+                skipTraversal: true,
+                onFocusChange: (has) {
+                  if (has != _typing) setState(() => _typing = has);
+                },
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // **The group's name, once there is something to call it.**
+                    // The card used to wear a `FieldGroup` heading reading
+                    // "Adresse" over a row that was showing one — a whole
+                    // block of the step's height spent labelling a house
+                    // number with the word "address" — and the two feeds it
+                    // produced then started a *second* labelled card below.
+                    // One section, named for what it holds.
+                    //
+                    // Tied to [OnboardingState.found] rather than to the
+                    // picked address, because "Für eure Adresse gefunden"
+                    // over "Kalender werden gesucht…" would be a heading
+                    // contradicting the row under it.
+                    //
+                    // An `else` rather than a bare `if`, so the card stays the
+                    // Column's second child either way: a row list that slides
+                    // from index 0 to index 1 is unmounted and rebuilt, which
+                    // is the same trap [PinnedActionLayout] fell into with the
+                    // body it sometimes wrapped in a `Stack`.
+                    if (state.found != null) GroupLabel(L.s.onboardFoundForYou) else const SizedBox.shrink(),
+                    SectionCard(
+                      radius: AppRadii.card,
+                      onSurface: true,
+                      children: dividedRows(_addressRows(state), inset: true, onSurface: true),
+                    ),
+                  ],
+                ),
+              ),
+              if (state.found case final found?) ...[
+                const SizedBox(height: 10),
+                SettingsNote(found.any ? L.s.onboardRenameLater : L.s.onboardNothingForAddress),
+              ],
+              if (state.addressError case final message?) ...[
+                const SizedBox(height: 12),
+                ErrorNote(message: message),
+              ],
+            ],
           ),
         ),
-      ],
+      ),
     );
   }
 
@@ -790,7 +1205,6 @@ class _AddressStepState extends ConsumerState<_AddressStep> {
     }
 
     return [
-      FieldGroup(label: L.s.yourAddress),
       SettingsRow(
         icon: AppIcons.house,
         title: picked.label,
@@ -807,22 +1221,19 @@ class _AddressStepState extends ConsumerState<_AddressStep> {
         ),
       ),
       if (state.lookingUp) _BusyRow(L.s.onboardFindingCalendars),
+      if (state.found case final found?) ..._calendarRows(found, state),
     ];
   }
-}
 
-/// What the address turned out to be worth. Both rows are always drawn, found
-/// or not: a family that lives somewhere no vendor of ours serves is owed the
-/// sentence saying so, and a missing row would just look like we never looked.
-class _FoundCalendars extends ConsumerWidget {
-  final LocalCalendars found;
-  final OnboardingState state;
-
-  const _FoundCalendars({required this.found, required this.state});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final notifier = ref.read(onboardingProvider.notifier);
+  /// The two feeds the address produced — **rows of the address card, not a
+  /// card of their own.**
+  ///
+  /// They were a `_FoundCalendars` widget with its own [GroupLabel] and
+  /// [SectionCard], which meant the step answered one question with two
+  /// labelled blocks: the address you gave, then the calendars found for it.
+  /// They are one thing — this address, and what is available at it — so they
+  /// are one card, and the address row above them is its first line.
+  List<Widget> _calendarRows(LocalCalendars found, OnboardingState state) {
     final coverage = found.abfall;
     final where = coverage == null
         ? null
@@ -830,38 +1241,62 @@ class _FoundCalendars extends ConsumerWidget {
         ? coverage.town
         : '${coverage.street}, ${coverage.town}';
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        GroupLabel(L.s.onboardFoundForYou),
-        SectionCard(
-          radius: AppRadii.card,
-          children: dividedRows([
-            _CalendarRow(
-              icon: AppIcons.recycle,
-              title: L.s.wasteCalendar,
-              subtitle: found.hasAbfall ? where : L.s.onboardNotFoundHere,
-              value: found.hasAbfall ? state.trashCalendar : null,
-              onChanged: notifier.setTrashCalendar,
-            ),
-            _CalendarRow(
-              icon: AppIcons.graduationCap,
-              title: L.s.holidayCalendar,
-              subtitle: found.hasFerien ? bundeslaender[found.ferienState] : L.s.onboardNotFoundHere,
-              value: found.hasFerien ? state.ferienCalendar : null,
-              onChanged: notifier.setFerienCalendar,
-            ),
-          ]),
-        ),
-      ],
-    );
+    return [
+      _CalendarRow(
+        icon: AppIcons.recycle,
+        title: L.s.wasteCalendar,
+        subtitle: found.hasAbfall
+            ? where
+            : coverage?.needsHouseNumber == true
+            ? L.s.wasteNeedsHouseNumber
+            : coverage?.requested == true
+            ? L.s.wasteRequested
+            : L.s.wasteRequestHint,
+        value: found.hasAbfall ? state.trashCalendar : null,
+        onChanged: _onboarding.setTrashCalendar,
+        // The lookup ran and no vendor answered: the row offers to have us
+        // find one. A lookup that *failed* (coverage null) offers nothing —
+        // there is no town to file — and a vendor that only wants the house
+        // number is not missing either.
+        missingAction: coverage == null || coverage.requested || coverage.needsHouseNumber
+            ? null
+            : _MissingAction(
+                label: L.s.wasteRequestAction,
+                busy: state.requestingTrash,
+                onTap: _onboarding.requestTrash,
+              ),
+        done: coverage?.requested == true,
+      ),
+      _CalendarRow(
+        icon: AppIcons.graduationCap,
+        title: L.s.holidayCalendar,
+        subtitle: found.hasFerien ? bundeslaender[found.ferienState] : L.s.onboardNotFoundHere,
+        value: found.hasFerien ? state.ferienCalendar : null,
+        onChanged: _onboarding.setFerienCalendar,
+      ),
+    ];
   }
+}
+
+/// What a missing calendar's row offers instead of a switch: the one verb that
+/// can still make it exist.
+class _MissingAction {
+  final String label;
+  final bool busy;
+  final VoidCallback onTap;
+
+  const _MissingAction({required this.label, required this.busy, required this.onTap});
 }
 
 /// A calendar the lookup found, with its switch — or one it didn't, greyed and
 /// carrying an X where the switch would be. A **disabled switch** is the thing
 /// this deliberately isn't: it invites a tap that can't do anything, where the
 /// X simply says there is nothing here to turn on.
+///
+/// The Müllabfuhr row is the exception with a way forward: no vendor of ours
+/// serving the street is *our* gap, not the household's, so instead of the X
+/// it carries [missingAction] — "Anfragen" — and, once tapped, a check and the
+/// sentence saying we are on it ([done]).
 class _CalendarRow extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -871,12 +1306,17 @@ class _CalendarRow extends StatelessWidget {
   final bool? value;
   final ValueChanged<bool> onChanged;
 
+  final _MissingAction? missingAction;
+  final bool done;
+
   const _CalendarRow({
     required this.icon,
     required this.title,
     required this.subtitle,
     required this.value,
     required this.onChanged,
+    this.missingAction,
+    this.done = false,
   });
 
   @override
@@ -905,15 +1345,61 @@ class _CalendarRow extends StatelessWidget {
               children: [
                 Text(title, style: AppText.rowTitle.copyWith(color: missing ? AppColors.muted : null)),
                 if (subtitle case final line?)
-                  Text(line, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.label),
+                  // The request sentence is a sentence, and gets the second line
+                  // an address never needs.
+                  Text(
+                    line,
+                    maxLines: missing && !done ? 2 : 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppText.label,
+                  ),
               ],
             ),
           ),
           if (value case final on?)
             NativeSwitch(value: on, onChanged: onChanged)
+          else if (done)
+            AppIcon(AppIcons.check, size: 16, color: AppColors.success)
+          else if (missingAction case final action?)
+            _SmallPill(label: action.label, busy: action.busy, onTap: action.onTap)
           else
             AppIcon(AppIcons.x, size: 16, color: AppColors.mutedLight),
         ],
+      ),
+    );
+  }
+}
+
+/// The accent-tinted word at the end of a row — the same drawing as the
+/// connect flow's house-number chips, selected — sized to a row's height. A
+/// spinner takes the word's place while the tap is on its way, so the pill
+/// cannot be tapped twice and nothing jumps.
+class _SmallPill extends StatelessWidget {
+  final String label;
+  final bool busy;
+  final VoidCallback onTap;
+
+  const _SmallPill({required this.label, required this.busy, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = Theme.of(context).colorScheme.primary;
+    return GestureDetector(
+      onTap: busy ? null : onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        decoration: BoxDecoration(
+          color: accent.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(AppRadii.chip),
+        ),
+        child: busy
+            ? SizedBox(
+                width: 14,
+                height: 14,
+                child: CircularProgressIndicator(strokeWidth: 2, color: accent),
+              )
+            : Text(label, style: AppText.buttonSmall.copyWith(color: accent)),
       ),
     );
   }
@@ -1000,16 +1486,23 @@ class _DoneStep extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(onboardingProvider);
-    // **The recap reports what happened, not what was ticked.** Both feeds are
-    // ticked from the moment the lookup finds them, and they were ticked before
-    // that too — a tour clicked straight through without an address used to
-    // finish by congratulating the household on two calendars nobody had
-    // connected. So the row asks the connect for its outcome, and the live
-    // connection list beside it, which is what answers for the household that
-    // already had the calendar when the tour was replayed from Settings.
-    final connections = ref.watch(calendarConnectionsProvider);
-    final hasTrash = state.trashConnected || connections.of(CalendarProvider.abfall).isNotEmpty;
-    final hasFerien = state.ferienConnected || connections.of(CalendarProvider.ferien).isNotEmpty;
+    final family = ref.watch(familyProvider);
+    // **The recap reports what *this tour* did, and nothing else.** These two
+    // used to fall back on `calendarConnectionsProvider` — "does the household
+    // have an Abfall feed at all?" — which is a different question and answers
+    // yes for reasons that have nothing to do with the last three screens: a
+    // tour skipped outright, or an address with no waste vendor, still
+    // finished by ticking both rows because a feed from some earlier address
+    // was sitting in the list. [OnboardingNotifier.connectLocalCalendars] is
+    // the only thing that may set these, and it credits an existing
+    // subscription only when *this* lookup found the same calendar.
+    final hasTrash = state.trashConnected;
+    final hasFerien = state.ferienConnected;
+    // This step carries no [_TopBar], so its share of [_stepTopInset] is the
+    // status-bar strip alone — the wizard hands it to each step rather than to
+    // a `SafeArea` (see [OnboardingScreen.build]). Held here because the
+    // minimum height below has to subtract exactly what the padding added.
+    final topPad = MediaQuery.paddingOf(context).top + 20;
 
     return PinnedActionLayout(
       fadeInto: AppColors.surface,
@@ -1021,11 +1514,11 @@ class _DoneStep extends ConsumerWidget {
       action: _StepButton(label: L.s.letsGo, onTap: () => _leaveTour(context, ref, replay)),
       bodyBuilder: (context, bottomInset) => LayoutBuilder(
         builder: (context, constraints) => SingleChildScrollView(
-          padding: EdgeInsets.fromLTRB(AppSpacing.screenPad, 20, AppSpacing.screenPad, bottomInset),
+          padding: EdgeInsets.fromLTRB(AppSpacing.screenPad, topPad, AppSpacing.screenPad, bottomInset),
           child: ConstrainedBox(
             // Minus the padding this scroll view already adds, so a screen that
             // exactly fits doesn't gain a scrollbar's worth of overflow.
-            constraints: BoxConstraints(minHeight: constraints.maxHeight - 20 - bottomInset),
+            constraints: BoxConstraints(minHeight: constraints.maxHeight - topPad - bottomInset),
             child: ConfirmationView(
               mark: ConfirmationMark.celebration,
               headline: L.s.onboardReady,
@@ -1033,7 +1526,30 @@ class _DoneStep extends ConsumerWidget {
               action: ConfirmationAction.none,
               content: [
                 SectionCard(
+                  // The wizard's pages are `AppColors.surface`, so the card has to
+                  // take the lift on dark or it vanishes — see [SectionCard.onSurface].
+                  onSurface: true,
                   children: [
+                    // **The household leads the recap, because it is the one
+                    // thing the tour certainly did.** The first step gives the
+                    // family its name and its picture, and until this row
+                    // existed the celebration reported on three things that
+                    // may all have been skipped and said nothing about the
+                    // one that cannot be. Ticked for the same reason: a
+                    // household always has a name by the time it gets here.
+                    //
+                    // Not editable — `canEdit: false`, so the circle carries
+                    // no camera badge. This is a receipt, and the place to
+                    // change either half is Settings › Familie, which the line
+                    // above the card already points at.
+                    if (family.household case final household?) ...[
+                      _RecapRow(
+                        leading: FamilyAvatarButton(canEdit: false, size: _RecapRow._leadingSlot),
+                        label: household.name,
+                        done: true,
+                      ),
+                      CardDivider(onSurface: true),
+                    ],
                     _RecapRow(
                       icon: AppIcons.userPlus,
                       label: state.invites.isEmpty
@@ -1041,9 +1557,9 @@ class _DoneStep extends ConsumerWidget {
                           : L.s.invitedCount(state.invites.length),
                       done: state.invites.isNotEmpty,
                     ),
-                    CardDivider(),
+                    CardDivider(onSurface: true),
                     _RecapRow(icon: AppIcons.recycle, label: L.s.wasteCalendar, done: hasTrash),
-                    CardDivider(),
+                    CardDivider(onSurface: true),
                     _RecapRow(icon: AppIcons.graduationCap, label: L.s.holidayCalendar, done: hasFerien),
                   ],
                 ),
@@ -1054,6 +1570,9 @@ class _DoneStep extends ConsumerWidget {
                 // the tour finishes first and this lands on the connect page with
                 // onboarding already behind it.
                 SectionCard(
+                  // The wizard's pages are `AppColors.surface`, so the card has to
+                  // take the lift on dark or it vanishes — see [SectionCard.onSurface].
+                  onSurface: true,
                   children: [
                     SettingsRow(
                       icon: AppIcons.calendarPlus,
@@ -1073,11 +1592,22 @@ class _DoneStep extends ConsumerWidget {
 }
 
 class _RecapRow extends StatelessWidget {
-  final IconData icon;
+  final IconData? icon;
+
+  /// Stands in for [icon] on the row that has a *face* rather than a symbol:
+  /// the household's own picture on the first line. Sized by the caller to
+  /// [_leadingSlot], which is what keeps the four labels in one column.
+  final Widget? leading;
+
   final String label;
   final bool done;
 
-  const _RecapRow({required this.icon, required this.label, required this.done});
+  const _RecapRow({this.icon, this.leading, required this.label, required this.done})
+    : assert(icon != null || leading != null);
+
+  /// The width the leading column reserves. Wide enough for the avatar, so a
+  /// 18pt glyph centres in it rather than every label shifting by row.
+  static const _leadingSlot = 26.0;
 
   @override
   Widget build(BuildContext context) {
@@ -1085,8 +1615,11 @@ class _RecapRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
       child: Row(
         children: [
-          AppIcon(icon, size: 18, color: AppColors.muted),
-          const SizedBox(width: 12),
+          SizedBox(
+            width: _leadingSlot,
+            child: Center(child: leading ?? AppIcon(icon, size: 18, color: AppColors.muted)),
+          ),
+          const SizedBox(width: 10),
           Expanded(child: Text(label, style: AppText.rowTitle)),
           AppIcon(
             done ? AppIcons.check : AppIcons.x,

@@ -945,6 +945,18 @@ class StringsPt extends AppStrings {
       'as datas: procure no site da sua empresa por "Abfuhrkalender" ou '
       '"Kalender abonnieren" e cole o link aqui.';
   @override
+  String get wasteRequestHint => 'Ainda não temos — peça e a gente configura pra vocês em poucos dias.';
+  @override
+  String get wasteRequestAction => 'Solicitar';
+  @override
+  String get wasteRequested => 'Solicitado — avisamos assim que estiver pronto.';
+  @override
+  String get wasteRequestFailed => 'A solicitação não foi enviada. Tente de novo daqui a pouco.';
+  @override
+  String get wasteNeedsHouseNumber => 'Digite o endereço com o número — aqui a coleta é planejada por casa.';
+  @override
+  String get pickHouseNumberHint => 'Aqui a coleta é planejada por casa — escolha o número da sua casa.';
+  @override
   String get checkingLinkEllipsis => 'Verificando o link …';
   // Os passos citam itens de menu reais de uma plataforma escolar alemã. A frase
   // é traduzida; o caminho do menu fica como está na tela do usuário.
@@ -1004,23 +1016,11 @@ class StringsPt extends AppStrings {
   @override
   String get whoseCalendarFirst => 'Diga de quem é esta conta.';
   @override
-  String get addAnotherCalendar => 'Adicionar calendário';
-  @override
-  String get addAnotherCalendarBody =>
-      'A plataforma da escola cria um link separado para cada calendário. Todos os '
-      'links desta conta ficam sob um único filtro no Calendário.';
-  @override
   String get schoolCalendars => 'Calendários';
   @override
   String get removeCalendar => 'Remover calendário';
   @override
   String get linkStaysAtSchool => ' O link continua na plataforma da escola — a gente só para de guardá-lo.';
-  @override
-  String get connectWithLogin => 'Conectar com login e senha';
-  @override
-  String get connectWithLoginBody =>
-      'Só vale a pena se a escola tiver o CalDAV ligado. As tarefas e as provas '
-      'não estão lá — para elas são precisos os links acima.';
   @override
   String get linkedCalendarsNote =>
       'O Aporah só lê estes calendários. Continue alterando os eventos na plataforma '
@@ -1356,8 +1356,13 @@ class StringsPt extends AppStrings {
   String get onboardSetUpFamily => 'Vamos configurar a sua família';
   @override
   String get onboardSetUpFamilyBody =>
-      'Em poucos passos você convida a família e conecta os calendários que contam no '
-      'dia a dia de vocês.';
+      'Dê um nome e uma foto para a sua família. Você pode mudar os dois depois, quando '
+      'quiser.';
+  @override
+  String get onboardJoinExistingFamily => 'A sua família já usa o Aporah?';
+  @override
+  String get onboardJoinExistingFamilyBody =>
+      'Então não crie uma nova aqui — peça a alguém da família para convidar você.';
   @override
   String get onboardInviteTitle => 'Convide a sua família';
   @override
@@ -2101,6 +2106,8 @@ class StringsPt extends AppStrings {
   @override
   String get plannerHowTo => 'COMO FAZER';
   @override
+  String get plannerShowMethod => 'Mostrar tudo';
+  @override
   String get plannerRecipe => 'RECEITA';
   @override
   String get adLabel => 'Publicidade';
@@ -2175,11 +2182,11 @@ class StringsPt extends AppStrings {
   @override
   String get notifyBriefTitle => 'Resumo do dia';
   @override
-  String get notifyBriefSubtitle => 'Toda manhã, o que tem para hoje';
+  String get notifyBriefSubtitle => 'O que tem para o dia';
   @override
   String get notifyAbfallTitle => 'Coleta de lixo';
   @override
-  String get notifyAbfallSubtitle => 'Na noite anterior à coleta';
+  String get notifyAbfallSubtitle => 'No dia anterior à coleta';
   @override
   String get notifyTaskTimesTitle => 'To-dos com horário';
   @override

@@ -6,25 +6,43 @@ part of '../calendar_screen.dart';
 
 /// Compact "liquid glass" dropdown standing in for the filter chip row once
 /// the header has collapsed — the chips don't fit a collapsed header, so this
-/// pins a small dot (the active source's colour, or muted for "Alle") +
-/// chevron in the title row itself, opening a native-feeling glass menu (dot
-/// + full name per calendar) to pick a filter from. Only visible while
-/// collapsed; see [_TitleRow.leading].
+/// pins the filter's colours + chevron in the title row itself, opening a
+/// native-feeling glass menu (dot + full name per calendar) to pick a filter
+/// from. Only visible while collapsed; see [_TitleRow.leading].
+///
+/// **It says how many and whose, not "N Kalender".** Spelling the count out in
+/// words made the one control on the left of a *centred* title wide enough to
+/// reach it — and the word was the half of it carrying no information, since
+/// what a reader wants back from a filter is which calendars survived it. So a
+/// selection is its count beside up to [_maxDots] of the calendars' own
+/// colours, overlapping the way [AvatarStack] overlaps a household: the
+/// colours are the same ones the chips, the menu rows and the events
+/// themselves wear. One calendar is its dot alone — a "1" beside a single
+/// colour counts something nobody was asked to count.
 class _CalendarFilterButton extends ConsumerWidget {
   final CalendarScreenState state;
 
   const _CalendarFilterButton({required this.state});
 
-  Color get _dotColor {
+  /// The filter's colours, in the order the calendars are *listed* rather than
+  /// the order they come out of the set — a Set has no order, so reading them
+  /// out of it would reshuffle the dots on an unrelated rebuild.
+  ///
+  /// Capped at [_maxDots]: the count beside them is what says how many there
+  /// really are, and a stack that grew with the selection would walk into the
+  /// title it sits beside.
+  List<Color> get _dotColors {
     final filter = state.calendarFilter;
-    if (filter == null || filter.isEmpty) return AppColors.muted;
-    // The first *listed* calendar in the filter rather than the first in the
-    // set: a Set has no order, so reading one out of it would repaint the dot a
-    // different colour on an unrelated rebuild.
+    if (filter == null) return const [];
+    final colors = <Color>[];
     for (final src in state.calendars) {
-      if (filter.contains(src.id)) return src.color;
+      if (!filter.contains(src.id)) continue;
+      colors.add(src.color);
+      if (colors.length == _maxDots) break;
     }
-    return AppColors.muted;
+    // A selection emptied to nothing still has to draw something, and muted is
+    // what the menu's own "Alle" row wears.
+    return colors.isEmpty ? [AppColors.muted] : colors;
   }
 
   /// The "Alle" chip's own multi-select list, plus the to-do row — the system's
@@ -143,45 +161,47 @@ class _CalendarFilterButton extends ConsumerWidget {
   /// the controls on both sides of the title draw their glyphs at one size.
   static const _caretSize = AppGlyph.button;
 
-  /// The picked calendar's dot. The native button draws it as a "●" in the
-  /// title, at [_dotFontSize] — a bullet's ink is roughly 0.55 of its em.
-  static const _dotSize = 12.0;
-  static const _dotFontSize = 22.0;
+  /// How many calendar colours the button wears at most. Three: the count
+  /// beside them says how many there really are, and every dot past the third
+  /// is width taken off a title this control already sits close to.
+  static const _maxDots = 3;
+
+  /// One colour dot, and how far the next one sits inside it — about a third
+  /// of it, the bite [WhoAvatars] takes out of a stack of household avatars.
+  static const _dotSize = 11.0;
+  static const _dotOverlap = 4.0;
+
+  /// Tighter than a glass pill's usual 14, which is what keeps the widest this
+  /// control gets — a two-digit count, [_maxDots] dots, the gaps and the caret
+  /// — inside [_TitleRow._collapsedSideInset]. That inset is the room the
+  /// collapsed title keeps clear on *both* sides, and widening one side alone
+  /// is exactly what pushes a centred title off centre.
+  static const _padding = EdgeInsets.symmetric(horizontal: 12);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final filter = state.calendarFilter;
     final isAll = filter == null;
-    // A hand-picked set spans accounts and so has no one colour: a single dot
-    // would claim it is filtered to that one calendar. It counts itself, the
-    // same way its chip does once the header is open.
-    final picked = state.filterGroupId == kPickedCalendarFilterId;
-    // "Alle" is spelled out — a plain gray dot doesn't read as "everything"
-    // the way a source's own colour reads as that source. Once a specific
-    // calendar is picked, its dot alone is unambiguous, so the label drops
-    // back to just that.
-    final word = isAll ? L.s.all : (picked ? L.s.calendarCount(filter.length) : null);
+    final dots = _dotColors;
+    // "Alle" is spelled out — no set of colours stands for "everything", and a
+    // muted dot would only say "some". A selection counts itself and shows
+    // whose; a selection of one is already named by its own colour.
+    final word = isAll ? L.s.all : (filter.length > 1 ? '${filter.length}' : null);
     // The Heute pill's type ([FloatingGlassPill] on the nav row), so the two
     // floating glass controls on this screen read at one size.
     final wordStyle = AppText.rowTitle.copyWith(color: AppColors.ink);
     final caretColor = AppColors.inkTertiary;
-    const padding = EdgeInsets.symmetric(horizontal: 14);
 
     final body = SizedBox(
       height: _height,
       child: Padding(
-        padding: padding,
+        padding: _padding,
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (word != null)
-              Text(word, maxLines: 1, style: wordStyle)
-            else
-              Container(
-                width: _dotSize,
-                height: _dotSize,
-                decoration: BoxDecoration(color: _dotColor, shape: BoxShape.circle),
-              ),
+            if (word != null) Text(word, maxLines: 1, style: wordStyle),
+            if (word != null && dots.isNotEmpty) const SizedBox(width: _gap),
+            if (dots.isNotEmpty) _FilterDots(colors: dots),
             const SizedBox(width: _gap),
             AppIcon(AppIcons.caretDown, size: _caretSize, color: caretColor, flat: true),
           ],
@@ -193,18 +213,24 @@ class _CalendarFilterButton extends ConsumerWidget {
       // **A real glass `UIButton`, like the link and + beside the title.** The
       // `GlassSurface` this was — the material with a Flutter row laid over it
       // — sat next to two real buttons and read as a different control. A
-      // `UIButton` takes one image, so the dot is a coloured bullet in the
-      // title rather than a drawn circle.
+      // `UIButton` takes one image, which is why the dots travel *with* the
+      // caret rather than beside it; see [NativeGlassDots].
       return NativeGlassButtons(
         buttons: [
           NativeGlassButton(
             icon: AppIcons.caretDown,
             iconTrailing: true,
-            label: word ?? _pickedName ?? L.s.all,
-            title: word ?? '●',
-            titleStyle: word != null
-                ? wordStyle
-                : wordStyle.copyWith(color: _dotColor, fontSize: _dotFontSize, height: 1),
+            // The words the button no longer spends width on are still what a
+            // screen reader is owed: a stack of colours names nothing out loud.
+            label: isAll
+                ? L.s.all
+                : (filter.length > 1 ? L.s.calendarCount(filter.length) : (_pickedName ?? L.s.all)),
+            title: word,
+            titleStyle: wordStyle,
+            dots: dots.isEmpty ? null : NativeGlassDots(colors: dots, size: _dotSize, overlap: _dotOverlap),
+            // Baked rather than tinted, because the dots' own colours are in
+            // the same image.
+            glyphColor: dots.isEmpty ? null : caretColor,
             onTap: () => _openMenu(context, ref),
           ),
         ],
@@ -236,6 +262,48 @@ class _CalendarFilterButton extends ConsumerWidget {
       if (filter.contains(src.id)) return src.name;
     }
     return null;
+  }
+}
+
+/// The overlapping colour dots on [_CalendarFilterButton] — the Flutter
+/// drawing of them. On iOS it is only ever *measured*: UIKit draws the same
+/// stack into the button's one image slot (see [NativeGlassDots]), and this is
+/// what tells it how wide to make the box.
+///
+/// The ring is the one thing the two draw differently, and for a reason. Here
+/// it is [AppColors.surface], the way [AvatarStack] separates two heads; on
+/// glass the gap is *cleared* instead, so the material shows through it — a
+/// solid ring on glass would read as a sticker laid on the button.
+class _FilterDots extends StatelessWidget {
+  final List<Color> colors;
+
+  const _FilterDots({required this.colors});
+
+  @override
+  Widget build(BuildContext context) {
+    const size = _CalendarFilterButton._dotSize;
+    const step = size - _CalendarFilterButton._dotOverlap;
+    return SizedBox(
+      width: size + step * (colors.length - 1),
+      height: size,
+      child: Stack(
+        children: [
+          for (var i = 0; i < colors.length; i++)
+            Positioned(
+              left: step * i,
+              child: Container(
+                width: size,
+                height: size,
+                decoration: BoxDecoration(
+                  color: colors[i],
+                  shape: BoxShape.circle,
+                  boxShadow: [BoxShadow(color: AppColors.surface, blurRadius: 0, spreadRadius: 2)],
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
   }
 }
 

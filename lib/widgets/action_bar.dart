@@ -28,7 +28,8 @@ class PinnedActionLayout extends StatefulWidget {
   /// The action itself, already in its final shape — an `AccentAction`, a
   /// step button, a small column of a note above one. Null draws no bar at
   /// all, so a page whose action is gated (a non-admin's Familienmitglieder)
-  /// ends where its content ends rather than on an empty band.
+  /// shows no empty band — and a page whose action comes and go with the
+  /// keyboard keeps its body's state across the change; see [build].
   final Widget? action;
 
   /// What the content fades into behind the bar. Defaults to the gray body
@@ -67,27 +68,48 @@ class _PinnedActionLayoutState extends State<PinnedActionLayout> {
   @override
   Widget build(BuildContext context) {
     final action = widget.action;
-    if (action == null) return widget.bodyBuilder(context, 0);
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _measureBar();
-    });
+    // Nothing to measure while there is no bar, and asking for a post-frame
+    // callback on every build of a page that will never have one is waste.
+    if (action != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _measureBar();
+      });
+    }
 
+    // **The `Stack` is built even when there is no action, and that is not
+    // tidiness — it is the difference between a field keeping the keyboard and
+    // losing it.**
+    //
+    // This used to `return widget.bodyBuilder(context, 0)` for a null action,
+    // which is a different *widget type* in the same slot. Flutter reconciles
+    // by type, so every time an action appeared or vanished the whole body was
+    // unmounted and rebuilt from scratch — and the body of the pages that do
+    // this is a form. The `TextField`'s `EditableText` state went with it,
+    // taking the focus and the keyboard: on the onboarding steps, whose action
+    // steps aside *because* a field has the keyboard, tapping the field folded
+    // the page up and then immediately dropped the keyboard it had just
+    // opened. A `Stack` in both cases keeps the body's element, so the field
+    // keeps its state.
+    //
+    // `StackFit.expand` in both cases too: the body is a scroll view, and
+    // under loose constraints a short one shrink-wraps its content — the Stack
+    // would then be as tall as the text and the bar would sit under the last
+    // paragraph rather than at the bottom of the screen, which is the whole
+    // thing this is here to stop. Every caller lays this out against tight
+    // constraints (a `Scaffold` body, a step's chrome), so expanding is what
+    // the bodyBuilder was already getting when it was returned bare.
     return Stack(
-      // Expand, not the loose default: the body is a scroll view, and under
-      // loose constraints a short one shrink-wraps its content — the Stack
-      // would then be as tall as the text and the bar would sit under the last
-      // paragraph rather than at the bottom of the screen, which is the whole
-      // thing this is here to stop.
       fit: StackFit.expand,
       children: [
-        widget.bodyBuilder(context, _barHeight ?? widget.estimatedActionHeight),
-        Positioned(
-          left: 0,
-          right: 0,
-          bottom: 0,
-          child: PinnedActionBar(key: _barKey, fadeInto: widget.fadeInto, child: action),
-        ),
+        widget.bodyBuilder(context, action == null ? 0 : (_barHeight ?? widget.estimatedActionHeight)),
+        if (action != null)
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: PinnedActionBar(key: _barKey, fadeInto: widget.fadeInto, child: action),
+          ),
       ],
     );
   }

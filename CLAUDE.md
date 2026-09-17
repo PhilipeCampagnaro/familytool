@@ -70,7 +70,7 @@ task:
   Mo/Do tracker reports five failures a week of a perfect record.
 - **Localization: German, English, Portuguese and Spanish, and every user-facing string goes
   through [lib/l10n/](lib/l10n/).** `AppStrings` declares them and `StringsDe`/`StringsEn`/
-  `StringsPt`/`StringsEs` answer them — 866 members each — and `L.s.someString` reads the live one.
+  `StringsPt`/`StringsEs` answer them — 923 members each — and `L.s.someString` reads the live one.
   Because `AppStrings` is abstract, a string you add to one language and forget in another **fails
   to compile** — that is the point, so don't work around it with a map or a `??`. Portuguese is
   **Brazilian (pt-BR)** and Spanish is peninsular (es-ES); `appSupportedLocales` carries bare
@@ -88,7 +88,7 @@ task:
   - **What is German market data rather than German text, and is therefore still German-only:**
     the Feiertage (`german_holidays.dart`; a Portuguese or Spanish household sees **no public
     holidays at all** — see the note in [lib/state/holidays_state.dart](lib/state/holidays_state.dart)),
-    the Ferien Bundesland picker, the six waste-vendor families in `abfall.ts`, and IServ/WebUntis.
+    the Ferien Bundesland picker, the thirteen waste-vendor families in `abfall/vendors/`, and IServ/WebUntis.
     Translating the UI did not port any of it, and that is written down rather than hidden.
   - `L.s` is a global swapped in `AporahApp.build`, exactly like `AppColors.palette`, so it works
     in notifiers, models and repositories where there is no `BuildContext` — which is most of the
@@ -175,18 +175,31 @@ task:
   **`ical` is that mechanism with the vendor taken out**, for any feed a household can already
   subscribe to — and the one tile that also takes a **file**, for the calendar that is published as
   a download. The three differ only in the tile and the instructions. **Don't reinstate CalDAV
-  as IServ's main route** — still reachable from a row at the bottom of its page, and it still
-  finds nothing a family wants. **And don't bring back WebUntis's app secret.** It was the QR-code
+  as IServ's route at all** — the "Stattdessen mit Zugangsdaten anmelden" row that kept it
+  reachable at the bottom of the page is gone, because it put a login form beside the one thing
+  that works and it still finds nothing a family wants. `calendar-caldav` stays for iCloud, GMX and
+  WEB.DE, and an IServ connection already made that way keeps working; there is no way to make
+  another. **And don't bring back WebUntis's app secret.** It was the QR-code
   route, it is deleted (function, shared module, `auth_type = 'secret'`, `app_secret`, the QR
   scanner and its Swift side), and it went because it was TOTP seed material for the pupil's whole
   WebUntis account where a feed URL is one timetable. It took Entfall/Vertretung as lesson status,
   the whole school year rather than the feed's twelve weeks, and **Hausaufgaben, which the Board
   no longer shows**, with it. That is the trade; it was made deliberately.
   Read the school-calendar section of [docs/ported-features.md](docs/ported-features.md) before
-  touching any of it, in particular the `TZID="+02:00"` trap. Abfall's six German waste-vendor families live in
-  `supabase/functions/_shared/abfall.ts`; see the Abfall section of
+  touching any of it, in particular the `TZID="+02:00"` trap. **Abfall's thirteen German waste-vendor
+  families are one file each in
+  [supabase/functions/_shared/abfall/vendors/](supabase/functions/_shared/abfall/vendors/), behind a
+  registry** — `abfall.ts` itself is now only the public face, and `abfall/resolve.ts` names no
+  vendor at all. Adding a city is **one new vendor file, one provider row in `abfall_providers.ts`,
+  and two lines in `abfall/registry.ts`** — Düsseldorf, the thirteenth, cost exactly that; the `VendorAdapter` contract in `abfall/core.ts` says
+  what an adapter may implement and what leaving a member out means. Don't reintroduce a
+  `if (vendor === …)` chain in the shared half — there were four of them, and adding a vendor to
+  three looked exactly like success. See the Abfall section of
   [docs/ported-features.md](docs/ported-features.md) before touching them, and re-run the live
-  end-to-end probe described there afterwards.
+  end-to-end probe described there afterwards. **A town nobody serves is not a dead end**: the
+  Müllabfuhr row offers "Anfragen", which files the town in `public.abfall_requests` — the queue
+  that decides which vendor comes next — and the coverage artifact linked from
+  [docs/production-plan.md](docs/production-plan.md) is the census of what is served today.
 - **Weather is per event, comes from Open-Meteo, and is decoration.** `weatherProvider`
   ([lib/state/weather_state.dart](lib/state/weather_state.dart)) resolves each appointment's place
   and hour and hands the agenda row and detail sheet a `WeatherReading`; `CalendarEvent` carries no

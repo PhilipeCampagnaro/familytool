@@ -231,10 +231,30 @@ class _FlutterGlassApproximation extends StatelessWidget {
   }
 }
 
-/// The material behind a collapsing header: a *progressive* blur under a
-/// translucent white that both ramp to nothing at the bottom edge — the
-/// variable-blur treatment Apple uses under nav bars, rather than a uniform
-/// frosted panel.
+/// Loads the variable-blur kernel behind [FrostedHeaderBackground], once,
+/// before the first frame.
+///
+/// The widget is built during layout on every screen in the app and cannot
+/// await anything, so the program is fetched in `main` and read from here
+/// synchronously afterwards. A null program — the shader failed to compile, or
+/// this device is not on Impeller — is not an error: the bar falls back to the
+/// banded approximation below.
+FragmentProgram? _blurProgram;
+
+Future<void> loadFrostedHeaderShader() async {
+  if (!ImageFilter.isShaderFilterSupported) return;
+  try {
+    _blurProgram = await FragmentProgram.fromAsset('shaders/progressive_blur.frag');
+  } catch (error, stack) {
+    _blurProgram = null;
+    FlutterError.reportError(FlutterErrorDetails(exception: error, stack: stack, library: 'aporah'));
+  }
+}
+
+/// The material behind a collapsing header: a *variable* blur under a
+/// translucent wash, both ramping to nothing at the bottom edge — the treatment
+/// Apple's own `.soft` scroll-edge effect uses under a nav bar, rather than a
+/// uniform frosted panel.
 ///
 /// It exists because `NestedScrollView` does *not* clip its body to below a
 /// pinned header: the scrolled content keeps sliding up until its top reaches
@@ -243,18 +263,32 @@ class _FlutterGlassApproximation extends StatelessWidget {
 /// solid fill would hide that content outright; this washes it out instead, so
 /// you can still see it passing underneath.
 ///
-/// The ramp is the whole point, and the reason this isn't one `BackdropFilter`
-/// with one tint. A uniform bar ends in a hard step — sharp content and a flat
-/// tone change, both at the same y — and that edge is what makes it read as a
-/// separate rectangle sitting *over* the screen. Fading both to zero means
-/// there is no edge to see: content simply gets blurrier the further it slides
-/// under the title.
+/// **The ramp has to be continuous, and that is what the shader buys.** This
+/// shipped first as five stacked `BackdropFilter`s in hard `ClipRect`s, with
+/// rising sigmas — and every one of those clips was an edge:
+///
+/// * blur **stepped** at each boundary, and the eye reads a step in blur as a
+///   horizontal line drawn across the screen;
+/// * the bottom-most band was still at sigma 3 when it simply stopped, so the
+///   bar's own bottom edge was the sharpest line of the lot;
+/// * a band's kernel was wider than the band was tall (sigma 11 inside a ~29pt
+///   box), so it ran out of pixels to sample and **edge-clamped** — rows
+///   stretched rather than blurred, which is the frozen, smeared look;
+/// * and because each band filtered the output of the ones below it, the sigmas
+///   compounded to √(3²+4.5²+6²+8²+11²) ≈ **15.8** where 11 was intended. The
+///   bar was half again as strong as anybody had asked for.
+///
+/// A blur whose radius is a smooth function of y has no boundary to show,
+/// nothing to clamp against, and applies exactly the sigma it is handed. It is
+/// one `FragmentShader` run twice — vertically, then horizontally over that
+/// result — because a separable pair of 17-tap passes is the same Gaussian as
+/// one 289-tap kernel for a thirtieth of the work.
 ///
 /// Deliberately *not* a [GlassSurface]: liquid glass has a specular highlight
 /// and refracts at its edges, which reads as a floating control. A header is an
 /// edge-to-edge bar, and a bar wants a plain material.
-class FrostedHeaderBackground extends StatelessWidget {
-  /// Peak white at the very top, ramped to fully transparent at the bottom.
+class FrostedHeaderBackground extends StatefulWidget {
+  /// Peak white at the very top, eased to fully transparent at the bottom.
   /// Kept low: this app's content is white cards on #F7F8FA, so the blurred
   /// backdrop is already nearly white and a heavy tint just repaints the bar
   /// solid white — the effect runs, it simply has nothing left to show. Most of
@@ -268,10 +302,18 @@ class FrostedHeaderBackground extends StatelessWidget {
   /// lens, so the control rendered as a flat grey pill with a hard rim — the
   /// look of a painted approximation, not of the material. Apple's own
   /// scroll-edge effect is mostly *blur* with a very light tint for the same
-  /// reason, and the five bands above already do that work. This is the one
-  /// knob: raise it if a title ever loses its footing over scrolled content,
+  /// reason. Raise it if a title ever loses its footing over scrolled content,
   /// lower it if the buttons go flat again.
   final double tintOpacity;
+
+  /// Blur sigma in logical pixels at the very top of the bar, falling to zero
+  /// at its bottom edge.
+  ///
+  /// Lower than it looks next to the old stack's nominal 11 because that stack
+  /// *compounded* to nearly 16 — this is the number that actually reaches the
+  /// glass. It is the knob for "too strong / not enough": the ramp's shape
+  /// lives in the shader and should stay there.
+  final double peakSigma;
 
   /// **Deliberately not `const`, and the lint below is suppressed on purpose.**
   ///
@@ -287,27 +329,140 @@ class FrostedHeaderBackground extends StatelessWidget {
   /// A non-const constructor turns that into a compile error at the call site,
   /// the same trade `AppStrings` makes for a missing translation.
   // ignore: prefer_const_constructors_in_immutables
-  FrostedHeaderBackground({super.key, this.tintOpacity = 0.46});
+  FrostedHeaderBackground({super.key, this.tintOpacity = 0.46, this.peakSigma = 12});
 
-  /// Stacked top-anchored blur bands, each covering a *fraction* of the bar's
-  /// height. Each one filters what the previous ones have already blurred, so
-  /// the blur accumulates toward the top (roughly the root-sum-square of the
-  /// sigmas covering a given row) and thins out to the single gentlest band at
-  /// the bottom edge. Their fractions are spaced unevenly so the steps between
-  /// them stay below what the eye picks up as banding.
+  /// How much colour survives at the top of the bar, where the blur is at full
+  /// strength. Applied once, by the horizontal pass, and ramped down with the
+  /// blur so it dies at the same edge.
+  static const _peakSaturation = 1.45;
+
+  @override
+  State<FrostedHeaderBackground> createState() => _FrostedHeaderBackgroundState();
+}
+
+class _FrostedHeaderBackgroundState extends State<FrostedHeaderBackground> {
+  /// One shader object per pass. They cannot be the same instance: an
+  /// [ImageFilter.shader] holds on to the shader rather than to a copy of its
+  /// uniforms, so a shared one would run both passes in whichever direction was
+  /// written last.
+  FragmentShader? _vertical;
+  FragmentShader? _horizontal;
+
+  @override
+  void initState() {
+    super.initState();
+    final program = _blurProgram;
+    if (program == null) return;
+    _vertical = program.fragmentShader();
+    _horizontal = program.fragmentShader();
+  }
+
+  @override
+  void dispose() {
+    _vertical?.dispose();
+    _horizontal?.dispose();
+    super.dispose();
+  }
+
+  /// Uniform indices follow the declaration order in the .frag, counting two
+  /// floats per `vec2` and skipping samplers. 0–1 are `uTextureSize`, which the
+  /// engine fills in.
+  void _configure(FragmentShader shader, {required double heightPx, required double sigmaPx, required bool horizontal}) {
+    shader
+      ..setFloat(2, heightPx)
+      ..setFloat(3, sigmaPx)
+      ..setFloat(4, horizontal ? 1 : 0)
+      ..setFloat(5, horizontal ? 0 : 1)
+      ..setFloat(6, horizontal ? FrostedHeaderBackground._peakSaturation : 1);
+  }
+
+  /// The wash over the blur.
+  ///
+  /// Five stops rather than three, following the same ease the shader ramps the
+  /// blur on. A straight linear fade to zero ends in a corner — the alpha stops
+  /// changing all at once — and that corner is visible as a faint band even
+  /// though nothing is drawn there. Held near full under the title, then eased
+  /// away over the lower half where there is nothing on top of the material
+  /// that has to stay legible.
+  Widget _wash() {
+    final frost = AppColors.frost;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            frost.withValues(alpha: widget.tintOpacity),
+            frost.withValues(alpha: widget.tintOpacity * 0.97),
+            frost.withValues(alpha: widget.tintOpacity * 0.78),
+            frost.withValues(alpha: widget.tintOpacity * 0.34),
+            frost.withValues(alpha: widget.tintOpacity * 0.08),
+            frost.withValues(alpha: 0),
+          ],
+          stops: const [0, 0.30, 0.55, 0.78, 0.92, 1],
+        ),
+      ),
+      child: const SizedBox.expand(),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final vertical = _vertical;
+    final horizontal = _horizontal;
+    if (vertical == null || horizontal == null) return _BandedFrost(wash: _wash());
+
+    final dpr = MediaQuery.devicePixelRatioOf(context);
+    return ClipRect(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // The shader measures its ramp against the bar's own height, not the
+          // backdrop texture's — the engine is free to hand us a snapshot
+          // larger than the box we are drawn into, and a collapsing header's
+          // height changes on every frame of a scroll besides.
+          final heightPx = constraints.maxHeight * dpr;
+          final sigmaPx = widget.peakSigma * dpr;
+          _configure(vertical, heightPx: heightPx, sigmaPx: sigmaPx, horizontal: false);
+          _configure(horizontal, heightPx: heightPx, sigmaPx: sigmaPx, horizontal: true);
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              // Vertical first, horizontal painted over it: a `BackdropFilter`
+              // samples whatever has already been written into the layer, so
+              // the second pass filters the output of the first. That is what
+              // makes the pair one separable 2-D blur instead of two
+              // independent 1-D ones — and it is the *only* place in this
+              // widget where stacking filters is wanted.
+              BackdropFilter(filter: ImageFilter.shader(vertical), child: const SizedBox.expand()),
+              BackdropFilter(filter: ImageFilter.shader(horizontal), child: const SizedBox.expand()),
+              _wash(),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// The pre-Impeller fallback: the stepped approximation, kept only for backends
+/// where [ImageFilter.shader] does not exist (Skia, and the web).
+///
+/// Its seams are the ones described on [FrostedHeaderBackground] and they are
+/// not fixable from here — a hard-clipped band *is* an edge. Don't tune it in
+/// the hope of closing them, and don't copy it into anything new.
+class _BandedFrost extends StatelessWidget {
+  final Widget wash;
+
+  const _BandedFrost({required this.wash});
+
   static const _bands = <({double fraction, double sigma})>[
-    (fraction: 1.00, sigma: 3.0),
-    (fraction: 0.88, sigma: 4.5),
-    (fraction: 0.72, sigma: 6.0),
-    (fraction: 0.52, sigma: 8.0),
-    (fraction: 0.30, sigma: 11.0),
+    (fraction: 1.00, sigma: 2.0),
+    (fraction: 0.88, sigma: 3.0),
+    (fraction: 0.72, sigma: 4.0),
+    (fraction: 0.52, sigma: 5.0),
+    (fraction: 0.30, sigma: 6.5),
   ];
 
-  /// Boosting saturation the way Apple's own materials do. On near-neutral
-  /// content it does nothing; where a colored chip or source dot passes under
-  /// the bar, it's what lets the color bleed through instead of washing out to
-  /// the same gray as everything else. Applied once, on the full-height band —
-  /// composing it onto every band would compound it five times over.
   static const _saturate = <double>[
     1.4722, -0.4290, -0.0432, 0, 0, //
     -0.1278, 1.1710, -0.0432, 0, 0, //
@@ -340,24 +495,7 @@ class FrostedHeaderBackground extends StatelessWidget {
                 ),
               ),
             ),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  AppColors.frost.withValues(alpha: tintOpacity),
-                  AppColors.frost.withValues(alpha: tintOpacity * 0.82),
-                  AppColors.frost.withValues(alpha: 0),
-                ],
-                // Held near full for most of the bar — the title needs it — then
-                // dropped over the last third, where there's nothing on top of
-                // the material that has to stay legible.
-                stops: const [0, 0.62, 1],
-              ),
-            ),
-            child: const SizedBox.expand(),
-          ),
+          wash,
         ],
       ),
     );

@@ -394,14 +394,30 @@ class CelebrationGlow extends StatefulWidget {
 }
 
 class _CelebrationGlowState extends State<CelebrationGlow> {
-  /// Where each colour comes in from, strongest first: two upper corners and
-  /// one higher up the middle, all centred *above* the top edge so only the
-  /// lower arc of the falloff is on screen. Alpha drops down the ranking, so
-  /// the glyph's main colour leads and the streamers tint it.
+  /// Where each colour comes in from, strongest first: **left, middle, right
+  /// across the top edge**, all centred *above* it so only the lower arc of
+  /// the falloff is on screen.
+  ///
+  /// Three lamps at comparable heights and comparable strengths, because the
+  /// point of the wash is that the light on the screen is the light in the
+  /// glyph — and a gold corner with two colours too faint and too far above
+  /// the edge to see reads as one tinted corner and nothing else. The second
+  /// and third used to be at -1.25 and -1.5 at .13 and .11, which is most of
+  /// why only the gold ever showed; the other half was the extractor throwing
+  /// the streamer colours away (see `_minShare` in `emoji_colors.dart`).
+  ///
+  /// The middle one sits a little higher and a little weaker than its
+  /// neighbours all the same: the centre of the top edge is where the glyph
+  /// and the headline are, and that is the one place the wash must not compete
+  /// with what it is lighting.
+  ///
+  /// **The colours land in weight order, not by name.** Which streamer a glyph
+  /// gives up second is the font's business — so this places the light and
+  /// leaves the hues to whatever `emojiGlowFor` read off the artwork.
   static const _lamps = [
-    (center: Alignment(-0.65, -1.15), radius: 1.15, strength: .17),
-    (center: Alignment(0.7, -1.25), radius: 1.2, strength: .13),
-    (center: Alignment(0.0, -1.5), radius: 1.3, strength: .11),
+    (center: Alignment(-0.75, -1.12), radius: 1.15, strength: .18),
+    (center: Alignment(0.0, -1.2), radius: 1.1, strength: .15),
+    (center: Alignment(0.78, -1.12), radius: 1.15, strength: .17),
   ];
 
   @override

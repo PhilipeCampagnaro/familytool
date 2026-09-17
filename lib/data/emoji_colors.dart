@@ -27,10 +27,24 @@ final Map<String, List<Color>> _hues = {};
 /// alpha is a grey smudge between the three that matter.
 const _take = 3;
 
-/// A colour has to carry a fifth of the strongest one's weight to join them,
-/// which is what keeps the antialiased seam between two streamers out of the
-/// list.
-const _minShare = .2;
+/// **How small a colour may be and still count, and it has to be small.** A
+/// party popper is mostly cone: the gold is forty-odd percent of the opaque
+/// glyph and each streamer is two or three, so at the fifth this used to be,
+/// the red and the blue were thrown out with the seam between them and the
+/// whole celebration screen was washed in one colour. `dominantHues` keeps its
+/// own absolute floor under this, so a handful of stray pixels still cannot
+/// become a colour.
+///
+/// What replaces it as the guard against the seam is [_minHueGap] — see the
+/// note on `dominantHues`, which is where the two are explained together.
+const _minShare = .04;
+
+/// How different from each other the three have to be. Enough that gold and
+/// the orange where gold meets red cannot both be picked, and forgiving enough
+/// that gold and a red streamer — fifty degrees apart on Apple's glyph — both
+/// can. It is also what the *wash* needs: three lamps in neighbouring hues is
+/// a screen with one colour on it and no way to tell why it took three passes.
+const _minHueGap = 45.0;
 
 /// Rendered size. Large enough that the streamers — a few percent of the glyph
 /// each — survive as their own hue buckets rather than blending into the cone.
@@ -80,5 +94,5 @@ Future<List<Color>> _extractHues(String emoji) async {
   image.dispose();
   painter.dispose();
   if (bytes == null) return const [];
-  return dominantHues(bytes.buffer.asUint8List(), take: _take, minShare: _minShare);
+  return dominantHues(bytes.buffer.asUint8List(), take: _take, minShare: _minShare, minHueGap: _minHueGap);
 }

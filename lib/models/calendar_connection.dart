@@ -99,12 +99,6 @@ extension CalendarProviderMeta on CalendarProvider {
   /// one account can hold several calendars added one at a time.
   bool get isLinkProvider => kind == ConnectKind.link;
 
-  /// IServ still answers CalDAV, and a school that publishes real collections
-  /// there is better served by a login than by pasting a link per calendar. So
-  /// the login stays reachable — as the second option on the IServ page, never
-  /// as the first. WebUntis has no CalDAV at all.
-  bool get hasCaldavFallback => this == CalendarProvider.iserv;
-
   /// Where the user goes to create the link, in their own words. Rendered as
   /// the numbered steps on the paste screen.
   List<String> get linkSteps => switch (this) {
@@ -644,12 +638,28 @@ class AbfallCoverage {
   /// connection. Nothing here is a credential — these APIs are all keyless.
   final Map<String, dynamic>? config;
 
+  /// Only meaningful when not [supported]: this household has already asked
+  /// for a calendar here, so the row says so rather than offering the button
+  /// a second time. Set by the server from `abfall_requests`, and flipped on
+  /// the client the moment a request goes through.
+  final bool requested;
+
+  /// The vendor plans per house and the address came without a usable house
+  /// number — Berlin's BSR, where Karl-Marx-Allee 1, 3 and 12 are three
+  /// calendars. [config] is the street and cannot be read yet: the row asks
+  /// for the number rather than connecting a calendar that would fail on its
+  /// first sync, or show the neighbour's bins. [houseNumbers] may still carry
+  /// the choices when the number exists in more than one postcode.
+  final bool needsHouseNumber;
+
   const AbfallCoverage({
     required this.supported,
     required this.town,
     this.street,
     this.houseNumbers = const [],
     this.config,
+    this.requested = false,
+    this.needsHouseNumber = false,
   });
 
   factory AbfallCoverage.fromMap(Map<String, dynamic> map) => AbfallCoverage(
@@ -658,12 +668,27 @@ class AbfallCoverage {
     street: map['street'] as String?,
     houseNumbers: _houseNumbers(map['hausNrList']),
     config: map['config'] is Map ? Map<String, dynamic>.from(map['config'] as Map) : null,
+    requested: map['requested'] == true,
+    needsHouseNumber: map['needsHouseNumber'] == true,
   );
+
+  AbfallCoverage asRequested() => AbfallCoverage(
+    supported: supported,
+    town: town,
+    street: street,
+    houseNumbers: houseNumbers,
+    config: config,
+    requested: true,
+    needsHouseNumber: needsHouseNumber,
+  );
+
+  /// Whether [config] can be connected as it stands.
+  bool get connectable => supported && config != null && !needsHouseNumber;
 
   /// Both halves of a house number are load-bearing: `nr` is what the chip says
   /// and `id` is what goes back to the vendor, so an entry missing either is not
   /// something we can offer. Skipping it beats throwing — a street-level
-  /// schedule is a perfectly good answer, and six vendors' worth of upstream
+  /// schedule is a perfectly good answer, and thirteen vendors' worth of upstream
   /// JSON is not a contract. regio-iT does send entries without an `id`, and the
   /// cast that used to sit here threw a `TypeError` past the connect screen's
   /// `on CalendarConnectionException` handler, which left the address row
@@ -742,3 +767,24 @@ String? bundeslandCodeFor(String? state) {
 }
 
 String _foldBundesland(String value) => value.toLowerCase().replaceAll(RegExp(r'[^a-zäöüß]'), '');
+
+/// The Bundesland behind a geocoded address, for the Ferien feed.
+///
+/// The geocoder's `state` first — and when it named none, the town, but only
+/// for the three Stadtstaaten. Photon leaves `state` empty for Berlin and
+/// Hamburg, which are one boundary with no admin level above the city to name,
+/// so a Berlin address arrived here as "no Bundesland" and the onboarding
+/// offered no school holidays for the capital. The lookup function fills the
+/// gap on its side too; this is the belt to that suspender.
+///
+/// Deliberately *not* [bundeslandCodeFor] on the town: that matcher accepts a
+/// state's name inside a longer word, and "Sachsenhausen" is in Brandenburg.
+String? ferienStateOf(GeoAddress address) =>
+    bundeslandCodeFor(address.state) ?? _cityStates[address.town.trim().toLowerCase()];
+
+const _cityStates = <String, String>{
+  'berlin': 'BE',
+  'hamburg': 'HH',
+  'bremen': 'HB',
+  'bremerhaven': 'HB',
+};

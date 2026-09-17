@@ -366,12 +366,19 @@ something you asked for once and get once is acceptable. `output_config: {effort
 of that wait anyway. If it tests badly, the function can hand back SSE and the card can fill the
 list rows in as they arrive — that is a later change to two files, not a different architecture.
 
-**3. Answer.** Two blocks, the list first because the list is the point:
+**3. Answer.** A title, then two blocks:
 
+- **The plan's title, with the bulb on it** — one heading, not two. The card used to print the goal
+  as a caption and the title under it, and for a plan those are near enough the same words in two
+  sizes: "Silvesterabend für 10 Personen" over "Silvesterparty für 10" spent the top of the card
+  telling the reader what they had typed thirty seconds ago. The bulb was the part worth keeping, so
+  it moved onto the title, and the `WaveSweep` that washed the question washes the answer instead.
+  The goal itself is not lost — **Nochmal** puts it straight back into the field, which is the only
+  place it was ever editable.
 - **Die Liste** — the articles, drawn with the real `IconTile` and the icon `suggestIcon` picks, with
   quantity and unit, each one **tickable off before the list is made**, so the parent drops the salt
   and the olive oil they already have rather than carrying them into a Liste and deleting them there.
-- **So geht's / Rezept** — one block below the list, **folded**, holding the overview steps and, on
+- **So geht's / Rezept** — a second section **below the list**, **peeked**, holding the overview steps and, on
   a cooking goal, the full method under them. **A step is a titled block under one title for the
   whole method, and there is exactly one emoji in an answer** (2026-09-16): `steps[0]` is
   `# 🏠 Wohnzimmer streichen`, every entry after it is `## Wände reinigen` and a sentence or two,
@@ -398,11 +405,40 @@ list rows in as they arrive — that is a later change to two files, not a diffe
     is held out of the count so a plan cannot lose its last stage to its own heading. A titled block
     is three lines on a phone.
   - The prompt also forbids a step about *buying* the articles. "Materialien besorgen" is a step
-    telling the reader to read the other half of the answer. The label row is the control: the section's own
-  `microLabel` plus the caret the rest of the app uses for a disclosure, so there is no "anzeigen"
-  sentence to translate four times. It was expanded once and that was wrong — by the second Vorhaben
-  you know how this works, and scrolling past twelve steps to reach the only button is a toll paid on
-  every plan afterwards. The recipe is drawn by `MarkdownText` — headings, ingredient bullets,
+    telling the reader to read the other half of the answer.
+
+    **It shows itself rather than announcing itself, and that took four tries.** A `microLabel` and a
+    caret; the same a rung larger and heavier (`groupHeading`); an accent pill in `_MethodChip`'s
+    shape. All three were invisible or worse, and the size was never what was wrong with them — a
+    word is a promise about content, and a promise is easy to decline when the reader already has the
+    list they came for. So the first **132 points** of the method are simply on screen, faded out at
+    the bottom, with **Alles anzeigen** under the fade. What shows is a sentence of the real recipe,
+    which nobody has to take on trust.
+
+    **The fade is load-bearing.** A fixed height cuts prose mid-word and in four languages there is
+    no height that does not; the gradient is what turns that cut into an edge. `BlendMode.dstIn` over
+    an `OverflowBox`, so the column is laid out against an unbounded height exactly as it will be
+    when open — the words do not reflow when the lid comes off, the box is just shorter than they
+    are.
+
+    **Whether it peeks at all is read off the content, not off a measurement**: a recipe always
+    overflows, and `steps[0]` being the `#` title with about three lines per titled stage after it
+    makes three entries the point where a method reliably does too. Measuring would mean laying the
+    prose out twice, or a render object, to answer a question whose wrong answers both cost nothing —
+    a short method that peeks anyway fades over its own last line, which is what the fade is for.
+
+    **And it is a section below the list, after a full-bleed `CardDivider`.** Above the list it was
+    worse than invisible: a heading over a column of articles is read as the heading *of* those
+    articles, so "REZEPT" sat on top of Sekt and Weißwein and said the shopping was the recipe. The
+    heavier of the app's two rules (the articles themselves are parted by `InsetDivider`s) is what
+    makes the break read as the end of one block rather than a gap inside it. With the peek carrying
+    the invitation, the heading goes back to `microLabel` — it is a caption again, and it has nothing
+    left to prove.
+
+    It was fully expanded once and that was wrong for a different reason: by the second Vorhaben you
+    know how this works, and scrolling past twelve steps to reach the only button is a toll paid on
+    every plan afterwards. A peek is the difference between showing somebody the method and making
+    them walk through it. The recipe is drawn by `MarkdownText` — headings, ingredient bullets,
   numbered working steps, bold on a temperature or a time — and the same widget draws it again in the
   method sheet on the finished list, so the plan and the list it becomes are the same page twice.
   Anything outside that subset is printed as it arrived.

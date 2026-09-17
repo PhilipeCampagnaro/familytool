@@ -8,6 +8,7 @@ import '../data/brand_colors.dart';
 import '../data/grocery_catalog.dart';
 import '../data/grocery_search.dart';
 import '../data/icon_suggestions.dart';
+import '../data/merchant_logos.dart';
 import '../data/list_data.dart';
 import '../models/attachment.dart';
 import '../models/event_link.dart';
@@ -38,6 +39,7 @@ import '../widgets/expandable_title.dart';
 import '../widgets/event_link_chip.dart';
 import '../widgets/floating_pill.dart';
 import '../widgets/glass.dart';
+import '../widgets/brand_mark.dart';
 import '../widgets/icon_picker.dart';
 import '../widgets/markdown_text.dart';
 import '../widgets/overview_screen.dart';
@@ -751,10 +753,15 @@ class _ListRow extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 15),
       child: Row(
         children: [
+          // The disc, because this row *is* the list's own name — the same
+          // mark the header wears once it is open, and the reason
+          // [IconTile.disc] is about a place rather than a kind of icon. The
+          // articles inside the list are the column that stays bare.
           IconTile(
             iconKey: list.iconKey,
             size: AppText.rowMark,
             imageSize: AppText.markImage(AppText.rowMark),
+            disc: true,
           ),
           const SizedBox(width: 13),
           Expanded(
@@ -850,8 +857,16 @@ class _ItemIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // An article can carry a shop's mark rather than a picture of food — a line
+    // that says "Rewe" is matched to the logo. That is [BrandMark]'s framing
+    // wherever it happens; the bare treatment below is for the art, which is
+    // drawn with its own margin and has no edge to bleed.
+    final asset = resolveIcon(iconKey)?.asset;
+    if (isMerchantAsset(asset)) {
+      return BrandMark(size: size, asset: asset);
+    }
     final image = IconImage(
-      asset: resolveIcon(iconKey)?.asset ?? generalGroceryAsset,
+      asset: asset ?? generalGroceryAsset,
       size: imageSize ?? size * _imageRatio,
     );
     if (!AppColors.isDark) {
@@ -2180,7 +2195,12 @@ class _MethodChip extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            AppIcon(AppIcons.listChecks, size: AppGlyph.inline, color: accent),
+            // The bulb the planner wears everywhere else — its island line and
+            // the goal line on the card it came from. This chip is that plan's
+            // method after the list was made, so it carries the same mark
+            // rather than the generic checklist glyph, which is what every
+            // list row in the app already falls back to.
+            AppIcon(AppIcons.lightbulb, size: AppGlyph.inline, color: accent),
             const SizedBox(width: 5),
             Text(
               label,

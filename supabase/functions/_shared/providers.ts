@@ -24,6 +24,7 @@ import {
 import { collections, readEvents } from "./caldav.ts";
 import {
   feedFileOf,
+  FeedLinkInvalid,
   feedsOf,
   feedUrlOf,
   readFeedEvents,
@@ -199,7 +200,19 @@ async function readLinkedFeed(
     return readFeedFileEvents(ics, window);
   }
 
-  return await readFeedEvents(await feedUrl(db, connection, externalId), window);
+  try {
+    return await readFeedEvents(await feedUrl(db, connection, externalId), window);
+  } catch (e) {
+    // A link that answered "no" is the user's to fix and nobody else's: the
+    // token was regenerated in the school platform, or the URL was copied from
+    // the address bar and has only ever returned a login page. Saying so as a
+    // ReconnectRequired is what puts "Erneut verbinden" on the row; leaving it
+    // as a plain error would park the connection on "Der Kalender konnte nicht
+    // geladen werden" and retry it for ever against an answer that will not
+    // change.
+    if (e instanceof FeedLinkInvalid) throw new ReconnectRequired(e.message);
+    throw e;
+  }
 }
 
 export async function accessToken(db: SupabaseClient, connection: Connection): Promise<string> {

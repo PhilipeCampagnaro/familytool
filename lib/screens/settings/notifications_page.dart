@@ -62,55 +62,68 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> with Widg
           SectionCard(radius: AppRadii.card, children: [_accessRow(s.access, notifier)]),
           const SizedBox(height: AppSpacing.blockGap),
         ],
-        SectionCard(
-          radius: AppRadii.card,
-          children: dividedRows(inset: true, [
-            // Keyed: the time rows come and go between the switches, and a
-            // native switch matched to the wrong row by position would show
-            // the other category's state.
-            SettingsRow(
-              key: const ValueKey('brief'),
-              icon: AppIcons.sun,
-              title: L.s.notifyBriefTitle,
-              subtitle: L.s.notifyBriefSubtitle,
-              trailing: NativeSwitch(value: s.brief, onChanged: notifier.setBrief),
-            ),
-            if (s.brief)
-              SettingsRow(
-                key: const ValueKey('brief-time'),
-                icon: AppIcons.clock,
-                title: L.s.notifyTime,
-                value: _clock(s.briefMinutes),
-                onTap: () => _pickTime(s.briefMinutes, notifier.setBriefMinutes),
-              ),
-            SettingsRow(
-              key: const ValueKey('abfall'),
-              icon: AppIcons.trash,
-              title: L.s.notifyAbfallTitle,
-              subtitle: L.s.notifyAbfallSubtitle,
-              trailing: NativeSwitch(value: s.abfall, onChanged: notifier.setAbfall),
-            ),
-            if (s.abfall)
-              SettingsRow(
-                key: const ValueKey('abfall-time'),
-                icon: AppIcons.clock,
-                title: L.s.notifyTime,
-                value: _clock(s.abfallMinutes),
-                onTap: () => _pickTime(s.abfallMinutes, notifier.setAbfallMinutes),
-              ),
-            SettingsRow(
-              key: const ValueKey('tasks'),
-              icon: AppIcons.checkCircle,
-              title: L.s.notifyTaskTimesTitle,
-              subtitle: L.s.notifyTaskTimesSubtitle,
-              trailing: NativeSwitch(value: s.taskTimes, onChanged: notifier.setTaskTimes),
-            ),
-          ]),
+        // One card per kind: the switch and the hour it fires at are the same
+        // thing, so they share a card and the gap between cards says where one
+        // ends. In one flat card a bare "Uhrzeit" row sat between two switches
+        // and belonged to neither.
+        _group(
+          SettingsRow(
+            key: const ValueKey('brief'),
+            icon: AppIcons.sun,
+            title: L.s.notifyBriefTitle,
+            subtitle: L.s.notifyBriefSubtitle,
+            trailing: NativeSwitch(value: s.brief, onChanged: notifier.setBrief),
+          ),
+          time: s.brief
+              ? SettingsRow(
+                  key: const ValueKey('brief-time'),
+                  icon: AppIcons.clock,
+                  title: L.s.notifyTime,
+                  value: _clock(s.briefMinutes),
+                  onTap: () => _pickTime(s.briefMinutes, notifier.setBriefMinutes),
+                )
+              : null,
+        ),
+        const SizedBox(height: AppSpacing.blockGap),
+        _group(
+          SettingsRow(
+            key: const ValueKey('abfall'),
+            icon: AppIcons.trash,
+            title: L.s.notifyAbfallTitle,
+            subtitle: L.s.notifyAbfallSubtitle,
+            trailing: NativeSwitch(value: s.abfall, onChanged: notifier.setAbfall),
+          ),
+          time: s.abfall
+              ? SettingsRow(
+                  key: const ValueKey('abfall-time'),
+                  icon: AppIcons.clock,
+                  title: L.s.notifyTime,
+                  value: _clock(s.abfallMinutes),
+                  onTap: () => _pickTime(s.abfallMinutes, notifier.setAbfallMinutes),
+                )
+              : null,
+        ),
+        const SizedBox(height: AppSpacing.blockGap),
+        _group(
+          SettingsRow(
+            key: const ValueKey('tasks'),
+            icon: AppIcons.checkCircle,
+            title: L.s.notifyTaskTimesTitle,
+            subtitle: L.s.notifyTaskTimesSubtitle,
+            trailing: NativeSwitch(value: s.taskTimes, onChanged: notifier.setTaskTimes),
+          ),
         ),
         SettingsNote(L.s.notificationsEventNote),
       ],
     );
   }
+
+  /// A switch and, while it is on, the hour it fires at — one card, so the
+  /// time row can only read as belonging to the switch above it.
+  Widget _group(Widget toggle, {Widget? time}) => SectionCard(
+    radius: AppRadii.card,
+    children: time == null ? [toggle] : dividedRows(inset: true, [toggle, time]),
+  );
 
   /// The OS grant, in the one shape that lets the user act on it: ask while it
   /// can still be asked, send them to system settings once only that can help,

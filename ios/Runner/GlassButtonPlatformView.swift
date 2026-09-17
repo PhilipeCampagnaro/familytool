@@ -251,7 +251,9 @@ class GlassButtonPlatformView: NSObject, FlutterPlatformView {
         titleFont: item["titleFont"] as? String,
         titleSize: (item["titleSize"] as? NSNumber).map { CGFloat($0.doubleValue) } ?? 15,
         titleARGB: (item["titleColor"] as? NSNumber)?.int64Value,
-        iconTrailing: (item["iconTrailing"] as? NSNumber)?.boolValue ?? false
+        iconTrailing: (item["iconTrailing"] as? NSNumber)?.boolValue ?? false,
+        glyphARGB: (item["glyphColor"] as? NSNumber)?.int64Value,
+        dots: item["dots"] as? [String: Any]
       )
       button.accessibilityLabel = item["label"] as? String
       if let argb = tintARGB {
@@ -351,7 +353,9 @@ class GlassButtonPlatformView: NSObject, FlutterPlatformView {
         titleFont: item["titleFont"] as? String,
         titleSize: (item["titleSize"] as? NSNumber).map { CGFloat($0.doubleValue) } ?? 15,
         titleARGB: (item["titleColor"] as? NSNumber)?.int64Value,
-        iconTrailing: (item["iconTrailing"] as? NSNumber)?.boolValue ?? false
+        iconTrailing: (item["iconTrailing"] as? NSNumber)?.boolValue ?? false,
+        glyphARGB: (item["glyphColor"] as? NSNumber)?.int64Value,
+        dots: item["dots"] as? [String: Any]
       )
       button.accessibilityLabel = item["label"] as? String
     }
@@ -425,7 +429,9 @@ class GlassButtonPlatformView: NSObject, FlutterPlatformView {
     titleFont: String?,
     titleSize: CGFloat,
     titleARGB: Int64?,
-    iconTrailing: Bool
+    iconTrailing: Bool,
+    glyphARGB: Int64?,
+    dots: [String: Any]?
   ) -> UIButton.Configuration {
     var configuration = glassConfiguration(prominent: prominent, grouped: grouped)
     if let symbol = symbol {
@@ -439,6 +445,15 @@ class GlassButtonPlatformView: NSObject, FlutterPlatformView {
       configuration.image = symbolImage(symbol, pointSize: symbolSize, weight: symbolWeightName)
     } else if let codepoint = codepoint, let fontAsset = fontAsset {
       configuration.image = PhosphorGlyphs.image(codepoint: codepoint, asset: fontAsset, size: iconSize)
+    }
+    // A glyph normally reaches UIKit as a *template* and takes the button's
+    // tint. One that has to share its image with something coloured cannot —
+    // see `NativeGlassDots` on the Dart side — so it is baked instead.
+    if let glyphARGB = glyphARGB, let image = configuration.image {
+      configuration.image = image.withTintColor(color(fromARGB: glyphARGB), renderingMode: .alwaysOriginal)
+    }
+    if let dots = dots {
+      configuration.image = dotStack(dots, glyph: configuration.image, glyphTrailing: iconTrailing)
     }
     if let title = title {
       // **The app's own typeface, not the system's.** A native button that
@@ -469,6 +484,54 @@ class GlassButtonPlatformView: NSObject, FlutterPlatformView {
     // squeeze the content or force a minimum the header has not reserved.
     configuration.contentInsets = .zero
     return configuration
+  }
+
+  /// The overlap between two dots is cleared out of the image rather than
+  /// filled: what shows through it is the glass the button is made of.
+  private static let dotGap: CGFloat = 2
+
+  /// A row of overlapping colour dots, with the button's glyph beside them, as
+  /// one image — a `UIButton.Configuration` has a single image slot, so the two
+  /// travel together or not at all. See `NativeGlassDots` in Dart.
+  ///
+  /// The result is **not** a template: each dot carries its own colour, and a
+  /// template is a single-colour mask.
+  private static func dotStack(_ spec: [String: Any], glyph: UIImage?, glyphTrailing: Bool) -> UIImage? {
+    let colors = ((spec["colors"] as? [NSNumber]) ?? []).map { color(fromARGB: $0.int64Value) }
+    guard !colors.isEmpty else { return glyph }
+    let size = (spec["size"] as? NSNumber).map { CGFloat($0.doubleValue) } ?? 11
+    let overlap = (spec["overlap"] as? NSNumber).map { CGFloat($0.doubleValue) } ?? 4
+    let step = size - overlap
+    let dotsWidth = size + step * CGFloat(colors.count - 1)
+    let glyphSize = glyph?.size ?? .zero
+    let gap: CGFloat = glyph == nil ? 0 : imagePadding
+    let box = CGSize(width: dotsWidth + gap + glyphSize.width, height: max(size, glyphSize.height))
+    return UIGraphicsImageRenderer(size: box).image { context in
+      let originX = glyphTrailing ? 0 : glyphSize.width + gap
+      for (index, dot) in colors.enumerated() {
+        let rect = CGRect(
+          x: originX + step * CGFloat(index),
+          y: (box.height - size) / 2,
+          width: size,
+          height: size
+        )
+        // Each dot cuts its own edge out of the one it covers, so the two read
+        // as two circles rather than as one blob.
+        if index > 0 {
+          context.cgContext.setBlendMode(.clear)
+          context.cgContext.fillEllipse(in: rect.insetBy(dx: -dotGap, dy: -dotGap))
+          context.cgContext.setBlendMode(.normal)
+        }
+        dot.setFill()
+        context.cgContext.fillEllipse(in: rect)
+      }
+      glyph?.draw(
+        at: CGPoint(
+          x: glyphTrailing ? dotsWidth + gap : 0,
+          y: (box.height - glyphSize.height) / 2
+        )
+      )
+    }.withRenderingMode(.alwaysOriginal)
   }
 
   /// The iOS 26 glass configurations.

@@ -33,6 +33,7 @@ import 'widgets/more_shelf.dart';
 import 'widgets/paywall_sheet.dart';
 import 'widgets/empty_state.dart';
 import 'widgets/error_note.dart';
+import 'widgets/glass.dart';
 import 'widgets/native_tab_bar.dart';
 
 Future<void> main() async {
@@ -41,6 +42,12 @@ Future<void> main() async {
   // already restored — otherwise `_RootGate` would render the login screen for
   // a moment on every launch.
   await AporahSupabase.initialize();
+  // Also before the first frame, and for the same kind of reason: every screen
+  // in the app puts a `FrostedHeaderBackground` behind its header, and that
+  // widget cannot await a shader from inside `build`. Loading it here means the
+  // first header ever drawn is already the real variable blur rather than the
+  // banded fallback.
+  await loadFrostedHeaderShader();
   runApp(ProviderScope(child: AporahApp()));
 }
 

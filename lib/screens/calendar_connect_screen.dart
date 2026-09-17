@@ -231,30 +231,8 @@ class _ProviderPageState extends ConsumerState<_ProviderPage> with WidgetsBindin
     }
   }
 
-  void _openSheet({
-    CalendarConnection? connection,
-    List<RemoteCalendar> calendars = const [],
-    String? addToConnectionId,
-  }) {
-    showCalendarConnectSheet(
-      context,
-      ref,
-      _provider,
-      connection: connection,
-      calendars: calendars,
-      addToConnectionId: addToConnectionId,
-    );
-  }
-
-  /// The CalDAV login, for the one provider that still has one.
-  ///
-  /// Reached only from the note under the link flow, never as the first thing
-  /// on the page: a school that has enabled CalDAV publishes its class and
-  /// group collections there, but never the plugin calendars — Aufgaben,
-  /// Klausuren, Geburtstage are module views with no collection behind them —
-  /// so a login alone is exactly the empty calendar this whole flow replaced.
-  void _openLoginSheet() {
-    showCalendarConnectSheet(context, ref, _provider, useCaldavLogin: true);
+  void _openSheet({CalendarConnection? connection, List<RemoteCalendar> calendars = const []}) {
+    showCalendarConnectSheet(context, ref, _provider, connection: connection, calendars: calendars);
   }
 
   /// The free tier's one connected account, asked before the user is sent
@@ -433,13 +411,6 @@ class _ProviderPageState extends ConsumerState<_ProviderPage> with WidgetsBindin
               radius: AppRadii.card,
               children: dividedRows(inset: true, [
                 for (final entry in connection.entries) _ConnectedRow(key: ValueKey(entry.key), entry: entry),
-                if (connection.isLinked)
-                  SettingsRow(
-                    icon: AppIcons.plus,
-                    title: L.s.addAnotherCalendar,
-                    subtitle: L.s.addAnotherCalendarBody,
-                    onTap: () => _openSheet(addToConnectionId: connection.id),
-                  ),
               ]),
             ),
             const SizedBox(height: AppSpacing.blockGap),
@@ -460,20 +431,6 @@ class _ProviderPageState extends ConsumerState<_ProviderPage> with WidgetsBindin
         if (_error case final message?) ...[
           const SizedBox(height: AppSpacing.blockGap),
           ErrorNote(message: message),
-        ],
-        if (_provider.hasCaldavFallback) ...[
-          const SizedBox(height: AppSpacing.blockGap),
-          SectionCard(
-            radius: AppRadii.card,
-            children: dividedRows(inset: true, [
-              SettingsRow(
-                icon: AppIcons.key,
-                title: L.s.connectWithLogin,
-                subtitle: L.s.connectWithLoginBody,
-                onTap: _openLoginSheet,
-              ),
-            ]),
-          ),
         ],
       ],
     );
@@ -670,20 +627,14 @@ Future<void> showCalendarConnectSheet(
   CalendarProvider provider, {
   CalendarConnection? connection,
   List<RemoteCalendar> calendars = const [],
-  String? addToConnectionId,
-  bool useCaldavLogin = false,
 }) async {
   final flow = _ConnectFlow(
     provider: provider,
     notifier: ref.read(calendarConnectionsProvider.notifier),
     repository: ref.read(calendarConnectionRepositoryProvider),
-    // What the CalDAV login gets back is an id; the row it names is in state,
-    // which is the page's to read, not the flow's.
     findConnection: (id) => _byId(ref.read(calendarConnectionsProvider).connections, id),
     connection: connection,
     calendars: calendars,
-    addToConnectionId: addToConnectionId,
-    useCaldavLogin: useCaldavLogin,
   );
 
   await showAppSheet<void>(
@@ -1704,8 +1655,6 @@ class _ConnectFlow extends ChangeNotifier {
     required this.findConnection,
     this.connection,
     this.calendars = const [],
-    this.addToConnectionId,
-    this.useCaldavLogin = false,
   }) {
     // Everything the account offers, all ticked. Starting from "all" rather
     // than "none" matches what the connection already means the moment it
@@ -1738,21 +1687,14 @@ class _ConnectFlow extends ChangeNotifier {
   // -- link (IServ, WebUntis)
   final linkUrl = TextEditingController();
 
-  /// Who the account belongs to — "Alice". Only asked when a new account is
-  /// being made; adding a second calendar to one already knows.
+  /// Who the account belongs to — "Alice", and always asked.
+  ///
+  /// It is not decoration and it is not only the card's title: the school and
+  /// this name together are the account's identity — `external_account` is
+  /// `kgs-sb.de/alice` — so a second link typed under the same name lands on the
+  /// calendars already there rather than beside them. `calendar-link` is what
+  /// does the matching; see the merge in its `add`.
   final account = TextEditingController();
-
-  /// Set when the sheet was opened from "+ Kalender hinzufügen" on an account
-  /// that already exists, which is what turns the flow from two questions into
-  /// one.
-  final String? addToConnectionId;
-
-  /// IServ's second route: the CalDAV login, reached from the note at the
-  /// bottom of its page rather than from the button. The flow is otherwise
-  /// unchanged — it is the same login step iCloud uses, and it ends on the same
-  /// picker, because a school that publishes collections has a list to choose
-  /// from.
-  final bool useCaldavLogin;
 
   /// What the fetched feed said about itself: the name it carries, if any, and
   /// how many events are in it. Shown on the naming step, because "37 Termine
@@ -1819,11 +1761,12 @@ class _ConnectFlow extends ChangeNotifier {
   /// True on the pasted-link flow, which is now the front door for IServ,
   /// WebUntis and the generic iCal tile alike. Everything downstream — the
   /// account name, the naming step, the submit — is the same conversation.
-  bool get isLink => provider.kind == ConnectKind.link && !useCaldavLogin;
+  bool get isLink => provider.kind == ConnectKind.link;
 
-  /// True while this flow is making a *new* account rather than adding a
-  /// calendar to one — the only case that has to ask whose it is.
-  bool get needsAccountName => isLink && addToConnectionId == null;
+  /// Every pasted link is asked whose it is, because the answer is what decides
+  /// which account it joins — Alice's second IServ link says "Alice" and lands
+  /// on Alice's card.
+  bool get needsAccountName => isLink;
 
   /// Whether this step offers the file route at all.
   ///
@@ -1854,7 +1797,7 @@ class _ConnectFlow extends ChangeNotifier {
       // Google and Outlook did their asking in Safari, before the sheet.
       ConnectKind.oauth => const <_Step>[],
       ConnectKind.password => const [_Step.login],
-      ConnectKind.link => useCaldavLogin ? const [_Step.login] : const [_Step.link],
+      ConnectKind.link => const [_Step.link],
       ConnectKind.feed => isFerien ? const [_Step.region] : const [_Step.address],
     },
     if (_needsDetails) _Step.details,
@@ -1865,7 +1808,9 @@ class _ConnectFlow extends ChangeNotifier {
 
   bool get _needsDetails {
     final found = coverage;
-    return isAbfall && found != null && (!found.supported || found.houseNumbers.isNotEmpty);
+    return isAbfall &&
+        found != null &&
+        (!found.supported || found.houseNumbers.isNotEmpty || found.needsHouseNumber);
   }
 
   int get index => steps.indexOf(step);
@@ -1891,7 +1836,7 @@ class _ConnectFlow extends ChangeNotifier {
     if (isLink) {
       final typed = account.text.trim();
       if (typed.isNotEmpty) return '${provider.label} · $typed';
-      return findConnection(addToConnectionId ?? '')?.displayName ?? provider.label;
+      return provider.label;
     }
     return connection?.displayName ?? provider.label;
   }
@@ -1976,6 +1921,13 @@ class _ConnectFlow extends ChangeNotifier {
       case _Step.details:
         FocusScope.of(context).unfocus();
         if (coverage?.supported == true) {
+          // A per-house vendor without the house: there is nothing to connect
+          // yet, and the message says what to type. Not an ICS fallback — the
+          // vendor is right there.
+          if (coverage!.needsHouseNumber && houseNumber == null) {
+            _fail(coverage!.houseNumbers.isEmpty ? L.s.wasteNeedsHouseNumber : L.s.pickHouseNumberHint);
+            return;
+          }
           _advance();
         } else {
           await _checkIcs();
@@ -2071,6 +2023,31 @@ class _ConnectFlow extends ChangeNotifier {
     // or a listing that came back empty. The calendars of an account that *did*
     // offer a list are named one by one, in [calendarNames].
     return connection?.displayName ?? provider.label;
+  }
+
+  // -- request ----------------------------------------------------------------
+
+  /// The spinner on "Anfragen" while the town is being filed.
+  bool requesting = false;
+
+  /// No vendor of ours serves the address: file the town so we go and find
+  /// one. The step then says so where the button was, and the server keeps
+  /// the request, so coming back a week later finds it already filed.
+  Future<void> requestAbfall() async {
+    final at = address;
+    final found = coverage;
+    if (at == null || found == null || found.supported || found.requested || requesting) return;
+    requesting = true;
+    error = null;
+    _notify();
+    try {
+      await repository.requestAbfall(at, stateCode: ferienStateOf(at));
+      coverage = found.asRequested();
+    } catch (_) {
+      error = L.s.wasteRequestFailed;
+    }
+    requesting = false;
+    _notify();
   }
 
   // -- login ------------------------------------------------------------------
@@ -2438,7 +2415,6 @@ class _ConnectFlow extends ChangeNotifier {
           fileName: pickedFileName,
           name: label,
           account: account.text.trim(),
-          connectionId: addToConnectionId,
         );
       } else if (hasPicker) {
         // The picked calendars and what to call each of them: one write,
@@ -3430,10 +3406,17 @@ class _DetailsStep extends StatelessWidget {
         SectionCard(
           radius: AppRadii.card,
           children: dividedRows(inset: true, [
-            if (supported)
+            if (supported && coverage.needsHouseNumber && coverage.houseNumbers.isEmpty)
+              // Nothing to pick from: the number has to be typed on the step
+              // before. Said in the vendor's own words rather than as an error.
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 14),
+                child: Text(L.s.wasteNeedsHouseNumber, style: AppText.body.copyWith(color: AppColors.muted)),
+              )
+            else if (supported)
               FieldGroup(
                 label: L.s.houseNumber,
-                hint: L.s.multipleDistrictsHint,
+                hint: coverage.needsHouseNumber ? L.s.pickHouseNumberHint : L.s.multipleDistrictsHint,
                 child: Wrap(
                   spacing: 8,
                   runSpacing: 8,
@@ -3468,11 +3451,66 @@ class _DetailsStep extends StatelessWidget {
                   ),
                 ),
               ),
+            // The other way out of an unserved town: have us add its vendor.
+            // Below the link field rather than above it, because a household
+            // holding the link is done now and one without it is done in a
+            // few days.
+            if (!supported) _RequestRow(flow: flow),
           ]),
         ),
         _StepError(flow.error),
         if (flow.busy) _StepBusyRow(L.s.checkingLinkEllipsis),
       ],
+    );
+  }
+}
+
+/// "Anfragen" for a town no vendor serves, and the sentence saying we are on
+/// it once tapped. Same row the onboarding's Müllabfuhr line draws, so the two
+/// places a household can hit this wall answer it the same way.
+class _RequestRow extends StatelessWidget {
+  final _ConnectFlow flow;
+
+  const _RequestRow({required this.flow});
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = Theme.of(context).colorScheme.primary;
+    final requested = flow.coverage?.requested == true;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              requested ? L.s.wasteRequested : L.s.wasteRequestHint,
+              style: AppText.label,
+            ),
+          ),
+          const SizedBox(width: 12),
+          if (requested)
+            AppIcon(AppIcons.check, size: 16, color: AppColors.success)
+          else
+            GestureDetector(
+              onTap: flow.requesting ? null : flow.requestAbfall,
+              behavior: HitTestBehavior.opaque,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(AppRadii.chip),
+                ),
+                child: flow.requesting
+                    ? SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: accent),
+                      )
+                    : Text(L.s.wasteRequestAction, style: AppText.buttonSmall.copyWith(color: accent)),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

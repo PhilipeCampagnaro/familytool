@@ -33,7 +33,7 @@ class LocalCalendars {
 
   const LocalCalendars({this.abfall, this.ferienState});
 
-  bool get hasAbfall => abfall?.supported == true && abfall?.config != null;
+  bool get hasAbfall => abfall?.connectable == true;
   bool get hasFerien => ferienState != null;
   bool get any => hasAbfall || hasFerien;
 
@@ -83,6 +83,10 @@ class OnboardingState {
   final bool connecting;
   final String? addressError;
 
+  /// The spinner on the Müllabfuhr row's "Anfragen" while the request is on
+  /// its way. Whether it *went* lives on `found.abfall.requested`.
+  final bool requestingTrash;
+
   const OnboardingState({
     this.done,
     this.step = 0,
@@ -99,6 +103,7 @@ class OnboardingState {
     this.found,
     this.connecting = false,
     this.addressError,
+    this.requestingTrash = false,
   });
 
   OnboardingState copyWith({
@@ -117,6 +122,7 @@ class OnboardingState {
     LocalCalendars? found,
     bool? connecting,
     String? addressError,
+    bool? requestingTrash,
     bool clearPickedAddress = false,
     bool clearFound = false,
     bool clearAddressError = false,
@@ -137,6 +143,7 @@ class OnboardingState {
       found: clearFound ? null : (found ?? this.found),
       connecting: connecting ?? this.connecting,
       addressError: clearAddressError ? null : (addressError ?? this.addressError),
+      requestingTrash: requestingTrash ?? this.requestingTrash,
     );
   }
 }
@@ -261,7 +268,7 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
     }
     if (!mounted) return;
 
-    final result = LocalCalendars(abfall: coverage, ferienState: bundeslandCodeFor(found.state));
+    final result = LocalCalendars(abfall: coverage, ferienState: ferienStateOf(found));
     state = state.copyWith(
       lookingUp: false,
       found: result,
@@ -270,6 +277,31 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
       trashCalendar: result.hasAbfall,
       ferienCalendar: result.hasFerien,
     );
+  }
+
+  /// "Anfragen" on the Müllabfuhr row: files the town so we go and find its
+  /// vendor. The row flips to "angefragt" on the answer and stays there — the
+  /// server remembers the request, so a replayed tour finds it already set.
+  Future<void> requestTrash() async {
+    final found = state.found;
+    final address = state.pickedAddress;
+    final coverage = found?.abfall;
+    if (found == null || address == null || coverage == null) return;
+    if (coverage.supported || coverage.requested || state.requestingTrash) return;
+    state = state.copyWith(requestingTrash: true, clearAddressError: true);
+    try {
+      await _ref
+          .read(calendarConnectionRepositoryProvider)
+          .requestAbfall(address, stateCode: found.ferienState);
+      if (!mounted) return;
+      state = state.copyWith(
+        requestingTrash: false,
+        found: LocalCalendars(abfall: coverage.asRequested(), ferienState: found.ferienState),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      state = state.copyWith(requestingTrash: false, addressError: L.s.wasteRequestFailed);
+    }
   }
 
   /// Back to an empty field, from the X on the address row.
@@ -309,15 +341,25 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
     final found = state.found;
     if (found == null || state.connecting) return true;
 
+    // **Both of these are gated on the lookup having found the thing**, not
+    // only on the household owning one already. Without that gate an address
+    // with no waste vendor still counted as "Müllabfuhr connected" whenever
+    // *any* Abfall feed was in the list — one from the family's previous
+    // address, say — and the tour finished by ticking a calendar this address
+    // cannot have. The Ferien half was already matched on the Bundesland this
+    // lookup resolved; `found.hasFerien` is the same guard said for the case
+    // where it resolved none.
     final existing = _ref.read(calendarConnectionsProvider);
-    final hasFerienAlready = existing
-        .of(CalendarProvider.ferien)
-        .any((c) => c.ferienBundesland == found.ferienState);
-    final hasAbfallAlready = existing.of(CalendarProvider.abfall).isNotEmpty;
+    final hasFerienAlready =
+        found.hasFerien &&
+        existing.of(CalendarProvider.ferien).any((c) => c.ferienBundesland == found.ferienState);
+    final hasAbfallAlready = found.hasAbfall && existing.of(CalendarProvider.abfall).isNotEmpty;
 
     // Already subscribed counts as connected: the tour did not create it, but
     // the household has it, and a cross beside a calendar they can see in
-    // Kalender would be its own kind of lie.
+    // Kalender would be its own kind of lie. This is the *only* place the two
+    // recap flags pick up anything the tour did not do itself — see the note
+    // in `_DoneStep`.
     if (hasFerienAlready || hasAbfallAlready) {
       state = state.copyWith(
         ferienConnected: state.ferienConnected || hasFerienAlready,

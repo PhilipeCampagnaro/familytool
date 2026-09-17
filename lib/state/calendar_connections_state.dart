@@ -166,7 +166,6 @@ class CalendarConnectionsNotifier extends StateNotifier<CalendarConnectionsState
     String? ics,
     String? fileName,
     String? account,
-    String? connectionId,
   }) async {
     final result = await _repo.addCalendarLink(
       provider: provider,
@@ -175,7 +174,6 @@ class CalendarConnectionsNotifier extends StateNotifier<CalendarConnectionsState
       fileName: fileName,
       name: name,
       account: account,
-      connectionId: connectionId,
     );
     // No `displayName` to apply: the account was named on the way in, and the
     // calendar's own name went with the link. So this only re-reads and kicks
