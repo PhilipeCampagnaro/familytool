@@ -66,7 +66,12 @@ class BoxRepository {
 
     final results = await Future.wait([
       _db.from('box_shares').select('box_id, user_id').inFilter('box_id', ids),
-      _db.from('box_items').select(_itemColumns).inFilter('box_id', ids).order('position').order('created_at'),
+      _db
+          .from('box_items')
+          .select(_itemColumns)
+          .inFilter('box_id', ids)
+          .order('position')
+          .order('created_at'),
       // Own grants only — `guest_access_select` also returns the guests *on* my
       // household's boxes, which are somebody else's grants.
       _db.from('guest_access').select('resource_id').eq('resource_kind', 'box').eq('user_id', _uid),
@@ -183,7 +188,12 @@ class BoxRepository {
   /// upload has to have landed before the column may name it. Bundling the two
   /// would mean a `photo_path` pointing at an object that isn't there yet.
   Future<StorageBox> setPhoto(String boxId, String? path) async {
-    final row = await _db.from('boxes').update({'photo_path': path}).eq('id', boxId).select(_boxColumns).single();
+    final row = await _db
+        .from('boxes')
+        .update({'photo_path': path})
+        .eq('id', boxId)
+        .select(_boxColumns)
+        .single();
     return StorageBox.fromMap(row);
   }
 
@@ -229,7 +239,11 @@ class BoxRepository {
       createdBy: _uid,
       position: position,
     );
-    final row = await _db.from('box_items').insert(draft.toMap(forInsert: true)).select(_itemColumns).single();
+    final row = await _db
+        .from('box_items')
+        .insert(draft.toMap(forInsert: true))
+        .select(_itemColumns)
+        .single();
     return BoxItem.fromMap(row);
   }
 
@@ -247,13 +261,7 @@ class BoxRepository {
   }) async {
     final row = await _db
         .from('box_items')
-        .update({
-          'name': name,
-          'size': size,
-          'qty': ?qty,
-          'note': note,
-          'icon_asset': iconKey,
-        })
+        .update({'name': name, 'size': size, 'qty': ?qty, 'note': note, 'icon_asset': iconKey})
         .eq('id', itemId)
         .select(_itemColumns)
         .single();
@@ -262,7 +270,12 @@ class BoxRepository {
 
   /// The item side of [setPhoto], and the same reasoning.
   Future<BoxItem> setItemPhoto(String itemId, String? path) async {
-    final row = await _db.from('box_items').update({'photo_path': path}).eq('id', itemId).select(_itemColumns).single();
+    final row = await _db
+        .from('box_items')
+        .update({'photo_path': path})
+        .eq('id', itemId)
+        .select(_itemColumns)
+        .single();
     return BoxItem.fromMap(row);
   }
 

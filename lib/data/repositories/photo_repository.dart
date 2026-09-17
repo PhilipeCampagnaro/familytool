@@ -48,11 +48,9 @@ class PhotoRepository {
   Future<String> upload({required String bucket, required String containerId, required File file}) async {
     final extension = extensionOf(file.path);
     final path = '$containerId/${newUuidV4()}.$extension';
-    await _db.storage.from(bucket).upload(
-      path,
-      file,
-      fileOptions: FileOptions(contentType: contentTypeFor(extension)),
-    );
+    await _db.storage
+        .from(bucket)
+        .upload(path, file, fileOptions: FileOptions(contentType: contentTypeFor(extension)));
     return path;
   }
 
@@ -86,7 +84,11 @@ class PhotoRepository {
   /// kept its old `photo_path` would name an object filed under an id no box
   /// has any more, which the read policy correctly refuses. Copying is the only
   /// honest answer: undo either gives the pictures back or it isn't undo.
-  Future<String> copyTo({required String bucket, required String fromPath, required String containerId}) async {
+  Future<String> copyTo({
+    required String bucket,
+    required String fromPath,
+    required String containerId,
+  }) async {
     final to = '$containerId/${newUuidV4()}.${extensionOf(fromPath)}';
     await _db.storage.from(bucket).copy(fromPath, to);
     return to;

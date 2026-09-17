@@ -29,7 +29,10 @@ out loud: *"Zugewiesen an Lea — für alle sichtbar."* The backend splits it in
 | **Freigabe (extern)** | `guest_access` + `share_links` | Gäste, einzeln eingeladen |
 
 External sharing is deliberately **not** part of the "Für wen?" picker. Mixing outsiders into the
-family avatar row would make a mis-tap leak family data; it gets its own "Teilen" sheet.
+family avatar row would make a mis-tap leak family data; it gets its own "Teilen" action. For a
+list that action is the system share sheet with a link minted for it (`expires_in_days: 7`, revoked
+at once if the sheet is closed unsent); boxes and tasks keep the Teilen sheet. Expiry only stops new
+redemptions — `revoke_link_guests` fires on `revoked_at`, so guests who joined in time stay.
 
 **Every external share may edit, and the sheet no longer asks.** `share_links.can_edit` and
 `guest_access.can_edit` are still there, still enforced by `private.can_edit_guest` inside

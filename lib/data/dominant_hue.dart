@@ -72,8 +72,7 @@ List<Color> dominantHues(Uint8List rgba, {int take = 1, double minShare = 0}) {
     sumB[bucket] += b * w;
   }
 
-  final ranked = [for (var i = 0; i < _buckets; i++) i]
-    ..sort((a, b) => weight[b].compareTo(weight[a]));
+  final ranked = [for (var i = 0; i < _buckets; i++) i]..sort((a, b) => weight[b].compareTo(weight[a]));
   if (weight[ranked.first] < _noise) return const [];
 
   final floor = [_noise, weight[ranked.first] * minShare].reduce((a, b) => a > b ? a : b);

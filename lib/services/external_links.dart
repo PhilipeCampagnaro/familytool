@@ -83,9 +83,11 @@ String urlLabel(String url) {
   return host.startsWith('www.') ? host.substring(4) : host;
 }
 
-/// Amazon's search URL for [query] — the German store, matching the app's
-/// German copy and the merchants the Listen screen already ships icons for.
-String amazonSearchUrl(String query) => 'https://www.amazon.de/s?k=${Uri.encodeQueryComponent(query)}';
+// Amazon's search URL moved to `lib/data/amazon.dart` when the app stopped
+// assuming the German store. It is no longer one line: which marketplace a
+// household shops in and whether the link carries our partner tag are decided
+// together, because the tag is what makes the link advertising and advertising
+// has to say so.
 
 /// The navigation apps the event-detail sheet's "Route" button offers.
 ///

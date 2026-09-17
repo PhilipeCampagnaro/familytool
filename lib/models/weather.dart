@@ -96,16 +96,17 @@ class WeatherReading {
   ///
   /// Only the two clearest buckets have a night form: a rain cloud at 22:00 is
   /// still a rain cloud, but a sun is not.
-  String get iconAsset => 'assets/weather/${switch (condition) {
-    WeatherCondition.clear => isDay ? 'clear-day' : 'clear-night',
-    WeatherCondition.partlyCloudy => isDay ? 'partly-cloudy-day' : 'partly-cloudy-night',
-    WeatherCondition.cloudy => 'cloudy',
-    WeatherCondition.fog => 'fog',
-    WeatherCondition.drizzle => 'drizzle',
-    WeatherCondition.rain => 'rain',
-    WeatherCondition.snow => 'snow',
-    WeatherCondition.storm => 'thunderstorms-rain',
-  }}.svg';
+  String get iconAsset =>
+      'assets/weather/${switch (condition) {
+        WeatherCondition.clear => isDay ? 'clear-day' : 'clear-night',
+        WeatherCondition.partlyCloudy => isDay ? 'partly-cloudy-day' : 'partly-cloudy-night',
+        WeatherCondition.cloudy => 'cloudy',
+        WeatherCondition.fog => 'fog',
+        WeatherCondition.drizzle => 'drizzle',
+        WeatherCondition.rain => 'rain',
+        WeatherCondition.snow => 'snow',
+        WeatherCondition.storm => 'thunderstorms-rain',
+      }}.svg';
 
   /// The wash behind the forecast card in the event sheet, and the ink on it.
   /// The agenda row deliberately has no skin — see [WeatherSkin].
@@ -132,8 +133,7 @@ class GeoPoint {
 
   /// Two decimals ≈ 1 km, which is the resolution the forecast model has
   /// anyway — so two addresses on the same street share one fetch.
-  String get cacheKey =>
-      '${(latitude * 100).round() / 100},${(longitude * 100).round() / 100}';
+  String get cacheKey => '${(latitude * 100).round() / 100},${(longitude * 100).round() / 100}';
 
   factory GeoPoint.fromMap(Map<String, dynamic> map) => GeoPoint(
     latitude: (map['lat'] as num).toDouble(),
@@ -261,9 +261,8 @@ class HourlyForecast {
 /// appointment actually falls on.
 const int dayForecastHour = 13;
 
-DateTime eventSampleTime(CalendarEvent event, DateTime day) => event.allDay
-    ? DateTime(day.year, day.month, day.day, dayForecastHour)
-    : event.startsAt;
+DateTime eventSampleTime(CalendarEvent event, DateTime day) =>
+    event.allDay ? DateTime(day.year, day.month, day.day, dayForecastHour) : event.startsAt;
 
 /// The name of one reading: same place, same moment, same key.
 ///

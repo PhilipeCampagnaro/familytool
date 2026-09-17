@@ -64,51 +64,48 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> with Widg
         ],
         SectionCard(
           radius: AppRadii.card,
-          children: dividedRows(
-            inset: true,
-            [
-              // Keyed: the time rows come and go between the switches, and a
-              // native switch matched to the wrong row by position would show
-              // the other category's state.
+          children: dividedRows(inset: true, [
+            // Keyed: the time rows come and go between the switches, and a
+            // native switch matched to the wrong row by position would show
+            // the other category's state.
+            SettingsRow(
+              key: const ValueKey('brief'),
+              icon: AppIcons.sun,
+              title: L.s.notifyBriefTitle,
+              subtitle: L.s.notifyBriefSubtitle,
+              trailing: NativeSwitch(value: s.brief, onChanged: notifier.setBrief),
+            ),
+            if (s.brief)
               SettingsRow(
-                key: const ValueKey('brief'),
-                icon: AppIcons.sun,
-                title: L.s.notifyBriefTitle,
-                subtitle: L.s.notifyBriefSubtitle,
-                trailing: NativeSwitch(value: s.brief, onChanged: notifier.setBrief),
+                key: const ValueKey('brief-time'),
+                icon: AppIcons.clock,
+                title: L.s.notifyTime,
+                value: _clock(s.briefMinutes),
+                onTap: () => _pickTime(s.briefMinutes, notifier.setBriefMinutes),
               ),
-              if (s.brief)
-                SettingsRow(
-                  key: const ValueKey('brief-time'),
-                  icon: AppIcons.clock,
-                  title: L.s.notifyTime,
-                  value: _clock(s.briefMinutes),
-                  onTap: () => _pickTime(s.briefMinutes, notifier.setBriefMinutes),
-                ),
+            SettingsRow(
+              key: const ValueKey('abfall'),
+              icon: AppIcons.trash,
+              title: L.s.notifyAbfallTitle,
+              subtitle: L.s.notifyAbfallSubtitle,
+              trailing: NativeSwitch(value: s.abfall, onChanged: notifier.setAbfall),
+            ),
+            if (s.abfall)
               SettingsRow(
-                key: const ValueKey('abfall'),
-                icon: AppIcons.trash,
-                title: L.s.notifyAbfallTitle,
-                subtitle: L.s.notifyAbfallSubtitle,
-                trailing: NativeSwitch(value: s.abfall, onChanged: notifier.setAbfall),
+                key: const ValueKey('abfall-time'),
+                icon: AppIcons.clock,
+                title: L.s.notifyTime,
+                value: _clock(s.abfallMinutes),
+                onTap: () => _pickTime(s.abfallMinutes, notifier.setAbfallMinutes),
               ),
-              if (s.abfall)
-                SettingsRow(
-                  key: const ValueKey('abfall-time'),
-                  icon: AppIcons.clock,
-                  title: L.s.notifyTime,
-                  value: _clock(s.abfallMinutes),
-                  onTap: () => _pickTime(s.abfallMinutes, notifier.setAbfallMinutes),
-                ),
-              SettingsRow(
-                key: const ValueKey('tasks'),
-                icon: AppIcons.checkCircle,
-                title: L.s.notifyTaskTimesTitle,
-                subtitle: L.s.notifyTaskTimesSubtitle,
-                trailing: NativeSwitch(value: s.taskTimes, onChanged: notifier.setTaskTimes),
-              ),
-            ],
-          ),
+            SettingsRow(
+              key: const ValueKey('tasks'),
+              icon: AppIcons.checkCircle,
+              title: L.s.notifyTaskTimesTitle,
+              subtitle: L.s.notifyTaskTimesSubtitle,
+              trailing: NativeSwitch(value: s.taskTimes, onChanged: notifier.setTaskTimes),
+            ),
+          ]),
         ),
         SettingsNote(L.s.notificationsEventNote),
       ],

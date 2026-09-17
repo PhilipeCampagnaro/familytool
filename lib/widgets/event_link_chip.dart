@@ -82,10 +82,7 @@ class EventLinkChip extends ConsumerWidget {
 
     final chip = Container(
       padding: EdgeInsets.symmetric(horizontal: label == null ? 6 : 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: tint(accent, .88),
-        borderRadius: BorderRadius.circular(12),
-      ),
+      decoration: BoxDecoration(color: tint(accent, .88), borderRadius: BorderRadius.circular(12)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [

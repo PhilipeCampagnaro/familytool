@@ -39,7 +39,7 @@ class SpendMark extends StatelessWidget {
   final String? merchant;
 
   const SpendMark({super.key, required this.size, this.icon, this.merchant})
-      : assert(icon != null || merchant != null, 'A mark has to be of something');
+    : assert(icon != null || merchant != null, 'A mark has to be of something');
 
   @override
   Widget build(BuildContext context) {
@@ -63,14 +63,14 @@ class SpendMark extends StatelessWidget {
       child: switch ((asset, initials)) {
         (final logo?, _) => IconImage(asset: logo, size: AppText.markImage(size)),
         (_, final letters?) => Text(
-            letters,
-            // Sized against the circle, like an avatar's initials.
-            style: AppText.itemTitle.copyWith(
-              fontSize: AppText.markInitials(size),
-              letterSpacing: 0.2,
-              color: AppColors.brandTileInk,
-            ),
+          letters,
+          // Sized against the circle, like an avatar's initials.
+          style: AppText.itemTitle.copyWith(
+            fontSize: AppText.markInitials(size),
+            letterSpacing: 0.2,
+            color: AppColors.brandTileInk,
           ),
+        ),
         // Duotone: the over-layer is the black line and the under-layer the
         // grey fill behind it, which is the whole point of the icon set and is
         // what the tone-coloured tiles were flattening.

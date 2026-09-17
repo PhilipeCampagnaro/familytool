@@ -247,8 +247,7 @@ enum SpendKind {
   String get label => this == SpendKind.budget ? L.s.spendKindBudget : L.s.spendKindExtra;
 }
 
-SpendKind spendKindFrom(String? value) =>
-    value == 'extra' ? SpendKind.extra : SpendKind.budget;
+SpendKind spendKindFrom(String? value) => value == 'extra' ? SpendKind.extra : SpendKind.budget;
 
 /// How the row arrived — `public.spend_source`. A `wallet` row was written by a
 /// device token with nobody signed in, which is why it is the only kind that can
@@ -260,8 +259,7 @@ enum SpendSource {
   String get wire => this == SpendSource.wallet ? 'wallet' : 'manual';
 }
 
-SpendSource spendSourceFrom(String? value) =>
-    value == 'wallet' ? SpendSource.wallet : SpendSource.manual;
+SpendSource spendSourceFrom(String? value) => value == 'wallet' ? SpendSource.wallet : SpendSource.manual;
 
 // ---------------------------------------------------------------------------
 // Money

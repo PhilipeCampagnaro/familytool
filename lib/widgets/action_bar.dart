@@ -110,7 +110,18 @@ class PinnedActionBar extends StatelessWidget {
   final Widget child;
   final Color? fadeInto;
 
-  const PinnedActionBar({super.key, required this.child, this.fadeInto});
+  /// How much room the fade is given above the action. The default is sized
+  /// for content that really does scroll underneath — a row needs somewhere to
+  /// dissolve, and a short band cuts it instead.
+  ///
+  /// **A body that cannot scroll needs none of that.** The paywall's is a
+  /// fixed column that is laid out to fit, so nothing ever passes behind the
+  /// band and the 24 points buy only an empty line above the button. Lower it
+  /// there rather than everywhere: on the scrolling screens the gap is the
+  /// whole point.
+  final double fadeHeight;
+
+  const PinnedActionBar({super.key, required this.child, this.fadeInto, this.fadeHeight = 24});
 
   @override
   Widget build(BuildContext context) {
@@ -127,7 +138,7 @@ class PinnedActionBar extends StatelessWidget {
     return Material(
       type: MaterialType.transparency,
       child: Container(
-        padding: EdgeInsets.fromLTRB(16, 24, 16, safeBottom > 0 ? safeBottom + 6 : 22),
+        padding: EdgeInsets.fromLTRB(16, fadeHeight, 16, safeBottom > 0 ? safeBottom + 6 : 22),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,

@@ -256,10 +256,7 @@ class _EditingBody extends StatelessWidget {
                 Container(
                   width: 44,
                   height: 44,
-                  decoration: BoxDecoration(
-                    color: accent.withValues(alpha: 0.10),
-                    shape: BoxShape.circle,
-                  ),
+                  decoration: BoxDecoration(color: accent.withValues(alpha: 0.10), shape: BoxShape.circle),
                   alignment: Alignment.center,
                   child: AppIcon(icon, size: 21, color: accent),
                 ),
@@ -270,12 +267,7 @@ class _EditingBody extends StatelessWidget {
             // sheet. Two lines is a long address on two lines; anything past
             // that is an address nobody reads to the end anyway.
             Expanded(
-              child: Text(
-                headline,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: AppText.cardTitle,
-              ),
+              child: Text(headline, maxLines: 2, overflow: TextOverflow.ellipsis, style: AppText.cardTitle),
             ),
           ],
         ),

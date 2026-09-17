@@ -106,7 +106,12 @@ class _SettingsDetailPageState extends State<SettingsDetailPage> {
               child: ListView(
                 // 40 is where a page without an action ends; with one, the
                 // last card clears the bar by a block's gap.
-                padding: EdgeInsets.fromLTRB(16, 18, 16, bottomInset == 0 ? 40 : bottomInset + AppSpacing.blockGap),
+                padding: EdgeInsets.fromLTRB(
+                  16,
+                  18,
+                  16,
+                  bottomInset == 0 ? 40 : bottomInset + AppSpacing.blockGap,
+                ),
                 children: widget.children,
               ),
             ),
@@ -159,7 +164,13 @@ class HeroCard extends StatelessWidget {
   /// needs to look editable.
   final Widget? leading;
 
-  const HeroCard({super.key, required this.icon, required this.title, required this.description, this.leading});
+  const HeroCard({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.description,
+    this.leading,
+  });
 
   @override
   Widget build(BuildContext context) {

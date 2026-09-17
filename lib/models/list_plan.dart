@@ -22,11 +22,34 @@ class ListPlan {
 
   /// How to do it, in order. May be empty — a hardware run has no method, and
   /// pretending otherwise would print an empty card.
+  ///
+  /// **The overview, not the method, whenever [recipe] is there.** The server
+  /// cuts these to six in that case, because a model asked for both will
+  /// happily write the whole thing twice.
   final List<String> steps;
+
+  /// The full method, **cooking goals only** — null for a hardware run, a
+  /// party, a trip or a week's shopping, which is most of what Vorhaben is for.
+  ///
+  /// **The one field with markup in it**, and the subset is ours rather than the
+  /// model's: `##` headings, `-` ingredients, `1.` working steps, `**bold**` on
+  /// a temperature or a time, and nothing else — see `MarkdownText`, which is
+  /// the only parser in the app. A method has structure that prose cannot carry,
+  /// and this is the shape of a cookbook page rather than of a chat answer.
+  ///
+  /// It is folded away behind a disclosure on the card, because the shopping is
+  /// why the card was opened and the recipe is what you want later, at the hob.
+  final String? recipe;
 
   final List<ListPlanItem> items;
 
-  const ListPlan({required this.title, required this.kind, required this.steps, required this.items});
+  const ListPlan({
+    required this.title,
+    required this.kind,
+    required this.steps,
+    this.recipe,
+    required this.items,
+  });
 
   /// Reads the model's answer, defensively.
   ///
@@ -37,9 +60,13 @@ class ListPlan {
   /// cannot be recovered from is having no items, and the caller checks that.
   factory ListPlan.fromJson(Map<String, dynamic> json) {
     final rawItems = json['items'];
+    final recipe = (json['recipe'] as String?)?.trim();
     return ListPlan(
       title: (json['title'] as String?)?.trim() ?? '',
       kind: json['kind'] == 'other' ? ListKind.other : ListKind.grocery,
+      // Empty is the same as absent: an older function answers without the
+      // field at all, and both must draw no disclosure rather than an empty one.
+      recipe: recipe == null || recipe.isEmpty ? null : recipe,
       steps: [
         for (final step in (json['steps'] as List?) ?? const [])
           if (step is String && step.trim().isNotEmpty) step.trim(),
@@ -79,6 +106,10 @@ class ListPlanItem {
     if (name == null || name.isEmpty) return null;
     final quantity = (json['quantity'] as String?)?.trim();
     final unit = (json['unit'] as String?)?.trim();
+    // **No `emoji` here, and an older answer's is ignored.** A picture beside an
+    // article was a guess the app made confidently and often wrongly; the model
+    // still draws, but in the method and the recipe where a miss is decoration
+    // rather than a mislabelled row. See [planItemIconKey].
     return ListPlanItem(
       name: name,
       quantity: quantity == null || quantity.isEmpty ? null : quantity,

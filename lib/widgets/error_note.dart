@@ -20,7 +20,8 @@ import '../theme/app_icons.dart';
 /// rather than green — a write landing and a write failing are one event with
 /// two outcomes, so they are one component with two colours. Kept under this
 /// name because the ~8 call sites read as what they are.
-void showErrorSnack(BuildContext context, String message) => showToast(context, message, kind: ToastKind.error);
+void showErrorSnack(BuildContext context, String message) =>
+    showToast(context, message, kind: ToastKind.error);
 
 /// A failed *read*: there is nothing on screen and no reason to believe the
 /// next frame will fix it, so the message stays put and offers the retry.
@@ -37,27 +38,22 @@ class ErrorNote extends StatelessWidget {
     final accent = Theme.of(context).colorScheme.primary;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(color: AppColors.surfaceAlt, borderRadius: BorderRadius.circular(AppRadii.cardSmall)),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceAlt,
+        borderRadius: BorderRadius.circular(AppRadii.cardSmall),
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           AppIcon(AppIcons.info, size: 17, color: AppColors.danger),
           const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              message,
-              style: AppText.body,
-            ),
-          ),
+          Expanded(child: Text(message, style: AppText.body)),
           if (onRetry != null) ...[
             const SizedBox(width: 10),
             GestureDetector(
               onTap: onRetry,
               behavior: HitTestBehavior.opaque,
-              child: Text(
-                L.s.reload,
-                style: AppText.caption.copyWith(color: accent),
-              ),
+              child: Text(L.s.reload, style: AppText.caption.copyWith(color: accent)),
             ),
           ],
         ],

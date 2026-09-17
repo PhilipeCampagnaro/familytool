@@ -129,11 +129,7 @@ class _Reel extends StatelessWidget {
                     left: 0,
                     width: size.width,
                     top: (face - at) * size.height,
-                    child: Text(
-                      '${face % 10}',
-                      style: style,
-                      textAlign: TextAlign.center,
-                    ),
+                    child: Text('${face % 10}', style: style, textAlign: TextAlign.center),
                   ),
               ],
             ),

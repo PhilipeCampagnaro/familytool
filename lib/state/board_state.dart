@@ -148,13 +148,19 @@ class BoardState {
     final filter = personFilter;
     if (filter == null || !filter.startsWith('member:')) return tasks;
     final memberId = filter.substring('member:'.length);
-    return [for (final t in tasks) if (t.assigneeId == memberId) t];
+    return [
+      for (final t in tasks)
+        if (t.assigneeId == memberId) t,
+    ];
   }
 
   /// Recently finished tasks, newest first — the "Erledigt" card. How far back
   /// "recently" reaches is [BoardRepository.fetchBoard]'s call, not the UI's.
   List<BoardTask> get doneTasks {
-    final done = [for (final t in visibleTasks) if (t.done) t];
+    final done = [
+      for (final t in visibleTasks)
+        if (t.done) t,
+    ];
     done.sort((a, b) => (b.doneAt ?? DateTime(0)).compareTo(a.doneAt ?? DateTime(0)));
     return done;
   }
@@ -221,10 +227,7 @@ class BoardNotifier extends StateNotifier<BoardState> {
   /// Picks a person chip, or clears it when the lit one is tapped again.
   void filterToPerson(String? groupId) {
     final same = groupId != null && state.personFilter == groupId;
-    state = state.copyWith(
-      personFilter: same ? null : groupId,
-      clearPersonFilter: same || groupId == null,
-    );
+    state = state.copyWith(personFilter: same ? null : groupId, clearPersonFilter: same || groupId == null);
   }
 
   Future<void> load() async {
@@ -502,7 +505,10 @@ class BoardNotifier extends StateNotifier<BoardState> {
   /// (somebody else's task, cleared by a non-admin) come straight back rather
   /// than disappearing until the next reload.
   Future<void> clearDone() async {
-    final ids = [for (final t in state.tasks) if (t.done && !_isTemp(t.id)) t.id];
+    final ids = [
+      for (final t in state.tasks)
+        if (t.done && !_isTemp(t.id)) t.id,
+    ];
     if (ids.isEmpty) return;
 
     final previous = state.tasks;
@@ -586,17 +592,25 @@ class BoardNotifier extends StateNotifier<BoardState> {
   // more — which is what made them wrong for a task that is on none.
 
   void _patchTask(String taskId, BoardTask Function(BoardTask) patch) {
-    state = state.copyWith(
-      tasks: [for (final t in state.tasks) t.id == taskId ? patch(t) : t],
-    );
+    state = state.copyWith(tasks: [for (final t in state.tasks) t.id == taskId ? patch(t) : t]);
   }
 
   void _removeTask(String taskId) {
-    state = state.copyWith(tasks: [for (final t in state.tasks) if (t.id != taskId) t]);
+    state = state.copyWith(
+      tasks: [
+        for (final t in state.tasks)
+          if (t.id != taskId) t,
+      ],
+    );
   }
 
   void _removeTasks(Set<String> taskIds) {
-    state = state.copyWith(tasks: [for (final t in state.tasks) if (!taskIds.contains(t.id)) t]);
+    state = state.copyWith(
+      tasks: [
+        for (final t in state.tasks)
+          if (!taskIds.contains(t.id)) t,
+      ],
+    );
   }
 }
 

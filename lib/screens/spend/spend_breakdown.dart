@@ -1,16 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/spend_analysis.dart';
 import '../../l10n/l10n.dart';
 import '../../models/spend.dart';
 import '../../state/family_state.dart';
-import '../../state/spend_state.dart';
 import '../../theme/app_icons.dart';
 import '../../theme/tokens.dart';
 import '../../widgets/avatar.dart';
-import '../../widgets/app_sheet.dart';
-import '../../widgets/settings_chrome.dart';
 import 'spend_charts.dart';
 import 'spend_mark.dart';
 
@@ -70,6 +66,15 @@ class SpendBreakdownEntry {
   /// lets the mark beside it be the shop's own logo. See [SpendMark].
   final String? merchant;
 
+  /// The category this row is, where it is exactly one — the folded "Sonstige"
+  /// row is not. What a tap drills into on the explore page.
+  final SpendCategory? category;
+
+  /// True on a person's row, whose [payerId] may be null for somebody who has
+  /// left — so the id alone cannot say it is a person's row.
+  final bool byMember;
+  final String? payerId;
+
   const SpendBreakdownEntry({
     required this.title,
     required this.cents,
@@ -78,6 +83,9 @@ class SpendBreakdownEntry {
     required this.icon,
     this.member,
     this.merchant,
+    this.category,
+    this.byMember = false,
+    this.payerId,
   });
 }
 
@@ -94,27 +102,34 @@ List<SpendBreakdownEntry> spendBreakdownRows(
   int? limit,
 }) {
   final rows = switch (by) {
-    SpendGrouping.category => limit == null
-        ? [
-            for (final slice in summary.byCategory)
-              SpendBreakdownEntry(
-                title: slice.key.label,
-                cents: slice.cents,
-                count: slice.count,
-                share: slice.share,
-                icon: slice.key.icon,
-              ),
-          ]
-        : [
-            for (final slice in ringSlices(summary))
-              SpendBreakdownEntry(
-                title: slice.label,
-                cents: slice.cents,
-                count: slice.count,
-                share: slice.share,
-                icon: slice.icon,
-              ),
-          ],
+    SpendGrouping.category =>
+      limit == null
+          ? [
+              for (final slice in summary.byCategory)
+                SpendBreakdownEntry(
+                  title: slice.key.label,
+                  cents: slice.cents,
+                  count: slice.count,
+                  share: slice.share,
+                  icon: slice.key.icon,
+                  category: slice.key,
+                ),
+            ]
+          : [
+              for (final (i, slice) in ringSlices(summary).indexed)
+                SpendBreakdownEntry(
+                  title: slice.label,
+                  cents: slice.cents,
+                  count: slice.count,
+                  share: slice.share,
+                  icon: slice.icon,
+                  // The ring keeps the fold's order, so the arcs before
+                  // "Sonstige" line up with the categories one to one.
+                  category: i < summary.byCategory.length && summary.byCategory[i].key.label == slice.label
+                      ? summary.byCategory[i].key
+                      : null,
+                ),
+            ],
     SpendGrouping.merchant => [
       for (final slice in summary.byMerchant)
         () {
@@ -143,6 +158,8 @@ List<SpendBreakdownEntry> spendBreakdownRows(
             share: slice.share,
             icon: AppIcons.user,
             member: member,
+            byMember: true,
+            payerId: id,
           );
         }(),
     ],
@@ -160,11 +177,14 @@ class SpendBreakdownRow extends StatelessWidget {
   final SpendBreakdownEntry row;
   final String currency;
 
-  const SpendBreakdownRow({super.key, required this.row, this.currency = 'EUR'});
+  /// Opens what the row stands for. Null leaves the row as a plain line.
+  final VoidCallback? onTap;
+
+  const SpendBreakdownRow({super.key, required this.row, this.currency = 'EUR', this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    final line = Padding(
       padding: const EdgeInsets.symmetric(vertical: 7),
       child: Row(
         children: [
@@ -198,6 +218,10 @@ class SpendBreakdownRow extends StatelessWidget {
         ],
       ),
     );
+
+    final tap = onTap;
+    if (tap == null) return line;
+    return GestureDetector(behavior: HitTestBehavior.opaque, onTap: tap, child: line);
   }
 }
 
@@ -231,65 +255,5 @@ class _Disc extends StatelessWidget {
     }
 
     return SpendMark(size: AppText.rowMark, icon: row.icon, merchant: row.merchant);
-  }
-}
-
-/// Every last row of one breakdown, on a page of its own.
-///
-/// **A page rather than a taller card.** The card on Ausgaben shows five and the
-/// donut above it draws five, and a card that grew to forty rows would bury the
-/// payments under it and contradict the picture at the same time. Somebody who
-/// wants the whole list is reading rather than glancing, and reading deserves
-/// the screen.
-///
-/// It watches the page's own range and metric rather than taking a copy, so a
-/// figure here is the same figure that is on the card behind it — and the
-/// categories are **unfolded**: this is the one place "Sonstige" is spelled out
-/// into the things it was hiding.
-class SpendBreakdownPage extends ConsumerWidget {
-  final SpendGrouping grouping;
-
-  const SpendBreakdownPage({super.key, required this.grouping});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(spendProvider);
-    final summary = state.summary;
-    final rows = spendBreakdownRows(summary, grouping, ref.watch(familyProvider).members);
-    final currency = spendCurrency(summary.rows);
-
-    return SettingsDetailPage(
-      icon: grouping.icon,
-      title: grouping.title,
-      // What the figures are of. Without it the page is a list of amounts with
-      // no stretch of time attached to any of them.
-      description: summary.range.caption,
-      parentTitle: L.s.spendTitle,
-      estimatedHeroHeight: 200,
-      children: [
-        SectionCard(
-          radius: AppRadii.card,
-          children: [
-            if (rows.isEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.cardPad, vertical: 18),
-                child: Text(
-                  L.s.spendIslandNothing,
-                  style: AppText.body.copyWith(color: AppColors.inkSecondary),
-                ),
-              )
-            else
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.cardPad, vertical: 6),
-                child: Column(
-                  children: [
-                    for (final row in rows) SpendBreakdownRow(row: row, currency: currency),
-                  ],
-                ),
-              ),
-          ],
-        ),
-      ],
-    );
   }
 }

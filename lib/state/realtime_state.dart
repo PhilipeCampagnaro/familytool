@@ -107,10 +107,7 @@ class FamilyChannel {
     if (channel == null) return;
     unawaited(
       channel
-          .sendBroadcastMessage(
-            event: _event,
-            payload: {'table': table, 'actor': userId},
-          )
+          .sendBroadcastMessage(event: _event, payload: {'table': table, 'actor': userId})
           .catchError((_) => ChannelResponse.error),
     );
   }
@@ -137,8 +134,7 @@ final familyChannelProvider = Provider<FamilyChannel?>((ref) {
   final userId = ref.watch(currentUserIdProvider);
   if (familyId == null || userId == null) return null;
 
-  final channel = FamilyChannel(AporahSupabase.client, familyId: familyId, userId: userId)
-    ..connect();
+  final channel = FamilyChannel(AporahSupabase.client, familyId: familyId, userId: userId)..connect();
   ref.onDispose(() => unawaited(channel.dispose()));
   return channel;
 });

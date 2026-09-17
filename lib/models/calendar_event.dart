@@ -159,11 +159,8 @@ class CalendarGroup {
 
   Set<String> get ids => {for (final c in calendars) c.id};
 
-  CalendarGroup withCalendar(CalendarSource source) => CalendarGroup(
-    id: id,
-    name: name,
-    calendars: [...calendars, source],
-  );
+  CalendarGroup withCalendar(CalendarSource source) =>
+      CalendarGroup(id: id, name: name, calendars: [...calendars, source]);
 
   /// The same group renamed after its only calendar — "Aufgaben" rather than
   /// "Schule" when that account contributes nothing else with an event in view.
@@ -174,8 +171,7 @@ class CalendarGroup {
   /// themselves look like it had been ignored. A person's chip says the person
   /// whether they own one calendar or six; the calendar's own name is what the
   /// popup and Settings are for. See `CalendarScreenState.activeGroups`.
-  CalendarGroup asSingle() =>
-      CalendarGroup(id: id, name: calendars.first.name, calendars: calendars);
+  CalendarGroup asSingle() => CalendarGroup(id: id, name: calendars.first.name, calendars: calendars);
 }
 
 /// How often an appointment comes round.
@@ -428,8 +424,7 @@ class CalendarEvent {
 
   /// The line the agenda and detail sheet print. All-day events say so instead
   /// of printing "00:00 – 00:00 Uhr".
-  String get timeRangeLabel =>
-      allDay ? L.s.allDayDuration : L.s.timeRange(_hm(startsAt), _hm(endsAt));
+  String get timeRangeLabel => allDay ? L.s.allDayDuration : L.s.timeRange(_hm(startsAt), _hm(endsAt));
 
   static String _hm(DateTime t) => formatTime(t);
 
@@ -479,9 +474,11 @@ class CalendarEvent {
       // span is anchored to local midnights, and a Ferien block containing a
       // clock change is 42 days minus an hour — which `inDays` reports as 41.
       // Restating both ends in UTC removes the offset without moving the dates.
-      final days = DateTime.utc(endsAt.year, endsAt.month, endsAt.day)
-          .difference(DateTime.utc(startsAt.year, startsAt.month, startsAt.day))
-          .inDays;
+      final days = DateTime.utc(
+        endsAt.year,
+        endsAt.month,
+        endsAt.day,
+      ).difference(DateTime.utc(startsAt.year, startsAt.month, startsAt.day)).inDays;
       if (days <= 1) return L.s.allDayDuration;
       return L.s.durationDays(days);
     }
@@ -581,9 +578,7 @@ class CalendarEvent {
     // it — which bin goes out — so it comes from the fraction rather than from
     // the feed. Everywhere else the calendar's colour is the event's, which is
     // what makes a Google calendar recognisable at a glance.
-    final color = calendar.feedKind == 'abfall'
-        ? binColorFor(title) ?? calendar.color
-        : calendar.color;
+    final color = calendar.feedKind == 'abfall' ? binColorFor(title) ?? calendar.color : calendar.color;
 
     return CalendarEvent(
       id: map['id'] as String,

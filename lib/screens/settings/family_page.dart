@@ -106,14 +106,10 @@ class FamilyPage extends ConsumerWidget {
         SectionCard(
           radius: AppRadii.card,
           children: family.members.isEmpty && family.invites.isEmpty
-              ? [
-                  EmptyState(
-                    icon: AppIcons.users,
-                    message: L.s.nobodyInHouseholdYet,
-                  ),
-                ]
+              ? [EmptyState(icon: AppIcons.users, message: L.s.nobodyInHouseholdYet)]
               : dividedRows(inset: true, [
-                  for (final m in family.members) _MemberRow(member: m, isMe: m.userId == me, canManage: isAdmin),
+                  for (final m in family.members)
+                    _MemberRow(member: m, isMe: m.userId == me, canManage: isAdmin),
                   // People in the household who have no account. They exist as
                   // the owner of a calendar and nowhere else — a child with a
                   // WebUntis login and no e-mail address, a four-year-old whose
@@ -250,11 +246,7 @@ class _InviteFlow {
     error.value = null;
     phase.value = _InvitePhase.sending;
 
-    final outcome = await _notifier.inviteMember(
-      email: email.text,
-      name: name.text,
-      role: role,
-    );
+    final outcome = await _notifier.inviteMember(email: email.text, name: name.text, role: role);
     if (_disposed) return;
 
     if (outcome.invite case final invite?) {
@@ -354,7 +346,11 @@ class _InviteFormBodyState extends State<_InviteFormBody> {
                 autocorrect: false,
                 textInputAction: TextInputAction.next,
                 style: AppText.searchInput,
-                decoration: InputDecoration(border: InputBorder.none, hintText: L.s.emailAddress, isDense: true),
+                decoration: InputDecoration(
+                  border: InputBorder.none,
+                  hintText: L.s.emailAddress,
+                  isDense: true,
+                ),
               ),
             ),
             _InviteRow(
@@ -363,17 +359,18 @@ class _InviteFormBodyState extends State<_InviteFormBody> {
                 enabled: !widget.busy,
                 textInputAction: TextInputAction.done,
                 style: AppText.searchInput,
-                decoration: InputDecoration(border: InputBorder.none, hintText: L.s.nameOptional, isDense: true),
+                decoration: InputDecoration(
+                  border: InputBorder.none,
+                  hintText: L.s.nameOptional,
+                  isDense: true,
+                ),
               ),
             ),
             _InviteRow(
               child: Row(
                 children: [
                   Expanded(child: Text(L.s.role, style: AppText.rowTitle)),
-                  _RolePicker(
-                    role: widget.flow.role,
-                    onChanged: (r) => setState(() => widget.flow.role = r),
-                  ),
+                  _RolePicker(role: widget.flow.role, onChanged: (r) => setState(() => widget.flow.role = r)),
                 ],
               ),
             ),
@@ -391,10 +388,7 @@ class _InviteFormBodyState extends State<_InviteFormBody> {
         const SizedBox(height: 10),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4),
-          child: Text(
-            L.s.inviteValidity,
-            style: AppText.label.copyWith(fontSize: 12),
-          ),
+          child: Text(L.s.inviteValidity, style: AppText.label.copyWith(fontSize: 12)),
         ),
         if (widget.busy) ...[
           const SizedBox(height: 16),
@@ -508,12 +502,26 @@ class _MemberRow extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
           children: [
-            Avatar(size: 40, bg: tone.bg, fg: tone.fg, initials: member.initials, fontSize: 13, imageUrl: member.avatarUrl),
+            Avatar(
+              size: 40,
+              bg: tone.bg,
+              fg: tone.fg,
+              initials: member.initials,
+              fontSize: 13,
+              imageUrl: member.avatarUrl,
+            ),
             const SizedBox(width: 13),
             Expanded(
               child: Row(
                 children: [
-                  Flexible(child: Text(member.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.rowTitle)),
+                  Flexible(
+                    child: Text(
+                      member.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppText.rowTitle,
+                    ),
+                  ),
                   if (isMe) ...[
                     const SizedBox(width: 8),
                     Container(
@@ -570,10 +578,7 @@ class _MemberRow extends ConsumerWidget {
         // there is no backdoor into it, by design.
         content: Text(L.s.removeMemberBody(member.name)),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: Text(L.s.cancel),
-          ),
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: Text(L.s.cancel)),
           TextButton(
             onPressed: () {
               ref.read(familyProvider.notifier).removeMember(member.userId);

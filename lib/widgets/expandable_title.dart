@@ -80,7 +80,12 @@ class _ExpandableTitleState extends State<ExpandableTitle> {
         final lineHeight = painter.height;
         painter.dispose();
 
-        final label = Text(widget.text, maxLines: _open ? widget.expandedMaxLines : 1, overflow: TextOverflow.ellipsis, style: style);
+        final label = Text(
+          widget.text,
+          maxLines: _open ? widget.expandedMaxLines : 1,
+          overflow: TextOverflow.ellipsis,
+          style: style,
+        );
         if (!overflows) return label;
 
         // A hint rather than a label, merged into the name's own node: the row
@@ -108,7 +113,12 @@ class _ExpandableTitleState extends State<ExpandableTitle> {
                         // Flat: a caret is a control, not a name for a thing,
                         // and the duotone under-layer would draw it as a hollow
                         // triangle.
-                        child: AppIcon(AppIcons.caretDown, size: AppGlyph.caret, flat: true, color: AppColors.mutedLight),
+                        child: AppIcon(
+                          AppIcons.caretDown,
+                          size: AppGlyph.caret,
+                          flat: true,
+                          color: AppColors.mutedLight,
+                        ),
                       ),
                     ),
                   ),

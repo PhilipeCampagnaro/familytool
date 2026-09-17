@@ -19,11 +19,7 @@ class CalendarSnapshot {
   /// screen can say "Stand von …" instead of implying it is live.
   final bool fromCache;
 
-  const CalendarSnapshot({
-    required this.calendars,
-    required this.eventsByDay,
-    this.fromCache = false,
-  });
+  const CalendarSnapshot({required this.calendars, required this.eventsByDay, this.fromCache = false});
 
   static const empty = CalendarSnapshot(calendars: [], eventsByDay: {});
 }
@@ -85,22 +81,13 @@ class CalendarRepository {
   /// The two reads are gathered in parallel because neither depends on the
   /// other, and the calendar half is the slow one — it is talking to Google.
   Future<CalendarSnapshot> fetch() async {
-    final results = await Future.wait([
-      _external(),
-      _profiles(),
-    ]);
+    final results = await Future.wait([_external(), _profiles()]);
 
-    final external = results[0] as ({
-      List<Map<String, dynamic>> calendars,
-      List<Map<String, dynamic>> events,
-    });
+    final external =
+        results[0] as ({List<Map<String, dynamic>> calendars, List<Map<String, dynamic>> events});
     final profiles = results[1] as List<Map<String, dynamic>>;
 
-    await _cache.write({
-      'calendars': external.calendars,
-      'events': external.events,
-      'profiles': profiles,
-    });
+    await _cache.write({'calendars': external.calendars, 'events': external.events, 'profiles': profiles});
     return _assemble(external.calendars, external.events, _names(profiles));
   }
 
@@ -126,10 +113,7 @@ class CalendarRepository {
   /// An **empty but successful** read is not a failure and never was: a
   /// household that has connected nothing has no calendars, and that emptiness
   /// is real and belongs in the cache.
-  Future<({
-    List<Map<String, dynamic>> calendars,
-    List<Map<String, dynamic>> events,
-  })> _external() async {
+  Future<({List<Map<String, dynamic>> calendars, List<Map<String, dynamic>> events})> _external() async {
     final res = await _db.functions.invoke('calendar-events', body: const {});
     final data = res.data;
     if (data is! Map) throw const CalendarReadException();
@@ -148,12 +132,13 @@ class CalendarRepository {
   }
 
   static List<Map<String, dynamic>> _rows(Object? raw) => raw is List
-      ? [for (final r in raw) if (r is Map) Map<String, dynamic>.from(r)]
+      ? [
+          for (final r in raw)
+            if (r is Map) Map<String, dynamic>.from(r),
+        ]
       : const [];
 
-  static Map<String?, ({String name, String initials, int tone})> _names(
-    List<Map<String, dynamic>> rows,
-  ) => {
+  static Map<String?, ({String name, String initials, int tone})> _names(List<Map<String, dynamic>> rows) => {
     for (final row in rows)
       row['id'] as String: (
         name: row['display_name'] as String? ?? '',
@@ -203,11 +188,7 @@ class CalendarRepository {
       list.sort(CalendarEvent.compareForDay);
     }
 
-    return CalendarSnapshot(
-      calendars: calendars,
-      eventsByDay: eventsByDay,
-      fromCache: fromCache,
-    );
+    return CalendarSnapshot(calendars: calendars, eventsByDay: eventsByDay, fromCache: fromCache);
   }
 
   // -------------------------------------------------------------------------
@@ -248,25 +229,28 @@ class CalendarRepository {
     CalendarEvent? occurrence,
   }) async {
     try {
-      final res = await _db.functions.invoke('calendar-write', body: {
-        'action': action,
-        'calendar_id': calendarId,
-        if (uid != null && uid.isNotEmpty) 'uid': uid,
-        if (seriesUid.isNotEmpty) ...{
-          'series_uid': seriesUid,
-          'scope': scope == EventScope.series ? 'series' : 'single',
-          // The occurrence as it stands *now*, before the draft's edits — the
-          // RECURRENCE-ID/EXDATE a CalDAV server needs in order to find the one
-          // Monday being changed. Sent alongside the draft rather than derived
-          // from it, because moving an appointment changes the draft's start
-          // and this has to keep pointing at where it used to be.
-          if (occurrence != null) ...{
-            'occurrence_date': _date(occurrence.startsAt),
-            'occurrence_time': occurrence.allDay ? null : _clock(occurrence.startsAt),
+      final res = await _db.functions.invoke(
+        'calendar-write',
+        body: {
+          'action': action,
+          'calendar_id': calendarId,
+          if (uid != null && uid.isNotEmpty) 'uid': uid,
+          if (seriesUid.isNotEmpty) ...{
+            'series_uid': seriesUid,
+            'scope': scope == EventScope.series ? 'series' : 'single',
+            // The occurrence as it stands *now*, before the draft's edits — the
+            // RECURRENCE-ID/EXDATE a CalDAV server needs in order to find the one
+            // Monday being changed. Sent alongside the draft rather than derived
+            // from it, because moving an appointment changes the draft's start
+            // and this has to keep pointing at where it used to be.
+            if (occurrence != null) ...{
+              'occurrence_date': _date(occurrence.startsAt),
+              'occurrence_time': occurrence.allDay ? null : _clock(occurrence.startsAt),
+            },
           },
+          if (draft != null) ...draft.toWire(),
         },
-        if (draft != null) ...draft.toWire(),
-      });
+      );
       final data = res.data;
       return data is Map ? (data['uid'] as String? ?? '') : '';
     } on FunctionException catch (e) {

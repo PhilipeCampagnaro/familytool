@@ -15,8 +15,7 @@ DateTime boardDay(DateTime d) => DateTime(d.year, d.month, d.day);
 /// itself, so this stays correct across month and year ends too.
 DateTime boardDaysAfter(DateTime day, int days) => DateTime(day.year, day.month, day.day + days);
 
-bool boardIsSameDay(DateTime a, DateTime b) =>
-    a.year == b.year && a.month == b.month && a.day == b.day;
+bool boardIsSameDay(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
 
 /// 'Donnerstag, 13. Aug'. The weekday list is Sunday-first, hence the `% 7`.
 String boardLongDayName(DateTime d) => L.s.weekdayWithDateShort(d.weekday % 7, d.day, d.month);
@@ -50,8 +49,7 @@ enum BoardSection { overdue, today, tomorrow, thisWeek, later, undated }
 /// the section is labelled "Diese Woche", and a Saturday that swept in the
 /// following Thursday would be lying. Late in the week the section is simply
 /// empty and everything falls through to [BoardSection.later].
-BoardSection boardSectionOf(BoardTask task, DateTime today) =>
-    boardSectionForDate(task.dueDate, today);
+BoardSection boardSectionOf(BoardTask task, DateTime today) => boardSectionForDate(task.dueDate, today);
 
 /// The same bucketing, for anything with a due date rather than only a task.
 BoardSection boardSectionForDate(DateTime? due, DateTime today) {
@@ -168,10 +166,7 @@ Map<DateTime, BoardDayTally> boardDayTallies(List<BoardTask> tasks, DateTime tod
     final day = boardDay(due);
     if (day.isAfter(today)) continue;
     final seen = tallies[day] ?? const BoardDayTally();
-    tallies[day] = BoardDayTally(
-      done: seen.done + (task.done ? 1 : 0),
-      planned: seen.planned + 1,
-    );
+    tallies[day] = BoardDayTally(done: seen.done + (task.done ? 1 : 0), planned: seen.planned + 1);
   }
   return tallies;
 }

@@ -1,9 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../data/repositories/list_repository.dart' show newUuidV4;
 import '../data/repositories/spend_repository.dart';
 import '../data/spend_analysis.dart';
 import '../l10n/l10n.dart';
 import '../models/spend.dart';
+import '../models/spend_budget.dart';
 import '../services/spend_intent.dart';
 import '../services/supabase.dart';
 import 'auth_state.dart';
@@ -34,6 +36,16 @@ class SpendState {
   /// round trip at all, which is what makes the slicer feel instant.
   final DateTime windowFrom;
   final DateTime windowTo;
+
+  /// The household's monthly budgets, oldest first — the order the rings sit in.
+  final List<SpendBudget> budgets;
+
+  /// This calendar month's rows, held **only** while [spends] does not reach
+  /// over the month — a week, or a custom stretch in the past. The rings are
+  /// always about this month whatever the slicer is on, and re-fetching the
+  /// window wide enough to include it would turn a picked March two years ago
+  /// into two years of rows.
+  final List<Spend> monthSpends;
 
   /// The phones allowed to file wallet transactions into this household.
   final List<SpendDevice> devices;
@@ -78,6 +90,8 @@ class SpendState {
     this.metric = SpendMetric.all,
     required this.windowFrom,
     required this.windowTo,
+    this.budgets = const [],
+    this.monthSpends = const [],
     this.devices = const [],
     this.thisDeviceEnrolled = false,
     this.thisDeviceUid,
@@ -92,11 +106,7 @@ class SpendState {
   /// and the one a household asks about most.
   factory SpendState.initial() {
     final range = SpendRange.of(SpendPeriod.month);
-    return SpendState(
-      range: range,
-      windowFrom: range.previous.from,
-      windowTo: range.to,
-    );
+    return SpendState(range: range, windowFrom: range.previous.from, windowTo: range.to);
   }
 
   /// The whole page, folded. Recomputed on every read rather than cached: it is
@@ -106,8 +116,19 @@ class SpendState {
 
   /// Whether [spends] already reaches over everything [range] and its
   /// comparison need.
-  bool covers(SpendRange other) =>
-      !other.previous.from.isBefore(windowFrom) && !other.to.isAfter(windowTo);
+  bool covers(SpendRange other) => !other.previous.from.isBefore(windowFrom) && !other.to.isAfter(windowTo);
+
+  /// Whether [spends] already holds all of this calendar month.
+  bool get holdsThisMonth {
+    final month = SpendRange.of(SpendPeriod.month);
+    return !month.from.isBefore(windowFrom) && !month.to.isAfter(windowTo);
+  }
+
+  /// Every budget against this month, whichever range the page is showing.
+  List<SpendBudgetProgress> get budgetProgress =>
+      spendBudgetProgress(budgets, holdsThisMonth ? spends : monthSpends);
+
+  SpendBudget? budgetFor(SpendCategory category) => budgets.where((b) => b.category == category).firstOrNull;
 
   SpendState copyWith({
     List<Spend>? spends,
@@ -115,6 +136,8 @@ class SpendState {
     SpendMetric? metric,
     DateTime? windowFrom,
     DateTime? windowTo,
+    List<SpendBudget>? budgets,
+    List<Spend>? monthSpends,
     List<SpendDevice>? devices,
     bool? thisDeviceEnrolled,
     String? thisDeviceUid,
@@ -130,6 +153,8 @@ class SpendState {
     metric: metric ?? this.metric,
     windowFrom: windowFrom ?? this.windowFrom,
     windowTo: windowTo ?? this.windowTo,
+    budgets: budgets ?? this.budgets,
+    monthSpends: monthSpends ?? this.monthSpends,
     devices: devices ?? this.devices,
     thisDeviceEnrolled: thisDeviceEnrolled ?? this.thisDeviceEnrolled,
     thisDeviceUid: thisDeviceUid ?? this.thisDeviceUid,
@@ -176,6 +201,53 @@ class SpendNotifier extends StateNotifier<SpendState> {
       state = state.copyWith(loading: false, error: L.s.spendLoadFailed);
     }
 
+    await Future.wait([_loadBudgets(), _syncMonth()]);
+    await refreshDevices();
+  }
+
+  /// The budgets. Silent on failure: a page full of correct numbers must not
+  /// grow an error banner because the rings above it could not be read.
+  Future<void> _loadBudgets() async {
+    try {
+      final budgets = await _repo.fetchBudgets();
+      if (mounted) state = state.copyWith(budgets: budgets);
+    } catch (_) {}
+  }
+
+  /// Fetches this month on its own when the window does not already hold it —
+  /// see [SpendState.monthSpends].
+  Future<void> _syncMonth() async {
+    if (state.holdsThisMonth) return;
+    final month = SpendRange.of(SpendPeriod.month);
+    try {
+      final rows = await _repo.fetchRange(month.from, month.to);
+      if (mounted) state = state.copyWith(monthSpends: rows);
+    } catch (_) {}
+  }
+
+  /// Re-reads the loaded window **without** the loading state, so the rows on
+  /// screen stay put and the new one simply appears among them.
+  ///
+  /// What a broadcast, a resume and a pull all run. None of them is the page
+  /// starting from nothing, so none of them may blank it into a spinner — and a
+  /// failure leaves the numbers already drawn rather than a banner over them.
+  ///
+  /// **Resume is the load-bearing caller.** A payment is filed while the phone is
+  /// in a pocket and the app suspended; iOS has closed the socket, and a
+  /// broadcast is not stored for a device that was not listening. The one moment
+  /// the app can learn about it is when it comes back.
+  Future<void> refresh() async {
+    if (_userId == null || !_isAdmin) return;
+    final from = state.windowFrom;
+    final to = state.windowTo;
+    try {
+      final rows = await _repo.fetchRange(from, to);
+      // The range moved while this was in flight; its own fetch owns the rows.
+      if (!mounted || state.windowFrom != from || state.windowTo != to) return;
+      state = state.copyWith(spends: rows);
+    } catch (_) {}
+
+    await Future.wait([_loadBudgets(), _syncMonth()]);
     await refreshDevices();
   }
 
@@ -246,6 +318,7 @@ class SpendNotifier extends StateNotifier<SpendState> {
       if (!mounted) return;
       state = state.copyWith(loading: false, error: L.s.spendLoadFailed);
     }
+    await _syncMonth();
   }
 
   Future<void> showPeriod(SpendPeriod period) => showRange(SpendRange.of(period));
@@ -325,7 +398,7 @@ class SpendNotifier extends StateNotifier<SpendState> {
     if (index < 0) return null;
     final removed = state.spends[index];
 
-    state = state.copyWith(spends: [for (final s in state.spends) if (s.id != id) s]);
+    _remove(id);
     try {
       await _repo.deleteSpend(id);
       return removed;
@@ -346,10 +419,81 @@ class SpendNotifier extends StateNotifier<SpendState> {
       return true;
     } catch (_) {
       if (!mounted) return false;
-      state = state.copyWith(
-        spends: [for (final s in state.spends) if (s.id != spend.id) s],
-        error: L.s.spendSaveFailed,
-      );
+      _remove(spend.id);
+      state = state.copyWith(error: L.s.spendSaveFailed);
+      return false;
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Budgets
+  // ---------------------------------------------------------------------------
+
+  /// Sets the monthly budget for [category], replacing the one already there.
+  ///
+  /// On screen first, under an id made here, and rolled back if the write does
+  /// not land — the same shape a new list takes. Answers whether it landed, so
+  /// the sheet can say so.
+  Future<bool> saveBudget(SpendCategory category, int amountCents, {String? iconAsset}) async {
+    final familyId = _familyId;
+    if (familyId == null || amountCents <= 0) return false;
+
+    final before = state.budgets;
+    final existing = state.budgetFor(category);
+    final budget =
+        existing?.copyWith(amountCents: amountCents, iconAsset: iconAsset, clearIcon: iconAsset == null) ??
+        SpendBudget(
+          id: newUuidV4(),
+          familyId: familyId,
+          category: category,
+          amountCents: amountCents,
+          iconAsset: iconAsset,
+        );
+
+    state = state.copyWith(
+      budgets: existing == null
+          ? [...before, budget]
+          : [for (final b in before) b.id == budget.id ? budget : b],
+    );
+    try {
+      existing == null ? await _repo.createBudget(budget) : await _repo.updateBudget(budget);
+      return true;
+    } catch (_) {
+      if (mounted) state = state.copyWith(budgets: before);
+      return false;
+    }
+  }
+
+  /// Removes a budget and hands it back for the undo.
+  Future<SpendBudget?> deleteBudget(String id) async {
+    final before = state.budgets;
+    final removed = before.where((b) => b.id == id).firstOrNull;
+    if (removed == null) return null;
+
+    state = state.copyWith(
+      budgets: [
+        for (final b in before)
+          if (b.id != id) b,
+      ],
+    );
+    try {
+      await _repo.deleteBudget(id);
+      return removed;
+    } catch (_) {
+      if (mounted) state = state.copyWith(budgets: before, error: L.s.spendBudgetSaveFailed);
+      return null;
+    }
+  }
+
+  /// Puts a deleted budget back under its own id, in the place it had.
+  Future<bool> undoDeleteBudget(SpendBudget budget) async {
+    final before = state.budgets;
+    state = state.copyWith(budgets: [...before, budget]);
+    try {
+      await _repo.createBudget(budget);
+      return true;
+    } catch (_) {
+      if (mounted) state = state.copyWith(budgets: before);
       return false;
     }
   }
@@ -444,7 +588,10 @@ class SpendNotifier extends StateNotifier<SpendState> {
       if (isThisDevice) await _intents.clearToken();
       if (!mounted) return;
       state = state.copyWith(
-        devices: [for (final d in state.devices) if (d.id != id) d],
+        devices: [
+          for (final d in state.devices)
+            if (d.id != id) d,
+        ],
         thisDeviceEnrolled: isThisDevice ? false : state.thisDeviceEnrolled,
       );
     } catch (_) {
@@ -460,17 +607,49 @@ class SpendNotifier extends StateNotifier<SpendState> {
 
   /// Puts a row back in date order without re-sorting the whole list. The list
   /// is newest first, so the row goes before the first one older than it.
+  ///
+  /// Every one of these also touches [SpendState.monthSpends], or a payment
+  /// typed in while the slicer is on a past stretch would leave the rings
+  /// counting without it.
   void _insert(Spend spend) {
-    final rows = [for (final s in state.spends) if (s.id != spend.id) s];
-    var at = rows.indexWhere((s) => !s.occurredAt.isAfter(spend.occurredAt));
-    if (at < 0) at = rows.length;
-    rows.insert(at, spend);
-    state = state.copyWith(spends: rows);
+    List<Spend> into(List<Spend> list) {
+      final rows = [
+        for (final s in list)
+          if (s.id != spend.id) s,
+      ];
+      var at = rows.indexWhere((s) => !s.occurredAt.isAfter(spend.occurredAt));
+      if (at < 0) at = rows.length;
+      rows.insert(at, spend);
+      return rows;
+    }
+
+    final month = SpendRange.of(SpendPeriod.month);
+    state = state.copyWith(
+      spends: into(state.spends),
+      monthSpends: month.contains(spend.occurredAt)
+          ? into(state.monthSpends)
+          : [
+              for (final s in state.monthSpends)
+                if (s.id != spend.id) s,
+            ],
+    );
   }
 
-  void _replace(Spend spend) {
+  /// The same as putting it back: [_insert] drops the old copy first and files
+  /// the new one by date, which also moves it in or out of this month's list
+  /// when its day was changed across the boundary.
+  void _replace(Spend spend) => _insert(spend);
+
+  void _remove(String id) {
     state = state.copyWith(
-      spends: [for (final s in state.spends) s.id == spend.id ? spend : s],
+      spends: [
+        for (final s in state.spends)
+          if (s.id != id) s,
+      ],
+      monthSpends: [
+        for (final s in state.monthSpends)
+          if (s.id != id) s,
+      ],
     );
   }
 }
@@ -492,6 +671,6 @@ final spendProvider = StateNotifierProvider<SpendNotifier, SpendState>((ref) {
     ref.watch(familyProvider.select((s) => s.household?.id)),
     ref.watch(isAdminProvider),
   );
-  reloadOnFamilyChange(ref, const {'spends'}, notifier.load);
+  reloadOnFamilyChange(ref, const {'spends', 'spend_budgets'}, notifier.refresh);
   return notifier;
 });

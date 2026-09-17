@@ -109,12 +109,17 @@ class SpendTrendChart extends StatefulWidget {
   final int? scrub;
   final ValueChanged<int?> onScrub;
 
+  /// A monthly budget drawn across the plot, or null. Only meaningful when the
+  /// line is one calendar month climbing towards it; the card decides.
+  final int? budgetCents;
+
   const SpendTrendChart({
     super.key,
     required this.summary,
     required this.onScrub,
     this.scrub,
     this.height = spendChartHeight,
+    this.budgetCents,
   });
 
   @override
@@ -153,10 +158,7 @@ class _SpendTrendChartState extends State<SpendTrendChart> with SingleTickerProv
     // Measured here rather than inside the painter so the gesture and the
     // drawing agree on where the plot ends: a finger halfway along a plot the
     // painter thinks is forty points wider lands on the wrong day.
-    final gutter = math.max(
-      _endLabelWidth(current, currency),
-      _endLabelWidth(previous, currency),
-    );
+    final gutter = math.max(_endLabelWidth(current, currency), _endLabelWidth(previous, currency));
 
     return SizedBox(
       height: widget.height,
@@ -193,6 +195,8 @@ class _SpendTrendChartState extends State<SpendTrendChart> with SingleTickerProv
                     axisInk: AppColors.muted,
                     surface: AppColors.surface,
                     currency: currency,
+                    budget: widget.budgetCents,
+                    budgetInk: AppColors.danger,
                     scrub: widget.scrub,
                     // The ring is noise beside a finger that is already
                     // pointing at something.
@@ -237,7 +241,13 @@ class _TrendPainter extends CustomPainter {
   /// chart and the ring would be noise beside it.
   final double? pulse;
 
+  /// The budget, if one is drawn — see [SpendTrendChart.budgetCents].
+  final int? budget;
+  final Color budgetInk;
+
   const _TrendPainter({
+    required this.budget,
+    required this.budgetInk,
     required this.reveal,
     required this.current,
     required this.previous,
@@ -268,8 +278,12 @@ class _TrendPainter extends CustomPainter {
     final currentEnd = current.isEmpty ? 0 : current.last;
     final previousEnd = previous.isEmpty ? 0 : previous.last;
 
-    final currentLabel = currentEnd == 0 ? null : _text(formatMoneyCompact(currentEnd, currency: currency), line);
-    final previousLabel = previousEnd == 0 ? null : _text(formatMoneyCompact(previousEnd, currency: currency), pastInk);
+    final currentLabel = currentEnd == 0
+        ? null
+        : _text(formatMoneyCompact(currentEnd, currency: currency), line);
+    final previousLabel = previousEnd == 0
+        ? null
+        : _text(formatMoneyCompact(previousEnd, currency: currency), pastInk);
 
     final plot = Rect.fromLTWH(
       0,
@@ -281,7 +295,9 @@ class _TrendPainter extends CustomPainter {
     // Both lines share one scale or the race between them is a lie. Nothing is
     // added on top: the taller line ending exactly at the plot's ceiling is
     // what makes the two figures beside it readable as a pair.
-    final peak = math.max(currentEnd, previousEnd);
+    // The budget shares the scale too, or a line well under it would be drawn
+    // as if it had already blown through it.
+    final peak = math.max(math.max(currentEnd, previousEnd), budget ?? 0);
     double y(int cents) => peak == 0 ? plot.bottom : plot.bottom - plot.height * (cents / peak);
 
     // The x of bucket [i], with the *whole* range across the plot — so the
@@ -291,6 +307,10 @@ class _TrendPainter extends CustomPainter {
         count <= 1 ? plot.right : plot.left + plot.width * (index / (count - 1));
 
     _axis(canvas, plot, size);
+
+    if (budget case final goal? when goal > 0) {
+      _paintBudgetLine(canvas, plot, y(goal), goal, budgetInk, currency);
+    }
 
     if (previous.length > 1) {
       final path = Path();
@@ -311,9 +331,7 @@ class _TrendPainter extends CustomPainter {
 
     Offset? head;
     if (current.isNotEmpty) {
-      final points = [
-        for (var i = 0; i < current.length; i++) Offset(xOf(i, buckets.length), y(current[i])),
-      ];
+      final points = [for (var i = 0; i < current.length; i++) Offset(xOf(i, buckets.length), y(current[i]))];
       head = points.last;
 
       // A single elapsed bucket is a dot and no line — a month on its first day
@@ -375,7 +393,12 @@ class _TrendPainter extends CustomPainter {
     // because the head is rarely at the right-hand edge and a number floating
     // there with nothing joining it to the line is a number about nothing.
     if (head != null && currentEnd > 0 && scrub == null) {
-      _dashed(canvas, Offset(head.dx + 10, head.dy), Offset(plot.right, head.dy), line.withValues(alpha: .45));
+      _dashed(
+        canvas,
+        Offset(head.dx + 10, head.dy),
+        Offset(plot.right, head.dy),
+        line.withValues(alpha: .45),
+      );
       if (pulse case final at?) {
         // Out and gone: the ring grows on an ease-out so it leaves quickly and
         // arrives slowly, and it fades to nothing by the end of the cycle so
@@ -454,7 +477,8 @@ class _TrendPainter extends CustomPainter {
       old.line != line ||
       old.gutter != gutter ||
       old.scrub != scrub ||
-      old.pulse != pulse;
+      old.pulse != pulse ||
+      old.budget != budget;
 }
 
 // ---------------------------------------------------------------------------
@@ -478,12 +502,17 @@ class SpendBarsChart extends StatelessWidget {
   final int? scrub;
   final ValueChanged<int?> onScrub;
 
+  /// A monthly budget drawn across the plot, or null. Only meaningful when every
+  /// bar is a month; the card decides.
+  final int? budgetCents;
+
   const SpendBarsChart({
     super.key,
     required this.summary,
     required this.onScrub,
     this.scrub,
     this.height = spendChartHeight,
+    this.budgetCents,
   });
 
   @override
@@ -497,7 +526,9 @@ class SpendBarsChart extends StatelessWidget {
     // drawing agree on where the plot ends — see [SpendTrendChart].
     final gutter = math.max(
       empty ? 0.0 : _text(formatMoneyCompact(peak, currency: currency), AppColors.muted, size: 11).width,
-      average == 0 ? 0.0 : _text(formatMoneyCompact(average, currency: currency), AppColors.ink, size: 11).width,
+      average == 0
+          ? 0.0
+          : _text(formatMoneyCompact(average, currency: currency), AppColors.ink, size: 11).width,
     );
 
     return SizedBox(
@@ -539,6 +570,8 @@ class SpendBarsChart extends StatelessWidget {
                   axisInk: AppColors.muted,
                   currency: currency,
                   scrub: scrub,
+                  budget: budgetCents,
+                  budgetInk: AppColors.danger,
                 ),
               ),
             ),
@@ -580,7 +613,13 @@ class _BarsPainter extends CustomPainter {
     required this.axisInk,
     required this.currency,
     required this.scrub,
+    required this.budget,
+    required this.budgetInk,
   });
+
+  /// The budget, if one is drawn — see [SpendBarsChart.budgetCents].
+  final int? budget;
+  final Color budgetInk;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -599,7 +638,9 @@ class _BarsPainter extends CustomPainter {
     // it, and a gridline labelled "0" is that guard leaking onto the screen.
     final empty = peak <= 1;
     final peakLabel = empty ? null : _text(formatMoneyCompact(peak, currency: currency), gridInk, size: 11);
-    final averageLabel = average == 0 ? null : _text(formatMoneyCompact(average, currency: currency), averageInk, size: 11);
+    final averageLabel = average == 0
+        ? null
+        : _text(formatMoneyCompact(average, currency: currency), averageInk, size: 11);
 
     final plot = Rect.fromLTWH(
       0,
@@ -608,14 +649,18 @@ class _BarsPainter extends CustomPainter {
       math.max(size.height - _axisStrip - 6, 20),
     );
 
-    double y(int cents) => peak == 0 ? plot.bottom : plot.bottom - plot.height * (cents / peak);
+    // A budget above every bar raises the scale to it, so the bars stand where
+    // they really are against it; the ceiling label still names the tallest bar.
+    final scale = math.max(peak, budget ?? 0);
+    double y(int cents) => scale == 0 ? plot.bottom : plot.bottom - plot.height * (cents / scale);
 
     // The ceiling is the tallest bar itself rather than a rounded-up axis
     // maximum: the gridline then labels a figure the household actually spent
     // in one month instead of a number picked to make the arithmetic tidy.
     if (peakLabel != null) {
-      _dashed(canvas, Offset(plot.left, plot.top), Offset(plot.right, plot.top), grid, dash: 4, gap: 4);
-      peakLabel.paint(canvas, Offset(size.width - peakLabel.width, plot.top - peakLabel.height / 2));
+      final top = y(peak);
+      _dashed(canvas, Offset(plot.left, top), Offset(plot.right, top), grid, dash: 4, gap: 4);
+      peakLabel.paint(canvas, Offset(size.width - peakLabel.width, top - peakLabel.height / 2));
     }
 
     canvas.drawRect(Rect.fromLTWH(plot.left, plot.bottom, plot.width, 1), Paint()..color = grid);
@@ -642,6 +687,10 @@ class _BarsPainter extends CustomPainter {
       );
     }
 
+    if (budget case final goal? when goal > 0) {
+      _paintBudgetLine(canvas, plot, y(goal), goal, budgetInk, currency);
+    }
+
     if (averageLabel != null && !empty && average < peak) {
       final at = y(average);
       _dashed(canvas, Offset(plot.left, at), Offset(plot.right, at), averageInk, dash: 5, gap: 4);
@@ -664,7 +713,8 @@ class _BarsPainter extends CustomPainter {
       old.average != average ||
       old.gutter != gutter ||
       old.bar != bar ||
-      old.scrub != scrub;
+      old.scrub != scrub ||
+      old.budget != budget;
 }
 
 // ---------------------------------------------------------------------------
@@ -840,16 +890,18 @@ List<RingSlice> ringSlices(SpendSummary summary) {
       count += slice.count;
       share += slice.share;
     }
-    slices.add(RingSlice(
-      label: L.s.spendOtherCategories,
-      color: AppSpendColors.rest,
-      // The `other` category's own glyph: whatever folded in here, this row
-      // means the same thing that one does.
-      icon: SpendCategory.other.icon,
-      cents: cents,
-      count: count,
-      share: share,
-    ));
+    slices.add(
+      RingSlice(
+        label: L.s.spendOtherCategories,
+        color: AppSpendColors.rest,
+        // The `other` category's own glyph: whatever folded in here, this row
+        // means the same thing that one does.
+        icon: SpendCategory.other.icon,
+        cents: cents,
+        count: count,
+        share: share,
+      ),
+    );
   }
 
   return slices;
@@ -1111,8 +1163,7 @@ double _plotWidth(double width, double gutter) =>
 
 /// How much room the figure at the end of a cumulative line takes, or none at
 /// all where the stretch is empty and there is no figure to print.
-double _endLabelWidth(List<int> cumulative, String currency) =>
-    cumulative.isEmpty || cumulative.last == 0
+double _endLabelWidth(List<int> cumulative, String currency) => cumulative.isEmpty || cumulative.last == 0
     ? 0
     : _text(formatMoneyCompact(cumulative.last, currency: currency), AppColors.ink).width;
 
@@ -1144,10 +1195,25 @@ List<(int, String)> axisTicks(List<SpendBucket> buckets, {bool everyBar = false}
 /// The first row's, because a household's rows are all in one currency in
 /// practice and the alternative — a chart axis that mixes two — is not a thing
 /// this page could draw honestly anyway.
+/// A budget, dashed across the plot in the danger colour.
+///
+/// Labelled at the **left** edge, because the right-hand gutter already holds
+/// the figures both charts print there and a third label would land on one of
+/// them.
+void _paintBudgetLine(Canvas canvas, Rect plot, double y, int budget, Color ink, String currency) {
+  _dashed(canvas, Offset(plot.left, y), Offset(plot.right, y), ink.withValues(alpha: .6), dash: 3, gap: 3);
+  final label = _text(L.s.spendBudgetLine(formatMoneyCompact(budget, currency: currency)), ink, size: 11);
+  final above = y - label.height - 2;
+  label.paint(canvas, Offset(plot.left, above < 0 ? y + 2 : above));
+}
+
 String spendCurrency(List<Spend> rows) => rows.isEmpty ? 'EUR' : rows.first.currency;
 
 TextPainter _text(String value, Color color, {double size = 12}) => TextPainter(
-  text: TextSpan(text: value, style: AppText.body.copyWith(color: color, fontSize: size, height: 1.1)),
+  text: TextSpan(
+    text: value,
+    style: AppText.body.copyWith(color: color, fontSize: size, height: 1.1),
+  ),
   textDirection: TextDirection.ltr,
 )..layout();
 

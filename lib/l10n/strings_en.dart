@@ -1121,6 +1121,18 @@ class StringsEn extends AppStrings {
   String get linkRevokeFailed => 'The link couldn\'t be revoked.';
   @override
   String get guestRemoveFailed => 'The guest couldn\'t be removed.';
+  @override
+  String shareListMessage(String name) => '“$name” on Aporah — this link lets you in:';
+  @override
+  String get sharedOutsideTitle => 'Shared with';
+  @override
+  String openInvitations(int count, String? until) {
+    final what = count == 1 ? 'Open invitation' : '$count open invitations';
+    return until == null ? what : '$what · valid until $until';
+  }
+
+  @override
+  String get sharedOutsideLabel => 'Shared with people outside the family';
 
   // ----------------------------------------------------------- visibility --
   @override
@@ -1499,8 +1511,11 @@ class StringsEn extends AppStrings {
   @override
   String get homeHintDone => 'Nothing left for today';
   @override
-  @override
   String get homeTrackerSection => 'Due today';
+  @override
+  String get homeTrackerEmpty => 'No tracker yet';
+  @override
+  String get homeTrackerEmptyBody => 'Sport, reading, vitamins — whatever you keep up.';
   @override
   String get homeListsSection => 'Lists';
   @override
@@ -1844,6 +1859,60 @@ class StringsEn extends AppStrings {
   String get spendCatOther => 'Other';
 
   @override
+  String get spendSearchPlaceholder => 'Shop, category, person';
+  @override
+  String get spendSearchAction => 'Search spending';
+  @override
+  String get spendViewAll => 'All';
+  @override
+  String get spendViewMembers => 'People';
+  @override
+  String get spendViewMerchants => 'Shops';
+  @override
+  String get spendViewCategories => 'Categories';
+  @override
+  String get spendNoMatches => 'No payments match.';
+  @override
+  String get spendClearFilter => 'Remove filter';
+  @override
+  String get spendBudget => 'Budget';
+  @override
+  String get spendBudgets => 'Budgets';
+  @override
+  String get spendBudgetAdd => 'New budget';
+  @override
+  String get spendBudgetEdit => 'Edit budget';
+  @override
+  String get spendBudgetPerMonth => 'Per month';
+  @override
+  String get spendBudgetHint =>
+      'How much can this category cost in a month? The rings show whether you are on track.';
+  @override
+  String spendBudgetLastMonth(String amount) => 'Last month: $amount';
+  @override
+  String get spendBudgetSaved => 'Budget saved';
+  @override
+  String get spendBudgetDeleted => 'Budget deleted';
+  @override
+  String get spendBudgetSaveFailed => "Couldn't save the budget";
+  @override
+  String get spendBudgetNeedsAmount => 'Enter an amount';
+  @override
+  String spendBudgetOf(String spent, String limit) => '$spent of $limit';
+  @override
+  String spendBudgetLeft(String amount) => '$amount left';
+  @override
+  String spendBudgetOver(String amount) => '$amount over';
+  @override
+  String get spendBudgetOnTrack => 'On track';
+  @override
+  String get spendBudgetAhead => 'Ahead of pace';
+  @override
+  String get spendBudgetExceeded => 'Budget exceeded';
+  @override
+  String spendBudgetLine(String amount) => 'Budget $amount';
+
+  @override
   String get plusName => 'Aporah Plus';
   @override
   String get plusPriceMonthly => '€4.99 / month';
@@ -1853,6 +1922,9 @@ class StringsEn extends AppStrings {
   String get plusYearlySaving => 'Saves 33%';
   @override
   String get plusTrialNote => 'Free for 14 days. Cancel any time.';
+
+  @override
+  String plusForOnly(String price) => 'For just $price.';
   @override
   String get plusUpgrade => 'Get Plus';
   @override
@@ -1867,12 +1939,9 @@ class StringsEn extends AppStrings {
   String get plusDebugOverride => 'Test mode: the plan is simulated';
 
   @override
-  String get paywallCalendarsTitle => 'More than one calendar';
+  String get paywallCalendarsTitle => 'All your calendars';
   @override
-  String get paywallCalendarsBody =>
-      'With Plus you can connect as many calendars as you need — the second Google account, '
-      'Outlook from work, school through IServ or WebUntis, and any iCal link. '
-      'The whole family\'s week in one place.';
+  String get paywallCalendarsBody => 'With Plus you connect as many calendars as you need!';
   @override
   String get paywallTrackersTitle => 'More routines';
   @override
@@ -1891,12 +1960,6 @@ class StringsEn extends AppStrings {
   String get paywallMembersBody =>
       'Up to four people are free. With Plus the household is as big as it actually is — '
       'grandma, the au pair, the third child.';
-  @override
-  String get paywallSharingTitle => 'More shares at once';
-  @override
-  String get paywallSharingBody =>
-      'Two share links can be live at the same time. With Plus there is no limit — the shopping '
-      'list for work, the packing list for camp and the box for the neighbour, all side by side.';
   @override
   String get paywallPhotosTitle => 'Photographs and files';
   @override
@@ -1973,6 +2036,10 @@ class StringsEn extends AppStrings {
   String plannerItemCount(int count) => count == 1 ? '1 item' : '$count items';
   @override
   String get plannerHowTo => 'HOW TO';
+  @override
+  String get plannerRecipe => 'RECIPE';
+  @override
+  String get adLabel => 'Ad';
   @override
   String get plannerCreateList => 'Create list';
   @override

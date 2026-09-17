@@ -61,7 +61,10 @@ class SwipeActionsRow extends StatefulWidget {
 }
 
 class _SwipeActionsRowState extends State<SwipeActionsRow> with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 220));
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 220),
+  );
 
   double get _actionsWidth => widget.actionWidth * widget.actions.length;
 
@@ -127,10 +130,8 @@ class _SwipeActionsRowState extends State<SwipeActionsRow> with SingleTickerProv
           // still takes the tap that closes it.
           AnimatedBuilder(
             animation: _controller,
-            builder: (context, child) => Transform.translate(
-              offset: Offset(-_actionsWidth * _controller.value, 0),
-              child: child,
-            ),
+            builder: (context, child) =>
+                Transform.translate(offset: Offset(-_actionsWidth * _controller.value, 0), child: child),
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
               onHorizontalDragUpdate: _onDragUpdate,

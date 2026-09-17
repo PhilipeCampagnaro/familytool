@@ -53,7 +53,11 @@ class _DueDraft {
 /// control from every other sheet in the app — there was no way to see what you
 /// had chosen before committing, and no way to change your mind without
 /// reopening. The check is the standard, so this wears it too.
-Future<DueDateChoice?> showDueDateSheet(BuildContext context, {DateTime? current, DueTime? currentTime}) async {
+Future<DueDateChoice?> showDueDateSheet(
+  BuildContext context, {
+  DateTime? current,
+  DueTime? currentTime,
+}) async {
   final draft = _DueDraft(current, currentTime);
   await showAppSheet<void>(
     context: context,
@@ -129,7 +133,9 @@ class _DueDateOptionsState extends State<_DueDateOptions> {
     final start = _time;
     final picked = await showTimePicker(
       context: context,
-      initialTime: start == null ? const TimeOfDay(hour: 9, minute: 0) : TimeOfDay(hour: start.hour, minute: start.minute),
+      initialTime: start == null
+          ? const TimeOfDay(hour: 9, minute: 0)
+          : TimeOfDay(hour: start.hour, minute: start.minute),
     );
     if (picked == null || !context.mounted) return;
     setState(() {
@@ -156,7 +162,8 @@ class _DueDateOptionsState extends State<_DueDateOptions> {
     bool isShortcut(DateTime day) => chosen != null && boardIsSameDay(chosen, day);
     // A date the shortcuts cannot express — it belongs on "Datum wählen …", or
     // the sheet would show a selection with nothing lit anywhere.
-    final custom = chosen != null &&
+    final custom =
+        chosen != null &&
         !isShortcut(today) &&
         !isShortcut(tomorrow) &&
         !isShortcut(weekend) &&
@@ -243,12 +250,7 @@ class _DueDateOptionsState extends State<_DueDateOptions> {
             // Only once there is an hour to take away. Unlike "Kein Datum",
             // which is a real answer the sheet always offers, no-hour is simply
             // the absence of one and needs no row to stand for it.
-            if (_time != null)
-              _DueActionRow(
-                icon: AppIcons.xCircle,
-                label: L.s.dueNoTime,
-                onTap: _clearTime,
-              ),
+            if (_time != null) _DueActionRow(icon: AppIcons.xCircle, label: L.s.dueNoTime, onTap: _clearTime),
           ]),
         ),
       ],
@@ -277,22 +279,14 @@ class _DueOptionRow extends StatelessWidget {
         child: Row(
           children: [
             Expanded(
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppText.rowTitle,
-              ),
+              child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.rowTitle),
             ),
             Text(
               hint,
               style: AppText.buttonSmall.copyWith(fontWeight: FontWeight.w400, color: AppColors.inkTertiary),
             ),
             const SizedBox(width: 10),
-            SizedBox(
-              width: 18,
-              child: selected ? AppIcon(AppIcons.check, size: 18, color: accent) : null,
-            ),
+            SizedBox(width: 18, child: selected ? AppIcon(AppIcons.check, size: 18, color: accent) : null),
           ],
         ),
       ),
@@ -345,14 +339,14 @@ class _DueActionRow extends StatelessWidget {
             if (hint case final text?) ...[
               Text(
                 text,
-                style: AppText.buttonSmall.copyWith(fontWeight: FontWeight.w400, color: AppColors.inkTertiary),
+                style: AppText.buttonSmall.copyWith(
+                  fontWeight: FontWeight.w400,
+                  color: AppColors.inkTertiary,
+                ),
               ),
               const SizedBox(width: 10),
             ],
-            SizedBox(
-              width: 18,
-              child: selected ? AppIcon(AppIcons.check, size: 18, color: accent) : null,
-            ),
+            SizedBox(width: 18, child: selected ? AppIcon(AppIcons.check, size: 18, color: accent) : null),
           ],
         ),
       ),

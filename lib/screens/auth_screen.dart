@@ -48,10 +48,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         displayName: _nameController.text,
       );
     } else {
-      notifier.signIn(
-        email: _emailController.text,
-        password: _passwordController.text,
-      );
+      notifier.signIn(email: _emailController.text, password: _passwordController.text);
     }
   }
 
@@ -81,15 +78,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const SizedBox(height: 12),
-                Text(
-                  _register ? L.s.welcomeToAporah : L.s.welcomeBack,
-                  style: AppText.screenTitle,
-                ),
+                Text(_register ? L.s.welcomeToAporah : L.s.welcomeBack, style: AppText.screenTitle),
                 const SizedBox(height: 10),
-                Text(
-                  _register ? L.s.signUpBlurb : L.s.signInBlurb,
-                  style: AppText.body,
-                ),
+                Text(_register ? L.s.signUpBlurb : L.s.signInBlurb, style: AppText.body),
                 const SizedBox(height: 28),
 
                 SectionCard(
@@ -141,15 +132,15 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 4),
                     child: Text(
                       L.s.atLeast8Chars,
-                      style: AppText.caption.copyWith(fontWeight: FontWeight.w300, color: AppColors.inkTertiary),
+                      style: AppText.caption.copyWith(
+                        fontWeight: FontWeight.w300,
+                        color: AppColors.inkTertiary,
+                      ),
                     ),
                   ),
                 ],
 
-                if (auth.error != null) ...[
-                  const SizedBox(height: 16),
-                  _ErrorNote(auth.error!),
-                ],
+                if (auth.error != null) ...[const SizedBox(height: 16), _ErrorNote(auth.error!)],
 
                 // The two ways off this form stay in the scroll rather than
                 // joining the button in the bar: they are the alternatives to it,
@@ -237,11 +228,7 @@ class _ConfirmationPending extends ConsumerWidget {
                 const SizedBox(height: 22),
                 Text(L.s.almostThere, style: AppText.screenTitle, textAlign: TextAlign.center),
                 const SizedBox(height: 10),
-                Text(
-                  L.s.confirmMailSent(email),
-                  style: AppText.body,
-                  textAlign: TextAlign.center,
-                ),
+                Text(L.s.confirmMailSent(email), style: AppText.body, textAlign: TextAlign.center),
               ],
             ),
           ),
@@ -323,12 +310,7 @@ class _ErrorNote extends StatelessWidget {
         children: [
           AppIcon(AppIcons.info, size: 17, color: AppColors.danger),
           const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              message,
-              style: AppText.body,
-            ),
-          ),
+          Expanded(child: Text(message, style: AppText.body)),
         ],
       ),
     );
@@ -360,10 +342,7 @@ class _PrimaryButton extends StatelessWidget {
                   height: 20,
                   child: CircularProgressIndicator(strokeWidth: 2.2, color: Colors.white),
                 )
-              : Text(
-                  label,
-                  style: AppText.buttonLarge.copyWith(color: Colors.white),
-                ),
+              : Text(label, style: AppText.buttonLarge.copyWith(color: Colors.white)),
         ),
       ),
     );

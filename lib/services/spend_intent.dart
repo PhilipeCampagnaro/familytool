@@ -11,8 +11,7 @@ import 'package:flutter/services.dart';
 /// answer happens to be the same.
 bool get spendAvailable =>
     !kIsWeb &&
-    (defaultTargetPlatform == TargetPlatform.iOS ||
-        defaultTargetPlatform == TargetPlatform.android);
+    (defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.android);
 
 /// How this phone hears about a payment.
 ///
@@ -51,8 +50,7 @@ SpendCaptureRoute get spendCaptureRoute {
 /// Settings row and the Ausgaben row need it to choose a *label* long before
 /// anybody has an instance in hand, and reaching for the provider to answer a
 /// question about the platform would be the long way round.
-bool get spendUsesNotificationAccess =>
-    spendCaptureRoute == SpendCaptureRoute.notificationListener;
+bool get spendUsesNotificationAccess => spendCaptureRoute == SpendCaptureRoute.notificationListener;
 
 /// This phone's side of automatic spend capture.
 ///
@@ -142,17 +140,9 @@ class SpendIntents {
   /// `--dart-define=SUPABASE_URL=…` files its spends there too. Two copies of
   /// that address would be one copy too many, and the wrong one would only show
   /// up as transactions silently landing in the wrong project.
-  Future<void> storeToken({
-    required String token,
-    required String endpoint,
-    required String apiKey,
-  }) async {
+  Future<void> storeToken({required String token, required String endpoint, required String apiKey}) async {
     if (!isSupported) return;
-    await _invoke<void>('storeToken', {
-      'token': token,
-      'endpoint': endpoint,
-      'api_key': apiKey,
-    });
+    await _invoke<void>('storeToken', {'token': token, 'endpoint': endpoint, 'api_key': apiKey});
   }
 
   Future<void> clearToken() async {

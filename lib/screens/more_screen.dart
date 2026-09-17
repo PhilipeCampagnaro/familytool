@@ -37,9 +37,6 @@ class MoreScreen extends ConsumerWidget {
 
     // Both stay mounted, so switching to the other one and back lands where the
     // user left off rather than at the top of a rebuilt screen.
-    return IndexedStack(
-      index: ref.watch(moreProvider).index,
-      children: [BoxScreen(), SpendScreen()],
-    );
+    return IndexedStack(index: ref.watch(moreProvider).index, children: [BoxScreen(), SpendScreen()]);
   }
 }

@@ -95,6 +95,11 @@ flutter:
     - assets/merchants/
     - assets/onboarding/
     - assets/calendar_providers/
+    # The device shots the calendar and Ausgaben paywalls lead with, one per
+    # language — `hero_<gate>_<localeCode>.png`, see `_heroAsset` in
+    # `lib/widgets/paywall_sheet.dart`. A new language needs both of its own,
+    # or its paywall throws on a missing asset.
+    - assets/paywall/
     # Meteocons (github.com/basmilius/meteocons), MIT — the licence sits beside
     # them in assets/weather/LICENSE and ships with them. Only the ten the eight
     # WeatherConditions map onto are vendored, out of 535; see

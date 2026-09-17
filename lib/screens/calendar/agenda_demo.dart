@@ -30,8 +30,7 @@ const bool _agendaDemo = false;
 /// Hooked here rather than inside [_dayPlan] because the fake set has to be
 /// built *for a date*, and a day with nothing on it hands the two call sites no
 /// events to take one from.
-List<CalendarEvent> _demoEvents(List<CalendarEvent> real, DateTime day) =>
-    _agendaDemo ? _demoDay(day) : real;
+List<CalendarEvent> _demoEvents(List<CalendarEvent> real, DateTime day) => _agendaDemo ? _demoDay(day) : real;
 
 /// The same, for the to-dos the agenda merges into the clock.
 ///
@@ -44,14 +43,14 @@ List<BoardTask> _demoTodos(List<BoardTask> real, DateTime day) => _agendaDemo ? 
 
 List<BoardTask> _demoTaskDay(DateTime day) {
   BoardTask task(String id, String text, {DueTime? at, bool done = false}) => BoardTask(
-        id: 'demo-$id',
-        familyId: 'demo',
-        text: text,
-        ownerId: 'demo',
-        dueDate: DateTime(day.year, day.month, day.day),
-        dueTime: at,
-        done: done,
-      );
+    id: 'demo-$id',
+    familyId: 'demo',
+    text: text,
+    ownerId: 'demo',
+    dueDate: DateTime(day.year, day.month, day.day),
+    dueTime: at,
+    done: done,
+  );
 
   return [
     task('t1', 'Turnbeutel packen'),
@@ -61,27 +60,37 @@ List<BoardTask> _demoTaskDay(DateTime day) {
 }
 
 List<CalendarEvent> _demoDay(DateTime day) {
-  CalendarEvent at(String id, String title, int fromHour, int fromMin, int toHour, int toMin, String source, Color color, {String loc = ''}) => CalendarEvent(
-        id: 'demo-$id',
-        calendarId: 'demo-cal',
-        title: title,
-        startsAt: DateTime(day.year, day.month, day.day, fromHour, fromMin),
-        endsAt: DateTime(day.year, day.month, day.day, toHour, toMin),
-        source: source,
-        srcColor: color,
-        loc: loc,
-      );
+  CalendarEvent at(
+    String id,
+    String title,
+    int fromHour,
+    int fromMin,
+    int toHour,
+    int toMin,
+    String source,
+    Color color, {
+    String loc = '',
+  }) => CalendarEvent(
+    id: 'demo-$id',
+    calendarId: 'demo-cal',
+    title: title,
+    startsAt: DateTime(day.year, day.month, day.day, fromHour, fromMin),
+    endsAt: DateTime(day.year, day.month, day.day, toHour, toMin),
+    source: source,
+    srcColor: color,
+    loc: loc,
+  );
 
   CalendarEvent allDay(String id, String title, String source, Color color) => CalendarEvent(
-        id: 'demo-$id',
-        calendarId: 'demo-cal',
-        title: title,
-        startsAt: DateTime(day.year, day.month, day.day),
-        endsAt: DateTime(day.year, day.month, day.day + 1),
-        allDay: true,
-        source: source,
-        srcColor: color,
-      );
+    id: 'demo-$id',
+    calendarId: 'demo-cal',
+    title: title,
+    startsAt: DateTime(day.year, day.month, day.day),
+    endsAt: DateTime(day.year, day.month, day.day + 1),
+    allDay: true,
+    source: source,
+    srcColor: color,
+  );
 
   return [
     // The band: two things true of the whole day, neither of them at a time.
@@ -108,7 +117,17 @@ List<CalendarEvent> _demoDay(DateTime day) {
 
     // Two colliding, one with a title no block can hold.
     at('d1', 'Fußballtraining', 14, 0, 15, 30, 'Sport', const Color(0xFF0EA5E9)),
-    at('d2', 'Kinderarzt Vorsorgeuntersuchung U9 Praxis Dr. Müller', 14, 0, 14, 45, 'Familie', const Color(0xFF8B5CF6), loc: 'München'),
+    at(
+      'd2',
+      'Kinderarzt Vorsorgeuntersuchung U9 Praxis Dr. Müller',
+      14,
+      0,
+      14,
+      45,
+      'Familie',
+      const Color(0xFF8B5CF6),
+      loc: 'München',
+    ),
 
     // Late and on its own, so the grid's window has to stretch to the evening.
     at('e1', 'Abendessen mit Oma', 18, 30, 20, 0, 'Familie', const Color(0xFF8B5CF6), loc: 'Köln'),

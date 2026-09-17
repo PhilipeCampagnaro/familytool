@@ -84,14 +84,16 @@ class _CalendarFilterButton extends ConsumerWidget {
       final filter = current.calendarFilter;
       for (final src in group.calendars) {
         ids.add(src.id);
-        options.add(NativeMenuOption(
-          src.name,
-          color: src.color,
-          section: section,
-          sectionTitle: title,
-          selected: filter == null || filter.contains(src.id),
-          keepsOpen: true,
-        ));
+        options.add(
+          NativeMenuOption(
+            src.name,
+            color: src.color,
+            section: section,
+            sectionTitle: title,
+            selected: filter == null || filter.contains(src.id),
+            keepsOpen: true,
+          ),
+        );
       }
     }
 
@@ -175,7 +177,11 @@ class _CalendarFilterButton extends ConsumerWidget {
             if (word != null)
               Text(word, maxLines: 1, style: wordStyle)
             else
-              Container(width: _dotSize, height: _dotSize, decoration: BoxDecoration(color: _dotColor, shape: BoxShape.circle)),
+              Container(
+                width: _dotSize,
+                height: _dotSize,
+                decoration: BoxDecoration(color: _dotColor, shape: BoxShape.circle),
+              ),
             const SizedBox(width: _gap),
             AppIcon(AppIcons.caretDown, size: _caretSize, color: caretColor, flat: true),
           ],
@@ -196,7 +202,9 @@ class _CalendarFilterButton extends ConsumerWidget {
             iconTrailing: true,
             label: word ?? _pickedName ?? L.s.all,
             title: word ?? '●',
-            titleStyle: word != null ? wordStyle : wordStyle.copyWith(color: _dotColor, fontSize: _dotFontSize, height: 1),
+            titleStyle: word != null
+                ? wordStyle
+                : wordStyle.copyWith(color: _dotColor, fontSize: _dotFontSize, height: 1),
             onTap: () => _openMenu(context, ref),
           ),
         ],
@@ -256,11 +264,7 @@ class _CalendarPickerRoute extends PopupRoute<void> with DropdownRoute<void> {
   final CalendarGroup group;
   final void Function(String calendarId) onToggle;
 
-  _CalendarPickerRoute({
-    required this.anchor,
-    required this.group,
-    required this.onToggle,
-  });
+  _CalendarPickerRoute({required this.anchor, required this.group, required this.onToggle});
 
   @override
   Color? get barrierColor => null;
@@ -280,9 +284,10 @@ class _CalendarPickerRoute extends PopupRoute<void> with DropdownRoute<void> {
   @override
   Widget buildPage(BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation) {
     final size = MediaQuery.sizeOf(context);
-    final maxLeft =
-        (size.width - _menuWidth - AppSpacing.screenPad)
-            .clamp(AppSpacing.screenPad, double.infinity);
+    final maxLeft = (size.width - _menuWidth - AppSpacing.screenPad).clamp(
+      AppSpacing.screenPad,
+      double.infinity,
+    );
     return Stack(
       children: [
         Positioned(
@@ -295,8 +300,17 @@ class _CalendarPickerRoute extends PopupRoute<void> with DropdownRoute<void> {
   }
 
   @override
-  Widget buildTransitions(BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation, Widget child) {
-    final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic, reverseCurve: Curves.easeIn);
+  Widget buildTransitions(
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    final curved = CurvedAnimation(
+      parent: animation,
+      curve: Curves.easeOutCubic,
+      reverseCurve: Curves.easeIn,
+    );
     return FadeTransition(
       opacity: curved,
       child: ScaleTransition(
@@ -326,10 +340,7 @@ class _CalendarPickerSurface extends ConsumerWidget {
     return Material(
       color: Colors.transparent,
       child: DecoratedBox(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
-          boxShadow: [...AppShadows.menu],
-        ),
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(14), boxShadow: [...AppShadows.menu]),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(14),
           child: BackdropFilter(
@@ -427,13 +438,9 @@ class _CalendarPickerRow extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: checked ? AppColors.accent : Colors.transparent,
-                border: checked
-                    ? null
-                    : Border.all(color: AppColors.inkTertiary, width: 1.5),
+                border: checked ? null : Border.all(color: AppColors.inkTertiary, width: 1.5),
               ),
-              child: checked
-                  ? const AppIcon(AppIcons.check, size: 13, color: Colors.white)
-                  : null,
+              child: checked ? const AppIcon(AppIcons.check, size: 13, color: Colors.white) : null,
             ),
           ],
         ),
@@ -496,8 +503,10 @@ class _AllCalendarsPickerRoute extends PopupRoute<void> with DropdownRoute<void>
   @override
   Widget buildPage(BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation) {
     final size = MediaQuery.sizeOf(context);
-    final maxLeft = (size.width - _menuWidth - AppSpacing.screenPad)
-        .clamp(AppSpacing.screenPad, double.infinity);
+    final maxLeft = (size.width - _menuWidth - AppSpacing.screenPad).clamp(
+      AppSpacing.screenPad,
+      double.infinity,
+    );
     final top = anchor.bottom + 6;
     return Stack(
       children: [
@@ -518,8 +527,17 @@ class _AllCalendarsPickerRoute extends PopupRoute<void> with DropdownRoute<void>
   }
 
   @override
-  Widget buildTransitions(BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation, Widget child) {
-    final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic, reverseCurve: Curves.easeIn);
+  Widget buildTransitions(
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    final curved = CurvedAnimation(
+      parent: animation,
+      curve: Curves.easeOutCubic,
+      reverseCurve: Curves.easeIn,
+    );
     return FadeTransition(
       opacity: curved,
       child: ScaleTransition(
@@ -556,10 +574,7 @@ class _AllCalendarsPickerSurface extends ConsumerWidget {
     return Material(
       color: Colors.transparent,
       child: DecoratedBox(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
-          boxShadow: [...AppShadows.menu],
-        ),
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(14), boxShadow: [...AppShadows.menu]),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(14),
           child: BackdropFilter(

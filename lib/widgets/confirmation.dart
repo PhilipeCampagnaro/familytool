@@ -134,6 +134,7 @@ class _ConfirmationViewState extends State<ConfirmationView> with SingleTickerPr
     parent: _controller,
     curve: const Interval(0, 0.6, curve: Curves.easeOutCubic),
   );
+
   /// Starts before the ring has closed, the way a hand would: the two strokes
   /// overlap, so it reads as one gesture rather than two animations queued up.
   late final CurvedAnimation _tick = CurvedAnimation(
@@ -257,10 +258,7 @@ class _ConfirmationViewState extends State<ConfirmationView> with SingleTickerPr
                   style: AppText.body.copyWith(color: AppColors.muted),
                 ),
               ],
-              for (final card in widget.content) ...[
-                const SizedBox(height: 16),
-                card,
-              ],
+              for (final card in widget.content) ...[const SizedBox(height: 16), card],
               if (waits && widget.action != ConfirmationAction.none) ...[
                 const SizedBox(height: 22),
                 switch (widget.action) {
@@ -529,11 +527,7 @@ class _ConfettiState extends State<_Confetti> with SingleTickerProviderStateMixi
             pieces: _pieces,
             // The family's own tone colours, so the paper belongs to this app
             // in either palette rather than to a party-supplies stock palette.
-            colors: [
-              for (final tone in AppTones.list) tone.fg,
-              accent,
-              AppColors.success,
-            ],
+            colors: [for (final tone in AppTones.list) tone.fg, accent, AppColors.success],
           ),
           size: Size.infinite,
         ),
@@ -575,19 +569,19 @@ class _ConfettiPiece {
   });
 
   static List<_ConfettiPiece> scatter(math.Random random, int count) => [
-        for (var i = 0; i < count; i++)
-          _ConfettiPiece(
-            x: random.nextDouble(),
-            delay: random.nextDouble() * 0.35,
-            fall: 0.5 + random.nextDouble() * 0.3,
-            width: 6 + random.nextDouble() * 5,
-            height: 9 + random.nextDouble() * 7,
-            turns: 0.6 + random.nextDouble() * 2.2,
-            swayAmplitude: 8 + random.nextDouble() * 26,
-            swayPhase: random.nextDouble() * math.pi * 2,
-            color: random.nextInt(1 << 20),
-          ),
-      ];
+    for (var i = 0; i < count; i++)
+      _ConfettiPiece(
+        x: random.nextDouble(),
+        delay: random.nextDouble() * 0.35,
+        fall: 0.5 + random.nextDouble() * 0.3,
+        width: 6 + random.nextDouble() * 5,
+        height: 9 + random.nextDouble() * 7,
+        turns: 0.6 + random.nextDouble() * 2.2,
+        swayAmplitude: 8 + random.nextDouble() * 26,
+        swayPhase: random.nextDouble() * math.pi * 2,
+        color: random.nextInt(1 << 20),
+      ),
+  ];
 }
 
 class _ConfettiPainter extends CustomPainter {
@@ -596,7 +590,7 @@ class _ConfettiPainter extends CustomPainter {
   final List<Color> colors;
 
   _ConfettiPainter({required this.progress, required this.pieces, required this.colors})
-      : super(repaint: progress);
+    : super(repaint: progress);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -612,8 +606,7 @@ class _ConfettiPainter extends CustomPainter {
       final y = -30 + local * (size.height + 60);
       final x = piece.x * size.width + math.sin(piece.swayPhase + local * math.pi * 3) * piece.swayAmplitude;
 
-      paint.color = colors[piece.color % colors.length]
-          .withValues(alpha: (1 - local * local) * 0.85);
+      paint.color = colors[piece.color % colors.length].withValues(alpha: (1 - local * local) * 0.85);
 
       canvas.save();
       canvas.translate(x, y);
@@ -630,6 +623,5 @@ class _ConfettiPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _ConfettiPainter old) =>
-      old.pieces != pieces || old.colors != colors;
+  bool shouldRepaint(covariant _ConfettiPainter old) => old.pieces != pieces || old.colors != colors;
 }

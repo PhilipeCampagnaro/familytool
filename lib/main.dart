@@ -24,6 +24,7 @@ import 'state/nav_state.dart';
 import 'state/notification_scheduler.dart';
 import 'state/notification_state.dart';
 import 'state/settings_state.dart';
+import 'state/spend_state.dart';
 import 'theme/app_icons.dart';
 import 'theme/app_theme.dart';
 import 'theme/tokens.dart';
@@ -101,9 +102,7 @@ class AporahApp extends ConsumerWidget {
         // times everywhere in the app and then open a 24-hour picker to edit
         // them. The interface language decides both.
         child: MediaQuery(
-          data: MediaQuery.of(context).copyWith(
-            alwaysUse24HourFormat: alwaysUse24HourFormat,
-          ),
+          data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: alwaysUse24HourFormat),
           child: _DismissKeyboardOnTap(child: child ?? const SizedBox.shrink()),
         ),
       ),
@@ -223,10 +222,7 @@ class _NoHousehold extends ConsumerWidget {
                 verticalPadding: 0,
               ),
               const SizedBox(height: 8),
-              TextButton(
-                onPressed: () => ref.invalidate(familyProvider),
-                child: Text(L.s.reload),
-              ),
+              TextButton(onPressed: () => ref.invalidate(familyProvider), child: Text(L.s.reload)),
             ],
           ),
         ),
@@ -246,13 +242,7 @@ const _initialTab = homeTabIndex;
 /// palette. Rebuilding the *widgets* is cheap and preserves each screen's
 /// `State` (scroll offset, header expansion), which is the thing that
 /// actually has to survive here.
-List<Widget> _buildScreens() => [
-  StartScreen(),
-  CalendarScreen(),
-  ListScreen(),
-  BoardScreen(),
-  MoreScreen(),
-];
+List<Widget> _buildScreens() => [StartScreen(), CalendarScreen(), ListScreen(), BoardScreen(), MoreScreen()];
 
 /// The tabs whose scrolling compacts the nav bar (see [navBarProvider]).
 ///
@@ -302,7 +292,10 @@ class _AppShellState extends ConsumerState<AppShell>
     duration: const Duration(milliseconds: 220),
   );
   late final Animation<double> _fade = CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic);
-  late final Animation<Offset> _slide = Tween<Offset>(begin: const Offset(0, 0.03), end: Offset.zero).animate(_fade);
+  late final Animation<Offset> _slide = Tween<Offset>(
+    begin: const Offset(0, 0.03),
+    end: Offset.zero,
+  ).animate(_fade);
 
   @override
   void initState() {
@@ -346,6 +339,10 @@ class _AppShellState extends ConsumerState<AppShell>
     if (state != AppLifecycleState.resumed) return;
     if (!mounted) return;
     unawaited(ref.read(calendarProvider.notifier).refreshIfStale());
+    // A payment filed while the app was suspended was broadcast to a socket iOS
+    // had already closed, and broadcasts are not replayed. See
+    // [SpendNotifier.refresh].
+    if (spendAvailable) unawaited(ref.read(spendProvider.notifier).refresh());
     // The grant can have changed in system settings while we were away, and
     // time has passed: this morning's brief is no longer pending.
     unawaited(ref.read(notificationSettingsProvider.notifier).refreshAccess());
@@ -366,9 +363,8 @@ class _AppShellState extends ConsumerState<AppShell>
   ///
   /// [itemFrame] is where the bar had the tapped item, which only **Mehr** is
   /// asked for and only the shelf uses — see [_moreItemAnchor].
-  Future<void> _navigateTo(int i, Rect? itemFrame) => i == moreTabIndex && spendAvailable
-      ? _openMoreShelf(itemFrame)
-      : _switchTo(i);
+  Future<void> _navigateTo(int i, Rect? itemFrame) =>
+      i == moreTabIndex && spendAvailable ? _openMoreShelf(itemFrame) : _switchTo(i);
 
   Future<void> _openMoreShelf(Rect? itemFrame) async {
     final section = await _showMoreShelf(itemFrame);
@@ -377,8 +373,7 @@ class _AppShellState extends ConsumerState<AppShell>
     // a menu that quietly loses an item reads as a bug, and somebody who has
     // never seen Ausgaben cannot want it. See the gate rules in
     // docs/production-plan.md.
-    if (section == MoreSection.spend &&
-        !await requireFeature(context, ref, Feature.spend)) {
+    if (section == MoreSection.spend && !await requireFeature(context, ref, Feature.spend)) {
       return;
     }
     if (!mounted) return;
@@ -682,10 +677,7 @@ class _NavLayerState extends State<_NavLayer> with SingleTickerProviderStateMixi
           // what they refract is the screen the reader was already on.
           if (widget.moreOpen)
             Positioned.fill(
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: widget.onDismissMore,
-              ),
+              child: GestureDetector(behavior: HitTestBehavior.opaque, onTap: widget.onDismissMore),
             ),
           if (native)
             Positioned(
@@ -756,11 +748,7 @@ class _NavLayerState extends State<_NavLayer> with SingleTickerProviderStateMixi
               // edge of the display.
               right: moreShelfRight(context, anchor),
               bottom: MediaQuery.sizeOf(context).height - anchor.top + kMoreShelfGap,
-              child: MoreShelf(
-                open: widget.moreOpen,
-                current: widget.moreSection,
-                onPick: widget.onPickMore,
-              ),
+              child: MoreShelf(open: widget.moreOpen, current: widget.moreSection, onPick: widget.onPickMore),
             ),
         ],
       ),
@@ -787,7 +775,8 @@ class _NavShape extends AnimatedWidget {
   final bool compactShape;
   final Widget child;
 
-  const _NavShape({required Animation<double> t, required this.compactShape, required this.child}) : super(listenable: t);
+  const _NavShape({required Animation<double> t, required this.compactShape, required this.child})
+    : super(listenable: t);
 
   double get _progress => (listenable as Animation<double>).value;
 

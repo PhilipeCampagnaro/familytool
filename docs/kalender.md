@@ -207,8 +207,13 @@ strip between the chevron and what the chevron opened, and a floating `Composite
 panel sat in the right place but hovered over the day instead of belonging to the header its control
 is in.
 
-**Its height is arithmetic, not a measurement** (`firstStepsPanelHeight`, over a fixed
-`firstStepRowHeight`). A `SliverPersistentHeader` is laid out against one extent, so the header has
+**Its height is arithmetic, not a measurement** (`firstStepsPanelHeight`, over
+`firstStepRowHeight`, which is 52 points **times the reader's text scaler**, capped at 1.8). Fixed
+in points was wrong and it clipped: the two lines inside a row grow with Dynamic Type and 52 did
+not, so at the larger settings the subtitle wrapped into space the header had never reserved and the
+row overflowed by six points. Both labels are also held to one line with an ellipsis, which is what
+catches the rest — a label that wraps is a label drawn outside an extent decided before it was
+built. A `SliverPersistentHeader` is laid out against one extent, so the header has
 to know the panel's height before the panel is built; a child that sized itself would be a frame
 ahead of the header containing it and the chips would jump. `StartScreen` computes it,
 `CalendarWeekScreen` passes it as `underLabelHeight`, and `_WeekView` animates its own controller
@@ -238,7 +243,17 @@ door the way `openTaskSheet` does, and inventing one would mean a second entranc
 with the first.
 
 `HomeSections` — the `belowDay` slot: **Heute dran** and **Listen**, each hidden entirely when it
-has nothing. **There is no open-to-do section.** There was one (**Offen**, four rows, oldest
+has nothing — **with one exception, and the exception is the household that has never kept a
+tracker.** There the section stands with a single row (`_TrackerEmptyRow`): the dashed ring the
+whole app uses for a tracker, what a tracker is for in one line, a caret, and a tap that goes to the
+Board. Home is where somebody would notice a rhythm is missing, and a household with none saw
+nothing at all here. **Two emptinesses, and only one of them earns a card**: no tracker at all is a
+thing the reader has not met yet, while trackers that simply owe nothing today is a day going fine,
+and a card explaining that is a section talking about itself. Nothing is drawn while
+`TrackerState.loading` either, or a household with five rhythms would be told for one frame that it
+keeps none. It overlaps with the checklist's **Tracker anlegen** step on purpose — same condition,
+different reader: the checklist is collapsed by default and is about setting the app up, this is the
+section's own content saying what will live in it. **There is no open-to-do section.** There was one (**Offen**, four rows, oldest
 deadline first), and it went because the week view above already draws every to-do on its due day —
 a second card of them was the strip repeated in another shape. Tracker rows keep their circle
 because a tracker you have to navigate to in order to tick is a tracker that stops being ticked, and

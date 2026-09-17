@@ -93,8 +93,7 @@ class CalendarConnectionsPage extends ConsumerWidget {
       title: provider.label,
       subtitle: provider.blurb,
       accessory: _ProviderStatus(state.of(provider)),
-      onTap: () =>
-          Navigator.of(context).push(MaterialPageRoute(builder: (_) => _ProviderPage(provider))),
+      onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => _ProviderPage(provider))),
     );
 
     return SettingsDetailPage(
@@ -270,7 +269,7 @@ class _ProviderPageState extends ConsumerState<_ProviderPage> with WidgetsBindin
   ///
   /// **Reconnecting is not adding.** An account this household already has is
   /// let through, or "Erneut verbinden" would put a paywall in front of
-  /// repairing the single calendar free entitles them to. The Edge Functions
+  /// repairing a calendar free entitles them to. The Edge Functions
   /// make the same exception; this is the polite half of the same rule.
   Future<bool> _allowedToConnect() async {
     if (_provider == CalendarProvider.ferien || _provider == CalendarProvider.abfall) return true;
@@ -307,8 +306,7 @@ class _ProviderPageState extends ConsumerState<_ProviderPage> with WidgetsBindin
       if (url == null) {
         setState(() {
           _opening = false;
-          _error =
-              ref.read(calendarConnectionsProvider).error ?? L.s.providerNotSetUp(_provider.label);
+          _error = ref.read(calendarConnectionsProvider).error ?? L.s.providerNotSetUp(_provider.label);
         });
         return;
       }
@@ -382,16 +380,12 @@ class _ProviderPageState extends ConsumerState<_ProviderPage> with WidgetsBindin
             SettingsNote(
               _awaitingReturn
                   ? L.s.comeBackWhenDone
-                  : L.s.redirectNotice(
-                      _provider == CalendarProvider.google ? 'Google' : 'Microsoft',
-                    ),
+                  : L.s.redirectNotice(_provider == CalendarProvider.google ? 'Google' : 'Microsoft'),
             ),
             const SizedBox(height: AppSpacing.blockGap),
           ],
           AccentAction(
-            icon: _isOAuth
-                ? (working ? AppIcons.spinnerGap : AppIcons.arrowSquareOut)
-                : AppIcons.plus,
+            icon: _isOAuth ? (working ? AppIcons.spinnerGap : AppIcons.arrowSquareOut) : AppIcons.plus,
             label: _isOAuth
                 ? (_opening
                       ? L.s.openingEllipsis
@@ -438,8 +432,7 @@ class _ProviderPageState extends ConsumerState<_ProviderPage> with WidgetsBindin
             SectionCard(
               radius: AppRadii.card,
               children: dividedRows(inset: true, [
-                for (final entry in connection.entries)
-                  _ConnectedRow(key: ValueKey(entry.key), entry: entry),
+                for (final entry in connection.entries) _ConnectedRow(key: ValueKey(entry.key), entry: entry),
                 if (connection.isLinked)
                   SettingsRow(
                     icon: AppIcons.plus,
@@ -460,8 +453,7 @@ class _ProviderPageState extends ConsumerState<_ProviderPage> with WidgetsBindin
               // reads as the two calendars the household picked rather than as
               // the account it reached them through.
               for (final connection in connections)
-                for (final entry in connection.entries)
-                  _ConnectedRow(key: ValueKey(entry.key), entry: entry),
+                for (final entry in connection.entries) _ConnectedRow(key: ValueKey(entry.key), entry: entry),
             ]),
           ),
         ],
@@ -643,10 +635,7 @@ class _CheckBadge extends StatelessWidget {
     return Container(
       width: 22,
       height: 22,
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primary,
-        shape: BoxShape.circle,
-      ),
+      decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary, shape: BoxShape.circle),
       alignment: Alignment.center,
       child: const AppIcon(AppIcons.check, size: 13, color: Colors.white),
     );
@@ -756,11 +745,7 @@ class _ConnectedRowState extends ConsumerState<_ConnectedRow> {
 
     return SwipeActionsRow(
       actions: [
-        SwipeAction(
-          icon: AppIcons.pencilSimple,
-          color: Theme.of(context).colorScheme.primary,
-          onTap: _open,
-        ),
+        SwipeAction(icon: AppIcons.pencilSimple, color: Theme.of(context).colorScheme.primary, onTap: _open),
         SwipeAction(icon: AppIcons.trash, color: AppColors.danger, onTap: _confirmRemove),
       ],
       // Opaque: the row slides over the actions, and the card behind it is what
@@ -779,10 +764,7 @@ class _ConnectedRowState extends ConsumerState<_ConnectedRow> {
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (attention)
-                AppIcon(AppIcons.warning, size: 18, color: AppColors.danger)
-              else
-                _CheckBadge(),
+              if (attention) AppIcon(AppIcons.warning, size: 18, color: AppColors.danger) else _CheckBadge(),
               const SizedBox(width: 4),
               RowMoreButton(onTap: _open),
             ],
@@ -811,10 +793,7 @@ class _ConnectedRowState extends ConsumerState<_ConnectedRow> {
 /// the other or for the sheet to close: they are separate columns written by
 /// separate statements, and a sheet that batched them would have to explain
 /// what "Sichern" meant when only one of them had been touched.
-Future<void> showCalendarDetailSheet({
-  required BuildContext context,
-  required ConnectedCalendar entry,
-}) {
+Future<void> showCalendarDetailSheet({required BuildContext context, required ConnectedCalendar entry}) {
   return showAppSheet<void>(
     context: context,
     // Tall enough that the name field and the "andere Person" field both clear
@@ -915,7 +894,9 @@ class _CalendarDetailBodyState extends ConsumerState<_CalendarDetailBody> {
     });
 
     try {
-      await ref.read(calendarConnectionsProvider.notifier).setCalendarColor(
+      await ref
+          .read(calendarConnectionsProvider.notifier)
+          .setCalendarColor(
             entry.connection,
             entry.externalId,
             // The signed 32-bit ARGB the column holds, which is also what
@@ -1003,12 +984,7 @@ class _CalendarDetailBodyState extends ConsumerState<_CalendarDetailBody> {
                     open: _pickingColor,
                     onTap: () => setState(() => _pickingColor = !_pickingColor),
                   ),
-                  _NameSaveButton(
-                    name: _name,
-                    current: entry.name,
-                    busy: _savingName,
-                    onTap: _saveName,
-                  ),
+                  _NameSaveButton(name: _name, current: entry.name, busy: _savingName, onTap: _saveName),
                 ],
               ),
             ),
@@ -1023,32 +999,20 @@ class _CalendarDetailBodyState extends ConsumerState<_CalendarDetailBody> {
           firstChild: const SizedBox(width: double.infinity, height: 0),
           secondChild: Padding(
             padding: const EdgeInsets.only(top: 10),
-            child: _ColorChoices(
-              selected: _swatchColor(entry),
-              onPick: _saveColor,
-            ),
+            child: _ColorChoices(selected: _swatchColor(entry), onPick: _saveColor),
           ),
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(4, 8, 4, 0),
           child: Text(L.s.householdOnly, style: AppText.label.copyWith(fontSize: 12)),
         ),
-        if (_error case final message?) ...[
-          const SizedBox(height: 12),
-          ErrorNote(message: message),
-        ],
+        if (_error case final message?) ...[const SizedBox(height: 12), ErrorNote(message: message)],
         const SizedBox(height: AppSpacing.blockGap),
-        _OwnerPicker(
-          connection: connection,
-          externalId: entry.externalId,
-          calendarName: entry.name,
-        ),
+        _OwnerPicker(connection: connection, externalId: entry.externalId, calendarName: entry.name),
         const SizedBox(height: AppSpacing.blockGap),
         OutlinedSheetAction(
           icon: AppIcons.linkBreak,
-          label: connection.isFeed || !entry.isWholeConnection
-              ? L.s.removeCalendar
-              : L.s.disconnect,
+          label: connection.isFeed || !entry.isWholeConnection ? L.s.removeCalendar : L.s.disconnect,
           destructive: true,
           onTap: () => showRemoveCalendarDialog(
             context: context,
@@ -1114,9 +1078,7 @@ class _ColorSwatchButton extends StatelessWidget {
             // The halo: a ring of the same colour, faded, standing off the
             // swatch. `spreadRadius` with a zero blur draws exactly that and
             // costs no extra widget.
-            boxShadow: open
-                ? [BoxShadow(color: color.withValues(alpha: 0.3), spreadRadius: 4)]
-                : null,
+            boxShadow: open ? [BoxShadow(color: color.withValues(alpha: 0.3), spreadRadius: 4)] : null,
           ),
         ),
       ),
@@ -1197,12 +1159,7 @@ class _NameSaveButton extends StatelessWidget {
   final bool busy;
   final VoidCallback onTap;
 
-  const _NameSaveButton({
-    required this.name,
-    required this.current,
-    required this.busy,
-    required this.onTap,
-  });
+  const _NameSaveButton({required this.name, required this.current, required this.busy, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -1211,11 +1168,7 @@ class _NameSaveButton extends StatelessWidget {
       height: 40,
       child: busy
           ? const Center(
-              child: SizedBox(
-                width: 18,
-                height: 18,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
+              child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)),
             )
           : ValueListenableBuilder<TextEditingValue>(
               valueListenable: name,
@@ -1289,8 +1242,7 @@ void showRemoveCalendarDialog({
                     // `isLinked` is the connection's own `auth_type`, so it
                     // answers for the row in front of the user rather than for
                     // the provider.
-                    ConnectKind.link =>
-                      connection.isLinked ? L.s.linkStaysAtSchool : L.s.credentialsDeleted,
+                    ConnectKind.link => connection.isLinked ? L.s.linkStaysAtSchool : L.s.credentialsDeleted,
                   }),
       ),
       actions: [
@@ -1351,11 +1303,7 @@ class _OwnerPicker extends ConsumerStatefulWidget {
   final String? externalId;
   final String calendarName;
 
-  const _OwnerPicker({
-    required this.connection,
-    required this.externalId,
-    required this.calendarName,
-  });
+  const _OwnerPicker({required this.connection, required this.externalId, required this.calendarName});
 
   @override
   ConsumerState<_OwnerPicker> createState() => _OwnerPickerState();
@@ -1503,10 +1451,7 @@ class _OwnerPickerState extends ConsumerState<_OwnerPicker> {
             ),
           ]),
         ),
-        if (_error case final message?) ...[
-          const SizedBox(height: 12),
-          ErrorNote(message: message),
-        ],
+        if (_error case final message?) ...[const SizedBox(height: 12), ErrorNote(message: message)],
         const SizedBox(height: 12),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -1894,8 +1839,7 @@ class _ConnectFlow extends ChangeNotifier {
       provider == CalendarProvider.ical &&
       isLink &&
       !kIsWeb &&
-      (defaultTargetPlatform == TargetPlatform.iOS ||
-          defaultTargetPlatform == TargetPlatform.android);
+      (defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.android);
 
   /// The steps this flow walks, in order.
   ///
@@ -2459,8 +2403,10 @@ class _ConnectFlow extends ChangeNotifier {
     }
     // Taken before any await, so no BuildContext crosses one. Used only if an
     // Abfall calendar connects — see below.
-    final notices = ProviderScope.containerOf(context, listen: false)
-        .read(notificationSettingsProvider.notifier);
+    final notices = ProviderScope.containerOf(
+      context,
+      listen: false,
+    ).read(notificationSettingsProvider.notifier);
     try {
       if (isFerien) {
         await notifier.connectFerien(region!, displayName: label);
@@ -2476,11 +2422,7 @@ class _ConnectFlow extends ChangeNotifier {
         // this, not launch, is where the notification prompt goes.
         unawaited(notices.ensureAccess());
       } else if (isAbfall) {
-        await notifier.connectIcs(
-          url: icsUrl.text.trim(),
-          label: address!.label,
-          displayName: label,
-        );
+        await notifier.connectIcs(url: icsUrl.text.trim(), label: address!.label, displayName: label);
         // The evening-before reminder is what makes a bin calendar worth
         // having, and this is the moment it starts being worth something — so
         // this, not launch, is where the notification prompt goes.
@@ -2718,10 +2660,7 @@ class _LinkStep extends StatelessWidget {
                   if (steps.isEmpty)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 10),
-                      child: Text(
-                        L.s.icalLinkNote,
-                        style: AppText.body.copyWith(color: AppColors.muted),
-                      ),
+                      child: Text(L.s.icalLinkNote, style: AppText.body.copyWith(color: AppColors.muted)),
                     ),
                   for (final (index, line) in steps.indexed) ...[
                     if (index > 0) const SizedBox(height: 10),
@@ -2785,9 +2724,7 @@ class _LinkStep extends StatelessWidget {
         ),
         _StepError(flow.error),
         if (flow.busy)
-          _StepBusyRow(
-            flow.pickedFileName == null ? L.s.checkingLinkEllipsis : L.s.checkingFileEllipsis,
-          ),
+          _StepBusyRow(flow.pickedFileName == null ? L.s.checkingLinkEllipsis : L.s.checkingFileEllipsis),
       ],
     );
   }
@@ -2872,9 +2809,7 @@ class _LoginStep extends StatelessWidget {
               child: FieldBox(
                 child: TextField(
                   controller: flow.user,
-                  keyboardType: provider.needsServerField
-                      ? TextInputType.text
-                      : TextInputType.emailAddress,
+                  keyboardType: provider.needsServerField ? TextInputType.text : TextInputType.emailAddress,
                   autocorrect: false,
                   style: AppText.searchInput,
                   decoration: InputDecoration(
@@ -3122,10 +3057,7 @@ class _NameStep extends StatelessWidget {
                           textCapitalization: TextCapitalization.sentences,
                           textInputAction: TextInputAction.done,
                           style: AppText.searchInput,
-                          decoration: const InputDecoration(
-                            border: InputBorder.none,
-                            isDense: true,
-                          ),
+                          decoration: const InputDecoration(border: InputBorder.none, isDense: true),
                           onSubmitted: (_) => flow.next(context),
                         ),
                       ),
@@ -3446,9 +3378,7 @@ class _AddressStep extends StatelessWidget {
             : failed
             ? L.s.tapToRetry
             : coverage!.supported
-            ? L.s.foundVendor(
-                '${coverage.town}${coverage.street == null ? '' : ', ${coverage.street}'}',
-              )
+            ? L.s.foundVendor('${coverage.town}${coverage.street == null ? '' : ', ${coverage.street}'}')
             : L.s.noVendorFoundTapForLink,
         onTap: flow.resolving
             ? null

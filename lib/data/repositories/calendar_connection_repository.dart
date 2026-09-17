@@ -29,8 +29,7 @@ class CalendarConnectionException implements Exception {
 /// Reads and deletes are plain PostgREST, because RLS already says exactly what
 /// the household may see and remove.
 class CalendarConnectionRepository {
-  CalendarConnectionRepository([SupabaseClient? client])
-    : _db = client ?? AporahSupabase.client;
+  CalendarConnectionRepository([SupabaseClient? client]) : _db = client ?? AporahSupabase.client;
 
   final SupabaseClient _db;
 
@@ -366,10 +365,7 @@ class CalendarConnectionRepository {
       if (account != null && account.trim().isNotEmpty) 'account': account.trim(),
       'connection_id': ?connectionId,
     });
-    return (
-      connectionId: body['connection_id'] as String?,
-      externalId: body['external_id'] as String?,
-    );
+    return (connectionId: body['connection_id'] as String?, externalId: body['external_id'] as String?);
   }
 
   /// Drops one link from an account, and the account with it when it was the
@@ -379,10 +375,7 @@ class CalendarConnectionRepository {
   /// `authenticated` cannot write, so removing it is the function's job too.
   /// Deselecting alone would leave the link stored and the calendar back on the
   /// next tick of the picker.
-  Future<void> removeCalendarLink({
-    required String connectionId,
-    required String externalId,
-  }) async {
+  Future<void> removeCalendarLink({required String connectionId, required String externalId}) async {
     await _invoke('calendar-link', {
       'action': 'remove',
       'connection_id': connectionId,
@@ -442,10 +435,7 @@ class CalendarConnectionRepository {
   /// Is this address served by a vendor we can read? Slow by nature — it fans
   /// out across every provider in the registry — so callers show a spinner.
   Future<AbfallCoverage> resolveAddress(GeoAddress address) async {
-    final body = await _invoke('abfall-lookup', {
-      'action': 'resolve',
-      'address': address.toMap(),
-    });
+    final body = await _invoke('abfall-lookup', {'action': 'resolve', 'address': address.toMap()});
     return AbfallCoverage.fromMap(Map<String, dynamic>.from(body['result'] as Map));
   }
 
@@ -522,11 +512,7 @@ class CalendarConnectionRepository {
   /// A feed's name is written on *this household's* subscription, never on the
   /// shared `public_feeds` row — calling your bin calendar "Tonne raus" must not
   /// rename it for the rest of the street.
-  Future<void> renameById({
-    required String id,
-    required bool isFeed,
-    required String name,
-  }) async {
+  Future<void> renameById({required String id, required bool isFeed, required String name}) async {
     final trimmed = name.trim();
     if (trimmed.isEmpty) return;
 
@@ -555,9 +541,7 @@ class CalendarConnectionRepository {
     Duration timeout = const Duration(seconds: 30),
   }) async {
     try {
-      final res = await _db.functions
-          .invoke(name, body: body, queryParameters: query)
-          .timeout(timeout);
+      final res = await _db.functions.invoke(name, body: body, queryParameters: query).timeout(timeout);
       final data = res.data;
       if (data is Map) return Map<String, dynamic>.from(data);
       return const {};

@@ -58,8 +58,7 @@ class WalletCapturePage extends ConsumerStatefulWidget {
   ConsumerState<WalletCapturePage> createState() => _WalletCapturePageState();
 }
 
-class _WalletCapturePageState extends ConsumerState<WalletCapturePage>
-    with WidgetsBindingObserver {
+class _WalletCapturePageState extends ConsumerState<WalletCapturePage> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
@@ -109,9 +108,7 @@ class _WalletCapturePageState extends ConsumerState<WalletCapturePage>
       // provider pages make: it is the whole point of the page, and with one
       // phone enrolled it would otherwise sit halfway up the screen with nothing
       // under it.
-      bottomAction: !supported
-          ? null
-          : _action(context, state, notifier, needsAccess: needsAccess),
+      bottomAction: !supported ? null : _action(context, state, notifier, needsAccess: needsAccess),
       children: [
         if (supported) ...[
           _ThisDeviceCard(
@@ -120,10 +117,7 @@ class _WalletCapturePageState extends ConsumerState<WalletCapturePage>
             needsAccess: needsAccess,
           ),
           const SizedBox(height: AppSpacing.blockGap),
-          if (needsAccess) ...[
-            _DisclosureCard(),
-            const SizedBox(height: AppSpacing.blockGap),
-          ],
+          if (needsAccess) ...[_DisclosureCard(), const SizedBox(height: AppSpacing.blockGap)],
         ],
         GroupLabel(L.s.spendWalletDevicesLabel),
         SectionCard(
@@ -149,9 +143,7 @@ class _WalletCapturePageState extends ConsumerState<WalletCapturePage>
                     for (final device in state.devices)
                       _DeviceRow(
                         device: device,
-                        isThisDevice:
-                            state.thisDeviceEnrolled &&
-                            device.deviceUid == state.thisDeviceUid,
+                        isThisDevice: state.thisDeviceEnrolled && device.deviceUid == state.thisDeviceUid,
                       ),
                   ],
           ),
@@ -225,11 +217,7 @@ class _ThisDeviceCard extends StatelessWidget {
   final bool access;
   final bool needsAccess;
 
-  const _ThisDeviceCard({
-    required this.enrolled,
-    required this.access,
-    required this.needsAccess,
-  });
+  const _ThisDeviceCard({required this.enrolled, required this.access, required this.needsAccess});
 
   bool get _complete => needsAccess ? enrolled && access : enrolled;
 
@@ -267,10 +255,7 @@ class _ThisDeviceCard extends StatelessWidget {
               if (needsAccess)
                 ..._androidBody()
               else if (!enrolled)
-                Text(
-                  L.s.spendWalletIntro,
-                  style: AppText.body.copyWith(color: AppColors.inkSecondary),
-                )
+                Text(L.s.spendWalletIntro, style: AppText.body.copyWith(color: AppColors.inkSecondary))
               else
                 ..._steps(L.s.spendWalletStepsTitle, [
                   (L.s.spendWalletStep1, null),
@@ -289,18 +274,12 @@ class _ThisDeviceCard extends StatelessWidget {
   List<Widget> _androidBody() {
     if (_complete) {
       return [
-        Text(
-          L.s.spendWalletAndroidSources,
-          style: AppText.body.copyWith(color: AppColors.inkSecondary),
-        ),
+        Text(L.s.spendWalletAndroidSources, style: AppText.body.copyWith(color: AppColors.inkSecondary)),
       ];
     }
 
     return [
-      Text(
-        L.s.spendWalletAndroidIntro,
-        style: AppText.body.copyWith(color: AppColors.inkSecondary),
-      ),
+      Text(L.s.spendWalletAndroidIntro, style: AppText.body.copyWith(color: AppColors.inkSecondary)),
       // The one state worth calling out rather than listing: the token is here,
       // the grant is not, and every payment made in the meantime is gone for
       // good. Nothing else on this page is a warning.
@@ -346,16 +325,10 @@ class _ThisDeviceCard extends StatelessWidget {
                 width: 20,
                 child: step.$2 == true
                     ? AppIcon(AppIcons.checkCircle, size: 15, color: AppColors.success)
-                    : Text(
-                        '${index + 1}.',
-                        style: AppText.body.copyWith(color: AppColors.inkTertiary),
-                      ),
+                    : Text('${index + 1}.', style: AppText.body.copyWith(color: AppColors.inkTertiary)),
               ),
               Expanded(
-                child: Text(
-                  step.$1,
-                  style: AppText.body.copyWith(color: AppColors.inkSecondary),
-                ),
+                child: Text(step.$1, style: AppText.body.copyWith(color: AppColors.inkSecondary)),
               ),
             ],
           ),
@@ -390,12 +363,7 @@ class _DisclosureCard extends StatelessWidget {
                 children: [
                   AppIcon(AppIcons.shieldCheck, size: 19, color: AppColors.inkSecondary),
                   const SizedBox(width: 9),
-                  Expanded(
-                    child: Text(
-                      L.s.spendWalletDisclosureTitle,
-                      style: AppText.sectionHeading,
-                    ),
-                  ),
+                  Expanded(child: Text(L.s.spendWalletDisclosureTitle, style: AppText.sectionHeading)),
                 ],
               ),
               const SizedBox(height: 12),
@@ -404,10 +372,7 @@ class _DisclosureCard extends StatelessWidget {
                 style: AppText.body.copyWith(color: AppColors.inkSecondary),
               ),
               const SizedBox(height: 10),
-              Text(
-                L.s.spendWalletAndroidSources,
-                style: AppText.body.copyWith(color: AppColors.inkTertiary),
-              ),
+              Text(L.s.spendWalletAndroidSources, style: AppText.body.copyWith(color: AppColors.inkTertiary)),
             ],
           ),
         ),
@@ -495,7 +460,10 @@ class _DeviceRowState extends ConsumerState<_DeviceRow> {
       // Anchored on the dots rather than the row, so the menu grows out of the
       // thing that was tapped — which is the whole reason this app puts up a
       // `UIMenu` beside the control instead of a sheet at the bottom.
-      trailing: KeyedSubtree(key: _anchorKey, child: RowMoreButton(onTap: _open)),
+      trailing: KeyedSubtree(
+        key: _anchorKey,
+        child: RowMoreButton(onTap: _open),
+      ),
     );
   }
 }

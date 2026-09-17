@@ -233,9 +233,13 @@ task:
   `share_links` + `guest_access` are *who outside may see it*. The old single `who` string
   (`'all' | 'private' | <memberId>`) conflated the first two and is gone — `whoBadge()` in
   [lib/models/who.dart](lib/models/who.dart) renders the badge from the first two together.
-  External sharing is its own action ([lib/widgets/share_sheet.dart](lib/widgets/share_sheet.dart)),
-  reached from a row menu and **never** from the "Für wen?" picker: mixing outsiders into the
-  family avatar row would make a mis-tap leak household data. **A share always may edit and the
+  External sharing is its own action, reached from a menu and **never** from the "Für wen?"
+  picker: mixing outsiders into the family avatar row would make a mis-tap leak household data.
+  **A list's "Teilen" goes straight to the system share sheet** (`_shareListOut` in
+  [lib/screens/list_screen.dart](lib/screens/list_screen.dart), `aporah/share`): it mints a
+  seven-day invitation, revokes it again if the sheet was closed unsent, and the guests and open
+  invitations live in the list's edit sheet under "Geteilt mit". Boxes and tasks still use
+  [lib/widgets/share_sheet.dart](lib/widgets/share_sheet.dart). Sharing has no plan limit. **A share always may edit and the
   sheet does not ask** — `can_edit` survives on the rows and in the policies, defaulted `true`,
   but read-only was a mode the database enforced and no screen ever drew, so the guest saw every
   control and had every tap refused. Bringing it back means building the read-only UI, not
@@ -372,7 +376,10 @@ task:
   glyph is *two* codepoints — an under-layer and an over-layer stacked with the lower one faded —
   so a bare `Icon` renders half of it, which looks thin and hollow rather than broken. Both
   codepoints are named in [lib/theme/app_icons.dart](lib/theme/app_icons.dart) and both must be
-  `const`, or `--tree-shake-icons` fails the release build. **A glyph that names a thing is
+  `const`, or `--tree-shake-icons` fails the release build. A glyph only the curated symbol set in
+  `icon_suggestions.dart` uses is written `PhIcons.<name>` instead, and
+  `python3 tool/gen_phosphor_catalog.py` generates exactly the ones referenced, both layers, into
+  `phosphor_catalog.dart` — run it after adding one, or the build fails on the missing name. **A glyph that names a thing is
   duotone; a glyph that *is* a control is flat, and flat means the set's Regular weight from a
   second vendored font** — not the duotone minus its under-layer, which for a caret is a hollow
   triangle rather than a chevron. Every Phosphor weight shares one codepoint per glyph, so

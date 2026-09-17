@@ -66,7 +66,8 @@ class _WeekViewState extends ConsumerState<_WeekView> with SingleTickerProviderS
 
   static DateTime _stripDate(int index) => _stripEpoch.add(Duration(days: index));
 
-  static int _stripIndexOf(DateTime date) => DateTime(date.year, date.month, date.day).difference(_stripEpoch).inDays;
+  static int _stripIndexOf(DateTime date) =>
+      DateTime(date.year, date.month, date.day).difference(_stripEpoch).inDays;
 
   final ScrollController _stripController = ScrollController();
 
@@ -138,7 +139,11 @@ class _WeekViewState extends ConsumerState<_WeekView> with SingleTickerProviderS
     // spent two of seven cells on days that had already happened.
     final target = (index * _stripItemExtent).clamp(0.0, _stripController.position.maxScrollExtent);
     if (animate) {
-      _stripController.animateTo(target, duration: const Duration(milliseconds: 420), curve: Curves.easeOutCubic);
+      _stripController.animateTo(
+        target,
+        duration: const Duration(milliseconds: 420),
+        curve: Curves.easeOutCubic,
+      );
     } else {
       _stripController.jumpTo(target);
     }
@@ -254,7 +259,12 @@ class _WeekViewState extends ConsumerState<_WeekView> with SingleTickerProviderS
                     child: Column(
                       children: [
                         Padding(
-                          padding: const EdgeInsets.fromLTRB(AppSpacing.screenPad, 16, AppSpacing.screenPad, 0),
+                          padding: const EdgeInsets.fromLTRB(
+                            AppSpacing.screenPad,
+                            16,
+                            AppSpacing.screenPad,
+                            0,
+                          ),
                           child: _MonthAndChipsRow(
                             state: state,
                             accent: accent,
@@ -323,12 +333,7 @@ class _WeekViewState extends ConsumerState<_WeekView> with SingleTickerProviderS
   /// Kalender's month view keeps [_JumpToTodaySlot] on the nav row.
   Widget? _buildJumpToToday(Color accent) {
     if (_todayVisible) return null;
-    return _JumpToTodayButton(
-      visible: true,
-      accent: accent,
-      onNavRow: false,
-      onTap: _jumpToToday,
-    );
+    return _JumpToTodayButton(visible: true, accent: accent, onNavRow: false, onTap: _jumpToToday);
   }
 
   /// The 40pt profile circle plus the gap the title keeps from it — what
@@ -393,7 +398,9 @@ class _WeekViewState extends ConsumerState<_WeekView> with SingleTickerProviderS
     // Only while the chip is lit — and unfiltered by the calendar row, which is
     // the whole point of it standing apart from those chips. See
     // [CalendarScreenState.showTasks].
-    final todos = state.showTasks ? _demoTodos(_todosDueOn(ref, sel.y, sel.m, sel.d), selDate) : const <BoardTask>[];
+    final todos = state.showTasks
+        ? _demoTodos(_todosDueOn(ref, sel.y, sel.m, sel.d), selDate)
+        : const <BoardTask>[];
     // The day split the way the grid draws it: the band above, the clock below.
     // See [_dayPlan].
     final plan = _dayPlan(events, todos, selDate);
@@ -425,7 +432,8 @@ class _WeekViewState extends ConsumerState<_WeekView> with SingleTickerProviderS
                   t,
                   state,
                   accent,
-                  widget.label ?? Text(L.s.yourDay, key: const ValueKey('yourDay'), style: AppText.sectionHeading),
+                  widget.label ??
+                      Text(L.s.yourDay, key: const ValueKey('yourDay'), style: AppText.sectionHeading),
                 ),
               ),
             ),
@@ -443,49 +451,54 @@ class _WeekViewState extends ConsumerState<_WeekView> with SingleTickerProviderS
           // whenever the content was shorter than the display.
           body: LayoutBuilder(
             builder: (context, viewport) => ListView(
-            padding: EdgeInsets.zero,
-            children: [
-              _DayBody(
-                // At least the viewport, so the grey reaches the bottom of the
-                // screen on a short day rather than stopping mid-page.
-                minHeight: viewport.maxHeight,
-                bottomInset: navContentInset(context),
-                below: widget.belowDay,
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 240),
-                  switchInCurve: Curves.easeOutCubic,
-                  switchOutCurve: Curves.easeIn,
-                  transitionBuilder: (child, animation) => FadeTransition(
-                    opacity: animation,
-                    child: SlideTransition(
-                      position: Tween<Offset>(begin: const Offset(0, 0.02), end: Offset.zero).animate(animation),
-                      child: child,
+              padding: EdgeInsets.zero,
+              children: [
+                _DayBody(
+                  // At least the viewport, so the grey reaches the bottom of the
+                  // screen on a short day rather than stopping mid-page.
+                  minHeight: viewport.maxHeight,
+                  bottomInset: navContentInset(context),
+                  below: widget.belowDay,
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 240),
+                    switchInCurve: Curves.easeOutCubic,
+                    switchOutCurve: Curves.easeIn,
+                    transitionBuilder: (child, animation) => FadeTransition(
+                      opacity: animation,
+                      child: SlideTransition(
+                        position: Tween<Offset>(
+                          begin: const Offset(0, 0.02),
+                          end: Offset.zero,
+                        ).animate(animation),
+                        child: child,
+                      ),
                     ),
-                  ),
-                  child: KeyedSubtree(
-                    // The to-do toggle joins the key, so turning the chip on
-                    // crossfades the day the way changing the filter does rather
-                    // than having rows appear under the reader's thumb. It also
-                    // resets [_DayAgenda]'s fold, so a day always opens showing
-                    // what it shows rather than inheriting the last day's
-                    // "weitere" still unfolded.
-                    key: ValueKey('${sel.y}-${sel.m}-${sel.d}-${state.calendarFilterKey}-${state.showTasks}'),
-                    child: _DayAgenda(
-                      holiday: holiday,
-                      plan: plan,
-                      day: selDate,
-                      headingText: headingText,
-                      accent: accent,
-                      // A day with only to-dos on it is not an empty day, so the
-                      // empty state waits for both to be empty.
-                      empty: events.isEmpty && todos.isEmpty,
-                      eventCount: events.length,
+                    child: KeyedSubtree(
+                      // The to-do toggle joins the key, so turning the chip on
+                      // crossfades the day the way changing the filter does rather
+                      // than having rows appear under the reader's thumb. It also
+                      // resets [_DayAgenda]'s fold, so a day always opens showing
+                      // what it shows rather than inheriting the last day's
+                      // "weitere" still unfolded.
+                      key: ValueKey(
+                        '${sel.y}-${sel.m}-${sel.d}-${state.calendarFilterKey}-${state.showTasks}',
+                      ),
+                      child: _DayAgenda(
+                        holiday: holiday,
+                        plan: plan,
+                        day: selDate,
+                        headingText: headingText,
+                        accent: accent,
+                        // A day with only to-dos on it is not an empty day, so the
+                        // empty state waits for both to be empty.
+                        empty: events.isEmpty && todos.isEmpty,
+                        eventCount: events.length,
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
           ),
         ),
       ],
@@ -519,16 +532,11 @@ class _EmptyDayActions extends ConsumerWidget {
       return GlassAccentButton(
         label: L.s.connectCalendars,
         icon: AppIcons.calendarPlus,
-        onTap: () => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => CalendarConnectionsPage()),
-        ),
+        onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => CalendarConnectionsPage())),
       );
     }
 
-    return GlassAccentButton(
-      label: L.s.addEvent,
-      onTap: () => _openNewEventSheet(context, ref),
-    );
+    return GlassAccentButton(label: L.s.addEvent, onTap: () => _openNewEventSheet(context, ref));
   }
 }
 
@@ -566,12 +574,7 @@ class _DayBody extends StatelessWidget {
   /// Room left at the bottom so the last section clears the nav bar.
   final double bottomInset;
 
-  const _DayBody({
-    required this.child,
-    required this.minHeight,
-    required this.bottomInset,
-    this.below,
-  });
+  const _DayBody({required this.child, required this.minHeight, required this.bottomInset, this.below});
 
   static const _radius = Radius.circular(26);
 
@@ -605,10 +608,7 @@ class _DayBody extends StatelessWidget {
               // under them.
               ClipRRect(
                 borderRadius: const BorderRadius.vertical(top: _radius),
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(14, 20, 16, 16),
-                  child: child,
-                ),
+                child: Padding(padding: const EdgeInsets.fromLTRB(14, 20, 16, 16), child: child),
               ),
               // Add an appointment without leaving Home — the same sheet as
               // Kalender's '+', dated to whichever day the strip is on.
@@ -703,7 +703,9 @@ class _DayAgenda extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,
             children: [
-              Flexible(child: Text(headingText, overflow: TextOverflow.ellipsis, style: AppText.itemTitle)),
+              Flexible(
+                child: Text(headingText, overflow: TextOverflow.ellipsis, style: AppText.itemTitle),
+              ),
               // No "0 Termine" on an empty day: the empty state below says it
               // in a sentence.
               if (eventCount > 0) ...[
@@ -838,28 +840,44 @@ class _DayStripCell extends ConsumerWidget {
     // Only while the overlay is on. A ring on a day whose to-do the agenda is
     // not showing points at nothing, and the reader has no way to find out what
     // it meant.
-    final hasTodo = state.showTasks &&
+    final hasTodo =
+        state.showTasks &&
         ref.watch(openTodoDaysProvider).contains(CalendarScreenState.key(date.year, date.month, date.day));
 
     return GestureDetector(
       onTap: () => ref.read(calendarProvider.notifier).selectDay(date.year, date.month, date.day),
       child: Column(
         children: [
-          SizedBox(height: _weatherBand, child: _DayWeather(date: date)),
+          SizedBox(
+            height: _weatherBand,
+            child: _DayWeather(date: date),
+          ),
           const SizedBox(height: _weatherGap),
           Container(
             padding: const EdgeInsets.fromLTRB(0, 8, 0, 8),
-            decoration: BoxDecoration(color: isSel ? tint(accent, .9) : AppColors.screenBg, borderRadius: BorderRadius.circular(22)),
+            decoration: BoxDecoration(
+              color: isSel ? tint(accent, .9) : AppColors.screenBg,
+              borderRadius: BorderRadius.circular(22),
+            ),
             child: Column(
               children: [
                 SizedBox(
                   height: _letterBand,
                   child: Center(
-                    child: Text(letter, style: AppText.weekdayLetter.copyWith(color: isSel ? AppColors.ink : AppColors.muted)),
+                    child: Text(
+                      letter,
+                      style: AppText.weekdayLetter.copyWith(color: isSel ? AppColors.ink : AppColors.muted),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 6),
-                DaySelectorCircle(day: date.day, selected: isSel, today: today, highlight: highlight, accent: accent),
+                DaySelectorCircle(
+                  day: date.day,
+                  selected: isSel,
+                  today: today,
+                  highlight: highlight,
+                  accent: accent,
+                ),
                 const SizedBox(height: 8),
                 SizedBox(
                   height: _dotBand,
@@ -1013,7 +1031,12 @@ class _JumpToTodayButton extends StatelessWidget {
   /// pill that sits under Home's day strip.
   final bool onNavRow;
 
-  const _JumpToTodayButton({required this.visible, required this.accent, required this.onTap, this.onNavRow = true});
+  const _JumpToTodayButton({
+    required this.visible,
+    required this.accent,
+    required this.onTap,
+    this.onNavRow = true,
+  });
 
   @override
   Widget build(BuildContext context) {

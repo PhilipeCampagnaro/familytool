@@ -106,8 +106,7 @@ class TrackerDayChart extends StatelessWidget {
         // start before it existed and draw those days as faint placeholders.
         final first = boardDaysAfter(thisWeek, -(rows * weeksPerRow - 1) * 7);
 
-        Widget spacer(int column) =>
-            SizedBox(width: column % 7 == 0 ? _gap * 2 : _gap);
+        Widget spacer(int column) => SizedBox(width: column % 7 == 0 ? _gap * 2 : _gap);
 
         var kept = 0, due = 0;
         for (var i = 0; i < rows * perRow; i++) {
@@ -251,7 +250,8 @@ class _DaySquare extends StatelessWidget {
     if (!tappable) return ExcludeSemantics(child: square);
     return Semantics(
       button: true,
-      label: '${L.s.weekdayWithDateShort(day.weekday % 7, day.day, day.month)}: '
+      label:
+          '${L.s.weekdayWithDateShort(day.weekday % 7, day.day, day.month)}: '
           '${mark == TrackerDayMark.kept ? L.s.trackerLegendKept : L.s.trackerLegendMissed}',
       child: GestureDetector(
         onTap: () => onToggleDay!(day),
@@ -304,8 +304,14 @@ class TrackerWeekChart extends StatelessWidget {
     // The live week is left out of the tally: it can still be finished, and
     // counting it as a miss on a Dienstag would make every current record look
     // one week worse than it is — the same rule [trackerStreak] follows.
-    final closed = [for (final r in records) if (r.monday != thisWeek) r];
-    final hit = [for (final r in closed) if (r.done >= target) r].length;
+    final closed = [
+      for (final r in records)
+        if (r.monday != thisWeek) r,
+    ];
+    final hit = [
+      for (final r in closed)
+        if (r.done >= target) r,
+    ].length;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -340,18 +346,11 @@ class _WeekRow extends StatelessWidget {
   final Color accent;
   final bool isCurrent;
 
-  const _WeekRow({
-    required this.record,
-    required this.target,
-    required this.accent,
-    required this.isCurrent,
-  });
+  const _WeekRow({required this.record, required this.target, required this.accent, required this.isCurrent});
 
   @override
   Widget build(BuildContext context) {
-    final label = isCurrent
-        ? L.s.sectionThisWeek
-        : L.s.dayMonthShort(record.monday.day, record.monday.month);
+    final label = isCurrent ? L.s.sectionThisWeek : L.s.dayMonthShort(record.monday.day, record.monday.month);
     final count = L.s.weekDoneOfTarget(record.done, target);
 
     return Semantics(
@@ -399,9 +398,7 @@ class _WeekRow extends StatelessWidget {
               count,
               textAlign: TextAlign.right,
               maxLines: 1,
-              style: AppText.microLabel.copyWith(
-                color: record.done >= target ? accent : AppColors.muted,
-              ),
+              style: AppText.microLabel.copyWith(color: record.done >= target ? accent : AppColors.muted),
             ),
           ),
         ],
@@ -619,9 +616,10 @@ class TrackerRecentDays extends StatelessWidget {
         const SizedBox(height: 12),
         LayoutBuilder(
           builder: (context, constraints) {
-            final size = (((constraints.maxWidth - (days - 1) * _gapMin) / days)
-                    .clamp(24.0, _maxDiameter))
-                .toDouble();
+            final size = (((constraints.maxWidth - (days - 1) * _gapMin) / days).clamp(
+              24.0,
+              _maxDiameter,
+            )).toDouble();
             return Row(
               // Spread rather than gapped: once the circle hits its ceiling the
               // leftover width becomes air between the days, so the strip stays
@@ -643,10 +641,7 @@ class TrackerRecentDays extends StatelessWidget {
           },
         ),
         const SizedBox(height: 10),
-        Text(
-          L.s.trackerBackfillHint,
-          style: AppText.microLabel.copyWith(color: AppColors.mutedLight),
-        ),
+        Text(L.s.trackerBackfillHint, style: AppText.microLabel.copyWith(color: AppColors.mutedLight)),
       ],
     );
   }
@@ -725,10 +720,7 @@ class _DayChip extends StatelessWidget {
     final labelled = Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          dayLetters[day.weekday - 1],
-          style: AppText.microLabel.copyWith(color: AppColors.mutedLight),
-        ),
+        Text(dayLetters[day.weekday - 1], style: AppText.microLabel.copyWith(color: AppColors.mutedLight)),
         const SizedBox(height: 6),
         circle,
       ],
@@ -737,12 +729,13 @@ class _DayChip extends StatelessWidget {
     // Seven days is few enough that every one of them is worth reading out,
     // pressable or not — unlike the grid, where labelling all seven rows would
     // mean stepping through months of squares to reach one.
-    final spoken = '${L.s.weekdayWithDateShort(day.weekday % 7, day.day, day.month)}: '
+    final spoken =
+        '${L.s.weekdayWithDateShort(day.weekday % 7, day.day, day.month)}: '
         '${switch (mark) {
-      TrackerDayMark.kept => L.s.trackerLegendKept,
-      TrackerDayMark.missed => L.s.trackerLegendMissed,
-      _ => L.s.trackerLegendNotDue,
-    }}';
+          TrackerDayMark.kept => L.s.trackerLegendKept,
+          TrackerDayMark.missed => L.s.trackerLegendMissed,
+          _ => L.s.trackerLegendNotDue,
+        }}';
 
     if (!tappable) {
       return Semantics(label: spoken, excludeSemantics: true, child: labelled);

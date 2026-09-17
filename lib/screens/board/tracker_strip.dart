@@ -185,11 +185,7 @@ class BoardTrackerStrip extends StatelessWidget {
             if (c > from) cells.add(SizedBox(width: gap));
             final day = boardDaysAfter(first, r == 0 ? c - lead : before + c);
             cells.add(
-              _TrackerCell(
-                tally: days[day] ?? const BoardDayTally(),
-                isToday: day == today,
-                accent: accent,
-              ),
+              _TrackerCell(tally: days[day] ?? const BoardDayTally(), isToday: day == today, accent: accent),
             );
           }
           return Row(mainAxisSize: MainAxisSize.min, children: cells);
@@ -235,11 +231,7 @@ class _TrackerCell extends StatelessWidget {
     // Board is on screen, and a couple of hundred implicit animations to fade in
     // a history that never moves would cost a frame for nothing.
     if (!isToday) {
-      return Container(
-        width: BoardTrackerStrip._cell,
-        height: BoardTrackerStrip._cell,
-        decoration: square,
-      );
+      return Container(width: BoardTrackerStrip._cell, height: BoardTrackerStrip._cell, decoration: square);
     }
     return AnimatedContainer(
       // The same 280ms the progress bar slides in, so ticking off the last task

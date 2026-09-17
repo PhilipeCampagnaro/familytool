@@ -42,10 +42,15 @@ class ListSnapshot {
   /// docs/backend.md, "What the guest can never reach").
   final Set<String> guestListIds;
 
+  /// Lists somebody outside the household can reach — see
+  /// [ListRepository.fetchSharedOutIds].
+  final Set<String> sharedOutIds;
+
   const ListSnapshot({
     required this.lists,
     required this.itemsByList,
     required this.guestListIds,
+    this.sharedOutIds = const {},
   });
 
   static const empty = ListSnapshot(lists: [], itemsByList: {}, guestListIds: {});
@@ -70,7 +75,7 @@ class ListRepository {
 
   static const _listColumns =
       'id, family_id, name, icon_asset, kind, owner_id, visibility, position, '
-      'event_calendar_id, event_uid, event_starts_at, created_at, updated_at';
+      'event_calendar_id, event_uid, event_starts_at, steps, recipe, created_at, updated_at';
   static const _itemColumns =
       'id, list_id, text, sub, unit, icon_asset, link_url, assignee_id, done, done_by, done_at, position, created_by, created_at, updated_at';
   static const _attachmentColumns = 'id, item_id, storage_path, name, is_image, created_at';
@@ -103,12 +108,20 @@ class ListRepository {
 
     final ids = [for (final r in listRows) r['id'] as String];
 
+    // Beside the three below rather than after them: it answers a badge, and
+    // nothing else waits on it.
+    final sharedOut = fetchSharedOutIds(ids);
     final results = await Future.wait([
       // `list_shares` is readable exactly for the lists that are readable, so
       // this needs no predicate of its own beyond narrowing to what we just
       // read.
       _db.from('list_shares').select('list_id, user_id').inFilter('list_id', ids),
-      _db.from('list_items').select(_itemColumns).inFilter('list_id', ids).order('position').order('created_at'),
+      _db
+          .from('list_items')
+          .select(_itemColumns)
+          .inFilter('list_id', ids)
+          .order('position')
+          .order('created_at'),
       // Own grants only — `guest_access_select` also returns the guests *on* my
       // household's lists, which are somebody else's grants and would wrongly
       // mark my own lists as foreign.
@@ -131,11 +144,47 @@ class ListRepository {
 
     return ListSnapshot(
       lists: [
-        for (final r in listRows) ShoppingList.fromMap(r, sharedWith: sharedWith[r['id'] as String] ?? const []),
+        for (final r in listRows)
+          ShoppingList.fromMap(r, sharedWith: sharedWith[r['id'] as String] ?? const []),
       ],
       itemsByList: itemsByList,
       guestListIds: {for (final r in grantRows) r['resource_id'] as String},
+      sharedOutIds: await sharedOut,
     );
+  }
+
+  /// Which of [listIds] somebody outside the household can reach, or has been
+  /// invited to: a guest on it other than me, or a link still open.
+  ///
+  /// Never throws — it only decides whether a small icon is drawn, and a list
+  /// without it is still a list. `share_links_select` shows a member only their
+  /// own links (an admin sees all), so a member does not see the icon for an
+  /// invitation another member sent until somebody has come in through it.
+  Future<Set<String>> fetchSharedOutIds(List<String> listIds) async {
+    if (listIds.isEmpty) return const {};
+    try {
+      final results = await Future.wait([
+        _db
+            .from('guest_access')
+            .select('resource_id')
+            .eq('resource_kind', 'list')
+            .inFilter('resource_id', listIds)
+            .neq('user_id', _uid),
+        _db
+            .from('share_links')
+            .select('resource_id')
+            .eq('resource_kind', 'list')
+            .inFilter('resource_id', listIds)
+            .isFilter('revoked_at', null)
+            .or('expires_at.is.null,expires_at.gt.${DateTime.now().toUtc().toIso8601String()}'),
+      ]);
+      return {
+        for (final rows in results)
+          for (final r in rows) r['resource_id'] as String,
+      };
+    } catch (_) {
+      return const {};
+    }
   }
 
   /// The files hanging off a screenful of articles, one statement for all of
@@ -236,6 +285,8 @@ class ListRepository {
     Set<String> sharedWith = const {},
     int position = 0,
     EventLink? eventLink,
+    List<String> steps = const [],
+    String? recipe,
   }) async {
     final listId = id ?? newUuidV4();
     final ownerId = _uid;
@@ -252,6 +303,9 @@ class ListRepository {
       position: position,
       // Only ever on the insert — see [BoardRepository.createTask].
       eventLink: eventLink,
+      // Same: written once, with the row, and never by `updateList`.
+      steps: steps,
+      recipe: recipe,
     );
 
     await _db.from('lists').insert({...draft.toMap(forInsert: true), 'id': listId});
@@ -353,7 +407,11 @@ class ListRepository {
       createdBy: _uid,
       position: position,
     );
-    final row = await _db.from('list_items').insert(draft.toMap(forInsert: true)).select(_itemColumns).single();
+    final row = await _db
+        .from('list_items')
+        .insert(draft.toMap(forInsert: true))
+        .select(_itemColumns)
+        .single();
     return ShoppingListItem.fromMap(row);
   }
 

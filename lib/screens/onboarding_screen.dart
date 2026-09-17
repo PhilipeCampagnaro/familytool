@@ -205,11 +205,20 @@ class _StepButton extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         alignment: Alignment.center,
-        decoration: BoxDecoration(color: AppColors.surfaceAlt, borderRadius: BorderRadius.circular(AppRadii.bar)),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceAlt,
+          borderRadius: BorderRadius.circular(AppRadii.bar),
+        ),
         child: Text(label, style: AppText.buttonLarge.copyWith(color: AppColors.mutedLight)),
       );
     }
-    return GlassAccentButton(label: label, onTap: onTap, expand: true, fontSize: 16, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16));
+    return GlassAccentButton(
+      label: label,
+      onTap: onTap,
+      expand: true,
+      fontSize: 16,
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+    );
   }
 }
 
@@ -318,7 +327,9 @@ class _FamilyStepState extends ConsumerState<_FamilyStep> {
     }
 
     setState(() => _sending = true);
-    final outcome = await ref.read(familyProvider.notifier).inviteMember(email: email, name: name, role: _isChild ? FamilyRole.kid : FamilyRole.member);
+    final outcome = await ref
+        .read(familyProvider.notifier)
+        .inviteMember(email: email, name: name, role: _isChild ? FamilyRole.kid : FamilyRole.member);
     if (!mounted) return false;
     setState(() => _sending = false);
 
@@ -330,7 +341,9 @@ class _FamilyStepState extends ConsumerState<_FamilyStep> {
       return false;
     }
 
-    ref.read(onboardingProvider.notifier).addInvite(OnboardingInvite(email: email, name: name, isChild: _isChild));
+    ref
+        .read(onboardingProvider.notifier)
+        .addInvite(OnboardingInvite(email: email, name: name, isChild: _isChild));
     // Same distinction the Settings confirmation draws: an invitation whose
     // mail didn't go out is still an invitation, and it says so rather than
     // claiming a delivery that didn't happen.
@@ -371,7 +384,11 @@ class _FamilyStepState extends ConsumerState<_FamilyStep> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _TopBar(step: 1, onBack: () => ref.read(onboardingProvider.notifier).back(), onSkip: () => ref.read(onboardingProvider.notifier).next()),
+        _TopBar(
+          step: 1,
+          onBack: () => ref.read(onboardingProvider.notifier).back(),
+          onSkip: () => ref.read(onboardingProvider.notifier).next(),
+        ),
         Expanded(
           child: PinnedActionLayout(
             fadeInto: AppColors.surface,
@@ -387,7 +404,9 @@ class _FamilyStepState extends ConsumerState<_FamilyStep> {
             // dead button holding the best real estate on the step. The hint
             // pointing at the send button lives in the scroll body, so nothing
             // the user still needs goes away with it.
-            action: _typing ? null : _StepButton(label: L.s.next, onTap: _goNext, enabled: !_hasUnsentEmail && !_sending),
+            action: _typing
+                ? null
+                : _StepButton(label: L.s.next, onTap: _goNext, enabled: !_hasUnsentEmail && !_sending),
             bodyBuilder: (context, bottomInset) => SingleChildScrollView(
               // The second way back out of the keyboard, for the address that
               // won't send and the field that was tapped by mistake: a drag on
@@ -411,11 +430,21 @@ class _FamilyStepState extends ConsumerState<_FamilyStep> {
                   Row(
                     children: [
                       Expanded(
-                        child: _RoleChip(label: L.s.adult, selected: !_isChild, accent: accent, onTap: () => setState(() => _isChild = false)),
+                        child: _RoleChip(
+                          label: L.s.adult,
+                          selected: !_isChild,
+                          accent: accent,
+                          onTap: () => setState(() => _isChild = false),
+                        ),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
-                        child: _RoleChip(label: L.s.child, selected: _isChild, accent: accent, onTap: () => setState(() => _isChild = true)),
+                        child: _RoleChip(
+                          label: L.s.child,
+                          selected: _isChild,
+                          accent: accent,
+                          onTap: () => setState(() => _isChild = true),
+                        ),
                       ),
                     ],
                   ),
@@ -442,7 +471,11 @@ class _FamilyStepState extends ConsumerState<_FamilyStep> {
                             controller: _nameController,
                             textInputAction: TextInputAction.next,
                             style: AppText.searchInput,
-                            decoration: InputDecoration(border: InputBorder.none, hintText: L.s.nameOptional, isDense: true),
+                            decoration: InputDecoration(
+                              border: InputBorder.none,
+                              hintText: L.s.nameOptional,
+                              isDense: true,
+                            ),
                           ),
                         ),
                         CardDivider(),
@@ -460,7 +493,11 @@ class _FamilyStepState extends ConsumerState<_FamilyStep> {
                                   textInputAction: TextInputAction.done,
                                   onSubmitted: (_) => _sendInvite(),
                                   style: AppText.searchInput,
-                                  decoration: InputDecoration(border: InputBorder.none, hintText: L.s.emailAddress, isDense: true),
+                                  decoration: InputDecoration(
+                                    border: InputBorder.none,
+                                    hintText: L.s.emailAddress,
+                                    isDense: true,
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: 10),
@@ -471,10 +508,20 @@ class _FamilyStepState extends ConsumerState<_FamilyStep> {
                                 const SizedBox(
                                   width: 36,
                                   height: 36,
-                                  child: Center(child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))),
+                                  child: Center(
+                                    child: SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                    ),
+                                  ),
                                 )
                               else
-                                GlassConfirmButton(icon: AppIcons.paperPlaneTilt, size: 36, onTap: _sendInvite),
+                                GlassConfirmButton(
+                                  icon: AppIcons.paperPlaneTilt,
+                                  size: 36,
+                                  onTap: _sendInvite,
+                                ),
                             ],
                           ),
                         ),
@@ -499,7 +546,14 @@ class _FamilyStepState extends ConsumerState<_FamilyStep> {
                   ],
                   if (invites.isNotEmpty) ...[
                     const SizedBox(height: 14),
-                    Wrap(spacing: 8, runSpacing: 8, children: [for (final invite in invites) Chip(label: Text(invite.name.isNotEmpty ? invite.name : invite.email))]),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        for (final invite in invites)
+                          Chip(label: Text(invite.name.isNotEmpty ? invite.name : invite.email)),
+                      ],
+                    ),
                   ],
                 ],
               ),
@@ -644,7 +698,9 @@ class _AddressStepState extends ConsumerState<_AddressStep> {
             // covered both the field and the first suggestions — the one strip
             // of screen the step still needed — so a control that does not act
             // on what is being typed gives it back.
-            action: state.connecting ? _InlineBusy() : (_typing ? null : _StepButton(label: L.s.next, onTap: _continue)),
+            action: state.connecting
+                ? _InlineBusy()
+                : (_typing ? null : _StepButton(label: L.s.next, onTap: _continue)),
             bodyBuilder: (context, bottomInset) => SingleChildScrollView(
               // A drag on the body drops the focus, which brings "Weiter" back
               // for the address that was typed and never picked.
@@ -669,7 +725,10 @@ class _AddressStepState extends ConsumerState<_AddressStep> {
                     onFocusChange: (has) {
                       if (has != _typing) setState(() => _typing = has);
                     },
-                    child: SectionCard(radius: AppRadii.card, children: dividedRows(_addressRows(state), inset: true)),
+                    child: SectionCard(
+                      radius: AppRadii.card,
+                      children: dividedRows(_addressRows(state), inset: true),
+                    ),
                   ),
                   if (state.found case final found?) ...[
                     const SizedBox(height: 16),
@@ -677,7 +736,10 @@ class _AddressStepState extends ConsumerState<_AddressStep> {
                     const SizedBox(height: 10),
                     SettingsNote(found.any ? L.s.onboardRenameLater : L.s.onboardNothingForAddress),
                   ],
-                  if (state.addressError case final message?) ...[const SizedBox(height: 12), ErrorNote(message: message)],
+                  if (state.addressError case final message?) ...[
+                    const SizedBox(height: 12),
+                    ErrorNote(message: message),
+                  ],
                 ],
               ),
             ),
@@ -705,13 +767,25 @@ class _AddressStepState extends ConsumerState<_AddressStep> {
               textCapitalization: TextCapitalization.words,
               textInputAction: TextInputAction.search,
               style: AppText.searchInput,
-              decoration: InputDecoration(border: InputBorder.none, hintText: L.s.addressPlaceholder, isDense: true),
+              decoration: InputDecoration(
+                border: InputBorder.none,
+                hintText: L.s.addressPlaceholder,
+                isDense: true,
+              ),
               onChanged: _onboarding.onAddressQueryChanged,
             ),
           ),
         ),
-        if (state.searchingAddress) _BusyRow(L.s.searchingAddresses) else if (state.addressResults.isEmpty && state.address.trim().length >= 3) _MutedRow(L.s.noAddressFound),
-        for (final found in state.addressResults) SettingsRow(icon: found.prefix ? AppIcons.mapPin : AppIcons.house, title: found.label, onTap: () => _pick(found)),
+        if (state.searchingAddress)
+          _BusyRow(L.s.searchingAddresses)
+        else if (state.addressResults.isEmpty && state.address.trim().length >= 3)
+          _MutedRow(L.s.noAddressFound),
+        for (final found in state.addressResults)
+          SettingsRow(
+            icon: found.prefix ? AppIcons.mapPin : AppIcons.house,
+            title: found.label,
+            onTap: () => _pick(found),
+          ),
       ];
     }
 
@@ -797,7 +871,13 @@ class _CalendarRow extends StatelessWidget {
   final bool? value;
   final ValueChanged<bool> onChanged;
 
-  const _CalendarRow({required this.icon, required this.title, required this.subtitle, required this.value, required this.onChanged});
+  const _CalendarRow({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.value,
+    required this.onChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -811,7 +891,10 @@ class _CalendarRow extends StatelessWidget {
           Container(
             width: 34,
             height: 34,
-            decoration: BoxDecoration(color: AppColors.surfaceAlt, borderRadius: BorderRadius.circular(AppRadii.iconTile)),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceAlt,
+              borderRadius: BorderRadius.circular(AppRadii.iconTile),
+            ),
             alignment: Alignment.center,
             child: AppIcon(icon, size: 17, color: missing ? AppColors.mutedLight : accent),
           ),
@@ -821,11 +904,15 @@ class _CalendarRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(title, style: AppText.rowTitle.copyWith(color: missing ? AppColors.muted : null)),
-                if (subtitle case final line?) Text(line, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.label),
+                if (subtitle case final line?)
+                  Text(line, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.label),
               ],
             ),
           ),
-          if (value case final on?) NativeSwitch(value: on, onChanged: onChanged) else AppIcon(AppIcons.x, size: 16, color: AppColors.mutedLight),
+          if (value case final on?)
+            NativeSwitch(value: on, onChanged: onChanged)
+          else
+            AppIcon(AppIcons.x, size: 16, color: AppColors.mutedLight),
         ],
       ),
     );
@@ -947,7 +1034,13 @@ class _DoneStep extends ConsumerWidget {
               content: [
                 SectionCard(
                   children: [
-                    _RecapRow(icon: AppIcons.userPlus, label: state.invites.isEmpty ? L.s.noInvitesSent : L.s.invitedCount(state.invites.length), done: state.invites.isNotEmpty),
+                    _RecapRow(
+                      icon: AppIcons.userPlus,
+                      label: state.invites.isEmpty
+                          ? L.s.noInvitesSent
+                          : L.s.invitedCount(state.invites.length),
+                      done: state.invites.isNotEmpty,
+                    ),
                     CardDivider(),
                     _RecapRow(icon: AppIcons.recycle, label: L.s.wasteCalendar, done: hasTrash),
                     CardDivider(),
@@ -995,7 +1088,11 @@ class _RecapRow extends StatelessWidget {
           AppIcon(icon, size: 18, color: AppColors.muted),
           const SizedBox(width: 12),
           Expanded(child: Text(label, style: AppText.rowTitle)),
-          AppIcon(done ? AppIcons.check : AppIcons.x, size: 16, color: done ? AppColors.success : AppColors.mutedLight),
+          AppIcon(
+            done ? AppIcons.check : AppIcons.x,
+            size: 16,
+            color: done ? AppColors.success : AppColors.mutedLight,
+          ),
         ],
       ),
     );

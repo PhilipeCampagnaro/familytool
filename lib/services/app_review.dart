@@ -9,8 +9,7 @@ import 'external_links.dart';
 /// Whether the system rating prompt exists here.
 bool get reviewAvailable =>
     !kIsWeb &&
-    (defaultTargetPlatform == TargetPlatform.iOS ||
-        defaultTargetPlatform == TargetPlatform.android);
+    (defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.android);
 
 /// The App Store id, once the listing exists. **Empty until then**, and the
 /// Settings row that opens the store is absent while it is — a link to a

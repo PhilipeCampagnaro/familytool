@@ -82,7 +82,8 @@ class SearchableOverviewScreen extends StatefulWidget {
   State<SearchableOverviewScreen> createState() => _SearchableOverviewScreenState();
 }
 
-class _SearchableOverviewScreenState extends State<SearchableOverviewScreen> with SingleTickerProviderStateMixin {
+class _SearchableOverviewScreenState extends State<SearchableOverviewScreen>
+    with SingleTickerProviderStateMixin {
   /// Search runs *in* the screen (see [HeaderSearchBar]): the header becomes
   /// the system search field and this body shows the hits — no sheet over the
   /// content.
@@ -222,7 +223,6 @@ class _SearchableOverviewScreenState extends State<SearchableOverviewScreen> wit
     if (query.isEmpty) {
       return SearchResultsPlaceholder(query: '', prompt: widget.searchPrompt);
     }
-    return widget.results(context, query, _closeSearch) ??
-        SearchResultsPlaceholder(query: query, prompt: '');
+    return widget.results(context, query, _closeSearch) ?? SearchResultsPlaceholder(query: query, prompt: '');
   }
 }

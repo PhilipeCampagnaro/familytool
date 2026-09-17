@@ -24,20 +24,17 @@ class LanguagePage extends ConsumerWidget {
       children: [
         SectionCard(
           radius: AppRadii.card,
-          children: dividedRows(
-            inset: true,
-            [
-              for (final language in AppLanguage.values)
-                SettingsRow(
-                  title: language.label,
-                  subtitle: language.nativeSubtitle,
-                  trailing: language == selected
-                      ? AppIcon(AppIcons.check, size: 18, color: Theme.of(context).colorScheme.primary)
-                      : const SizedBox.shrink(),
-                  onTap: () => ref.read(settingsProvider.notifier).setLanguage(language),
-                ),
-            ],
-          ),
+          children: dividedRows(inset: true, [
+            for (final language in AppLanguage.values)
+              SettingsRow(
+                title: language.label,
+                subtitle: language.nativeSubtitle,
+                trailing: language == selected
+                    ? AppIcon(AppIcons.check, size: 18, color: Theme.of(context).colorScheme.primary)
+                    : const SizedBox.shrink(),
+                onTap: () => ref.read(settingsProvider.notifier).setLanguage(language),
+              ),
+          ]),
         ),
       ],
     );

@@ -141,7 +141,10 @@ class BoardRepository {
       // Same three states, and one extra rule: losing the day loses the hour in
       // the same patch. `tasks_due_time_needs_date` would reject the row
       // otherwise, and an hour left behind on a dateless to-do names nothing.
-      if (clearDueDate || clearDueTime) 'due_time': null else if (dueTime != null) 'due_time': dueTime.toSql(),
+      if (clearDueDate || clearDueTime)
+        'due_time': null
+      else if (dueTime != null)
+        'due_time': dueTime.toSql(),
       if (visibility != null && visibility != task.visibility) 'visibility': visibility.name,
     };
 

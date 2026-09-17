@@ -210,8 +210,7 @@ _ToastContent _confirmContent(
       }
       // Confirm regardless of [kind]: whatever the chip the undo hung off was
       // reporting, the restore landing is good news.
-      if (!holding ||
-          !handle.swap(_ToastContent(L.s.restored, ToastKind.confirm), stay: _confirmStay)) {
+      if (!holding || !handle.swap(_ToastContent(L.s.restored, ToastKind.confirm), stay: _confirmStay)) {
         // The chip was gone or was displaced while the restore ran; the answer
         // is still owed, so it gets a fresh one — [_show] taps for itself.
         _show(overlay, bottomInset, L.s.restored, ToastKind.confirm, null);
@@ -220,6 +219,7 @@ _ToastContent _confirmContent(
       HapticFeedback.lightImpact();
     });
   }
+
   return _ToastContent(message, kind, undo: undo, onUndo: onUndo);
 }
 

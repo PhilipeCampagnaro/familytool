@@ -41,12 +41,7 @@ class TrackerDetailView extends ConsumerWidget {
   final Color accent;
   final VoidCallback onEdit;
 
-  const TrackerDetailView({
-    super.key,
-    required this.tracker,
-    required this.accent,
-    required this.onEdit,
-  });
+  const TrackerDetailView({super.key, required this.tracker, required this.accent, required this.onEdit});
 
   /// First-frame estimate of the name block only — [CollapsingHeaderScreen]
   /// re-measures it. See the collapsing-headers section of
@@ -83,7 +78,12 @@ class TrackerDetailView extends ConsumerWidget {
         // and a rhythm a household keeps is not a thing to hand to an outsider.
         trailing: GlassMenuButton(
           items: [
-            AnchoredMenuItem(label: L.s.edit, icon: AppIcons.pencilSimple, symbol: 'pencil', onSelected: onEdit),
+            AnchoredMenuItem(
+              label: L.s.edit,
+              icon: AppIcons.pencilSimple,
+              symbol: 'pencil',
+              onSelected: onEdit,
+            ),
             AnchoredMenuItem(
               label: L.s.delete,
               icon: AppIcons.trash,
@@ -152,8 +152,7 @@ class TrackerDetailView extends ConsumerWidget {
                           today: today,
                           accent: accent,
                           title: L.s.trackerHistory,
-                          onToggleDay: (day) =>
-                              _backfill(context, notifier, tracker, day, today, checks),
+                          onToggleDay: (day) => _backfill(context, notifier, tracker, day, today, checks),
                         ),
                         const SizedBox(height: 14),
                         TrackerChartLegend(accent: accent),

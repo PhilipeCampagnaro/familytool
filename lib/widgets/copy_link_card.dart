@@ -22,13 +22,7 @@ class CopyLinkCard extends StatefulWidget {
   final String? footnote;
   final VoidCallback? onDismiss;
 
-  const CopyLinkCard({
-    super.key,
-    required this.url,
-    required this.label,
-    this.footnote,
-    this.onDismiss,
-  });
+  const CopyLinkCard({super.key, required this.url, required this.label, this.footnote, this.onDismiss});
 
   @override
   State<CopyLinkCard> createState() => _CopyLinkCardState();

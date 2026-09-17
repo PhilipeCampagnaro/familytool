@@ -178,8 +178,7 @@ class NotificationSettingsNotifier extends StateNotifier<NotificationSettings> {
         taskTimes: prefs.getBool(_kTaskTimes),
         reminders: [
           if (decoded is List)
-            for (final item in decoded)
-              ?EventReminder.fromJson(item),
+            for (final item in decoded) ?EventReminder.fromJson(item),
         ],
       );
     } catch (_) {
@@ -262,7 +261,10 @@ class NotificationSettingsNotifier extends StateNotifier<NotificationSettings> {
   /// Sets, changes or clears ([minutes] null) the reminder on [event]. Returns
   /// the access the OS ended up with, so the sheet can say when it is refused.
   Future<NotificationAccess> setReminder(CalendarEvent event, int? minutes) async {
-    final others = [for (final r in state.reminders) if (!r.matches(event)) r];
+    final others = [
+      for (final r in state.reminders)
+        if (!r.matches(event)) r,
+    ];
     state = state.copyWith(
       reminders: [
         ...others,
@@ -283,7 +285,10 @@ class NotificationSettingsNotifier extends StateNotifier<NotificationSettings> {
   /// Drops reminders on appointments that have been over for a while, so the
   /// stored list does not grow for the life of the install.
   void pruneReminders(DateTime before) {
-    final kept = [for (final r in state.reminders) if (!r.startsAt.isBefore(before)) r];
+    final kept = [
+      for (final r in state.reminders)
+        if (!r.startsAt.isBefore(before)) r,
+    ];
     if (kept.length == state.reminders.length) return;
     state = state.copyWith(reminders: kept);
     unawaited(_persist());

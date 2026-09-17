@@ -38,7 +38,8 @@ enum FirstStep { calendar, family, todo, tracker, list }
 /// sees a checklist flash up telling them to connect the calendar they already
 /// have. The other three answer from memory and need no such guard.
 final firstStepsProvider = Provider<List<FirstStep>>((ref) {
-  final ready = ref.watch(familyProvider.select((s) => s.loaded)) &&
+  final ready =
+      ref.watch(familyProvider.select((s) => s.loaded)) &&
       ref.watch(calendarProvider.select((s) => s.loaded));
   if (!ready) return const [];
 
@@ -49,9 +50,7 @@ final firstStepsProvider = Provider<List<FirstStep>>((ref) {
   // having failed. `invites` is admin-only, which costs nothing here: only an
   // admin can invite, so only an admin can be looking at a step they have
   // already taken.
-  final hasFamily = ref.watch(
-    familyProvider.select((s) => s.members.length > 1 || s.invites.isNotEmpty),
-  );
+  final hasFamily = ref.watch(familyProvider.select((s) => s.members.length > 1 || s.invites.isNotEmpty));
   final hasTodo = ref.watch(boardProvider.select((s) => s.tasks.isNotEmpty));
   final hasTracker = ref.watch(trackerProvider.select((s) => s.trackers.isNotEmpty));
   final hasList = ref.watch(listProvider.select((s) => s.lists.isNotEmpty));
@@ -86,7 +85,24 @@ final firstStepsOpenProvider = StateProvider<bool>((ref) => false);
 /// that has to contain it. Fixed rows are how the answer is knowable in
 /// advance, and they cost nothing: every row is a glyph, a line and a line
 /// under it.
-const double firstStepRowHeight = 52;
+const double _firstStepRowHeight = 52;
+
+/// That row at the reader's own text size.
+///
+/// **"Knowable in advance" is not the same as "52".** The two lines inside a
+/// row grow with Dynamic Type and the row did not, so at the larger settings
+/// the second line wrapped into space that was not there and the row overflowed
+/// by six points. The number still has to be arithmetic rather than a
+/// measurement — the header is laid out against one extent — so it follows the
+/// scaler instead of following the built rows.
+///
+/// The factor is read off a row-title-sized number rather than off the row
+/// itself: a non-linear scaler answers quite differently for 52 points than for
+/// the 15-point line that is actually growing. It is capped because past
+/// roughly twice the size the checklist would be taller than the day it pushes
+/// down; beyond that the single line each label is held to takes over.
+double firstStepRowHeight(TextScaler textScaler) =>
+    _firstStepRowHeight * (textScaler.scale(15) / 15).clamp(1.0, 1.8);
 const double _panelPadTop = 6;
 const double _panelPadBottom = 6;
 
@@ -96,8 +112,8 @@ const double _panelPadBottom = 6;
 /// from under the line above it rather than as growing off it.
 const double _panelGapTop = 12;
 
-double firstStepsPanelHeight(int steps) =>
-    steps == 0 ? 0 : _panelGapTop + _panelPadTop + steps * firstStepRowHeight + _panelPadBottom;
+double firstStepsPanelHeight(int steps, TextScaler textScaler) =>
+    steps == 0 ? 0 : _panelGapTop + _panelPadTop + steps * firstStepRowHeight(textScaler) + _panelPadBottom;
 
 /// The checklist itself, in the header directly under the island.
 ///
@@ -202,7 +218,7 @@ class _FirstStepRow extends ConsumerWidget {
       behavior: HitTestBehavior.opaque,
       onTap: () => _open(context, ref),
       child: SizedBox(
-        height: firstStepRowHeight,
+        height: firstStepRowHeight(MediaQuery.textScalerOf(context)),
         child: Row(
           children: [
             // An empty ring, not a check: every row here is a step still to
@@ -223,9 +239,18 @@ class _FirstStepRow extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(_title, style: AppText.rowTitle),
+                  // One line each, and the row is as wide as the phone: the
+                  // height above is arithmetic, so a label that wrapped would
+                  // be drawn into space the header never reserved. German and
+                  // Portuguese both run long enough here to try.
+                  Text(_title, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.rowTitle),
                   const SizedBox(height: 1),
-                  Text(_body, style: AppText.microLabel.copyWith(color: AppColors.muted)),
+                  Text(
+                    _body,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppText.microLabel.copyWith(color: AppColors.muted),
+                  ),
                 ],
               ),
             ),

@@ -26,6 +26,7 @@
 		A0B1C2DD1F0000000000A001 /* MapSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0B1C2DC1F0000000000A001 /* MapSnapshot.swift */; };
 		B7C4E1A01F0000000000C002 /* LocalNotifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7C4E1A01F0000000000C001 /* LocalNotifications.swift */; };
 		B7C4E1A01F0000000000C004 /* AppReview.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7C4E1A01F0000000000C003 /* AppReview.swift */; };
+		B7C4E1A01F0000000000C006 /* ShareSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7C4E1A01F0000000000C005 /* ShareSheet.swift */; };
 		A0B1C2DF1F0000000000A001 /* NativeMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0B1C2DE1F0000000000A001 /* NativeMenu.swift */; };
 		A0B1C2E11F0000000000A002 /* GlassButtonPlatformView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0B1C2E01F0000000000A002 /* GlassButtonPlatformView.swift */; };
 		A0B1C2E31F0000000000A001 /* SpendAppIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0B1C2E21F0000000000A001 /* SpendAppIntent.swift */; };
@@ -86,6 +87,7 @@
 		A0B1C2DC1F0000000000A001 /* MapSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapSnapshot.swift; sourceTree = "<group>"; };
 		B7C4E1A01F0000000000C001 /* LocalNotifications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalNotifications.swift; sourceTree = "<group>"; };
 		B7C4E1A01F0000000000C003 /* AppReview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppReview.swift; sourceTree = "<group>"; };
+		B7C4E1A01F0000000000C005 /* ShareSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareSheet.swift; sourceTree = "<group>"; };
 		A0B1C2DE1F0000000000A001 /* NativeMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeMenu.swift; sourceTree = "<group>"; };
 		A0B1C2E01F0000000000A002 /* GlassButtonPlatformView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassButtonPlatformView.swift; sourceTree = "<group>"; };
 		A0B1C2E21F0000000000A001 /* SpendAppIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpendAppIntent.swift; sourceTree = "<group>"; };
@@ -163,6 +165,7 @@
 				A0B1C2DC1F0000000000A001 /* MapSnapshot.swift */,
 				B7C4E1A01F0000000000C001 /* LocalNotifications.swift */,
 				B7C4E1A01F0000000000C003 /* AppReview.swift */,
+				B7C4E1A01F0000000000C005 /* ShareSheet.swift */,
 				A0B1C2DE1F0000000000A001 /* NativeMenu.swift */,
 				A0B1C2E01F0000000000A002 /* GlassButtonPlatformView.swift */,
 				A0B1C2E21F0000000000A001 /* SpendAppIntent.swift */,
@@ -340,6 +343,7 @@
 				A0B1C2DD1F0000000000A001 /* MapSnapshot.swift in Sources */,
 				B7C4E1A01F0000000000C002 /* LocalNotifications.swift in Sources */,
 				B7C4E1A01F0000000000C004 /* AppReview.swift in Sources */,
+				B7C4E1A01F0000000000C006 /* ShareSheet.swift in Sources */,
 				A0B1C2DF1F0000000000A001 /* NativeMenu.swift in Sources */,
 				A0B1C2E11F0000000000A002 /* GlassButtonPlatformView.swift in Sources */,
 				A0B1C2E31F0000000000A001 /* SpendAppIntent.swift in Sources */,

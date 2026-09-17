@@ -9,7 +9,6 @@ import '../state/spend_state.dart';
 import '../theme/app_icons.dart';
 import '../theme/tokens.dart';
 import '../widgets/anchored_menu.dart';
-import '../widgets/app_sheet.dart';
 import '../widgets/bottom_nav.dart';
 import '../widgets/collapsing_header.dart';
 import '../widgets/empty_state.dart';
@@ -17,13 +16,14 @@ import '../widgets/error_note.dart';
 import '../widgets/glass.dart';
 import '../widgets/rolling_number.dart';
 import '../widgets/segmented_control.dart';
-import '../widgets/settings_chrome.dart';
 import '../widgets/step_dots.dart';
 import '../widgets/swipe_actions.dart';
 import '../widgets/toast_chip.dart';
 import 'settings/wallet_capture_page.dart';
 import 'spend/spend_charts.dart';
 import 'spend/spend_breakdown.dart';
+import 'spend/spend_budgets.dart';
+import 'spend/spend_explore.dart';
 import 'spend/spend_island.dart';
 import 'spend/spend_mark.dart';
 import 'spend/spend_sheets.dart';
@@ -95,7 +95,13 @@ class SpendScreen extends ConsumerWidget {
         // is on and the thumb's place in the range slicer, so a week-to-month
         // tap snapped the thumb across instead of sliding it and put the pager
         // back on the first chart.
-        _AnalysisBlock(key: const ValueKey('analysis'), state: state),
+        // The budgets, one ring each, and the "+" that adds one. Above the chart
+        // because they are the one thing on the page that says whether the
+        // month is going to plan, not just what it came to.
+        SpendBudgetStrip(),
+        const SizedBox(height: AppSpacing.blockGap),
+
+        SpendAnalysisCard(key: const ValueKey('analysis'), summary: summary),
         const SizedBox(height: AppSpacing.blockGap),
 
         if (state.loading && state.spends.isEmpty)
@@ -150,59 +156,55 @@ class _Shell extends StatelessWidget {
   /// False on the page a member sees, which has no rows to say anything about.
   final bool showIsland;
 
-  /// [GlassIconGroup.width] for two actions plus the gap the title keeps from
-  /// it — the same 100 Kalender's header reserves for its pair.
-  static const _groupWidth = 100.0;
-
   /// Whether there is a capture page to lead to. `SpendScreen` only ships where
   /// there is, so this is the belt to that braces, as in [WalletSetupCard].
   bool get _hasWallet => ref.read(spendIntentsProvider).isSupported;
 
-  const _Shell({
-    required this.ref,
-    required this.showAdd,
-    required this.body,
-    this.showIsland = false,
-  });
+  const _Shell({required this.ref, required this.showAdd, required this.body, this.showIsland = false});
 
   @override
   Widget build(BuildContext context) {
+    // One glass capsule: search, then the setup place, then the daily verb.
+    // Search opens the explore page with the keyboard up — the question "how
+    // much at REWE" starts with typing REWE. The wallet opens the page that
+    // holds the switch, the steps and the household's phones.
+    final group = !showAdd
+        ? null
+        : GlassIconGroup(
+            actions: [
+              GlassIconAction(
+                icon: AppIcons.magnifyingGlass,
+                label: L.s.spendSearchAction,
+                onTap: () => Navigator.of(
+                  context,
+                ).push(MaterialPageRoute(builder: (_) => SpendExplorePage(focusSearch: true))),
+              ),
+              if (_hasWallet)
+                GlassIconAction(
+                  icon: AppIcons.wallet,
+                  label: ref.read(spendIntentsProvider).usesNotificationAccess
+                      ? L.s.settingsWalletCapture
+                      : L.s.settingsApplePay,
+                  onTap: () => Navigator.of(
+                    context,
+                  ).push(MaterialPageRoute(builder: (_) => WalletCapturePage(parentTitle: L.s.spendTitle))),
+                ),
+              GlassIconAction(
+                icon: AppIcons.plus,
+                label: L.s.spendAdd,
+                onTap: () => showSpendSheet(context, ref),
+              ),
+            ],
+          );
+
     return CollapsingHeaderScreen(
       titleRowBuilder: (context, t) => CollapsingScreenTitle(
         title: L.s.spendTitle,
         t: t,
-        trailingWidth: showAdd && _hasWallet ? _groupWidth : 48,
-        trailing: !showAdd
-            ? null
-            : _hasWallet
-            // Kalender's pair: the setup place beside the daily verb, in one
-            // glass capsule. The wallet opens the page that holds the switch,
-            // the steps and the household's phones — the same page the card at
-            // the bottom leads to while this phone is not set up yet.
-            ? GlassIconGroup(
-                actions: [
-                  GlassIconAction(
-                    icon: AppIcons.wallet,
-                    label: ref.read(spendIntentsProvider).usesNotificationAccess
-                        ? L.s.settingsWalletCapture
-                        : L.s.settingsApplePay,
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => WalletCapturePage(parentTitle: L.s.spendTitle),
-                      ),
-                    ),
-                  ),
-                  GlassIconAction(
-                    icon: AppIcons.plus,
-                    label: L.s.spendAdd,
-                    onTap: () => showSpendSheet(context, ref),
-                  ),
-                ],
-              )
-            : GlassIconButton(
-                icon: AppIcons.plus,
-                onTap: () => showSpendSheet(context, ref),
-              ),
+        // The group's own width plus the gap the title keeps from it — 100 for
+        // a pair, as Kalender reserves, and wider now that search leads it.
+        trailingWidth: group == null ? 48 : group.width + 4,
+        trailing: group,
       ),
       // First frame only — the block re-measures itself once laid out, and a
       // constant here would clip it on a phone with large text. See
@@ -223,14 +225,20 @@ class _Shell extends StatelessWidget {
             )
           : const SizedBox.shrink(),
       body: ScreenBodyPanel(
-        child: ListView(
-          padding: EdgeInsets.fromLTRB(
-            AppSpacing.screenPad,
-            AppSpacing.blockGap,
-            AppSpacing.screenPad,
-            navContentInset(context),
+        // Pull to refresh, for the payment somebody is sure they just made. The
+        // page is live and reloads on resume, so this is reassurance more than
+        // a necessity — which is exactly why people reach for it.
+        child: RefreshIndicator.adaptive(
+          color: AppColors.accent,
+          onRefresh: () => ref.read(spendProvider.notifier).refresh(),
+          child: ListView(
+            // A short page must still be pullable.
+            physics: const AlwaysScrollableScrollPhysics(),
+            // The same inset as Board, Box and Listen, so switching tabs
+            // doesn't move the cards' edges.
+            padding: EdgeInsets.fromLTRB(16, 18, 16, navContentInset(context)),
+            children: body,
           ),
-          children: body,
         ),
       ),
     );
@@ -255,16 +263,22 @@ class _Shell extends StatelessWidget {
 /// fetched and what every card below this one counts, so it lives in the
 /// notifier; the chart is three ways of looking at rows already in hand and
 /// nothing outside this card cares which one is showing.
-class _AnalysisBlock extends StatefulWidget {
-  final SpendState state;
+class SpendAnalysisCard extends StatefulWidget {
+  /// What to draw. Ausgaben hands over the whole range; the explore page hands
+  /// over the same range folded from only the rows its search let through.
+  final SpendSummary summary;
 
-  const _AnalysisBlock({super.key, required this.state});
+  /// A monthly budget to draw across the line (on a month) or the bars (when
+  /// every bar is a month). Null draws none.
+  final int? budgetCents;
+
+  const SpendAnalysisCard({super.key, required this.summary, this.budgetCents});
 
   @override
-  State<_AnalysisBlock> createState() => _AnalysisBlockState();
+  State<SpendAnalysisCard> createState() => _SpendAnalysisCardState();
 }
 
-class _AnalysisBlockState extends State<_AnalysisBlock> {
+class _SpendAnalysisCardState extends State<SpendAnalysisCard> {
   final _pages = PageController();
   SpendChart _chart = SpendChart.trend;
 
@@ -278,10 +292,9 @@ class _AnalysisBlockState extends State<_AnalysisBlock> {
   /// picked: without this, tapping the slicer would leave the fifth bucket of
   /// last week lit up as the fifth bucket of last year.
   @override
-  void didUpdateWidget(_AnalysisBlock old) {
+  void didUpdateWidget(SpendAnalysisCard old) {
     super.didUpdateWidget(old);
-    if (old.state.summary.range != widget.state.summary.range ||
-        old.state.summary.metric != widget.state.summary.metric) {
+    if (old.summary.range != widget.summary.range || old.summary.metric != widget.summary.metric) {
       _scrub = null;
     }
   }
@@ -310,15 +323,12 @@ class _AnalysisBlockState extends State<_AnalysisBlock> {
         ? (at < summary.cumulative.length ? summary.cumulative[at] : summary.totalCents)
         : bucket.cents;
 
-    return (
-      value: formatMoneyShort(cents, currency: spendCurrency(summary.rows)),
-      caption: bucket.caption,
-    );
+    return (value: formatMoneyShort(cents, currency: spendCurrency(summary.rows)), caption: bucket.caption);
   }
 
   @override
   Widget build(BuildContext context) {
-    final summary = widget.state.summary;
+    final summary = widget.summary;
 
     return Container(
       width: double.infinity,
@@ -365,20 +375,29 @@ class _AnalysisBlockState extends State<_AnalysisBlock> {
                       duration: const Duration(milliseconds: 260),
                       switchInCurve: Curves.easeOut,
                       switchOutCurve: Curves.easeOut,
-                      layoutBuilder: (current, previous) => Stack(
-                        fit: StackFit.expand,
-                        children: [...previous, ?current],
-                      ),
+                      layoutBuilder: (current, previous) =>
+                          Stack(fit: StackFit.expand, children: [...previous, ?current]),
                       child: KeyedSubtree(
                         key: ValueKey((summary.range, summary.metric, chart)),
                         child: switch (chart) {
                           SpendChart.trend => SpendTrendChart(
                             summary: summary,
+                            // A cumulative month climbing towards its budget.
+                            // Any other span would compare a month's promise
+                            // with a week's or a year's total.
+                            budgetCents: summary.range.period == SpendPeriod.month
+                                ? widget.budgetCents
+                                : null,
                             scrub: _scrub,
                             onScrub: (at) => setState(() => _scrub = at),
                           ),
                           SpendChart.bars => SpendBarsChart(
                             summary: summary,
+                            // Only where each bar is a month, so each one
+                            // stands against the whole budget.
+                            budgetCents: summary.range.unit == SpendBucketUnit.month
+                                ? widget.budgetCents
+                                : null,
                             scrub: _scrub,
                             onScrub: (at) => setState(() => _scrub = at),
                           ),
@@ -393,7 +412,7 @@ class _AnalysisBlockState extends State<_AnalysisBlock> {
           const SizedBox(height: 12),
           StepDots(count: SpendChart.values.length, index: _chart.index),
           const SizedBox(height: 16),
-          _RangeSlicer(range: widget.state.range),
+          _RangeSlicer(range: summary.range),
         ],
       ),
     );
@@ -435,10 +454,7 @@ class _Headline extends StatelessWidget {
                   alignment: Alignment.centerLeft,
                   child: _Figure(
                     reading: reading?.value,
-                    total: formatMoneyShort(
-                      summary.totalCents,
-                      currency: spendCurrency(summary.rows),
-                    ),
+                    total: formatMoneyShort(summary.totalCents, currency: spendCurrency(summary.rows)),
                   ),
                 ),
               ),
@@ -679,12 +695,7 @@ class _RingHole extends StatelessWidget {
   final String? footnote;
   final Color? footnoteColor;
 
-  const _RingHole({
-    required this.label,
-    required this.value,
-    this.footnote,
-    this.footnoteColor,
-  });
+  const _RingHole({required this.label, required this.value, this.footnote, this.footnoteColor});
 
   @override
   Widget build(BuildContext context) {
@@ -762,10 +773,7 @@ class _MetricChipState extends ConsumerState<_MetricChip> {
       ),
       child: Container(
         padding: const EdgeInsets.fromLTRB(11, 5, 8, 5),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceAlt,
-          borderRadius: BorderRadius.circular(100),
-        ),
+        decoration: BoxDecoration(color: AppColors.surfaceAlt, borderRadius: BorderRadius.circular(100)),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -878,7 +886,7 @@ class _RangeSlicerState extends ConsumerState<_RangeSlicer> {
 // ---------------------------------------------------------------------------
 
 /// The shared shape every block on this page sits in.
-class _Card extends StatelessWidget {
+class SpendCard extends StatelessWidget {
   final String title;
   final Widget child;
   final Widget? trailing;
@@ -890,10 +898,11 @@ class _Card extends StatelessWidget {
   /// Runs [child] to the card's own edges, padding the heading instead. For
   /// the one card made of swipeable rows: a delete strip that stops a card's
   /// padding short of the edge reads as a floating red block rather than as
-  /// the row's own action. See [_SpendRow].
+  /// the row's own action. See [SpendRow].
   final bool bleedChild;
 
-  const _Card({
+  const SpendCard({
+    super.key,
     required this.title,
     required this.child,
     this.trailing,
@@ -907,7 +916,9 @@ class _Card extends StatelessWidget {
     final heading = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Flexible(child: Text(title, style: AppText.sectionHeading, maxLines: 1, overflow: TextOverflow.ellipsis)),
+        Flexible(
+          child: Text(title, style: AppText.sectionHeading, maxLines: 1, overflow: TextOverflow.ellipsis),
+        ),
         if (onTitleTap != null) ...[
           const SizedBox(width: 5),
           AppIcon(AppIcons.caretDown, size: AppGlyph.inline, flat: true, color: AppColors.muted),
@@ -1027,7 +1038,7 @@ class _BreakdownCardState extends ConsumerState<_BreakdownCard> {
     final members = ref.watch(familyProvider).members;
     final rows = spendBreakdownRows(summary, _by, members, limit: spendBreakdownPreview);
 
-    return _Card(
+    return SpendCard(
       title: _by.title,
       titleKey: _anchor,
       onTitleTap: () => showAnchoredMenu(
@@ -1048,12 +1059,29 @@ class _BreakdownCardState extends ConsumerState<_BreakdownCard> {
           ? null
           : _ShowAll(
               label: L.s.spendShowAll,
-              page: () => SpendBreakdownPage(grouping: _by),
+              page: () => SpendExplorePage(view: SpendExploreView.of(_by)),
             ),
       child: Column(
         children: [
           for (final row in rows)
-            SpendBreakdownRow(row: row, currency: spendCurrency(summary.rows)),
+            SpendBreakdownRow(
+              row: row,
+              currency: spendCurrency(summary.rows),
+              // A row opens the explore page filtered to it — "340 € bei REWE"
+              // is exactly where somebody wants to see the payments and the
+              // year behind the figure. "Sonstige" is no one thing to open.
+              onTap: row.category == null && row.merchant == null && !row.byMember
+                  ? null
+                  : () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => SpendExplorePage(
+                          category: row.category,
+                          merchant: row.merchant,
+                          member: row.byMember ? (id: row.payerId, name: row.title) : null,
+                        ),
+                      ),
+                    ),
+            ),
         ],
       ),
     );
@@ -1092,7 +1120,7 @@ class _TransactionList extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final shown = rows.take(_purchasePreview).toList();
 
-    return _Card(
+    return SpendCard(
       title: L.s.spendAllPurchases,
       bleedChild: true,
       trailing: rows.length <= shown.length
@@ -1100,68 +1128,8 @@ class _TransactionList extends ConsumerWidget {
               L.s.spendCountShort(rows.length),
               style: AppText.body.copyWith(color: AppColors.inkSecondary),
             )
-          : _ShowAll(
-              label: L.s.spendShowAllCount(rows.length),
-              page: () => SpendPurchasesPage(),
-            ),
-      child: Column(
-        children: [
-          for (final spend in shown) _SpendRow(spend: spend),
-        ],
-      ),
-    );
-  }
-}
-
-/// Every payment in the selected range, on a screen of its own.
-///
-/// **It reads the live range rather than the list it was opened with.** The
-/// slicer stays on the page behind it, so a range changed there and a page
-/// showing the old rows would be two answers to one question; watching the
-/// provider also means a payment deleted from a row here leaves the page
-/// without the caller having to hand anything back.
-class SpendPurchasesPage extends ConsumerWidget {
-  const SpendPurchasesPage({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final summary = ref.watch(spendProvider).summary;
-    final rows = summary.rows;
-
-    return SettingsDetailPage(
-      icon: AppIcons.receipt,
-      title: L.s.spendAllPurchases,
-      // The stretch and how much of it there is — the two things the card's
-      // heading said between them before this page existed.
-      description: '${summary.range.caption} · ${L.s.spendCountShort(rows.length)}',
-      parentTitle: L.s.spendTitle,
-      estimatedHeroHeight: 200,
-      children: [
-        SectionCard(
-          radius: AppRadii.card,
-          children: [
-            if (rows.isEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.cardPad, vertical: 18),
-                child: Text(
-                  L.s.spendIslandNothing,
-                  style: AppText.body.copyWith(color: AppColors.inkSecondary),
-                ),
-              )
-            else
-              // Vertical only: the rows pad themselves sideways so their
-              // swipe strip reaches the card's edge. See [_SpendRow].
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: Column(
-                  children: [
-                    for (final spend in rows) _SpendRow(spend: spend),
-                  ],
-                ),
-              ),
-          ],
-        ),
-      ],
+          : _ShowAll(label: L.s.spendShowAllCount(rows.length), page: () => SpendExplorePage()),
+      child: Column(children: [for (final spend in shown) SpendRow(spend: spend)]),
     );
   }
 }
@@ -1180,10 +1148,10 @@ class SpendPurchasesPage extends ConsumerWidget {
 /// the revealed strip reaches the card's own corners rather than stopping
 /// short of them — every container that holds one of these therefore pads
 /// around it vertically only.
-class _SpendRow extends ConsumerWidget {
+class SpendRow extends ConsumerWidget {
   final Spend spend;
 
-  const _SpendRow({required this.spend});
+  const SpendRow({super.key, required this.spend});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -1310,12 +1278,9 @@ class _ReviewDrawer extends ConsumerWidget {
                   AppSpacing.cardPad,
                   8,
                 ),
-                child: Text(
-                  L.s.spendReviewBody,
-                  style: AppText.body.copyWith(color: AppColors.inkSecondary),
-                ),
+                child: Text(L.s.spendReviewBody, style: AppText.body.copyWith(color: AppColors.inkSecondary)),
               ),
-              for (final spend in rows) _SpendRow(spend: spend),
+              for (final spend in rows) SpendRow(spend: spend),
               const SizedBox(height: AppSpacing.cardPad),
             ],
           ),
@@ -1340,10 +1305,7 @@ class _EmptyRange extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(top: 24),
-      child: EmptyState(
-        icon: AppIcons.receipt,
-        message: enrolled ? L.s.spendEmptyEnrolled : L.s.spendEmpty,
-      ),
+      child: EmptyState(icon: AppIcons.receipt, message: enrolled ? L.s.spendEmptyEnrolled : L.s.spendEmpty),
     );
   }
 }

@@ -1,7 +1,9 @@
+import 'dart:ui' show PlatformDispatcher;
 
 import 'package:flutter/foundation.dart' show setEquals;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../data/amazon.dart';
 import '../data/brand_colors.dart';
 import '../data/grocery_catalog.dart';
 import '../data/grocery_search.dart';
@@ -13,6 +15,7 @@ import '../models/grocery_unit.dart';
 import '../models/shopping_list.dart';
 import '../services/external_links.dart';
 import '../services/media_picker.dart';
+import '../services/share_out.dart';
 import '../state/auth_state.dart';
 import '../state/family_state.dart';
 import '../state/list_state.dart';
@@ -36,6 +39,7 @@ import '../widgets/event_link_chip.dart';
 import '../widgets/floating_pill.dart';
 import '../widgets/glass.dart';
 import '../widgets/icon_picker.dart';
+import '../widgets/markdown_text.dart';
 import '../widgets/overview_screen.dart';
 import '../widgets/search.dart';
 import '../widgets/segmented_control.dart';
@@ -59,7 +63,8 @@ TextStyle get _itemTextStyle => AppText.itemTitle;
 /// The number in the quantity circle, and the field it turns into. A step
 /// firmer than [AppText.label] was as a subtitle: it is a single glyph or two
 /// inside a shape of its own, and grey-on-grey at w300 would disappear in it.
-TextStyle get _quantityStyle => AppText.caption.copyWith(color: AppColors.inkSecondary, fontWeight: FontWeight.w600);
+TextStyle get _quantityStyle =>
+    AppText.caption.copyWith(color: AppColors.inkSecondary, fontWeight: FontWeight.w600);
 
 /// Whether an article's own list holds food — asked of the item rather than of
 /// the open list, because "Alle Artikel" pools every list's articles into one
@@ -67,16 +72,64 @@ TextStyle get _quantityStyle => AppText.caption.copyWith(color: AppColors.inkSec
 bool _isGroceryList(WidgetRef ref, String listId) =>
     ref.watch(listProvider).listById(listId)?.kind == ListKind.grocery;
 
+/// Whether a Sonstige list's rows keep an icon slot: when at least one of its
+/// articles — open or done — carries an icon the catalogs can draw. Per list,
+/// so every row of it lines its words up in the same column.
+/// The Amazon marketplace for this article's row, or null to draw no badge.
+///
+/// Null for a grocery list, null while no partner tag is configured at all, and
+/// null when the device's region and the app's language between them name no
+/// marketplace we have a tag for. **The region comes from the phone's own
+/// setting** — no IP lookup, no permission, and the household's address stays
+/// where it is; see [amazonMarketplace].
+String? _amazonFor(WidgetRef ref, ShoppingListItem item) {
+  if (!amazonConfigured) return null;
+  final list = ref.watch(listProvider).lists.where((l) => l.id == item.listId).firstOrNull;
+  if (list == null || list.kind == ListKind.grocery) return null;
+  return amazonMarketplace(
+    countryCode: PlatformDispatcher.instance.locale.countryCode,
+    languageCode: L.s.localeCode,
+  );
+}
+
+bool _listHasSymbols(WidgetRef ref, String listId) =>
+    (ref.watch(listProvider).itemsByList[listId] ?? const []).any((i) => resolveIcon(i.iconKey) != null);
+
+/// A Sonstige article's icon in the 42 slot a grocery picture gets — drawn the
+/// way the Vorhaben card previewed it, or left empty when nothing matched.
+class _SymbolSlot extends StatelessWidget {
+  final String? iconKey;
+
+  const _SymbolSlot({required this.iconKey});
+
+  @override
+  Widget build(BuildContext context) {
+    // 38 at the shipped type scale, but it grows with the text size, and the
+    // slot has to grow with it rather than clip the disc.
+    final mark = AppText.rowMark;
+    final side = mark > 42 ? mark : 42.0;
+    return SizedBox(
+      width: side,
+      height: side,
+      child: resolveIcon(iconKey) == null
+          ? null
+          : Center(
+              child: IconTile(iconKey: iconKey, size: mark, imageSize: AppText.markImage(mark)),
+            ),
+    );
+  }
+}
+
 /// A text field that has to pass for the label it replaced: no border, no
 /// underline, and none of the vertical padding a [TextField] carries by
 /// default.
 InputDecoration _inlineFieldDecoration(String hint, TextStyle style) => InputDecoration(
-      border: InputBorder.none,
-      isDense: true,
-      contentPadding: EdgeInsets.zero,
-      hintText: hint,
-      hintStyle: style.copyWith(color: AppColors.mutedLight),
-    );
+  border: InputBorder.none,
+  isDense: true,
+  contentPadding: EdgeInsets.zero,
+  hintText: hint,
+  hintStyle: style.copyWith(color: AppColors.mutedLight),
+);
 
 class ListScreen extends ConsumerWidget {
   const ListScreen({super.key});
@@ -113,7 +166,9 @@ class ListScreen extends ConsumerWidget {
       // brand-colored glow that has to start at the very top of the display, so
       // it absorbs the status-bar inset itself (see [CollapsingHeaderScreen])
       // rather than being pushed below a white band.
-      body: state.isDetail ? _ListDetail(state: state) : SafeArea(bottom: false, child: _ListOverview(state: state)),
+      body: state.isDetail
+          ? _ListDetail(state: state)
+          : SafeArea(bottom: false, child: _ListOverview(state: state)),
     );
   }
 }
@@ -140,7 +195,10 @@ class _ListOverview extends ConsumerWidget {
       // a project missing the secret says so in the card rather than hiding
       // the feature. Not `const`: it reads the palette in its own build, see
       // `tool/check_const_palette.dart`.
-      headerExtra: SizedBox(height: ListIsland.rowHeight, child: Row(children: [Expanded(child: ListIsland())])),
+      headerExtra: SizedBox(
+        height: ListIsland.rowHeight,
+        child: Row(children: [Expanded(child: ListIsland())]),
+      ),
       extraHeight: _extraHeight,
       body: (context) => [
         // Vorhaben, unfolding from the island above it. Always in the tree so
@@ -221,7 +279,9 @@ class _ListOverview extends ConsumerWidget {
       ref.read(listProvider.notifier).open(id);
     }
 
-    final matchedLists = state.lists.where((l) => listMatchesQuery(l.name, query, iconKey: l.iconKey)).toList();
+    final matchedLists = state.lists
+        .where((l) => listMatchesQuery(l.name, query, iconKey: l.iconKey))
+        .toList();
     final itemHits = <(ShoppingList, List<ShoppingListItem>)>[];
     for (final l in state.lists) {
       final hits = state.itemsFor(l.id).where((i) => _itemMatches(i, query)).toList();
@@ -262,7 +322,11 @@ class _ListOverview extends ConsumerWidget {
                   // The article's own picture only where the list shows one;
                   // a Sonstige hit wears its list's icon, which is what says
                   // where the row was found anyway.
-                  leading: IconTile(iconKey: (list.kind == ListKind.grocery ? hit.iconKey : null) ?? list.iconKey, size: AppText.rowMark, imageSize: AppText.markImage(AppText.rowMark)),
+                  leading: IconTile(
+                    iconKey: (list.kind == ListKind.grocery ? hit.iconKey : null) ?? list.iconKey,
+                    size: AppText.rowMark,
+                    imageSize: AppText.markImage(AppText.rowMark),
+                  ),
                   title: hit.text,
                   subtitle: hit.done ? L.s.doneInList(list.name) : (hit.sub ?? L.s.inList(list.name)),
                   onTap: () => open(list.id),
@@ -349,13 +413,19 @@ void openListSheet(
         // "Liste aktualisiert" for a change that never happened.
         final current = ref.read(listProvider);
         final typed = nameController.text.trim();
-        final unchanged = (typed.isEmpty || typed == list.name) &&
+        final unchanged =
+            (typed.isEmpty || typed == list.name) &&
             kind == list.kind &&
             draft.picked == null &&
             current.newVisibility == list.visibility &&
             setEquals(current.newSharedWith, list.sharedWith.toSet());
         if (unchanged) return;
-        if (await notifier.updateList(list.id, name: nameController.text, kind: kind, iconKey: draft.picked)) {
+        if (await notifier.updateList(
+          list.id,
+          name: nameController.text,
+          kind: kind,
+          iconKey: draft.picked,
+        )) {
           confirm(L.s.listUpdated);
         }
         return;
@@ -466,7 +536,12 @@ class _ListSheetBodyState extends ConsumerState<_ListSheetBody> {
               suggested: widget.draft.picked == null && stored == null,
               fallbackIcon: isGrocery ? AppIcons.shoppingCart : AppIcons.listChecks,
               onTap: () async {
-                final picked = await showIconPicker(context, selected: iconKey, name: name, subject: IconSubject.list);
+                final picked = await showIconPicker(
+                  context,
+                  selected: iconKey,
+                  name: name,
+                  subject: IconSubject.list,
+                );
                 if (picked != null && mounted) setState(() => widget.draft.picked = picked);
               },
             ),
@@ -486,6 +561,170 @@ class _ListSheetBodyState extends ConsumerState<_ListSheetBody> {
           currentUserId: ref.watch(currentUserIdProvider),
           allowMembers: !s.isGuest,
           noun: L.s.theList,
+        ),
+        // Who outside the household is in, and the invitations still out. This
+        // used to be the Teilen sheet's job; "Teilen" now goes straight to the
+        // system share sheet, so the list's own edit sheet is where it lives.
+        if (widget.list case final list?
+            when ref.watch(canShareExternallyProvider) &&
+                !s.guestListIds.contains(list.id) &&
+                s.sharedOutIds.contains(list.id))
+          _SharedOutsideSection(listId: list.id),
+      ],
+    );
+  }
+}
+
+/// The list whose invitation is being minted while "Teilen" waits on the
+/// server — the header's menu button is a spinner for that moment.
+final _sharingListId = ValueNotifier<String?>(null);
+
+/// The header's menu button, so an iPad's share popover has something to point
+/// at. One detail view is mounted at a time, so one key is enough.
+final _shareAnchorKey = GlobalKey();
+
+/// "Teilen" on a list: mint an invitation, then hand it straight to the system
+/// share sheet — no sheet of ours in between.
+///
+/// **The link has to exist before the sheet can offer it**, which is the only
+/// wait. Only its hash is stored, so a link from a sheet that was closed
+/// without sending is one nobody holds, and it is revoked on the spot. Every
+/// invitation runs out after [shareInvitationDays]; people who came in keep
+/// their access. Who is in, and what is still out, is in the list's edit
+/// sheet ([_SharedOutsideSection]).
+Future<void> _shareListOut(BuildContext context, WidgetRef ref, ShoppingList list) async {
+  if (_sharingListId.value != null) return;
+  final lists = ref.read(listProvider.notifier);
+  final confirm = confirmChipOf(context);
+  final box = _shareAnchorKey.currentContext?.findRenderObject() as RenderBox?;
+  final anchor = box != null && box.hasSize ? box.localToGlobal(Offset.zero) & box.size : null;
+
+  _sharingListId.value = list.id;
+  final MintedLink link;
+  try {
+    link = await mintShareLink((kind: ShareableKind.list, id: list.id), expiresInDays: shareInvitationDays);
+  } on ShareLinkFailure catch (e) {
+    if (context.mounted) showErrorSnack(context, e.message);
+    return;
+  } finally {
+    _sharingListId.value = null;
+  }
+
+  switch (await shareOut(text: L.s.shareListMessage(list.name), url: link.url, anchor: anchor)) {
+    case ShareOutcome.cancelled:
+      await revokeUnsentShareLink(link.id);
+      return;
+    case ShareOutcome.copied:
+      confirm(L.s.copied);
+    case ShareOutcome.sent || ShareOutcome.unconfirmed:
+      break;
+  }
+  await lists.refreshSharedOut();
+}
+
+/// Somebody outside the household can reach this list, or has been invited to.
+class _SharedOutsideMark extends StatelessWidget {
+  final double size;
+
+  const _SharedOutsideMark({required this.size});
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    label: L.s.sharedOutsideLabel,
+    excludeSemantics: true,
+    child: AppIcon(AppIcons.users, size: size, color: AppColors.muted),
+  );
+}
+
+/// "Geteilt mit" in a list's edit sheet: the guests, each removable, and one
+/// row for the invitations nobody has used yet.
+///
+/// Removing acts at once rather than on the sheet's check — it is somebody's
+/// access, not a draft of the list.
+class _SharedOutsideSection extends ConsumerWidget {
+  final String listId;
+
+  const _SharedOutsideSection({required this.listId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final ShareTarget target = (kind: ShareableKind.list, id: listId);
+    final sharing = ref.watch(sharingProvider(target));
+    final notifier = ref.read(sharingProvider(target).notifier);
+    final lists = ref.read(listProvider.notifier);
+
+    ref.listen<String?>(sharingProvider(target).select((s) => s.error), (_, message) {
+      if (message == null) return;
+      showErrorSnack(context, message);
+      notifier.clearError();
+    });
+
+    final pending = sharing.pendingLinks;
+    if (sharing.guests.isEmpty && pending.isEmpty) return const SizedBox.shrink();
+
+    // The last day any of them can still be used. A link minted before
+    // invitations expired has no date, and one of those means no end at all.
+    DateTime? latest;
+    for (final link in pending) {
+      final at = link.expiresAt;
+      if (at != null && (latest == null || at.isAfter(latest))) latest = at;
+    }
+    final until = latest == null || pending.any((l) => l.expiresAt == null)
+        ? null
+        : L.s.dayMonthShort(latest.day, latest.month);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 22),
+        Padding(
+          padding: const EdgeInsets.only(left: 2, bottom: 8),
+          child: Text(L.s.sharedOutsideTitle, style: AppText.microLabel),
+        ),
+        SectionCard(
+          children: dividedRows([
+            for (final guest in sharing.guests)
+              GuestRow(
+                guest: guest,
+                onRemove: () async {
+                  await notifier.removeGuest(guest.userId);
+                  await lists.refreshSharedOut();
+                },
+              ),
+            if (pending.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Row(
+                  children: [
+                    AppIcon(AppIcons.link, size: 16, color: AppColors.inkSecondary),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        L.s.openInvitations(pending.length, until),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppText.rowTitle,
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () async {
+                        await notifier.revokePending();
+                        await lists.refreshSharedOut();
+                      },
+                      behavior: HitTestBehavior.opaque,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                        child: Text(L.s.revoke, style: AppText.caption.copyWith(color: AppColors.danger)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ]),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(left: 2, top: 8),
+          child: Text(L.s.shareIntroSecond(L.s.theList), style: AppText.label.copyWith(fontSize: 12.5)),
         ),
       ],
     );
@@ -512,18 +751,17 @@ class _ListRow extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 15),
       child: Row(
         children: [
-          IconTile(iconKey: list.iconKey, size: AppText.rowMark, imageSize: AppText.markImage(AppText.rowMark)),
+          IconTile(
+            iconKey: list.iconKey,
+            size: AppText.rowMark,
+            imageSize: AppText.markImage(AppText.rowMark),
+          ),
           const SizedBox(width: 13),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  list.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppText.itemTitle,
-                ),
+                Text(list.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.itemTitle),
                 // The subtitle line: where the list came from, then how much of
                 // it is left. In that order because the appointment is what the
                 // list *is* — "Wochenende Hamburg" — and "3 verbleibend" is how
@@ -548,15 +786,16 @@ class _ListRow extends ConsumerWidget {
                       Flexible(child: EventLinkChip(link: link)),
                       const SizedBox(width: 7),
                     ],
-                    Text(
-                      meta,
-                      style: AppText.label.copyWith(color: metaColor),
-                    ),
+                    Text(meta, style: AppText.label.copyWith(color: metaColor)),
                   ],
                 ),
               ],
             ),
           ),
+          // Somebody outside the household is in, or has been invited — before
+          // the household's own badge, which answers a different question.
+          if (state.sharedOutIds.contains(list.id))
+            Padding(padding: const EdgeInsets.only(right: 10), child: _SharedOutsideMark(size: 17)),
           // Who may see this list, when that is not simply the household. "Alle
           // Artikel" is computed across the real lists and has no audience of
           // its own — it inherits [ListVisibility.family] and so draws nothing,
@@ -611,9 +850,16 @@ class _ItemIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final image = IconImage(asset: resolveIcon(iconKey)?.asset ?? generalGroceryAsset, size: imageSize ?? size * _imageRatio);
+    final image = IconImage(
+      asset: resolveIcon(iconKey)?.asset ?? generalGroceryAsset,
+      size: imageSize ?? size * _imageRatio,
+    );
     if (!AppColors.isDark) {
-      return SizedBox(width: size, height: size, child: Center(child: image));
+      return SizedBox(
+        width: size,
+        height: size,
+        child: Center(child: image),
+      );
     }
     return Container(
       width: size,
@@ -662,52 +908,78 @@ class _ListDetail extends ConsumerWidget {
           titleRowBuilder: (context, t) => CollapsingScreenTitle(
             title: L.s.listLabel,
             collapsedTitle: open.name,
-            collapsedIcon: IconTile(iconKey: open.iconKey, size: 24, imageSize: 17),
+            collapsedIcon: IconTile(iconKey: open.iconKey, size: 24, imageSize: 17, disc: true),
             t: t,
             expandedAlignment: Alignment.center,
             expandedFontSize: AppText.pageTitle,
             fontWeight: FontWeight.w500,
             leadingWidth: 48,
             trailingWidth: 48,
-            leading: GlassIconButton(icon: AppIcons.caretLeft, onTap: () => ref.read(listProvider.notifier).back()),
+            leading: GlassIconButton(
+              icon: AppIcons.caretLeft,
+              onTap: () => ref.read(listProvider.notifier).back(),
+            ),
             // "Alle Artikel" is computed rather than stored, so there is nothing
             // there to rename, re-symbol or delete.
             trailing: summary
                 ? const SizedBox(width: 40)
-                : GlassMenuButton(
-                    items: [
-                      AnchoredMenuItem(label: L.s.edit, icon: AppIcons.pencilSimple, symbol: 'pencil', onSelected: () => openListSheet(context, ref, list: open)),
-                      // Its own action, never part of "Für wen?" — see
-                      // [showShareSheet]. Absent for kids and for a guest looking
-                      // at somebody else's list, both of whom the database refuses.
-                      if (ref.watch(canShareExternallyProvider) && !state.guestListIds.contains(open.id))
-                        AnchoredMenuItem(
-                          label: L.s.share,
-                          icon: AppIcons.userPlus,
-                          symbol: 'person.badge.plus',
-                          onSelected: () => showShareSheet(
-                            context,
-                            kind: ShareableKind.list,
-                            resourceId: open.id,
-                            resourceName: open.name,
+                // A spinner in the button's place while "Teilen" mints its link
+                // — in place of it rather than over it, because Flutter content
+                // drawn over a glass platform view can be dropped on device.
+                : ValueListenableBuilder<String?>(
+                    valueListenable: _sharingListId,
+                    builder: (context, sharing, _) => sharing == open.id
+                        ? SizedBox(
+                            width: 40,
+                            height: 40,
+                            child: Center(
+                              child: SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.muted),
+                              ),
+                            ),
+                          )
+                        : KeyedSubtree(
+                            key: _shareAnchorKey,
+                            child: GlassMenuButton(
+                              items: [
+                                AnchoredMenuItem(
+                                  label: L.s.edit,
+                                  icon: AppIcons.pencilSimple,
+                                  symbol: 'pencil',
+                                  onSelected: () => openListSheet(context, ref, list: open),
+                                ),
+                                // Its own action, never part of "Für wen?". Straight to the
+                                // system share sheet — see [_shareListOut]. Absent for kids
+                                // and for a guest looking at somebody else's list, both of
+                                // whom the database refuses.
+                                if (ref.watch(canShareExternallyProvider) &&
+                                    !state.guestListIds.contains(open.id))
+                                  AnchoredMenuItem(
+                                    label: L.s.share,
+                                    icon: AppIcons.userPlus,
+                                    symbol: 'person.badge.plus',
+                                    onSelected: () => _shareListOut(context, ref, open),
+                                  ),
+                                AnchoredMenuItem(
+                                  label: L.s.delete,
+                                  icon: AppIcons.trash,
+                                  symbol: 'trash',
+                                  destructive: true,
+                                  onSelected: () async {
+                                    // Captured before the write: this row lives in the detail
+                                    // view, which the delete itself unmounts.
+                                    final confirm = confirmChipOf(context);
+                                    final notifier = ref.read(listProvider.notifier);
+                                    if (await notifier.deleteList(open.id) case final deleted?) {
+                                      confirm(L.s.listDeleted, undo: () => notifier.restoreList(deleted));
+                                    }
+                                  },
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                      AnchoredMenuItem(
-                        label: L.s.delete,
-                        icon: AppIcons.trash,
-                        symbol: 'trash',
-                        destructive: true,
-                        onSelected: () async {
-                          // Captured before the write: this row lives in the detail
-                          // view, which the delete itself unmounts.
-                          final confirm = confirmChipOf(context);
-                          final notifier = ref.read(listProvider.notifier);
-                          if (await notifier.deleteList(open.id) case final deleted?) {
-                            confirm(L.s.listDeleted, undo: () => notifier.restoreList(deleted));
-                          }
-                        },
-                      ),
-                    ],
                   ),
           ),
           estimatedExtraHeight: _detailExtraHeight,
@@ -717,7 +989,14 @@ class _ListDetail extends ConsumerWidget {
               const SizedBox(height: 16),
               Row(
                 children: [
-                  IconTile(iconKey: open.iconKey, size: AppText.headerMark, imageSize: AppText.markImage(AppText.headerMark)),
+                  // The list's own name wears the disc; the articles under it do
+                  // not — see [IconTile.disc].
+                  IconTile(
+                    iconKey: open.iconKey,
+                    size: AppText.headerMark,
+                    imageSize: AppText.markImage(AppText.headerMark),
+                    disc: true,
+                  ),
                   const SizedBox(width: 13),
                   Expanded(
                     child: Column(
@@ -744,18 +1023,34 @@ class _ListDetail extends ConsumerWidget {
                         // the row's own tap opens the list and the two targets
                         // sat a few millimetres apart; here it has a line to
                         // itself and is the only thing on it.
-                        if (open.eventLink case final link?) ...[
+                        // Both chips can be on one list — a Vorhaben started
+                        // from an appointment — so they wrap rather than
+                        // sitting in a Row that would squeeze the longer one.
+                        if (open.eventLink != null || open.hasMethod) ...[
                           const SizedBox(height: 4),
-                          EventLinkChip(
-                            link: link,
-                            // The appointment's own sheet, over this list rather
-                            // than instead of it — see [showLinkedEventSheet].
-                            onOpen: () => showLinkedEventSheet(context, ref, link),
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 4,
+                            children: [
+                              if (open.eventLink case final link?)
+                                EventLinkChip(
+                                  link: link,
+                                  // The appointment's own sheet, over this list
+                                  // rather than instead of it — see
+                                  // [showLinkedEventSheet].
+                                  onOpen: () => showLinkedEventSheet(context, ref, link),
+                                ),
+                              if (open.hasMethod) _MethodChip(list: open),
+                            ],
                           ),
                         ],
                       ],
                     ),
                   ),
+                  if (state.sharedOutIds.contains(open.id)) ...[
+                    const SizedBox(width: 10),
+                    _SharedOutsideMark(size: 20),
+                  ],
                 ],
               ),
             ],
@@ -780,7 +1075,17 @@ class _ListDetail extends ConsumerWidget {
                             builder: (context, strike, checkOff) => Column(
                               children: [
                                 CardDivider(),
-                                _swipeToDelete(context, ref, openItems[i], _ItemRow(item: openItems[i], accent: accent, strike: strike, onCheckOff: checkOff)),
+                                _swipeToDelete(
+                                  context,
+                                  ref,
+                                  openItems[i],
+                                  _ItemRow(
+                                    item: openItems[i],
+                                    accent: accent,
+                                    strike: strike,
+                                    onCheckOff: checkOff,
+                                  ),
+                                ),
                               ],
                             ),
                           ),
@@ -804,10 +1109,7 @@ class _ListDetail extends ConsumerWidget {
                                   children: [
                                     IconTile(iconKey: l.iconKey, size: 26, imageSize: 17),
                                     const SizedBox(width: 9),
-                                    Text(
-                                      l.name,
-                                      style: AppText.groupHeading,
-                                    ),
+                                    Text(l.name, style: AppText.groupHeading),
                                     const SizedBox(width: 6),
                                     Text(
                                       L.s.itemCount(its.length),
@@ -824,11 +1126,22 @@ class _ListDetail extends ConsumerWidget {
                                       animate: its[i].id == state.justMoved,
                                       fromBelow: true,
                                       child: CheckOffRow(
-                                        onCompleted: () => ref.read(listProvider.notifier).toggle(its[i].id, false),
+                                        onCompleted: () =>
+                                            ref.read(listProvider.notifier).toggle(its[i].id, false),
                                         builder: (context, strike, checkOff) => Column(
                                           children: [
                                             if (i > 0) CardDivider(),
-                                            _swipeToDelete(context, ref, its[i], _ItemRow(item: its[i], accent: accent, strike: strike, onCheckOff: checkOff)),
+                                            _swipeToDelete(
+                                              context,
+                                              ref,
+                                              its[i],
+                                              _ItemRow(
+                                                item: its[i],
+                                                accent: accent,
+                                                strike: strike,
+                                                onCheckOff: checkOff,
+                                              ),
+                                            ),
                                           ],
                                         ),
                                       ),
@@ -850,16 +1163,10 @@ class _ListDetail extends ConsumerWidget {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            L.s.doneWithCount(doneItems.length),
-                            style: AppText.caption,
-                          ),
+                          Text(L.s.doneWithCount(doneItems.length), style: AppText.caption),
                           GestureDetector(
                             onTap: () => ref.read(listProvider.notifier).clearDone(doneItems),
-                            child: Text(
-                              L.s.deleteDone,
-                              style: AppText.caption.copyWith(color: accent),
-                            ),
+                            child: Text(L.s.deleteDone, style: AppText.caption.copyWith(color: accent)),
                           ),
                         ],
                       ),
@@ -876,7 +1183,8 @@ class _ListDetail extends ConsumerWidget {
                           child: CheckOffRow(
                             undo: true,
                             onCompleted: () => ref.read(listProvider.notifier).toggle(item.id, true),
-                            builder: (context, strike, undo) => _DoneItemRow(item: item, accent: accent, strike: strike, onUndo: undo),
+                            builder: (context, strike, undo) =>
+                                _DoneItemRow(item: item, accent: accent, strike: strike, onUndo: undo),
                           ),
                         ),
                     ]),
@@ -1010,10 +1318,10 @@ bool _itemMatches(ShoppingListItem item, String query) {
 /// article yet either, so the circle carries both and the words stay where the
 /// eye already is.
 ///
-/// [grocery] says whether either of them happens at all. On a Sonstige list the
-/// article chips are dropped outright — "Bohrmaschine" is not a shopping
-/// article, and a row of food photos under it would be noise — and so is the
-/// preview, because the row it is previewing carries no picture either.
+/// [grocery] decides what they are. On a Sonstige list the article chips are
+/// dropped outright — "Bohrmaschine" is not a shopping article, and a row of
+/// food photos under it would be noise — but the preview stays, as the symbol
+/// the article will be stored with, because its row now shows one.
 class _AddItemRow extends ConsumerStatefulWidget {
   final bool grocery;
 
@@ -1050,9 +1358,17 @@ class _AddItemRowState extends ConsumerState<_AddItemRow> {
 
   @override
   Widget build(BuildContext context) {
+    // The same call [ListNotifier.addItem] stores with, so the preview is the
+    // icon the row will get.
+    // Lebensmittel only, like the row it previews: nothing picks a symbol for a
+    // Sonstige article any more (see [planItemIconKey]), so the circle stays a
+    // circle until the reader chooses one themselves.
     final preview = widget.grocery ? suggestIcon(_draft, subject: IconSubject.groceryArticle) : null;
     final suggestions = widget.grocery
-        ? [for (final icon in groceryIconSuggestions(_draft)) IconChoice(kind: IconKind.grocery, key: icon.asset, label: icon.label)]
+        ? [
+            for (final icon in groceryIconSuggestions(_draft))
+              IconChoice(kind: IconKind.grocery, key: icon.asset, label: icon.label),
+          ]
         : const <IconChoice>[];
     return Column(
       children: [
@@ -1078,7 +1394,12 @@ class _AddItemRowState extends ConsumerState<_AddItemRow> {
                 child: AnimatedSwitcher(
                   duration: const Duration(milliseconds: 160),
                   child: preview == null
-                      ? AppIcon(AppIcons.circle, key: const ValueKey('empty'), size: 24, color: AppColors.idleRing)
+                      ? AppIcon(
+                          AppIcons.circle,
+                          key: const ValueKey('empty'),
+                          size: 24,
+                          color: AppColors.idleRing,
+                        )
                       // Drawn over the slot rather than inside it: the circle is
                       // 24 because a checkbox is, and a photograph of a Paprika
                       // shrunk to a checkbox is a smudge. The slot keeps its
@@ -1089,7 +1410,21 @@ class _AddItemRowState extends ConsumerState<_AddItemRow> {
                       : OverflowBox(
                           maxWidth: 36,
                           maxHeight: 36,
-                          child: _ItemIcon(key: ValueKey(preview.key), iconKey: preview.key, size: 36, imageSize: 36),
+                          child: widget.grocery
+                              ? _ItemIcon(
+                                  key: ValueKey(preview.key),
+                                  iconKey: preview.key,
+                                  size: 36,
+                                  imageSize: 36,
+                                )
+                              : KeyedSubtree(
+                                  key: ValueKey(preview.key),
+                                  child: IconTile(
+                                    iconKey: preview.key,
+                                    size: 36,
+                                    imageSize: AppText.markImage(36),
+                                  ),
+                                ),
                         ),
                 ),
               ),
@@ -1098,7 +1433,11 @@ class _AddItemRowState extends ConsumerState<_AddItemRow> {
                 child: TextField(
                   controller: _controller,
                   style: AppText.inputTitle,
-                  decoration: InputDecoration(border: InputBorder.none, hintText: L.s.addItemPlaceholder, isDense: true),
+                  decoration: InputDecoration(
+                    border: InputBorder.none,
+                    hintText: L.s.addItemPlaceholder,
+                    isDense: true,
+                  ),
                   textInputAction: TextInputAction.done,
                   onChanged: (v) => setState(() => _draft = v),
                   onSubmitted: (v) => _add(v),
@@ -1168,10 +1507,7 @@ class _SuggestionChip extends StatelessWidget {
           children: [
             IconTile(iconKey: choice.key, size: 24, imageSize: 20),
             const SizedBox(width: 7),
-            Text(
-              choice.label,
-              style: AppText.caption.copyWith(color: AppColors.inkSecondary),
-            ),
+            Text(choice.label, style: AppText.caption.copyWith(color: AppColors.inkSecondary)),
           ],
         ),
       ),
@@ -1260,7 +1596,9 @@ class _ItemRowState extends ConsumerState<_ItemRow> {
 
   void _commit() {
     setState(() => _editing = false);
-    ref.read(listProvider.notifier).editItem(widget.item, text: _textController.text, sub: _subController.text);
+    ref
+        .read(listProvider.notifier)
+        .editItem(widget.item, text: _textController.text, sub: _subController.text);
   }
 
   @override
@@ -1290,12 +1628,15 @@ class _ItemRowState extends ConsumerState<_ItemRow> {
           // in front of it — the row reads as one line of circles, and a
           // rounded square in the middle of it was the only corner in sight.
           //
-          // On a Sonstige list there is nothing in that slot to begin with: a
-          // Bohrmaschine and a Termin beim Zahnarzt have no picture worth
-          // guessing at, and a row of near-identical fallback symbols reads as
-          // noise in front of the words that carry the meaning. A checkbox and
-          // the text are the whole row — but a photo the user attached
-          // themselves still shows, because that one they chose.
+          // On a Sonstige list the slot is there only when the list has
+          // something to put in it — an article whose name, or a Vorhaben's
+          // icon hint, matched a symbol. Then every row of that list keeps the
+          // slot so the words stay in one column, and a row that matched
+          // nothing leaves it empty: a column of identical fallback symbols is
+          // noise in front of the words that carry the meaning. A list where
+          // nothing matched looks as it always did, a checkbox and the text. A
+          // photo the user attached still shows either way, because that one
+          // they chose.
           if (photo != null) ...[
             // Centred in the same 42 slot the grocery picture gets, but drawn
             // at the size that picture is drawn at rather than filling the
@@ -1319,6 +1660,9 @@ class _ItemRowState extends ConsumerState<_ItemRow> {
             const SizedBox(width: 12),
           ] else if (_isGroceryList(ref, item.listId)) ...[
             _ItemIcon(iconKey: item.iconKey),
+            const SizedBox(width: 12),
+          ] else if (_listHasSymbols(ref, item.listId)) ...[
+            _SymbolSlot(iconKey: item.iconKey),
             const SizedBox(width: 12),
           ],
           Expanded(
@@ -1353,7 +1697,9 @@ class _ItemRowState extends ConsumerState<_ItemRow> {
                           item.text,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: _itemTextStyle.copyWith(color: Color.lerp(AppColors.ink, _itemDoneInk, strike)),
+                          style: _itemTextStyle.copyWith(
+                            color: Color.lerp(AppColors.ink, _itemDoneInk, strike),
+                          ),
                         ),
                       ),
                     ),
@@ -1390,6 +1736,16 @@ class _ItemRowState extends ConsumerState<_ItemRow> {
                   Opacity(
                     opacity: 1 - 0.45 * strike,
                     child: _LinkLine(url: url, accent: accent),
+                  ),
+                // Non-grocery lists only: nobody orders a cucumber from Amazon,
+                // and a badge under every article on the weekly shop would be
+                // fourteen adverts nobody taps. The article's own shop page,
+                // when the household set one, is the better answer and sits
+                // directly above — so the badge steps aside for it.
+                if (_amazonFor(ref, item) case final marketplace? when item.linkUrl == null && !_editing)
+                  Opacity(
+                    opacity: 1 - 0.45 * strike,
+                    child: _AmazonLine(article: item.text, marketplace: marketplace, accent: accent),
                   ),
               ],
             ),
@@ -1628,6 +1984,64 @@ class _AttachmentsLine extends StatelessWidget {
 /// about where the tap leads. It is the one thing under the name that is a
 /// target of its own — the attachments line beside it is a caption, while this
 /// is the whole point of having stored a link.
+/// "Bei Amazon suchen · Anzeige" under one article on a non-grocery list.
+///
+/// **The "Anzeige" is not decoration and must not be dropped.** An affiliate
+/// link is advertising, and German law (§ 5a Abs. 4 UWG) requires the
+/// commercial intent to be recognisable *at the link* rather than in a footnote
+/// somebody scrolls past. That is why the word rides on the badge itself, on
+/// every row, instead of one disclosure at the bottom of the list. The
+/// Werbekennzeichnung is also why [amazonSearchUrl] fails closed: no partner
+/// tag, no badge, so there is never an unlabelled one.
+///
+/// Nothing is stored. The URL is built from [article] as the row is drawn — see
+/// [lib/data/amazon.dart]. A list shared outward carries no tag, because it
+/// carries no link.
+class _AmazonLine extends StatelessWidget {
+  final String article;
+  final String? marketplace;
+  final Color accent;
+
+  const _AmazonLine({required this.article, required this.marketplace, required this.accent});
+
+  @override
+  Widget build(BuildContext context) {
+    final search = amazonSearch(article, marketplace: marketplace);
+    // Gated on the tag by [_amazonFor], so this is belt-and-braces: an
+    // unsponsored badge would be clutter that earns nothing, and a sponsored
+    // one without the word beside it would be an unlabelled advert.
+    if (!search.sponsored) return const SizedBox.shrink();
+
+    return GestureDetector(
+      onTap: () => openExternalUrl(search.url),
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.only(top: 3, bottom: 3, right: 6),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Same 11pt as [_LinkLine] and for the same reason — it sits beside
+            // the same `microLabel`. Amazon's own mark cannot come: it is an
+            // SVG, and this row draws from the Phosphor set.
+            AppIcon(AppIcons.magnifyingGlass, size: 11, color: accent, flat: true),
+            const SizedBox(width: 4),
+            Flexible(
+              child: Text(
+                L.s.searchOnAmazon,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppText.microLabel.copyWith(color: accent),
+              ),
+            ),
+            const SizedBox(width: 5),
+            Text(L.s.adLabel, style: AppText.microLabel.copyWith(color: AppColors.mutedLight)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _LinkLine extends StatelessWidget {
   final String url;
   final Color accent;
@@ -1734,6 +2148,101 @@ void _editLink(BuildContext context, WidgetRef ref, ShoppingListItem item) {
   );
 }
 
+/// The method a Vorhaben wrote for this list, under its name.
+///
+/// **A chip rather than a card at the top of the list.** It sits exactly where
+/// [EventLinkChip] sits and behaves the same way: the articles are why the
+/// screen is opened — you add milk constantly and consult the method
+/// occasionally — so the recipe gets one line that is always there and never in
+/// the way, instead of a block that pushes the shopping down the screen every
+/// time.
+///
+/// Drawn only when there is something behind it ([ShoppingList.hasMethod]),
+/// which is a Vorhaben's list and nothing else.
+class _MethodChip extends StatelessWidget {
+  final ShoppingList list;
+
+  const _MethodChip({required this.list});
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = Theme.of(context).colorScheme.primary;
+    // "Rezept" only when there is one; a Bauhaus plan's steps are a method, not
+    // a recipe, and calling them one would be a small lie on every such list.
+    final label = list.recipe == null ? L.s.plannerHowTo : L.s.plannerRecipe;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => _showMethodSheet(context, list),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(color: tint(accent, .88), borderRadius: BorderRadius.circular(12)),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AppIcon(AppIcons.listChecks, size: AppGlyph.inline, color: accent),
+            const SizedBox(width: 5),
+            Text(
+              label,
+              style: AppText.caption.copyWith(color: accent, fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The method, read-only, over the list rather than instead of it.
+///
+/// [SheetPickerHeader] rather than the default header: there is nothing to
+/// save. The list's own name is the title, because the sheet is opened from a
+/// chip under that name and the method has no name of its own.
+void _showMethodSheet(BuildContext context, ShoppingList list) {
+  showAppSheet(
+    context: context,
+    header: SheetPickerHeader(title: list.name),
+    heightFactor: 0.8,
+    child: _MethodSheetBody(list: list),
+  );
+}
+
+class _MethodSheetBody extends StatelessWidget {
+  final ShoppingList list;
+
+  const _MethodSheetBody({required this.list});
+
+  @override
+  Widget build(BuildContext context) {
+    // Drawn by the same widget as the planner card's disclosure, deliberately:
+    // this sheet is that card's content after the list was made, and a recipe
+    // that reformatted itself on the way would read as a different recipe. See
+    // `_MethodDisclosure` in list/planner_card.dart and [MarkdownText].
+    final recipe = list.recipe?.trim() ?? '';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (list.steps.isNotEmpty) ...[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(4, 4, 4, 8),
+            child: Text(L.s.plannerHowTo, style: AppText.microLabel),
+          ),
+          MarkdownText(stepsAsMarkdown(list.steps)),
+        ],
+        if (recipe.isNotEmpty) ...[
+          Padding(
+            padding: EdgeInsets.fromLTRB(4, list.steps.isEmpty ? 4 : 20, 4, 8),
+            child: Text(L.s.plannerRecipe, style: AppText.microLabel),
+          ),
+          MarkdownText(recipe),
+        ],
+        const SizedBox(height: 24),
+      ],
+    );
+  }
+}
+
 /// One field, and the sentence that says what it is for.
 class _LinkSheetBody extends StatelessWidget {
   final TextEditingController controller;
@@ -1772,7 +2281,11 @@ class _LinkSheetBody extends StatelessWidget {
                 autocorrect: false,
                 textInputAction: TextInputAction.done,
                 style: AppText.inputTitle,
-                decoration: InputDecoration(border: InputBorder.none, hintText: L.s.itemLinkHint, isDense: true),
+                decoration: InputDecoration(
+                  border: InputBorder.none,
+                  hintText: L.s.itemLinkHint,
+                  isDense: true,
+                ),
               ),
             ),
           ],
@@ -1800,11 +2313,7 @@ Future<void> _removeLink(BuildContext context, WidgetRef ref, ShoppingListItem i
 /// event cards and the Boxen item rows use. No `onTap`: the article's own text
 /// and its check circle carry the handlers here.
 Widget _swipeToDelete(BuildContext context, WidgetRef ref, ShoppingListItem item, Widget row) {
-  return SwipeToEditDelete(
-    identity: item.id,
-    onDelete: () => _deleteItem(context, ref, item),
-    child: row,
-  );
+  return SwipeToEditDelete(identity: item.id, onDelete: () => _deleteItem(context, ref, item), child: row);
 }
 
 /// Takes an article off its list and offers it straight back.
@@ -1828,16 +2337,28 @@ Future<void> _deleteItem(BuildContext context, WidgetRef ref, ShoppingListItem i
 /// times says nothing and makes the list harder to scan.
 List<AnchoredMenuItem> _itemMenu(BuildContext context, WidgetRef ref, ShoppingListItem item) {
   final attachments = ref.read(listProvider).attachmentsFor(item);
+  // The household's own marketplace, not the German one this used to assume.
+  // Unlike the row badge, this is **not** gated on having a partner tag: an
+  // untagged search is still a search, useful to the reader and earning us
+  // nothing — so it needs no Werbekennzeichnung either. The label picks up
+  // "Anzeige" exactly when the link turns into advertising.
+  final amazon = amazonSearch(
+    item.text,
+    marketplace: amazonMarketplace(
+      countryCode: PlatformDispatcher.instance.locale.countryCode,
+      languageCode: L.s.localeCode,
+    ),
+  );
   return [
     AnchoredMenuItem(
-      label: L.s.searchOnAmazon,
+      label: amazon.sponsored ? '${L.s.searchOnAmazon} · ${L.s.adLabel}' : L.s.searchOnAmazon,
       svgAsset: 'assets/merchants/amazon-simple.svg',
       // The one row whose glyph can't survive the crossing: UIKit's menu takes
       // SF Symbols, and Amazon's mark is an SVG in `assets/merchants/`. The
       // label already says whose shop it is, so the system row shows what the
       // row *does* instead.
       symbol: 'magnifyingglass',
-      onSelected: () => openExternalUrl(amazonSearchUrl(item.text)),
+      onSelected: () => openExternalUrl(amazon.url),
     ),
     // Beside it because both rows are about the web: one goes looking for the
     // product, the other records the one that was already found.
@@ -1852,8 +2373,18 @@ List<AnchoredMenuItem> _itemMenu(BuildContext context, WidgetRef ref, ShoppingLi
     // shopping list wants beside it is a picture of the thing, and the
     // document picker offered a PDF that would then sit under the name as a
     // caption nobody can open from the row.
-    AnchoredMenuItem(label: L.s.photo, icon: AppIcons.image, symbol: 'photo.on.rectangle', onSelected: () => _attach(context, ref, item, AttachmentSource.photos)),
-    AnchoredMenuItem(label: L.s.camera, icon: AppIcons.camera, symbol: 'camera', onSelected: () => _attach(context, ref, item, AttachmentSource.camera)),
+    AnchoredMenuItem(
+      label: L.s.photo,
+      icon: AppIcons.image,
+      symbol: 'photo.on.rectangle',
+      onSelected: () => _attach(context, ref, item, AttachmentSource.photos),
+    ),
+    AnchoredMenuItem(
+      label: L.s.camera,
+      icon: AppIcons.camera,
+      symbol: 'camera',
+      onSelected: () => _attach(context, ref, item, AttachmentSource.camera),
+    ),
     // One row per attached file, because they are stored now and a file you
     // cannot take off again is a file you think twice about putting on. Named
     // by the file only when there are several — with one there is nothing to
@@ -1910,10 +2441,13 @@ class _DoneItemRow extends ConsumerWidget {
             children: [
               CheckOffButton(progress: strike, accent: accent, onTap: onUndo, size: 24),
               const SizedBox(width: 12),
-              // Same rule as the open row: pictures on a Lebensmittel list,
-              // nothing on a Sonstige one.
+              // Same rule as the open row: pictures on a Lebensmittel list, and
+              // on a Sonstige one only when the list has any to show.
               if (_isGroceryList(ref, item.listId)) ...[
                 _ItemIcon(iconKey: item.iconKey),
+                const SizedBox(width: 12),
+              ] else if (_listHasSymbols(ref, item.listId)) ...[
+                _SymbolSlot(iconKey: item.iconKey),
                 const SizedBox(width: 12),
               ],
               Expanded(
@@ -1944,4 +2478,3 @@ class _DoneItemRow extends ConsumerWidget {
     );
   }
 }
-

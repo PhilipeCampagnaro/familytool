@@ -204,7 +204,12 @@ class ProfilePageState extends ConsumerState<ProfilePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(displayName, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.cardTitle),
+                        Text(
+                          displayName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppText.cardTitle,
+                        ),
                         const SizedBox(height: 2),
                         Text(role.label, style: AppText.body.copyWith(color: AppColors.muted)),
                       ],
@@ -221,65 +226,62 @@ class ProfilePageState extends ConsumerState<ProfilePage> {
               children: [
                 SectionCard(
                   radius: AppRadii.card,
-                  children: dividedRows(
-                    inset: true,
-                    [
-                      FieldGroup(
-                        label: L.s.displayName,
-                        child: FieldBox(
-                          child: TextField(
-                            controller: _nameController,
-                            textInputAction: TextInputAction.done,
-                            style: AppText.searchInput,
-                            decoration: InputDecoration(
-                              border: InputBorder.none,
-                              hintText: L.s.name,
-                              isDense: true,
-                              contentPadding: EdgeInsets.zero,
-                            ),
-                            onChanged: (v) {
-                              ref.read(settingsProvider.notifier).setName(v);
-                              // The hero avatar, its initials and the collapsed
-                              // bar title all read the field, so every
-                              // keystroke has to redraw them.
-                              setState(() {});
-                            },
+                  children: dividedRows(inset: true, [
+                    FieldGroup(
+                      label: L.s.displayName,
+                      child: FieldBox(
+                        child: TextField(
+                          controller: _nameController,
+                          textInputAction: TextInputAction.done,
+                          style: AppText.searchInput,
+                          decoration: InputDecoration(
+                            border: InputBorder.none,
+                            hintText: L.s.name,
+                            isDense: true,
+                            contentPadding: EdgeInsets.zero,
                           ),
+                          onChanged: (v) {
+                            ref.read(settingsProvider.notifier).setName(v);
+                            // The hero avatar, its initials and the collapsed
+                            // bar title all read the field, so every
+                            // keystroke has to redraw them.
+                            setState(() {});
+                          },
                         ),
                       ),
-                      FieldGroup(
-                        label: L.s.avatarColour,
+                    ),
+                    FieldGroup(
+                      label: L.s.avatarColour,
+                      child: Row(
+                        children: [
+                          for (var i = 0; i < AppTones.list.length; i++) ...[
+                            _ToneSwatch(
+                              tone: AppTones.list[i],
+                              selected: i == (me?.tone ?? state.avatarTone),
+                              onTap: () {
+                                ref.read(settingsProvider.notifier).setAvatarTone(i);
+                                ref.read(familyProvider.notifier).saveMyProfile(tone: i);
+                              },
+                            ),
+                            if (i != AppTones.list.length - 1) const SizedBox(width: 12),
+                          ],
+                        ],
+                      ),
+                    ),
+                    FieldGroup(
+                      label: L.s.role,
+                      hint: L.s.adminsManageFamily,
+                      child: FieldBox(
                         child: Row(
                           children: [
-                            for (var i = 0; i < AppTones.list.length; i++) ...[
-                              _ToneSwatch(
-                                tone: AppTones.list[i],
-                                selected: i == (me?.tone ?? state.avatarTone),
-                                onTap: () {
-                                  ref.read(settingsProvider.notifier).setAvatarTone(i);
-                                  ref.read(familyProvider.notifier).saveMyProfile(tone: i);
-                                },
-                              ),
-                              if (i != AppTones.list.length - 1) const SizedBox(width: 12),
-                            ],
+                            AppIcon(AppIcons.shieldCheck, size: 17, color: AppColors.muted),
+                            const SizedBox(width: 10),
+                            Text(role.label, style: AppText.searchInput),
                           ],
                         ),
                       ),
-                      FieldGroup(
-                        label: L.s.role,
-                        hint: L.s.adminsManageFamily,
-                        child: FieldBox(
-                          child: Row(
-                            children: [
-                              AppIcon(AppIcons.shieldCheck, size: 17, color: AppColors.muted),
-                              const SizedBox(width: 10),
-                              Text(role.label, style: AppText.searchInput),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ]),
                 ),
               ],
             ),

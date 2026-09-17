@@ -107,10 +107,9 @@ int trackerWeekDone(Set<DateTime> checkedDays, DateTime day) {
 ///   at nine in the morning would otherwise wipe out eleven weeks, and the
 ///   number would only be right after bedtime. The same goes for the current
 ///   week of a weekly count.
-int trackerStreak(Tracker tracker, Set<DateTime> checkedDays, DateTime today) =>
-    tracker.schedule.isDayBased
-        ? _dayStreak(tracker, checkedDays, boardDay(today))
-        : _weekStreak(tracker, checkedDays, boardDay(today));
+int trackerStreak(Tracker tracker, Set<DateTime> checkedDays, DateTime today) => tracker.schedule.isDayBased
+    ? _dayStreak(tracker, checkedDays, boardDay(today))
+    : _weekStreak(tracker, checkedDays, boardDay(today));
 
 int _dayStreak(Tracker tracker, Set<DateTime> checkedDays, DateTime today) {
   var day = today;

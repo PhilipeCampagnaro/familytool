@@ -136,6 +136,25 @@ class _TrackersToday extends ConsumerWidget {
     final state = ref.watch(trackerProvider);
     final accent = Theme.of(context).colorScheme.primary;
     final today = calToday();
+
+    // Nothing at all while the rows are still out: a household that keeps five
+    // rhythms must not be told for one frame that it keeps none.
+    if (state.loading) return const SizedBox.shrink();
+
+    // **Two different emptinesses, and only one of them is worth a card.** A
+    // household with no tracker at all has never seen what this section is for,
+    // and Home is where it would have noticed — so the section stands with one
+    // row that says what a tracker is and opens the Board, which is where one
+    // is made. A household that keeps rhythms and simply owes none today is
+    // told nothing: the heading reads "Heute dran", and a card under it
+    // explaining a day that is going fine is a section talking about itself.
+    if (state.trackers.isEmpty) {
+      return _Section(
+        title: L.s.homeTrackerSection,
+        rows: [_TrackerEmptyRow(onTap: () => ref.read(tabJumpProvider.notifier).toTab(boardTabIndex))],
+      );
+    }
+
     final due = state.dueOn(today).take(_max).toList();
     if (due.isEmpty) return const SizedBox.shrink();
 
@@ -154,6 +173,66 @@ class _TrackersToday extends ConsumerWidget {
             today: today,
           ),
       ],
+    );
+  }
+}
+
+/// The tracker section with no tracker behind it: the one row that says what
+/// the section will hold, and goes to where one is made.
+///
+/// **No check circle**, unlike every other row on this card. There is nothing
+/// to tick, and a circle here would offer to keep a rhythm that does not exist
+/// yet. The caret is the honest control: this row is a door.
+class _TrackerEmptyRow extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _TrackerEmptyRow({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Row(
+          children: [
+            // The dashed ring the app uses for a tracker everywhere else — the
+            // create sheet's segment, the island, the checklist — drawn in ink
+            // on the card's own grey rather than in the accent: it is naming a
+            // kind of thing, not asking for attention.
+            Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(color: AppColors.surface, shape: BoxShape.circle),
+              child: Center(child: AppIcon(AppIcons.circleDashed, size: 18, color: AppColors.inkSecondary)),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    L.s.homeTrackerEmpty,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppText.itemTitle,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    L.s.homeTrackerEmptyBody,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppText.microLabel.copyWith(color: AppColors.muted),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            AppIcon(AppIcons.caretRight, size: AppGlyph.caret, color: AppColors.mutedLight, flat: true),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -267,10 +346,18 @@ class _ListsOverview extends ConsumerWidget {
                   IconTile(iconKey: list.iconKey, size: 34, imageSize: 26),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: Text(list.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.itemTitle),
+                    child: Text(
+                      list.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppText.itemTitle,
+                    ),
                   ),
                   const SizedBox(width: 10),
-                  Text(L.s.homeListOpenItems(open), style: AppText.microLabel.copyWith(color: AppColors.muted)),
+                  Text(
+                    L.s.homeListOpenItems(open),
+                    style: AppText.microLabel.copyWith(color: AppColors.muted),
+                  ),
                 ],
               ),
             ),

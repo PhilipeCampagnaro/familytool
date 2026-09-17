@@ -42,9 +42,16 @@ class IconDraft {
 ///
 /// Three cases, and the difference between them is not decoration.
 ///
-/// **A symbol glyph** is line art that takes the theme's own colour, so it sits
-/// on the ordinary [AppPalette.surfaceAlt] disc — the disc is what gives a
-/// hairline mark somewhere to be.
+/// **A symbol glyph is drawn bare**, in the theme's own ink, at
+/// [AppText.markBareGlyph] of the slot. It sat on an [AppPalette.surfaceAlt]
+/// disc until 2026-09-16, on the reasoning that a hairline mark needs somewhere
+/// to be — but a duotone glyph is not a hairline mark. Its under-layer is
+/// already a mass behind the strokes, so the disc was a second ground under a
+/// shape that brings its own, and in a column mixing glyphs with grocery
+/// pictures it was also the only thing wearing one: every food row read as
+/// artwork and every other row as a button. (The same discovery `GlyphTile`
+/// made when the duotone set took its glass lens's job — see the glyph-tile
+/// section of docs/design-system.md.)
 ///
 /// **A grocery picture is drawn bare**, at nearly the full width of the slot.
 /// It is a photograph on nothing — a Paprika, a Milchtüte — and it arrives
@@ -116,6 +123,18 @@ class IconTile extends StatelessWidget {
 
   final bool border;
 
+  /// Puts the icon on the tile's own disc without naming a colour for it —
+  /// [background] with the choosing left here, so a caller asking for the ground
+  /// does not also have to know that a logo's is white and a glyph's is grey.
+  ///
+  /// **It marks a *place*, not a kind of icon: the disc belongs to a list's own
+  /// name.** The header of an open list and the collapsed title above it wear
+  /// it; the articles inside that list do not, in any of the four kinds. A
+  /// container is a heading and its contents are a column of rows, and giving
+  /// every row a disc turns the column into a strip of buttons — which is the
+  /// shape the grocery photographs are deliberately drawn bare to avoid.
+  final bool disc;
+
   const IconTile({
     super.key,
     required this.iconKey,
@@ -128,6 +147,7 @@ class IconTile extends StatelessWidget {
     this.glyphColor,
     this.background,
     this.border = true,
+    this.disc = false,
   });
 
   @override
@@ -135,7 +155,41 @@ class IconTile extends StatelessWidget {
     final choice = resolveIcon(iconKey);
     final asset = choice?.asset;
     final hasPhoto = photoFile != null || photoUrl != null;
-    if (asset != null && !hasPhoto && background == null) {
+    // A named [background] is a disc asked for outright, so it answers this too.
+    final wantsDisc = disc || background != null;
+    // An emoji is the model's own picture, drawn as text — see
+    // [emojiIconPrefix]. It follows the same rule as everything else here: bare
+    // on a row, on the disc where the place wears one. A little under the
+    // glyphs' own numbers, because an emoji fills its em box where a Phosphor
+    // mark leaves air inside it; `height: 1` because the font's line spacing
+    // would otherwise push it off the centre line.
+    final emoji = choice?.emoji;
+    if (emoji != null && !hasPhoto) {
+      final mark = Text(
+        emoji,
+        style: TextStyle(fontSize: glyphSize ?? size * (wantsDisc ? 0.52 : 0.56), height: 1),
+        textAlign: TextAlign.center,
+      );
+      if (!wantsDisc) {
+        return SizedBox(
+          width: size,
+          height: size,
+          child: Center(child: mark),
+        );
+      }
+      return Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          color: background ?? AppColors.surfaceAlt,
+          shape: BoxShape.circle,
+          border: border ? Border.all(color: AppColors.hairline) : null,
+        ),
+        alignment: Alignment.center,
+        child: mark,
+      );
+    }
+    if (asset != null && !hasPhoto && !wantsDisc) {
       // A brand mark in its chip — see the class doc. The inset is what a logo
       // is normally given on a white card, and the clip is for the full-bleed
       // ones, which end at the chip's corners instead of squaring them off.
@@ -160,9 +214,29 @@ class IconTile extends StatelessWidget {
         return SizedBox(
           width: size,
           height: size,
-          child: Center(child: IconImage(asset: asset, size: size * 0.88)),
+          child: Center(
+            child: IconImage(asset: asset, size: size * 0.88),
+          ),
         );
       }
+    }
+    // The glyph, on nothing — including the fallback, which is a glyph that
+    // happens to have been chosen by absence. Everything below this line needs a
+    // ground for a reason: a photograph has to be cropped to *some* shape, art
+    // drawn for paper needs white under it on dark, and a caller that named a
+    // [background] is asking for the disc outright.
+    if (!hasPhoto && asset == null && !wantsDisc) {
+      return SizedBox(
+        width: size,
+        height: size,
+        child: Center(
+          child: AppIcon(
+            choice?.glyph ?? fallbackIcon,
+            size: glyphSize ?? AppText.markBareGlyph(size),
+            color: glyphColor ?? AppColors.inkSecondary,
+          ),
+        ),
+      );
     }
     return Container(
       width: size,
@@ -177,12 +251,14 @@ class IconTile extends StatelessWidget {
       child: hasPhoto
           ? PhotoThumbnail(url: photoUrl, filePath: photoFile, size: size)
           : asset != null
-              ? ClipOval(child: IconImage(asset: asset, size: imageSize))
-              : AppIcon(
-                  choice?.glyph ?? fallbackIcon,
-                  size: glyphSize ?? imageSize * 0.78,
-                  color: glyphColor ?? AppColors.inkSecondary,
-                ),
+          ? ClipOval(
+              child: IconImage(asset: asset, size: imageSize),
+            )
+          : AppIcon(
+              choice?.glyph ?? fallbackIcon,
+              size: glyphSize ?? imageSize * 0.78,
+              color: glyphColor ?? AppColors.inkSecondary,
+            ),
     );
   }
 }
@@ -227,8 +303,14 @@ class PhotoThumbnail extends StatelessWidget {
         // showing a hole.
         errorBuilder: (context, _, _) => url == null
             ? broken
-            : Image.network(url!, width: size, height: size, fit: BoxFit.cover, cacheWidth: cache,
-                errorBuilder: (context, _, _) => broken),
+            : Image.network(
+                url!,
+                width: size,
+                height: size,
+                fit: BoxFit.cover,
+                cacheWidth: cache,
+                errorBuilder: (context, _, _) => broken,
+              ),
       );
     }
 
@@ -236,7 +318,13 @@ class PhotoThumbnail extends StatelessWidget {
     // signing failed and whose device copy is from a previous install has
     // neither, and it must still draw its row.
     final remote = url;
-    if (remote == null) return SizedBox(width: size, height: size, child: Center(child: broken));
+    if (remote == null) {
+      return SizedBox(
+        width: size,
+        height: size,
+        child: Center(child: broken),
+      );
+    }
 
     return Image.network(
       remote,
@@ -452,26 +540,15 @@ class _PictureFieldRow extends StatelessWidget {
               child: Row(
                 children: [
                   Flexible(
-                    child: Text(
-                      label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppText.rowTitle,
-                    ),
+                    child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.rowTitle),
                   ),
-                  if (badge != null) ...[
-                    const SizedBox(width: 6),
-                    badge!,
-                  ],
+                  if (badge != null) ...[const SizedBox(width: 6), badge!],
                 ],
               ),
             ),
             if (trailing != null) ...[
               const SizedBox(width: 12),
-              Text(
-                trailing!,
-                style: AppText.buttonSmall.copyWith(color: AppColors.muted),
-              ),
+              Text(trailing!, style: AppText.buttonSmall.copyWith(color: AppColors.muted)),
             ],
             const SizedBox(width: 4),
             AppIcon(AppIcons.caretRight, size: 16, color: AppColors.mutedLight),
@@ -636,10 +713,7 @@ class _Section extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(6, 0, 6, 9),
-            child: Text(
-              title,
-              style: AppText.groupHeading,
-            ),
+            child: Text(title, style: AppText.groupHeading),
           ),
           if (choices.isEmpty)
             Padding(
@@ -723,10 +797,7 @@ class _MoreRow extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              label,
-              style: AppText.buttonSmall.copyWith(color: accent),
-            ),
+            Text(label, style: AppText.buttonSmall.copyWith(color: accent)),
             const SizedBox(width: 6),
             AppIcon(expanded ? AppIcons.caretUp : AppIcons.caretDown, size: 16, color: accent),
           ],
@@ -778,7 +849,6 @@ class _IconRow extends StatelessWidget {
   }
 }
 
-
 /// What a picture row's menu can produce.
 ///
 /// **No symbol row.** It used to have one, and that is what made the box
@@ -817,11 +887,7 @@ Future<PictureChoice?> showPictureMenu(
   required GlobalKey anchorKey,
   required bool hasPhoto,
 }) async {
-  final choices = [
-    PictureChoice.photo,
-    PictureChoice.camera,
-    if (hasPhoto) PictureChoice.remove,
-  ];
+  final choices = [PictureChoice.photo, PictureChoice.camera, if (hasPhoto) PictureChoice.remove];
   final completer = Completer<PictureChoice?>();
   await showAnchoredMenu(
     context: context,

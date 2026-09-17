@@ -40,6 +40,13 @@ const _foldPairs = {
   'û': 'u',
   'ç': 'c',
   'ñ': 'n',
+  // A Portuguese plural in *-ões*/*-ães* folds to its own singular *-ão*, and
+  // it has to happen up here, ahead of the nasals it contains: *feijões* would
+  // otherwise pass through õ→o and then the German *oe*→*o* collapse below and
+  // come out as "feijos", while the catalog's *Feijão* comes out "feijao" — the
+  // two would never meet.
+  'ões': 'ao',
+  'ães': 'ao',
   // Portuguese nasals. Not optional politeness: anything left unfolded is
   // stripped by [_punctuation] below, so without these `Romã` folds to "rom"
   // and stops answering to *roma* — the icon would be in the catalog and
@@ -61,7 +68,9 @@ final _spaces = RegExp(r'\s+');
 /// Stück)" are all still about the head noun. Longest units first — `l` would
 /// otherwise swallow the `l` of "liter" and leave the rest stranded.
 final _parenthetical = RegExp(r'\([^)]*\)');
-final _quantity = RegExp(r'\b\d+[.,]?\d*\s*(liter|litre|packung|pack|stueck|stück|stk|dosen|dose|gramm|kg|mg|ml|cl|st|g|l|x)?\b');
+final _quantity = RegExp(
+  r'\b\d+[.,]?\d*\s*(liter|litre|packung|pack|stueck|stück|stk|dosen|dose|gramm|kg|mg|ml|cl|st|g|l|x)?\b',
+);
 
 /// The comparison form of a word. Lowercases, folds umlauts and accents to
 /// their base letter, drops punctuation, then collapses the *spelled-out*
@@ -187,10 +196,75 @@ class _Hit {
   const _Hit(this.icon, this.rank, this.length);
 }
 
-/// Best hit per icon, ordered best-first. `matchCategory` lets a section name
-/// ("Gemüse", "Vegetables") stand in for everything under it — useful while
-/// browsing suggestions, wrong when picking the *one* icon for an article.
-List<_Hit> _search(String query, {required bool matchCategory}) {
+/// Whether [query] ends a word of [term] rather than sitting in the middle of
+/// one — "milch" does in "vollmilch", "mini" does not in "feminine pads".
+///
+/// The test for a [rankTerm] 3 hit when one icon has to be *picked*: German
+/// glues its nouns together, so a name the typed word ends is the thing itself
+/// ("Vollmilch" is milk), while a name that merely contains those letters is a
+/// coincidence. *Mini-Pizzen* matched a sanitary towel through the "mini" in
+/// "feminine pads" until this was here (2026-09-16).
+bool _endsWord(String term, String query) {
+  for (var i = term.indexOf(query); i != -1; i = term.indexOf(query, i + 1)) {
+    final end = i + query.length;
+    if (end == term.length || term[end] == ' ') return true;
+  }
+  return false;
+}
+
+/// Shortest word a trailing plural *s* is taken off. Below it the *s* is more
+/// likely part of the word than a plural of it: *Eis* is not two *Ei*, *Reis*
+/// not two *Rei*.
+const _minPlural = 5;
+
+/// The query with an English, Portuguese or Spanish plural *s* taken off each
+/// word — *pizzas* → *pizza*, *bananas* → *banana*, *tomates* → *tomate*.
+///
+/// **Only this direction needs it.** A singular query already finds a plural
+/// name, because a name that merely *starts* with the query is a rank-1 hit, so
+/// *fruta* reaches "frutas congeladas" on its own; it is the plural asking after
+/// a singular name that has nothing to hold on to. German is untouched on
+/// purpose — it pluralises with *-en*, *-e* and an umlaut rather than an *s*,
+/// and the catalog carries those as aliases (*Pizzen*, *Bananen*).
+///
+/// A word ending in *ss* keeps it: that is a folded *ß* (*Weiß* → "weiss") and
+/// never a plural.
+String _singularize(String query) {
+  var changed = false;
+  final words = [
+    for (final word in query.split(' '))
+      if (word.length >= _minPlural && word.endsWith('s') && !word.endsWith('ss'))
+        (() {
+          changed = true;
+          return word.substring(0, word.length - 1);
+        })()
+      else
+        word,
+  ];
+  return changed ? words.join(' ') : query;
+}
+
+/// Best hit per icon, ordered best-first — the query as typed, and failing that
+/// the query with its plurals taken off ([_singularize]). The fallback is only
+/// reached when the word as typed answers to nothing at all, so a plural that
+/// *is* a catalog name ("Chips", "Pommes") can never be pulled onto its
+/// singular.
+///
+/// `matchCategory` lets a section name ("Gemüse", "Vegetables") stand in for
+/// everything under it — useful while browsing suggestions, wrong when picking
+/// the *one* icon for an article.
+///
+/// `anchored` holds a rank-3 hit to [_endsWord]. Picking an icon asks for it;
+/// browsing must not, or typing "pizz" would stop offering *Tiefkühlpizza*
+/// halfway through the word.
+List<_Hit> _search(String query, {required bool matchCategory, bool anchored = false}) {
+  final hits = _rank(query, matchCategory: matchCategory, anchored: anchored);
+  if (hits.isNotEmpty) return hits;
+  final singular = _singularize(query);
+  return singular == query ? hits : _rank(singular, matchCategory: matchCategory, anchored: anchored);
+}
+
+List<_Hit> _rank(String query, {required bool matchCategory, required bool anchored}) {
   if (query.length < 2) return const [];
 
   final hits = <_Hit>[];
@@ -200,6 +274,7 @@ List<_Hit> _search(String query, {required bool matchCategory}) {
     for (final term in entry.terms) {
       final rank = rankTerm(term, query);
       if (rank == null) continue;
+      if (rank == 3 && anchored && !_endsWord(term, query)) continue;
       if (best == null || rank < best || (rank == best && term.length < bestLength)) {
         best = rank;
         bestLength = term.length;
@@ -223,28 +298,52 @@ List<_Hit> _search(String query, {required bool matchCategory}) {
 
 /// The icon a typed article gets, or `null` if nothing fits.
 ///
-/// Tries the whole line first ("Grüner Salat"), then its words longest-first,
-/// so a line with a qualifier still finds its head noun. Filler words fall out
-/// via the length floor rather than a stop-word list.
+/// Tries the whole line first ("Grüner Salat"), then asks **every** word and
+/// keeps the best answer any of them gave. Filler words fall out via the length
+/// floor rather than a stop-word list.
+///
+/// **Which word carries the meaning is not something a length can tell you.**
+/// German puts the head noun last and glues it on, so the longest word usually
+/// is the thing — but Portuguese and Spanish put the head noun *first* and hang
+/// a longer adjective off it, and "Mini-pizzas congeladas" then resolved on
+/// *congeladas*, which is half the frozen aisle, and came back a bag of frozen
+/// fruit. Asking all of them and comparing the hits instead lets the strength of
+/// the match decide: *pizza* is a name we hold outright (rank 0) and
+/// *congeladas* only the tail of some other names (rank 2). The old rule survives
+/// as the tie-break, so an equally good hit still goes to the longer word.
 ///
 /// [strict] drops the weakest kind of hit — the query merely appearing
 /// *somewhere* inside a name. Inside a Lebensmittel list that hit earns its
 /// keep; asked about an arbitrary name it produces nonsense (a list called
 /// "Mia" matching *Thymian*), so `icon_suggestions.dart` asks strictly when the
-/// grocery catalog is only its last resort.
+/// grocery catalog is only its last resort. Even for a Lebensmittel list it is
+/// held to [_endsWord], so the letters have to end a word of the name and not
+/// merely occur in it.
 GroceryIcon? matchGroceryIcon(String text, {bool strict = false}) {
   final full = foldItemText(text);
   if (full.length < 2) return null;
 
-  final direct = _search(full, matchCategory: false);
+  final direct = _search(full, matchCategory: false, anchored: true);
   if (direct.isNotEmpty && !(strict && direct.first.rank >= 3)) return direct.first.icon;
 
-  final words = full.split(' ').where((w) => w.length >= 3).toList()..sort((a, b) => b.length.compareTo(a.length));
-  for (final word in words) {
-    final hits = _search(word, matchCategory: false);
+  _Hit? best;
+  var bestWord = 0;
+  for (final word in full.split(' ')) {
+    if (word.length < 3) continue;
+    final hits = _search(word, matchCategory: false, anchored: true);
     if (hits.isEmpty || (strict && hits.first.rank >= 3)) continue;
-    return hits.first.icon;
+    final hit = hits.first;
+    final better =
+        best == null ||
+        hit.rank < best.rank ||
+        (hit.rank == best.rank &&
+            (word.length > bestWord || (word.length == bestWord && hit.length < best.length)));
+    if (better) {
+      best = hit;
+      bestWord = word.length;
+    }
   }
+  if (best != null) return best.icon;
   // A name found *inside* the word is weaker still than one the word is found
   // inside, and a misspelt one weaker than that, so a strict caller gets neither.
   return strict ? null : (_compoundMatch(full) ?? _typoMatch(full));
@@ -324,9 +423,8 @@ GroceryIcon? _compoundMatch(String folded) {
         if (term.length < _minPart || term.length >= word.length || term.contains(' ')) continue;
         final suffix = word.endsWith(term);
         if (!suffix && (term.length < _minInfix || !word.contains(term))) continue;
-        final better = best == null ||
-            (suffix && !bestSuffix) ||
-            (suffix == bestSuffix && term.length > best.length);
+        final better =
+            best == null || (suffix && !bestSuffix) || (suffix == bestSuffix && term.length > best.length);
         if (better) {
           best = _Hit(entry.icon, 0, term.length);
           bestSuffix = suffix;

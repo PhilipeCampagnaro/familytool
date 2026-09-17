@@ -143,6 +143,10 @@ abstract class AppStrings {
   String get navHome;
   String get navCalendar;
   String get navLists;
+
+  /// "Board" in every language, tab and title alike ([boardTitle]) — it names
+  /// the place rather than describing it, so "Quadro"/"Tablero" would make the
+  /// same screen answer to four names across a household that switches phones.
   String get navBoard;
   String get navBox;
 
@@ -151,6 +155,8 @@ abstract class AppStrings {
   String get navExpand;
 
   // ---------------------------------------------------------------- board --
+
+  /// Untranslated, like [navBoard] above it.
   String get boardTitle;
   String doneCountSeparator(int count);
   String get newTask;
@@ -232,6 +238,11 @@ abstract class AppStrings {
   /// title that named one of the two would contradict the control every time
   /// somebody switched.
   String get newEntry;
+
+  /// "To-do" in all four languages, and so is every string built on it
+  /// ([newTask], [tasksTitle], [todosChip] …): the Board's two kinds are named,
+  /// not described, and "Tarefa"/"Tarea" also collides with the school
+  /// assignments IServ and WebUntis bring in ([providerIservDesc]).
   String get kindTask;
   String get kindTracker;
 
@@ -490,9 +501,9 @@ abstract class AppStrings {
   /// calendar. Plural where every other chip in that row is a name, because it
   /// stands for a whole kind of thing rather than for somebody.
   ///
-  /// The same word in both languages: "To-do" is what the Board calls one
-  /// ([kindTask]), in German as much as in English, and a chip reading
-  /// "Aufgaben" over rows that say "To-do" would be two names for one thing.
+  /// The same word in all four languages: "To-do" is what the Board calls one
+  /// ([kindTask]) everywhere, and a chip reading "Aufgaben" or "Tarefas" over
+  /// rows that say "To-do" would be two names for one thing.
   String get todosChip;
 
   /// The rail beside a to-do in the agenda, where an appointment prints its
@@ -926,6 +937,10 @@ abstract class AppStrings {
   String get shareLinkCreateFailed;
   String get linkRevokeFailed;
   String get guestRemoveFailed;
+  String shareListMessage(String name);
+  String get sharedOutsideTitle;
+  String openInvitations(int count, String? until);
+  String get sharedOutsideLabel;
 
   // ----------------------------------------------------------- visibility --
   String get forWhom;
@@ -1197,6 +1212,12 @@ abstract class AppStrings {
   String get homeTrackerSection;
   String get homeListsSection;
   String get homeShowAll;
+
+  /// What the tracker section says to a household that does not keep one yet.
+  /// It is the section's own empty state and the door to the Board, so it names
+  /// the kind of thing a tracker is rather than repeating the heading above it.
+  String get homeTrackerEmpty;
+  String get homeTrackerEmptyBody;
 
   /// How many articles on a shopping list are still unticked.
   String homeListOpenItems(int count);
@@ -1478,6 +1499,49 @@ abstract class AppStrings {
   String get spendCatHome;
   String get spendCatOther;
 
+  /// The search at the foot of the explore page, and the header button that
+  /// opens that page with it focused.
+  String get spendSearchPlaceholder;
+  String get spendSearchAction;
+
+  /// The four ways the explore page cuts the list.
+  String get spendViewAll;
+  String get spendViewMembers;
+  String get spendViewMerchants;
+  String get spendViewCategories;
+  String get spendNoMatches;
+  String get spendClearFilter;
+
+  /// Monthly budgets per category — the rings above the chart card.
+  ///
+  /// [spendBudget] is the singular, and it is the one word under the "+" at the
+  /// end of the strip — the only text left down there now that the rings
+  /// themselves carry none.
+  String get spendBudget;
+  String get spendBudgets;
+  String get spendBudgetAdd;
+  String get spendBudgetEdit;
+  String get spendBudgetPerMonth;
+  String get spendBudgetHint;
+  String spendBudgetLastMonth(String amount);
+  String get spendBudgetSaved;
+  String get spendBudgetDeleted;
+  String get spendBudgetSaveFailed;
+  String get spendBudgetNeedsAmount;
+
+  /// "620 € von 800 €".
+  String spendBudgetOf(String spent, String limit);
+  String spendBudgetLeft(String amount);
+  String spendBudgetOver(String amount);
+  String get spendBudgetOnTrack;
+
+  /// Under the limit, but spending faster than the month is passing.
+  String get spendBudgetAhead;
+  String get spendBudgetExceeded;
+
+  /// The label on the dashed budget line inside a chart — "Budget 800".
+  String spendBudgetLine(String amount);
+
   // --- Plus (entitlements & paywall) ------------------------------------
   //
   // The paywall's copy is keyed on the feature that was reached, so a new
@@ -1488,6 +1552,12 @@ abstract class AppStrings {
   String get plusPriceYearly;
   String get plusYearlySaving;
   String get plusTrialNote;
+
+  /// The price said in a sentence rather than shown on a tile — the paywall's
+  /// one line about what Plus costs. Takes [plusPriceMonthly] rather than
+  /// spelling the amount out again, so the price lives in exactly one member
+  /// per language.
+  String plusForOnly(String price);
   String get plusUpgrade;
   String get plusNotNow;
   String get plusRestore;
@@ -1495,6 +1565,10 @@ abstract class AppStrings {
   String plusActiveUntil(String date);
   String get plusDebugOverride;
 
+  /// **No count in this one.** How many accounts free includes is a number
+  /// that has already moved once (one → two, 2026-09-16) and lives in
+  /// `Entitlements._limits`; a heading that spells it out is a second copy of
+  /// it in four languages, wrong the next time the line moves.
   String get paywallCalendarsTitle;
   String get paywallCalendarsBody;
   String get paywallTrackersTitle;
@@ -1503,8 +1577,6 @@ abstract class AppStrings {
   String get paywallBoxesBody;
   String get paywallMembersTitle;
   String get paywallMembersBody;
-  String get paywallSharingTitle;
-  String get paywallSharingBody;
   String get paywallPhotosTitle;
   String get paywallPhotosBody;
   String get paywallSpendTitle;
@@ -1565,6 +1637,13 @@ abstract class AppStrings {
   String get plannerWhatToBuy;
   String plannerItemCount(int count);
   String get plannerHowTo;
+
+  /// The disclosure that folds the full method away on a cooking plan.
+  String get plannerRecipe;
+
+  /// The affiliate badge under an article on a non-grocery list, and the
+  /// Werbekennzeichnung that must ride beside it.
+  String get adLabel;
   String get plannerCreateList;
   String get plannerAgain;
   String get plannerEditGoal;

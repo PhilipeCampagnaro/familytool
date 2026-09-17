@@ -5,7 +5,6 @@ import '../theme/app_icons.dart';
 /// The idle ring colour Board and Listen already used for their unchecked
 /// rows — kept here so both screens draw the same circle.
 
-
 /// Whole "abhaken" gesture: strike, a short hold, then the collapse.
 const _checkOffDuration = Duration(milliseconds: 520);
 
@@ -155,7 +154,14 @@ class CheckOffButton extends StatelessWidget {
   final double size;
   final bool filled;
 
-  const CheckOffButton({super.key, required this.progress, required this.accent, required this.onTap, required this.size, this.filled = false});
+  const CheckOffButton({
+    super.key,
+    required this.progress,
+    required this.accent,
+    required this.onTap,
+    required this.size,
+    this.filled = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -219,7 +225,13 @@ class StrikeThrough extends StatelessWidget {
   final double thickness;
   final Widget child;
 
-  const StrikeThrough({super.key, required this.progress, required this.color, required this.child, this.thickness = 1.4});
+  const StrikeThrough({
+    super.key,
+    required this.progress,
+    required this.color,
+    required this.child,
+    this.thickness = 1.4,
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -209,18 +209,10 @@ class SearchGroupHeading extends StatelessWidget {
         children: [
           if (icon != null) ...[icon!, const SizedBox(width: 9)],
           Flexible(
-            child: Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: AppText.groupHeading,
-            ),
+            child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.groupHeading),
           ),
           const SizedBox(width: 8),
-          Text(
-            count,
-            style: AppText.label.copyWith(color: AppColors.mutedLight),
-          ),
+          Text(count, style: AppText.label.copyWith(color: AppColors.mutedLight)),
         ],
       ),
     );
@@ -275,7 +267,13 @@ class SearchResultRow extends StatelessWidget {
   final String subtitle;
   final VoidCallback onTap;
 
-  const SearchResultRow({super.key, required this.leading, required this.title, required this.subtitle, required this.onTap});
+  const SearchResultRow({
+    super.key,
+    required this.leading,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -292,18 +290,8 @@ class SearchResultRow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppText.itemTitle,
-                  ),
-                  Text(
-                    subtitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppText.label,
-                  ),
+                  Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.itemTitle),
+                  Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.label),
                 ],
               ),
             ),

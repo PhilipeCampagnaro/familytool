@@ -32,8 +32,10 @@ class CalendarConnectionsState {
 
   /// A household connects one Google account, not one per provider — but it may
   /// well connect two, so this returns all of them.
-  List<CalendarConnection> of(CalendarProvider provider) =>
-      [for (final c in connections) if (c.provider == provider) c];
+  List<CalendarConnection> of(CalendarProvider provider) => [
+    for (final c in connections)
+      if (c.provider == provider) c,
+  ];
 
   bool get anyNeedsAttention => connections.any((c) => c.needsAttention);
 
@@ -115,8 +117,7 @@ class CalendarConnectionsNotifier extends StateNotifier<CalendarConnectionsState
   /// What an already-connected account offers, for the picker step of the setup
   /// flow. Never throws and never touches the state: a listing that fails means
   /// "no picker", not "the connect failed" — see the repository.
-  Future<List<RemoteCalendar>> listCalendars(String connectionId) =>
-      _repo.listCalendars(connectionId);
+  Future<List<RemoteCalendar>> listCalendars(String connectionId) => _repo.listCalendars(connectionId);
 
   /// [displayName] is the name the user typed in the confirm sheet. It is
   /// applied before the list is re-read, so the new row appears already
@@ -135,15 +136,12 @@ class CalendarConnectionsNotifier extends StateNotifier<CalendarConnectionsState
     isFeed: true,
   );
 
-  Future<String?> connectIcs({
-    required String url,
-    required String label,
-    String? displayName,
-  }) async => _afterConnect(
-    await _repo.connectIcs(url: url, label: label),
-    displayName: displayName,
-    isFeed: true,
-  );
+  Future<String?> connectIcs({required String url, required String label, String? displayName}) async =>
+      _afterConnect(
+        await _repo.connectIcs(url: url, label: label),
+        displayName: displayName,
+        isFeed: true,
+      );
 
   /// Checks a pasted school-calendar link. Touches no state: this is the
   /// setup sheet asking whether the link works before it offers to keep it.
@@ -266,22 +264,14 @@ class CalendarConnectionsNotifier extends StateNotifier<CalendarConnectionsState
     List<String>? externalIds, {
     Map<String, String>? names,
   }) async {
-    await _repo.setCalendarSelection(
-      id: connectionId,
-      externalIds: externalIds,
-      names: names,
-    );
+    await _repo.setCalendarSelection(id: connectionId, externalIds: externalIds, names: names);
     await _settle();
   }
 
   /// Renames one calendar inside an account — the row the household sees in
   /// "Verbunden", which is a calendar rather than the account it arrived on.
   Future<void> renameCalendar(CalendarConnection connection, String externalId, String name) async {
-    await _repo.renameCalendar(
-      connection: connection,
-      externalId: externalId,
-      name: name,
-    );
+    await _repo.renameCalendar(connection: connection, externalId: externalId, name: name);
     await _settle();
   }
 
@@ -292,16 +282,8 @@ class CalendarConnectionsNotifier extends StateNotifier<CalendarConnectionsState
   /// which fans out across every account the household has connected, and a
   /// picker where each tap sits through that is a picker nobody plays with. What
   /// can fail is the update, and that is what the caller awaits.
-  Future<void> setCalendarColor(
-    CalendarConnection connection,
-    String? externalId,
-    int color,
-  ) async {
-    await _repo.setCalendarColor(
-      connection: connection,
-      externalId: externalId,
-      color: color,
-    );
+  Future<void> setCalendarColor(CalendarConnection connection, String? externalId, int color) async {
+    await _repo.setCalendarColor(connection: connection, externalId: externalId, color: color);
     unawaited(_settle());
   }
 
@@ -319,16 +301,8 @@ class CalendarConnectionsNotifier extends StateNotifier<CalendarConnectionsState
   /// times. What can actually fail is the update, and that is what the caller
   /// gets to await; the read behind it already swallows its own errors and
   /// repaints when it lands.
-  Future<void> setCalendarOwner(
-    CalendarConnection connection,
-    String? externalId,
-    String owner,
-  ) async {
-    await _repo.setCalendarOwner(
-      connection: connection,
-      externalId: externalId,
-      owner: owner,
-    );
+  Future<void> setCalendarOwner(CalendarConnection connection, String? externalId, String owner) async {
+    await _repo.setCalendarOwner(connection: connection, externalId: externalId, owner: owner);
     unawaited(_settle());
   }
 
@@ -344,10 +318,7 @@ class CalendarConnectionsNotifier extends StateNotifier<CalendarConnectionsState
     // dropping one is the function's job. Deselecting it here instead would
     // leave the link stored and the calendar waiting in the picker.
     if (connection.isLinked) {
-      await _repo.removeCalendarLink(
-        connectionId: connection.id,
-        externalId: externalId,
-      );
+      await _repo.removeCalendarLink(connectionId: connection.id, externalId: externalId);
       await _settle();
       return;
     }

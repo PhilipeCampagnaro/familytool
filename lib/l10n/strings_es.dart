@@ -210,7 +210,7 @@ class StringsEs extends AppStrings {
   @override
   String get navLists => 'Listas';
   @override
-  String get navBoard => 'Tablero';
+  String get navBoard => 'Board';
   @override
   String get navBox => 'Cajas';
   @override
@@ -218,13 +218,13 @@ class StringsEs extends AppStrings {
 
   // ---------------------------------------------------------------- board --
   @override
-  String get boardTitle => 'Tablero';
+  String get boardTitle => 'Board';
   @override
   String doneCountSeparator(int count) => 'Hechas · $count';
   @override
-  String get newTask => 'Nueva tarea';
+  String get newTask => 'Nuevo To-do';
   @override
-  String get editTask => 'Editar tarea';
+  String get editTask => 'Editar To-do';
   @override
   String get taskPlaceholder => '¿Qué hay que hacer?';
   @override
@@ -256,9 +256,9 @@ class StringsEs extends AppStrings {
   @override
   String get dueTimeNeedsDate => 'Elige antes una fecha';
   @override
-  String get theTask => 'la tarea';
+  String get theTask => 'el To-do';
   @override
-  String get deleteTask => 'Eliminar tarea';
+  String get deleteTask => 'Eliminar To-do';
   @override
   String get assigneeLabel => 'Asignada a';
   @override
@@ -280,7 +280,7 @@ class StringsEs extends AppStrings {
   @override
   String get newEntry => 'Nuevo';
   @override
-  String get kindTask => 'Tarea';
+  String get kindTask => 'To-do';
   @override
   String get kindTracker => 'Rutina';
   @override
@@ -319,7 +319,7 @@ class StringsEs extends AppStrings {
   @override
   String get trackersTitle => 'Rutinas';
   @override
-  String get tasksTitle => 'Tareas';
+  String get tasksTitle => 'To-dos';
   @override
   String weekProgressLabel(int done, int target) => '$done de $target esta semana';
   @override
@@ -375,31 +375,31 @@ class StringsEs extends AppStrings {
   @override
   String get trackerDeleted => 'Rutina eliminada';
   @override
-  String get noOpenTasks => 'No hay tareas pendientes';
+  String get noOpenTasks => 'No hay To-dos pendientes';
   @override
-  String get addTask => 'Añadir tarea';
+  String get addTask => 'Añadir To-do';
   @override
-  String get tasksLoadFailed => 'No se han podido cargar las tareas.';
+  String get tasksLoadFailed => 'No se han podido cargar los To-dos.';
   @override
-  String get taskSaveFailed => 'No se ha podido guardar la tarea.';
+  String get taskSaveFailed => 'No se ha podido guardar el To-do.';
   @override
   String get changeSaveFailed => 'No se ha podido guardar el cambio.';
   @override
   String get saveFailed => 'No se ha podido guardar.';
   @override
-  String get someDoneTasksNotDeleted => 'No se han podido eliminar todas las tareas hechas.';
+  String get someDoneTasksNotDeleted => 'No se han podido eliminar todos los To-dos hechos.';
   @override
-  String get doneTasksDeleteFailed => 'No se han podido eliminar las tareas hechas.';
+  String get doneTasksDeleteFailed => 'No se han podido eliminar los To-dos hechos.';
   @override
-  String get taskDeleteFailed => 'No se ha podido eliminar la tarea.';
+  String get taskDeleteFailed => 'No se ha podido eliminar el To-do.';
   @override
-  String get taskCreated => 'Tarea creada';
+  String get taskCreated => 'To-do creado';
   @override
-  String get taskUpdated => 'Tarea actualizada';
+  String get taskUpdated => 'To-do actualizado';
   @override
-  String get taskDeleted => 'Tarea eliminada';
+  String get taskDeleted => 'To-do eliminado';
   @override
-  String get taskRestoreFailed => 'No se ha podido restaurar la tarea.';
+  String get taskRestoreFailed => 'No se ha podido restaurar el To-do.';
 
   // ------------------------------------------------------------------ box --
   @override
@@ -615,7 +615,7 @@ class StringsEs extends AppStrings {
   @override
   String get noEventsThisDay => 'Ningún evento este día';
   @override
-  String get todosChip => 'Tareas';
+  String get todosChip => 'To-dos';
   @override
   String get dueRailLabel => 'Fecha';
   @override
@@ -657,7 +657,7 @@ class StringsEs extends AppStrings {
   @override
   String get createListFromEvent => 'Crear una lista para este evento';
   @override
-  String get createTaskFromEvent => 'Crear una tarea para este evento';
+  String get createTaskFromEvent => 'Crear un To-do para este evento';
   @override
   String get createForEvent => 'Crear';
   @override
@@ -673,7 +673,7 @@ class StringsEs extends AppStrings {
   @override
   String linkedListCount(int count) => count == 1 ? '1 lista' : '$count listas';
   @override
-  String linkedTaskCount(int count) => count == 1 ? '1 tarea' : '$count tareas';
+  String linkedTaskCount(int count) => count == 1 ? '1 To-do' : '$count To-dos';
   @override
   String get route => 'Ruta';
   @override
@@ -1149,6 +1149,22 @@ class StringsEs extends AppStrings {
   String get linkRevokeFailed => 'No se ha podido revocar el enlace.';
   @override
   String get guestRemoveFailed => 'No se ha podido quitar al invitado.';
+  @override
+  String shareListMessage(String name) => '“$name” en Aporah — entra con este enlace:';
+  @override
+  String get sharedOutsideTitle => 'Compartida con';
+  @override
+  String openInvitations(int count, String? until) {
+    if (count == 1) {
+      return until == null ? 'Invitación pendiente' : 'Invitación pendiente · válida hasta el $until';
+    }
+    return until == null
+        ? '$count invitaciones pendientes'
+        : '$count invitaciones pendientes · válidas hasta el $until';
+  }
+
+  @override
+  String get sharedOutsideLabel => 'Compartida con personas de fuera de la familia';
 
   // ----------------------------------------------------------- visibility --
   @override
@@ -1247,7 +1263,7 @@ class StringsEs extends AppStrings {
   @override
   String get nobodyInHouseholdYet =>
       'Todavía no hay nadie en el hogar.\nInvita a alguien para compartir listas, '
-      'tareas y eventos.';
+      'To-dos y eventos.';
   @override
   String get inviteMember => 'Invitar a alguien';
   @override
@@ -1474,7 +1490,7 @@ class StringsEs extends AppStrings {
   @override
   String assignCalendarBody(String calendar) =>
       '¿De quién es “$calendar”? El calendario pasará a aparecer bajo esa persona '
-      'en Calendario y en el Tablero.';
+      'en Calendario y en el Board.';
   @override
   String get assignCalendarFamilyHint => 'Es de todo el hogar';
   @override
@@ -1496,8 +1512,7 @@ class StringsEs extends AppStrings {
   @override
   String get renameFamily => 'Cambiar el nombre de la familia';
   @override
-  String get renameFamilyBody =>
-      'El nombre aparece en la pestaña de la familia en Calendario y en el Tablero.';
+  String get renameFamilyBody => 'El nombre aparece en la pestaña de la familia en Calendario y en el Board.';
   @override
   String get familyRenameFailed => 'No se ha podido cambiar el nombre.';
 
@@ -1528,9 +1543,9 @@ class StringsEs extends AppStrings {
   @override
   String get homeHintSetup => 'Configura Aporah para tu familia';
   @override
-  String get homeHintOverdue => 'Tareas fuera de plazo';
+  String get homeHintOverdue => 'To-dos fuera de plazo';
   @override
-  String get homeHintOpen => 'Tareas para hoy';
+  String get homeHintOpen => 'To-dos para hoy';
   @override
   String get homeHintTrackers => 'Aún sin marcar hoy';
   @override
@@ -1538,8 +1553,11 @@ class StringsEs extends AppStrings {
   @override
   String get homeHintDone => 'Ya no queda nada para hoy';
   @override
-  @override
   String get homeTrackerSection => 'Hoy toca';
+  @override
+  String get homeTrackerEmpty => 'Aún ninguna rutina';
+  @override
+  String get homeTrackerEmptyBody => 'Deporte, lectura, vitaminas — lo que hacéis a menudo.';
   @override
   String get homeListsSection => 'Listas';
   @override
@@ -1561,7 +1579,7 @@ class StringsEs extends AppStrings {
   @override
   String get firstStepFamilyBody => 'Para que todos vean lo mismo.';
   @override
-  String get firstStepTodo => 'Primera tarea';
+  String get firstStepTodo => 'Primer To-do';
   @override
   String get firstStepTodoBody => 'Algo que tenga que pasar esta semana.';
   @override
@@ -1896,6 +1914,60 @@ class StringsEs extends AppStrings {
   @override
   String get spendCatOther => 'Otros';
 
+  @override
+  String get spendSearchPlaceholder => 'Tienda, categoría, persona';
+  @override
+  String get spendSearchAction => 'Buscar gastos';
+  @override
+  String get spendViewAll => 'Todo';
+  @override
+  String get spendViewMembers => 'Personas';
+  @override
+  String get spendViewMerchants => 'Tiendas';
+  @override
+  String get spendViewCategories => 'Categorías';
+  @override
+  String get spendNoMatches => 'Ningún gasto coincide.';
+  @override
+  String get spendClearFilter => 'Quitar filtro';
+  @override
+  String get spendBudget => 'Presupuesto';
+  @override
+  String get spendBudgets => 'Presupuestos';
+  @override
+  String get spendBudgetAdd => 'Nuevo presupuesto';
+  @override
+  String get spendBudgetEdit => 'Editar presupuesto';
+  @override
+  String get spendBudgetPerMonth => 'Al mes';
+  @override
+  String get spendBudgetHint =>
+      '¿Cuánto puede costar esta categoría al mes? Los anillos muestran si vais bien.';
+  @override
+  String spendBudgetLastMonth(String amount) => 'El mes pasado: $amount';
+  @override
+  String get spendBudgetSaved => 'Presupuesto guardado';
+  @override
+  String get spendBudgetDeleted => 'Presupuesto eliminado';
+  @override
+  String get spendBudgetSaveFailed => 'No se pudo guardar el presupuesto';
+  @override
+  String get spendBudgetNeedsAmount => 'Introduce un importe';
+  @override
+  String spendBudgetOf(String spent, String limit) => '$spent de $limit';
+  @override
+  String spendBudgetLeft(String amount) => 'Quedan $amount';
+  @override
+  String spendBudgetOver(String amount) => '$amount por encima';
+  @override
+  String get spendBudgetOnTrack => 'Vas bien';
+  @override
+  String get spendBudgetAhead => 'Por encima del ritmo';
+  @override
+  String get spendBudgetExceeded => 'Presupuesto superado';
+  @override
+  String spendBudgetLine(String amount) => 'Presupuesto $amount';
+
   // ------------------------------------------------------ Plus (paywall) --
   @override
   String get plusName => 'Aporah Plus';
@@ -1907,6 +1979,9 @@ class StringsEs extends AppStrings {
   String get plusYearlySaving => 'Ahorras un 33%';
   @override
   String get plusTrialNote => 'Gratis 14 días. Cancela cuando quieras.';
+
+  @override
+  String plusForOnly(String price) => 'Por solo $price.';
   @override
   String get plusUpgrade => 'Conseguir Plus';
   @override
@@ -1921,12 +1996,9 @@ class StringsEs extends AppStrings {
   String get plusDebugOverride => 'Modo de prueba: el plan está simulado';
 
   @override
-  String get paywallCalendarsTitle => 'Más de un calendario';
+  String get paywallCalendarsTitle => 'Todos vuestros calendarios';
   @override
-  String get paywallCalendarsBody =>
-      'Con Plus puedes conectar tantos calendarios como necesites — la segunda '
-      'cuenta de Google, el Outlook del trabajo, el colegio a través de IServ o '
-      'WebUntis y cualquier enlace iCal. La semana de toda la familia en un sitio.';
+  String get paywallCalendarsBody => '¡Con Plus conectas tantos calendarios como necesites!';
   @override
   String get paywallTrackersTitle => 'Más rutinas';
   @override
@@ -1946,13 +2018,6 @@ class StringsEs extends AppStrings {
   String get paywallMembersBody =>
       'Hasta cuatro personas es gratis. Con Plus el hogar es tan grande como lo es '
       'de verdad — la abuela, la au pair, el tercer hijo.';
-  @override
-  String get paywallSharingTitle => 'Más elementos compartidos a la vez';
-  @override
-  String get paywallSharingBody =>
-      'Puede haber dos enlaces compartidos activos a la vez. Con Plus no hay '
-      'límite — la lista de la compra para el trabajo, la del campamento y la caja '
-      'para el vecino, todas a la vez.';
   @override
   String get paywallPhotosTitle => 'Fotos y archivos';
   @override
@@ -2031,6 +2096,10 @@ class StringsEs extends AppStrings {
   @override
   String get plannerHowTo => 'CÓMO SE HACE';
   @override
+  String get plannerRecipe => 'RECETA';
+  @override
+  String get adLabel => 'Publicidad';
+  @override
   String get plannerCreateList => 'Crear lista';
   @override
   String get plannerAgain => 'Preguntar otra vez';
@@ -2106,7 +2175,7 @@ class StringsEs extends AppStrings {
   @override
   String get notifyAbfallSubtitle => 'La noche antes de la recogida';
   @override
-  String get notifyTaskTimesTitle => 'Tareas con hora';
+  String get notifyTaskTimesTitle => 'To-dos con hora';
   @override
   String get notifyTaskTimesSubtitle => 'A la hora que pusiste';
   @override
@@ -2137,7 +2206,7 @@ class StringsEs extends AppStrings {
   @override
   String briefFirstAt(String time) => 'desde las $time';
   @override
-  String briefTasks(int count) => count == 1 ? '1 tarea pendiente' : '$count tareas pendientes';
+  String briefTasks(int count) => count == 1 ? '1 To-do pendiente' : '$count To-dos pendientes';
   @override
   String noticeAbfallTitle(String bins) => '¿Ya has sacado $bins?';
   @override

@@ -90,12 +90,8 @@ extension CalendarProviderMeta on CalendarProvider {
 
   ConnectKind get kind => switch (this) {
     CalendarProvider.google || CalendarProvider.outlook => ConnectKind.oauth,
-    CalendarProvider.icloud ||
-    CalendarProvider.gmx ||
-    CalendarProvider.webde => ConnectKind.password,
-    CalendarProvider.iserv ||
-    CalendarProvider.webuntis ||
-    CalendarProvider.ical => ConnectKind.link,
+    CalendarProvider.icloud || CalendarProvider.gmx || CalendarProvider.webde => ConnectKind.password,
+    CalendarProvider.iserv || CalendarProvider.webuntis || CalendarProvider.ical => ConnectKind.link,
     CalendarProvider.ferien || CalendarProvider.abfall => ConnectKind.feed,
   };
 
@@ -184,10 +180,8 @@ extension CalendarProviderMeta on CalendarProvider {
   /// exists once 2FA is on.
   String? get appPasswordUrl => switch (this) {
     CalendarProvider.icloud => 'https://appleid.apple.com/account/manage',
-    CalendarProvider.gmx =>
-      'https://hilfe.gmx.net/sicherheit/2fa/anwendungsspezifisches-passwort.html',
-    CalendarProvider.webde =>
-      'https://hilfe.web.de/sicherheit/2fa/anwendungsspezifisches-passwort.html',
+    CalendarProvider.gmx => 'https://hilfe.gmx.net/sicherheit/2fa/anwendungsspezifisches-passwort.html',
+    CalendarProvider.webde => 'https://hilfe.web.de/sicherheit/2fa/anwendungsspezifisches-passwort.html',
     _ => null,
   };
 
@@ -242,12 +236,7 @@ class RemoteCalendar {
   /// simply goes quiet and nothing on screen explains why.
   final DateTime? coversTo;
 
-  const RemoteCalendar({
-    required this.externalId,
-    required this.name,
-    this.readOnly = false,
-    this.coversTo,
-  });
+  const RemoteCalendar({required this.externalId, required this.name, this.readOnly = false, this.coversTo});
 
   static RemoteCalendar? fromMap(Map<String, dynamic> map) {
     final id = map['external_id'] as String?;
@@ -418,9 +407,7 @@ class CalendarConnection {
           // A picked calendar is always named by the sheet that picked it. The
           // fallback is for a row written by an older build, where showing the
           // account's name beats showing a CalDAV URL.
-          name: calendarNames[id]?.trim().isNotEmpty == true
-              ? calendarNames[id]!.trim()
-              : displayName,
+          name: calendarNames[id]?.trim().isNotEmpty == true ? calendarNames[id]!.trim() : displayName,
         ),
     ];
   }
@@ -462,8 +449,7 @@ class CalendarConnection {
     if (raw is! Map) return const {};
     return {
       for (final entry in raw.entries)
-        if (entry.key is String && entry.value is num)
-          entry.key as String: (entry.value as num).toInt(),
+        if (entry.key is String && entry.value is num) entry.key as String: (entry.value as num).toInt(),
     };
   }
 
@@ -471,8 +457,7 @@ class CalendarConnection {
     if (raw is! Map) return const {};
     return {
       for (final entry in raw.entries)
-        if (entry.key is String && entry.value is String)
-          entry.key as String: entry.value as String,
+        if (entry.key is String && entry.value is String) entry.key as String: entry.value as String,
     };
   }
 
@@ -566,13 +551,11 @@ class ConnectedCalendar {
   /// Falls back to the `'*'` entry the way [CalendarConnection.ownerOf] does:
   /// a connection that yields one calendar is coloured from the row that stands
   /// for the whole account.
-  int? get chosenColor =>
-      connection.calendarColors[externalId ?? '*'] ?? connection.calendarColors['*'];
+  int? get chosenColor => connection.calendarColors[externalId ?? '*'] ?? connection.calendarColors['*'];
 
   /// True when removing this row means disconnecting the whole account: either
   /// it stands for the connection, or it is the last calendar left on it.
-  bool get isWholeConnection =>
-      externalId == null || (connection.selectedCalendars?.length ?? 0) <= 1;
+  bool get isWholeConnection => externalId == null || (connection.selectedCalendars?.length ?? 0) <= 1;
 }
 
 // ---------------------------------------------------------------------------

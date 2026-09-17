@@ -5,12 +5,12 @@
 /// alone, and that is the right trade for them: a household that hacks its way
 /// to a fourth Box costs us nothing and would not have paid anyway. The ones
 /// that are re-checked here are the ones with somebody else's bill behind them
-/// — a second connected calendar is a provider quota, an Edge Function
+/// — another connected calendar is a provider quota, an Edge Function
 /// invocation every refresh and egress on every event it returns.
 ///
 /// This is cheap to enforce because of a decision made long before any of it
 /// was about money: **`authenticated` holds no INSERT grant on
-/// `calendar_connections`, `public_feeds`, `family_feeds` or `share_links`.**
+/// `calendar_connections`, `public_feeds` or `family_feeds`.**
 /// Every one of them is created by a function that first proved the thing
 /// works, so there is exactly one place per resource where the count can be
 /// checked, and no PostgREST call that goes around it.
@@ -32,15 +32,15 @@ export type Plan = "free" | "plus";
 /// rather than a silent hole.
 const LIMITS: Record<
   Plan,
-  { calendarAccounts: number | null; shareLinks: number | null; listPlansPerMonth: number | null }
+  { calendarAccounts: number | null; listPlansPerMonth: number | null }
 > = {
-  free: { calendarAccounts: 1, shareLinks: 2, listPlansPerMonth: 3 },
+  free: { calendarAccounts: 2, listPlansPerMonth: 3 },
   // **The first non-null number in the Plus column, on purpose.** Every other
   // Plus value is unlimited because unlimited costs us nothing; a Vorhaben is a
   // paid model call, and thirty a month is a plan every day that no household
   // reaches — it is the ceiling that stops one scripted client spending somebody
   // else's money. See "The recommendation" in docs/list-planner.md.
-  plus: { calendarAccounts: null, shareLinks: null, listPlansPerMonth: 30 },
+  plus: { calendarAccounts: null, listPlansPerMonth: 30 },
 };
 
 /// Apple's billing retry runs up to 16 days and Google's up to 30, and a
@@ -80,11 +80,11 @@ export async function planOf(db: SupabaseClient, familyId: string): Promise<Plan
 /// **A reconnect is always allowed, and getting this wrong would be worse than
 /// having no limit at all.** All three connect routes `upsert` on
 /// `(family_id, provider, external_account)`, so repairing an expired token
-/// writes no new row — but a naive count would see one connection against a
-/// limit of one and refuse it. A free household would then be locked out of the
-/// single calendar they are entitled to, by the button whose whole job is
-/// getting them back in. So the account being connected is named here, and an
-/// account that already exists is a repair rather than an addition.
+/// writes no new row — but a naive count would see the household already at
+/// its limit and refuse it. A free household would then be locked out of a
+/// calendar they are entitled to, by the button whose whole job is getting them
+/// back in. So the account being connected is named here, and an account that
+/// already exists is a repair rather than an addition.
 export async function canAddCalendarAccount(
   db: SupabaseClient,
   familyId: string,
@@ -106,32 +106,6 @@ export async function canAddCalendarAccount(
     .from("calendar_connections")
     .select("id", { count: "exact", head: true })
     .eq("family_id", familyId);
-
-  return (count ?? 0) < limit;
-}
-
-/// Whether this household may mint another share link.
-///
-/// **Live links, not links ever made.** Revoked and expired ones do not count,
-/// so a free household that shares a list, revokes it and shares another never
-/// meets the limit — which is the behaviour the growth argument for capping
-/// rather than closing this depends on. A link is live when it has not been
-/// revoked and has not expired; `max_uses` is deliberately not consulted,
-/// because a link that has been used up can still be looked at by the guests
-/// who already redeemed it.
-export async function canAddShareLink(
-  db: SupabaseClient,
-  familyId: string,
-): Promise<boolean> {
-  const limit = LIMITS[await planOf(db, familyId)].shareLinks;
-  if (limit === null) return true;
-
-  const { count } = await db
-    .from("share_links")
-    .select("id", { count: "exact", head: true })
-    .eq("family_id", familyId)
-    .is("revoked_at", null)
-    .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`);
 
   return (count ?? 0) < limit;
 }

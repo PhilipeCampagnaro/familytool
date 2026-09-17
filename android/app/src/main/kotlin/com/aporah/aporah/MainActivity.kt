@@ -31,6 +31,10 @@ class MainActivity : FlutterActivity() {
             .setMethodCallHandler { call, result ->
                 AppReviewChannel.handle(this, call, result)
             }
+        MethodChannel(messenger, ShareChannel.NAME)
+            .setMethodCallHandler { call, result ->
+                ShareChannel.handle(this, call, result)
+            }
     }
 
     override fun onRequestPermissionsResult(

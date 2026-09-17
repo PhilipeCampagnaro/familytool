@@ -45,9 +45,7 @@ class ArticleQuantity {
   const ArticleQuantity(this.text, {this.amount, this.unit});
 
   /// The line said nothing about a count.
-  const ArticleQuantity.none(this.text)
-      : amount = null,
-        unit = null;
+  const ArticleQuantity.none(this.text) : amount = null, unit = null;
 }
 
 /// The unit words, in both interface languages, mapped onto the stored keys.
@@ -162,7 +160,11 @@ ArticleQuantity parseArticleQuantity(String input, {required bool grocery}) {
     if (rest != null) {
       final parsed = _unitWords[unit.group(2)!]!;
       // Stück is the default and is stored as nothing — see [GroceryUnit].
-      return ArticleQuantity(rest, amount: unit.group(1), unit: parsed == GroceryUnit.piece ? null : parsed.key);
+      return ArticleQuantity(
+        rest,
+        amount: unit.group(1),
+        unit: parsed == GroceryUnit.piece ? null : parsed.key,
+      );
     }
   }
 

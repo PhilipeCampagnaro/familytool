@@ -99,7 +99,11 @@ class SpendRange {
   factory SpendRange.custom(DateTime firstDay, DateTime lastDay) {
     final from = _midnight(firstDay);
     final to = _midnight(lastDay).add(const Duration(days: 1));
-    return SpendRange(period: SpendPeriod.custom, from: from, to: to.isAfter(from) ? to : from.add(const Duration(days: 1)));
+    return SpendRange(
+      period: SpendPeriod.custom,
+      from: from,
+      to: to.isAfter(from) ? to : from.add(const Duration(days: 1)),
+    );
   }
 
   /// The same stretch immediately before this one, for the comparison line.
@@ -108,11 +112,7 @@ class SpendRange {
   /// one: February against January is the comparison a household means, and
   /// subtracting 31 days from 1 March lands on 29 January.
   SpendRange get previous => switch (period) {
-    SpendPeriod.week => SpendRange(
-      period: period,
-      from: from.subtract(const Duration(days: 7)),
-      to: from,
-    ),
+    SpendPeriod.week => SpendRange(period: period, from: from.subtract(const Duration(days: 7)), to: from),
     SpendPeriod.month => SpendRange(period: period, from: DateTime(from.year, from.month - 1), to: from),
     SpendPeriod.halfYear => SpendRange(period: period, from: DateTime(from.year, from.month - 6), to: from),
     SpendPeriod.year => SpendRange(period: period, from: DateTime(from.year - 1), to: from),
@@ -349,8 +349,7 @@ class SpendSummary {
   /// in. The bar chart draws this as its dashed line.
   int get averagePerUnitCents => (totalCents / elapsedUnits).round();
 
-  int get averagePerTransactionCents =>
-      transactionCount == 0 ? 0 : (totalCents / transactionCount).round();
+  int get averagePerTransactionCents => transactionCount == 0 ? 0 : (totalCents / transactionCount).round();
 
   /// The biggest bucket, for scaling a bar chart. Never zero, so a caller can
   /// divide by it without guarding.
@@ -393,6 +392,7 @@ SpendSummary summariseRange(
   List<Spend> all,
   SpendRange range, {
   SpendMetric metric = SpendMetric.all,
+
   /// Null keeps every shop. The page's card shows a handful and its "alle
   /// anzeigen" page shows the lot, and both read the same fold — a cap here
   /// would mean the full list was a different list rather than more of the
@@ -455,10 +455,10 @@ SpendSummary summariseRange(
     budgetCents: budget,
     extraCents: extra,
     buckets: bucketise(rows, range),
-    previousBuckets: bucketise(
-      [for (final s in all) if (previousRange.contains(s.occurredAt) && metric.accepts(s)) s],
-      previousRange,
-    ),
+    previousBuckets: bucketise([
+      for (final s in all)
+        if (previousRange.contains(s.occurredAt) && metric.accepts(s)) s,
+    ], previousRange),
     needsReview: review,
   );
 }
@@ -477,9 +477,11 @@ List<SpendBucket> bucketise(List<Spend> rows, SpendRange range) {
       edges.add(at);
     }
   } else {
-    for (var at = DateTime(range.from.year, range.from.month);
-        at.isBefore(range.to);
-        at = DateTime(at.year, at.month + 1)) {
+    for (
+      var at = DateTime(range.from.year, range.from.month);
+      at.isBefore(range.to);
+      at = DateTime(at.year, at.month + 1)
+    ) {
       edges.add(at);
     }
   }

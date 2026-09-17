@@ -46,12 +46,7 @@ class FamilyAvatarButton extends ConsumerStatefulWidget {
   final double size;
   final Color? ringColor;
 
-  const FamilyAvatarButton({
-    super.key,
-    required this.canEdit,
-    this.size = 40,
-    this.ringColor,
-  });
+  const FamilyAvatarButton({super.key, required this.canEdit, this.size = 40, this.ringColor});
 
   @override
   ConsumerState<FamilyAvatarButton> createState() => _FamilyAvatarButtonState();

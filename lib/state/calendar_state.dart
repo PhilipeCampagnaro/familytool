@@ -102,8 +102,8 @@ class CalendarScreenState {
     this.openEvent,
     this.openEventDateLine = '',
     DateTime? now,
-  })  : now = now ?? DateTime.now(),
-        selected = selected ?? _todaySelected();
+  }) : now = now ?? DateTime.now(),
+       selected = selected ?? _todaySelected();
 
   static CalSelectedDay _todaySelected() {
     final t = calToday();
@@ -160,7 +160,10 @@ class CalendarScreenState {
         seen.add(e.calendarId);
       }
     }
-    return [for (final c in calendars) if (seen.contains(c.id)) c];
+    return [
+      for (final c in calendars)
+        if (seen.contains(c.id)) c,
+    ];
   }
 
   CalendarSource? sourceById(String? id) {
@@ -180,8 +183,10 @@ class CalendarScreenState {
   /// 'aporah'` row — and it is gone both times over. The app has no calendar of
   /// its own, so a household with nothing connected is told to connect one
   /// rather than offered a destination that lives nowhere but here.
-  List<CalendarSource> get writableCalendars =>
-      [for (final c in calendars) if (c.editable) c];
+  List<CalendarSource> get writableCalendars => [
+    for (final c in calendars)
+      if (c.editable) c,
+  ];
 
   /// Where a new event goes unless the user says otherwise, and null when the
   /// household has nowhere to put one yet.
@@ -190,14 +195,16 @@ class CalendarScreenState {
   /// connected accounts contribute — so the form shows the whole list with this
   /// one ticked rather than filing anything silently. A first appointment landing
   /// unseen in somebody's work calendar is the surprise worth avoiding here.
-  CalendarSource? get defaultTarget =>
-      writableCalendars.isEmpty ? null : writableCalendars.first;
+  CalendarSource? get defaultTarget => writableCalendars.isEmpty ? null : writableCalendars.first;
 
   List<CalendarEvent> eventsFor(int y, int m, int d) {
     final all = eventsByDay[key(y, m, d)] ?? const <CalendarEvent>[];
     final filter = calendarFilter;
     if (filter == null) return all;
-    return [for (final e in all) if (filter.contains(e.calendarId)) e];
+    return [
+      for (final e in all)
+        if (filter.contains(e.calendarId)) e,
+    ];
   }
 
   /// The loaded event a list or a task points back at, or null.
@@ -242,9 +249,7 @@ class CalendarScreenState {
   /// The cross-account picker starts from this rather than from [calendars]:
   /// a calendar with nothing in the loaded window has no row to tick, so
   /// leaving it out of a hand-picked filter would hide it with no way back.
-  Set<String> get pickableCalendarIds => {
-        for (final g in activeGroups) ...g.ids,
-      };
+  Set<String> get pickableCalendarIds => {for (final g in activeGroups) ...g.ids};
 
   String get calendarFilterKey {
     final filter = calendarFilter;
@@ -293,11 +298,13 @@ class CalendarScreenState {
       final at = byId[src.groupId];
       if (at == null) {
         byId[src.groupId] = out.length;
-        out.add(CalendarGroup(
-          id: src.groupId,
-          name: src.groupName.isEmpty ? src.name : src.groupName,
-          calendars: [src],
-        ));
+        out.add(
+          CalendarGroup(
+            id: src.groupId,
+            name: src.groupName.isEmpty ? src.name : src.groupName,
+            calendars: [src],
+          ),
+        );
       } else {
         out[at] = out[at].withCalendar(src);
       }
@@ -328,9 +335,7 @@ class CalendarScreenState {
   /// a day looks at a glance, and that is a question about events, not about how
   /// many calendars they happen to be spread across. The cells cap the row and
   /// turn the rest into a "+" badge, so a heavy day stays the same width.
-  List<Color> dayColors(int y, int m, int d) => [
-        for (final e in eventsFor(y, m, d)) e.srcColor,
-      ];
+  List<Color> dayColors(int y, int m, int d) => [for (final e in eventsFor(y, m, d)) e.srcColor];
 
   /// Whether the household subscribed to a Schulferien feed at all — which is
   /// what decides whether the month grid's legend mentions Ferien. Nobody needs
@@ -387,12 +392,12 @@ const kPickedCalendarFilterId = '__picked__';
 
 class CalendarNotifier extends StateNotifier<CalendarScreenState> {
   CalendarNotifier(this._repo, {required bool signedIn, FamilyChannel? channel})
-      // `channel` is the public name and `_channel` the private field. Dart
-      // forbids an underscore in a named parameter, so an initializing formal
-      // is not available here.
-      // ignore: prefer_initializing_formals
-      : _channel = channel,
-        super(CalendarScreenState(now: DateTime.now())) {
+    // `channel` is the public name and `_channel` the private field. Dart
+    // forbids an underscore in a named parameter, so an initializing formal
+    // is not available here.
+    // ignore: prefer_initializing_formals
+    : _channel = channel,
+      super(CalendarScreenState(now: DateTime.now())) {
     if (signedIn) load();
     // Ticks the real-time clock so the agenda's timeline phase (done/live/
     // upcoming) advances on its own instead of only updating on interaction.
@@ -479,10 +484,7 @@ class CalendarNotifier extends StateNotifier<CalendarScreenState> {
       // Nothing is cleared here on purpose: whatever the cache put on screen
       // stays there, and only the banner changes. That is the whole reason
       // CalendarRepository._external throws rather than returning empty lists.
-      state = state.copyWith(
-        loaded: true,
-        error: silent ? null : L.s.calendarLoadFailed,
-      );
+      state = state.copyWith(loaded: true, error: silent ? null : L.s.calendarLoadFailed);
     } finally {
       _inFlight = null;
     }
@@ -875,9 +877,7 @@ class CalendarNotifier extends StateNotifier<CalendarScreenState> {
 
   void setCalendarFilter(Set<String> calendarIds) {
     final current = state.calendarFilter;
-    final same = current != null &&
-        current.length == calendarIds.length &&
-        current.containsAll(calendarIds);
+    final same = current != null && current.length == calendarIds.length && current.containsAll(calendarIds);
     state = state.copyWith(
       calendarFilter: same ? null : calendarIds,
       clearCalendarFilter: same || calendarIds.isEmpty,
@@ -1016,9 +1016,7 @@ class CalendarNotifier extends StateNotifier<CalendarScreenState> {
     // have failed on anyway.
     final target = state.sourceById(clean.calendarId);
     if (target == null) {
-      return _failed(
-        clean.calendarId.isEmpty ? L.s.noWritableCalendar : L.s.calendarNoLongerAvailable,
-      );
+      return _failed(clean.calendarId.isEmpty ? L.s.noWritableCalendar : L.s.calendarNoLongerAvailable);
     }
 
     final provisional = _provisional(clean, target);
@@ -1251,10 +1249,6 @@ final calendarProvider = StateNotifierProvider<CalendarNotifier, CalendarScreenS
     signedIn: userId != null,
     channel: ref.watch(familyChannelProvider),
   );
-  reloadOnFamilyChange(
-    ref,
-    const {CalendarNotifier.kCalendarTopic},
-    notifier.refreshFromElsewhere,
-  );
+  reloadOnFamilyChange(ref, const {CalendarNotifier.kCalendarTopic}, notifier.refreshFromElsewhere);
   return notifier;
 });

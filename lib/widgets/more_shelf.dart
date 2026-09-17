@@ -82,12 +82,7 @@ class MoreShelf extends StatefulWidget {
 
   final ValueChanged<MoreSection> onPick;
 
-  const MoreShelf({
-    super.key,
-    required this.open,
-    required this.current,
-    required this.onPick,
-  });
+  const MoreShelf({super.key, required this.open, required this.current, required this.onPick});
 
   @override
   State<MoreShelf> createState() => _MoreShelfState();
@@ -240,8 +235,7 @@ class _MoreShelfState extends State<MoreShelf> with SingleTickerProviderStateMix
   /// wobble.
   bool get _closing => _controller.status == AnimationStatus.reverse;
 
-  double _riseCurve(double u) =>
-      _closing ? Curves.easeInCubic.transform(u) : Curves.easeOutBack.transform(u);
+  double _riseCurve(double u) => _closing ? Curves.easeInCubic.transform(u) : Curves.easeOutBack.transform(u);
 
   double _fadeCurve(double u) =>
       _closing ? Curves.easeInCubic.transform(u) : Curves.easeOutCubic.transform(u);
@@ -267,25 +261,27 @@ class _MoreShelfState extends State<MoreShelf> with SingleTickerProviderStateMix
             children: [
               for (var i = 0; i < entries.length; i++) ...[
                 if (i > 0) const SizedBox(height: kMoreShelfSpacing),
-                Builder(builder: (context) {
-                  final u = _raw(i);
-                  final label = ((u - _labelDelay) / (1 - _labelDelay)).clamp(0.0, 1.0);
-                  return Opacity(
-                    opacity: _fadeCurve(u).clamp(0.0, 1.0),
-                    child: Transform.translate(
-                      // `easeOutBack` passes 1 and comes back, so this goes
-                      // negative for a moment: the button rises a little past
-                      // where it lands and settles onto it.
-                      offset: Offset(0, (1 - _riseCurve(u)) * _rise),
-                      child: _ShelfButton(
-                        entry: entries[i],
-                        selected: widget.current == entries[i].section,
-                        reveal: _fadeCurve(label).clamp(0.0, 1.0),
-                        onTap: () => widget.onPick(entries[i].section),
+                Builder(
+                  builder: (context) {
+                    final u = _raw(i);
+                    final label = ((u - _labelDelay) / (1 - _labelDelay)).clamp(0.0, 1.0);
+                    return Opacity(
+                      opacity: _fadeCurve(u).clamp(0.0, 1.0),
+                      child: Transform.translate(
+                        // `easeOutBack` passes 1 and comes back, so this goes
+                        // negative for a moment: the button rises a little past
+                        // where it lands and settles onto it.
+                        offset: Offset(0, (1 - _riseCurve(u)) * _rise),
+                        child: _ShelfButton(
+                          entry: entries[i],
+                          selected: widget.current == entries[i].section,
+                          reveal: _fadeCurve(label).clamp(0.0, 1.0),
+                          onTap: () => widget.onPick(entries[i].section),
+                        ),
                       ),
-                    ),
-                  );
-                }),
+                    );
+                  },
+                ),
               ],
             ],
           ),
@@ -453,12 +449,7 @@ class _ShelfButtonState extends State<_ShelfButton> {
                   child: SizedBox(
                     width: kCompactNavSize,
                     height: kCompactNavSize,
-                    child: AppIcon(
-                      widget.entry.icon,
-                      size: kNavRowIconSize,
-                      color: color,
-                      flat: true,
-                    ),
+                    child: AppIcon(widget.entry.icon, size: kNavRowIconSize, color: color, flat: true),
                   ),
                 ),
               ),

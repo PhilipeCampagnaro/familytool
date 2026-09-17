@@ -169,7 +169,12 @@ class _FallbackSearchField extends StatefulWidget {
   /// [NativeSearchFieldStyle.field].
   final bool fill;
 
-  const _FallbackSearchField({required this.placeholder, required this.onChanged, this.autofocus = false, this.fill = false});
+  const _FallbackSearchField({
+    required this.placeholder,
+    required this.onChanged,
+    this.autofocus = false,
+    this.fill = false,
+  });
 
   @override
   State<_FallbackSearchField> createState() => _FallbackSearchFieldState();
@@ -187,7 +192,10 @@ class _FallbackSearchFieldState extends State<_FallbackSearchField> {
   @override
   Widget build(BuildContext context) {
     final pill = DecoratedBox(
-      decoration: BoxDecoration(color: AppColors.surfaceAlt, borderRadius: BorderRadius.circular(AppRadii.chip)),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceAlt,
+        borderRadius: BorderRadius.circular(AppRadii.chip),
+      ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 15),
         child: Row(
@@ -234,6 +242,9 @@ class _FallbackSearchFieldState extends State<_FallbackSearchField> {
     // Filling means taking the row's height; otherwise the pill keeps the
     // native bar's own metrics so both variants lay out alike.
     if (widget.fill) return pill;
-    return SizedBox(height: kNativeSearchFieldHeight, child: Center(child: pill));
+    return SizedBox(
+      height: kNativeSearchFieldHeight,
+      child: Center(child: pill),
+    );
   }
 }

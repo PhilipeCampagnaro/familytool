@@ -73,10 +73,7 @@ Future<List<PlaceSuggestion>> searchPlaces({required String query, String? near}
     });
     return [
       for (final row in rows ?? const <Map<Object?, Object?>>[])
-        PlaceSuggestion(
-          name: row['title'] as String? ?? '',
-          address: row['subtitle'] as String? ?? '',
-        ),
+        PlaceSuggestion(name: row['title'] as String? ?? '', address: row['subtitle'] as String? ?? ''),
     ];
   } on PlatformException {
     return const [];

@@ -94,12 +94,13 @@ const _minSlotMinutes = 20;
 List<_PlacedBlock> _placeBlocks(List<_TimedEntry> entries) {
   if (entries.isEmpty) return const [];
 
-  final sorted = [...entries]..sort((a, b) {
-    final byStart = a.from.compareTo(b.from);
-    // Longest first among equal starts, so the appointment that shapes the
-    // group takes the leftmost column and the short ones fill in beside it.
-    return byStart != 0 ? byStart : b.slotTo.compareTo(a.slotTo);
-  });
+  final sorted = [...entries]
+    ..sort((a, b) {
+      final byStart = a.from.compareTo(b.from);
+      // Longest first among equal starts, so the appointment that shapes the
+      // group takes the leftmost column and the short ones fill in beside it.
+      return byStart != 0 ? byStart : b.slotTo.compareTo(a.slotTo);
+    });
 
   final out = <_PlacedBlock>[];
   var group = <_TimedEntry>[];
@@ -391,36 +392,38 @@ class _HourGridState extends ConsumerState<_HourGrid> with SingleTickerProviderS
               for (var i = 0; i < hours; i++)
                 _HourLabel(top: i * _hour, label: _hourLabel(widget.fromHour + i), gutter: _gutter),
               for (var i = 0; i < widget.blocks.length; i++)
-                Builder(builder: (context) {
-                  final placed = widget.blocks[i];
-                  final column = trackWidth / placed.columns;
-                  final top = y(placed.entry.from);
-                  final height = math.max(_minBlockHeight, y(placed.entry.slotTo) - top);
-                  return Positioned(
-                    top: top,
-                    left: trackLeft + placed.column * column,
-                    width: math.max(0.0, column * placed.span - _blockGap),
-                    height: height,
-                    child: AnimatedBuilder(
-                      animation: _entrance,
-                      builder: (context, child) {
-                        final t = _stagger(_entrance.value, i, widget.blocks.length);
-                        return Opacity(
-                          opacity: t,
-                          child: Transform.translate(offset: Offset(0, 10 * (1 - t)), child: child),
-                        );
-                      },
-                      child: _DayBlock(
-                        entry: placed.entry,
-                        headingText: widget.headingText,
-                        accent: widget.accent,
-                        now: now,
-                        height: height,
-                        width: math.max(0.0, column * placed.span - _blockGap),
+                Builder(
+                  builder: (context) {
+                    final placed = widget.blocks[i];
+                    final column = trackWidth / placed.columns;
+                    final top = y(placed.entry.from);
+                    final height = math.max(_minBlockHeight, y(placed.entry.slotTo) - top);
+                    return Positioned(
+                      top: top,
+                      left: trackLeft + placed.column * column,
+                      width: math.max(0.0, column * placed.span - _blockGap),
+                      height: height,
+                      child: AnimatedBuilder(
+                        animation: _entrance,
+                        builder: (context, child) {
+                          final t = _stagger(_entrance.value, i, widget.blocks.length);
+                          return Opacity(
+                            opacity: t,
+                            child: Transform.translate(offset: Offset(0, 10 * (1 - t)), child: child),
+                          );
+                        },
+                        child: _DayBlock(
+                          entry: placed.entry,
+                          headingText: widget.headingText,
+                          accent: widget.accent,
+                          now: now,
+                          height: height,
+                          width: math.max(0.0, column * placed.span - _blockGap),
+                        ),
                       ),
-                    ),
-                  );
-                }),
+                    );
+                  },
+                ),
               if (showNow)
                 Positioned(
                   top: y(nowMinutes) - 4,
@@ -644,7 +647,11 @@ class _NowLine extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Container(width: 8, height: 8, decoration: BoxDecoration(color: accent, shape: BoxShape.circle)),
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(color: accent, shape: BoxShape.circle),
+        ),
         Expanded(child: Container(height: 1.5, color: accent)),
       ],
     );
@@ -663,7 +670,10 @@ class _NowLine extends StatelessWidget {
 Color _blockInk(Color c) {
   final hsl = HSLColor.fromColor(c);
   return AppColors.isDark
-      ? hsl.withLightness(hsl.lightness.clamp(0.68, 0.86)).withSaturation(math.min(hsl.saturation, 0.7)).toColor()
+      ? hsl
+            .withLightness(hsl.lightness.clamp(0.68, 0.86))
+            .withSaturation(math.min(hsl.saturation, 0.7))
+            .toColor()
       : hsl.withLightness(math.min(hsl.lightness, _inkLightness)).toColor();
 }
 
@@ -695,10 +705,8 @@ const _inkLightness = 0.26;
 /// gave it a grey — iCloud does, for "Familie" — is a pale grey chip on a grey
 /// card, and nothing is left to rescue it. The household picking its own colour
 /// is what fixes that, and it is queued as 2d in the production plan.
-BoxDecoration _blockChip(Color c, {double radius = 10}) => BoxDecoration(
-      color: _blockFill(c),
-      borderRadius: BorderRadius.circular(radius),
-    );
+BoxDecoration _blockChip(Color c, {double radius = 10}) =>
+    BoxDecoration(color: _blockFill(c), borderRadius: BorderRadius.circular(radius));
 
 /// A to-do's chip: **outlined where an appointment is filled.**
 ///
@@ -709,10 +717,10 @@ BoxDecoration _blockChip(Color c, {double radius = 10}) => BoxDecoration(
 /// means "a calendar's", outlined means "the Board's" — the shape carries the
 /// difference the colour no longer has to.
 BoxDecoration _todoChip({double radius = 10}) => BoxDecoration(
-      color: AppColors.surface,
-      borderRadius: BorderRadius.circular(radius),
-      border: Border.all(color: AppColors.idleRing, width: 1),
-    );
+  color: AppColors.surface,
+  borderRadius: BorderRadius.circular(radius),
+  border: Border.all(color: AppColors.idleRing, width: 1),
+);
 
 /// The chip's fill: the calendar's colour lightened, **not mixed with white**.
 ///
@@ -780,7 +788,14 @@ class _DayBlock extends StatelessWidget {
   final double height;
   final double width;
 
-  const _DayBlock({required this.entry, required this.headingText, required this.accent, required this.now, required this.height, required this.width});
+  const _DayBlock({
+    required this.entry,
+    required this.headingText,
+    required this.accent,
+    required this.now,
+    required this.height,
+    required this.width,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -811,7 +826,13 @@ class _EventBlock extends ConsumerWidget {
   final double height;
   final double width;
 
-  const _EventBlock({required this.event, required this.headingText, required this.now, required this.height, required this.width});
+  const _EventBlock({
+    required this.event,
+    required this.headingText,
+    required this.now,
+    required this.height,
+    required this.width,
+  });
 
   /// Below this the block's padding tightens, which is the only thing height
   /// decides directly — how many lines it holds is worked out in [_detailLines].
@@ -872,10 +893,8 @@ class _EventBlock extends ConsumerWidget {
   /// accessibility scale is the text again, exactly as it should be. Only the
   /// *first* line is this tall; a title that wraps adds plain [_titleLine]s
   /// under it.
-  static double _titleRow(BuildContext context, double beside) => math.max(
-        MediaQuery.textScalerOf(context).scale(_titleLine),
-        beside,
-      );
+  static double _titleRow(BuildContext context, double beside) =>
+      math.max(MediaQuery.textScalerOf(context).scale(_titleLine), beside);
 
   /// How many lines the name may wrap onto.
   ///
@@ -898,8 +917,7 @@ class _EventBlock extends ConsumerWidget {
     double beside,
   ) {
     final scale = MediaQuery.textScalerOf(context);
-    final spare =
-        height - pad * 2 - _titleRow(context, beside) - reserve - drawn * scale.scale(_detailLine);
+    final spare = height - pad * 2 - _titleRow(context, beside) - reserve - drawn * scale.scale(_detailLine);
     final extra = spare <= 0 ? 0 : spare ~/ scale.scale(_titleLine);
     return (1 + extra).clamp(1, _maxTitleLines);
   }
@@ -958,11 +976,11 @@ class _EventBlock extends ConsumerWidget {
 
   /// One of the lines under the title.
   Widget _detailText(String line, Color ink) => Text(
-        line,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: AppText.microLabel.copyWith(color: ink.withValues(alpha: 0.66), height: 1.25),
-      );
+    line,
+    maxLines: 1,
+    overflow: TextOverflow.ellipsis,
+    style: AppText.microLabel.copyWith(color: ink.withValues(alpha: 0.66), height: 1.25),
+  );
 
   /// The name, with the repeat mark set *inside* it, wrapping onto as many
   /// lines as [_titleLines] found room for.
@@ -975,31 +993,31 @@ class _EventBlock extends ConsumerWidget {
   /// the first *character* of the title: line two starts at the block's left
   /// edge, under the mark, where the eye is already looking.
   Widget _title(Color ink, int maxLines, {required bool mark}) => Text.rich(
-        TextSpan(
-          children: [
-            if (mark)
-              WidgetSpan(
-                // Centred on the line it opens, not on the run of text under
-                // it — the mark belongs to the first line.
-                alignment: PlaceholderAlignment.middle,
-                child: Padding(
-                  padding: const EdgeInsets.only(right: 5),
-                  child: _RepeatPageMark(ink: ink),
-                ),
-              ),
-            TextSpan(text: event.title),
-          ],
-        ),
-        maxLines: maxLines,
-        overflow: TextOverflow.ellipsis,
-        // **[AppText.label] at w600 — the all-day chip's own type, exactly.**
-        // The band and the grid are one surface read in one glance, and a name
-        // two points larger down here made the band look like a caption over
-        // the real thing. Smaller also buys the blocks what they are always
-        // short of: a 15-point title left a half-hour block room for its name
-        // and nothing else.
-        style: AppText.label.copyWith(color: ink, fontWeight: FontWeight.w600, height: 1.15),
-      );
+    TextSpan(
+      children: [
+        if (mark)
+          WidgetSpan(
+            // Centred on the line it opens, not on the run of text under
+            // it — the mark belongs to the first line.
+            alignment: PlaceholderAlignment.middle,
+            child: Padding(
+              padding: const EdgeInsets.only(right: 5),
+              child: _RepeatPageMark(ink: ink),
+            ),
+          ),
+        TextSpan(text: event.title),
+      ],
+    ),
+    maxLines: maxLines,
+    overflow: TextOverflow.ellipsis,
+    // **[AppText.label] at w600 — the all-day chip's own type, exactly.**
+    // The band and the grid are one surface read in one glance, and a name
+    // two points larger down here made the band look like a caption over
+    // the real thing. Smaller also buys the blocks what they are always
+    // short of: a 15-point title left a half-hour block room for its name
+    // and nothing else.
+    style: AppText.label.copyWith(color: ink, fontWeight: FontWeight.w600, height: 1.15),
+  );
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -1040,8 +1058,9 @@ class _EventBlock extends ConsumerWidget {
     // with it, halfway up a block of empty colour. The row is reserved out of
     // the height first, so the lines above end above it.
     final wantsMarks = kinds > 0 || event.repeats;
-    final reserve =
-        wantsMarks && height - pad * 2 - _titleRow(context, besideTitle) >= _markRow ? _markRow : 0.0;
+    final reserve = wantsMarks && height - pad * 2 - _titleRow(context, besideTitle) >= _markRow
+        ? _markRow
+        : 0.0;
 
     final lines = _detailLines(context, event, height, width, pad, reserve, besideTitle);
     // With no floor to stand on, a repeating appointment says so in its title —
@@ -1213,12 +1232,9 @@ class _RepeatPageMark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => _CalendarPageMark(
-        ink: ink,
-        face: CustomPaint(
-          size: const Size(_RepeatDots.width, _RepeatDots.height),
-          painter: _RepeatDots(ink),
-        ),
-      );
+    ink: ink,
+    face: CustomPaint(size: const Size(_RepeatDots.width, _RepeatDots.height), painter: _RepeatDots(ink)),
+  );
 }
 
 /// The dates on the recurrence page: two rows of three, in the page's own ink.
@@ -1307,27 +1323,27 @@ class _BlockWeather extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(
-            width: box,
-            height: box,
-            child: OverflowBox(
-              maxWidth: _art,
-              maxHeight: _art,
-              child: SvgPicture.asset(reading.iconAsset, width: _art, height: _art),
-            ),
-          ),
-          // Three rather than two: the widest drawings reach a point past the
-          // box on each side, and the degrees must not be what they land on.
-          const SizedBox(width: 3),
-          Text(
-            reading.temperatureLabel,
-            maxLines: 1,
-            style: AppText.microLabel.copyWith(color: ink.withValues(alpha: 0.66), height: 1.25),
-          ),
-        ],
-      );
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      SizedBox(
+        width: box,
+        height: box,
+        child: OverflowBox(
+          maxWidth: _art,
+          maxHeight: _art,
+          child: SvgPicture.asset(reading.iconAsset, width: _art, height: _art),
+        ),
+      ),
+      // Three rather than two: the widest drawings reach a point past the
+      // box on each side, and the degrees must not be what they land on.
+      const SizedBox(width: 3),
+      Text(
+        reading.temperatureLabel,
+        maxLines: 1,
+        style: AppText.microLabel.copyWith(color: ink.withValues(alpha: 0.66), height: 1.25),
+      ),
+    ],
+  );
 }
 
 /// What a household hung off this appointment: the shopping list, the to-do.
@@ -1367,19 +1383,15 @@ class _LinkBadges extends StatelessWidget {
     final tint = ink.withValues(alpha: 0.66);
 
     Widget badge(IconData icon, String label) => Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AppIcon(icon, size: AppGlyph.inline, color: tint),
-            if (labelled) ...[
-              const SizedBox(width: 3),
-              Text(
-                label,
-                maxLines: 1,
-                style: AppText.microLabel.copyWith(color: tint, height: 1.25),
-              ),
-            ],
-          ],
-        );
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        AppIcon(icon, size: AppGlyph.inline, color: tint),
+        if (labelled) ...[
+          const SizedBox(width: 3),
+          Text(label, maxLines: 1, style: AppText.microLabel.copyWith(color: tint, height: 1.25)),
+        ],
+      ],
+    );
 
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -1486,13 +1498,8 @@ class _Unbounded extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ClipRect(
-        child: OverflowBox(
-          alignment: Alignment.topLeft,
-          minHeight: 0,
-          maxHeight: double.infinity,
-          child: child,
-        ),
-      );
+    child: OverflowBox(alignment: Alignment.topLeft, minHeight: 0, maxHeight: double.infinity, child: child),
+  );
 }
 
 /// Whether one calendar takes writes — Ferien, Abfall and a read-only provider
@@ -1502,9 +1509,7 @@ class _Unbounded extends StatelessWidget {
 /// block on the grid asks this, and the answer changes when a connection does,
 /// not when the clock ticks.
 final _editableProvider = Provider.family<bool, String>(
-  (ref, calendarId) => ref.watch(
-    calendarProvider.select((s) => s.sourceById(calendarId)?.editable ?? false),
-  ),
+  (ref, calendarId) => ref.watch(calendarProvider.select((s) => s.sourceById(calendarId)?.editable ?? false)),
 );
 
 /// Everything true of the whole day, above the clock: the Feiertag, the all-day
@@ -1678,7 +1683,9 @@ class _AllDayPill extends ConsumerWidget {
     // does with its confetti. The same glyphs their tiles wear in Settings
     // (`CalendarProvider.icon`), so a bin day reads as the Abfall calendar the
     // family connected rather than as one more appointment.
-    final feedKind = ref.watch(calendarProvider.select((s) => s.sourceById(event.calendarId)?.feedKind ?? ''));
+    final feedKind = ref.watch(
+      calendarProvider.select((s) => s.sourceById(event.calendarId)?.feedKind ?? ''),
+    );
     final feedIcon = switch (feedKind) {
       'abfall' => AppIcons.recycle,
       'ferien' => AppIcons.graduationCap,
@@ -1703,7 +1710,10 @@ class _AllDayPill extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              SizedBox(width: _accentBar, child: ColoredBox(color: event.srcColor)),
+              SizedBox(
+                width: _accentBar,
+                child: ColoredBox(color: event.srcColor),
+              ),
               Flexible(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(9, 6, 12, 6),
@@ -1757,17 +1767,22 @@ class _DayPageMark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => _CalendarPageMark(
-        ink: ink,
-        face: Text(
-          '$day',
-          // A glyph rather than text: at an accessibility scale the number
-          // would break out of the page long before it helped anybody read it,
-          // and the chip's own label beside it is what does scale.
-          textScaler: TextScaler.noScaling,
-          maxLines: 1,
-          style: TextStyle(fontSize: _CalendarPageMark.faceText, fontWeight: FontWeight.w700, color: ink, height: 1),
-        ),
-      );
+    ink: ink,
+    face: Text(
+      '$day',
+      // A glyph rather than text: at an accessibility scale the number
+      // would break out of the page long before it helped anybody read it,
+      // and the chip's own label beside it is what does scale.
+      textScaler: TextScaler.noScaling,
+      maxLines: 1,
+      style: TextStyle(
+        fontSize: _CalendarPageMark.faceText,
+        fontWeight: FontWeight.w700,
+        color: ink,
+        height: 1,
+      ),
+    ),
+  );
 }
 
 /// The page both of the day's calendar marks are drawn on: a bound, a border,

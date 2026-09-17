@@ -4,8 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/icon_suggestions.dart';
+import '../../data/spend_analysis.dart';
 import '../../l10n/l10n.dart';
 import '../../models/spend.dart';
+import '../../models/spend_budget.dart';
 import '../../state/family_state.dart';
 import '../../state/spend_state.dart';
 import '../../theme/app_icons.dart';
@@ -13,6 +16,7 @@ import '../../theme/tokens.dart';
 import '../../widgets/anchored_menu.dart';
 import '../../widgets/app_sheet.dart';
 import '../../widgets/glass.dart';
+import '../../widgets/icon_picker.dart';
 import '../../widgets/settings_chrome.dart';
 import '../../widgets/segmented_control.dart';
 import '../../widgets/toast_chip.dart';
@@ -144,7 +148,11 @@ class _SpendDetailBody extends ConsumerWidget {
         // the shop is what it was for.
         Center(child: SpendMark(size: 54, merchant: live.merchant)),
         const SizedBox(height: 14),
-        Text(formatMoney(live.amountCents, currency: live.currency), textAlign: TextAlign.center, style: AppText.screenTitle),
+        Text(
+          formatMoney(live.amountCents, currency: live.currency),
+          textAlign: TextAlign.center,
+          style: AppText.screenTitle,
+        ),
         const SizedBox(height: 4),
         Text(
           live.merchant,
@@ -161,10 +169,7 @@ class _SpendDetailBody extends ConsumerWidget {
         ),
         const SizedBox(height: 18),
 
-        if (live.needsReview) ...[
-          _ReviewNote(),
-          const SizedBox(height: 12),
-        ],
+        if (live.needsReview) ...[_ReviewNote(), const SizedBox(height: 12)],
 
         SectionCard(
           children: [
@@ -328,14 +333,14 @@ Future<bool> showSpendSheet(BuildContext context, WidgetRef ref, {Spend? spend})
 /// `_EventForm` and `IconDraft` use.
 class _SpendDraft {
   _SpendDraft(this.original)
-      : merchant = TextEditingController(text: original?.merchant ?? ''),
-        amount = TextEditingController(
-          text: original == null ? '' : formatMoney(original.amountCents, withSymbol: false),
-        ),
-        note = TextEditingController(text: original?.note ?? ''),
-        date = original?.occurredAt ?? DateTime.now(),
-        category = original?.category,
-        kind = original?.kind ?? SpendKind.budget;
+    : merchant = TextEditingController(text: original?.merchant ?? ''),
+      amount = TextEditingController(
+        text: original == null ? '' : formatMoney(original.amountCents, withSymbol: false),
+      ),
+      note = TextEditingController(text: original?.note ?? ''),
+      date = original?.occurredAt ?? DateTime.now(),
+      category = original?.category,
+      kind = original?.kind ?? SpendKind.budget;
 
   /// The row being corrected, or null on a fresh payment.
   final Spend? original;
@@ -605,7 +610,10 @@ int? parseAmountCents(String input) {
 class _AmountField extends StatelessWidget {
   final TextEditingController controller;
 
-  const _AmountField({required this.controller});
+  /// What the row is called. Null is a payment's "Betrag".
+  final String? label;
+
+  const _AmountField({required this.controller, this.label});
 
   @override
   Widget build(BuildContext context) {
@@ -613,7 +621,7 @@ class _AmountField extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
-          Text(L.s.spendAmount, style: AppText.rowTitle),
+          Text(label ?? L.s.spendAmount, style: AppText.rowTitle),
           const SizedBox(width: 16),
           Expanded(
             child: TextField(
@@ -686,7 +694,17 @@ class _CategoryField extends StatelessWidget {
   final SpendCategory? value;
   final ValueChanged<SpendCategory?> onChanged;
 
-  const _CategoryField({required this.anchorKey, required this.value, required this.onChanged});
+  /// Offers "automatisch" as the first row. A payment's form does — the
+  /// database names the category from the shop — and a budget's does not, since
+  /// a budget is always about one category somebody chose.
+  final bool allowAuto;
+
+  const _CategoryField({
+    required this.anchorKey,
+    required this.value,
+    required this.onChanged,
+    this.allowAuto = true,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -697,12 +715,13 @@ class _CategoryField extends StatelessWidget {
         anchorKey: anchorKey,
         title: L.s.spendCategory,
         items: [
-          AnchoredMenuItem(
-            label: L.s.spendCategoryAuto,
-            icon: AppIcons.sparkle,
-            symbol: 'wand.and.stars',
-            onSelected: () => onChanged(null),
-          ),
+          if (allowAuto)
+            AnchoredMenuItem(
+              label: L.s.spendCategoryAuto,
+              icon: AppIcons.sparkle,
+              symbol: 'wand.and.stars',
+              onSelected: () => onChanged(null),
+            ),
           for (final category in SpendCategory.values)
             AnchoredMenuItem(
               label: category.label,
@@ -726,6 +745,234 @@ class _CategoryField extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Setting a budget
+// ---------------------------------------------------------------------------
+
+/// Sets or changes the monthly budget for one category.
+///
+/// Two fields: which category and how much a month. The category is fixed on an
+/// existing budget — moving 800 € from groceries to fuel is a different budget, and
+/// deleting one and adding the other says that more honestly than an edit.
+/// Picking a category that already has a budget on a *new* sheet loads its amount,
+/// so the save lands on that budget rather than bouncing off the database's
+/// one-per-category rule.
+Future<void> showBudgetSheet(
+  BuildContext context,
+  WidgetRef ref, {
+  SpendBudget? budget,
+  SpendCategory? category,
+}) {
+  final state = ref.read(spendProvider);
+  final start =
+      budget?.category ??
+      category ??
+      SpendCategory.values.firstWhere(
+        (c) => state.budgetFor(c) == null,
+        orElse: () => SpendCategory.groceries,
+      );
+  final draft = _BudgetDraft(original: budget ?? state.budgetFor(start), category: start);
+
+  return showAppSheet<void>(
+    context: context,
+    heightFactor: 0.62,
+    header: _BudgetHeader(draft: draft),
+    child: _BudgetForm(draft: draft),
+  ).whenComplete(
+    // A beat after the pop: the body is still reading the controller while the
+    // route animates out. Same arrangement as [_SpendDraft].
+    () => Future<void>.delayed(const Duration(milliseconds: 500), draft.dispose),
+  );
+}
+
+class _BudgetDraft {
+  _BudgetDraft({required this.original, required this.category})
+    : amount = TextEditingController(
+        text: original == null ? '' : formatMoney(original.amountCents, withSymbol: false),
+      ),
+      iconAsset = original?.iconAsset;
+
+  /// The budget being changed, or the one already set for [category].
+  SpendBudget? original;
+  SpendCategory category;
+  final TextEditingController amount;
+  final ValueNotifier<bool> saving = ValueNotifier(false);
+
+  /// The symbol the ring will wear, or null for the category's own glyph —
+  /// which is what makes the strip legible now that it carries no text. Null
+  /// is stored as null; see [SpendBudget.iconAsset].
+  String? iconAsset;
+
+  /// Whether the sheet was opened on a budget, which is what locks the
+  /// category.
+  late final bool editing = original != null;
+
+  void dispose() {
+    amount.dispose();
+    saving.dispose();
+  }
+}
+
+class _BudgetHeader extends ConsumerWidget {
+  final _BudgetDraft draft;
+
+  const _BudgetHeader({required this.draft});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return ValueListenableBuilder<bool>(
+      valueListenable: draft.saving,
+      builder: (context, saving, _) => SheetActionHeader(
+        title: draft.editing ? L.s.spendBudgetEdit : L.s.spendBudgetAdd,
+        action: saving ? SheetHeaderAction.busy : SheetHeaderAction.confirm,
+        requiredField: draft.amount,
+        onConfirm: () => _saveBudget(context, ref, draft),
+      ),
+    );
+  }
+}
+
+Future<void> _saveBudget(BuildContext context, WidgetRef ref, _BudgetDraft draft) async {
+  if (draft.saving.value) return;
+
+  final cents = parseAmountCents(draft.amount.text);
+  if (cents == null || cents == 0) {
+    confirmChipOf(context, kind: ToastKind.error)(L.s.spendBudgetNeedsAmount);
+    return;
+  }
+
+  final navigator = Navigator.of(context);
+  // Nothing typed and nothing picked: leave without a write, the way every
+  // other sheet does.
+  if (draft.original?.amountCents == cents && draft.original?.iconAsset == draft.iconAsset) {
+    navigator.pop();
+    return;
+  }
+
+  final confirm = confirmChipOf(context);
+  final failed = confirmChipOf(context, kind: ToastKind.error);
+  draft.saving.value = true;
+  final saved = await ref
+      .read(spendProvider.notifier)
+      .saveBudget(draft.category, cents, iconAsset: draft.iconAsset);
+
+  navigator.pop();
+  saved ? confirm(L.s.spendBudgetSaved) : failed(L.s.spendBudgetSaveFailed);
+}
+
+class _BudgetForm extends ConsumerStatefulWidget {
+  final _BudgetDraft draft;
+
+  const _BudgetForm({required this.draft});
+
+  @override
+  ConsumerState<_BudgetForm> createState() => _BudgetFormState();
+}
+
+class _BudgetFormState extends ConsumerState<_BudgetForm> {
+  final _categoryAnchor = GlobalKey();
+
+  _BudgetDraft get _draft => widget.draft;
+
+  /// What the category came to last month, when the loaded rows reach that
+  /// far — the one number that makes a budget a decision rather than a guess.
+  int? _lastMonthCents(SpendState state) {
+    final previous = SpendRange.of(SpendPeriod.month).previous;
+    if (previous.from.isBefore(state.windowFrom) || previous.to.isAfter(state.windowTo)) return null;
+    var sum = 0;
+    for (final s in state.spends) {
+      if (s.category == _draft.category && previous.contains(s.occurredAt)) sum += s.amountCents;
+    }
+    return sum == 0 ? null : sum;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = ref.watch(spendProvider);
+    final lastMonth = _lastMonthCents(state);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionCard(
+          children: [
+            IgnorePointer(
+              ignoring: _draft.editing,
+              child: _CategoryField(
+                anchorKey: _categoryAnchor,
+                value: _draft.category,
+                allowAuto: false,
+                onChanged: (value) => setState(() {
+                  if (value == null) return;
+                  _draft.category = value;
+                  _draft.original = state.budgetFor(value);
+                  _draft.amount.text = _draft.original == null
+                      ? ''
+                      : formatMoney(_draft.original!.amountCents, withSymbol: false);
+                  // The symbol follows the category until somebody picks one:
+                  // switching from Tanken to Drogerie and keeping the pump is
+                  // not a choice anybody made.
+                  _draft.iconAsset = _draft.original?.iconAsset;
+                }),
+              ),
+            ),
+            CardDivider(),
+            _AmountField(controller: _draft.amount, label: L.s.spendBudgetPerMonth),
+            CardDivider(),
+            // What the ring shows, and — since the strip dropped its labels —
+            // the only thing that says which budget it is. The fallback is the
+            // category's own glyph, so the row is never empty and a household
+            // that never opens it still gets a picture.
+            IconFieldRow(
+              iconKey: _draft.iconAsset,
+              fallbackIcon: _draft.category.icon,
+              onTap: () async {
+                final picked = await showIconPicker(
+                  context,
+                  selected: _draft.iconAsset,
+                  // The category's name, so the picker opens on the symbol it
+                  // would have guessed for "Lebensmittel" rather than on
+                  // nothing — the same courtesy a typed list name gets.
+                  name: _draft.category.label,
+                  subject: IconSubject.budget,
+                );
+                if (picked != null && mounted) setState(() => _draft.iconAsset = picked);
+              },
+            ),
+          ],
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(4, 10, 4, 0),
+          child: Text(
+            [
+              L.s.spendBudgetHint,
+              if (lastMonth != null) L.s.spendBudgetLastMonth(formatMoneyShort(lastMonth)),
+            ].join('\n'),
+            style: AppText.body.copyWith(color: AppColors.inkSecondary),
+          ),
+        ),
+        if (_draft.editing) ...[
+          const SizedBox(height: 18),
+          OutlinedSheetAction(
+            icon: AppIcons.trash,
+            label: L.s.delete,
+            destructive: true,
+            onTap: () async {
+              final confirm = confirmChipOf(context);
+              final navigator = Navigator.of(context);
+              final notifier = ref.read(spendProvider.notifier);
+              navigator.pop();
+              if (await notifier.deleteBudget(_draft.original!.id) case final deleted?) {
+                confirm(L.s.spendBudgetDeleted, undo: () => notifier.undoDeleteBudget(deleted));
+              }
+            },
+          ),
+        ],
+      ],
     );
   }
 }
@@ -786,17 +1033,13 @@ class WalletSetupCard extends ConsumerWidget {
         children: [
           SettingsRow(
             icon: AppIcons.wallet,
-            title: intents.usesNotificationAccess
-                ? L.s.spendWalletAndroidTitle
-                : L.s.spendWalletTitle,
+            title: intents.usesNotificationAccess ? L.s.spendWalletAndroidTitle : L.s.spendWalletTitle,
             subtitle: intents.usesNotificationAccess
                 ? L.s.spendWalletAndroidInactive
                 : L.s.spendWalletInactive,
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => WalletCapturePage(parentTitle: L.s.spendTitle),
-              ),
-            ),
+            onTap: () => Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => WalletCapturePage(parentTitle: L.s.spendTitle))),
           ),
         ],
       ),

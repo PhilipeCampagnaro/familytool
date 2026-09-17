@@ -136,12 +136,24 @@ WhoMeta whoBadge({
   }
 
   return switch (visibility) {
-    ItemVisibility.private =>
-      WhoMeta(label: L.s.onlyMe, bg: AppColors.nurIchBg, fg: AppColors.nurIchFg, icon: AppIcons.lock),
-    ItemVisibility.custom =>
-      WhoMeta(label: L.s.selected, bg: AppColors.alleBg, fg: AppColors.alleFg, icon: AppIcons.userCheck),
-    ItemVisibility.family =>
-      WhoMeta(label: L.s.everyone, bg: AppColors.alleBg, fg: AppColors.alleFg, icon: AppIcons.users),
+    ItemVisibility.private => WhoMeta(
+      label: L.s.onlyMe,
+      bg: AppColors.nurIchBg,
+      fg: AppColors.nurIchFg,
+      icon: AppIcons.lock,
+    ),
+    ItemVisibility.custom => WhoMeta(
+      label: L.s.selected,
+      bg: AppColors.alleBg,
+      fg: AppColors.alleFg,
+      icon: AppIcons.userCheck,
+    ),
+    ItemVisibility.family => WhoMeta(
+      label: L.s.everyone,
+      bg: AppColors.alleBg,
+      fg: AppColors.alleFg,
+      icon: AppIcons.users,
+    ),
   };
 }
 

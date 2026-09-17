@@ -17,11 +17,22 @@ import '../theme/app_icons.dart';
 /// shape (e.g. a read-only detail view with no save action) — everything
 /// else (backdrop, grab handle, outer chrome, scrolling body container)
 /// still comes from this one shared widget.
+///
+/// **[footer] pins an action to the foot of the sheet** and lets the body
+/// scroll under it — for a sheet whose whole point is one button (the
+/// paywall's "Plus holen"), where a button that scrolls out of sight is a
+/// button that does not exist. Everything else keeps the plain scrolling body,
+/// because for a form the *fields* are the point and a bar over them only
+/// takes room away. Wrap it in a [PinnedActionBar] so the content dissolves
+/// into it rather than being cut by a line; the footer is laid out edge to
+/// edge, so it brings its own padding.
 Future<T?> showAppSheet<T>({
   required BuildContext context,
   String? title,
   Widget? header,
   required Widget child,
+  Widget? footer,
+  bool scrollBody = true,
   FutureOr<void> Function()? onSave,
   TextEditingController? requiredField,
   FocusNode? requiredFocus,
@@ -43,6 +54,8 @@ Future<T?> showAppSheet<T>({
       builder: (ctx) => _AppSheetBody(
         title: title,
         header: header,
+        footer: footer,
+        scrollBody: scrollBody,
         onSave: onSave,
         requiredField: requiredField,
         requiredFocus: requiredFocus,
@@ -89,7 +102,11 @@ class CollapsingSliverHeaderDelegate extends SliverPersistentHeaderDelegate {
   final double collapsedHeight;
   final Widget Function(BuildContext context, double t) builder;
 
-  const CollapsingSliverHeaderDelegate({required this.expandedHeight, required this.collapsedHeight, required this.builder});
+  const CollapsingSliverHeaderDelegate({
+    required this.expandedHeight,
+    required this.collapsedHeight,
+    required this.builder,
+  });
 
   @override
   double get minExtent => collapsedHeight;
@@ -126,7 +143,11 @@ class SheetCollapsingHeader {
   final double collapsedHeight;
   final Widget Function(BuildContext context, double t) builder;
 
-  const SheetCollapsingHeader({required this.expandedHeight, required this.collapsedHeight, required this.builder});
+  const SheetCollapsingHeader({
+    required this.expandedHeight,
+    required this.collapsedHeight,
+    required this.builder,
+  });
 }
 
 /// How far a covered sheet scales back, and how much of it is left showing
@@ -216,7 +237,9 @@ class _CoveredSheetState extends State<_CoveredSheet> {
         // which would have to be owned and disposed to keep from leaking its
         // status listener. Same pair of curves the Cupertino sheet uses in
         // each direction.
-        final curve = animation.status == AnimationStatus.reverse ? Curves.easeInToLinear : Curves.linearToEaseOut;
+        final curve = animation.status == AnimationStatus.reverse
+            ? Curves.easeInToLinear
+            : Curves.linearToEaseOut;
         final t = curve.transform(animation.value.clamp(0.0, 1.0));
         final front = widget.frontHeight() ?? _front;
         if (front != null) _front = front;
@@ -311,6 +334,8 @@ class _SaveButton extends StatelessWidget {
 class _AppSheetBody extends StatefulWidget {
   final String? title;
   final Widget? header;
+  final Widget? footer;
+  final bool scrollBody;
   final FutureOr<void> Function()? onSave;
   final TextEditingController? requiredField;
   final FocusNode? requiredFocus;
@@ -321,6 +346,8 @@ class _AppSheetBody extends StatefulWidget {
   const _AppSheetBody({
     required this.title,
     required this.header,
+    required this.footer,
+    required this.scrollBody,
     required this.onSave,
     required this.requiredField,
     required this.requiredFocus,
@@ -429,16 +456,19 @@ class _AppSheetBodyState extends State<_AppSheetBody> {
                 // though only one side carries the accent button.
                 padding: const EdgeInsets.symmetric(horizontal: _headerButtonSize + 14),
                 child: Center(
-                  child: Text(widget.title!, textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.sheetTitle),
+                  child: Text(
+                    widget.title!,
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppText.sheetTitle,
+                  ),
                 ),
               ),
             ),
             Align(
               alignment: Alignment.centerLeft,
-              child: GlassIconButton(
-                icon: AppIcons.x,
-                onTap: () => Navigator.of(context).pop(),
-              ),
+              child: GlassIconButton(icon: AppIcons.x, onTap: () => Navigator.of(context).pop()),
             ),
             Align(
               alignment: Alignment.centerRight,
@@ -478,6 +508,22 @@ class _AppSheetBodyState extends State<_AppSheetBody> {
     // Flutter approximation, so there is no platform view being transformed.
     final covered = ModalRoute.of(context)?.secondaryAnimation;
 
+    // **A body that scrolls, unless the sheet is a picture.** Almost every
+    // sheet here is a form or a list and wants the scroll: it can be any
+    // height, and the keyboard takes half the screen from it. A paywall is the
+    // other kind — a fixed set of things that has to *fit*, with one of them
+    // (the device shot) willing to be whatever size is left. Handed a scroll
+    // view, that one has no idea how much is left, so it guesses; the guess
+    // was 20 points out and quietly pushed the last line under the footer.
+    // Without one, the child is given the sheet's own bounded height and an
+    // `Expanded` answers the question exactly.
+    final body = widget.scrollBody
+        ? SingleChildScrollView(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [widget.child]),
+          )
+        : widget.child;
+
+    final footer = widget.footer;
     final grayBody = Container(
       // `width: double.infinity` is load-bearing: the enclosing Column centers
       // its children (loose width constraints), so without it the gray panel
@@ -488,15 +534,31 @@ class _AppSheetBodyState extends State<_AppSheetBody> {
       width: double.infinity,
       // The keyboard inset goes on the container rather than inside the scroll
       // view, so the gray still paints all the way down behind the keyboard
-      // while the part that scrolls stops above it.
-      padding: EdgeInsets.fromLTRB(18, 18, 18, 28 + keyboard),
+      // while the part that scrolls stops above it. With a [footer] the same
+      // padding moves onto the two children instead — the bar has to reach the
+      // sheet's left and right edges for its fade to cover the content sliding
+      // under it, and it is the bar rather than the body that the keyboard has
+      // to push up.
+      padding: footer == null ? EdgeInsets.fromLTRB(18, 18, 18, 28 + keyboard) : EdgeInsets.zero,
       decoration: BoxDecoration(
         color: AppColors.screenBg,
         borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
       ),
-      child: SingleChildScrollView(
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [widget.child]),
-      ),
+      child: footer == null
+          ? body
+          : Column(
+              children: [
+                // Expanded, so the bar is at the foot of the *sheet* rather
+                // than under the last line of a body that happens to be short.
+                Expanded(
+                  child: Padding(padding: const EdgeInsets.fromLTRB(18, 18, 18, 0), child: body),
+                ),
+                Padding(
+                  padding: EdgeInsets.only(bottom: keyboard),
+                  child: footer,
+                ),
+              ],
+            ),
     );
 
     return SheetCountdown(
@@ -566,7 +628,9 @@ class _AppSheetBodyState extends State<_AppSheetBody> {
                         )
                       else ...[
                         widget.header ?? _defaultHeader(context),
-                        Expanded(child: Container(margin: const EdgeInsets.only(top: 14), child: grayBody)),
+                        Expanded(
+                          child: Container(margin: const EdgeInsets.only(top: 14), child: grayBody),
+                        ),
                       ],
                     ],
                   ),
@@ -787,10 +851,7 @@ class SheetActionHeader extends StatelessWidget {
             if (action == SheetHeaderAction.confirm || action == SheetHeaderAction.close)
               Align(
                 alignment: Alignment.centerLeft,
-                child: GlassIconButton(
-                  icon: closeIcon,
-                  onTap: onClose ?? () => Navigator.of(context).pop(),
-                ),
+                child: GlassIconButton(icon: closeIcon, onTap: onClose ?? () => Navigator.of(context).pop()),
               ),
             Align(
               alignment: Alignment.centerRight,
@@ -807,8 +868,10 @@ class SheetActionHeader extends StatelessWidget {
                     child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
                   ),
                 ),
-                SheetHeaderAction.none ||
-                SheetHeaderAction.close => const SizedBox(width: _headerButtonSize, height: _headerButtonSize),
+                SheetHeaderAction.none || SheetHeaderAction.close => const SizedBox(
+                  width: _headerButtonSize,
+                  height: _headerButtonSize,
+                ),
               },
             ),
           ],
@@ -915,10 +978,7 @@ class OutlinedSheetAction extends StatelessWidget {
           children: [
             AppIcon(icon, size: AppGlyph.row, color: color, flat: true),
             const SizedBox(width: 9),
-            Text(
-              label,
-              style: AppText.rowTitle.copyWith(color: color),
-            ),
+            Text(label, style: AppText.rowTitle.copyWith(color: color)),
           ],
         ),
       ),
@@ -941,10 +1001,8 @@ class InsetDivider extends StatelessWidget {
   const InsetDivider({super.key});
 
   @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 18),
-        child: CardDivider(),
-      );
+  Widget build(BuildContext context) =>
+      Padding(padding: const EdgeInsets.symmetric(horizontal: 18), child: CardDivider());
 }
 
 /// [rows] with a divider dropped between every neighbouring pair — the body of
@@ -956,8 +1014,5 @@ class InsetDivider extends StatelessWidget {
 /// keeps rendering it flush against the first. Passing an empty list yields an
 /// empty card rather than a stray rule.
 List<Widget> dividedRows(List<Widget> rows, {bool inset = false}) => [
-      for (var i = 0; i < rows.length; i++) ...[
-        if (i > 0) inset ? InsetDivider() : CardDivider(),
-        rows[i],
-      ],
-    ];
+  for (var i = 0; i < rows.length; i++) ...[if (i > 0) inset ? InsetDivider() : CardDivider(), rows[i]],
+];

@@ -653,7 +653,12 @@ class _GlassIconGroupState extends State<GlassIconGroup> {
                       scale: _pressed == i ? 0.82 : 1.0,
                       duration: const Duration(milliseconds: 120),
                       curve: Curves.easeOut,
-                      child: AppIcon(widget.actions[i].icon, size: widget.iconSize, color: AppColors.ink, flat: true),
+                      child: AppIcon(
+                        widget.actions[i].icon,
+                        size: widget.iconSize,
+                        color: AppColors.ink,
+                        flat: true,
+                      ),
                     ),
                   ),
                 ),
@@ -699,21 +704,13 @@ class GlassPillButton extends StatelessWidget {
   /// measuring the word itself; see [NativeGlassButtons.sizer].
   static const _padding = EdgeInsets.symmetric(horizontal: 18, vertical: 10);
 
-  Widget get _label =>
-      Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.rowTitle);
+  Widget get _label => Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.rowTitle);
 
   @override
   Widget build(BuildContext context) {
     if (nativeGlassActive(context)) {
       return NativeGlassButtons(
-        buttons: [
-          NativeGlassButton(
-            label: label,
-            title: label,
-            titleStyle: AppText.rowTitle,
-            onTap: onTap,
-          ),
-        ],
+        buttons: [NativeGlassButton(label: label, title: label, titleStyle: AppText.rowTitle, onTap: onTap)],
         tint: AppColors.ink,
         sizer: Padding(padding: _padding, child: _label),
       );

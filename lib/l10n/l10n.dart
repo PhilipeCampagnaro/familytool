@@ -38,11 +38,11 @@ class L {
 /// throwing: a stored preference from a future version must not brick the app
 /// on downgrade.
 AppStrings stringsFor(String localeCode) => switch (localeCode) {
-      'en' => const StringsEn(),
-      'pt' => const StringsPt(),
-      'es' => const StringsEs(),
-      _ => const StringsDe(),
-    };
+  'en' => const StringsEn(),
+  'pt' => const StringsPt(),
+  'es' => const StringsEs(),
+  _ => const StringsDe(),
+};
 
 /// The locales `MaterialApp` is told about. Order matters — the first is the
 /// fallback when the device asks for something we don't have.

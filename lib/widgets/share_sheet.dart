@@ -33,10 +33,7 @@ Future<void> showShareSheet(
     context: context,
     header: SheetPickerHeader(title: L.s.shareTitle),
     heightFactor: 0.8,
-    child: _ShareSheetBody(
-      target: (kind: kind, id: resourceId),
-      resourceName: resourceName,
-    ),
+    child: _ShareSheetBody(target: (kind: kind, id: resourceId), resourceName: resourceName),
   );
 }
 
@@ -64,9 +61,7 @@ class _ShareSheetBodyState extends ConsumerState<_ShareSheetBody> {
   Future<void> _create() async {
     if (_busy) return;
     setState(() => _busy = true);
-    await ref
-        .read(sharingProvider(widget.target).notifier)
-        .createLink(email: _email.text);
+    await ref.read(sharingProvider(widget.target).notifier).createLink(email: _email.text);
     if (!mounted) return;
     _email.clear();
     setState(() => _busy = false);
@@ -90,8 +85,7 @@ class _ShareSheetBodyState extends ConsumerState<_ShareSheetBody> {
         Padding(
           padding: const EdgeInsets.only(left: 4, bottom: 12, right: 4),
           child: Text(
-            L.s.shareIntro(widget.resourceName) +
-                L.s.shareIntroSecond(widget.target.kind.noun),
+            L.s.shareIntro(widget.resourceName) + L.s.shareIntroSecond(widget.target.kind.noun),
             style: AppText.label.copyWith(fontSize: 12.5),
           ),
         ),
@@ -144,7 +138,7 @@ class _ShareSheetBodyState extends ConsumerState<_ShareSheetBody> {
           SectionCard(
             children: dividedRows([
               for (final guest in state.guests)
-                _GuestRow(guest: guest, onRemove: () => notifier.removeGuest(guest.userId)),
+                GuestRow(guest: guest, onRemove: () => notifier.removeGuest(guest.userId)),
             ]),
           ),
         ],
@@ -166,21 +160,18 @@ class _ShareSheetBodyState extends ConsumerState<_ShareSheetBody> {
 
         if (!state.loading && state.guests.isEmpty && state.links.isEmpty && state.freshUrl == null) ...[
           const SizedBox(height: 18),
-          EmptyState(
-            icon: AppIcons.userPlus,
-            message: L.s.notSharedYet,
-          ),
+          EmptyState(icon: AppIcons.userPlus, message: L.s.notSharedYet),
         ],
       ],
     );
   }
 }
 
-class _GuestRow extends StatelessWidget {
+class GuestRow extends StatelessWidget {
   final Guest guest;
   final VoidCallback onRemove;
 
-  const _GuestRow({required this.guest, required this.onRemove});
+  const GuestRow({super.key, required this.guest, required this.onRemove});
 
   @override
   Widget build(BuildContext context) {
@@ -199,12 +190,7 @@ class _GuestRow extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              guest.name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: AppText.rowTitle,
-            ),
+            child: Text(guest.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.rowTitle),
           ),
           GestureDetector(
             onTap: onRemove,
@@ -251,8 +237,7 @@ class _LinkRow extends StatelessWidget {
                 Text(L.s.shareLink, style: AppText.rowTitle),
                 // A fresh, unused, unexpired link has nothing to say about
                 // itself — every share may edit, so that is not news either.
-                if (_subtitle.isNotEmpty)
-                  Text(_subtitle, style: AppText.label.copyWith(fontSize: 12)),
+                if (_subtitle.isNotEmpty) Text(_subtitle, style: AppText.label.copyWith(fontSize: 12)),
               ],
             ),
           ),
@@ -261,10 +246,7 @@ class _LinkRow extends StatelessWidget {
             behavior: HitTestBehavior.opaque,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-              child: Text(
-                L.s.revoke,
-                style: AppText.caption.copyWith(color: AppColors.danger),
-              ),
+              child: Text(L.s.revoke, style: AppText.caption.copyWith(color: AppColors.danger)),
             ),
           ),
         ],
@@ -311,10 +293,7 @@ class _PrimaryAction extends StatelessWidget {
             else
               AppIcon(icon, size: 17, color: Colors.white),
             const SizedBox(width: 10),
-            Text(
-              label,
-              style: AppText.itemTitle.copyWith(color: Colors.white),
-            ),
+            Text(label, style: AppText.itemTitle.copyWith(color: Colors.white)),
           ],
         ),
       ),

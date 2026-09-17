@@ -360,7 +360,8 @@ belongs to. Reads a token in `build`, so **never `const`-construct it**.
 
 **Not `IconTile` (`icon_picker.dart`)**, which is the other half of a confusing pair of names:
 that one is handed an `iconKey` string and works out whether it names a merchant logo, a grocery
-photograph or a symbol, and it draws the disc behind it. `GlyphTile` is handed the glyph already.
+photograph or a symbol, and draws whatever ground that kind of art needs. `GlyphTile` is handed the
+glyph already.
 
 ### This was a glass lens, and the duotone icons took its job
 
@@ -399,9 +400,10 @@ The event sheet's two link cards pass `leading:` with an `IconTile` instead (`_L
 
 Inside those cards the fill carries one distinction — grey `surfaceAlt` for something that exists,
 white `surface` for a row that creates one — via `IconTile.background`. That override exists for
-this case only: the automatic choice (no disc at all for artwork in light, a white one on dark, grey
-for a glyph) is about legibility, and overriding it elsewhere is how a shop logo ends up unreadable
-on dark. Naming a `background` also opts that tile back into having a disc in light. Note it is
+this case only: the automatic choice (no disc at all for a glyph or for artwork in light, a white one
+on dark) is about legibility, and overriding it elsewhere is how a shop logo ends up unreadable
+on dark. Naming a `background` is now the *only* thing that puts a disc under a glyph, which is what
+keeps these two cards telling things apart from actions after the disc went everywhere else. Note it is
 `surface` and not `brandTile`: `brandTile` is white in *both* palettes so that logos stay readable,
 and an ink glyph on it would disappear on dark.
 
@@ -492,6 +494,11 @@ Non-obvious bits, each one a bug that shipped first:
   the header's element, so the post-frame measurement is never scheduled and the header keeps a
   height the block has outgrown. That is what clipped the second line of a name and the event chip
   under it.
+- **`extraPadding` is not part of the measured height — keep it horizontal.** The block is measured
+  through a key *inside* that padding, so any top or bottom padding there is laid out but never
+  counted, and the bottom of the block is clipped by exactly that much. Put vertical gaps inside
+  `extra` itself. The spend explore page's filter chips shipped with their bottom edge cut off for
+  this reason.
 - **`OverflowBox` + `ClipRect`, not a shrinking box.** The block keeps its natural height while its
   visible box shrinks, so rows slide up under the title and get clipped. Constrain it instead and
   the content re-flows on every scroll frame, then overflows.
@@ -511,6 +518,12 @@ Non-obvious bits, each one a bug that shipped first:
   drop theirs so the glow owns the top edge instead of starting below a white band.
 
 ## Other shared widgets
+
+- **`SegmentedProgressBar` (`segmented_progress_bar.dart`)** — every horizontal "this much of it"
+  bar: the Board's day and a spending goal. Drawn like the Ausgaben donut's arcs — a rounded filled
+  piece, a rounded remainder, and daylight between them, with nothing painted under the fill. Empty
+  is all track and full is all fill, and a non-zero value never shrinks below a round mark. Don't
+  lay a fill over a track for a new bar; use this.
 
 - **`AppFilterChip` (`filter_chip.dart`)** — the rounded, tappable word: Kalender's people row and
   Listen's Vorhaben suggestions are the same chip. It was Kalender's private `_CalendarChip` first,
@@ -1207,12 +1220,20 @@ Non-obvious bits, each one a bug that shipped first:
   `RowMenuButton` is a bare 15px glyph sized for a list row.
 - `IconTile` / `IconFieldRow` / `PhotoFieldRow` / `showIconPicker` / `IconDraft` (`icon_picker.dart`) — the one place
   a list/box/item icon is **drawn** and the one place it is **chosen**. Both sides speak the same
-  `iconKey` string from `data/icon_suggestions.dart`: an `assets/` path or `lucide:<name>` — a
+  `iconKey` string from `data/icon_suggestions.dart`: an `assets/` path, `lucide:<name>`, or
+  `emoji:<character>` — a
   key format frozen by the rows already in the database, not a statement about which icon set the
   app draws (that is Phosphor Duotone; see `lib/theme/app_icons.dart`).
-  - `IconTile` splits three ways on *what kind of art it is*, not on taste. **A symbol glyph** is
-    line art in the theme's own ink and sits on the `surfaceAlt` disc, which is what gives a
-    hairline mark somewhere to be. **A grocery picture is drawn bare** at `size * 0.88`, since it
+  - `IconTile` splits four ways on *what kind of art it is*, not on taste. **A symbol glyph is
+    drawn bare** in the theme's own ink at `AppText.markBareGlyph` (0.6 of the slot). It sat on the
+    `surfaceAlt` disc until 2026-09-16, on the reasoning that a hairline mark needs somewhere to be —
+    but a duotone glyph is not a hairline mark: its under-layer is already a mass behind the strokes,
+    so the disc was a second ground under a shape that brings its own. In a column mixing glyphs with
+    grocery pictures it was also the only thing wearing one, so every food row read as artwork and
+    every other row as a button. (Same discovery `GlyphTile` made when the duotone set took its glass
+    lens's job.) The glyph *grows* when the disc goes — half the slot inside a fill and 0.6 of it on
+    nothing are the same apparent size, and this lands where `_ItemIcon` in `box_screen.dart` already
+    had it by hand. **A grocery picture is drawn bare** at `size * 0.88`, since it
     arrives already sized and centred on nothing — except on dark, where it keeps the white
     `brandTile` under it because the art is drawn for paper (the same rule `_ItemIcon` in
     `list_screen.dart` follows). **A shop logo gets a white disc**: `brandTile` ground in
@@ -1221,7 +1242,15 @@ Non-obvious bits, each one a bug that shipped first:
     fitted straight into a slot they normalise to nothing: the square fills it while the wordmark
     shrinks to a sliver, and the row reads as unrelated coloured rectangles. The chip is what gives
     them one footprint. Its `IconImage` bounds the decode with `cacheWidth` — the picker puts 160
-    full-size logo PNGs on screen at once.
+    full-size logo PNGs on screen at once. **An emoji is the fourth kind**, drawn as text at 0.56 of
+    the slot (0.52 on a disc, since an emoji fills its em box where a Phosphor mark leaves air) —
+    `emoji:⛺`, which only a Vorhaben writes; see [list-planner.md](list-planner.md).
+  - **The disc came back in one place: a list's own name.** `IconTile.disc` asks for the ground
+    without naming a colour for it, and the open list's header and its collapsed title are what pass
+    it. The rule it encodes is about *place, not kind*: a container is a heading and its contents are
+    a column of rows, so the name at the top wears the disc and none of the articles under it do —
+    which is the same observation that took the disc off every row above, read from the other end.
+    Don't hand it to a row.
   - **A symbol that names a thing is drawn in ink, never in the accent, and `glyphColor` is
     therefore left alone.** The app has one accent and it already carries a meaning — a check-off
     circle, a done count, an attachment line, an empty state's call to action — so colouring a box

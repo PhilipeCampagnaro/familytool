@@ -57,7 +57,9 @@ class BoxScreen extends ConsumerWidget {
       // accent glow that has to start at the very top of the display, so it
       // absorbs the status-bar inset itself (see [CollapsingHeaderScreen])
       // rather than being pushed below a white band.
-      body: state.isDetail ? _BoxDetail(state: state) : SafeArea(bottom: false, child: _BoxOverview(state: state)),
+      body: state.isDetail
+          ? _BoxDetail(state: state)
+          : SafeArea(bottom: false, child: _BoxOverview(state: state)),
     );
   }
 }
@@ -92,11 +94,21 @@ class _BoxOverview extends ConsumerWidget {
       headerExtra: Row(
         children: [
           Expanded(
-            child: _StatTile(value: '${state.boxes.length}', icon: AppIcons.package, label: L.s.boxes, accent: accent),
+            child: _StatTile(
+              value: '${state.boxes.length}',
+              icon: AppIcons.package,
+              label: L.s.boxes,
+              accent: accent,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: _StatTile(value: '${state.totalItems}', icon: AppIcons.clipboardText, label: L.s.items, accent: accent),
+            child: _StatTile(
+              value: '${state.totalItems}',
+              icon: AppIcons.clipboardText,
+              label: L.s.items,
+              accent: accent,
+            ),
           ),
         ],
       ),
@@ -129,11 +141,7 @@ class _BoxOverview extends ConsumerWidget {
                   // Not while the first load is still out — an account with
                   // twelve boxes must not be told it has none.
                   if (state.boxes.isEmpty && !state.loading)
-                    EmptyState(
-                      icon: AppIcons.package,
-                      iconColor: accent,
-                      message: L.s.noBoxesYet,
-                    ),
+                    EmptyState(icon: AppIcons.package, iconColor: accent, message: L.s.noBoxesYet),
                 ],
               ),
             ],
@@ -156,12 +164,19 @@ class _BoxOverview extends ConsumerWidget {
       ref.read(boxProvider.notifier).open(id);
     }
 
-    final matchedBoxes = state.boxes.where((b) => b.name.toLowerCase().contains(q) || b.place.toLowerCase().contains(q)).toList();
+    final matchedBoxes = state.boxes
+        .where((b) => b.name.toLowerCase().contains(q) || b.place.toLowerCase().contains(q))
+        .toList();
     final itemHits = <(StorageBox, List<BoxItem>)>[];
     for (final b in state.boxes) {
       final hits = state
           .itemsFor(b.id)
-          .where((i) => i.name.toLowerCase().contains(q) || i.meta.toLowerCase().contains(q) || (i.note?.toLowerCase().contains(q) ?? false))
+          .where(
+            (i) =>
+                i.name.toLowerCase().contains(q) ||
+                i.meta.toLowerCase().contains(q) ||
+                (i.note?.toLowerCase().contains(q) ?? false),
+          )
           .toList();
       if (hits.isNotEmpty) itemHits.add((b, hits));
     }
@@ -245,13 +260,19 @@ void openBoxSheet(BuildContext context, WidgetRef ref, {StorageBox? box}) {
         // picked, see [_BoxSheetBodyState._photoMenu].
         final current = ref.read(boxProvider);
         final typed = nameController.text.trim();
-        final unchanged = (typed.isEmpty || typed == box.name) &&
+        final unchanged =
+            (typed.isEmpty || typed == box.name) &&
             placeController.text.trim() == box.place.trim() &&
             draft.picked == null &&
             current.newVisibility == box.visibility &&
             setEquals(current.newSharedWith, box.sharedWith.toSet());
         if (unchanged) return;
-        if (await notifier.updateBox(box.id, name: nameController.text, place: placeController.text, iconKey: draft.picked)) {
+        if (await notifier.updateBox(
+          box.id,
+          name: nameController.text,
+          place: placeController.text,
+          iconKey: draft.picked,
+        )) {
           confirm(L.s.boxUpdated);
         }
         return;
@@ -267,7 +288,12 @@ void openBoxSheet(BuildContext context, WidgetRef ref, {StorageBox? box}) {
         confirm(L.s.boxCreated);
       }
     },
-    child: _BoxSheetBody(nameController: nameController, placeController: placeController, draft: draft, box: box),
+    child: _BoxSheetBody(
+      nameController: nameController,
+      placeController: placeController,
+      draft: draft,
+      box: box,
+    ),
   );
 }
 
@@ -280,7 +306,12 @@ class _BoxSheetBody extends ConsumerStatefulWidget {
   /// stored icon and its old name to tell "not touched yet" from "renamed".
   final StorageBox? box;
 
-  const _BoxSheetBody({required this.nameController, required this.placeController, required this.draft, this.box});
+  const _BoxSheetBody({
+    required this.nameController,
+    required this.placeController,
+    required this.draft,
+    this.box,
+  });
 
   @override
   ConsumerState<_BoxSheetBody> createState() => _BoxSheetBodyState();
@@ -402,10 +433,7 @@ class _BoxSheetBodyState extends ConsumerState<_BoxSheetBody> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
               child: Row(
                 children: [
-                  Text(
-                    L.s.place,
-                    style: AppText.rowTitle,
-                  ),
+                  Text(L.s.place, style: AppText.rowTitle),
                   const SizedBox(width: 11),
                   Expanded(
                     child: TextField(
@@ -413,7 +441,11 @@ class _BoxSheetBodyState extends ConsumerState<_BoxSheetBody> {
                       textInputAction: TextInputAction.done,
                       textAlign: TextAlign.right,
                       style: AppText.input,
-                      decoration: InputDecoration(border: InputBorder.none, hintText: L.s.placeExample, isDense: true),
+                      decoration: InputDecoration(
+                        border: InputBorder.none,
+                        hintText: L.s.placeExample,
+                        isDense: true,
+                      ),
                     ),
                   ),
                 ],
@@ -475,10 +507,18 @@ class _BoxDetail extends ConsumerWidget {
         fontWeight: FontWeight.w500,
         leadingWidth: 48,
         trailingWidth: 48,
-        leading: GlassIconButton(icon: AppIcons.caretLeft, onTap: () => ref.read(boxProvider.notifier).back()),
+        leading: GlassIconButton(
+          icon: AppIcons.caretLeft,
+          onTap: () => ref.read(boxProvider.notifier).back(),
+        ),
         trailing: GlassMenuButton(
           items: [
-            AnchoredMenuItem(label: L.s.edit, icon: AppIcons.pencilSimple, symbol: 'pencil', onSelected: () => openBoxSheet(context, ref, box: box)),
+            AnchoredMenuItem(
+              label: L.s.edit,
+              icon: AppIcons.pencilSimple,
+              symbol: 'pencil',
+              onSelected: () => openBoxSheet(context, ref, box: box),
+            ),
             if (ref.watch(canShareExternallyProvider) && !state.guestBoxIds.contains(box.id))
               AnchoredMenuItem(
                 label: L.s.share,
@@ -531,15 +571,8 @@ class _BoxDetail extends ConsumerWidget {
           children: [
             SectionCard(
               children: [
-                ...dividedRows([
-                  _AddItemRow(),
-                  for (final item in items) _ItemRow(item: item),
-                ]),
-                if (items.isEmpty)
-                  EmptyState(
-                    icon: AppIcons.clipboardText,
-                    message: L.s.tapAboveToAddFirst,
-                  ),
+                ...dividedRows([_AddItemRow(), for (final item in items) _ItemRow(item: item)]),
+                if (items.isEmpty) EmptyState(icon: AppIcons.clipboardText, message: L.s.tapAboveToAddFirst),
               ],
             ),
           ],
@@ -670,19 +703,9 @@ class _ItemRow extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    item.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppText.itemTitle,
-                  ),
+                  Text(item.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.itemTitle),
                   if (item.meta.isNotEmpty)
-                    Text(
-                      item.meta,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppText.label,
-                    ),
+                    Text(item.meta, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.label),
                 ],
               ),
             ),
@@ -708,7 +731,6 @@ class _ItemRow extends ConsumerWidget {
       ),
     );
   }
-
 }
 
 /// The item sheet — the same sheet for a new item and for one being edited,
@@ -770,11 +792,11 @@ void _openItemSheet(BuildContext context, WidgetRef ref, {BoxItem? item}) {
 /// arrangement `IconDraft` and the Kalender event form use.
 class _ItemForm {
   _ItemForm(BoxItem? item)
-      : name = TextEditingController(text: item?.name ?? ''),
-        size = TextEditingController(text: item?.size ?? ''),
-        note = TextEditingController(text: item?.note ?? ''),
-        draft = IconDraft(item?.iconKey),
-        qty = item?.qty ?? 1;
+    : name = TextEditingController(text: item?.name ?? ''),
+      size = TextEditingController(text: item?.size ?? ''),
+      note = TextEditingController(text: item?.note ?? ''),
+      draft = IconDraft(item?.iconKey),
+      qty = item?.qty ?? 1;
 
   final TextEditingController name;
   final TextEditingController size;
@@ -909,7 +931,11 @@ class _ItemSheetBodyState extends ConsumerState<_ItemSheetBody> {
                       autofocus: item == null,
                       textInputAction: TextInputAction.next,
                       style: AppText.inputTitle,
-                      decoration: InputDecoration(border: InputBorder.none, hintText: L.s.itemName, isDense: true),
+                      decoration: InputDecoration(
+                        border: InputBorder.none,
+                        hintText: L.s.itemName,
+                        isDense: true,
+                      ),
                       onChanged: (_) => setState(() {}),
                     ),
                   ),
@@ -943,10 +969,7 @@ class _ItemSheetBodyState extends ConsumerState<_ItemSheetBody> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
               child: Row(
                 children: [
-                  Text(
-                    L.s.size,
-                    style: AppText.rowTitle,
-                  ),
+                  Text(L.s.size, style: AppText.rowTitle),
                   const SizedBox(width: 11),
                   Expanded(
                     child: TextField(
@@ -957,7 +980,11 @@ class _ItemSheetBodyState extends ConsumerState<_ItemSheetBody> {
                       textInputAction: TextInputAction.done,
                       textAlign: TextAlign.right,
                       style: AppText.input,
-                      decoration: InputDecoration(border: InputBorder.none, hintText: L.s.sizeExample, isDense: true),
+                      decoration: InputDecoration(
+                        border: InputBorder.none,
+                        hintText: L.s.sizeExample,
+                        isDense: true,
+                      ),
                     ),
                   ),
                 ],
@@ -968,12 +995,7 @@ class _ItemSheetBodyState extends ConsumerState<_ItemSheetBody> {
               padding: const EdgeInsets.fromLTRB(16, 8, 12, 8),
               child: Row(
                 children: [
-                  Expanded(
-                    child: Text(
-                      L.s.quantity,
-                      style: AppText.rowTitle,
-                    ),
-                  ),
+                  Expanded(child: Text(L.s.quantity, style: AppText.rowTitle)),
                   _QtyStepper(
                     value: widget.form.qty,
                     // Floored at one: a box holding nought of something is a box
@@ -991,7 +1013,11 @@ class _ItemSheetBodyState extends ConsumerState<_ItemSheetBody> {
                 maxLines: null,
                 textCapitalization: TextCapitalization.sentences,
                 style: AppText.input,
-                decoration: InputDecoration(border: InputBorder.none, hintText: L.s.itemNotePlaceholder, isDense: true),
+                decoration: InputDecoration(
+                  border: InputBorder.none,
+                  hintText: L.s.itemNotePlaceholder,
+                  isDense: true,
+                ),
               ),
             ),
           ],
@@ -1012,12 +1038,13 @@ class _ItemSheetBodyState extends ConsumerState<_ItemSheetBody> {
             child: Container(
               width: double.infinity,
               padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(20), boxShadow: AppShadows.card),
-              alignment: Alignment.center,
-              child: Text(
-                L.s.deleteItem,
-                style: AppText.rowTitle.copyWith(color: AppColors.danger),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: AppShadows.card,
               ),
+              alignment: Alignment.center,
+              child: Text(L.s.deleteItem, style: AppText.rowTitle.copyWith(color: AppColors.danger)),
             ),
           ),
         ],
@@ -1043,14 +1070,15 @@ class _QtyStepper extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _QtyButton(icon: AppIcons.minus, accent: accent, enabled: value > 1, onTap: () => onChanged(value - 1)),
+        _QtyButton(
+          icon: AppIcons.minus,
+          accent: accent,
+          enabled: value > 1,
+          onTap: () => onChanged(value - 1),
+        ),
         SizedBox(
           width: 38,
-          child: Text(
-            '$value',
-            textAlign: TextAlign.center,
-            style: AppText.itemTitle,
-          ),
+          child: Text('$value', textAlign: TextAlign.center, style: AppText.itemTitle),
         ),
         _QtyButton(icon: AppIcons.plus, accent: accent, enabled: true, onTap: () => onChanged(value + 1)),
       ],
@@ -1152,12 +1180,7 @@ class _BoxRow extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  box.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppText.itemTitle,
-                ),
+                Text(box.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.itemTitle),
                 Text(
                   itemCount == 0 ? L.s.emptyWithPlace(box.place) : L.s.itemsWithPlace(itemCount, box.place),
                   style: AppText.label,
@@ -1197,19 +1220,13 @@ class _StatTile extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            value,
-            style: AppText.statValue,
-          ),
+          Text(value, style: AppText.statValue),
           const SizedBox(height: 3),
           Row(
             children: [
               AppIcon(icon, size: 13, color: accent),
               const SizedBox(width: 5),
-              Text(
-                label,
-                style: AppText.label,
-              ),
+              Text(label, style: AppText.label),
             ],
           ),
         ],

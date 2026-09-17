@@ -36,13 +36,10 @@ class ShareLink {
   final int? maxUses;
   final DateTime? createdAt;
 
-  const ShareLink({
-    required this.id,
-    this.expiresAt,
-    this.useCount = 0,
-    this.maxUses,
-    this.createdAt,
-  });
+  const ShareLink({required this.id, this.expiresAt, this.useCount = 0, this.maxUses, this.createdAt});
+
+  /// Still live and nobody has come in through it — an invitation that is out.
+  bool get pending => live && useCount == 0;
 
   bool get expired => expiresAt != null && expiresAt!.isBefore(DateTime.now());
   bool get usedUp => maxUses != null && useCount >= maxUses!;
@@ -94,6 +91,12 @@ class SharingState {
 
   /// Whether anything is currently shared outward — what the row badge reads.
   bool get isShared => guests.isNotEmpty || links.any((l) => l.live);
+
+  /// Invitations out that nobody has used yet.
+  List<ShareLink> get pendingLinks => [
+    for (final l in links)
+      if (l.pending) l,
+  ];
 
   SharingState copyWith({
     List<ShareLink>? links,
@@ -214,12 +217,15 @@ class SharingNotifier extends StateNotifier<SharingState> {
   /// share ever earns its keep — see the sharing section of `docs/backend.md`.
   Future<void> createLink({int? expiresInDays, String? email}) async {
     try {
-      final res = await _db.functions.invoke('create-share-link', body: {
-        'kind': _target.kind.wire,
-        'resource_id': _target.id,
-        'expires_in_days': ?expiresInDays,
-        if (email != null && email.trim().isNotEmpty) 'email': email.trim(),
-      });
+      final res = await _db.functions.invoke(
+        'create-share-link',
+        body: {
+          'kind': _target.kind.wire,
+          'resource_id': _target.id,
+          'expires_in_days': ?expiresInDays,
+          if (email != null && email.trim().isNotEmpty) 'email': email.trim(),
+        },
+      );
       final data = res.data;
       final url = data is Map ? data['url'] as String? : null;
       await load();
@@ -229,8 +235,7 @@ class SharingNotifier extends StateNotifier<SharingState> {
       // The function's own German message says why — a kid trying to share, a
       // daily cap reached — and beats anything generic invented here.
       final details = e.details;
-      _fail((details is Map ? details['error'] as String? : null) ??
-          L.s.shareLinkCreateFailed);
+      _fail((details is Map ? details['error'] as String? : null) ?? L.s.shareLinkCreateFailed);
     } catch (_) {
       _fail(L.s.shareLinkCreateFailed);
     }
@@ -241,7 +246,12 @@ class SharingNotifier extends StateNotifier<SharingState> {
   /// has to actually take the access away, not just stop new redemptions.
   Future<void> revokeLink(String linkId) async {
     final previous = state.links;
-    state = state.copyWith(links: [for (final l in state.links) if (l.id != linkId) l]);
+    state = state.copyWith(
+      links: [
+        for (final l in state.links)
+          if (l.id != linkId) l,
+      ],
+    );
     try {
       final updated = await _db
           .from('share_links')
@@ -260,7 +270,12 @@ class SharingNotifier extends StateNotifier<SharingState> {
   /// mistake shouldn't cost everyone else their access.
   Future<void> removeGuest(String userId) async {
     final previous = state.guests;
-    state = state.copyWith(guests: [for (final g in state.guests) if (g.userId != userId) g]);
+    state = state.copyWith(
+      guests: [
+        for (final g in state.guests)
+          if (g.userId != userId) g,
+      ],
+    );
     try {
       final deleted = await _db
           .from('guest_access')
@@ -276,15 +291,76 @@ class SharingNotifier extends StateNotifier<SharingState> {
     }
   }
 
+  /// Withdraws every invitation nobody has used. Guests who already came in
+  /// through a link are untouched: a used link is not pending, and revoking it
+  /// is what would drop them.
+  Future<void> revokePending() async {
+    for (final link in state.pendingLinks) {
+      await revokeLink(link.id);
+    }
+  }
+
   void _fail(String message) {
     if (mounted) state = state.copyWith(error: message);
   }
 }
 
+/// How long a list invitation can be redeemed. **An invitation, not a key:**
+/// expiry only stops new people coming in — `revoke_link_guests` fires on
+/// `revoked_at`, never on `expires_at`, so everyone who joined in time stays.
+const shareInvitationDays = 7;
+
+/// A link just minted: its row id, and the URL that exists only in this answer.
+typedef MintedLink = ({String id, String url});
+
+/// Why [mintShareLink] failed, in words safe to show — the function's own
+/// sentence when it sent one.
+class ShareLinkFailure implements Exception {
+  final String message;
+  const ShareLinkFailure(this.message);
+}
+
+/// Mints a link without a notifier behind it — what "Teilen" on a list does
+/// before it hands the URL straight to the system share sheet. The sheet, not
+/// Aporah, is where the URL is shown, so nothing here holds on to it.
+Future<MintedLink> mintShareLink(ShareTarget target, {int? expiresInDays}) async {
+  try {
+    final res = await AporahSupabase.client.functions.invoke(
+      'create-share-link',
+      body: {'kind': target.kind.wire, 'resource_id': target.id, 'expires_in_days': ?expiresInDays},
+    );
+    final data = res.data;
+    final id = data is Map ? data['link_id'] as String? : null;
+    final url = data is Map ? data['url'] as String? : null;
+    if (id == null || url == null) throw ShareLinkFailure(L.s.shareLinkCreateFailed);
+    return (id: id, url: url);
+  } on FunctionException catch (e) {
+    final details = e.details;
+    throw ShareLinkFailure(
+      (details is Map ? details['error'] as String? : null) ?? L.s.shareLinkCreateFailed,
+    );
+  } on ShareLinkFailure {
+    rethrow;
+  } catch (_) {
+    throw ShareLinkFailure(L.s.shareLinkCreateFailed);
+  }
+}
+
+/// Withdraws a link nobody received — the share sheet was closed without
+/// sending. Best effort: a failure leaves an invitation nobody holds, and it
+/// runs out on its own after [shareInvitationDays].
+Future<void> revokeUnsentShareLink(String linkId) async {
+  try {
+    await AporahSupabase.client
+        .from('share_links')
+        .update({'revoked_at': DateTime.now().toUtc().toIso8601String()})
+        .eq('id', linkId);
+  } catch (_) {}
+}
+
 /// One notifier per shared resource. `autoDispose` because a sheet is the only
 /// thing that ever watches one, and a household with forty lists should not keep
 /// forty of these alive.
-final sharingProvider =
-    StateNotifierProvider.autoDispose.family<SharingNotifier, SharingState, ShareTarget>(
+final sharingProvider = StateNotifierProvider.autoDispose.family<SharingNotifier, SharingState, ShareTarget>(
   (ref, target) => SharingNotifier(target),
 );

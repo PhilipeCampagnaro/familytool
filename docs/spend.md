@@ -329,12 +329,13 @@ meisten" looks at the heading that currently says something else.
 - **Five rows, because that is what the ring shows.** A card listing fourteen categories under a
   drawing of five is a card contradicting the picture above it, and the other two groupings take the
   same five so the page has one idea of "top" rather than three.
-- **"Alle anzeigen" opens a page, not a longer card** (`SpendBreakdownPage`). A card grown to forty
-  rows buries the payments under it; somebody who wants the whole list is reading rather than
-  glancing, and reading deserves the screen. The link is drawn only where there is something behind
-  it. The page watches the same range and metric as the card it was opened from, so a figure on it
-  is the same figure that was on the card — and it is the one place the categories are **unfolded**,
-  with "Sonstige" spelled out into the things it was hiding.
+- **"Alle anzeigen" opens the explore page, not a longer card** (`SpendExplorePage`, below). A card
+  grown to forty rows buries the payments under it; somebody who wants the whole list is reading
+  rather than glancing, and reading deserves the screen. The link is drawn only where there is
+  something behind it. The page watches the same range and metric as the card it was opened from,
+  so a figure on it is the same figure that was on the card — and it is the one place the categories
+  are **unfolded**, with "Sonstige" spelled out into the things it was hiding. **A row of the card
+  opens that page filtered to it**; "Sonstige" is no one thing and has no tap.
 - **By shop rather than by category is the one with an answer somebody can act on.** "€340
   Lebensmittel" is a fact about a month; "€340 bei REWE" is a fact about a habit. Names are folded
   case-insensitively, and deliberately no further — "REWE Markt GmbH" and "REWE City 4471" really
@@ -345,7 +346,7 @@ meisten" looks at the heading that currently says something else.
 - `ringSlices` feeds the donut *and* the card, so the two can never disagree about what folded into
   "Sonstige"; `spendBreakdownRows` is where the three groupings are turned into the one row shape
   the card and the page both draw.
-- **The payments list under it does the same thing, at ten** (`SpendPurchasesPage`). It has no
+- **The payments list under it does the same thing, at ten**, and its link opens the same explore page. It has no
   picture to agree with, so five would be short: what somebody scrolling to the bottom of Ausgaben
   is doing is scanning recent payments for one they half-remember, and ten is about a week of a
   normal household. A year selected in the slicer puts several hundred rows in that card otherwise,
@@ -353,6 +354,62 @@ meisten" looks at the heading that currently says something else.
   to the tab bar. **The count moved into the link** rather than sitting beside it: a heading on a
   phone holds a title and one other thing, so it reads "Alle 214 anzeigen" and goes back to being a
   plain count once the list fits.
+
+### The explore page: search filters the rows before they are folded
+
+`SpendExplorePage` (`lib/screens/spend/spend_explore.dart`) answers "how much do we spend at REWE".
+It is the chart card from Ausgaben (`SpendAnalysisCard`, which takes a `SpendSummary` rather than the
+whole state for exactly this), a pill of **Alle · Personen · Geschäfte · Kategorien**, and the list —
+with the phone's own search field pinned at the foot, the way Settings has it.
+
+- **The filter runs on the rows, then `summariseRange` folds what is left.** So the headline, the
+  line, the bars, the ring and the list all describe the same subset, and the comparison line is
+  last month's REWE rather than last month's everything. Typing "rewe" with the slicer on 1 J. is
+  the historical overview; there is no second chart for it.
+- Search matches the shop, the category name, the note, the card and the payer's name, folded with
+  `foldTerm` from Listen's search — case, umlauts and accents optional.
+- **Tapping a breakdown row drills in**: the shop, the person or the category becomes a chip and the
+  page goes back to the payments. A chip's X takes it off. Filters combine.
+- **The chips sit in the header, under the title**, and **categories are a set**: the glass button
+  in the header's right-hand corner is always there and opens every category, ticked on and off
+  with the menu staying open (Kalender's filter mechanism, `keepsOpen` + `onKeptOpen`). The goal
+  card and the chart's goal line appear only while exactly one category is picked — two goals added
+  together would be a promise nobody made.
+- With no chip the header's block is **one point tall, not empty**: an empty block gets
+  `bareTitleHeadroom` (44) under the title, which on this nav-bar-sized title is just a gap above
+  the panel.
+- Reached from the header's search button (keyboard up), from "Alle anzeigen", from a breakdown row
+  and from a goal's ring. It replaced `SpendPurchasesPage` and `SpendBreakdownPage`.
+- The range and the metric are the page's shared ones, so changing the slicer here changes Ausgaben
+  behind it. That is deliberate: two pages with two ideas of "this month" disagree on every figure.
+
+### Goals: one ring per category, measured against the month's pace
+
+`public.spend_budgets` holds a monthly limit per category — one per household per category, admin
+only like `spends`, integer cents. **How much of it is used is not stored**: `spendBudgetProgress`
+(`lib/models/spend_budget.dart`) folds this month's rows on the device.
+
+- **The rings sit above the chart card** (`SpendBudgetStrip`, `spend_budgets.dart`), scrolling
+  sideways, with a "+" at the end. The arc is the share used in the category's own donut colour.
+  **There is no tick for where today is in the month** — it was tried, and at 62 points a mark across
+  the band read as a glitch in the ring. The pace lives in the percentage under the ring instead,
+  which turns the danger colour once the goal is running more than a tenth ahead of the month, and
+  the arc turns danger once it is blown. The goal card's bar has no marker either, and is drawn as the donut is — a
+  rounded filled piece and a rounded remainder with daylight between them (`SegmentedProgressBar`,
+  shared with the Board's day bar). 500 € of 800 € is fine on the 25th and a warning on the 10th, and a bare
+  62 % says the same thing on both days.
+- **Always this calendar month, whatever the slicer is on.** When the loaded window does not reach
+  over the month (a week, a picked stretch in the past) the notifier fetches the month on its own
+  into `SpendState.monthSpends` rather than widening the window, and every local insert, edit and
+  delete touches both lists.
+- A tap opens the explore page filtered to the category, with a goal card on top and the goal drawn
+  as a dashed danger line — across the cumulative line on a month, across the bars when every bar is
+  a month, and nowhere else, because a month's promise against a week's total means nothing. A long
+  press, or the card, opens `showBudgetSheet`.
+- **Monthly only, and no notification.** A period column would be a second axis every ring has to
+  ask about. A "80 % erreicht" notice would qualify under docs/notifications.md (it has a deadline),
+  and it is the obvious next step — it is not built.
+- A failed goals read is silent, like the device list: the page's numbers are correct without them.
 
 ### One mark, and a shop is drawn as itself
 

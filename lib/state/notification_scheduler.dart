@@ -72,18 +72,18 @@ List<ScheduledNotice> composeNotices({
       if (!r.matches(e)) continue;
       final at = e.startsAt.subtract(Duration(minutes: r.minutesBefore));
       if (!inWindow(at)) continue;
-      final day = '${L.s.weekdayShort[e.startsAt.weekday % 7]}, '
+      final day =
+          '${L.s.weekdayShort[e.startsAt.weekday % 7]}, '
           '${L.s.dayMonthShort(e.startsAt.day, e.startsAt.month)}';
-      out.add(ScheduledNotice(
-        id: 'event:${e.id}:${r.minutesBefore}',
-        at: at,
-        title: e.title,
-        body: [
-          '$day · ${e.timeRangeLabel}',
-          if (e.loc.trim().isNotEmpty) e.loc.trim(),
-        ].join(' · '),
-        thread: 'events',
-      ));
+      out.add(
+        ScheduledNotice(
+          id: 'event:${e.id}:${r.minutesBefore}',
+          at: at,
+          title: e.title,
+          body: ['$day · ${e.timeRangeLabel}', if (e.loc.trim().isNotEmpty) e.loc.trim()].join(' · '),
+          thread: 'events',
+        ),
+      );
     }
   }
 
@@ -107,15 +107,17 @@ List<ScheduledNotice> composeNotices({
         settings.abfallMinutes % 60,
       );
       if (!inWindow(at)) continue;
-      out.add(ScheduledNotice(
-        id: 'abfall:${day.year}-${day.month}-${day.day}',
-        at: at,
-        // The vendor's own word for the bin — "Bioabfall", "Gelber Sack" —
-        // because that is what is written on the calendar the family reads.
-        title: L.s.noticeAbfallTitle(L.s.joinAnd(names)),
-        body: L.s.noticeAbfallBody,
-        thread: 'abfall',
-      ));
+      out.add(
+        ScheduledNotice(
+          id: 'abfall:${day.year}-${day.month}-${day.day}',
+          at: at,
+          // The vendor's own word for the bin — "Bioabfall", "Gelber Sack" —
+          // because that is what is written on the calendar the family reads.
+          title: L.s.noticeAbfallTitle(L.s.joinAnd(names)),
+          body: L.s.noticeAbfallBody,
+          thread: 'abfall',
+        ),
+      );
     }
   }
 
@@ -128,36 +130,47 @@ List<ScheduledNotice> composeNotices({
   if (settings.brief) {
     for (var offset = 0; offset < 2; offset++) {
       final day = DateTime(now.year, now.month, now.day + offset);
-      final at = DateTime(day.year, day.month, day.day, settings.briefMinutes ~/ 60, settings.briefMinutes % 60);
+      final at = DateTime(
+        day.year,
+        day.month,
+        day.day,
+        settings.briefMinutes ~/ 60,
+        settings.briefMinutes % 60,
+      );
       if (!inWindow(at)) continue;
 
       // Ferien and Abfall are context, not appointments. The bins have gone by
       // seven anyway; that reminder was last night's.
       final dayEvents = [
-        for (final e in calendar.eventsByDay[CalendarScreenState.key(day.year, day.month, day.day)] ??
-            const <CalendarEvent>[])
+        for (final e
+            in calendar.eventsByDay[CalendarScreenState.key(day.year, day.month, day.day)] ??
+                const <CalendarEvent>[])
           if ((feedKinds[e.calendarId] ?? '').isEmpty) e,
       ];
       final timed = [
         for (final e in dayEvents)
           if (!e.allDay && _sameDay(e.startsAt, day)) e.startsAt,
       ]..sort();
-      final due = tasks.where((t) => !t.done && t.dueDate != null && _sameDay(t.dueDate!, day) && mine(t)).length;
+      final due = tasks
+          .where((t) => !t.done && t.dueDate != null && _sameDay(t.dueDate!, day) && mine(t))
+          .length;
       if (dayEvents.isEmpty && due == 0) continue;
 
-      out.add(ScheduledNotice(
-        id: 'brief:${day.year}-${day.month}-${day.day}',
-        at: at,
-        title: L.s.noticeBriefTitle,
-        body: [
-          if (dayEvents.isNotEmpty)
-            timed.isEmpty
-                ? L.s.briefEvents(dayEvents.length)
-                : '${L.s.briefEvents(dayEvents.length)} ${L.s.briefFirstAt(formatTime(timed.first))}',
-          if (due > 0) L.s.briefTasks(due),
-        ].join(' · '),
-        thread: 'brief',
-      ));
+      out.add(
+        ScheduledNotice(
+          id: 'brief:${day.year}-${day.month}-${day.day}',
+          at: at,
+          title: L.s.noticeBriefTitle,
+          body: [
+            if (dayEvents.isNotEmpty)
+              timed.isEmpty
+                  ? L.s.briefEvents(dayEvents.length)
+                  : '${L.s.briefEvents(dayEvents.length)} ${L.s.briefFirstAt(formatTime(timed.first))}',
+            if (due > 0) L.s.briefTasks(due),
+          ].join(' · '),
+          thread: 'brief',
+        ),
+      );
     }
   }
 
@@ -169,13 +182,15 @@ List<ScheduledNotice> composeNotices({
       if (t.done || date == null || time == null || !mine(t)) continue;
       final at = DateTime(date.year, date.month, date.day, time.hour, time.minute);
       if (!inWindow(at)) continue;
-      out.add(ScheduledNotice(
-        id: 'task:${t.id}',
-        at: at,
-        title: t.text,
-        body: L.s.noticeTaskDue(formatTimeOfDay(time.hour, time.minute)),
-        thread: 'tasks',
-      ));
+      out.add(
+        ScheduledNotice(
+          id: 'task:${t.id}',
+          at: at,
+          title: t.text,
+          body: L.s.noticeTaskDue(formatTimeOfDay(time.hour, time.minute)),
+          thread: 'tasks',
+        ),
+      );
     }
   }
 
@@ -238,9 +253,9 @@ class NoticeScheduler {
     await _os.replaceAll(notices, channelName: L.s.notificationsTitle);
 
     if (userId != null && calendar.loaded) {
-      _ref.read(notificationSettingsProvider.notifier).pruneReminders(
-            DateTime.now().subtract(const Duration(days: 1)),
-          );
+      _ref
+          .read(notificationSettingsProvider.notifier)
+          .pruneReminders(DateTime.now().subtract(const Duration(days: 1)));
     }
   }
 

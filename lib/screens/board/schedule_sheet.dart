@@ -81,7 +81,9 @@ class _ScheduleOptionsState extends State<_ScheduleOptions> {
   /// the weekdays where they were left. A draft that dropped them would punish
   /// somebody for looking at the other option.
   late Set<int> _weekdays = {...widget.draft.value.weekdays};
-  late int _target = widget.draft.value.kind == TrackerScheduleKind.weeklyCount ? widget.draft.value.target : 3;
+  late int _target = widget.draft.value.kind == TrackerScheduleKind.weeklyCount
+      ? widget.draft.value.target
+      : 3;
 
   TrackerSchedule get _schedule => switch (_kind) {
     TrackerScheduleKind.daily => TrackerSchedule.daily,
@@ -237,10 +239,7 @@ class _KindRow extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 10),
-            SizedBox(
-              width: 18,
-              child: selected ? AppIcon(AppIcons.check, size: 18, color: accent) : null,
-            ),
+            SizedBox(width: 18, child: selected ? AppIcon(AppIcons.check, size: 18, color: accent) : null),
           ],
         ),
       ),

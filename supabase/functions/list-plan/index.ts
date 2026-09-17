@@ -161,7 +161,11 @@ Deno.serve(async (req) => {
         // Low but not zero: the same goal twice in a week should not return a
         // byte-identical list, and the schema holds the shape whatever this does.
         temperature: 0.3,
-        max_tokens: 2000,
+        // Headroom for `recipe`, which is the one unbounded field in the answer.
+        // A truncated answer is not a short answer: the JSON stops mid-string,
+        // `JSON.parse` throws, and the household gets "Daraus ließ sich keine
+        // Liste machen" after waiting — having already been charged for the call.
+        max_tokens: 4000,
         response_format: { type: "json_object" },
         messages: [
           { role: "system", content: systemPrompt(locale) },
@@ -234,12 +238,21 @@ function text(v: unknown, max: number): string {
   return typeof v === "string" ? v.trim().slice(0, max) : "";
 }
 
+/// **There is no emoji validator here any more, and that is the point.** An
+/// emoji used to be a *field* — one per article, checked against
+/// `Extended_Pictographic` because it was about to be stored in `icon_asset`
+/// and drawn as a row's icon. It is now part of `steps` and `recipe`, which are
+/// prose: bounded by `text()` like every other string, drawn as text, and
+/// stored nowhere but the list's own method. Nothing needs validating, because
+/// nothing is being resolved into a picture on a row.
+
 /// The model's answer, reduced to exactly the shape the app reads. Everything
 /// the schema did not ask for is dropped, and every string is bounded, so what
 /// leaves this function is data of a known size rather than whatever a model
 /// happened to produce.
 function sanitize(raw: unknown) {
   const o = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+  const kind = o.kind === "other" ? "other" : "grocery";
   const items = (Array.isArray(o.items) ? o.items : []).flatMap((i) => {
     if (!i || typeof i !== "object") return [];
     const item = i as Record<string, unknown>;
@@ -249,12 +262,72 @@ function sanitize(raw: unknown) {
       ? String(item.quantity)
       : text(item.quantity, 40) || null;
     const unit = typeof item.unit === "string" && UNITS.includes(item.unit) ? item.unit : null;
+    // No `emoji` field to read: see the note above `sanitize` and the prompt.
+    // **No picture on an article, deliberately, since 2026-09-16.** A Sonstige
+    // article carried one emoji for a day: asked for in the prompt and forced
+    // here so a list could not come back half emoji and half symbol. What that
+    // fixed was the inconsistency, not the mistakes — 🧴 against a Dichtungsband
+    // and 🔩 against a Dübel are each read before the word beside them, and a
+    // wrong picture on a shopping row is the app being confidently wrong about
+    // the household's own errand. The model still draws, in `steps` and
+    // `recipe`, where a miss is decoration that missed rather than a label that
+    // lies. A Lebensmittel article never had one: it has a photograph.
     return [{ name, quantity, unit }];
   });
+  // Absent for every goal that is not cooking, and an empty string is the same
+  // as absent — the card draws nothing rather than an empty disclosure.
+  const recipe = text(o.recipe, 4000) || null;
+  // A step is a titled block now — "## Wände reinigen" and a sentence under it
+  // — so it carries a newline and needs the room for one. The cap is on the
+  // whole block rather than on the sentence.
+  //
+  // **A backslash and an "n", not a newline.** The prompt shows the wanted
+  // shape as a line of JSON, escapes and all, and the model copies it a little
+  // too faithfully: `"## Wände reinigen\\nWische…"` arrives as one line with two
+  // literal characters in the middle of it, which the heading rule then reads
+  // as part of the heading. Undone here rather than in the prompt, because the
+  // example is what made the model stop splitting a block in half and it is
+  // worth keeping. No household step contains a literal `\n`.
+  const entries = (Array.isArray(o.steps) ? o.steps : [])
+    .map((s) => text(s, 600).replace(/\\r\\n|\\n/g, "\n"))
+    .filter(Boolean);
+  // **The model splits a block across two entries about half the time**, asked
+  // for it or not: `["## Preparar o ambiente", "Retire os móveis…"]` rather
+  // than one string with a newline in it. Drawn, both look the same; *counted*,
+  // they do not, and the cap below would have taken a plan of seven stages and
+  // cut it after the fourth title with its sentences missing. So a line that is
+  // not a title joins the title above it, and the cap counts stages.
+  //
+  // A step from before 2026-09-16 is a bare sentence with no title anywhere —
+  // those stay one block each, which is why this only ever appends to a block
+  // that opened with a heading.
+  const steps: string[] = [];
+  for (const entry of entries) {
+    const last = steps.length - 1;
+    if (!entry.startsWith("#") && last >= 0 && steps[last].startsWith("#")) {
+      steps[last] += `\n${entry}`;
+    } else {
+      steps.push(entry);
+    }
+  }
+  // The opening "# " line names the whole method and is not a stage, so it is
+  // held out of the cap — counted in, a plan would lose its last stage to its
+  // own heading. A model that skipped the title simply has none: the label on
+  // the disclosure ("So geht's") still says what the block is, and inventing
+  // one here would be us writing the household's heading for it.
+  const head = steps.length > 0 && /^#(?!#)/.test(steps[0]) ? steps.slice(0, 1) : [];
   return {
     title: text(o.title, 120),
-    kind: o.kind === "other" ? "other" : "grocery",
-    steps: (Array.isArray(o.steps) ? o.steps : []).map((s) => text(s, 500)).filter(Boolean).slice(0, 12),
+    kind,
+    // **Five when there is a recipe, eight when there is not** — cut here as
+    // well as asked for in the prompt, the same belt-and-braces as `UNITS`.
+    // The model obeys "a short overview" for most dishes and then returns
+    // twelve steps for a paella, which is the whole method written twice: once
+    // on the card and once again inside the disclosure under it. The numbers
+    // came down with the titles: a titled block is three lines on a phone, so
+    // twelve of them is a page nobody folds open twice.
+    steps: [...head, ...steps.slice(head.length, head.length + (recipe ? 5 : 8))],
+    recipe,
     items: items.slice(0, 25),
   };
 }
@@ -273,14 +346,41 @@ Return exactly this object and nothing else:
   "title": string,
   "kind": "grocery" | "other",
   "steps": string[],
+  "recipe": string | null,
   "items": [{ "name": string, "quantity": string | null, "unit": string | null }]
 }
 
 title: what the list should be called, short, in the user's own words where possible.
 
-kind: "grocery" if the articles are bought in a supermarket, "other" for a hardware store, a chemist, a stationer or anything else.
+kind: where the articles are bought. "grocery" ONLY when they are food, drink or the everyday goods beside them in a supermarket. "other" for everything else — a hardware or DIY store, a garden centre, a chemist, a pharmacy, a stationer, a toy shop. Paint, brushes, tools, screws, timber, plants, craft materials, party decorations and school supplies are all "other", even when a large supermarket happens to stock some of them.
 
-steps: how to actually do it, in order, one sentence or two each. At most 12. Put recipe measures HERE ("2 EL Butter"), never in the items. Return an empty array when the goal is only about shopping and there is nothing to do.
+steps: how to actually do it, in order. An array of strings that together make one small document. The first string is the title of the whole method; every string after it is one whole stage — its "## " heading, a newline, then one or two sentences in the same string. Exactly like this:
+
+"steps": [
+  "# 🏠 Wohnzimmer streichen",
+  "## Wände reinigen\\nWische Wände und Decken mit einem feuchten Tuch ab und lass sie vollständig trocknen.",
+  "## Kanten abkleben\\nKlebe Sockelleisten, Türrahmen und Schalter sorgfältig mit Malerband ab.",
+  "## Erster Anstrich\\nStreiche zuerst die Decke, dann die Wände, immer von oben nach unten. Warte **4 Stunden** bis zum zweiten Anstrich."
+]
+
+- At most 8 stages after the title.
+- **The first stage is already the work.** Never write a stage about buying, fetching, collecting or preparing the articles — "Materialien besorgen", "Zutaten vorbereiten", "Einkaufen gehen". The list of what to buy is printed right beside these stages, so such a stage tells the reader to read the other half of the answer.
+- **Never split a heading and its sentences into two strings**, and never put two stages into one string.
+- **There is exactly ONE emoji in the whole answer: the one on the "# " line.** No emoji on a stage heading, none inside a sentence, none on an article, none anywhere else. One picture over the whole plan is right; a picture on every stage is five guesses about somebody else's job, and they are wrong more often than they are right.
+- The "# " title is two to five words naming the goal as a whole — "Wohnzimmer streichen", "Regal fürs Kinderzimmer bauen". Its emoji pictures that goal.
+- A stage heading is two to four words naming that stage — "Wände reinigen", "Kanten abkleben" — never a whole sentence and never the same words as another stage.
+- The sentences are plain: no bullets, no numbering, no headings of your own beyond the "## " line, and at most one "**...**" for a temperature, a time or a measurement that must not be missed.
+- Put recipe measures in these sentences ("2 EL Butter"), never in the items.
+
+Return an empty array when the goal is only about shopping and there is nothing to do. When you also write a "recipe", keep to four or five stages as an overview — the detail belongs there, not here, and the two must not repeat each other.
+
+recipe: the full method, and ONLY when the goal is a dish to cook or to bake. Null for everything else — a hardware run, a party, a trip, a week's shopping.
+- Lay it out like a page in a cookbook: open with a "# " line naming the dish, then a "## " heading for the ingredients, with the exact quantities for the number of people asked for, then a "## " heading for the method with the working steps in order. Write every heading in the answer's language.
+- **Exactly ONE emoji, at the start of the "# " line**, picturing the dish — like "# 🍝 Lasagne al forno". None on the "## " headings, none on an ingredient line, none inside a working step, none in the middle of a sentence. A list of ingredients each wearing a picture is a list nobody can read down.
+- Give oven temperatures, times, tin and pan sizes, and say what to do while something else is cooking.
+- Say how to tell it is ready by looking at it, not only by the clock.
+- Use ONLY this markup, and nothing else in it is markdown: "# " on the first line for the dish, "## " at the start of a line for a heading, "- " for a listed ingredient, "1. " for a numbered working step, "**...**" around what must not be missed — a temperature, a time, a tin size. One blank line between blocks.
+- No tables, no links, no images, no code, no block quotes, no nested lists, no second "# " line, no bold on a whole line or a whole paragraph.
 
 items: what to BUY. This is the important part.
 - Shop quantities, never recipe measures: one pack of butter, not two tablespoons.
@@ -288,6 +388,7 @@ items: what to BUY. This is the important part.
 - Leave out what every kitchen already has (water, salt, pepper) unless the goal is clearly about stocking up.
 - quantity is the number only, as text: "500", "2". Null when it is simply one.
 - unit is one of exactly: "${units}". Use null for single items. Anything you cannot express with those, put into quantity as text.
+- No emoji and no icon on an article, ever — not in the name, not beside it. The one picture in the answer is on the "# " title of "steps" or "recipe". An article is a word on a shopping list.
 - Between 3 and 25 articles.
 
 Never invent a link, a price, a shop or a brand. If the goal is unclear, make the most ordinary assumption a parent would make and answer anyway.`;

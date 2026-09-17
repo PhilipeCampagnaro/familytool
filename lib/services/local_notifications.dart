@@ -4,13 +4,11 @@ import 'package:flutter/services.dart';
 /// Whether this platform can schedule a notification at all.
 bool get localNotificationsAvailable =>
     !kIsWeb &&
-    (defaultTargetPlatform == TargetPlatform.iOS ||
-        defaultTargetPlatform == TargetPlatform.android);
+    (defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.android);
 
 /// Whether iOS's quiet, prompt-free grant exists here. Android has no such
 /// thing: a grant there is the dialog or nothing.
-bool get provisionalNotificationsAvailable =>
-    !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
+bool get provisionalNotificationsAvailable => !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
 
 /// Where the OS stands on this app posting notifications.
 enum NotificationAccess {

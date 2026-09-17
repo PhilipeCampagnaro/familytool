@@ -151,8 +151,7 @@ class DaySelectorCircle extends StatelessWidget {
 /// `FontWeight.value` is the numeric weight (400, 500, 600...), so comparing
 /// those is comparing the weights — and it is the only way to, since
 /// `FontWeight` is not `Comparable`.
-FontWeight _atLeast(FontWeight weight, FontWeight floor) =>
-    weight.value >= floor.value ? weight : floor;
+FontWeight _atLeast(FontWeight weight, FontWeight floor) => weight.value >= floor.value ? weight : floor;
 
 /// Light diagonal-hatch texture painted inside a Feiertag day-circle.
 ///

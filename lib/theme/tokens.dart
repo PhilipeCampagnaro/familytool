@@ -288,10 +288,20 @@ class AppPalette {
     // Saturated enough to hold a 12-point ring segment against a white card
     // without going neon in a legend dot beside 15-point text.
     spendSlices: [
-      Color(0xFF3B6FD4), Color(0xFFD98A1F), Color(0xFF1E9E8A), Color(0xFFD6456F),
-      Color(0xFF7C55D4), Color(0xFF5A9E36), Color(0xFFE2653C), Color(0xFF1B8FB5),
-      Color(0xFF4B54C6), Color(0xFFB2479E), Color(0xFF8A6A4B), Color(0xFF8C8A22),
-      Color(0xFF2E8F5B), Color(0xFF6B7A90),
+      Color(0xFF3B6FD4),
+      Color(0xFFD98A1F),
+      Color(0xFF1E9E8A),
+      Color(0xFFD6456F),
+      Color(0xFF7C55D4),
+      Color(0xFF5A9E36),
+      Color(0xFFE2653C),
+      Color(0xFF1B8FB5),
+      Color(0xFF4B54C6),
+      Color(0xFFB2479E),
+      Color(0xFF8A6A4B),
+      Color(0xFF8C8A22),
+      Color(0xFF2E8F5B),
+      Color(0xFF6B7A90),
     ],
     // Pale on light, so the icon drawn on top keeps its own colours and the
     // temperature keeps a text-weight contrast — see [WeatherSkin].
@@ -412,10 +422,20 @@ class AppPalette {
     // The same eight hues lifted and slightly desaturated. The light set drawn
     // on a dark card reads as holes punched in it rather than as a chart.
     spendSlices: [
-      Color(0xFF7BA3F0), Color(0xFFF0B45E), Color(0xFF55C7B2), Color(0xFFF07FA0),
-      Color(0xFFB693F5), Color(0xFF92CC6E), Color(0xFFF79470), Color(0xFF5FBFDF),
-      Color(0xFF8E94F0), Color(0xFFE289CE), Color(0xFFC4A183), Color(0xFFC6C45F),
-      Color(0xFF62C48D), Color(0xFF9AA9BC),
+      Color(0xFF7BA3F0),
+      Color(0xFFF0B45E),
+      Color(0xFF55C7B2),
+      Color(0xFFF07FA0),
+      Color(0xFFB693F5),
+      Color(0xFF92CC6E),
+      Color(0xFFF79470),
+      Color(0xFF5FBFDF),
+      Color(0xFF8E94F0),
+      Color(0xFFE289CE),
+      Color(0xFFC4A183),
+      Color(0xFFC6C45F),
+      Color(0xFF62C48D),
+      Color(0xFF9AA9BC),
     ],
     // Same hues at the surface lift the rest of the dark palette sits at, which
     // is what keeps a sunny card from glowing out of a night-time sheet. The
@@ -437,9 +457,7 @@ class AppPalette {
     // One layer here — on dark a card is lighter than its page, so the lift is
     // doing less work — with the same negative spread as light, for the same
     // reason: see the note over the light palette's.
-    shadowCard: [
-      BoxShadow(color: Color(0x33000000), blurRadius: 10, offset: Offset(0, 2), spreadRadius: -3),
-    ],
+    shadowCard: [BoxShadow(color: Color(0x33000000), blurRadius: 10, offset: Offset(0, 2), spreadRadius: -3)],
     shadowNavBar: [BoxShadow(color: Color(0x8C000000), blurRadius: 30, offset: Offset(0, 14))],
     shadowFloatingPill: [BoxShadow(color: Color(0x59000000), blurRadius: 14, offset: Offset(0, 4))],
     shadowSheet: [BoxShadow(color: Color(0x99000000), blurRadius: 40, offset: Offset(0, -14))],
@@ -593,9 +611,18 @@ class AppCalendarColors {
   AppCalendarColors._();
 
   static const choices = <Color>[
-    Color(0xFF4A7FDC), Color(0xFF2D9CDB), Color(0xFF1FA894), Color(0xFF63A83F),
-    Color(0xFFC9B227), Color(0xFFE0912A), Color(0xFFE2653C), Color(0xFFDC4F78),
-    Color(0xFFB0479E), Color(0xFF8A63DE), Color(0xFF8A6A4B), Color(0xFF7C8794),
+    Color(0xFF4A7FDC),
+    Color(0xFF2D9CDB),
+    Color(0xFF1FA894),
+    Color(0xFF63A83F),
+    Color(0xFFC9B227),
+    Color(0xFFE0912A),
+    Color(0xFFE2653C),
+    Color(0xFFDC4F78),
+    Color(0xFFB0479E),
+    Color(0xFF8A63DE),
+    Color(0xFF8A6A4B),
+    Color(0xFF7C8794),
   ];
 }
 
@@ -770,7 +797,6 @@ class AppGlyph {
   /// table-row indicator, which is ~12.5pt of chevron.
   static const caret = 18.0;
 }
-
 
 class AppShadows {
   AppShadows._();
@@ -1323,11 +1349,8 @@ class AppText {
   /// for why it is smaller than [microLabel] rather than borrowing it. Takes
   /// its colour from the item (`AppColors.ink`, or the accent on the tab in
   /// force), so unlike the captions above it does not carry one.
-  static TextStyle get navLabel => TextStyle(
-    fontFamily: _family,
-    fontSize: _s.navLabel.size,
-    fontWeight: _s.navLabel.weight,
-  );
+  static TextStyle get navLabel =>
+      TextStyle(fontFamily: _family, fontSize: _s.navLabel.size, fontWeight: _s.navLabel.weight);
 
   /// The two ends of a collapsing header's title, and the title of a pushed
   /// page at rest. Sizes rather than styles, because the header interpolates
@@ -1370,6 +1393,20 @@ class AppText {
   /// disc is what tracks the type; the ratios inside it are fixed.
   static double markImage(double mark) => mark * 0.68;
   static double markGlyph(double mark) => mark * 0.5;
+
+  /// The same symbol where there is **no disc under it at all** — the glyph is
+  /// the mark rather than the thing inside one.
+  ///
+  /// Bigger than [markGlyph] and smaller than [markImage], because the two
+  /// numbers are answering different questions. Inside a disc the glyph is half
+  /// of it and the fill carries the rest of the mark's presence; with the fill
+  /// gone a glyph kept at that size reads as having shrunk, and one grown to
+  /// the artwork's ratio out-weighs the grocery pictures it shares a column
+  /// with — those are art with their own margin baked in, a glyph is ink to its
+  /// own edge. This lands where `_ItemIcon` in `box_screen.dart` already had it
+  /// by hand, which is the one place in the app that has been drawing a bare
+  /// mark all along.
+  static double markBareGlyph(double mark) => mark * 0.6;
   static double markInitials(double mark) => mark * 0.36;
 
   // -------------------------------------------------------------- Calendar

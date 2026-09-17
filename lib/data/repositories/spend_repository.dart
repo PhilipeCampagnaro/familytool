@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../l10n/l10n.dart';
 import '../../models/spend.dart';
+import '../../models/spend_budget.dart';
 import '../../services/supabase.dart';
 import 'list_repository.dart' show newUuidV4;
 
@@ -135,10 +136,7 @@ class SpendRepository {
   /// `shared_preferences` — the whole point of the rebuild is that the user no
   /// longer handles a credential at all.
   Future<SpendEnrolment> enrolDevice({required String label, required String deviceUid}) async {
-    final res = await _db.functions.invoke(
-      'spend-enroll',
-      body: {'label': label, 'device_uid': deviceUid},
-    );
+    final res = await _db.functions.invoke('spend-enroll', body: {'label': label, 'device_uid': deviceUid});
 
     final data = res.data;
     if (data is! Map || data['token'] is! String) {
@@ -186,10 +184,37 @@ class SpendRepository {
     await _db.from('spend_ingest_devices').update({'label': label}).eq('id', id);
   }
 
+  // -------------------------------------------------------------------------
+  // Budgets
+  // -------------------------------------------------------------------------
+
+  static const _budgetColumns = 'id, family_id, category, amount_cents, icon_asset';
+
+  Future<List<SpendBudget>> fetchBudgets() async {
+    final rows = await _db.from('spend_budgets').select(_budgetColumns).order('created_at', ascending: true);
+    return [for (final r in rows) SpendBudget.fromMap(r)];
+  }
+
+  /// Files a budget under the id the caller already put on screen. No read-back:
+  /// there is nothing on the row the client did not send.
+  Future<void> createBudget(SpendBudget budget) async {
+    await _db.from('spend_budgets').insert(budget.toMap());
+  }
+
+  Future<void> updateBudget(SpendBudget budget) async {
+    await _db
+        .from('spend_budgets')
+        .update({'amount_cents': budget.amountCents, 'icon_asset': budget.iconAsset})
+        .eq('id', budget.id);
+  }
+
+  Future<void> deleteBudget(String id) async {
+    await _db.from('spend_budgets').delete().eq('id', id);
+  }
+
   /// Edge Functions answer a failure with `{ "error": "..." }` in German,
   /// meant to be shown as-is.
-  String? _errorFrom(Object? data) =>
-      data is Map && data['error'] is String ? data['error'] as String : null;
+  String? _errorFrom(Object? data) => data is Map && data['error'] is String ? data['error'] as String : null;
 }
 
 /// What `spend-enroll` hands back. The token exists in this object and in the
@@ -212,10 +237,5 @@ class SpendDevice {
 
   final DateTime? lastUsedAt;
 
-  const SpendDevice({
-    required this.id,
-    required this.label,
-    required this.deviceUid,
-    this.lastUsedAt,
-  });
+  const SpendDevice({required this.id, required this.label, required this.deviceUid, this.lastUsedAt});
 }

@@ -26,20 +26,20 @@ extension AppLanguageLabel on AppLanguage {
   /// The names come through `L.s` like everything else, so the compiler still
   /// refuses a language that forgot one — they simply read the same in all four.
   String get label => switch (this) {
-        AppLanguage.de => L.s.languageGerman,
-        AppLanguage.en => L.s.languageEnglish,
-        AppLanguage.pt => L.s.languagePortuguese,
-        AppLanguage.es => L.s.languageSpanish,
-      };
+    AppLanguage.de => L.s.languageGerman,
+    AppLanguage.en => L.s.languageEnglish,
+    AppLanguage.pt => L.s.languagePortuguese,
+    AppLanguage.es => L.s.languageSpanish,
+  };
 
   /// The region under the name — this one *does* follow the interface
   /// language, since it is a description rather than the language's own name.
   String get nativeSubtitle => switch (this) {
-        AppLanguage.de => L.s.languageGermanRegion,
-        AppLanguage.en => L.s.languageEnglishRegion,
-        AppLanguage.pt => L.s.languagePortugueseRegion,
-        AppLanguage.es => L.s.languageSpanishRegion,
-      };
+    AppLanguage.de => L.s.languageGermanRegion,
+    AppLanguage.en => L.s.languageEnglishRegion,
+    AppLanguage.pt => L.s.languagePortugueseRegion,
+    AppLanguage.es => L.s.languageSpanishRegion,
+  };
 }
 
 class SettingsScreenState {
@@ -59,12 +59,7 @@ class SettingsScreenState {
   /// not a stand-in identity.
   String get displayName => name.trim().isEmpty ? L.s.setUpProfile : name;
 
-  SettingsScreenState copyWith({
-    String? name,
-    int? avatarTone,
-    bool? darkMode,
-    AppLanguage? language,
-  }) {
+  SettingsScreenState copyWith({String? name, int? avatarTone, bool? darkMode, AppLanguage? language}) {
     return SettingsScreenState(
       name: name ?? this.name,
       avatarTone: avatarTone ?? this.avatarTone,
@@ -133,4 +128,6 @@ class SettingsNotifier extends StateNotifier<SettingsScreenState> {
   // against the real rows.
 }
 
-final settingsProvider = StateNotifierProvider<SettingsNotifier, SettingsScreenState>((ref) => SettingsNotifier());
+final settingsProvider = StateNotifierProvider<SettingsNotifier, SettingsScreenState>(
+  (ref) => SettingsNotifier(),
+);

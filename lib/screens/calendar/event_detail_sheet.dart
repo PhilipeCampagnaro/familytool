@@ -136,11 +136,18 @@ Widget _buildEventChips(CalendarEvent e) {
       Container(
         padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
         decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(14)),
-        child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Container(width: 7, height: 7, decoration: BoxDecoration(color: e.srcColor, shape: BoxShape.circle)),
-          const SizedBox(width: 6),
-          Text(e.source, style: AppText.microLabel.copyWith(color: AppColors.inkSecondary)),
-        ]),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 7,
+              height: 7,
+              decoration: BoxDecoration(color: e.srcColor, shape: BoxShape.circle),
+            ),
+            const SizedBox(width: 6),
+            Text(e.source, style: AppText.microLabel.copyWith(color: AppColors.inkSecondary)),
+          ],
+        ),
       ),
       // An event has no owner until there is an account behind the app; the
       // chip is dropped rather than shown blank.
@@ -149,11 +156,14 @@ Widget _buildEventChips(CalendarEvent e) {
         Container(
           padding: const EdgeInsets.fromLTRB(3, 3, 11, 3),
           decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(14)),
-          child: Row(mainAxisSize: MainAxisSize.min, children: [
-            Avatar(size: 21, bg: tone.bg, fg: tone.fg, initials: e.ownerInitial, fontSize: 9),
-            const SizedBox(width: 6),
-            Text(e.owner, style: AppText.microLabel.copyWith(color: AppColors.inkSecondary)),
-          ]),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Avatar(size: 21, bg: tone.bg, fg: tone.fg, initials: e.ownerInitial, fontSize: 9),
+              const SizedBox(width: 6),
+              Text(e.owner, style: AppText.microLabel.copyWith(color: AppColors.inkSecondary)),
+            ],
+          ),
         ),
       ],
     ],
@@ -168,9 +178,7 @@ void _showEventDetailSheet(BuildContext context, WidgetRef ref) {
   showAppSheet(
     context: context,
     heightFactor: 0.88,
-    header: Consumer(
-      builder: (context, ref, _) => _buildEventDetailHeader(context, ref),
-    ),
+    header: Consumer(builder: (context, ref, _) => _buildEventDetailHeader(context, ref)),
     child: Consumer(
       builder: (context, ref, _) {
         final state = ref.watch(calendarProvider);
@@ -188,10 +196,7 @@ void _showEventDetailSheet(BuildContext context, WidgetRef ref) {
           // "Notizen", ships as a stub beside them.
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (e.title.trim().isNotEmpty) ...[
-              _buildEventHeadline(e.title),
-              const SizedBox(height: 12),
-            ],
+            if (e.title.trim().isNotEmpty) ...[_buildEventHeadline(e.title), const SizedBox(height: 12)],
             _buildEventChips(e),
             const SizedBox(height: 12),
             IntrinsicHeight(
@@ -201,19 +206,31 @@ void _showEventDetailSheet(BuildContext context, WidgetRef ref) {
                   Expanded(
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
-                      decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(20), boxShadow: AppShadows.card),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: AppShadows.card,
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(children: [
-                            AppIcon(AppIcons.calendar, size: 15, color: AppColors.muted),
-                            SizedBox(width: 9),
-                            Text(L.s.eventLabel, style: AppText.microLabel.copyWith(letterSpacing: 0.3)),
-                          ]),
+                          Row(
+                            children: [
+                              AppIcon(AppIcons.calendar, size: 15, color: AppColors.muted),
+                              SizedBox(width: 9),
+                              Text(L.s.eventLabel, style: AppText.microLabel.copyWith(letterSpacing: 0.3)),
+                            ],
+                          ),
                           const SizedBox(height: 9),
                           Text(state.openEventDateLine, style: AppText.itemTitle),
                           const SizedBox(height: 2),
-                          Text(e.timeRangeLabel, style: AppText.caption.copyWith(fontWeight: FontWeight.w300, color: AppColors.inkTertiary)),
+                          Text(
+                            e.timeRangeLabel,
+                            style: AppText.caption.copyWith(
+                              fontWeight: FontWeight.w300,
+                              color: AppColors.inkTertiary,
+                            ),
+                          ),
                           // That it comes round, not how often. An expanded
                           // occurrence is all a provider hands back, so the
                           // frequency is genuinely unknown here — and the one
@@ -221,11 +238,13 @@ void _showEventDetailSheet(BuildContext context, WidgetRef ref) {
                           // about to ask a question.
                           if (e.repeats) ...[
                             const SizedBox(height: 5),
-                            Row(children: [
-                              AppIcon(AppIcons.repeat, size: 12, color: AppColors.muted),
-                              const SizedBox(width: 6),
-                              Text(L.s.repeats, style: AppText.microLabel),
-                            ]),
+                            Row(
+                              children: [
+                                AppIcon(AppIcons.repeat, size: 12, color: AppColors.muted),
+                                const SizedBox(width: 6),
+                                Text(L.s.repeats, style: AppText.microLabel),
+                              ],
+                            ),
                           ],
                         ],
                       ),
@@ -234,10 +253,7 @@ void _showEventDetailSheet(BuildContext context, WidgetRef ref) {
                   // Same as the agenda row: no forecast, no card — and the date
                   // beside it then takes the full width rather than sitting next
                   // to an empty box.
-                  if (weather != null) ...[
-                    const SizedBox(width: 10),
-                    _WeatherCard(weather: weather),
-                  ],
+                  if (weather != null) ...[const SizedBox(width: 10), _WeatherCard(weather: weather)],
                 ],
               ),
             ),
@@ -252,17 +268,18 @@ void _showEventDetailSheet(BuildContext context, WidgetRef ref) {
             // before *this* appointment *this* phone rings. Absent once it is
             // over, and for an appointment still on its way to the provider —
             // it has no uid yet to key a reminder on.
-            if (_reminderOffered(e, state.now)) ...[
-              const SizedBox(height: 12),
-              _ReminderCard(event: e),
-            ],
+            if (_reminderOffered(e, state.now)) ...[const SizedBox(height: 12), _ReminderCard(event: e)],
             // Notes, on the other hand, are shown empty on purpose: every event
             // has this card, so the sheet has one shape and "there are no notes
             // on this one" is something you can read off it.
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
-              decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(20), boxShadow: AppShadows.card),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: AppShadows.card,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -333,40 +350,23 @@ void _showEventDetailSheet(BuildContext context, WidgetRef ref) {
                 SettingsRow(
                   enabled: linkedLists.isEmpty,
                   value: linkedLists.isEmpty ? null : L.s.alreadyCreated,
-                  leading: _LinkTile(
-                    iconKey: null,
-                    fallbackIcon: AppIcons.listChecks,
-                    action: true,
-                  ),
+                  leading: _LinkTile(iconKey: null, fallbackIcon: AppIcons.listChecks, action: true),
                   title: L.s.createListFromEvent,
                   // The event's own name, as a name for the container — which
                   // is what makes this worth a tap: "Wochenende Hamburg" is a
                   // good list. Untouched-but-prefilled counts as typed, so
                   // `suggestIcon` picks the list's icon off it for free.
-                  onTap: () => openListSheet(
-                    context,
-                    ref,
-                    initialName: e.title.trim(),
-                    eventLink: _linkTo(e),
-                  ),
+                  onTap: () =>
+                      openListSheet(context, ref, initialName: e.title.trim(), eventLink: _linkTo(e)),
                 ),
                 SettingsRow(
                   enabled: linkedTasks.isEmpty,
                   value: linkedTasks.isEmpty ? null : L.s.alreadyCreated,
-                  leading: _LinkTile(
-                    iconKey: null,
-                    fallbackIcon: AppIcons.checkCircle,
-                    action: true,
-                  ),
+                  leading: _LinkTile(iconKey: null, fallbackIcon: AppIcons.checkCircle, action: true),
                   title: L.s.createTaskFromEvent,
                   // The date, not the title — see [openTaskSheet]. A task named
                   // after the appointment only repeats the appointment.
-                  onTap: () => openTaskSheet(
-                    context,
-                    ref,
-                    initialDue: e.startsAt,
-                    eventLink: _linkTo(e),
-                  ),
+                  onTap: () => openTaskSheet(context, ref, initialDue: e.startsAt, eventLink: _linkTo(e)),
                 ),
               ]),
             ),
@@ -428,7 +428,9 @@ class _ReminderCardState extends ConsumerState<_ReminderCard> {
             icon: AppIcons.bell,
             title: L.s.reminder,
             subtitle: subtitle,
-            value: current == null ? L.s.reminderNone : reminderLabel(current.minutesBefore, allDay: e.allDay),
+            value: current == null
+                ? L.s.reminderNone
+                : reminderLabel(current.minutesBefore, allDay: e.allDay),
             onTap: _openMenu,
           ),
         ],
@@ -582,13 +584,7 @@ class _EventLocationCardState extends State<_EventLocationCard> {
     if (key == _requested) return;
     _requested = key;
 
-    var view = await mapSnapshot(
-      query: _query,
-      width: width,
-      height: _mapHeight,
-      scale: scale,
-      dark: dark,
-    );
+    var view = await mapSnapshot(query: _query, width: width, height: _mapHeight, scale: scale, dark: dark);
     // "Turnhalle, Raum 2" is not an address anybody can place; the first line
     // on its own usually is.
     if (view == null && _query != widget.event.loc) {
@@ -636,12 +632,8 @@ class _EventLocationCardState extends State<_EventLocationCard> {
               NavigationApp.waze => 'location.fill',
               NavigationApp.googleMaps => 'map',
             },
-            onSelected: () => openNavigation(
-              app,
-              query: _query,
-              latitude: _map?.latitude,
-              longitude: _map?.longitude,
-            ),
+            onSelected: () =>
+                openNavigation(app, query: _query, latitude: _map?.latitude, longitude: _map?.longitude),
           ),
       ],
     );
@@ -653,7 +645,11 @@ class _EventLocationCardState extends State<_EventLocationCard> {
     final accent = widget.accent;
 
     return Container(
-      decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(20), boxShadow: AppShadows.card),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: AppShadows.card,
+      ),
       clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -666,7 +662,13 @@ class _EventLocationCardState extends State<_EventLocationCard> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
               child: Row(
                 children: [
-                  Container(width: 38, height: 38, decoration: BoxDecoration(color: AppColors.surfaceAlt, shape: BoxShape.circle), alignment: Alignment.center, child: AppIcon(AppIcons.mapPin, size: 18, color: accent)),
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(color: AppColors.surfaceAlt, shape: BoxShape.circle),
+                    alignment: Alignment.center,
+                    child: AppIcon(AppIcons.mapPin, size: 18, color: accent),
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -744,7 +746,11 @@ class _EventLocationCardState extends State<_EventLocationCard> {
                       onTap: _openRouteMenu,
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(color: AppColors.surface, borderRadius: const BorderRadius.all(Radius.circular(13)), boxShadow: AppShadows.card),
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          borderRadius: const BorderRadius.all(Radius.circular(13)),
+                          boxShadow: AppShadows.card,
+                        ),
                         child: Text(L.s.route, style: AppText.microLabel.copyWith(color: accent)),
                       ),
                     ),
@@ -777,7 +783,10 @@ class _MapPin extends StatelessWidget {
   static const size = Size(22, height);
 
   @override
-  Widget build(BuildContext context) => CustomPaint(size: size, painter: _MapPinPainter(color: color, ring: ring));
+  Widget build(BuildContext context) => CustomPaint(
+    size: size,
+    painter: _MapPinPainter(color: color, ring: ring),
+  );
 }
 
 class _MapPinPainter extends CustomPainter {
@@ -834,7 +843,12 @@ class _MapPinPainter extends CustomPainter {
 /// dieser Termin" and "Ganze Serie" replace the single "Löschen", because on a
 /// series the two are wildly different outcomes and there is no way to infer
 /// which one a tap meant. One of the two also cannot be undone — see below.
-void _confirmDeleteEvent(BuildContext context, WidgetRef ref, CalendarEvent event, {VoidCallback? onDeleted}) {
+void _confirmDeleteEvent(
+  BuildContext context,
+  WidgetRef ref,
+  CalendarEvent event, {
+  VoidCallback? onDeleted,
+}) {
   showDialog<void>(
     context: context,
     builder: (dialogContext) {
@@ -878,14 +892,9 @@ void _confirmDeleteEvent(BuildContext context, WidgetRef ref, CalendarEvent even
 
       return AlertDialog(
         title: Text(event.repeats ? L.s.repeatingEvent : L.s.deleteEventQuestion),
-        content: Text(
-          event.repeats ? L.s.deleteRepeatingEventBody : L.s.deleteEventBody(event.title),
-        ),
+        content: Text(event.repeats ? L.s.deleteRepeatingEventBody : L.s.deleteEventBody(event.title)),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: Text(L.s.cancel),
-          ),
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: Text(L.s.cancel)),
           if (event.repeats) ...[
             TextButton(
               onPressed: () => remove(EventScope.single),
@@ -1000,9 +1009,7 @@ class _LinkedCard extends ConsumerWidget {
                 // choosing between them.
                 leading: _LinkTile(
                   iconKey: list.iconKey,
-                  fallbackIcon: list.kind == ListKind.grocery
-                      ? AppIcons.shoppingCart
-                      : AppIcons.listChecks,
+                  fallbackIcon: list.kind == ListKind.grocery ? AppIcons.shoppingCart : AppIcons.listChecks,
                 ),
                 title: list.name,
                 onTap: () => _leaveFor(context, ref, () => nav.toList(list.id)),

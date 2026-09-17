@@ -210,12 +210,14 @@ _DayPlan _dayPlan(List<CalendarEvent> events, List<BoardTask> todos, DateTime da
     }
     final from = minutesInto(event.startsAt);
     final to = minutesInto(event.endsAt);
-    timed.add(_TimedEntry(
-      entry: event,
-      from: from,
-      to: math.max(to, from),
-      slotTo: math.min(1440, math.max(to, from + _minSlotMinutes)),
-    ));
+    timed.add(
+      _TimedEntry(
+        entry: event,
+        from: from,
+        to: math.max(to, from),
+        slotTo: math.min(1440, math.max(to, from + _minSlotMinutes)),
+      ),
+    );
   }
 
   for (final task in todos) {
@@ -225,12 +227,14 @@ _DayPlan _dayPlan(List<CalendarEvent> events, List<BoardTask> todos, DateTime da
       continue;
     }
     final from = math.min(1440, at.hour * 60 + at.minute);
-    timed.add(_TimedEntry(
-      entry: task,
-      from: from,
-      to: math.min(1440, from + _todoSlotMinutes),
-      slotTo: math.min(1440, from + _todoSlotMinutes),
-    ));
+    timed.add(
+      _TimedEntry(
+        entry: task,
+        from: from,
+        to: math.min(1440, from + _todoSlotMinutes),
+        slotTo: math.min(1440, from + _todoSlotMinutes),
+      ),
+    );
   }
 
   timed.sort((a, b) {
@@ -513,8 +517,8 @@ class _JumpToTodaySlot extends ConsumerWidget {
       bottom: nav.compact
           ? navRowBottom(context, barHeight: nav.barHeight)
           : shelf != null
-              ? moreShelfTop(context, barHeight: nav.barHeight) + kMoreShelfSpacing
-              : navContentInset(context, pill: 106, gap: 36),
+          ? moreShelfTop(context, barHeight: nav.barHeight) + kMoreShelfSpacing
+          : navContentInset(context, pill: 106, gap: 36),
       child: _JumpToTodayButton(visible: visible, accent: accent, onTap: onTap),
     );
   }
@@ -615,8 +619,7 @@ class _TitleRow extends StatelessWidget {
               ),
             ),
           ),
-          if (trailing != null)
-            Positioned(right: 0, top: 0, bottom: 0, child: Center(child: trailing!)),
+          if (trailing != null) Positioned(right: 0, top: 0, bottom: 0, child: Center(child: trailing!)),
           // Overlaid rather than laid out inline for the same reason as the
           // title: reserving width for it would drag the expanded, left-aligned
           // title sideways even at t == 0, where this isn't visible at all.
@@ -666,9 +669,8 @@ class _CalendarHeaderActions extends StatelessWidget {
           // is what "verbinden" means anyway.
           icon: AppIcons.link,
           label: L.s.connectCalendars,
-          onTap: () => Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => CalendarConnectionsPage()),
-          ),
+          onTap: () =>
+              Navigator.of(context).push(MaterialPageRoute(builder: (_) => CalendarConnectionsPage())),
         ),
         GlassIconAction(icon: AppIcons.plus, label: L.s.addEvent, onTap: onAdd),
       ],
@@ -818,66 +820,62 @@ class _MonthYearRow extends StatelessWidget {
     return SizedBox(
       height: height,
       child: Row(
-      children: [
-        // Given the row's whole width rather than left to ask for what it
-        // wants: a label that measures itself against infinity cannot
-        // ellipsise, and Home's island can hold an appointment's title. The
-        // switcher stacks its children centred by default, so the alignment
-        // has to be said out loud once the box is wider than the words.
-        Expanded(
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 260),
-            switchInCurve: Curves.easeOutCubic,
-            switchOutCurve: Curves.easeIn,
-            layoutBuilder: (current, previous) => Stack(
-              alignment: Alignment.centerLeft,
-              children: [...previous, ?current],
+        children: [
+          // Given the row's whole width rather than left to ask for what it
+          // wants: a label that measures itself against infinity cannot
+          // ellipsise, and Home's island can hold an appointment's title. The
+          // switcher stacks its children centred by default, so the alignment
+          // has to be said out loud once the box is wider than the words.
+          Expanded(
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 260),
+              switchInCurve: Curves.easeOutCubic,
+              switchOutCurve: Curves.easeIn,
+              layoutBuilder: (current, previous) =>
+                  Stack(alignment: Alignment.centerLeft, children: [...previous, ?current]),
+              transitionBuilder: (child, animation) => FadeTransition(
+                opacity: animation,
+                child: SlideTransition(
+                  position: Tween<Offset>(begin: const Offset(0, 0.25), end: Offset.zero).animate(animation),
+                  child: child,
+                ),
+              ),
+              child: child,
             ),
-            transitionBuilder: (child, animation) => FadeTransition(
-              opacity: animation,
+          ),
+          // Always mounted, so [trailing] animates both ways: it slides in from
+          // the right edge while its slot opens, and slides back out while the
+          // label takes the width back.
+          //
+          // The slot's width is what grows (the size transition), and the pill
+          // is pinned to its right edge inside it and travels in from the right
+          // over the top of that — clipped at the row's edge, so it reads as
+          // coming out from the side rather than appearing in place.
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 360),
+            reverseDuration: const Duration(milliseconds: 240),
+            switchInCurve: Curves.easeOutCubic,
+            switchOutCurve: Curves.easeInCubic,
+            layoutBuilder: (current, previous) =>
+                Stack(alignment: Alignment.centerRight, children: [...previous, ?current]),
+            transitionBuilder: (child, animation) => SizeTransition(
+              sizeFactor: animation,
+              axis: Axis.horizontal,
+              alignment: Alignment.centerRight,
               child: SlideTransition(
-                position: Tween<Offset>(begin: const Offset(0, 0.25), end: Offset.zero).animate(animation),
-                child: child,
+                position: Tween<Offset>(begin: const Offset(0.6, 0), end: Offset.zero).animate(animation),
+                child: FadeTransition(opacity: animation, child: child),
               ),
             ),
-            child: child,
+            child: trailing == null
+                ? const SizedBox.shrink(key: ValueKey('noTrailing'))
+                : Padding(
+                    key: const ValueKey('trailing'),
+                    padding: const EdgeInsets.only(left: 12),
+                    child: trailing,
+                  ),
           ),
-        ),
-        // Always mounted, so [trailing] animates both ways: it slides in from
-        // the right edge while its slot opens, and slides back out while the
-        // label takes the width back.
-        //
-        // The slot's width is what grows (the size transition), and the pill
-        // is pinned to its right edge inside it and travels in from the right
-        // over the top of that — clipped at the row's edge, so it reads as
-        // coming out from the side rather than appearing in place.
-        AnimatedSwitcher(
-          duration: const Duration(milliseconds: 360),
-          reverseDuration: const Duration(milliseconds: 240),
-          switchInCurve: Curves.easeOutCubic,
-          switchOutCurve: Curves.easeInCubic,
-          layoutBuilder: (current, previous) => Stack(
-            alignment: Alignment.centerRight,
-            children: [...previous, ?current],
-          ),
-          transitionBuilder: (child, animation) => SizeTransition(
-            sizeFactor: animation,
-            axis: Axis.horizontal,
-            alignment: Alignment.centerRight,
-            child: SlideTransition(
-              position: Tween<Offset>(begin: const Offset(0.6, 0), end: Offset.zero).animate(animation),
-              child: FadeTransition(opacity: animation, child: child),
-            ),
-          ),
-          child: trailing == null
-              ? const SizedBox.shrink(key: ValueKey('noTrailing'))
-              : Padding(
-                  key: const ValueKey('trailing'),
-                  padding: const EdgeInsets.only(left: 12),
-                  child: trailing,
-                ),
-        ),
-      ],
+        ],
       ),
     );
   }
@@ -1066,14 +1064,16 @@ String _groupLabel(WidgetRef ref, CalendarGroup group) {
   if (memberId.isNotEmpty) {
     // `select` rather than a bare watch, so a chip row doesn't rebuild every
     // time an avatar URL is re-signed. Only this member's name is read.
-    final name = ref.watch(
-      familyProvider.select((s) {
-        for (final m in s.members) {
-          if (m.userId == memberId) return m.name;
-        }
-        return null;
-      }),
-    )?.trim();
+    final name = ref
+        .watch(
+          familyProvider.select((s) {
+            for (final m in s.members) {
+              if (m.userId == memberId) return m.name;
+            }
+            return null;
+          }),
+        )
+        ?.trim();
     if (name != null && name.isNotEmpty) return name;
   }
 
@@ -1187,9 +1187,7 @@ class _AllCalendarsChipState extends ConsumerState<_AllCalendarsChip> {
     final ids = <String?>[null];
     List<bool> statesOf() {
       final filter = ref.read(calendarProvider).calendarFilter;
-      return [
-        for (final id in ids) filter == null || (id != null && filter.contains(id)),
-      ];
+      return [for (final id in ids) filter == null || (id != null && filter.contains(id))];
     }
 
     final options = <NativeMenuOption>[
@@ -1207,14 +1205,16 @@ class _AllCalendarsChipState extends ConsumerState<_AllCalendarsChip> {
       final filter = ref.read(calendarProvider).calendarFilter;
       for (final src in group.calendars) {
         ids.add(src.id);
-        options.add(NativeMenuOption(
-          src.name,
-          color: src.color,
-          section: section,
-          sectionTitle: title,
-          selected: filter == null || filter.contains(src.id),
-          keepsOpen: true,
-        ));
+        options.add(
+          NativeMenuOption(
+            src.name,
+            color: src.color,
+            section: section,
+            sectionTitle: title,
+            selected: filter == null || filter.contains(src.id),
+            keepsOpen: true,
+          ),
+        );
       }
     }
 

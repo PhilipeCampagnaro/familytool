@@ -62,7 +62,7 @@ class StartScreen extends ConsumerWidget {
       trailing: _ProfileButton(),
       label: DayIsland(),
       underLabel: FirstStepsCard(),
-      underLabelHeight: open ? firstStepsPanelHeight(steps.length) : 0,
+      underLabelHeight: open ? firstStepsPanelHeight(steps.length, MediaQuery.textScalerOf(context)) : 0,
       belowDay: HomeSections(),
     );
   }

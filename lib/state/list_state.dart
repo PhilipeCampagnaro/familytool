@@ -40,6 +40,10 @@ class ListScreenState {
   /// through the household — see [isGuest].
   final Set<String> guestListIds;
 
+  /// Lists somebody outside the household can reach or has been invited to —
+  /// the small people icon on the row and in the header.
+  final Set<String> sharedOutIds;
+
   /// Item id → what the row menu's Foto/Kamera/Dateien have attached to it.
   ///
   /// Stored now. This map used to be the whole feature — the objects lived in
@@ -76,6 +80,7 @@ class ListScreenState {
     this.lists = const [],
     this.itemsByList = const {},
     this.guestListIds = const {},
+    this.sharedOutIds = const {},
     this.attachments = const {},
     this.newVisibility = ListVisibility.family,
     this.newSharedWith = const {},
@@ -107,6 +112,7 @@ class ListScreenState {
     List<ShoppingList>? lists,
     Map<String, List<ShoppingListItem>>? itemsByList,
     Set<String>? guestListIds,
+    Set<String>? sharedOutIds,
     Map<String, List<ItemAttachment>>? attachments,
     ListVisibility? newVisibility,
     Set<String>? newSharedWith,
@@ -122,6 +128,7 @@ class ListScreenState {
       lists: lists ?? this.lists,
       itemsByList: itemsByList ?? this.itemsByList,
       guestListIds: guestListIds ?? this.guestListIds,
+      sharedOutIds: sharedOutIds ?? this.sharedOutIds,
       attachments: attachments ?? this.attachments,
       newVisibility: newVisibility ?? this.newVisibility,
       newSharedWith: newSharedWith ?? this.newSharedWith,
@@ -175,7 +182,12 @@ class DeletedList {
   /// Where it sat in the overview, so undo puts it back rather than at the end.
   final int index;
 
-  const DeletedList({required this.list, required this.items, required this.attachments, required this.index});
+  const DeletedList({
+    required this.list,
+    required this.items,
+    required this.attachments,
+    required this.index,
+  });
 }
 
 /// One deleted article, held for as long as its chip is up.
@@ -207,13 +219,29 @@ class ListNotifier extends StateNotifier<ListScreenState> {
 
   /// Client-side ids for rows that exist on screen but not yet on the server.
   /// Prefixed so nothing can mistake one for a uuid and send it back.
+  ///
+  /// **A uuid rather than the clock**, which is not a detail: [_fillList] mints
+  /// one per article in a tight synchronous loop, and on a Sonstige list that
+  /// loop does no work at all per row (no icon to look up), so two of them read
+  /// the same microsecond. Two drafts then shared an id, the first insert to
+  /// answer replaced *both* with its own saved row — `_patchItem` patches every
+  /// match, which is right — and the list came back with one uuid on two rows,
+  /// which is a duplicate `ValueKey` and a red screen rather than a wrong row.
   static const _tempPrefix = 'tmp:';
   static bool _isTemp(String id) => id.startsWith(_tempPrefix);
-  static String _tempId() => '$_tempPrefix${DateTime.now().microsecondsSinceEpoch}';
+  static String _tempId() => '$_tempPrefix${newUuidV4()}';
 
   // ---------------------------------------------------------------------------
   // Lifecycle
   // ---------------------------------------------------------------------------
+
+  /// Re-reads which lists are shared outside the household, after a share
+  /// sheet sent an invitation or the edit sheet removed a guest.
+  Future<void> refreshSharedOut() async {
+    final ids = [for (final l in state.lists) l.id];
+    final shared = await _repo.fetchSharedOutIds(ids);
+    if (mounted) state = state.copyWith(sharedOutIds: shared);
+  }
 
   Future<void> load() async {
     if (_userId == null) {
@@ -228,6 +256,7 @@ class ListNotifier extends StateNotifier<ListScreenState> {
         lists: snapshot.lists,
         itemsByList: snapshot.itemsByList,
         guestListIds: snapshot.guestListIds,
+        sharedOutIds: snapshot.sharedOutIds,
         loading: false,
         // A list can vanish between two launches (deleted on another device,
         // or a share revoked) while its detail view is the one being restored.
@@ -251,7 +280,10 @@ class ListNotifier extends StateNotifier<ListScreenState> {
   /// source of truth for what is attached, and a stale entry here would draw a
   /// thumbnail for a file somebody else has already removed.
   Future<void> _loadAttachments() async {
-    final itemIds = [for (final items in state.itemsByList.values) for (final i in items) i.id];
+    final itemIds = [
+      for (final items in state.itemsByList.values)
+        for (final i in items) i.id,
+    ];
     if (itemIds.isEmpty) {
       if (state.attachments.isNotEmpty) state = state.copyWith(attachments: const {});
       return;
@@ -269,16 +301,17 @@ class ListNotifier extends StateNotifier<ListScreenState> {
   /// Signs every attached object in one round trip. Never throws: a failure
   /// here costs thumbnails, not the screen.
   Future<void> _signAttachments() async {
-    final urls = await _photos.signUrls(
-      PhotoRepository.listBucket,
-      [for (final list in state.attachments.values) for (final a in list) a.storagePath],
-    );
+    final urls = await _photos.signUrls(PhotoRepository.listBucket, [
+      for (final list in state.attachments.values)
+        for (final a in list) a.storagePath,
+    ]);
     if (!mounted || urls.isEmpty) return;
     state = state.copyWith(
       attachments: {
         for (final entry in state.attachments.entries)
           entry.key: [
-            for (final a in entry.value) urls[a.storagePath] == null ? a : a.copyWith(url: urls[a.storagePath]),
+            for (final a in entry.value)
+              urls[a.storagePath] == null ? a : a.copyWith(url: urls[a.storagePath]),
           ],
       },
     );
@@ -357,6 +390,9 @@ class ListNotifier extends StateNotifier<ListScreenState> {
     String? iconKey,
     EventLink? eventLink,
     String? withId,
+    bool openIt = false,
+    List<String> steps = const [],
+    String? recipe,
   }) async {
     final trimmed = name.trim();
     if (trimmed.isEmpty) return false;
@@ -390,10 +426,18 @@ class ListNotifier extends StateNotifier<ListScreenState> {
       sharedWith: visibility == ListVisibility.custom ? sharedWith.toList() : const [],
       position: state.lists.length,
       eventLink: eventLink,
+      steps: steps,
+      recipe: recipe,
     );
     state = state.copyWith(
       lists: [...state.lists, optimistic],
       itemsByList: {...state.itemsByList, id: const []},
+      // In the same update as the row, so there is no frame of the shelf with
+      // the new list on it before the detail view replaces it. A failed write
+      // puts the reader back on the shelf below.
+      isDetail: openIt ? true : null,
+      openId: openIt ? id : null,
+      justMoved: openIt ? '' : null,
     );
 
     try {
@@ -407,6 +451,11 @@ class ListNotifier extends StateNotifier<ListScreenState> {
         sharedWith: sharedWith,
         position: optimistic.position,
         eventLink: eventLink,
+        // Must be passed, not merely put on `optimistic`: the row this returns
+        // *replaces* the optimistic one below, so anything the repository was
+        // not told about is dropped from the insert and from state alike.
+        steps: steps,
+        recipe: recipe,
       );
       if (!mounted) return false;
       // Appended rather than replaced when it is gone: a [load] that finished
@@ -458,9 +507,14 @@ class ListNotifier extends StateNotifier<ListScreenState> {
     required String name,
     required ListKind kind,
     required List<({String text, String? sub, String? unit})> items,
+    bool openIt = false,
+    List<String> steps = const [],
+    String? recipe,
   }) async {
     final id = newUuidV4();
-    if (!await createList(name: name, kind: kind, withId: id)) return false;
+    if (!await createList(name: name, kind: kind, withId: id, openIt: openIt, steps: steps, recipe: recipe)) {
+      return false;
+    }
     await _fillList(id, items);
     return true;
   }
@@ -486,7 +540,6 @@ class ListNotifier extends StateNotifier<ListScreenState> {
   Future<void> _fillList(String listId, List<({String text, String? sub, String? unit})> rows) async {
     if (rows.isEmpty) return;
     final grocery = _isGrocery(listId);
-    final subject = grocery ? IconSubject.groceryArticle : IconSubject.article;
 
     final drafts = <ShoppingListItem>[];
     for (var i = 0; i < rows.length; i++) {
@@ -499,7 +552,7 @@ class ListNotifier extends StateNotifier<ListScreenState> {
           text: text,
           sub: rows[i].sub,
           unit: rows[i].unit,
-          iconKey: suggestIcon(text, subject: subject)?.key,
+          iconKey: planItemIconKey(text, grocery: grocery),
           createdBy: _userId,
           position: drafts.length,
         ),
@@ -537,7 +590,9 @@ class ListNotifier extends StateNotifier<ListScreenState> {
     if (list == null) return false;
 
     final newName = name.trim().isEmpty ? list.name : name.trim();
-    final icon = iconKey ?? (newName == list.name ? list.iconKey : suggestIcon(newName, subject: IconSubject.list)?.key);
+    final icon =
+        iconKey ??
+        (newName == list.name ? list.iconKey : suggestIcon(newName, subject: IconSubject.list)?.key);
 
     try {
       final saved = await _repo.updateList(
@@ -573,9 +628,7 @@ class ListNotifier extends StateNotifier<ListScreenState> {
     final removed = DeletedList(
       list: list,
       items: removedItems,
-      attachments: {
-        for (final item in removedItems) item.id: ?state.attachments[item.id],
-      },
+      attachments: {for (final item in removedItems) item.id: ?state.attachments[item.id]},
       index: state.lists.indexWhere((l) => l.id == id),
     );
 
@@ -632,9 +685,7 @@ class ListNotifier extends StateNotifier<ListScreenState> {
       // In parallel: each article carries its own `position`, so the order it
       // comes back in is the order it was in, whatever sequence the inserts
       // finish in.
-      final restored = await Future.wait([
-        for (final item in deleted.items) _restoreItem(saved.id, item),
-      ]);
+      final restored = await Future.wait([for (final item in deleted.items) _restoreItem(saved.id, item)]);
       // The attached files have to be copied, not re-keyed. Undo re-inserts
       // under a fresh uuid — the old rows are gone and their ids with them —
       // and every object is filed under the id of the *list* it belongs to, so
@@ -698,10 +749,10 @@ class ListNotifier extends StateNotifier<ListScreenState> {
     }
 
     if (out.isEmpty) return out;
-    final urls = await _photos.signUrls(
-      PhotoRepository.listBucket,
-      [for (final list in out.values) for (final a in list) a.storagePath],
-    );
+    final urls = await _photos.signUrls(PhotoRepository.listBucket, [
+      for (final list in out.values)
+        for (final a in list) a.storagePath,
+    ]);
     return {
       for (final entry in out.entries)
         entry.key: [
@@ -759,7 +810,11 @@ class ListNotifier extends StateNotifier<ListScreenState> {
     final current = state.itemsFor(targetId);
     // Newest first, and one below the lowest sibling so the server agrees.
     final position = current.isEmpty ? 0 : current.map((i) => i.position).reduce((a, b) => a < b ? a : b) - 1;
-    final icon = iconKey ?? suggestIcon(article.text, subject: grocery ? IconSubject.groceryArticle : IconSubject.article)?.key;
+    // **Only a Lebensmittel article picks its own picture.** A Sonstige one
+    // takes the icon the reader chose and nothing otherwise — see
+    // [planItemIconKey] for why the matcher stopped guessing here.
+    final icon =
+        iconKey ?? (grocery ? suggestIcon(article.text, subject: IconSubject.groceryArticle)?.key : null);
 
     final optimistic = ShoppingListItem(
       id: _tempId(),
@@ -821,9 +876,24 @@ class ListNotifier extends StateNotifier<ListScreenState> {
     final newSub = (quantity == null || quantity.isEmpty) ? null : quantity;
     if (name == item.text && newSub == item.sub) return;
 
-    final icon = name == item.text ? item.iconKey : suggestIcon(name, subject: _isGrocery(item.listId) ? IconSubject.groceryArticle : IconSubject.article)?.key;
+    // Renaming re-matches on a Lebensmittel list and leaves a Sonstige one
+    // alone, which also means a picture the reader picked there survives a
+    // typo being fixed.
+    final icon = name == item.text || !_isGrocery(item.listId)
+        ? item.iconKey
+        : suggestIcon(name, subject: IconSubject.groceryArticle)?.key;
 
-    _patchItem(item.listId, item.id, (i) => i.copyWith(text: name, sub: newSub, clearSub: newSub == null, iconKey: icon, clearIconKey: icon == null));
+    _patchItem(
+      item.listId,
+      item.id,
+      (i) => i.copyWith(
+        text: name,
+        sub: newSub,
+        clearSub: newSub == null,
+        iconKey: icon,
+        clearIconKey: icon == null,
+      ),
+    );
 
     try {
       final saved = await _repo.editItem(item.id, text: name, sub: newSub, iconKey: icon);
@@ -934,7 +1004,10 @@ class ListNotifier extends StateNotifier<ListScreenState> {
   /// article, cleared by a non-admin) come straight back rather than
   /// disappearing until the next reload.
   Future<void> clearDone(List<ShoppingListItem> doneItems) async {
-    final ids = [for (final i in doneItems) if (!_isTemp(i.id)) i.id];
+    final ids = [
+      for (final i in doneItems)
+        if (!_isTemp(i.id)) i.id,
+    ];
     if (ids.isEmpty) return;
 
     final previous = state.itemsByList;
@@ -1070,7 +1143,10 @@ class ListNotifier extends StateNotifier<ListScreenState> {
   /// there on the server.
   Future<void> removeAttachment(ShoppingListItem item, ItemAttachment attachment) async {
     final previous = state.attachmentsFor(item);
-    _putAttachments(item.id, [for (final a in previous) if (a.id != attachment.id) a]);
+    _putAttachments(item.id, [
+      for (final a in previous)
+        if (a.id != attachment.id) a,
+    ]);
 
     try {
       await _repo.deleteAttachment(attachment.id);
@@ -1127,14 +1203,20 @@ class ListNotifier extends StateNotifier<ListScreenState> {
   void _removeItemLocally(String listId, String itemId) {
     final items = state.itemsByList[listId];
     if (items == null) return;
-    _putItem(listId, [for (final i in items) if (i.id != itemId) i]);
+    _putItem(listId, [
+      for (final i in items)
+        if (i.id != itemId) i,
+    ]);
   }
 
   void _removeItemsLocally(Set<String> itemIds) {
     state = state.copyWith(
       itemsByList: {
         for (final entry in state.itemsByList.entries)
-          entry.key: [for (final i in entry.value) if (!itemIds.contains(i.id)) i],
+          entry.key: [
+            for (final i in entry.value)
+              if (!itemIds.contains(i.id)) i,
+          ],
       },
     );
   }

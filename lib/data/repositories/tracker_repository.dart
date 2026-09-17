@@ -46,16 +46,17 @@ class TrackerRepository {
     if (rows.isEmpty) return const [];
 
     final ids = [for (final r in rows) r['id'] as String];
-    final shareRows = await _db.from('tracker_shares').select('tracker_id, user_id').inFilter('tracker_id', ids);
+    final shareRows = await _db
+        .from('tracker_shares')
+        .select('tracker_id, user_id')
+        .inFilter('tracker_id', ids);
 
     final sharedWith = <String, List<String>>{};
     for (final r in shareRows) {
       (sharedWith[r['tracker_id'] as String] ??= []).add(r['user_id'] as String);
     }
 
-    return [
-      for (final r in rows) Tracker.fromMap(r, sharedWith: sharedWith[r['id'] as String] ?? const []),
-    ];
+    return [for (final r in rows) Tracker.fromMap(r, sharedWith: sharedWith[r['id'] as String] ?? const [])];
   }
 
   /// Every check inside the history window, grouped by tracker.
@@ -174,7 +175,12 @@ class TrackerRepository {
   Future<void> setChecked(String trackerId, String familyId, DateTime day, bool checked) async {
     final key = formatDueDate(boardDay(day));
     if (!checked) {
-      await _db.from('tracker_checks').delete().eq('tracker_id', trackerId).eq('day', key).eq('done_by', _uid);
+      await _db
+          .from('tracker_checks')
+          .delete()
+          .eq('tracker_id', trackerId)
+          .eq('day', key)
+          .eq('done_by', _uid);
       return;
     }
     await _db.from('tracker_checks').upsert({
@@ -189,9 +195,7 @@ class TrackerRepository {
   /// Retires a tracker without touching its record. The checks stay, so a
   /// household that stops tracking the bins in June can still see the spring.
   Future<void> archiveTracker(String id) async {
-    await _db.from('trackers').update({
-      'archived_at': DateTime.now().toUtc().toIso8601String(),
-    }).eq('id', id);
+    await _db.from('trackers').update({'archived_at': DateTime.now().toUtc().toIso8601String()}).eq('id', id);
   }
 
   /// Deletes it outright, checks and all — `on delete cascade` takes the record

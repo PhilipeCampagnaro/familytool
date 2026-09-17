@@ -29,6 +29,7 @@ import '../widgets/error_note.dart';
 import '../widgets/event_link_chip.dart';
 import '../widgets/visibility_picker.dart';
 import '../widgets/toast_chip.dart';
+import '../widgets/segmented_progress_bar.dart';
 import 'board/due_date_sheet.dart';
 import 'board/schedule_sheet.dart';
 import 'board/tracker_chart.dart';
@@ -58,8 +59,13 @@ import '../theme/app_icons.dart';
 /// tapped in the Kalender agenda does: the sheet stacks over the calendar rather
 /// than switching tab, so closing it lands the reader back on the day they were
 /// reading — the same rule [EventLinkChip] follows in the other direction.
-void openTaskSheet(BuildContext context, WidgetRef ref, {BoardTask? task, DateTime? initialDue, EventLink? eventLink}) =>
-    BoardScreen._openTaskSheet(context, ref, task: task, initialDue: initialDue, eventLink: eventLink);
+void openTaskSheet(
+  BuildContext context,
+  WidgetRef ref, {
+  BoardTask? task,
+  DateTime? initialDue,
+  EventLink? eventLink,
+}) => BoardScreen._openTaskSheet(context, ref, task: task, initialDue: initialDue, eventLink: eventLink);
 
 /// Label colour of a checked-off task — the strike-through fades the open row's
 /// text to it, so landing in "Erledigt" isn't a colour jump.
@@ -289,7 +295,12 @@ class BoardScreen extends ConsumerWidget {
                                       identity: task.id,
                                       onTap: undo,
                                       onDelete: () => _deleteTask(context, ref, task),
-                                      child: _DoneRow(task: task, accent: accent, strike: strike, onUndo: undo),
+                                      child: _DoneRow(
+                                        task: task,
+                                        accent: accent,
+                                        strike: strike,
+                                        onUndo: undo,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -428,7 +439,8 @@ class BoardScreen extends ConsumerWidget {
             draft.newVisibility == visibility && setEquals(draft.newSharedWith, sharedWith.toSet());
 
         if (tracker != null) {
-          final unchanged = (_trimmedOrNull(text.text) ?? tracker.text) == tracker.text &&
+          final unchanged =
+              (_trimmedOrNull(text.text) ?? tracker.text) == tracker.text &&
               _trimmedOrNull(notes.text) == _trimmedOrNull(tracker.meta) &&
               ref.read(trackerProvider).newSchedule == tracker.schedule &&
               draft.newAssigneeId == tracker.assigneeId &&
@@ -446,7 +458,8 @@ class BoardScreen extends ConsumerWidget {
           return;
         }
         if (task != null) {
-          final unchanged = (_trimmedOrNull(text.text) ?? task.text) == task.text &&
+          final unchanged =
+              (_trimmedOrNull(text.text) ?? task.text) == task.text &&
               _trimmedOrNull(notes.text) == _trimmedOrNull(task.meta) &&
               draft.newDueDate == task.dueDate &&
               draft.newDueTime == task.dueTime &&
@@ -513,8 +526,16 @@ class BoardScreen extends ConsumerWidget {
                     notifier.setKind(kind);
                   },
                   options: [
-                    SegmentedOption(value: BoardItemKind.task, label: L.s.kindTask, icon: AppIcons.checkCircle),
-                    SegmentedOption(value: BoardItemKind.tracker, label: L.s.kindTracker, icon: AppIcons.circleDashed),
+                    SegmentedOption(
+                      value: BoardItemKind.task,
+                      label: L.s.kindTask,
+                      icon: AppIcons.checkCircle,
+                    ),
+                    SegmentedOption(
+                      value: BoardItemKind.tracker,
+                      label: L.s.kindTracker,
+                      icon: AppIcons.circleDashed,
+                    ),
                   ],
                 ),
                 const SizedBox(height: 14),
@@ -553,7 +574,11 @@ class BoardScreen extends ConsumerWidget {
                       maxLines: null,
                       textCapitalization: TextCapitalization.sentences,
                       style: AppText.input,
-                      decoration: InputDecoration(border: InputBorder.none, hintText: L.s.addNotes, isDense: true),
+                      decoration: InputDecoration(
+                        border: InputBorder.none,
+                        hintText: L.s.addNotes,
+                        isDense: true,
+                      ),
                     ),
                   ),
                   CardDivider(),
@@ -569,7 +594,10 @@ class BoardScreen extends ConsumerWidget {
                   // no deadline to miss — it has a rhythm — and offering both
                   // would be offering a contradiction.
                   if (isTracker)
-                    _RhythmField(value: ref.watch(trackerProvider).newSchedule, onChanged: trackerNotifier.setSchedule)
+                    _RhythmField(
+                      value: ref.watch(trackerProvider).newSchedule,
+                      onChanged: trackerNotifier.setSchedule,
+                    )
                   else
                     _DueDateField(
                       value: state.newDueDate,
@@ -648,8 +676,12 @@ class BoardScreen extends ConsumerWidget {
                 OutlinedSheetAction(
                   icon: AppIcons.userPlus,
                   label: L.s.share,
-                  onTap: () =>
-                      showShareSheet(context, kind: ShareableKind.task, resourceId: task.id, resourceName: task.text),
+                  onTap: () => showShareSheet(
+                    context,
+                    kind: ShareableKind.task,
+                    resourceId: task.id,
+                    resourceName: task.text,
+                  ),
                 ),
               ],
               if (task != null) ...[
@@ -767,7 +799,11 @@ class _TodayHeader extends ConsumerWidget {
           textBaseline: TextBaseline.alphabetic,
           children: [
             Expanded(
-              child: Text(boardLongDayName(today), overflow: TextOverflow.ellipsis, style: AppText.sectionHeading),
+              child: Text(
+                boardLongDayName(today),
+                overflow: TextOverflow.ellipsis,
+                style: AppText.sectionHeading,
+              ),
             ),
             const SizedBox(width: 10),
             Text(total == 0 ? L.s.nothingPlanned : L.s.doneOfTotal(done, total), style: AppText.label),
@@ -780,9 +816,8 @@ class _TodayHeader extends ConsumerWidget {
   }
 }
 
-/// The day card's old two-`Expanded` bar, kept whole: an `AnimatedContainer` on
-/// the filled half so ticking a task off slides the bar along instead of
-/// snapping it.
+/// Today's share of tasks done, in the donut's style — see
+/// [SegmentedProgressBar]. Ticking a task off slides the parting along.
 class _ProgressBar extends StatelessWidget {
   final double progress;
   final Color accent;
@@ -791,28 +826,7 @@ class _ProgressBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final filled = (progress * 1000).round().clamp(0, 1000);
-    return Row(
-      children: [
-        Expanded(
-          flex: filled,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 280),
-            height: 7,
-            decoration: BoxDecoration(color: accent, borderRadius: BorderRadius.circular(999)),
-          ),
-        ),
-        const SizedBox(width: 3),
-        if (progress < 1)
-          Expanded(
-            flex: (1000 - filled).clamp(0, 1000),
-            child: Container(
-              height: 7,
-              decoration: BoxDecoration(color: tint(accent, .88), borderRadius: BorderRadius.circular(999)),
-            ),
-          ),
-      ],
-    );
+    return SegmentedProgressBar(value: progress, color: accent, track: tint(accent, .88), height: 7);
   }
 }
 
@@ -886,13 +900,7 @@ class _TrackerCard extends ConsumerWidget {
       onTap: () => ref.read(trackerProvider.notifier).open(tracker.id),
       onEdit: () => BoardScreen._openTaskSheet(context, ref, tracker: tracker),
       onDelete: () => _delete(context, ref, tracker),
-      child: _TrackerRow(
-        tracker: tracker,
-        state: state,
-        today: today,
-        accent: accent,
-        dueToday: dueToday,
-      ),
+      child: _TrackerRow(tracker: tracker, state: state, today: today, accent: accent, dueToday: dueToday),
     );
 
     return Column(
@@ -1587,7 +1595,12 @@ class _AssigneeOption extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
 
-  const _AssigneeOption({required this.member, required this.label, required this.selected, required this.onTap});
+  const _AssigneeOption({
+    required this.member,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1726,8 +1739,8 @@ class _DueDateField extends StatelessWidget {
                 due == null
                     ? L.s.dueNone
                     : (time == null
-                        ? boardLongDayName(due)
-                        : '${boardLongDayName(due)} · ${formatTimeOfDay(time!.hour, time!.minute)}'),
+                          ? boardLongDayName(due)
+                          : '${boardLongDayName(due)} · ${formatTimeOfDay(time!.hour, time!.minute)}'),
                 textAlign: TextAlign.right,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -1840,7 +1853,14 @@ Widget _personFace(WidgetRef ref, String groupId, String name) {
     for (final m in ref.watch(householdMembersProvider)) {
       if (m.id != id) continue;
       final tone = AppTones.list[m.tone % AppTones.list.length];
-      return Avatar(size: size, bg: tone.bg, fg: tone.fg, initials: m.initials, fontSize: 11, imageUrl: m.imageUrl);
+      return Avatar(
+        size: size,
+        bg: tone.bg,
+        fg: tone.fg,
+        initials: m.initials,
+        fontSize: 11,
+        imageUrl: m.imageUrl,
+      );
     }
   }
   final tone = AppTones.list[name.hashCode.abs() % AppTones.list.length];

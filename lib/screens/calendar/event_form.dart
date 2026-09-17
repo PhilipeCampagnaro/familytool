@@ -83,8 +83,8 @@ Future<bool> _openEditEventSheet(BuildContext context, WidgetRef ref, CalendarEv
         form.scope == EventScope.series
             ? L.s.seriesBeingSaved
             : movingTo == null
-                ? L.s.eventBeingSaved
-                : L.s.eventBeingMovedTo(movingTo),
+            ? L.s.eventBeingSaved
+            : L.s.eventBeingMovedTo(movingTo),
       );
       if (await notifier.saveEvent(event, draft, scope: form.scope)) {
         chip.done(L.s.eventUpdated);
@@ -119,9 +119,9 @@ bool _sameDraft(EventDraft a, EventDraft b) =>
 /// between them — the same arrangement `IconDraft` uses.
 class _EventForm {
   _EventForm(this.draft)
-      : title = TextEditingController(text: draft.title),
-        location = TextEditingController(text: draft.location),
-        notes = TextEditingController(text: draft.notes);
+    : title = TextEditingController(text: draft.title),
+      location = TextEditingController(text: draft.location),
+      notes = TextEditingController(text: draft.notes);
 
   /// Everything that is not free text. The three controllers below own their own
   /// fields, so rebuilding on every keystroke isn't necessary.
@@ -137,8 +137,7 @@ class _EventForm {
   final TextEditingController location;
   final TextEditingController notes;
 
-  EventDraft result() =>
-      draft.copyWith(title: title.text, location: location.text, notes: notes.text);
+  EventDraft result() => draft.copyWith(title: title.text, location: location.text, notes: notes.text);
 
   void dispose() {
     title.dispose();
@@ -217,9 +216,7 @@ class _EventFormBodyState extends ConsumerState<_EventFormBody> {
     if (_draft.allDay) {
       final last = DateTime(next.year, next.month, next.day);
       final stored = _addDays(last, 1);
-      _draft = _draft.copyWith(
-        end: stored.isAfter(_draft.start) ? stored : _addDays(_draft.start, 1),
-      );
+      _draft = _draft.copyWith(end: stored.isAfter(_draft.start) ? stored : _addDays(_draft.start, 1));
       return;
     }
     _draft = _draft.copyWith(
@@ -237,11 +234,7 @@ class _EventFormBodyState extends ConsumerState<_EventFormBody> {
       // Back to a timed event on the same day. 10:00 rather than the midnight it
       // has been sitting at, which nobody means.
       final start = DateTime(_draft.start.year, _draft.start.month, _draft.start.day, 10);
-      _draft = _draft.copyWith(
-        allDay: false,
-        start: start,
-        end: start.add(const Duration(hours: 1)),
-      );
+      _draft = _draft.copyWith(allDay: false, start: start, end: start.add(const Duration(hours: 1)));
     }
   }
 
@@ -318,7 +311,11 @@ class _EventFormBodyState extends ConsumerState<_EventFormBody> {
                 textCapitalization: TextCapitalization.sentences,
                 textInputAction: TextInputAction.next,
                 style: AppText.inputTitle,
-                decoration: InputDecoration(border: InputBorder.none, hintText: L.s.titleLabel, isDense: true),
+                decoration: InputDecoration(
+                  border: InputBorder.none,
+                  hintText: L.s.titleLabel,
+                  isDense: true,
+                ),
               ),
             ),
             CardDivider(),
@@ -481,12 +478,8 @@ class _EventFormBodyState extends ConsumerState<_EventFormBody> {
             destructive: true,
             // Pops this sheet with `true` rather than just closing it: the
             // detail sheet underneath, if there is one, closes on that answer.
-            onTap: () => _confirmDeleteEvent(
-              context,
-              ref,
-              event,
-              onDeleted: () => Navigator.of(context).pop(true),
-            ),
+            onTap: () =>
+                _confirmDeleteEvent(context, ref, event, onDeleted: () => Navigator.of(context).pop(true)),
           ),
         ],
       ],
@@ -678,20 +671,10 @@ class _PlaceRow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    place.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppText.rowTitle,
-                  ),
+                  Text(place.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.rowTitle),
                   if (place.address.isNotEmpty) ...[
                     const SizedBox(height: 2),
-                    Text(
-                      place.address,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppText.label,
-                    ),
+                    Text(place.address, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.label),
                   ],
                 ],
               ),
@@ -757,11 +740,7 @@ class _ValueRow extends StatelessWidget {
   final String value;
   final VoidCallback onTap;
 
-  const _ValueRow({
-    required this.label,
-    required this.value,
-    required this.onTap,
-  });
+  const _ValueRow({required this.label, required this.value, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -805,12 +784,7 @@ class _ChoiceRow extends StatelessWidget {
   final Color accent;
   final VoidCallback onTap;
 
-  const _ChoiceRow({
-    required this.label,
-    required this.selected,
-    required this.accent,
-    required this.onTap,
-  });
+  const _ChoiceRow({required this.label, required this.selected, required this.accent, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -822,12 +796,7 @@ class _ChoiceRow extends StatelessWidget {
         child: Row(
           children: [
             Expanded(
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppText.rowTitle,
-              ),
+              child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.rowTitle),
             ),
             if (selected) AppIcon(AppIcons.check, size: 18, color: accent),
           ],
@@ -856,15 +825,14 @@ class _CalendarOptionRow extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
           children: [
-            Container(width: 10, height: 10, decoration: BoxDecoration(color: source.color, shape: BoxShape.circle)),
+            Container(
+              width: 10,
+              height: 10,
+              decoration: BoxDecoration(color: source.color, shape: BoxShape.circle),
+            ),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(
-                source.name,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppText.rowTitle,
-              ),
+              child: Text(source.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.rowTitle),
             ),
             if (selected) AppIcon(AppIcons.check, size: 18, color: accent),
           ],
@@ -896,8 +864,7 @@ class _TimeRow extends StatelessWidget {
     this.onPickTime,
   }) : assert(!showTime || onPickTime != null, 'a row showing a time needs somewhere to change it');
 
-  String get _date =>
-      '${weekdayShort[value.weekday % 7]}, ${L.s.dayMonthShort(value.day, value.month)}';
+  String get _date => '${weekdayShort[value.weekday % 7]}, ${L.s.dayMonthShort(value.day, value.month)}';
 
   String get _time => formatTime(value);
 

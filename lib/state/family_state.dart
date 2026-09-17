@@ -1,8 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart'
-    show FileOptions, FunctionException, SignedUrlSuccess;
+import 'package:supabase_flutter/supabase_flutter.dart' show FileOptions, FunctionException, SignedUrlSuccess;
 
 import '../models/entitlements.dart';
 import '../models/who.dart';
@@ -386,10 +385,7 @@ class HouseholdNotifier extends StateNotifier<FamilyState> {
       familyId = await _household(uid).timeout(_deadline);
     } catch (_) {
       if (!mounted) return;
-      state = state.copyWith(
-        loaded: true,
-        error: L.s.householdLoadFailed,
-      );
+      state = state.copyWith(loaded: true, error: L.s.householdLoadFailed);
       return;
     }
     if (familyId == null || !mounted) return;
@@ -420,10 +416,7 @@ class HouseholdNotifier extends StateNotifier<FamilyState> {
       // Should be unreachable: handle_new_user gives every user a household
       // in the same transaction as the user row. If it ever happens, say so
       // rather than rendering a plausible-looking empty family.
-      state = FamilyState(
-        loaded: true,
-        error: L.s.noHouseholdForAccount,
-      );
+      state = FamilyState(loaded: true, error: L.s.noHouseholdForAccount);
       return null;
     }
 
@@ -519,10 +512,7 @@ class HouseholdNotifier extends StateNotifier<FamilyState> {
   /// and there is simply no pending section.
   Future<void> _loadFacesAndInvites(String familyId) async {
     final household = state.household;
-    final paths = <String>[
-      for (final m in state.members) ?m.avatarPath,
-      ?household?.avatarPath,
-    ];
+    final paths = <String>[for (final m in state.members) ?m.avatarPath, ?household?.avatarPath];
 
     final results = await Future.wait<Object>([
       paths.isEmpty ? Future.value(const <String, String>{}) : signAvatarUrls(paths),
@@ -538,8 +528,7 @@ class HouseholdNotifier extends StateNotifier<FamilyState> {
           ? null
           : household.copyWith(avatarUrl: signed[household.avatarPath]),
       members: [
-        for (final m in state.members)
-          m.avatarPath == null ? m : m.copyWith(avatarUrl: signed[m.avatarPath]),
+        for (final m in state.members) m.avatarPath == null ? m : m.copyWith(avatarUrl: signed[m.avatarPath]),
       ],
       invites: invites,
     );
@@ -611,23 +600,24 @@ class HouseholdNotifier extends StateNotifier<FamilyState> {
       final data = res.data;
       await load();
       final map = data is Map ? data : const {};
-      return InviteOutcome.sent(SentInvite(
-        email: trimmed,
-        name: trimmedName,
-        role: role,
-        // Absent counts as "not sent": the honest reading of a mailer that
-        // didn't say.
-        mailSent: map['mail_sent'] as bool? ?? false,
-        expiresAt: DateTime.tryParse((map['expires_at'] as String?) ?? '')?.toLocal(),
-      ));
+      return InviteOutcome.sent(
+        SentInvite(
+          email: trimmed,
+          name: trimmedName,
+          role: role,
+          // Absent counts as "not sent": the honest reading of a mailer that
+          // didn't say.
+          mailSent: map['mail_sent'] as bool? ?? false,
+          expiresAt: DateTime.tryParse((map['expires_at'] as String?) ?? '')?.toLocal(),
+        ),
+      );
     } on FunctionException catch (e) {
       // The function's messages are written for the user and in German, so the
       // one it chose ("Nur Admins können Mitglieder einladen") beats anything
       // generic invented here.
       final details = e.details;
       return InviteOutcome.failed(
-        (details is Map ? details['error'] as String? : null) ??
-            L.s.inviteSendFailed,
+        (details is Map ? details['error'] as String? : null) ?? L.s.inviteSendFailed,
       );
     } catch (_) {
       return InviteOutcome.failed(L.s.inviteSendFailed);
@@ -687,7 +677,12 @@ class HouseholdNotifier extends StateNotifier<FamilyState> {
   /// working immediately.
   Future<void> revokeInvite(String inviteId) async {
     final previous = state.invites;
-    state = state.copyWith(invites: [for (final i in state.invites) if (i.id != inviteId) i]);
+    state = state.copyWith(
+      invites: [
+        for (final i in state.invites)
+          if (i.id != inviteId) i,
+      ],
+    );
     try {
       final updated = await AporahSupabase.client
           .from('family_invites')
@@ -825,12 +820,18 @@ class HouseholdNotifier extends StateNotifier<FamilyState> {
 
     try {
       final storage = AporahSupabase.client.storage.from(_avatarBucket);
-      await storage.upload(path, file, fileOptions: FileOptions(contentType: _contentTypeFor(_extensionOf(file))));
+      await storage.upload(
+        path,
+        file,
+        fileOptions: FileOptions(contentType: _contentTypeFor(_extensionOf(file))),
+      );
       await AporahSupabase.client.from('families').update({'avatar_url': path}).eq('id', household.id);
 
       final signed = await storage.createSignedUrl(path, _avatarUrlTtl.inSeconds);
       if (mounted) {
-        state = state.copyWith(household: household.copyWith(avatarPath: path, avatarUrl: signed));
+        state = state.copyWith(
+          household: household.copyWith(avatarPath: path, avatarUrl: signed),
+        );
       }
 
       if (previous != null && previous != path) {
@@ -962,9 +963,7 @@ class HouseholdNotifier extends StateNotifier<FamilyState> {
     final value = address.trim();
     if (household == null || value.isEmpty || household.address == value) return;
 
-    state = state.copyWith(
-      household: household.copyWith(address: value),
-    );
+    state = state.copyWith(household: household.copyWith(address: value));
 
     try {
       await AporahSupabase.client.from('families').update({'address': value}).eq('id', household.id);
@@ -984,15 +983,10 @@ class HouseholdNotifier extends StateNotifier<FamilyState> {
     final household = state.household;
     if (household == null || household.onboardingDone) return;
 
-    state = state.copyWith(
-      household: household.copyWith(onboardingDone: true),
-    );
+    state = state.copyWith(household: household.copyWith(onboardingDone: true));
 
     try {
-      await AporahSupabase.client
-          .from('families')
-          .update({'onboarding_done': true})
-          .eq('id', household.id);
+      await AporahSupabase.client.from('families').update({'onboarding_done': true}).eq('id', household.id);
     } catch (_) {
       // Left as-is on purpose — see above.
     }

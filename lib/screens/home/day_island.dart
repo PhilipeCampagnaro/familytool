@@ -67,7 +67,11 @@ class DayIsland extends ConsumerWidget {
     if (sel.y != today.year || sel.m != today.month || sel.d != today.day) {
       // In UTC, so a clock change between the two days cannot make 3 days read
       // as 2 days and 23 hours.
-      final offset = DateTime.utc(sel.y, sel.m, sel.d).difference(DateTime.utc(today.year, today.month, today.day)).inDays;
+      final offset = DateTime.utc(
+        sel.y,
+        sel.m,
+        sel.d,
+      ).difference(DateTime.utc(today.year, today.month, today.day)).inDays;
       return IslandLine(
         // One key for every date, so tapping along the strip changes the words
         // in place instead of playing a 400ms swap on each tap.
@@ -93,7 +97,8 @@ class DayIsland extends ConsumerWidget {
     // island feel like it was not doing anything. It is also the one line here
     // that is about the app rather than the household, which is why it is the
     // one place a brain belongs.
-    final loading = !ref.watch(calendarProvider.select((s) => s.loaded)) ||
+    final loading =
+        !ref.watch(calendarProvider.select((s) => s.loaded)) ||
         ref.watch(boardProvider.select((s) => s.loading)) ||
         ref.watch(trackerProvider.select((s) => s.loading));
     if (loading) {

@@ -397,7 +397,11 @@ class BoxNotifier extends StateNotifier<BoxScreenState> {
     final previous = item.photoPath;
 
     try {
-      final path = await _photos.upload(bucket: PhotoRepository.boxBucket, containerId: item.boxId, file: file);
+      final path = await _photos.upload(
+        bucket: PhotoRepository.boxBucket,
+        containerId: item.boxId,
+        file: file,
+      );
       final saved = await _repo.setItemPhoto(item.id, path);
       final urls = await _photos.signUrls(PhotoRepository.boxBucket, [path]);
       if (!mounted) return false;
@@ -434,7 +438,8 @@ class BoxNotifier extends StateNotifier<BoxScreenState> {
     if (box == null) return false;
 
     final newName = name.trim().isEmpty ? box.name : name.trim();
-    final icon = iconKey ?? (newName == box.name ? box.iconKey : suggestIcon(newName, subject: IconSubject.box)?.key);
+    final icon =
+        iconKey ?? (newName == box.name ? box.iconKey : suggestIcon(newName, subject: IconSubject.box)?.key);
 
     try {
       final saved = await _repo.updateBox(
@@ -509,9 +514,7 @@ class BoxNotifier extends StateNotifier<BoxScreenState> {
         position: box.position,
       );
 
-      final restored = await Future.wait([
-        for (final item in deleted.items) _restoreItem(saved.id, item),
-      ]);
+      final restored = await Future.wait([for (final item in deleted.items) _restoreItem(saved.id, item)]);
       // The pictures have to be copied, not carried over. Undo re-inserts under
       // a fresh uuid — the old row is gone and its id with it — and every object
       // is filed under the id of the box it belongs to, so the old `photo_path`
@@ -586,11 +589,12 @@ class BoxNotifier extends StateNotifier<BoxScreenState> {
       }
     }
 
-    final paths = <String>[
-      ?restoredBox.photoPath,
-      for (final item in restoredItems) ?item.photoPath,
-    ];
-    return (box: restoredBox, items: restoredItems, urls: await _photos.signUrls(PhotoRepository.boxBucket, paths));
+    final paths = <String>[?restoredBox.photoPath, for (final item in restoredItems) ?item.photoPath];
+    return (
+      box: restoredBox,
+      items: restoredItems,
+      urls: await _photos.signUrls(PhotoRepository.boxBucket, paths),
+    );
   }
 
   /// One item of a restored box. Two statements, because `addItem` only takes
@@ -829,7 +833,10 @@ class BoxNotifier extends StateNotifier<BoxScreenState> {
   void _removeItemLocally(String boxId, String itemId) {
     final items = state.itemsByBox[boxId];
     if (items == null) return;
-    _putItems(boxId, [for (final i in items) if (i.id != itemId) i]);
+    _putItems(boxId, [
+      for (final i in items)
+        if (i.id != itemId) i,
+    ]);
   }
 }
 

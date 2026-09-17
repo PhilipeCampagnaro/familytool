@@ -98,11 +98,7 @@ class AuthNotifier extends StateNotifier<AuthScreenState> {
   /// creates the profile, a household named `Familie <Name>`, and an admin
   /// membership — all in the same transaction as the user row, so there is no
   /// moment where a signed-in user has no household.
-  Future<void> signUp({
-    required String email,
-    required String password,
-    required String displayName,
-  }) async {
+  Future<void> signUp({required String email, required String password, required String displayName}) async {
     final name = displayName.trim();
     if (name.isEmpty) {
       state = state.copyWith(error: L.s.pleaseEnterName);
@@ -120,11 +116,7 @@ class AuthNotifier extends StateNotifier<AuthScreenState> {
 
       if (!mounted) return;
       if (res.session == null) {
-        state = state.copyWith(
-          status: AuthStatus.awaitingConfirmation,
-          email: email.trim(),
-          busy: false,
-        );
+        state = state.copyWith(status: AuthStatus.awaitingConfirmation, email: email.trim(), busy: false);
       } else {
         state = state.copyWith(busy: false);
       }
@@ -140,10 +132,7 @@ class AuthNotifier extends StateNotifier<AuthScreenState> {
   Future<void> signIn({required String email, required String password}) async {
     state = state.copyWith(busy: true, clearError: true);
     try {
-      await AporahSupabase.client.auth.signInWithPassword(
-        email: email.trim(),
-        password: password,
-      );
+      await AporahSupabase.client.auth.signInWithPassword(email: email.trim(), password: password);
       if (mounted) state = state.copyWith(busy: false);
     } on AuthException catch (e) {
       if (mounted) state = state.copyWith(busy: false, error: _german(e));

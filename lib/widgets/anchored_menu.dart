@@ -133,7 +133,10 @@ Future<void> showAnchoredMenuAt({
   }
 
   if (!context.mounted) return;
-  final chosen = await pushDropdownRoute(context, _AnchoredMenuRoute(anchor: anchor, items: items, width: width));
+  final chosen = await pushDropdownRoute(
+    context,
+    _AnchoredMenuRoute(anchor: anchor, items: items, width: width),
+  );
   chosen?.onSelected();
 }
 
@@ -184,7 +187,9 @@ class _AnchoredMenuRoute extends PopupRoute<AnchoredMenuItem> with DropdownRoute
     final bottomLimit = size.height - navContentInset(context, gap: 8) - _screenMargin;
     final below = anchor.bottom + _gap;
     final fitsBelow = below + height <= bottomLimit;
-    final top = fitsBelow ? below : (anchor.top - _gap - height).clamp(media.padding.top + _screenMargin, below);
+    final top = fitsBelow
+        ? below
+        : (anchor.top - _gap - height).clamp(media.padding.top + _screenMargin, below);
 
     // Hangs off whichever of the anchor's edges faces the middle of the
     // screen: a trailing "..." button in a row opens a menu to its left.
@@ -203,7 +208,11 @@ class _AnchoredMenuRoute extends PopupRoute<AnchoredMenuItem> with DropdownRoute
   @override
   Widget buildPage(BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation) {
     final g = _geometry(context);
-    final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic, reverseCurve: Curves.easeIn);
+    final curved = CurvedAnimation(
+      parent: animation,
+      curve: Curves.easeOutCubic,
+      reverseCurve: Curves.easeIn,
+    );
     return Stack(
       children: [
         Positioned(
@@ -261,10 +270,7 @@ class AnchoredMenuSurface extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: DecoratedBox(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
-          boxShadow: AppShadows.menu,
-        ),
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(14), boxShadow: AppShadows.menu),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(14),
           child: Container(
@@ -280,7 +286,11 @@ class AnchoredMenuSurface extends StatelessWidget {
                     // separators past a row's leading symbol.
                     Padding(
                       padding: EdgeInsets.only(left: separatorInset),
-                      child: Divider(height: _separator, thickness: _separator, color: AppColors.menuSeparator),
+                      child: Divider(
+                        height: _separator,
+                        thickness: _separator,
+                        color: AppColors.menuSeparator,
+                      ),
                     ),
                   _AnchoredMenuRow(item: item),
                 ],
@@ -323,7 +333,11 @@ class _AnchoredMenuRow extends StatelessWidget {
                 width: _glyphSize,
                 height: _glyphSize,
                 child: switch (item.svgAsset) {
-                  final asset? => SvgPicture.asset(asset, fit: BoxFit.contain, colorFilter: ColorFilter.mode(color, BlendMode.srcIn)),
+                  final asset? => SvgPicture.asset(
+                    asset,
+                    fit: BoxFit.contain,
+                    colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
+                  ),
                   _ => AppIcon(item.icon, size: _glyphSize, color: color),
                 },
               ),
@@ -396,7 +410,12 @@ class _RowMenuButtonState extends State<RowMenuButton> {
     return KeyedSubtree(
       key: _anchorKey,
       child: RowMoreButton(
-        onTap: () => showAnchoredMenu(context: context, anchorKey: _anchorKey, items: widget.items, width: widget.menuWidth),
+        onTap: () => showAnchoredMenu(
+          context: context,
+          anchorKey: _anchorKey,
+          items: widget.items,
+          width: widget.menuWidth,
+        ),
       ),
     );
   }

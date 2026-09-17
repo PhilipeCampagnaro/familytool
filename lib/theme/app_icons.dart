@@ -1,5 +1,7 @@
 import 'package:flutter/widgets.dart';
 
+part 'phosphor_catalog.dart';
+
 /// **The app's icon set: Phosphor Duotone.**
 ///
 /// Replaced Lucide, which is one monoline stroke weight by design and has no
@@ -25,7 +27,10 @@ import 'package:flutter/widgets.dart';
 /// named. An `IconData` assembled at runtime from an `int` is invisible to it
 /// and the build **fails** rather than quietly shipping the whole 567 KB font.
 /// That is why [_underLayers] spells its values out instead of adding one to a
-/// codepoint. Tree-shaking then cuts the font to about 20 KB.
+/// codepoint. Tree-shaking then cuts the font down to the glyphs named — this
+/// file's, and the [PhIcons] the symbol catalog uses beyond them, which
+/// `tool/gen_phosphor_catalog.py` generates into `phosphor_catalog.dart` from
+/// the references it finds.
 ///
 /// ## Why the font is vendored rather than depended on
 ///
@@ -724,7 +729,14 @@ class AppIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final glyph = icon;
-    final under = flat || glyph == null ? null : _underLayers[glyph.codePoint];
+    // A glyph [AppIcons] names is paired by hand, and a missing pair there is a
+    // decision (the fourteen bare marks). Anything else can only have come from
+    // the generated table, which pairs every one.
+    final under = flat || glyph == null
+        ? null
+        : _flat.containsKey(glyph.codePoint)
+        ? _underLayers[glyph.codePoint]
+        : _phosphorUnderLayers[glyph.codePoint];
     // Not stacking two layers, so draw the real single-weight icon rather than
     // the duotone's top layer on its own — see [_flat] for why those are not
     // the same picture.
@@ -742,7 +754,11 @@ class AppIcon extends StatelessWidget {
     return Stack(
       alignment: Alignment.center,
       children: [
-        Icon(under, size: drawnSize, color: resolved.withValues(alpha: secondaryOpacity ?? _secondaryOpacity)),
+        Icon(
+          under,
+          size: drawnSize,
+          color: resolved.withValues(alpha: secondaryOpacity ?? _secondaryOpacity),
+        ),
         Icon(icon, size: drawnSize, color: resolved),
       ],
     );

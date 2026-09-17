@@ -1,0 +1,13 @@
+-- A budget wears a symbol of the household's choosing.
+--
+-- The strip above the chart card dropped its text labels, so the glyph inside
+-- each ring is now the only thing that says which budget it is. The category's
+-- own icon is still the default and still the fallback — this column is null
+-- until somebody picks — because a catch-all like "Sonstiges" has no picture of
+-- its own, and "the grocery budget" is a picture the household has in mind and
+-- we do not.
+--
+-- Same wire format as `lists.icon_asset` and `boxes.icon_asset`: a catalog key
+-- (`lucide:<name>`), never a file path, so the app resolves it against whatever
+-- icon set it ships with today.
+alter table public.spend_budgets add column icon_asset text;

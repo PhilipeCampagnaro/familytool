@@ -12,6 +12,7 @@ import UIKit
   private var spendChannel: FlutterMethodChannel?
   private var notificationsChannel: FlutterMethodChannel?
   private var reviewChannel: FlutterMethodChannel?
+  private var shareChannel: FlutterMethodChannel?
   private let localNotifications = LocalNotifications()
   private let mediaPicker = MediaPicker()
   private let mapSnapshot = MapSnapshot()
@@ -137,6 +138,15 @@ import UIKit
         AppReview.handle(call, result: result)
       }
       reviewChannel = channel
+    }
+    // The system share sheet, for a list's invitation link — see
+    // ShareSheet.swift and lib/services/share_out.dart.
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "AporahShare") {
+      let channel = FlutterMethodChannel(name: "aporah/share", binaryMessenger: registrar.messenger())
+      channel.setMethodCallHandler { call, result in
+        ShareSheet.handle(call, result: result)
+      }
+      shareChannel = channel
     }
   }
 }

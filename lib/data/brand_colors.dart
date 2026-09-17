@@ -70,12 +70,12 @@ String? _merchantAsset(String? iconKey) =>
 
 /// The four shops the palette has hand-tuned colours for, in both themes.
 Color? _brandToken(String asset) => switch (asset.substring(merchantAssetDir.length)) {
-      'rewe_de.png' => AppColors.brandRewe,
-      'dm_de.png' => AppColors.brandDm,
-      'toom_de.png' => AppColors.brandToom,
-      'ikea_com.png' => AppColors.brandIkea,
-      _ => null,
-    };
+  'rewe_de.png' => AppColors.brandRewe,
+  'dm_de.png' => AppColors.brandDm,
+  'toom_de.png' => AppColors.brandToom,
+  'ikea_com.png' => AppColors.brandIkea,
+  _ => null,
+};
 
 /// Decoded edge length. Big enough that a small accent — the dot on a logo's
 /// "i" — survives, small enough that the whole folder costs less than one photo.
@@ -86,10 +86,7 @@ const _decodeWidth = 64;
 /// [dominantHues]; all that is left here is getting the logo decoded.
 Future<Color?> _extractDominant(String asset) async {
   final data = await rootBundle.load(asset);
-  final codec = await ui.instantiateImageCodec(
-    data.buffer.asUint8List(),
-    targetWidth: _decodeWidth,
-  );
+  final codec = await ui.instantiateImageCodec(data.buffer.asUint8List(), targetWidth: _decodeWidth);
   final frame = await codec.getNextFrame();
   final bytes = await frame.image.toByteData(format: ui.ImageByteFormat.rawRgba);
   frame.image.dispose();

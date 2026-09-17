@@ -129,7 +129,11 @@ class _CollapsingHeaderScreenState extends State<CollapsingHeaderScreen> {
   /// them nothing.
   double _topInset(BuildContext context) => MediaQuery.paddingOf(context).top;
 
-  double _collapsedHeight(BuildContext context) => _topInset(context) + CollapsingHeaderScreen.topPad + widget.titleRowHeight + CollapsingHeaderScreen.collapsedGap;
+  double _collapsedHeight(BuildContext context) =>
+      _topInset(context) +
+      CollapsingHeaderScreen.topPad +
+      widget.titleRowHeight +
+      CollapsingHeaderScreen.collapsedGap;
 
   /// [extra] is laid out unbounded (see [_buildHeader]) so it always takes its
   /// natural height; this reads that back and re-publishes the sliver's extent
@@ -244,7 +248,12 @@ class _CollapsingHeaderScreenState extends State<CollapsingHeaderScreen> {
                     stops: [0, .45, 1],
                   ).createShader(rect),
                   blendMode: BlendMode.dstIn,
-                  child: OverflowBox(alignment: Alignment.topCenter, minHeight: 0, maxHeight: double.infinity, child: widget.backdrop),
+                  child: OverflowBox(
+                    alignment: Alignment.topCenter,
+                    minHeight: 0,
+                    maxHeight: double.infinity,
+                    child: widget.backdrop,
+                  ),
                 ),
               ),
             ),
@@ -339,9 +348,8 @@ class _HeaderMaterial extends StatelessWidget {
     if (animation == null) return FrostedHeaderBackground();
     return AnimatedBuilder(
       animation: animation,
-      builder: (context, child) => animation.status == AnimationStatus.forward
-          ? ColoredBox(color: AppColors.surface)
-          : child!,
+      builder: (context, child) =>
+          animation.status == AnimationStatus.forward ? ColoredBox(color: AppColors.surface) : child!,
       child: FrostedHeaderBackground(),
     );
   }
@@ -478,7 +486,10 @@ class CollapsingScreenTitle extends StatelessWidget {
         // makes centered mean centered, whatever flanks it.
         Positioned.fill(
           child: Padding(
-            padding: EdgeInsets.only(left: expandedLeft + (inset - expandedLeft) * t, right: expandedRight + (inset - expandedRight) * t),
+            padding: EdgeInsets.only(
+              left: expandedLeft + (inset - expandedLeft) * t,
+              right: expandedRight + (inset - expandedRight) * t,
+            ),
             child: collapsedTitle == null
                 ? label(title, _expandedSize + (_collapsedSize - _expandedSize) * t)
                 : Stack(

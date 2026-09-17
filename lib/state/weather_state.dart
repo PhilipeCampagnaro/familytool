@@ -30,14 +30,12 @@ class WeatherState {
   /// normal answer for a past appointment, one beyond the forecast horizon, or
   /// a household that has not given an address and holds no geocodable event
   /// locations either.
-  WeatherReading? forEvent(CalendarEvent event, DateTime day) =>
-      readings[eventWeatherKey(event, day)];
+  WeatherReading? forEvent(CalendarEvent event, DateTime day) => readings[eventWeatherKey(event, day)];
 
   /// The day's own forecast at home, or null — for a past day, one past the
   /// 16-day horizon (which is nearly every cell on a strip four years deep), or
   /// a household with no address.
-  WeatherReading? forDay(DateTime day) =>
-      daily[CalendarScreenState.key(day.year, day.month, day.day)];
+  WeatherReading? forDay(DateTime day) => daily[CalendarScreenState.key(day.year, day.month, day.day)];
 }
 
 /// Puts the forecast beside every appointment that has one.
@@ -253,20 +251,15 @@ final weatherRepositoryProvider = Provider<WeatherRepository>((ref) => WeatherRe
 final weatherProvider = StateNotifierProvider<WeatherNotifier, WeatherState>((ref) {
   final notifier = WeatherNotifier(ref.watch(weatherRepositoryProvider));
 
-  void sync() => notifier.sync(
-    ref.read(calendarProvider).eventsByDay,
-    ref.read(familyProvider).household?.address,
-  );
+  void sync() =>
+      notifier.sync(ref.read(calendarProvider).eventsByDay, ref.read(familyProvider).household?.address);
 
   ref.listen<Map<String, List<CalendarEvent>>>(
     calendarProvider.select((s) => s.eventsByDay),
     (_, _) => sync(),
     fireImmediately: true,
   );
-  ref.listen<String?>(
-    familyProvider.select((s) => s.household?.address),
-    (_, _) => sync(),
-  );
+  ref.listen<String?>(familyProvider.select((s) => s.household?.address), (_, _) => sync());
 
   return notifier;
 });

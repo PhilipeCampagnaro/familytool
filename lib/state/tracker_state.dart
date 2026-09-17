@@ -103,7 +103,10 @@ class TrackerState {
   List<Tracker> visibleTrackers(String? personFilter) {
     if (personFilter == null || !personFilter.startsWith('member:')) return trackers;
     final memberId = personFilter.substring('member:'.length);
-    return [for (final t in trackers) if (t.assigneeId == memberId) t];
+    return [
+      for (final t in trackers)
+        if (t.assigneeId == memberId) t,
+    ];
   }
 
   /// What the Board's tracker card owes today — the rows that carry a circle.
@@ -119,8 +122,7 @@ class TrackerState {
   Map<DateTime, BoardDayTally> dayTallies(DateTime today, {String? personFilter}) =>
       trackerDayTallies(visibleTrackers(personFilter), checks, today);
 
-  int streakOf(Tracker tracker, DateTime today) =>
-      trackerStreak(tracker, checksFor(tracker.id), today);
+  int streakOf(Tracker tracker, DateTime today) => trackerStreak(tracker, checksFor(tracker.id), today);
 
   int weekDoneFor(Tracker tracker, DateTime day) => trackerWeekDone(checksFor(tracker.id), day);
 }
@@ -408,14 +410,15 @@ class TrackerNotifier extends StateNotifier<TrackerState> {
   // ---------------------------------------------------------------------------
 
   void _patchTracker(String id, Tracker Function(Tracker) patch) {
-    state = state.copyWith(
-      trackers: [for (final t in state.trackers) t.id == id ? patch(t) : t],
-    );
+    state = state.copyWith(trackers: [for (final t in state.trackers) t.id == id ? patch(t) : t]);
   }
 
   void _removeTracker(String id) {
     state = state.copyWith(
-      trackers: [for (final t in state.trackers) if (t.id != id) t],
+      trackers: [
+        for (final t in state.trackers)
+          if (t.id != id) t,
+      ],
       checks: {...state.checks}..remove(id),
       // Deleting the tracker you are looking at drops you back on the Board.
       // Left set, the screen would keep its header and lose its subject.
@@ -434,7 +437,9 @@ class TrackerNotifier extends StateNotifier<TrackerState> {
   }
 }
 
-final trackerRepositoryProvider = Provider<TrackerRepository>((ref) => TrackerRepository(AporahSupabase.client));
+final trackerRepositoryProvider = Provider<TrackerRepository>(
+  (ref) => TrackerRepository(AporahSupabase.client),
+);
 
 /// Rebuilt when the signed-in user or their household changes, and only then.
 final trackerProvider = StateNotifierProvider<TrackerNotifier, TrackerState>((ref) {

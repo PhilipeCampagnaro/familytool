@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/calendar_data.dart';
+import '../../data/grocery_catalog.dart';
 import '../../data/icon_suggestions.dart';
 import '../../data/planner_examples.dart';
 import '../../l10n/l10n.dart';
@@ -17,19 +18,23 @@ import '../../widgets/app_sheet.dart';
 import '../../widgets/filter_chip.dart';
 import '../../widgets/glass.dart';
 import '../../widgets/icon_picker.dart';
+import '../../widgets/markdown_text.dart';
 import '../../widgets/status_island.dart';
 import '../../widgets/toast_chip.dart';
 
 /// **Vorhaben: one goal in, one finished list out.**
 ///
-/// Not a chat, and the answer is not markdown — both halves of the same
-/// decision, and the reasoning is in
-/// [docs/list-planner.md](../../../docs/list-planner.md). A chat invites a
+/// Not a chat, and the answer is not a wall of chat markdown — the reasoning is
+/// in [docs/list-planner.md](../../../docs/list-planner.md). A chat invites a
 /// second turn, every second turn is another paid request, and the app would
 /// never know when the conversation was finished. So the model fills a schema
 /// and this file draws it with the app's own widgets: `IconTile`, `dividedRows`,
 /// the real type scale. What comes back looks like a list somebody made by
 /// hand, which is the whole point.
+///
+/// The one field with any markup in it is `recipe`, and it is held to a subset
+/// this app draws itself — see [MarkdownText]. A method has structure that
+/// prose cannot carry; a chatbot transcript is still not what any of this is.
 ///
 /// ## It unfolds where you tapped, and that is the third answer
 ///
@@ -64,6 +69,13 @@ class _PlannerCardState extends ConsumerState<PlannerCard> {
   /// lists below do not appear to be sliding away from the reader.
   static const _grow = Duration(milliseconds: 280);
 
+  /// **Folded on arrival, every time.** The shopping is why the card was
+  /// opened; the method is what you want later, at the hob. Held here rather
+  /// than in [PlannerState] because it is how this card is being *read*, not
+  /// part of the plan — "Nochmal fragen" rebuilds the plan and this should
+  /// simply be shut again, which falls out of resetting it in [_again].
+  bool _methodOpen = false;
+
   @override
   void dispose() {
     _controller.dispose();
@@ -96,6 +108,7 @@ class _PlannerCardState extends ConsumerState<PlannerCard> {
       alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtStart,
     );
     if (!mounted) return;
+    _methodOpen = false;
     ref.read(plannerProvider.notifier).editGoal();
     _controller.text = ref.read(plannerProvider).goal;
     _controller.selection = TextSelection.collapsed(offset: _controller.text.length);
@@ -400,12 +413,18 @@ class _PlannerCardState extends ConsumerState<PlannerCard> {
           ),
       ], inset: true),
 
-      if (plan.steps.isNotEmpty) ...[
-        _AnswerLabel(label: L.s.plannerHowTo),
-        ...dividedRows([
-          for (final (i, step) in plan.steps.indexed) _StepRow(number: i + 1, text: step),
-        ], inset: true),
-      ],
+      // **One block, folded, between the articles and the button.** The method
+      // used to be printed in full here and pushed "Liste erstellen" off the
+      // bottom of a card the reader had already decided about — by the second
+      // Vorhaben you know how this works, and scrolling past twelve steps to
+      // reach the only button is a toll paid on every plan afterwards.
+      if (plan.steps.isNotEmpty || plan.recipe != null)
+        _MethodDisclosure(
+          steps: plan.steps,
+          recipe: plan.recipe,
+          open: _methodOpen,
+          onToggle: () => setState(() => _methodOpen = !_methodOpen),
+        ),
 
       Padding(
         padding: const EdgeInsets.fromLTRB(18, 18, 18, 8),
@@ -452,10 +471,20 @@ class _PlannerCardState extends ConsumerState<PlannerCard> {
     // sitting exactly where the new row is about to land.
     ref.read(plannerProvider.notifier).close();
 
+    // Straight into it: the reader just asked for this list, and leaving them on
+    // the shelf made them go looking for it.
     final created = await notifier.createListWithItems(
+      openIt: true,
       name: plan.title,
       kind: plan.kind,
-      items: [for (final item in items) (text: item.name, sub: item.quantity, unit: item.unit)],
+      items: [
+        for (final item in items) (text: item.name, sub: item.quantity, unit: item.unit),
+      ],
+      // **The method goes with the articles.** Dropping it here is what used to
+      // send the household off to look the recipe up again once the shopping
+      // was done, which is the one moment the feature was meant to help.
+      steps: plan.steps,
+      recipe: plan.recipe,
     );
     if (created) confirm(L.s.plannerListCreated);
   }
@@ -573,11 +602,11 @@ class _AnswerLabel extends StatelessWidget {
 
 /// One article, drawn exactly as it will be once it is a real row.
 ///
-/// **The icon comes from `suggestIcon` and nothing else** — the same pure
-/// function a typed article goes through, given the same `IconSubject` the list
-/// will have. So the preview cannot promise a picture the list then does not
-/// get, and a Lebensmittel plan arrives wearing photographs from
-/// `assets/grocery/` while a Bauhaus one gets symbols.
+/// **The icon comes from [planItemIconKey] and nothing else** — the same pure
+/// function the created row goes through. So the preview cannot promise a
+/// picture the list then does not get: a Lebensmittel plan arrives wearing
+/// photographs from `assets/grocery/`, and a Bauhaus one wears nothing at all,
+/// because nothing guesses a picture for a Sonstige article any more.
 class _PlanItemRow extends StatelessWidget {
   final ListPlanItem item;
   final ListKind kind;
@@ -588,8 +617,8 @@ class _PlanItemRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final subject = kind == ListKind.grocery ? IconSubject.groceryArticle : IconSubject.article;
-    final iconKey = suggestIcon(item.name, subject: subject)?.key;
+    final grocery = kind == ListKind.grocery;
+    final iconKey = planItemIconKey(item.name, grocery: grocery);
     final quantity = _quantityLabel();
 
     return GestureDetector(
@@ -599,8 +628,18 @@ class _PlanItemRow extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
         child: Row(
           children: [
-            IconTile(iconKey: iconKey, size: AppText.rowMark, imageSize: AppText.markImage(AppText.rowMark)),
-            const SizedBox(width: 12),
+            // A grocery article without a photo gets the general cart, as its
+            // row in the list will — not IconTile's fallback glyph. A Sonstige
+            // one gets no slot at all rather than an empty one: a column of
+            // blank squares down the left is a picture of what is missing.
+            if (grocery) ...[
+              IconTile(
+                iconKey: iconKey ?? generalGroceryAsset,
+                size: AppText.rowMark,
+                imageSize: AppText.markImage(AppText.rowMark),
+              ),
+              const SizedBox(width: 12),
+            ],
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -650,32 +689,88 @@ class _PlanItemRow extends StatelessWidget {
   }
 }
 
-class _StepRow extends StatelessWidget {
-  final int number;
-  final String text;
+/// The method — the overview steps and, when there is one, the full recipe —
+/// folded behind its own label.
+///
+/// **The label row is the control.** It is the same `microLabel` every other
+/// section of the answer is headed with, plus the caret the rest of the app
+/// uses for a disclosure, so the block reads as one of the card's sections
+/// rather than as a widget borrowed from somewhere else. No "anzeigen"
+/// sentence: the caret already says it, in four languages, in no words.
+///
+/// **An [AnimatedSize] rather than an `if`**, so opening it grows the card the
+/// way every other disclosure in this file does instead of teleporting the
+/// create button down the screen.
+///
+/// The recipe is drawn by [MarkdownText], which parses the small subset the
+/// prompt asks for — headings, bullets, numbered steps, bold — and prints
+/// everything else exactly as it arrived. The same widget draws it in the
+/// method sheet on the finished list, so the plan and the list it becomes are
+/// the same page twice.
+class _MethodDisclosure extends StatelessWidget {
+  final List<String> steps;
+  final String? recipe;
+  final bool open;
+  final VoidCallback onToggle;
 
-  const _StepRow({required this.number, required this.text});
+  const _MethodDisclosure({
+    required this.steps,
+    required this.recipe,
+    required this.open,
+    required this.onToggle,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 22,
-            height: 22,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(color: AppColors.surfaceAlt, shape: BoxShape.circle),
-            child: Text('$number', style: AppText.caption.copyWith(color: AppColors.inkSecondary)),
+    // A plan with a recipe is a plan about cooking, and "Rezept" is the truer
+    // name for what is inside than "So geht's" is.
+    final label = recipe == null ? L.s.plannerHowTo : L.s.plannerRecipe;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: onToggle,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(18, 14, 18, 8),
+            child: Row(
+              children: [
+                Expanded(child: Text(label, style: AppText.microLabel)),
+                AppIcon(
+                  open ? AppIcons.caretUp : AppIcons.caretDown,
+                  size: AppGlyph.caret,
+                  flat: true,
+                  color: AppColors.muted,
+                ),
+              ],
+            ),
           ),
-          const SizedBox(width: 11),
-          Expanded(
-            child: Text(text, style: AppText.body.copyWith(color: AppColors.inkSecondary, height: 1.45)),
+        ),
+        AnimatedSize(
+          duration: const Duration(milliseconds: 280),
+          curve: Curves.easeOutCubic,
+          alignment: Alignment.topCenter,
+          child: SizedBox(width: double.infinity, child: !open ? const SizedBox.shrink() : _body()),
+        ),
+      ],
+    );
+  }
+
+  Widget _body() {
+    final text = recipe?.trim() ?? '';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (steps.isNotEmpty)
+          Padding(
+            padding: EdgeInsets.fromLTRB(18, 0, 18, text.isEmpty ? 6 : 0),
+            child: MarkdownText(stepsAsMarkdown(steps)),
           ),
-        ],
-      ),
+        if (text.isNotEmpty)
+          Padding(padding: EdgeInsets.fromLTRB(18, steps.isEmpty ? 0 : 14, 18, 6), child: MarkdownText(text)),
+      ],
     );
   }
 }

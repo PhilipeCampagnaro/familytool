@@ -36,7 +36,7 @@ different shape of the same idea.
 
 ## The one decision everything follows from
 
-**It is not a chat, and the answer is not markdown.**
+**It is not a chat, and the model does not decide the layout.**
 
 Both halves matter and they are the same decision. A chat invites a second turn; every second turn
 is another paid request, and the app has no idea when the conversation is finished. A markdown blob
@@ -46,6 +46,18 @@ inside an app whose whole design argument is that it uses the platform's real ma
 So: **one request, one typed answer, rendered with the app's own widgets.** The model fills in a
 schema. `IconTile`, `SectionCard` and the real type scale draw it. What comes back looks like a list
 somebody made by hand, which is the whole of why it reads as clean.
+
+**The one field with any markup in it is `recipe`, and the subset is ours rather than the model's**
+(2026-09-16). This was "no markdown anywhere", which was right about chat markdown and wrong about
+a method: "Zutaten" and "Zubereitung" are two different things, a quantity list is a list, and the
+oven temperature is the one number you come back to the card to find — printed as undifferentiated
+paragraphs, the reader has to re-read the whole block to cook from it, at the hob, which is the one
+moment the recipe was kept for. The prompt therefore asks for exactly four marks — `##`, `- `,
+`1. `, `**bold**` — and forbids everything else by name, and `MarkdownText`
+([lib/widgets/markdown_text.dart](../lib/widgets/markdown_text.dart)) is the only parser in the app.
+It draws that subset in the app's own type scale and prints anything outside it **literally**, so a
+model that ignored the format stays visible instead of being quietly rendered into something that
+looks deliberate. That is the old rule's reasoning, kept.
 
 That also settles the cost question before it is asked: **there is exactly one paid call per
 Vorhaben, and no user gesture can produce a second one except asking again, which says so.**
@@ -359,7 +371,41 @@ list rows in as they arrive — that is a later change to two files, not a diffe
 - **Die Liste** — the articles, drawn with the real `IconTile` and the icon `suggestIcon` picks, with
   quantity and unit, each one **tickable off before the list is made**, so the parent drops the salt
   and the olive oil they already have rather than carrying them into a Liste and deleting them there.
-- **So geht's** — the steps, numbered, in the app's own type. Below the list, expanded.
+- **So geht's / Rezept** — one block below the list, **folded**, holding the overview steps and, on
+  a cooking goal, the full method under them. **A step is a titled block under one title for the
+  whole method, and there is exactly one emoji in an answer** (2026-09-16): `steps[0]` is
+  `# 🏠 Wohnzimmer streichen`, every entry after it is `## Wände reinigen` and a sentence or two,
+  and `MarkdownText` draws `#` a size up from `##` so the difference is visible. It draws the recipe
+  the same way, so the two halves of the method are one page rather than two components.
+  - **It took four tries, and the emoji is what each one got wrong.** A numbered ladder (a grey
+    circle per step) said "1 of 5" twice, once in the circle and once in the order they were already
+    in. Bullets with an emoji per *sentence* gave seven lines about painting three paintbrushes, a
+    wrench against "protect the floor" and 📦 against "gather the materials". Moving to one emoji per
+    *stage* fixed the repetition and kept the mistakes: **five emoji are five guesses about somebody
+    else's job**, and the model spends them on the topic rather than the stage. One picture over the
+    whole plan is the most it can be trusted with, and on a goal that is only work — no cooking —
+    that leaves the stages bare, which is what the household asked for.
+  - **`sanitize` joins a title to its sentences, because the model splits them across two array
+    entries about half the time** whatever the prompt says. Drawn, both shapes look identical;
+    counted, they do not — the 8-stage cap would have cut a plan after the fourth title and left its
+    sentences behind. A line that is not a title joins the title above it, and a step from before
+    this change (a bare sentence, still stored on lists) stays its own block and draws as a
+    paragraph.
+  - **And it un-escapes a literal `\n`.** The prompt shows the wanted shape as a line of JSON,
+    escapes and all — which is what stopped the splitting — and the model copies the `\n` across as
+    two characters often enough to matter. Undoing it server-side keeps the example.
+  - The caps came down with it: **eight stages, five when there is also a recipe**, and the `#` line
+    is held out of the count so a plan cannot lose its last stage to its own heading. A titled block
+    is three lines on a phone.
+  - The prompt also forbids a step about *buying* the articles. "Materialien besorgen" is a step
+    telling the reader to read the other half of the answer. The label row is the control: the section's own
+  `microLabel` plus the caret the rest of the app uses for a disclosure, so there is no "anzeigen"
+  sentence to translate four times. It was expanded once and that was wrong — by the second Vorhaben
+  you know how this works, and scrolling past twelve steps to reach the only button is a toll paid on
+  every plan afterwards. The recipe is drawn by `MarkdownText` — headings, ingredient bullets,
+  numbered working steps, bold on a temperature or a time — and the same widget draws it again in the
+  method sheet on the finished list, so the plan and the list it becomes are the same page twice.
+  Anything outside that subset is printed as it arrived.
 
 One primary button, **Liste erstellen**, which calls `createListWithItems`, folds the card away and
 confirms with a chip — the landing any newly created list gets. **Jumping straight into the new
@@ -419,17 +465,66 @@ as a list.
 
 ## How the icons come out right
 
-**They already do, and this is the part that needs no work.** `_fillList` in
-[lib/state/list_state.dart](../lib/state/list_state.dart) runs every article's own name through
-`suggestIcon(text, subject: …)`, which is the same function a hand-typed article goes through — so a
-generated Lebensmittel list gets photographs from `assets/grocery/` (544 of them) and a Bauhaus list
-gets symbols, with no new code and no icon field in the response.
+`_fillList` in [lib/state/list_state.dart](../lib/state/list_state.dart) picks every article's icon
+with `planItemIconKey`, and the planner card previews with the same function, so the preview cannot
+promise a picture the list then does not get.
 
-Three things make this work better than it sounds:
+- **A Lebensmittel list gets a photograph or nothing.** The article's own name goes through
+  `suggestIcon(…, subject: groceryArticle)` and only a photo from `assets/grocery/` is kept; with none,
+  no key is stored and the row draws the general cart, exactly like an article typed by hand.
+- **Anywhere else it is the matcher a typed article goes through, over a bigger catalog.** The
+  curated `symbolGroups` were ~106 symbols for naming a *list or a box*, and a Campingwochenende's
+  *Schlafsack*, *Taschenlampe* and *Pinsel* matched none of them. On 2026-09-15 the set grew to ~236,
+  four languages each, covering what a household buys and packs; a glyph `AppIcons` does not name is
+  written `PhIcons.<name>` and `tool/gen_phosphor_catalog.py` generates exactly those. A Sonstige row
+  now shows its icon too, so the preview and the finished list agree.
+- **A Sonstige article wears no picture at all, and the emoji moved into the prose — 2026-09-16,
+  after both other answers were tried in one day.** First the curated symbols, matched on the
+  article's name: the catalog will never hold a Heringsatz, so the matcher reached for whatever was
+  nearest. Then one emoji per article from the model, forced non-null in `sanitize` so a list could
+  not come back half emoji and half symbol — which fixed the *inconsistency* and left the
+  *mistakes*: 🧴 against a Dichtungsband is read before the word beside it, and a wrong picture on a
+  shopping row is the app being confidently wrong about the household's own errand. **A row of
+  fifteen articles wearing three confident mistakes is worse than one wearing none.** So
+  `planItemIconKey` answers null for anything that is not a Lebensmittel article, the prompt asks
+  for no `emoji` field at all, and the model draws in `steps` and `recipe` instead, where a miss is
+  decoration that missed rather than a label that lies. **This is not "a Sonstige article cannot
+  have an icon"**: the picker offers every symbol, a stored key still draws, and existing rows are
+  untouched — nothing *guesses* one for you. The same rule covers typed articles
+  (`ListNotifier.addItem`, the add line's live preview and a rename), because a guess is no better
+  for being typed.
+  - **Which means `kind` decides whether a row wears anything at all, so the prompt spells it out.**
+    "Buy paint" came back `grocery` on three runs out of three from a one-line rule, and a grocery
+    list looks up an icon for every row — so a mis-called `kind` puts the catalog's nearest guess
+    against a tin of emulsion. The rule now names the shops and the goods ("paint, brushes, tools,
+    screws, timber, plants, craft materials, party decorations and school supplies are all `other`,
+    even when a large supermarket happens to stock some of them").
+- **This is not the icon hint that was tried and removed on 2026-09-15 — know the difference before
+  touching either.** That hint was an English icon *name* looked up in all of Phosphor's names and
+  tags: it could name a glyph the font did not have, the lookup failed silently, and it kept ~960
+  glyphs in the release build for no visible win over a bigger translated catalog. **Don't bring
+  that back without a measured match rate that beats the catalog.** An emoji is the drawing itself —
+  nothing to resolve, nothing added to the font — so none of what sank the hint applies to it. What
+  it costs instead is the thing to watch: colour emoji stand beside the duotone symbols that every
+  hand-typed article still gets, so one list can wear two icon sets.
+- **The server validates it; the app does not trust it.** `EMOJI` in the function takes one
+  pictographic character with an optional skin tone, variation selector and ZWJ continuation — so
+  👨‍👩‍👧 passes and a flag, a keycap, a letter, two emoji or "🔩 Schraube" does not. `emojiIconKey`
+  repeats the cheap half of that on the device, because the string is drawn as text on a row.
+- **A Lebensmittel article never gets one**, and the prompt says so: the app has a photograph of the
+  actual article, and 🥛 beside a row of photographs is the mismatch the grocery rule exists to
+  avoid. Growing `symbolGroups` still helps the add line and the icon picker, which no emoji
+  touches — the picker offers symbols, logos and photographs exactly as before, so an emoji is only
+  ever something a plan arrived with.
+
+Three things make the photo side work better than it sounds:
 
 - **`kind` comes back in the response**, so the model decides Lebensmittel or Sonstige, which
   decides `IconSubject.groceryArticle` vs `IconSubject.article`, which decides whether the photo
-  catalog gets first look.
+  catalog is in play **at all** — since 2026-09-16 a Sonstige plan gets symbols and only symbols, so
+  a Baumarkt run cannot arrive wearing groceries. `planItemIconKey` is the one function that answers
+  both cases, and it is what the preview row and the stored key both go through, so the plan on the
+  card and the list it becomes cannot disagree.
 - **The matcher already speaks all four languages with the umlauts optional**
   ([lib/data/grocery_search.dart](../lib/data/grocery_search.dart)) and already strips quantities
   off a line. A Spanish household's *pechuga de pollo* lands on the same chicken picture as
@@ -497,11 +592,22 @@ hand in the SQL editor — and ignores it from everybody else, so the row in a p
 nothing. Runs are still written while it is on; they cost money either way, and turning it off
 afterwards is exactly how the used-up state gets tested. The Settings **plan** switch travels the same way (`simulatePlan`): choosing Free there makes the server count and refuse at 3 for the exempt account, rather than only relabelling the app.
 
-**The prompt and the answer are not stored. Neither one, ever.** A household's dinner plans and
-their building projects are not ours to keep, the Liste is the artifact and it is already stored,
-and a table of everything every family has ever asked for is a thing that can leak. This is the same
-call the app makes about `list_items.link_url` (*nothing ever fetches it*) and about events (*we do
-not store anybody's calendar*).
+**The goal is not stored, and neither the goal nor the answer is ever logged.** A household's
+dinner plans and their building projects are not ours to keep, and a table of everything every
+family has ever asked for is a thing that can leak. This is the same call the app makes about
+`list_items.link_url` (*nothing ever fetches it*) and about events (*we do not store anybody's
+calendar*).
+
+**The method is the one exception, and it is on the Liste rather than in a table of its own.**
+`lists.steps` and `lists.recipe` (migration `20260916071500_list_method.sql`) keep what the plan
+said, written once on create and never edited — the same shape as `EventLink`, for the same reason:
+it is a record of what the plan said, not a field anybody maintains. Until then the method lived
+exactly as long as the card was on screen, so a household read how to cook the thing, tapped "Liste
+erstellen", and stood in the kitchen with the shopping done and the recipe gone — the one moment the
+feature was meant to help. What is kept is what the household chose to keep by making a list of it,
+on a row they already own, under the RLS that already governs the articles beside it. The sentence
+this replaces said the answer was never stored; that stopped being true on 2026-09-16 and is
+rewritten here rather than left to rot.
 
 **The key** is `MISTRAL_API_KEY`, a function secret, exactly as `RESEND_API_KEY` and
 `GOOGLE_CLIENT_SECRET` are — set with `supabase secrets set` or in the dashboard, **never in `.env`,
@@ -538,7 +644,9 @@ If it disappoints on the messier goals — *"Kindergeburtstag für 8 Kinder"* ra
 {
   title:  string,                    // "Butter Chicken für 4"
   kind:   "grocery" | "other",       // picks ListKind, which picks the icon subject
-  steps:  string[],                  // 0..12; empty is legitimate for a hardware run
+  steps:  string[],                  // 0..12, or 0..6 when `recipe` is set; empty is
+                                     // legitimate for a hardware run
+  recipe: string | null,             // cooking goals only; null for everything else
   items:  [{ name, quantity?, unit?, note? }]   // unit ∈ the ten GroceryUnit keys
 }
 ```
@@ -546,6 +654,23 @@ If it disappoints on the messier goals — *"Kindergeburtstag für 8 Kinder"* ra
 `unit` is an enum of the exact `GroceryUnit.key` strings, so the model cannot invent a value into a
 column that holds ten. Anything it cannot express goes into `quantity`, which is free text and
 always was.
+
+**`steps` is cut to six in `sanitize` whenever `recipe` came back, belt-and-braces beside `UNITS`.**
+The prompt asks for a short overview in that case and mostly gets one — and then returns twelve
+steps for a paella, which is the whole method written twice: once on the card and once again inside
+the disclosure under it. Asking is not enforcing, and the two places that matter are both here.
+
+**`recipe` raised `max_tokens` from 2000 to 4000, and that is not a nicety.** It is the one
+unbounded field in the answer, and a truncated answer is not a short answer: the JSON stops
+mid-string, `JSON.parse` throws, and the household gets *"Daraus ließ sich keine Liste machen"*
+after waiting — having already been charged for the call.
+
+Measured on the deployed prompt across eight goals in all four languages: **~641 in / ~647 out, or
+$0.000485 a plan** at Mistral Small 4's $0.15/$0.60. About 30% above the recipe-less baseline rather
+than double, because the field only fires on cooking goals — a Plus household maxing thirty a month
+costs under two cents a year. The null rule held 4/4 both ways in that run: Bauhaus, Wocheneinkauf,
+Kindergeburtstag and Apotheke returned null; Käsekuchen, lasagna, bolo de cenoura and paella
+returned a recipe in their own language.
 
 **The answer comes back in the interface language.** Four languages now, not two — the request
 carries the language code, and the schema's contents are free text, so it follows the instruction.
@@ -587,6 +712,30 @@ every row is worse than no link.
 **Do not write a link into `link_url` on generated rows either.** That column means *the shop page
 this particular article points at*, set deliberately from the item menu. Filling it on fourteen rows
 puts a link chip on every one of them and writes our affiliate tag into the household's own data.
+
+**A badge under each article was added on 2026-09-16, and it does not contradict the rule above.**
+That rule is about *storing* — filling `link_url` puts our affiliate tag into the household's own
+data and carries it to anyone the list is shared with. The badge stores nothing: `amazonSearch` in
+[lib/data/amazon.dart](../lib/data/amazon.dart) builds the URL from the article's text as the row is
+drawn and forgets it. A shared list carries no tag because it carries no link. The badge shows on
+**non-grocery lists only** — nobody orders a cucumber from Amazon — and steps aside for
+`link_url` when the household set one, because the page they chose beats a search we guessed.
+
+**Which shop, and how we know.** `amazonMarketplace` reads the **device's own region setting**
+(`PlatformDispatcher.locale.countryCode`) with the app's language as fallback, and maps it to one of
+five marketplaces — Austria and Switzerland to amazon.de, Portugal to amazon.es, neither having a
+store of its own. **Never a geo-IP lookup and never `families.address`:** sending the household's
+address off the phone to choose between five hosts is wildly out of proportion, and this app already
+refuses that trade for the map and the weather.
+
+**`sponsored` is the legal hinge, and it is why the tag and the URL are decided together.** An
+untagged search earns nothing and is therefore not advertising; the moment our tag goes on, it is,
+and **§ 5a Abs. 4 UWG wants that recognisable at the link** rather than in a footnote. So
+`amazonSearch` returns the flag beside the URL and no caller can tag a link without being told it
+did. The row badge is **gated on a tag existing** — before that it would be clutter earning
+nothing — while the item-menu row is not, because an untagged search is still useful. `_partnerTags`
+is the only switch: an empty tag means no badge, so there is no way to ship a tagged link without
+its "Anzeige".
 
 **Do add one row to the item menu, for every article, generated or typed:** *"Bei Amazon suchen"*,
 which builds `https://www.amazon.de/s?k=<article>&tag=<partner-tag>` and hands it to

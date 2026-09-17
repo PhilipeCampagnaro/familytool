@@ -228,10 +228,33 @@ class _MonthViewState extends ConsumerState<_MonthView> {
                     swatch: SizedBox(
                       width: 13,
                       height: 8,
-                      child: Stack(children: [
-                        Container(width: 8, height: 8, decoration: BoxDecoration(color: AppColors.srcOutlook, shape: BoxShape.circle, border: Border.fromBorderSide(BorderSide(color: AppColors.surface, width: 1.5)))),
-                        Positioned(left: 5, child: Container(width: 8, height: 8, decoration: BoxDecoration(color: AppColors.srcIserv, shape: BoxShape.circle, border: Border.fromBorderSide(BorderSide(color: AppColors.surface, width: 1.5))))),
-                      ]),
+                      child: Stack(
+                        children: [
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: AppColors.srcOutlook,
+                              shape: BoxShape.circle,
+                              border: Border.fromBorderSide(BorderSide(color: AppColors.surface, width: 1.5)),
+                            ),
+                          ),
+                          Positioned(
+                            left: 5,
+                            child: Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: AppColors.srcIserv,
+                                shape: BoxShape.circle,
+                                border: Border.fromBorderSide(
+                                  BorderSide(color: AppColors.surface, width: 1.5),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                   if (marksHolidays)
@@ -248,7 +271,17 @@ class _MonthViewState extends ConsumerState<_MonthView> {
               ),
               const SizedBox(height: 16),
               Row(
-                children: [for (final l in dayLetters) Expanded(child: SizedBox(height: 26, child: Center(child: Text(l, style: AppText.label.copyWith(fontWeight: FontWeight.w500)))))],
+                children: [
+                  for (final l in dayLetters)
+                    Expanded(
+                      child: SizedBox(
+                        height: 26,
+                        child: Center(
+                          child: Text(l, style: AppText.label.copyWith(fontWeight: FontWeight.w500)),
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ],
           ),
@@ -263,13 +296,27 @@ class _MonthViewState extends ConsumerState<_MonthView> {
                 slivers: [
                   SliverList(
                     delegate: SliverChildBuilderDelegate(
-                      (context, i) => _MonthBlock(monthOffset: -i - 1, state: state, accent: accent, todayCellKey: _todayCellKey, detailKey: _detailKey, onSelectDay: _selectDay),
+                      (context, i) => _MonthBlock(
+                        monthOffset: -i - 1,
+                        state: state,
+                        accent: accent,
+                        todayCellKey: _todayCellKey,
+                        detailKey: _detailKey,
+                        onSelectDay: _selectDay,
+                      ),
                     ),
                   ),
                   SliverList(
                     key: _centerKey,
                     delegate: SliverChildBuilderDelegate(
-                      (context, i) => _MonthBlock(monthOffset: i, state: state, accent: accent, todayCellKey: _todayCellKey, detailKey: _detailKey, onSelectDay: _selectDay),
+                      (context, i) => _MonthBlock(
+                        monthOffset: i,
+                        state: state,
+                        accent: accent,
+                        todayCellKey: _todayCellKey,
+                        detailKey: _detailKey,
+                        onSelectDay: _selectDay,
+                      ),
                     ),
                   ),
                 ],
@@ -348,7 +395,9 @@ class _MonthBlock extends ConsumerWidget {
                 for (var col = 0; col < 7; col++)
                   Expanded(
                     child: _MonthCell(
-                      key: (monthOffset == 0 && row * 7 + col - lead + 1 == calToday().day) ? todayCellKey : null,
+                      key: (monthOffset == 0 && row * 7 + col - lead + 1 == calToday().day)
+                          ? todayCellKey
+                          : null,
                       index: row * 7 + col,
                       lead: lead,
                       len: len,
@@ -370,12 +419,17 @@ class _MonthBlock extends ConsumerWidget {
               sizeCurve: Curves.easeOutCubic,
               firstCurve: Curves.easeOut,
               secondCurve: Curves.easeIn,
-              crossFadeState: state.monthDetailExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+              crossFadeState: state.monthDetailExpanded
+                  ? CrossFadeState.showSecond
+                  : CrossFadeState.showFirst,
               firstChild: const SizedBox(width: double.infinity, height: 0),
               secondChild: Padding(
                 padding: const EdgeInsets.only(top: 16),
                 child: Container(
-                  decoration: BoxDecoration(color: AppColors.screenBg, borderRadius: BorderRadius.all(Radius.circular(20))),
+                  decoration: BoxDecoration(
+                    color: AppColors.screenBg,
+                    borderRadius: BorderRadius.all(Radius.circular(20)),
+                  ),
                   // Same reason as `_DayBody`: the timeline's dot lattice is
                   // sized by the hour grid and overdraws past it so the dots
                   // reach the panel's edges. This corner is what cuts them.
@@ -391,7 +445,13 @@ class _MonthBlock extends ConsumerWidget {
                               crossAxisAlignment: CrossAxisAlignment.baseline,
                               textBaseline: TextBaseline.alphabetic,
                               children: [
-                                Flexible(child: Text(headingText, overflow: TextOverflow.ellipsis, style: AppText.itemTitle)),
+                                Flexible(
+                                  child: Text(
+                                    headingText,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: AppText.itemTitle,
+                                  ),
+                                ),
                                 const SizedBox(width: 8),
                                 Text(L.s.eventCount(dayEvents.length), style: AppText.label),
                               ],
@@ -427,7 +487,10 @@ class _MonthBlock extends ConsumerWidget {
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           child: Column(
                             children: [
-                              Text(L.s.noEventsThisDay, style: AppText.body.copyWith(color: AppColors.inkTertiary)),
+                              Text(
+                                L.s.noEventsThisDay,
+                                style: AppText.body.copyWith(color: AppColors.inkTertiary),
+                              ),
                               const SizedBox(height: 14),
                               _EmptyDayActions(),
                             ],
@@ -474,7 +537,19 @@ class _MonthCell extends ConsumerWidget {
 
   final void Function(BuildContext cellContext, int y, int m, int d) onSelectDay;
 
-  const _MonthCell({super.key, required this.index, required this.lead, required this.len, required this.year, required this.month, required this.state, required this.accent, required this.holidays, required this.ferien, required this.onSelectDay});
+  const _MonthCell({
+    super.key,
+    required this.index,
+    required this.lead,
+    required this.len,
+    required this.year,
+    required this.month,
+    required this.state,
+    required this.accent,
+    required this.holidays,
+    required this.ferien,
+    required this.onSelectDay,
+  });
 
   /// The circle, the gap under it and the dot band, plus 5 points of slack —
   /// derived rather than written down, so a scale that grows the day cannot
@@ -487,14 +562,17 @@ class _MonthCell extends ConsumerWidget {
     final n = index - lead + 1;
     final isSel = _sameDay(state.selected, year, month, n);
     final isToday = _isToday(year, month, n);
-    final highlight = _dayHighlight(publicHoliday: holidays.containsKey(n), schoolHoliday: ferien.contains(n));
+    final highlight = _dayHighlight(
+      publicHoliday: holidays.containsKey(n),
+      schoolHoliday: ferien.contains(n),
+    );
     final colors = state.dayColors(year, month, n);
     final dots = colors.take(3).toList();
     final overflowCount = colors.length - 3;
     // Same rule as the week strip's: the ring only appears while the "To-dos"
     // chip is lit, so it always points at something the day can actually show.
-    final hasTodo = state.showTasks &&
-        ref.watch(openTodoDaysProvider).contains(CalendarScreenState.key(year, month, n));
+    final hasTodo =
+        state.showTasks && ref.watch(openTodoDaysProvider).contains(CalendarScreenState.key(year, month, n));
 
     return GestureDetector(
       onTap: () => onSelectDay(context, year, month, n),

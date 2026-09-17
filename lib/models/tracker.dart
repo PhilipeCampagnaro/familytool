@@ -53,11 +53,10 @@ class TrackerSchedule {
 
   /// Days outside 1..7 are dropped rather than clamped: a 0 clamped to Monday
   /// would silently schedule a day nobody picked.
-  factory TrackerSchedule.onWeekdays(Iterable<int> days) => TrackerSchedule._(
-    TrackerScheduleKind.weekdays,
-    {for (final d in days) if (d >= 1 && d <= 7) d},
-    0,
-  );
+  factory TrackerSchedule.onWeekdays(Iterable<int> days) => TrackerSchedule._(TrackerScheduleKind.weekdays, {
+    for (final d in days)
+      if (d >= 1 && d <= 7) d,
+  }, 0);
 
   factory TrackerSchedule.timesPerWeek(int target) =>
       TrackerSchedule._(TrackerScheduleKind.weeklyCount, const <int>{}, target.clamp(1, 7));
@@ -255,12 +254,7 @@ class TrackerCheck {
   final String doneBy;
   final DateTime? doneAt;
 
-  const TrackerCheck({
-    required this.trackerId,
-    required this.day,
-    required this.doneBy,
-    this.doneAt,
-  });
+  const TrackerCheck({required this.trackerId, required this.day, required this.doneBy, this.doneAt});
 
   factory TrackerCheck.fromMap(Map<String, dynamic> map) => TrackerCheck(
     trackerId: map['tracker_id'] as String,

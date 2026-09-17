@@ -68,10 +68,9 @@ Future<PickedFile?> pickAttachment(AttachmentSource source, {int? maxDimension})
 
 Future<PickedFile?> _pickIOS(AttachmentSource source, int? maxDimension) async {
   try {
-    final picked = await _channel.invokeMapMethod<String, dynamic>(
-      source.method,
-      {'maxDimension': maxDimension},
-    );
+    final picked = await _channel.invokeMapMethod<String, dynamic>(source.method, {
+      'maxDimension': maxDimension,
+    });
     if (picked == null) return null;
     return PickedFile(
       path: picked['path'] as String,
@@ -106,9 +105,7 @@ Future<PickedFile?> _pickAndroid(AttachmentSource source, int? maxDimension) asy
       case AttachmentSource.camera:
         final picker = ImagePicker();
         final shot = await picker.pickImage(
-          source: source == AttachmentSource.camera
-              ? ImageSource.camera
-              : ImageSource.gallery,
+          source: source == AttachmentSource.camera ? ImageSource.camera : ImageSource.gallery,
           // The plugin caps both edges; passing the same number to each caps the
           // longest one and leaves the aspect ratio alone, which is what
           // `maxDimension` means on the iOS side.
@@ -160,8 +157,15 @@ Future<PickedFile?> _adopt(String sourcePath, String name, {required bool isImag
 bool _looksLikeImage(String name) {
   final dot = name.lastIndexOf('.');
   if (dot < 0) return false;
-  return const {'jpg', 'jpeg', 'png', 'heic', 'heif', 'webp', 'gif'}
-      .contains(name.substring(dot + 1).toLowerCase());
+  return const {
+    'jpg',
+    'jpeg',
+    'png',
+    'heic',
+    'heif',
+    'webp',
+    'gif',
+  }.contains(name.substring(dot + 1).toLowerCase());
 }
 
 /// Reads a picked text file and then removes the copy the picker made.

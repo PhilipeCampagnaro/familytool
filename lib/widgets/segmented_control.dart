@@ -16,12 +16,8 @@ class SegmentedOption<T> {
   /// False draws the glyph alone and leaves [label] to the screen reader.
   final bool showLabel;
 
-  const SegmentedOption({
-    required this.value,
-    required this.label,
-    this.icon,
-    this.showLabel = true,
-  }) : assert(icon != null || showLabel, 'A segment with no icon must show its label');
+  const SegmentedOption({required this.value, required this.label, this.icon, this.showLabel = true})
+    : assert(icon != null || showLabel, 'A segment with no icon must show its label');
 }
 
 /// The app's two-or-three-way switch, as used at the top of the Listen sheet
@@ -100,10 +96,7 @@ class SegmentedControl<T> extends StatelessWidget {
               child: AnimatedAlign(
                 duration: _travel,
                 curve: Curves.easeOutCubic,
-                alignment: Alignment(
-                  options.length < 2 ? 0 : -1 + 2 * chosen / (options.length - 1),
-                  0,
-                ),
+                alignment: Alignment(options.length < 2 ? 0 : -1 + 2 * chosen / (options.length - 1), 0),
                 child: FractionallySizedBox(
                   widthFactor: 1 / options.length,
                   heightFactor: 1,
@@ -227,7 +220,8 @@ class _SegButton extends StatelessWidget {
                   tween: ColorTween(end: ink),
                   duration: duration,
                   curve: Curves.easeOutCubic,
-                  builder: (context, tone, _) => AppIcon(glyph, size: AppGlyph.row, color: tone ?? ink, flat: true),
+                  builder: (context, tone, _) =>
+                      AppIcon(glyph, size: AppGlyph.row, color: tone ?? ink, flat: true),
                 ),
               if (icon != null && label != null) const SizedBox(width: 7),
               if (label case final text?)

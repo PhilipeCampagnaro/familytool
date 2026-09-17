@@ -63,14 +63,12 @@ class EventLink {
   /// `*_event_link_complete` check refuses half a link, so the columns are
   /// always written together.
   static Map<String, dynamic> columnsOf(EventLink? link) =>
-      link?.toMap() ??
-      const {'event_calendar_id': null, 'event_uid': null, 'event_starts_at': null};
+      link?.toMap() ?? const {'event_calendar_id': null, 'event_uid': null, 'event_starts_at': null};
 
   /// The day the appointment falls on, midnight-normalised — what Kalender is
   /// jumped to. Null where the snapshot has no date, in which case the jump
   /// lands on today and the event is simply not highlighted.
-  DateTime? get day =>
-      startsAt == null ? null : DateTime(startsAt!.year, startsAt!.month, startsAt!.day);
+  DateTime? get day => startsAt == null ? null : DateTime(startsAt!.year, startsAt!.month, startsAt!.day);
 
   /// Whether this names the given event. Both halves, because the same
   /// appointment invited to two accounts in one household keeps its `uid` and

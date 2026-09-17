@@ -48,7 +48,8 @@ class Avatar extends StatelessWidget {
       decoration: BoxDecoration(color: bg, shape: BoxShape.circle, border: border),
       alignment: Alignment.center,
       clipBehavior: Clip.antiAlias,
-      child: _picture() ??
+      child:
+          _picture() ??
           (icon != null
               ? AppIcon(icon, size: size * 0.44, color: fg)
               : Text(
@@ -129,9 +130,10 @@ class AvatarStack extends StatelessWidget {
             Positioned(
               left: step * i,
               child: Container(
-                decoration: BoxDecoration(shape: BoxShape.circle, boxShadow: [
-                  BoxShadow(color: AppColors.surface, blurRadius: 0, spreadRadius: 2),
-                ]),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  boxShadow: [BoxShadow(color: AppColors.surface, blurRadius: 0, spreadRadius: 2)],
+                ),
                 child: avatars[i],
               ),
             ),

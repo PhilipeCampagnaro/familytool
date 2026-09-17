@@ -61,13 +61,24 @@ English, umlauts optional, punctuation ignored, quantities stripped:
    (that is what makes "dm" and "Q1" work without every third keystroke flashing a logo).
    Deliberately **no** compound matching here: shop names are short and turn up inside ordinary
    German words (*Akku-schrauber* → Uber, *Geburtstags-party* → Spar).
-3. **Curated symbols** — the `symbolGroups` list, ~105 icons in 14 German-named sections,
+3. **Curated symbols** — the `symbolGroups` list, ~235 icons in 14 German-named sections,
    each with German synonyms plus its English name. These *do* get the compound rule: a term of 4+
    letters sitting inside the query counts as the weakest hit, which is what makes *Wocheneinkauf*
    → Einkauf, *Winterkleidung* → Kleidung, *Umzugskartons* → Umzug. Ties there go to the **longer**
    stem (the more specific one); everywhere else to the shorter term.
 4. **The grocery catalog** last, and *strictly* — the "query appears somewhere in the name" hit is
    dropped, or a list called "Mia" comes out as Thymian.
+
+**That weakest hit is anchored to a word end even inside a Lebensmittel list** (`_endsWord`, added
+2026-09-16). It is there for German compounds, where the head noun comes last — *Vollmilch* is milk —
+and unanchored it also fired on letters buried mid-word: **Mini-Pizzen drew a sanitary towel**,
+because "mini" sits inside "feminine pads" and that name is shorter than "aluminiumfolie", which
+contains it too. Browsing keeps the loose rule (`_search(anchored: false)`), so typing *pizz* still
+offers Tiefkühlpizza halfway through the word. Verified against every German label in the catalog:
+all 600 still match themselves.
+
+A plural is not a compound and nothing stems it — *Pizzen* reaches no name that *Pizza* does — so a
+plural the household actually types is one more alias on the entry.
 
 **Which catalogs are in play at all is decided by `IconSubject`** — one value per thing being
 named, passed to `suggestIcon`, `searchIcons` and `showIconPicker` alike, so the manual override
@@ -76,7 +87,8 @@ offers exactly what the automatic match may pick:
 | Subject | Catalogs | Why |
 | --- | --- | --- |
 | `groceryArticle` | shops → **groceries (loose)** → symbols | An article on a Lebensmittel list is a food name outright. |
-| `article` | symbols → shops → symbols → groceries (strict) | Anywhere else: a Sonstige list's articles, a box's contents. |
+| `article` | symbols only | Anywhere else: a Sonstige list's articles, a box's contents. The photographs went on 2026-09-16 — see below. |
+| `budget` | symbols only | A monthly spending budget. A shop logo would say the household budgets for REWE rather than for groceries. |
 | `list` | symbols + shops | A list is a container. A grocery photo is a photograph of *one* article, so a list called "Milch" wore a milk carton as though the list were the carton. Households do name lists after shops ("Rewe"), so the logos stay. |
 | `box` | symbols only | A box is a place in the house. A shop logo says where something was bought, which is not what a box is. |
 
@@ -84,6 +96,17 @@ The rule is about meaning, so it lives on the enum rather than in booleans at ea
 two bugs it replaced were both a call site quietly getting the wrong policy, including the *stored*
 icon in `createList`/`updateList`, which re-runs the match server-side and had to agree with the
 preview the sheet showed.
+
+**`article` lost the photographs on 2026-09-16, and the reason generalises.** It had them on the
+true observation that a photograph of one thing stands for one thing — but the ~2000 pictures are a
+*supermarket's* catalog, so anywhere else they answer the wrong question with great confidence:
+"Kerzen" on a Baumarkt list came back as a dinner candle, and the strict grocery match is only
+reached once no symbol is even close, which is exactly when a confident picture is least deserved. A
+symbol that is merely near reads as a symbol; a photograph that is merely near reads as a mistake,
+because a photograph claims to *be* the thing. What made this affordable is that `symbolGroups` was
+grown for it in the same pass — Schlafsack, Pinsel, Socken, Dübel, Kinderwagen — so the answer to a
+thin match is another symbol rather than the photo catalog. A grocery picture now appears on a
+Lebensmittel list and nowhere else.
 
 **An edit sheet's `IconDraft` starts empty**, never seeded with the stored icon. Seeding it made
 every edit look like a manual pick: the preview stopped following the name *and* the old key went

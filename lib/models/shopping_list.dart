@@ -24,6 +24,13 @@ ListKind _kindFrom(String? value) => value == 'grocery' ? ListKind.grocery : Lis
 
 DateTime? _timeFrom(Object? value) => value == null ? null : DateTime.tryParse(value as String)?.toLocal();
 
+/// An empty column and an absent one are the same thing everywhere in this
+/// file — a list with `recipe = ''` draws no chip, exactly as `null` does.
+String? _textOrNull(Object? value) {
+  final text = (value as String?)?.trim();
+  return text == null || text.isEmpty ? null : text;
+}
+
 /// The id of the computed "Alle Artikel" view. Never a `lists.id` — every real
 /// one is a uuid.
 const String summaryListId = 'all';
@@ -66,12 +73,29 @@ class ShoppingList {
   /// deleting the list.
   final EventLink? eventLink;
 
+  /// How to actually do it, from the Vorhaben that made this list — the short
+  /// overview, in order. Empty on every list somebody typed themselves, which
+  /// is most of them.
+  ///
+  /// **Written once, when the list is created, and never edited.** Same shape
+  /// as [eventLink] and for the same reason: it is a record of what the plan
+  /// said, not a field of the list, so there is no edit path and no way to
+  /// clear it but deleting the list.
+  final List<String> steps;
+
+  /// The full method, when the Vorhaben was about cooking — null otherwise, and
+  /// null on every hand-made list. See [ListPlan.recipe].
+  final String? recipe;
+
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
   /// True for the one list that is computed rather than stored. Blocks
   /// [toMap], so "Alle Artikel" cannot be inserted by accident.
   final bool isSummary;
+
+  /// Whether this list carries anything worth opening a method sheet for.
+  bool get hasMethod => steps.isNotEmpty || (recipe?.isNotEmpty ?? false);
 
   const ShoppingList({
     required this.id,
@@ -84,6 +108,8 @@ class ShoppingList {
     this.sharedWith = const [],
     this.position = 0,
     this.eventLink,
+    this.steps = const [],
+    this.recipe,
     this.createdAt,
     this.updatedAt,
   }) : isSummary = false;
@@ -94,18 +120,20 @@ class ShoppingList {
   /// (see the type migration) and exists regardless of how many real lists
   /// there are. [familyId] and [ownerId] are empty for exactly that reason.
   ShoppingList.summary({String? name, this.iconKey})
-      : name = name ?? L.s.allItems,
-        id = summaryListId,
-        kind = ListKind.grocery,
-        familyId = '',
-        ownerId = '',
-        visibility = ListVisibility.family,
-        sharedWith = const [],
-        position = -1,
-        eventLink = null,
-        createdAt = null,
-        updatedAt = null,
-        isSummary = true;
+    : name = name ?? L.s.allItems,
+      id = summaryListId,
+      kind = ListKind.grocery,
+      familyId = '',
+      ownerId = '',
+      visibility = ListVisibility.family,
+      sharedWith = const [],
+      position = -1,
+      eventLink = null,
+      steps = const [],
+      recipe = null,
+      createdAt = null,
+      updatedAt = null,
+      isSummary = true;
 
   factory ShoppingList.fromMap(Map<String, dynamic> map, {List<String> sharedWith = const []}) {
     return ShoppingList(
@@ -119,6 +147,11 @@ class ShoppingList {
       sharedWith: sharedWith,
       position: (map['position'] as num?)?.toInt() ?? 0,
       eventLink: EventLink.fromMap(map),
+      steps: [
+        for (final s in (map['steps'] as List?) ?? const [])
+          if (s is String && s.trim().isNotEmpty) s.trim(),
+      ],
+      recipe: _textOrNull(map['recipe']),
       createdAt: _timeFrom(map['created_at']),
       updatedAt: _timeFrom(map['updated_at']),
     );
@@ -143,7 +176,16 @@ class ShoppingList {
       // All four columns or none: the `lists_event_link_complete` check refuses
       // half a link, so an unlinked list writes four explicit nulls.
       ...EventLink.columnsOf(eventLink),
-      if (forInsert) ...{'family_id': familyId, 'owner_id': ownerId},
+      // **Insert only.** The method is what the plan said when the list was
+      // made; there is no screen that edits it, and leaving it out of the
+      // update patch is what stops a rename from rewriting it — or, worse, from
+      // blanking it on a list loaded before these columns existed.
+      if (forInsert) ...{
+        'family_id': familyId,
+        'owner_id': ownerId,
+        'steps': steps.isEmpty ? null : steps,
+        'recipe': recipe,
+      },
     };
   }
 
@@ -157,6 +199,8 @@ class ShoppingList {
     List<String>? sharedWith,
     int? position,
     EventLink? eventLink,
+    List<String>? steps,
+    String? recipe,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -171,6 +215,8 @@ class ShoppingList {
       sharedWith: sharedWith ?? this.sharedWith,
       position: position ?? this.position,
       eventLink: eventLink ?? this.eventLink,
+      steps: steps ?? this.steps,
+      recipe: recipe ?? this.recipe,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

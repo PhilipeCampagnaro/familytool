@@ -60,13 +60,30 @@ IconData navRowIcon({required IconData lucide, required IconData cupertino}) =>
 /// German labels into a floating capsule until they truncate, and the Figma
 /// pill was drawn for five.
 List<NavTab> get navTabs => [
-  NavTab(L.s.navHome, AppIcons.house, cupertinoIcon: CupertinoIcons.house, sfSymbol: 'house', sfSymbolSelected: 'house.fill'),
+  NavTab(
+    L.s.navHome,
+    AppIcons.house,
+    cupertinoIcon: CupertinoIcons.house,
+    sfSymbol: 'house',
+    sfSymbolSelected: 'house.fill',
+  ),
   NavTab(L.s.navCalendar, AppIcons.calendar, cupertinoIcon: CupertinoIcons.calendar, sfSymbol: 'calendar'),
-  NavTab(L.s.navLists, AppIcons.listChecks, cupertinoIcon: CupertinoIcons.checkmark_square, sfSymbol: 'checklist'),
+  NavTab(
+    L.s.navLists,
+    AppIcons.listChecks,
+    cupertinoIcon: CupertinoIcons.checkmark_square,
+    sfSymbol: 'checklist',
+  ),
   // `squares-four`, not Phosphor's `layout` — the panel-with-a-sidebar glyph
   // that was here said "dashboard" where the SF Symbol beside it on the iPhone
   // says four squares, and the two bars are meant to be one design drawn twice.
-  NavTab(L.s.navBoard, AppIcons.squaresFour, cupertinoIcon: CupertinoIcons.square_grid_2x2, sfSymbol: 'square.grid.2x2', sfSymbolSelected: 'square.grid.2x2.fill'),
+  NavTab(
+    L.s.navBoard,
+    AppIcons.squaresFour,
+    cupertinoIcon: CupertinoIcons.square_grid_2x2,
+    sfSymbol: 'square.grid.2x2',
+    sfSymbolSelected: 'square.grid.2x2.fill',
+  ),
   // A stack of cards seen end-on, not an ellipsis: the three dots said "more
   // options" — a menu of settings — where this tab is two *places*. The SF
   // Symbol is the picture; Phosphor's nearest is its layered `stack-simple`,
@@ -124,9 +141,8 @@ double nativeTabBarBottomInset(BuildContext context) =>
 /// anything *parked* just above the bar (the calendar's floating "Heute"
 /// button) needs a bigger gap, or the two glass surfaces touch and the button
 /// looks like it's hiding behind the bar.
-double navContentInset(BuildContext context, {double pill = 130, double gap = 12}) => useNativeTabBar
-    ? nativeTabBarBottomInset(context) + kNativeTabBarHeight + gap
-    : pill;
+double navContentInset(BuildContext context, {double pill = 130, double gap = 12}) =>
+    useNativeTabBar ? nativeTabBarBottomInset(context) + kNativeTabBarHeight + gap : pill;
 
 /// How long the bar takes to collapse into [CompactNavButton] and back. Shared
 /// with anything that has to travel with it — Kalender's "Heute" button drops
@@ -325,10 +341,7 @@ class AppBottomNav extends StatelessWidget {
     final tabs = navTabs;
     return LayoutBuilder(
       builder: (context, constraints) {
-        final itemWidth = math.min(
-          _maxNavItemWidth,
-          (constraints.maxWidth - _barPad * 2) / tabs.length,
-        );
+        final itemWidth = math.min(_maxNavItemWidth, (constraints.maxWidth - _barPad * 2) / tabs.length);
         return GlassSurface(
           borderRadius: BorderRadius.circular(kFlutterNavBarHeight / 2),
           // No forced `tint`: it goes straight to `UIGlassEffect.tintColor` on
@@ -360,12 +373,7 @@ class AppBottomNav extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       for (var i = 0; i < tabs.length; i++)
-                        _NavItem(
-                          tab: tabs[i],
-                          width: itemWidth,
-                          active: i == index,
-                          onTap: () => onTap(i),
-                        ),
+                        _NavItem(tab: tabs[i], width: itemWidth, active: i == index, onTap: () => onTap(i)),
                     ],
                   ),
                 ],
@@ -414,12 +422,7 @@ class _NavItem extends StatefulWidget {
   final bool active;
   final VoidCallback onTap;
 
-  const _NavItem({
-    required this.tab,
-    required this.width,
-    required this.active,
-    required this.onTap,
-  });
+  const _NavItem({required this.tab, required this.width, required this.active, required this.onTap});
 
   @override
   State<_NavItem> createState() => _NavItemState();

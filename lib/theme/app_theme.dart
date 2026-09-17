@@ -40,8 +40,6 @@ ThemeData buildAppTheme(AppPalette palette) {
     // here rather than a `hintStyle` per field, so every sheet, search box and
     // notes area in the app tells the same truth about what is typed and what
     // is only being suggested.
-    inputDecorationTheme: base.inputDecorationTheme.copyWith(
-      hintStyle: TextStyle(color: palette.mutedLight),
-    ),
+    inputDecorationTheme: base.inputDecorationTheme.copyWith(hintStyle: TextStyle(color: palette.mutedLight)),
   );
 }

@@ -69,7 +69,11 @@ class EventDots extends StatelessWidget {
               child: Container(
                 width: dotSize,
                 height: dotSize,
-                decoration: BoxDecoration(color: colors[i], shape: BoxShape.circle, border: Border.all(color: AppColors.surface, width: 1.5)),
+                decoration: BoxDecoration(
+                  color: colors[i],
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.surface, width: 1.5),
+                ),
               ),
             ),
           if (overflowCount > 0)
@@ -79,7 +83,11 @@ class EventDots extends StatelessWidget {
                 width: dotSize,
                 height: dotSize,
                 alignment: Alignment.center,
-                decoration: BoxDecoration(color: AppColors.mutedLight, shape: BoxShape.circle, border: Border.all(color: AppColors.surface, width: 1.5)),
+                decoration: BoxDecoration(
+                  color: AppColors.mutedLight,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.surface, width: 1.5),
+                ),
                 child: Text(
                   '+',
                   // Sized off the dot it sits in, and the one w800 in the app:

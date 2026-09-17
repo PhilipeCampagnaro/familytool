@@ -33,10 +33,17 @@ enum Plan {
 /// on it, so a new gate cannot ship without a sentence explaining itself.
 enum Feature {
   /// Connected calendar accounts. **The one that matters**, and the reason the
-  /// gate is here rather than on writing an event: one free account is a
-  /// complete product for a household with one Google calendar, and the second
-  /// account is exactly the moment the app becomes the only place the family's
-  /// week exists. IServ, WebUntis, GMX and any iCal link arrive with it.
+  /// gate is here rather than on writing an event.
+  ///
+  /// **Two, because a household is at least two adults** (raised from one,
+  /// 2026-09-16). A family organizer whose free tier holds a single account is
+  /// a calendar app for one parent — and the second parent's week beside the
+  /// first *is* the thing this app is for, so charging for it means most
+  /// households never once see the app do its job. Two accounts is both adults
+  /// in. The **third** — the school's feed, a teenager's own, the shared one
+  /// nobody remembers making — is a household growing into the app rather than
+  /// tasting it, and that is what Plus is for. IServ, WebUntis, GMX and any
+  /// iCal link arrive with it.
   calendarAccounts,
 
   /// Rhythms on the Board.
@@ -47,17 +54,6 @@ enum Feature {
 
   /// People in the household.
   members,
-
-  /// Live share links out of the household.
-  ///
-  /// **Capped rather than closed on free, and that is a growth decision, not a
-  /// generous one.** A share link is the only way somebody outside a household
-  /// ever meets Aporah — the recipient signs up to open the list — so charging
-  /// before the first one can be sent would gate the funnel itself. The cap is
-  /// on links *live at once*, so revoking one frees the slot: a household that
-  /// shares occasionally never notices it, and one that shares constantly is
-  /// exactly the household Plus is for.
-  shareLinks,
 
   /// Photographs on boxes, box items and list articles, and file attachments.
   /// The only gated feature with a real marginal cost behind it — Storage and
@@ -143,7 +139,7 @@ class Entitlements {
 
   /// **Every number in the product, in one table.**
   ///
-  /// Free is a complete app for a household with one calendar, and that is the
+  /// Free is a complete app for a household with two calendars, and that is the
   /// design: a free tier that is worse than the calendar already on the phone
   /// converts nobody, because nobody stays long enough to be converted. So all
   /// of Kalender, Home and Board are here, **including creating, editing and
@@ -151,11 +147,10 @@ class Entitlements {
   /// on whether you can write.
   static const _limits = <Plan, Map<Feature, int?>>{
     Plan.free: {
-      Feature.calendarAccounts: 1,
+      Feature.calendarAccounts: 2,
       Feature.trackers: 3,
       Feature.boxes: 1,
       Feature.members: 4,
-      Feature.shareLinks: 2,
       Feature.photos: 0,
       Feature.spend: 0,
     },
@@ -164,7 +159,6 @@ class Entitlements {
       Feature.trackers: null,
       Feature.boxes: null,
       Feature.members: null,
-      Feature.shareLinks: null,
       Feature.photos: null,
       Feature.spend: null,
     },
@@ -188,7 +182,6 @@ String paywallTitle(Feature feature) => switch (feature) {
   Feature.trackers => L.s.paywallTrackersTitle,
   Feature.boxes => L.s.paywallBoxesTitle,
   Feature.members => L.s.paywallMembersTitle,
-  Feature.shareLinks => L.s.paywallSharingTitle,
   Feature.photos => L.s.paywallPhotosTitle,
   Feature.spend => L.s.paywallSpendTitle,
 };
@@ -198,7 +191,6 @@ String paywallBody(Feature feature) => switch (feature) {
   Feature.trackers => L.s.paywallTrackersBody,
   Feature.boxes => L.s.paywallBoxesBody,
   Feature.members => L.s.paywallMembersBody,
-  Feature.shareLinks => L.s.paywallSharingBody,
   Feature.photos => L.s.paywallPhotosBody,
   Feature.spend => L.s.paywallSpendBody,
 };

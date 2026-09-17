@@ -44,9 +44,12 @@ works on both. The full cost analysis behind this — the hosting model at 50 to
 where each euro goes, and what actually limits growth — is the Unit Economics artifact; the
 conclusions that bind code are here.
 
-**Free — a complete product for a one-calendar household:**
+**Free — a complete product for a two-calendar household:**
 
-- One connected calendar account, plus Ferien and Abfall (shared feeds, near-zero marginal cost)
+- **Two** connected calendar accounts, plus Ferien and Abfall (shared feeds, near-zero marginal
+  cost). Raised from one on 2026-09-16: a household is at least two adults, and a free tier
+  holding one account is a calendar app for one parent — most families would never have seen the
+  app do the thing it is for. The third account is where Plus starts.
 - All of Kalender, Home and Board, including **creating, editing and deleting events**
 - Three trackers, unlimited lists and articles, one Box, up to four people
 - Weather, the German holidays, all four languages
@@ -57,9 +60,11 @@ conclusions that bind code are here.
 - Ausgaben entirely (iOS only, by nature)
 - Photographs on boxes, box items and list articles, plus file attachments
 - Unlimited boxes, trackers and household members
-- Sharing a list or a box outside the household — **under review, see Phase 1b.** This is the app's
-  only acquisition loop, and gating it may cost more in growth than it earns in upgrades. The
-  likely answer is a free cap of one or two live links with unlimited on Plus.
+
+**Sharing is not on this list, on either plan — decided 2026-09-15.** It is the app's only
+acquisition loop, and a list's "Teilen" now mints a link every time the system share sheet opens,
+so a cap counted in links would be a cap on taps. `create-share-link`'s daily rate limit is the
+abuse guard and the only limit.
 
 ### Why write-back is *not* the gate
 
@@ -148,15 +153,11 @@ Everything commercial depends on this, and it is small. Build it before anything
       than quietly vanishing. **Nothing that only tidies up is gated** — removing a photograph,
       editing an existing Box — or a household dropping to free could not clean up after itself.
       Calendar accounts exclude Ferien and Abfall exactly as the server does, and let a reconnect
-      through, or "Erneut verbinden" would paywall repairing the one calendar free entitles them to.
+      through, or "Erneut verbinden" would paywall repairing a calendar free entitles them to.
       Avatars are not `Feature.photos` and never were: a person's face is 512px and free.
-- [ ] **Share links are gated on the server only, and that is a gap worth closing.** The cap is per
-      household and the share sheet is per resource, so the sheet cannot count what it would need
-      to. `create-share-link` returns 402 with an explaining sentence and the sheet shows it as an
-      error snack — correct, but a snack where every other limit gets the paywall. Closing it means
-      either a household-wide live-link count in state or a 402 the sheet recognises.
-- [ ] **Settle the sharing cap** (see Phase 1b). `Feature.shareLinks` is currently two live links on
-      free and unlimited on Plus, in both the Dart table and the TypeScript one. One number in each.
+- [x] **Share links are gated on the server only.** Moot — there is no gate any more (below).
+- [x] **Settle the sharing cap** (2026-09-15). No cap on free or Plus: `Feature.shareLinks`,
+      `canAddShareLink` and the paywall copy are gone from both tables.
 
 ---
 

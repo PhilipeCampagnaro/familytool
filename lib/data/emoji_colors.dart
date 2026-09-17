@@ -58,7 +58,10 @@ Future<void> loadEmojiGlow(String emoji) async {
 
 Future<List<Color>> _extractHues(String emoji) async {
   final painter = TextPainter(
-    text: TextSpan(text: emoji, style: const TextStyle(fontSize: _renderSize)),
+    text: TextSpan(
+      text: emoji,
+      style: const TextStyle(fontSize: _renderSize),
+    ),
     textDirection: TextDirection.ltr,
   )..layout();
 
