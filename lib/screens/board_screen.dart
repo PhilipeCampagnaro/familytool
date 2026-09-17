@@ -25,6 +25,7 @@ import '../widgets/glass.dart';
 import '../widgets/segmented_control.dart';
 import '../widgets/share_sheet.dart';
 import '../widgets/swipe_actions.dart';
+import '../widgets/empty_state.dart';
 import '../widgets/error_note.dart';
 import '../widgets/event_link_chip.dart';
 import '../widgets/visibility_picker.dart';
@@ -1183,6 +1184,10 @@ class _DoneFoldRow extends StatelessWidget {
 
 /// Nothing open at all — not "nothing on this day", which is what the day card
 /// used to say and which a list spanning every day can no longer mean.
+/// The Board with nothing open on it — the same block Listen and Box draw,
+/// plus the one button. It was a [SectionCard] with a line of text in it, which
+/// put a container around the news that there is nothing to contain; see
+/// [EmptyState] for why every screen now answers the same way.
 class _EmptyBoard extends StatelessWidget {
   final VoidCallback onAdd;
 
@@ -1190,19 +1195,12 @@ class _EmptyBoard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SectionCard(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 34, horizontal: 20),
-          child: Column(
-            children: [
-              Text(L.s.noOpenTasks, style: AppText.body.copyWith(color: AppColors.inkTertiary)),
-              const SizedBox(height: 16),
-              GlassAccentButton(label: L.s.addTask, onTap: onAdd),
-            ],
-          ),
-        ),
-      ],
+    return EmptyState(
+      icon: AppIcons.checkCircle,
+      iconColor: Theme.of(context).colorScheme.primary,
+      message: L.s.noOpenTasks,
+      verticalPadding: 44,
+      action: GlassAccentButton(label: L.s.addTask, onTap: onAdd),
     );
   }
 }

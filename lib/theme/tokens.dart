@@ -1384,6 +1384,17 @@ class AppText {
   /// those headers used.
   static double get headerMark => rowMark + 6;
 
+  /// The smallest mark: one that sits **inside a line of type** rather than
+  /// beside a block of it — the kind marker on a list's subtitle, which stands
+  /// among the words of that line instead of in a column of its own.
+  ///
+  /// The subtitle's line box plus the room a glyph needs to survive being put
+  /// on a fill. Sized exactly to the line, [markGlyph] of it comes out around
+  /// eight points, which is a smudge rather than a basket; the five is what
+  /// buys the glyph back, and it still rises with the type scale because the
+  /// line box does.
+  static double get inlineMark => lineBox(_s.label.size) + 5;
+
   /// What goes *inside* a mark, as a fraction of it.
   ///
   /// **These are not the thing to grow when a mark feels small.** The inset is

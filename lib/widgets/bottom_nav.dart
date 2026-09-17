@@ -3,7 +3,9 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../l10n/l10n.dart';
+import '../state/nav_state.dart';
 import '../services/spend_intent.dart';
 import '../theme/tokens.dart';
 import 'glass.dart';
@@ -118,9 +120,11 @@ List<NavTab> get navTabs => [
 /// same bar drawn in Flutter rather than Material's own.
 bool get useNativeTabBar => !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
 
-/// Fallback height for the native bar until it reports its own (~49–56pt).
-/// Only used for content clearance, never to size the bar itself — UIKit does
-/// that.
+/// Fallback height for the native bar for the frame before it reports its own.
+/// Only used to size clearance, never the bar itself — UIKit does that — and
+/// every one of those call sites prefers the measured height when there is one
+/// ([navContentInset], [navBarTop], [navRowBottom]). It is a floor, not an
+/// estimate: an iOS 26 glass capsule measures well above it.
 const kNativeTabBarHeight = 56.0;
 
 /// Gap between the bottom of the native bar and the bottom of the screen. iOS
@@ -136,13 +140,32 @@ double nativeTabBarBottomInset(BuildContext context) =>
 /// computed: the native bar from its own geometry, the pill from the constant
 /// [pill] — which a few screens nudge up to sit a card further clear of it.
 ///
+/// **The height is the one UIKit reported, not [kNativeTabBarHeight].** This
+/// used to pass the constant and argue that a row ending up a few points under
+/// the glass slides on past — which is true of a row in the *middle* of a list
+/// and false of the last one, because there is nothing left to scroll and it
+/// stays there, with its check circle and its "..." under the bar. An iOS 26
+/// capsule is a good deal taller than the constant, so that was the last row of
+/// every list, every box and the Board. Same fallback as everywhere else, and
+/// the same reason the confirmation chip stopped guessing (see `toast_chip`):
+/// the constant is only for the frame before the bar has measured itself.
+///
 /// [gap] is the breathing room left above the native bar. Scrolling content can
 /// sit close to it — it slides under the glass and reads as intended — but
 /// anything *parked* just above the bar (the calendar's floating "Heute"
 /// button) needs a bigger gap, or the two glass surfaces touch and the button
 /// looks like it's hiding behind the bar.
-double navContentInset(BuildContext context, {double pill = 130, double gap = 12}) =>
-    useNativeTabBar ? nativeTabBarBottomInset(context) + kNativeTabBarHeight + gap : pill;
+///
+/// Read off the container rather than a `ref` because this is called from
+/// `build` all over the app, most of it deep inside widgets that take a bare
+/// [BuildContext]. Not listening costs nothing: `AppShell` watches
+/// [navBarProvider] itself, so the measurement arriving rebuilds every screen
+/// under it anyway.
+double navContentInset(BuildContext context, {double pill = 130, double gap = 12}) {
+  if (!useNativeTabBar) return pill;
+  final measured = ProviderScope.containerOf(context, listen: false).read(navBarProvider).barHeight;
+  return nativeTabBarBottomInset(context) + (measured ?? kNativeTabBarHeight) + gap;
+}
 
 /// Distance from the bottom of the display to the **top edge of the nav bar** —
 /// the line anything parked above it has to clear.

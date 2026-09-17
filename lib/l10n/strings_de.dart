@@ -435,6 +435,10 @@ class StringsDe extends AppStrings {
   @override
   String get addItemPlaceholder => 'Artikel hinzufügen...';
   @override
+  String get viewAsCards => 'Als Karten';
+  @override
+  String get viewAsList => 'Als Liste';
+  @override
   String get empty => 'Leer';
   @override
   String emptyWithPlace(String place) => 'Leer · $place';
@@ -1985,8 +1989,8 @@ class StringsDe extends AppStrings {
   String get paywallSpendTitle => 'Ausgaben';
   @override
   String get paywallSpendBody =>
-      'Mit Plus seht ihr, wohin das Geld geht: Apple-Pay-Zahlungen landen von selbst im Monat, '
-      'alles andere tragt ihr in zwei Handgriffen nach.';
+      'Mit Plus steht jede Zahlung mit dem Handy von allein hier — sortiert nach Kategorie, '
+      'Geschäft und Person. Dazu ein Budget pro Kategorie, das sagt, was noch übrig ist.';
 
   @override
   String get debugPlanTitle => 'Plan (Debug)';

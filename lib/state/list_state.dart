@@ -3,6 +3,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/article_quantity.dart';
 import '../data/icon_suggestions.dart';
@@ -17,6 +18,22 @@ import 'auth_state.dart';
 import 'family_state.dart';
 import '../l10n/l10n.dart';
 import 'realtime_state.dart';
+
+/// How a list draws its open articles.
+///
+/// [cards] is the Bring-style grid: the article's own picture at the size it
+/// deserves, its name under it, and nothing else on the tile. It is offered on
+/// **Lebensmittel lists only**, because a Sonstige article has no picture at
+/// all — nothing picks a symbol for one (see `planItemIconKey`) — so a grid of
+/// them would be a wall of empty circles with words underneath, strictly worse
+/// than the rows it replaced.
+///
+/// The grid is a **reading** mode: it holds the picture, the name, the quantity
+/// and tap-to-check, and sends everything else — rename, unit, link,
+/// attachments — to the same row menu, reached by a long press. The list stays
+/// the mode you edit in, which is why it is the default and why "Erledigt"
+/// keeps its rows in both.
+enum ListViewMode { list, cards }
 
 /// Everything the Listen screen renders, and nothing it doesn't.
 ///
@@ -74,6 +91,15 @@ class ListScreenState {
   /// for the user, never a raw PostgREST message.
   final String? error;
 
+  /// The lists this *device* draws as a grid — see [ListViewMode].
+  ///
+  /// Only the ids in cards are held, because [ListViewMode.list] is the default
+  /// and an empty set is therefore the correct state for an account that has
+  /// never touched the switch. It lives in `shared_preferences` rather than on
+  /// `lists`: how I like to read the shopping list is mine, and a column would
+  /// re-draw the other parent's screen from across town.
+  final Set<String> cardListIds;
+
   const ListScreenState({
     this.isDetail = false,
     this.openId = summaryListId,
@@ -88,6 +114,7 @@ class ListScreenState {
     this.justMoved = '',
     this.loading = true,
     this.error,
+    this.cardListIds = const {},
   });
 
   /// Whether this account is looking at somebody else's list through an
@@ -121,6 +148,7 @@ class ListScreenState {
     bool? loading,
     String? error,
     bool clearError = false,
+    Set<String>? cardListIds,
   }) {
     return ListScreenState(
       isDetail: isDetail ?? this.isDetail,
@@ -136,8 +164,17 @@ class ListScreenState {
       justMoved: justMoved ?? this.justMoved,
       loading: loading ?? this.loading,
       error: clearError ? null : (error ?? this.error),
+      cardListIds: cardListIds ?? this.cardListIds,
     );
   }
+
+  /// How [id] draws its open articles on this device. "Alle Artikel" is always
+  /// [ListViewMode.list]: it is the one view with no menu to switch from — it
+  /// is computed rather than stored, so its header carries nothing to act on —
+  /// and it groups articles under the list each came from, which the grid has
+  /// no place for.
+  ListViewMode viewModeFor(String id) =>
+      id != summaryListId && cardListIds.contains(id) ? ListViewMode.cards : ListViewMode.list;
 
   ShoppingList? listById(String id) {
     for (final l in lists) {
@@ -209,6 +246,7 @@ class DeletedListItem {
 
 class ListNotifier extends StateNotifier<ListScreenState> {
   ListNotifier(this._repo, this._photos, this._userId, this._familyId) : super(const ListScreenState()) {
+    _loadViewModes();
     if (_userId != null) load();
   }
 
@@ -230,6 +268,55 @@ class ListNotifier extends StateNotifier<ListScreenState> {
   static const _tempPrefix = 'tmp:';
   static bool _isTemp(String id) => id.startsWith(_tempPrefix);
   static String _tempId() => '$_tempPrefix${newUuidV4()}';
+
+  // ---------------------------------------------------------------------------
+  // View mode
+  // ---------------------------------------------------------------------------
+
+  static const _prefsCardListsKey = 'list_view_cards';
+
+  /// Best-effort, like every other `shared_preferences` read in the app: a
+  /// device with no local storage this session simply draws every list as a
+  /// list, which is the default anyway.
+  Future<void> _loadViewModes() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final ids = prefs.getStringList(_prefsCardListsKey);
+      if (ids == null || ids.isEmpty || !mounted) return;
+      state = state.copyWith(cardListIds: ids.toSet());
+    } catch (_) {
+      // No local storage — every list stays a list.
+    }
+  }
+
+  /// Switches one list between rows and the grid, for this device only.
+  ///
+  /// The write prunes ids whose list is gone: the set is only ever touched from
+  /// inside an open list, so `state.lists` is loaded by definition here and a
+  /// year of deleted shopping lists can't pile up in the preference. An id that
+  /// belongs to a list this account can no longer see would be pruned too,
+  /// which is the same thing — it has nothing left to draw.
+  void setViewMode(String listId, ListViewMode mode) {
+    final ids = {...state.cardListIds};
+    if (mode == ListViewMode.cards) {
+      ids.add(listId);
+    } else {
+      ids.remove(listId);
+    }
+    final known = {for (final l in state.lists) l.id};
+    ids.removeWhere((id) => !known.contains(id));
+    state = state.copyWith(cardListIds: ids);
+    _persistViewModes(ids);
+  }
+
+  Future<void> _persistViewModes(Set<String> ids) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setStringList(_prefsCardListsKey, ids.toList());
+    } catch (_) {
+      // Same as above — the switch still holds for this session.
+    }
+  }
 
   // ---------------------------------------------------------------------------
   // Lifecycle

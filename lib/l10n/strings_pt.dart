@@ -456,6 +456,10 @@ class StringsPt extends AppStrings {
   @override
   String get addItemPlaceholder => 'Adicionar item...';
   @override
+  String get viewAsCards => 'Em cartões';
+  @override
+  String get viewAsList => 'Em lista';
+  @override
   String get empty => 'Vazia';
   @override
   String emptyWithPlace(String place) => 'Vazia · $place';
@@ -2033,8 +2037,8 @@ class StringsPt extends AppStrings {
   String get paywallSpendTitle => 'Gastos';
   @override
   String get paywallSpendBody =>
-      'Com o Plus você vê para onde o dinheiro vai: os pagamentos por Apple Pay se '
-      'arquivam sozinhos e todo o resto entra em dois toques.';
+      'Com o Plus, todo pagamento feito pelo celular aparece aqui sozinho — já separado por '
+      'categoria, loja e pessoa. E um orçamento por categoria que mostra quanto ainda sobra.';
 
   @override
   String get debugPlanTitle => 'Plano (debug)';

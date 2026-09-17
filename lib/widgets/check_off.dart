@@ -34,7 +34,24 @@ class CheckOffRow extends StatefulWidget {
   final VoidCallback onCompleted;
   final bool undo;
 
-  const CheckOffRow({super.key, required this.builder, required this.onCompleted, this.undo = false});
+  /// Leaves by shrinking and fading where it stands, instead of folding the
+  /// row away.
+  ///
+  /// For a **tile in a grid** — Listen's card view. The sequence is otherwise
+  /// identical (feedback, a beat, the departure, then [onCompleted]), because
+  /// only the last gesture makes no sense there: a grid cell is a fixed box,
+  /// so there is nothing above and below to close up behind the tile, and
+  /// folding it only clipped the picture from the bottom while the hole it sat
+  /// in stayed exactly where it was.
+  final bool inPlace;
+
+  const CheckOffRow({
+    super.key,
+    required this.builder,
+    required this.onCompleted,
+    this.undo = false,
+    this.inPlace = false,
+  });
 
   @override
   State<CheckOffRow> createState() => _CheckOffRowState();
@@ -71,6 +88,15 @@ class _CheckOffRowState extends State<CheckOffRow> with SingleTickerProviderStat
         final strike = widget.undo ? 1 - _strike.value : _strike.value;
         final child = widget.builder(context, strike, _toggle);
         if (gone == 0) return child;
+        if (widget.inPlace) {
+          // Shrinks *toward* the tile it was, not away to nothing: the fade is
+          // what carries it off, and a scale that ran to zero read as the
+          // picture being sucked out of the grid.
+          return Opacity(
+            opacity: 1 - gone,
+            child: Transform.scale(scale: 1 - 0.14 * gone, child: child),
+          );
+        }
         return ClipRect(
           child: Align(
             // Clip from the side it is leaving towards, so the row reads as

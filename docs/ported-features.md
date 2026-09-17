@@ -137,6 +137,43 @@ domain root == query as the strongest signal). Everything here is offline agains
 that is a **future option only** — it needs a backend, an API key and a network round trip per
 keystroke, and would only earn its keep for shops not already in `assets/merchants/`.
 
+### Card view — **built**, and new rather than ported
+
+The old app had one way to draw a list. A Lebensmittel list can now be read as a **grid of
+pictures** instead of rows — Bring's shape, which works there for a reason worth writing down: a
+grocery article is one word and one photograph, and `assets/grocery/` already holds the
+photograph. Anything else on a list is not.
+
+- **`ListViewMode` on `ListScreenState`** (`list_state.dart`), held as `cardListIds` — the ids that
+  are *cards*, since rows are the default and an empty set is the right state for an account that
+  has never touched it. It lives in `shared_preferences`, **not on `lists`**: how I like to read
+  the shopping list is mine, and a column would redraw the other parent's screen from across town.
+  `setViewMode` prunes ids whose list is gone on every write, which is safe because the switch is
+  only reachable from inside an open list.
+- **Offered on Lebensmittel lists only.** A Sonstige article carries no picture at all — nothing
+  picks a symbol for one, see `planItemIconKey` — so the grid would be a wall of empty circles with
+  words underneath, strictly worse than the rows. The list that can't have it never sees the menu
+  row; a disabled row is a promise with no way to keep it.
+- **"Alle Artikel" is always rows.** It has no menu to switch from — it is computed rather than
+  stored, so its header carries nothing to act on — and it groups articles under the list each came
+  from, which a grid has nowhere to put. `viewModeFor` refuses it by id.
+- **It is a reading mode, and that is the trade.** A tile holds the picture, the name, the count
+  and tap-to-check; **the whole tile is the check-off**, the way a done row's whole line is.
+  Everything the row spread across its width — rename, unit, link, photo, delete — moves to a
+  **long press** and the same `_itemMenu`. What the menu does *not* carry is inline rename and the
+  quantity, because both are edits the row does in place: composing the list stays a list-mode job
+  and ticking it off in the shop is what the grid is for. If that turns out to be too strict, the
+  fix is a row in the tile's menu, not a control on the tile — a second target on a 114-point
+  square makes the tap a coin toss.
+- **The add line stays a line in both views.** It is an input for one article, not one of the
+  articles, and a tile shaped like the others that opened a keyboard would be the one tile that
+  lies. "Erledigt" stays rows too: a tile is the loudest thing the screen can make, and the
+  shopping that is already over should not be shouting.
+- Tiles sit on the panel's own ground **below** the add card rather than inside it — a card of
+  cards is two surfaces saying the same thing. The grid is sized by `maxCrossAxisExtent: 130`
+  rather than a column count, so a phone gets three across and an iPad six rather than three very
+  fat ones.
+
 ## Onboarding flow
 
 Media already copied to `assets/onboarding/` (`hero_welcome.png` / `hero_members.png` /

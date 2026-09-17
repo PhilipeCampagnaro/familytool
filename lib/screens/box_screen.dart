@@ -122,9 +122,14 @@ class _BoxOverview extends ConsumerWidget {
               ),
             ]
           : [
-              SectionCard(
-                children: [
-                  ...dividedRows([
+              // Not while the first load is still out — an account with twelve
+              // boxes must not be told it has none. Bare, outside the card:
+              // see [EmptyState].
+              if (state.boxes.isEmpty && !state.loading)
+                EmptyState(icon: AppIcons.package, iconColor: accent, message: L.s.noBoxesYet)
+              else if (state.boxes.isNotEmpty)
+                SectionCard(
+                  children: dividedRows([
                     for (final box in state.boxes)
                       SwipeToEditDelete(
                         identity: box.id,
@@ -140,12 +145,7 @@ class _BoxOverview extends ConsumerWidget {
                         child: _BoxRow(box: box, itemCount: state.itemsFor(box.id).length),
                       ),
                   ]),
-                  // Not while the first load is still out — an account with
-                  // twelve boxes must not be told it has none.
-                  if (state.boxes.isEmpty && !state.loading)
-                    EmptyState(icon: AppIcons.package, iconColor: accent, message: L.s.noBoxesYet),
-                ],
-              ),
+                ),
             ],
       results: (context, query, closeSearch) => _searchResults(context, ref, query, closeSearch),
     );
@@ -572,11 +572,13 @@ class _BoxDetail extends ConsumerWidget {
           padding: EdgeInsets.fromLTRB(16, 18, 16, navContentInset(context, pill: 140)),
           children: [
             SectionCard(
-              children: [
-                ...dividedRows([_AddItemRow(), for (final item in items) _ItemRow(item: item)]),
-                if (items.isEmpty) EmptyState(icon: AppIcons.clipboardText, message: L.s.tapAboveToAddFirst),
-              ],
+              children: dividedRows([_AddItemRow(), for (final item in items) _ItemRow(item: item)]),
             ),
+            // Under the card that holds the add row rather than inside it, the
+            // way a list's own empty state sits — the card is the field you
+            // type in, not a container for the sentence saying it is empty.
+            if (items.isEmpty)
+              EmptyState(icon: AppIcons.clipboardText, message: L.s.tapAboveToAddFirst, verticalPadding: 48),
           ],
         ),
       ),

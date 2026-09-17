@@ -417,6 +417,21 @@ keeps these two cards telling things apart from actions after the disc went ever
 `surface` and not `brandTile`: `brandTile` is white in *both* palettes so that logos stay readable,
 and an ink glyph on it would disappear on dark.
 
+**A second circle on the same row is not a second disc.** Listen's overview marks each list's
+*kind* — Lebensmittel or Sonstige — with a glyph in a small filled circle on the subtitle line
+(`_KindMark`, `list_screen.dart`, sized by `AppText.inlineMark`). It is not `IconTile(disc: true)`
+and must not become one: that disc marks a **place**, a container's own name wherever it is named,
+so wearing it twice would say the row has two names. The difference is drawn as well as reasoned —
+the container disc is white with a ring, the kind mark is a fill with no ring, sitting among the
+words rather than in the column in front of them. Its glyphs are the **same pair the create
+sheet's segmented control wears** (`shoppingCart` / `listChecks`) and must stay so: the distinction
+is taught once, when the list is made, and the overview is where that lesson is read back — a
+second pair meaning the same two things would be a private language one screen speaks and the
+other does not. Those are also the two lists' own default icons, so a list that matched no icon of
+its own shows the glyph twice on one row, at `rowMark` meaning "this list" and at `inlineMark`
+meaning "this kind". That is knowingly accepted: it is the minority case, and an echo beats two
+vocabularies for one question.
+
 ## `FrostedHeaderBackground` (`glass.dart`)
 
 A **variable blur** under a translucent wash, both ramping to nothing at the bottom edge — the
@@ -891,6 +906,13 @@ Non-obvious bits, each one a bug that shipped first:
     a larger `gap:` for those: scrolling content may sit close and slide under the glass, while a
     control *parked* above the bar needs air or the two glass surfaces touch and it reads as
     hiding behind the bar.
+  - **It uses the height UIKit reported, and `kNativeTabBarHeight` is only the floor before the
+    bar has measured itself.** The helper used to pass the constant and argue that content sliding
+    a few points under the glass is fine. It is, for a row in the middle of a list — and it is not
+    for the *last* one, which has nothing left to scroll and simply stays under the bar with its
+    check circle and its "..." out of reach. An iOS 26 capsule measures well above 56, so that was
+    the bottom row of every list, box and Board. Same mistake the confirmation chip made before it
+    started reading `navBarProvider.barHeight`; anything computing clearance reads it too.
 - `GlassIconGroup` (`glass.dart`) — two or more icon buttons in **one** glass capsule: iOS 26's
   grouped bar buttons. On iOS these are real `UIButton`s merged by a `UIGlassContainerEffect` —
   see the glass section; everything below describes the Flutter fallback. **No separator between the segments** — one was tried and the capsule read
@@ -931,6 +953,21 @@ Non-obvious bits, each one a bug that shipped first:
     calling anything imperatively — which is also why undoing, from the pill or from the "Erledigt"
     row, takes the pill away by itself. A token already up when it mounts shows nothing, so opening
     a list doesn't offer to undo something ticked off ten minutes ago.
+- `EmptyState` (`empty_state.dart`) — the one "there's nothing here yet" block: a tinted circle
+  around a glyph, a line of guidance, and an optional `action` under it. Every screen with nothing
+  on it draws **this, bare** — never wrapped in a `SectionCard`. A card is a container for rows,
+  and an empty one draws a box around the news that there is no box; Listen is the shape the others
+  follow, and Box and Board were brought onto it. A detail screen whose card holds the add row
+  keeps the card and puts the block **under** it, because there the card is the field you type in.
+  - `iconColor` defaults to the muted tone. Pass the accent where the state is an **invitation**
+    (no boxes yet, no lists yet, nothing open on the Board) rather than a statement of fact (a
+    search with no hits, a range with no spending).
+  - `action` is for the screen with no other way in — Board's "Aufgabe hinzufügen". Most leave it
+    null and say "Oben tippen…", pointing at the `+` that is already in the header; a button
+    beside a `+` two centimetres above it is the same offer made twice.
+  - **Settings pages are the deliberate exception and say so at each site**: on a page of other
+    cards, the empty card holds the place its rows will take, so the page keeps its shape once
+    something connects and the state doesn't read as a page that failed to load.
 - `showAppSheet` / `SectionCard` / `CardDivider` (`app_sheet.dart`) — shared bottom-sheet chrome
   (grab handle, X/title/check header or a custom `header`, scrolling body). **Every** modal sheet
   should go through this rather than a bespoke `showModalBottomSheet`.
@@ -1546,6 +1583,11 @@ one.
   the divider above a row belongs *inside* the builder, so it folds away with the row instead of
   leaving a stray line; and a `StrikeThrough` under an `Expanded` needs an `Align` around it, or
   the line spans the whole row instead of stopping at the last glyph.
+  **`inPlace: true` swaps the last gesture for a tile**: the same feedback and the same beat, but
+  the thing shrinks ~14% and fades where it stands instead of folding away. Listen's card view
+  needs it because a grid cell is a fixed box — there is nothing above and below to close up
+  behind the tile, so folding only clipped the picture from the bottom while its hole stayed
+  put.
 - **Anchored menus** (`showAnchoredMenu`, and the Kalender filter's own `_AllCalendarsPickerRoute`): a
   custom `PopupRoute` that lays the finished panel out beside its anchor and fade +
   `ScaleTransition`s it out of the nearest corner (200ms in / 140ms out). Don't use `showMenu` —

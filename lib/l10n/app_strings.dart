@@ -424,6 +424,12 @@ abstract class AppStrings {
   String get itemNotePlaceholder;
   String get deleteItem;
   String get addItemPlaceholder;
+
+  /// The list's own menu, naming the view it would switch *to* rather than the
+  /// one in force — one row that reads as an action, like every other row of
+  /// every menu in the app, instead of two options and a tick.
+  String get viewAsCards;
+  String get viewAsList;
   String get empty;
   String emptyWithPlace(String place);
   String itemsWithPlace(int count, String place);

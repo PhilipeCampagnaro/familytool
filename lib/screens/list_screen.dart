@@ -62,6 +62,14 @@ Color get _itemDoneInk => AppColors.doneInk;
 /// the text move.
 TextStyle get _itemTextStyle => AppText.itemTitle;
 
+/// An article's name **on a tile**. A step down from [_itemTextStyle] and in
+/// the ink rather than the muted grey a label usually carries: the picture
+/// above it has already said what the thing is, so the name is a caption under
+/// a subject rather than the subject itself — and at the row's size
+/// "Toilettenpapier" needs three lines on a tile a hundred points wide to say
+/// what the picture said first.
+TextStyle get _tileTextStyle => AppText.label.copyWith(color: AppColors.ink, height: 1.2);
+
 /// The number in the quantity circle, and the field it turns into. A step
 /// firmer than [AppText.label] was as a subtitle: it is a single glyph or two
 /// inside a shape of its own, and grey-on-grey at w300 would disappear in it.
@@ -232,10 +240,12 @@ class _ListOverview extends ConsumerWidget {
   /// They used to be split into "Übersicht" / "Lebensmittel" / "Sonstige", which
   /// on a household with three lists produced three headings over three cards
   /// holding one row each — the sections said more about the data model than
-  /// about anything the user was looking for. What kind a list is is already
-  /// visible in its symbol, and the pooled "Alle Artikel" row is just the first
-  /// row of the same card, present only once there are two lists to pool (see
-  /// [ListScreenState.showSummary]).
+  /// about anything the user was looking for. The kind rides on the row itself
+  /// instead — see [_KindMark]; the symbol alone answered it only for the lists
+  /// that had matched a shop logo or a grocery picture, and said nothing at all
+  /// about the one somebody gave a symbol of their own. The pooled "Alle
+  /// Artikel" row is just the first row of the same card, present only once
+  /// there are two lists to pool (see [ListScreenState.showSummary]).
   Widget _listsCard(BuildContext context, WidgetRef ref) {
     final rows = <ShoppingList>[if (state.showSummary) allList, ...state.lists];
     return SectionCard(
@@ -498,11 +508,24 @@ class _ListSheetBodyState extends ConsumerState<_ListSheetBody> {
           padding: EdgeInsets.only(left: 2, bottom: 8),
           child: Text(L.s.whichKindOfList, style: AppText.microLabel),
         ),
+        // The two glyphs are the two lists' **own defaults** — `shoppingCart`
+        // for a Lebensmittel list and `listChecks` for a Sonstige one, exactly
+        // as [defaultGroceryListIcon] and [defaultListIcon] spell them, and
+        // exactly what the `fallbackIcon` on the icon row a few lines below
+        // draws the moment one of these is picked. A segment that shows the
+        // icon the list is about to wear is answering "which kind?" with a
+        // picture of the answer.
+        //
+        // Lebensmittel used to wear `clipboardText`, which is
+        // [defaultItemIcon]'s glyph — the symbol for *one article*, not for a
+        // shop. It said "list" beside a segment that also said "list", so the
+        // pair drew the distinction in the words alone and the icons were two
+        // ways of drawing a clipboard.
         SegmentedControl<String>(
           value: isGrocery ? 'grocery' : 'other',
           onChanged: ref.read(listProvider.notifier).setNewType,
           options: [
-            SegmentedOption(value: 'grocery', label: L.s.groceries, icon: AppIcons.clipboardText),
+            SegmentedOption(value: 'grocery', label: L.s.groceries, icon: AppIcons.shoppingCart),
             SegmentedOption(value: 'other', label: L.s.otherKind, icon: AppIcons.listChecks),
           ],
         ),
@@ -733,6 +756,59 @@ class _SharedOutsideSection extends ConsumerWidget {
   }
 }
 
+/// Which kind of list this is, as a glyph in a small filled circle on the
+/// subtitle line.
+///
+/// **It is deliberately not [IconTile] with `disc: true`.** That disc marks a
+/// *place* — a container's own name, wherever the container is named — and this
+/// marks a *kind*, so wearing the same mark would say the row has two names.
+/// The difference is drawn as well as reasoned: the container disc is the
+/// card's own white with a ring around it, and this is a fill with no ring at
+/// all, sitting among the words rather than in the column in front of them.
+///
+/// **The glyphs are the same two the create sheet's segmented control uses** —
+/// `shoppingCart` for Lebensmittel, `listChecks` for Sonstige — and they must
+/// stay that way. The distinction is taught in exactly one place, when the list
+/// is created, and this mark is where that lesson is read back; a second pair
+/// of glyphs meaning the same two things would be a private language the
+/// overview speaks and the sheet does not.
+///
+/// They are also the two lists' own defaults ([defaultGroceryListIcon] and
+/// [defaultListIcon]), which costs one thing, knowingly: a list that never
+/// matched an icon of its own draws that same default in the disc beside this,
+/// so its row shows the glyph twice — once at [AppText.rowMark] meaning "this
+/// list", once here meaning "this kind". That is the minority case (most lists
+/// match a shop logo, a grocery picture or a symbol from their name), and it
+/// reads as an echo rather than a contradiction, which is the better trade
+/// than teaching two vocabularies for one question.
+class _KindMark extends StatelessWidget {
+  final ListKind kind;
+
+  const _KindMark({required this.kind});
+
+  @override
+  Widget build(BuildContext context) {
+    final size = AppText.inlineMark;
+    return SizedBox(
+      width: size,
+      height: size,
+      child: DecoratedBox(
+        decoration: BoxDecoration(color: AppColors.surfaceAlt, shape: BoxShape.circle),
+        child: Center(
+          child: AppIcon(
+            kind == ListKind.grocery ? AppIcons.shoppingCart : AppIcons.listChecks,
+            size: AppText.markGlyph(size),
+            // The subtitle's own ink: the mark is part of that line, not a
+            // status light over it, and an accent here would out-shout the
+            // count it introduces.
+            color: AppColors.muted,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// One list on the overview card. Carries no tap target of its own — the row is
 /// wrapped either by a [SwipeToEditDelete] or by a plain [GestureDetector], and
 /// a second detector inside would swallow the tap that closes an open swipe.
@@ -781,6 +857,15 @@ class _ListRow extends ConsumerWidget {
                 // the list's own description.
                 Row(
                   children: [
+                    // Which kind of list this is, first on the line: the most
+                    // constant thing about it, the smallest mark on the row,
+                    // and the one that gives every subtitle the same left
+                    // edge. Never on "Alle Artikel" — that row pools both
+                    // kinds, so either glyph on it would be a lie.
+                    if (!list.isSummary) ...[
+                      _KindMark(kind: list.kind),
+                      const SizedBox(width: 7),
+                    ],
                     if (list.eventLink case final link?) ...[
                       // Flexible, so a long appointment name gives way to the
                       // count beside it rather than pushing it off the row. The
@@ -905,6 +990,9 @@ class _ListDetail extends ConsumerWidget {
     final items = state.itemsFor(open.id);
     final openItems = items.where((i) => !i.done).toList();
     final doneItems = items.where((i) => i.done).toList();
+    // The grid, on this device only — see [ListViewMode]. `viewModeFor` already
+    // refuses it for "Alle Artikel", which has no menu to switch from.
+    final cards = state.viewModeFor(open.id) == ListViewMode.cards;
 
     // The article the undo pill is offering to put back: the one that just
     // moved, and only while it is *done*. Undoing it moves it again, which
@@ -959,6 +1047,30 @@ class _ListDetail extends ConsumerWidget {
                             key: _shareAnchorKey,
                             child: GlassMenuButton(
                               items: [
+                                // Rows or the grid, for this reader on this
+                                // device — see [ListViewMode]. First in the
+                                // menu because it is the one row that changes
+                                // what you are looking at rather than what the
+                                // list *is*.
+                                //
+                                // Lebensmittel only: a Sonstige article carries
+                                // no picture, so the grid would have nothing to
+                                // show but the word its row already shows
+                                // better. The list it isn't offered on simply
+                                // never sees the row — a disabled one would be
+                                // a promise with no way to keep it.
+                                if (open.kind == ListKind.grocery)
+                                  AnchoredMenuItem(
+                                    label: cards ? L.s.viewAsList : L.s.viewAsCards,
+                                    icon: cards ? AppIcons.list : AppIcons.squaresFour,
+                                    symbol: cards ? 'list.bullet' : 'square.grid.2x2',
+                                    onSelected: () => ref
+                                        .read(listProvider.notifier)
+                                        .setViewMode(
+                                          open.id,
+                                          cards ? ListViewMode.list : ListViewMode.cards,
+                                        ),
+                                  ),
                                 AnchoredMenuItem(
                                   label: L.s.edit,
                                   icon: AppIcons.pencilSimple,
@@ -1076,8 +1188,12 @@ class _ListDetail extends ConsumerWidget {
               children: [
                 SectionCard(
                   children: [
+                    // The add line stays a line in both views: it is an input
+                    // for one article, not one of the articles, and a tile
+                    // shaped like the others that opened a keyboard instead of
+                    // checking something off would be the one tile that lies.
                     _AddItemRow(grocery: summary || open.kind == ListKind.grocery),
-                    if (!summary)
+                    if (!summary && !cards)
                       for (var i = 0; i < openItems.length; i++)
                         // Divider inside the collapsing block so it folds away with
                         // the row instead of leaving a stray line behind.
@@ -1107,6 +1223,15 @@ class _ListDetail extends ConsumerWidget {
                         ),
                   ],
                 ),
+                // Below the card rather than inside it: a card of cards is two
+                // surfaces saying the same thing, and the tiles want the
+                // panel's own ground to sit on the way the "Erledigt" section
+                // does.
+                if (cards && openItems.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 14),
+                    child: _ItemGrid(items: openItems, accent: accent, justMoved: state.justMoved),
+                  ),
                 if (summary)
                   for (final l in state.lists)
                     Builder(
@@ -1814,6 +1939,236 @@ class _ItemRowState extends ConsumerState<_ItemRow> {
             child: RowMenuButton(items: _itemMenu(context, ref, item)),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Listen's card view: one Lebensmittel list's open articles as a grid of
+/// pictures — see [ListViewMode], which says why it is that list only and why
+/// it is a reading mode rather than a second place to edit.
+///
+/// "Erledigt" is deliberately **not** gridded with it. A checked-off article is
+/// a footnote you glance at and mostly ignore, and a tile is the loudest thing
+/// the screen can make: the done section would end up shouting the shopping
+/// that is already over. Its rows also carry the one affordance that matters
+/// there — the whole line puts the article back — which a picture does not
+/// suggest.
+class _ItemGrid extends ConsumerWidget {
+  final List<ShoppingListItem> items;
+  final Color accent;
+
+  /// The article that just moved, so only that tile animates in — the same
+  /// `justMoved` gate the rows use.
+  final String justMoved;
+
+  const _ItemGrid({required this.items, required this.accent, required this.justMoved});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: EdgeInsets.zero,
+      // By the tile's width rather than a column count, so the same grid that
+      // gives a phone three across gives an iPad six instead of three very fat
+      // ones. 130 lands on three columns of ~114 at phone width, which is the
+      // narrowest a picture plus a word like "Toilettenpapier" reads at.
+      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: 130,
+        mainAxisSpacing: 10,
+        crossAxisSpacing: 10,
+        childAspectRatio: 0.88,
+      ),
+      itemCount: items.length,
+      itemBuilder: (context, i) => CheckOffArrival(
+        key: ValueKey(items[i].id),
+        animate: items[i].id == justMoved,
+        fromBelow: true,
+        child: CheckOffRow(
+          // A tile cannot fold away — see [CheckOffRow.inPlace].
+          inPlace: true,
+          onCompleted: () => ref.read(listProvider.notifier).toggle(items[i].id, false),
+          builder: (context, strike, checkOff) =>
+              _ItemTile(item: items[i], accent: accent, strike: strike, onCheckOff: checkOff),
+        ),
+      ),
+    );
+  }
+}
+
+/// One article as a card: its picture, its name, and its count in the corner.
+///
+/// **The whole tile is the check-off**, like a done row and unlike an open one.
+/// An open row carries a check circle because the row also holds a name you can
+/// tap to rename, a unit, a quantity and a menu, so the tap had to be aimed;
+/// a tile holds none of those, which is the point of it — so it takes the
+/// simplest gesture it has, and everything the row spread across its width
+/// moves to a **long press** and the same [_itemMenu].
+class _ItemTile extends ConsumerStatefulWidget {
+  final ShoppingListItem item;
+  final Color accent;
+  final double strike;
+  final VoidCallback onCheckOff;
+
+  const _ItemTile({
+    required this.item,
+    required this.accent,
+    required this.strike,
+    required this.onCheckOff,
+  });
+
+  @override
+  ConsumerState<_ItemTile> createState() => _ItemTileState();
+}
+
+class _ItemTileState extends ConsumerState<_ItemTile> {
+  /// Held rather than made in `build` for the same reason [_UnitButtonState]
+  /// holds one: a key minted per frame anchors the menu to nothing.
+  final _anchorKey = GlobalKey();
+
+  /// The picture's side. The grocery art is drawn at 42 on a row, where it
+  /// shares the line with the words; here it is the tile's subject and the
+  /// words are the caption, so it takes the room a row could never give it.
+  static const _pictureSize = 58.0;
+
+  @override
+  Widget build(BuildContext context) {
+    final item = widget.item;
+    final strike = widget.strike;
+    final attachments = ref.watch(listProvider).attachmentsFor(item);
+    final photo = attachments.where((a) => a.isImage).firstOrNull;
+    // The count as it is written on the row, unit and all — a tile has no
+    // subtitle to put "Gramm" on, and "500" alone in a corner is a number
+    // without a thing. Absent when there is nothing to say: one of something
+    // is what an article without a quantity already means.
+    final quantity = (item.sub?.trim().isNotEmpty ?? false)
+        ? (item.unit == null ? item.sub!.trim() : '${item.sub!.trim()} ${groceryUnitLabel(item.unit!)}')
+        : null;
+
+    return KeyedSubtree(
+      key: _anchorKey,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: widget.onCheckOff,
+        onLongPress: () => showAnchoredMenu(
+          context: context,
+          anchorKey: _anchorKey,
+          items: _itemMenu(context, ref, item),
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(AppRadii.cardSmall),
+            boxShadow: AppShadows.card,
+          ),
+          padding: const EdgeInsets.fromLTRB(8, 10, 8, 10),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: _pictureSize,
+                height: _pictureSize,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  alignment: Alignment.center,
+                  children: [
+                    // An attached photo takes the icon's place here exactly as
+                    // it does on the row: it *is* the picture of this article.
+                    if (photo != null)
+                      ClipOval(
+                        child: PhotoThumbnail(
+                          url: photo.url,
+                          filePath: photo.localPath,
+                          size: _pictureSize,
+                        ),
+                      )
+                    else
+                      _ItemIcon(iconKey: item.iconKey, size: _pictureSize),
+                    if (quantity != null)
+                      Positioned(
+                        top: -4,
+                        right: -6,
+                        child: Opacity(opacity: 1 - 0.45 * strike, child: _QuantityBadge(text: quantity)),
+                      ),
+                    _TileCheck(progress: strike, accent: widget.accent),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 7),
+              StrikeThrough(
+                progress: strike,
+                color: _itemDoneInk,
+                child: Text(
+                  item.text,
+                  maxLines: 2,
+                  textAlign: TextAlign.center,
+                  overflow: TextOverflow.ellipsis,
+                  style: _tileTextStyle.copyWith(color: Color.lerp(AppColors.ink, _itemDoneInk, strike)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The count on a tile — [_QuantityCircle]'s job in a shape that survives being
+/// 20 points wide and sitting on the corner of a photograph. Pill rather than
+/// circle because it carries "500 g" as often as it carries "2", and on the
+/// card's own surface with a hairline so it reads as attached to the picture
+/// rather than floating over it.
+class _QuantityBadge extends StatelessWidget {
+  final String text;
+
+  const _QuantityBadge({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceAlt,
+        borderRadius: BorderRadius.circular(AppRadii.chip),
+        border: Border.all(color: AppColors.surface, width: 1.5),
+      ),
+      child: Text(text, maxLines: 1, style: _quantityStyle),
+    );
+  }
+}
+
+/// The check that lands on a tile as it is ticked off.
+///
+/// [CheckOffButton] without its idle ring: a row wears the ring at rest because
+/// the ring *is* what you tap, while on a tile the whole tile is — and a ring
+/// on top of every picture would be precisely the clutter the grid exists to
+/// clear away. Filled, where Listen's rows use the bare accent check, because a
+/// bare check drawn over a photograph of a Paprika is illegible.
+class _TileCheck extends StatelessWidget {
+  final double progress;
+  final Color accent;
+
+  const _TileCheck({required this.progress, required this.accent});
+
+  static const _size = 26.0;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = progress.clamp(0.0, 1.0);
+    if (p == 0) return const SizedBox.shrink();
+    return Opacity(
+      opacity: p,
+      child: Transform.scale(
+        scale: Curves.easeOutBack.transform(p),
+        child: Container(
+          width: _size,
+          height: _size,
+          decoration: BoxDecoration(color: accent, shape: BoxShape.circle),
+          alignment: Alignment.center,
+          child: AppIcon(AppIcons.check, size: _size * 0.54, color: Colors.white, flat: true),
+        ),
       ),
     );
   }
