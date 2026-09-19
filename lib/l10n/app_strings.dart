@@ -466,6 +466,12 @@ abstract class AppStrings {
   String doneWithCount(int count);
   String get deleteDone;
   String get allItems;
+
+  /// The caption over the pooled add line's list menu. A question rather than
+  /// the bare noun the other menu titles carry: it is the one menu in the app
+  /// that answers "where is this going?" instead of "what shall I do with
+  /// this?".
+  String get whichList;
   String get itemLabel;
   String attachmentCount(int count);
   String get searchOnAmazon;
@@ -699,6 +705,9 @@ abstract class AppStrings {
 
   /// The eight WMO buckets in `WeatherCondition`. Day and night share a label:
   /// a clear night is still "Klar", and only the icon changes.
+  /// The credit both weather licences require (DWD: CC BY 4.0, OpenStreetMap:
+  /// ODbL). Brand names, so the same in every language.
+  String get weatherAttribution;
   String get weatherClear;
   String get weatherPartlyCloudy;
   String get weatherCloudy;
@@ -822,10 +831,56 @@ abstract class AppStrings {
   String get wasteRequestAction;
   String get wasteRequested;
   String get wasteRequestFailed;
+  /// A town served only by a provider we may not fetch from (terms of use or
+  /// robots.txt): the sentence on the details step, the row opening the town's
+  /// own calendar page, the address row's line, and the onboarding's.
+  String wasteUploadOnlyBody(String town);
+  String get openTownCalendarPage;
+  String get wasteUploadOnlyShort;
+  String get wasteUploadOnlyLater;
+  /// The town's page opened inside the app (iOS), so its iCal export comes
+  /// back as a file: the row's line, the prompt over the page, and the two
+  /// things that can go wrong there.
+  /// The numbered steps above the two buttons: on iOS the page opens in the app
+  /// and the file is caught; elsewhere it is downloaded and uploaded.
+  List<String> get binFileStepsInApp;
+  List<String> get binFileStepsBrowser;
+  String get calendarPagePrompt;
+  String get calendarPageNotCalendar;
+  String get calendarPageFailed;
+  String get ok;
   /// A vendor that plans per house (Berlin's BSR) and an address that came
   /// without the number, or with one in several postcodes.
   String get wasteNeedsHouseNumber;
+
+  /// The number field both address pickers open under a street picked without
+  /// one, its hint, and what it says to a number that is malformed or that the
+  /// vendor turned down.
+  String get houseNumberAsk;
+  String get houseNumberAskHint;
+  String get houseNumberPlaceholder;
+  String get houseNumberInvalid;
+  String get houseNumberUnknown;
+
+  /// The shield line under both address pickers: what the address is used
+  /// for. **It is a promise, so keep it true** — see `AddressPrivacyNote`.
+  String get addressPrivacyNote;
+
+  /// Over the onboarding's rhythm questions, which come before the calendars.
+  String get onboardRhythmTitle;
   String get pickHouseNumberHint;
+
+  /// The rhythm question, over the chips: "Restmüll — wie oft geleert?". [bin]
+  /// is the vendor's own German word for the bin.
+  String rhythmQuestion(String bin);
+  String get rhythmHint;
+  String get pickRhythmFirst;
+
+  /// Beside an option whose own words name no rhythm ("Grau", "Rote Woche"):
+  /// how far apart its dates actually fall.
+  String get rhythmWeekly;
+  String rhythmEveryWeeks(int n);
+  String get checkingRhythm;
   String get checkingLinkEllipsis;
 
   // -- calendars connected by a pasted link (IServ, WebUntis, any iCal feed)
@@ -1010,6 +1065,11 @@ abstract class AppStrings {
   String get displayName;
   String get avatarColour;
   String get removePhoto;
+
+  /// The item menu's "back to the general picture" row. Named after the symbol
+  /// rather than after the cart that replaces it, because what it takes off is
+  /// the guess — see `ListNotifier.setItemIcon`.
+  String get removeSymbol;
   String get avatarUploadFailed;
   String get avatarRemoveFailed;
   String get adminsManageFamily;
@@ -1181,6 +1241,10 @@ abstract class AppStrings {
   String get familyNameHint;
   String get renameFamily;
   String get renameFamilyBody;
+  String get renamePerson;
+  String get renamePersonBody;
+  String get removePersonQuestion;
+  String removePersonBody(String name);
   String get familyRenameFailed;
 
   // ------------------------------------------------------------------- Home
@@ -1339,6 +1403,12 @@ abstract class AppStrings {
   /// phrase rather than a count and a link side by side, which on a phone is
   /// three pieces of furniture in a heading that holds two.
   String spendShowAllCount(int count);
+
+  /// "Gesamt" — the label on the line at the foot of the breakdown and the
+  /// payments card, which repeats the figure the chart above them prints. The
+  /// card is where somebody filtering and comparing already is, and the total
+  /// is the one number they were scrolling back up for.
+  String get spendTotal;
 
   // -- The status island under the page title. One sentence, and a second line
   //    saying what it counts — the same pair Home's day island prints.
@@ -1519,10 +1589,10 @@ abstract class AppStrings {
   String get spendSearchPlaceholder;
   String get spendSearchAction;
 
-  /// The four ways the explore page cuts the list.
-  String get spendViewAll;
-  String get spendViewMembers;
-  String get spendViewMerchants;
+  /// The explore page's own title while it is filtered to more than one
+  /// category — no one category can name it then. The four *cuts* of the list
+  /// are named by their cards' own headings, which is where the picker lives:
+  /// see `SpendExploreView.title`.
   String get spendViewCategories;
   String get spendNoMatches;
   String get spendClearFilter;
@@ -1722,6 +1792,11 @@ abstract class AppStrings {
   String get notifyAbfallSubtitle;
   String get notifyTaskTimesTitle;
   String get notifyTaskTimesSubtitle;
+
+  /// Ausgaben's budgets. Shown only to a Plus household's admin, because that
+  /// is who the page itself is for.
+  String get notifyBudgetsTitle;
+  String get notifyBudgetsSubtitle;
   String get notifyTime;
   String get notificationsEventNote;
 
@@ -1753,9 +1828,39 @@ abstract class AppStrings {
   String get noticeAbfallBody;
   String noticeTaskDue(String time);
 
+  /// A budget past its limit, or running ahead of the month with time left to
+  /// do something about it. One notice covers every category that crossed the
+  /// same evening, so each comes in a one and a many: German and Spanish agree
+  /// the verb with the count, and a single "$n Budgets" placeholder cannot say
+  /// both.
+  String noticeBudgetAheadOne(String category);
+  String noticeBudgetAheadMany(int count);
+  String noticeBudgetOverOne(String category);
+  String noticeBudgetOverMany(int count);
+
+  /// "320 € von 500 €" — only where one budget is being talked about; several
+  /// are named with [joinAnd] instead.
+  String noticeBudgetAmount(String spent, String limit);
+
   /// "A, B und C".
   String joinAnd(List<String> parts);
 
   String get rateApp;
   String get searchTermsRate;
+
+  // -------------------------------------------------------------- app lock --
+  String get appLockSubtitle;
+  String get appLockLockedTitle;
+  String get appLockUnlockReason;
+  String get appLockEnableReason;
+  String get appLockDisableReason;
+  String unlockWith(String method);
+  String get biometricFaceId;
+  String get biometricTouchId;
+  String get biometricOpticId;
+  String get biometricFingerprint;
+  String get biometricFace;
+  String get biometricGeneric;
+  String get biometricPasscode;
+  String get searchTermsAppLock;
 }

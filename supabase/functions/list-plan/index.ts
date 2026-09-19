@@ -157,7 +157,13 @@ Deno.serve(async (req) => {
         "Accept": "application/json",
       },
       body: JSON.stringify({
-        model: Deno.env.get("MISTRAL_MODEL") ?? "mistral-small-latest",
+        // **A dated model, never `-latest`.** The alias moves when Mistral ships
+        // the next Small, and the prompt below was tuned against this one — the
+        // `#` title, whole `##` stages, `kind: "other"` for a tin of paint. A
+        // moved alias would change all of that without a deploy, and the first
+        // sign would be a broken card on somebody's phone. Upgrading is a probe
+        // against the new model and then this line, or `MISTRAL_MODEL` to try one.
+        model: Deno.env.get("MISTRAL_MODEL") ?? "mistral-small-2603",
         // Low but not zero: the same goal twice in a week should not return a
         // byte-identical list, and the schema holds the shape whatever this does.
         temperature: 0.3,

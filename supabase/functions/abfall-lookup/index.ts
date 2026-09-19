@@ -5,6 +5,12 @@
 ///   POST { action: "resolve", address }           -> { result: ResolveResult }
 ///   POST { action: "ics-check", url }             -> { ok, count }
 ///   POST { action: "request", address, state? }   -> { ok, requested: true }
+///   POST { action: "rhythms", config }            -> { rhythms: RhythmChoice[] }
+///
+/// `rhythms` is asked once the config names a whole address (after `resolve`, or
+/// after the household picked its house number): the bins whose rhythm this
+/// address makes the household choose, with only the options it has dates for.
+/// Empty almost everywhere.
 ///
 /// `request` is the answer to `resolve` coming back unsupported: it files the
 /// town in public.abfall_requests so the vendor map grows from what households
@@ -26,7 +32,14 @@
 /// connect before anything has been registered with Google or Microsoft.
 
 import { callerId, corsHeaders, fail, json, serviceClient } from "../_shared/http.ts";
-import { geocode, type GeoAddress, readIcsUrl, resolveAddress } from "../_shared/abfall.ts";
+import {
+  type AbfallConfig,
+  geocode,
+  type GeoAddress,
+  readIcsUrl,
+  resolveAddress,
+  rhythmChoices,
+} from "../_shared/abfall.ts";
 import { escapeHtml, sendMail } from "../_shared/mail.ts";
 
 /// The town as the queue keys it: what the geocoder called it, and its postcode
@@ -79,6 +92,7 @@ Deno.serve(async (req) => {
     address?: GeoAddress;
     url?: string;
     worldwide?: boolean;
+    config?: AbfallConfig;
     state?: string;
   };
   try {
@@ -138,6 +152,13 @@ Deno.serve(async (req) => {
           }
         }
         return json({ ok: true, requested: true });
+      }
+
+      case "rhythms": {
+        if (!body.config || typeof body.config !== "object" || !body.config.vendor) {
+          return fail("Diese Adresse konnte nicht übernommen werden.");
+        }
+        return json({ rhythms: await rhythmChoices(body.config) });
       }
 
       case "ics-check": {

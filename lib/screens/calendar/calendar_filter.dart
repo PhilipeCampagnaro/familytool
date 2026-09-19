@@ -105,7 +105,10 @@ class _CalendarFilterButton extends ConsumerWidget {
         options.add(
           NativeMenuOption(
             src.name,
-            color: src.color,
+            // A waste calendar's entries wear their bins' colours, so the
+            // calendar itself is a bin glyph rather than one more dot.
+            symbol: src.isAbfall ? 'trash' : null,
+            color: src.isAbfall ? null : src.color,
             section: section,
             sectionTitle: title,
             selected: filter == null || filter.contains(src.id),
@@ -125,7 +128,7 @@ class _CalendarFilterButton extends ConsumerWidget {
         if (index == tasksRow) {
           notifier.toggleTasks();
         } else if (id == null) {
-          notifier.clearCalendarFilter();
+          notifier.toggleAllCalendars();
         } else {
           notifier.toggleCalendarAnywhere(id);
         }
@@ -142,7 +145,7 @@ class _CalendarFilterButton extends ConsumerWidget {
       _AllCalendarsPickerRoute(
         anchor: anchor,
         onToggle: (id) => notifier.toggleCalendarAnywhere(id),
-        onAll: () => notifier.clearCalendarFilter(),
+        onAll: () => notifier.toggleAllCalendars(),
         onToggleTasks: () => notifier.toggleTasks(),
       ),
     );
@@ -224,7 +227,7 @@ class _CalendarFilterButton extends ConsumerWidget {
             // screen reader is owed: a stack of colours names nothing out loud.
             label: isAll
                 ? L.s.all
-                : (filter.length > 1 ? L.s.calendarCount(filter.length) : (_pickedName ?? L.s.all)),
+                : (filter.length == 1 ? (_pickedName ?? L.s.all) : L.s.calendarCount(filter.length)),
             title: word,
             titleStyle: wordStyle,
             dots: dots.isEmpty ? null : NativeGlassDots(colors: dots, size: _dotSize, overlap: _dotOverlap),
@@ -431,6 +434,7 @@ class _CalendarPickerSurface extends ConsumerWidget {
                     _CalendarPickerRow(
                       label: src.name,
                       color: src.color,
+                      glyph: src.isAbfall ? AppIcons.trash : null,
                       checked: shown.contains(src.id),
                       onTap: () => onToggle(src.id),
                     ),
@@ -669,9 +673,9 @@ class _AllCalendarsPickerSurface extends ConsumerWidget {
                         child: Divider(height: 0.5, thickness: 0.5, color: AppColors.menuSeparator),
                       ),
                     ],
-                    // The way back to everything, from inside the panel that
-                    // covers the chip it came out of — and the way out of a
-                    // selection emptied to nothing.
+                    // A checkbox over every row below it: ticked, it clears
+                    // them all; unticked, it is the way back to everything —
+                    // including out of a selection emptied to nothing.
                     _CalendarPickerRow(
                       label: L.s.all,
                       color: AppColors.muted,
@@ -695,6 +699,7 @@ class _AllCalendarsPickerSurface extends ConsumerWidget {
                         _CalendarPickerRow(
                           label: src.name,
                           color: src.color,
+                          glyph: src.isAbfall ? AppIcons.trash : null,
                           // No filter at all means every calendar is showing,
                           // this one included.
                           checked: filter == null || filter.contains(src.id),

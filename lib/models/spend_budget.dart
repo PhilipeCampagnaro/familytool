@@ -99,6 +99,34 @@ class SpendBudgetProgress {
     if (share > monthElapsed + .1) return SpendBudgetStatus.ahead;
     return SpendBudgetStatus.onTrack;
   }
+
+  /// A quarter of the month gone before pace is allowed to mean anything, and
+  /// half the budget spent before it is worth saying out loud. See
+  /// [noticeLevel].
+  static const noticeElapsedFloor = .25;
+  static const noticeShareFloor = .5;
+
+  /// What this budget is worth interrupting somebody for, or null for nothing.
+  ///
+  /// **A harder question than [status], deliberately.** [status] paints a ring:
+  /// a false positive there is a colour that is gone the next time anybody
+  /// looks. A notification is a phone buzzing in a pocket, and
+  /// docs/notifications.md spends its first page on why that budget is spent
+  /// once.
+  ///
+  /// So [SpendBudgetStatus.ahead] has to clear two floors first. On the 2nd of
+  /// the month [monthElapsed] is .03, so a single weekly shop is already a
+  /// tenth ahead of the month — without the floors every household with a
+  /// grocery budget would be told it was overspending in the first week of
+  /// every month, which is the most reliable way to have the switch turned off
+  /// before the month that matters.
+  SpendBudgetStatus? get noticeLevel {
+    final now = status;
+    if (now == SpendBudgetStatus.over) return now;
+    if (now != SpendBudgetStatus.ahead) return null;
+    if (monthElapsed < noticeElapsedFloor || share < noticeShareFloor) return null;
+    return now;
+  }
 }
 
 /// Folds [rows] into one progress per budget, in the order the budgets came in.

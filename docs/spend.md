@@ -406,9 +406,23 @@ only like `spends`, integer cents. **How much of it is used is not stored**: `sp
   as a dashed danger line — across the cumulative line on a month, across the bars when every bar is
   a month, and nowhere else, because a month's promise against a week's total means nothing. A long
   press, or the card, opens `showBudgetSheet`.
-- **Monthly only, and no notification.** A period column would be a second axis every ring has to
-  ask about. A "80 % erreicht" notice would qualify under docs/notifications.md (it has a deadline),
-  and it is the obvious next step — it is not built.
+- **Monthly only.** A period column would be a second axis every ring has to ask about.
+- **A goal does notify, and it notifies on pace rather than on a percentage.** The obvious version
+  of this was "80 % erreicht", and it is the wrong trigger for exactly the reason the ring does not
+  draw a bare percentage: **every household that spends evenly crosses 80 % near the end of every
+  month, in every category.** That is a guaranteed monthly buzz per goal carrying no information,
+  which is how the switch gets turned off before the month it would have mattered. So the early
+  notice is `SpendBudgetStatus.ahead` — the state whose own comment already read *"the one state
+  worth a nudge while there is still time to act"* — and the late one is the limit being passed.
+  `SpendBudgetProgress.noticeLevel` is the whole rule and it sits beside `status` rather than in the
+  scheduler, because the two are the same judgement at two costs: a ring's false positive is a
+  colour nobody sees again, a notification's is a phone. It is harder to satisfy than `status` by
+  two floors — a quarter of the month gone and half the goal spent — because on the 2nd
+  `monthElapsed` is .03 and a single weekly shop already clears the tenth of slack.
+  **It names no hour**, unlike every other notice in the app: a goal has no deadline to count back
+  from, so there is nothing for an hour to be *before* — it goes out when the derivation finds the
+  crossing. See the Ausgaben section of [notifications.md](notifications.md) for that, the
+  coalescing and the once-per-month memory.
 - A failed goals read is silent, like the device list: the page's numbers are correct without them.
 
 ### One mark, and a shop is drawn as itself

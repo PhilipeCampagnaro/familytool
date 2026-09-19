@@ -35,6 +35,10 @@ class MainActivity : FlutterActivity() {
             .setMethodCallHandler { call, result ->
                 ShareChannel.handle(this, call, result)
             }
+        MethodChannel(messenger, BiometricChannel.NAME)
+            .setMethodCallHandler { call, result ->
+                BiometricChannel.handle(this, call, result)
+            }
     }
 
     override fun onRequestPermissionsResult(

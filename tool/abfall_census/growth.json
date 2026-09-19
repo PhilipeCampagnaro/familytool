@@ -1,6 +1,15 @@
 {
  "candidates": [
   {
+   "name": "Restmüll-Rhythmus in der App fragen",
+   "scope": "Feature · Freiburg, Hagen, Pforzheim, Saarbrücken, Göttingen, Schwarzwald-Baar",
+   "state": "BW · NW · SL · NI",
+   "pattern": "Beim Verbinden eine Frage mehr: „Wie oft wird deine Restmülltonne geleert?“ (wöchentlich / 14-täglich / 4-wöchentlich), gespeichert in der Konfiguration.",
+   "effort": "deine Entscheidung",
+   "effortClass": "warn",
+   "why": "Elf Großstädte warten nur darauf: Freiburg, Hagen, Pforzheim, Saarbrücken, Göttingen, Mönchengladbach, Neuss, Siegen, Hildesheim, Heidelberg, Bremerhaven. Die Entsorger liefern jeden Rhythmus; nur der Haushalt weiß, welcher seiner ist."
+  },
+  {
    "name": "✓ München — AWM",
    "scope": "Stadt · 1,5 Mio. · seit 17.09.2026 live",
    "state": "BY",
@@ -19,22 +28,22 @@
    "why": "Fünftgrößte Stadt. Plant pro Haus wie Berlin, deshalb fragt die App nach der Hausnummer. Die PLZ wird geprüft, sonst bekäme Frankfurt (Oder) hessische Tonnentage."
   },
   {
-   "name": "abfall.io v3 (GraphQL)",
+   "name": "✓ abfall.io v3 / AbfallPlus (GraphQL)",
    "scope": "Plattform · Essen (EBE), Duisburg (WBD), Göttingen, Böblingen, Reutlingen-Land, Märkisch-Oderland, Nordsachsen, Leipzig-Land, Schwarzwald-Baar, ASO Osterholz",
    "state": "NW · NI · BW · BB · SN",
    "pattern": "GET api.abfall.io?key=… → apiKey; POST widgets.abfall.io/graphql (cities → streets → houseNumbers → appointments). Öffentlicher Service-Key pro Anbieter, JSON.",
-   "effort": "1 Adapter, 10 Anbieter",
+   "effort": "erledigt",
    "effortClass": "ok",
-   "why": "Holt Osterholz zurück (Legacy-Key 401) und bringt zwei Großstädte. Sauberstes JSON der Liste; Origin/Referer-Header nötig."
+   "why": "Essen, Duisburg, Reutlingen, Märkisch-Oderland, Nordsachsen, Osterholz (18.09.). Göttingen, Schwarzwald-Baar und Calw bewusst draußen: sie veröffentlichen mehrere Rhythmen einer Tonne bzw. planen pro Ortsteil."
   },
   {
-   "name": "Insert IT „BmsAbfallkalender“",
-   "scope": "Plattform · Mannheim, Kassel, Krefeld, Lübeck, Herne, Hattingen, Offenbach",
+   "name": "✓ Insert IT „BmsAbfallkalender“",
+   "scope": "Plattform · Mannheim, Kassel, Lübeck, Herne, Offenbach, Krefeld (GSAK)",
    "state": "BW · HE · NW · SH",
    "pattern": "GET …/Main/GetStreets?text= → GetLocations?streetId&houseNumber → Calender?bmsLocationId&year (ICS). Drei GETs, keyless.",
-   "effort": "1 Adapter, 7 Städte",
+   "effort": "erledigt",
    "effortClass": "ok",
-   "why": "Kleinster Aufwand pro Stadt in der ganzen Liste."
+   "why": "Seit 18.09. live, sechs Städte mit einem Adapter. Ein Haus kann in mehreren Standorten stecken (Herne: „7“ und „7-7c“) — sie werden zusammengeführt, wenn jede gemeinsame Tonne dieselben Tage hat."
   },
   {
    "name": "✓ Köln — AWB",
@@ -55,11 +64,11 @@
    "why": "Zweitgrößte Stadt. Die Suche faltet nichts: „Fränkelstraße“ findet nichts, wo die Stadt „Fraenkelstraße“ schreibt — der Name wird in jeder Schreibweise neu gefragt."
   },
   {
-   "name": "Leipzig — Stadtreinigung",
+   "name": "✓ Leipzig — Stadtreinigung",
    "scope": "Stadt · 0,6 Mio.",
    "state": "SN",
    "pattern": "GET /rest/Navision/Streets?search= (Straße → Hausnummern → position_no); GET …/ical.ics?position_nos= (ICS).",
-   "effort": "1 Adapter",
+   "effort": "erledigt",
    "effortClass": "ok",
    "why": "Erste Stadt in Sachsen; zwei GETs."
   },
@@ -82,22 +91,38 @@
    "why": "Siebtgrößte Stadt und die letzte der sieben größten. Die Suche sagt nie nein — auf „Quatschstraße 1“ antwortet sie „Kuhstraße 10“ —, also muss jede Zeile ihren eigenen Titel gegen die Anfrage halten; danach nennt jeder Termin im ICS per LOCATION noch einmal die Adresse."
   },
   {
-   "name": "Kiel — ABK",
+   "name": "✓ Dresden — Stadtreinigung",
+   "state": "SN",
+   "pattern": "Apache-Wicket-Formular (Session-Cookie, Ajax-Behaviours) → STANDORT; GET stadtplan.dresden.de/…/ical.ashx?STANDORT=&DATUM_VON=&DATUM_BIS= (ICS, freier Zeitraum).",
+   "effort": "erledigt",
+   "effortClass": "ok",
+   "why": "Kein Jahreswechsel: der Zeitraum ist frei wählbar. Eingemeindete Dörfer (CB, SW, LB) tragen gleichnamige Straßen und werden über die PLZ getrennt."
+  },
+  {
+   "name": "✓ Wuppertal — AWG",
+   "state": "NW",
+   "pattern": "TYPO3 bw_wastecalendar: Autocomplete → Formular-POST → cHash-signierte ICS-Links je Jahr (Straße, teils pro Haus).",
+   "effort": "erledigt",
+   "effortClass": "ok",
+   "why": "Jeder Link ist signiert, also läuft jeder Abruf das Formular neu — und nimmt dabei jedes Jahr mit, das die Seite anbietet."
+  },
+  {
+   "name": "✓ Kiel — ABK",
    "scope": "Stadt · 0,25 Mio.",
    "state": "SH",
    "pattern": "Vier GET-JSON-Schritte (strassennamen → streetnumber → leerungen-data → ical).",
-   "effort": "1 Adapter",
+   "effort": "erledigt",
    "effortClass": "ok",
-   "why": "Klein, aber sauber; SH hat sonst nur Pinneberg/Norderstedt."
+   "why": "Seit 18.09. live. Die Straßenliste ist Kendo-Serverfilterung: ungefiltert kommen nur die 115 Straßen unter „A“. Die Gelbe Tonne fehlt in ABKs Daten."
   },
   {
-   "name": "aha Region Hannover",
+   "name": "✓ aha Region Hannover",
    "scope": "Region · 21 Gemeinden, 1,2 Mio.",
    "state": "NI",
    "pattern": "HTML-Selects (Gemeinde + Anfangsbuchstabe → Straße → Hausnr → Ladeort) → ICS.",
-   "effort": "1 Adapter, mehrstufig",
-   "effortClass": "warn",
-   "why": "Eine Region mit einer Million Menschen hinter einem Formular."
+   "effort": "erledigt",
+   "effortClass": "ok",
+   "why": "Alle 21 Kommunen der Region inkl. Hannover (18.09.). Gleichnamige Straßen in mehreren Stadtteilen werden über die Hausnummer getrennt; eine Eckhaus-Adresse mit zwei Ladeorten fragt nach."
   },
   {
    "name": "Müllmax",
@@ -109,22 +134,22 @@
    "why": "Sperrt die IP für 24 h bei zu vielen Abfragen — bei einer geteilten Edge-Function-IP ein echtes Risiko. Nur mit täglichem Cache."
   },
   {
-   "name": "Abfall+ App-Backend (app.abfallplus.de)",
-   "scope": "Plattform · 126 Apps / 146 Regionen, u. a. Bonn, Augsburg, Dortmund, Freiburg, Würzburg, Kitzingen",
+   "name": "✗ Abfall+ App-Backend (app.abfallplus.de) — nicht nötig",
+   "scope": "Plattform · 126 Apps / 146 Regionen, u. a. Bonn, Augsburg, Freiburg, Hagen, Oldenburg, Leverkusen, Würzburg",
    "state": "bundesweit",
    "pattern": "~12 sequentielle Requests, onclick-JSON aus HTML, registriert pro Abruf einen Wegwerf-Client.",
-   "effort": "1 Adapter, schwer",
+   "effort": "verworfen",
    "effortClass": "bad",
-   "why": "Größte Reichweite der Liste, aber das fragilste Muster. Erst wenn die Anfragen es verlangen."
+   "why": "Alle sieben Städte, für die es vorgesehen war, veröffentlichen selbst: Bonn/Augsburg (Athos), Würzburg (Open Data), Leverkusen (AVEA), Oldenburg (Stadt-TYPO3), Hagen/Freiburg (AbfallPlus-Widget, warten auf die Rhythmus-Frage). Der App-Weg gibt sich als Android-App der Behörde aus — genau das, was wir nicht tun wollen."
   },
   {
    "name": "ATHOS WasteManagementServlet",
    "scope": "Muster · Saarbrücken, Pforzheim, Bielefeld, Städteregion Aachen, EDG Dortmund, Ludwigsburg …",
    "state": "SL · BW · NW",
    "pattern": "CITYCHANGED → STREETCHANGED → forward → filedownload_ICAL, Session-Cookies, versteckte Felder.",
-   "effort": "1 Adapter pro Host-Variante",
+   "effort": "5 Mandanten live, 2 blockiert",
    "effortClass": "warn",
-   "why": "Ein Muster, viele Hosts; Bielefeld braucht Legacy-TLS, das Deno nicht spricht."
+   "why": "Dortmund, Bielefeld, LK Schaumburg, Hameln-Pyrmont, LK Karlsruhe laufen. Pforzheim und Saarbrücken lassen den Haushalt seinen Restmüll-Rhythmus ankreuzen und drucken alle Rhythmen unter „Restmüll“ — sie warten auf die Rhythmus-Auswahl unten."
   },
   {
    "name": "Nur per ID (ohne Adresssuche)",
@@ -133,7 +158,7 @@
    "pattern": "ICS-URL mit einer ID, die nur die Website des Entsorgers verrät.",
    "effort": "kein Adapter — ICS-Link-Fallback",
    "effortClass": "muted",
-   "why": "Der bestehende „Link einsetzen\"-Weg deckt sie ab; ein Adapter bräuchte Reverse-Engineering der Suche. Frankfurt gehörte hierher und ist seit 17.09. ein eigener Adapter."
+   "why": "Dresden hat inzwischen einen Adapter (Wicket-Formular → STANDORT). Wiesbaden und Rostock bleiben beim „Link einsetzen“-Weg."
   }
  ],
  "cities": [
@@ -197,25 +222,25 @@
    "city": "Leipzig",
    "state": "SN",
    "pop": 620,
-   "status": "missing",
-   "via": "",
-   "note": "Stadtreinigung Leipzig REST"
+   "status": "covered",
+   "via": "Stadtreinigung Leipzig",
+   "note": ""
   },
   {
    "city": "Dortmund",
    "state": "NW",
    "pop": 600,
-   "status": "missing",
-   "via": "",
-   "note": "Abfall+ App-Backend"
+   "status": "covered",
+   "via": "EDG Entsorgung Dortmund",
+   "note": ""
   },
   {
    "city": "Essen",
    "state": "NW",
    "pop": 585,
-   "status": "missing",
-   "via": "",
-   "note": "abfall.io v3 (GraphQL)"
+   "status": "covered",
+   "via": "EBE Entsorgungsbetriebe Essen",
+   "note": ""
   },
   {
    "city": "Bremen",
@@ -229,17 +254,17 @@
    "city": "Dresden",
    "state": "SN",
    "pop": 565,
-   "status": "missing",
-   "via": "",
-   "note": "nur ICS-ID (kein Adapter)"
+   "status": "covered",
+   "via": "Stadtreinigung Dresden",
+   "note": ""
   },
   {
    "city": "Hannover",
    "state": "NI",
    "pop": 550,
-   "status": "missing",
-   "via": "",
-   "note": "aha Region Hannover"
+   "status": "covered",
+   "via": "aha Zweckverband Abfallwirtschaft Region Hannover",
+   "note": ""
   },
   {
    "city": "Nürnberg",
@@ -253,96 +278,96 @@
    "city": "Duisburg",
    "state": "NW",
    "pop": 505,
-   "status": "missing",
-   "via": "",
-   "note": "abfall.io v3 (GraphQL)"
+   "status": "covered",
+   "via": "Wirtschaftsbetriebe Duisburg",
+   "note": ""
   },
   {
    "city": "Bochum",
    "state": "NW",
    "pop": 365,
-   "status": "missing",
-   "via": "",
-   "note": "Müllmax (IP-Sperre!)"
+   "status": "covered",
+   "via": "USB Umweltservice Bochum",
+   "note": ""
   },
   {
    "city": "Wuppertal",
    "state": "NW",
    "pop": 360,
-   "status": "missing",
-   "via": "",
-   "note": "AWG Wuppertal"
+   "status": "covered",
+   "via": "AWG Abfallwirtschaftsgesellschaft Wuppertal",
+   "note": ""
   },
   {
    "city": "Bielefeld",
    "state": "NW",
    "pop": 340,
-   "status": "missing",
-   "via": "",
-   "note": "ATHOS-Servlet"
+   "status": "covered",
+   "via": "Umweltbetrieb Bielefeld",
+   "note": ""
   },
   {
    "city": "Bonn",
    "state": "NW",
    "pop": 335,
-   "status": "missing",
-   "via": "",
-   "note": "Abfall+ App-Backend"
+   "status": "covered",
+   "via": "bonnorange Bonn",
+   "note": ""
   },
   {
    "city": "Münster",
    "state": "NW",
    "pop": 320,
-   "status": "missing",
-   "via": "",
-   "note": "Müllmax (IP-Sperre!)"
+   "status": "covered",
+   "via": "AWM Abfallwirtschaftsbetriebe Münster",
+   "note": ""
   },
   {
    "city": "Mannheim",
    "state": "BW",
    "pop": 315,
-   "status": "missing",
-   "via": "",
-   "note": "Insert IT"
+   "status": "covered",
+   "via": "Abfallwirtschaft Mannheim",
+   "note": ""
   },
   {
    "city": "Karlsruhe",
    "state": "BW",
    "pop": 310,
-   "status": "missing",
-   "via": "",
-   "note": "Karlsruhe (TLS defekt) / Müllmann-App"
+   "status": "covered",
+   "via": "Team Sauberes Karlsruhe",
+   "note": ""
   },
   {
    "city": "Augsburg",
    "state": "BY",
    "pop": 300,
-   "status": "missing",
-   "via": "",
-   "note": "Abfall+ App-Backend"
+   "status": "covered",
+   "via": "AWS Abfallwirtschafts- und Stadtreinigungsbetrieb Augsburg",
+   "note": ""
   },
   {
    "city": "Wiesbaden",
    "state": "HE",
    "pop": 280,
-   "status": "missing",
-   "via": "",
-   "note": "nur ICS-ID (kein Adapter)"
+   "status": "covered",
+   "via": "ELW Entsorgungsbetriebe der Landeshauptstadt Wiesbaden",
+   "note": ""
   },
   {
    "city": "Mönchengladbach",
    "state": "NW",
    "pop": 265,
-   "status": "missing",
-   "via": "",
+   "status": "covered",
+   "via": "mags Mönchengladbacher Abfall-, Grün- und Straßenbetriebe",
    "note": ""
   },
   {
    "city": "Gelsenkirchen",
    "state": "NW",
    "pop": 265,
-   "status": "missing",
-   "via": "",
+   "status": "covered",
+   "via": "GELSENDIENSTE",
    "note": ""
   },
   {
@@ -357,81 +382,81 @@
    "city": "Braunschweig",
    "state": "NI",
    "pop": 250,
-   "status": "missing",
-   "via": "",
+   "status": "covered",
+   "via": "ALBA Braunschweig",
    "note": ""
   },
   {
    "city": "Chemnitz",
    "state": "SN",
    "pop": 245,
-   "status": "missing",
-   "via": "",
-   "note": "hausmuell.info"
+   "status": "covered",
+   "via": "ASR Abfallentsorgung Chemnitz",
+   "note": ""
   },
   {
    "city": "Kiel",
    "state": "SH",
    "pop": 250,
-   "status": "missing",
-   "via": "",
-   "note": "ABK Kiel JSON"
+   "status": "covered",
+   "via": "ABK Abfallwirtschaftsbetrieb Kiel",
+   "note": ""
   },
   {
    "city": "Halle (Saale)",
    "state": "ST",
    "pop": 240,
-   "status": "missing",
-   "via": "",
+   "status": "covered",
+   "via": "HWS Hallesche Wasser und Stadtwirtschaft",
    "note": ""
   },
   {
    "city": "Magdeburg",
    "state": "ST",
    "pop": 240,
-   "status": "missing",
-   "via": "",
-   "note": "Magdeburg smart-village ICS"
+   "status": "covered",
+   "via": "SAB Städtischer Abfallwirtschaftsbetrieb Magdeburg",
+   "note": ""
   },
   {
    "city": "Freiburg im Breisgau",
    "state": "BW",
    "pop": 235,
-   "status": "missing",
-   "via": "",
-   "note": "Abfall+ App-Backend"
+   "status": "covered",
+   "via": "ASF Abfallwirtschaft und Stadtreinigung Freiburg",
+   "note": ""
   },
   {
    "city": "Krefeld",
    "state": "NW",
    "pop": 230,
    "status": "covered",
-   "via": "MüllALARM / Schönmackers (Niederrhein, Eifel)",
+   "via": "GSAK Krefeld",
    "note": ""
   },
   {
    "city": "Mainz",
    "state": "RP",
    "pop": 220,
-   "status": "missing",
-   "via": "",
-   "note": "Müllmax (IP-Sperre!)"
+   "status": "covered",
+   "via": "Entsorgungsbetrieb der Stadt Mainz",
+   "note": ""
   },
   {
    "city": "Lübeck",
    "state": "SH",
    "pop": 220,
-   "status": "missing",
-   "via": "",
-   "note": "Insert IT"
+   "status": "covered",
+   "via": "Entsorgungsbetriebe Lübeck",
+   "note": ""
   },
   {
    "city": "Erfurt",
    "state": "TH",
    "pop": 215,
-   "status": "missing",
-   "via": "",
-   "note": "hausmuell.info"
+   "status": "covered",
+   "via": "SWE Stadtwirtschaft Erfurt",
+   "note": ""
   },
   {
    "city": "Oberhausen",
@@ -445,49 +470,49 @@
    "city": "Rostock",
    "state": "MV",
    "pop": 210,
-   "status": "missing",
-   "via": "",
-   "note": "nur ICS-ID (kein Adapter)"
+   "status": "covered",
+   "via": "Stadtentsorgung Rostock",
+   "note": ""
   },
   {
    "city": "Kassel",
    "state": "HE",
    "pop": 205,
-   "status": "missing",
-   "via": "",
-   "note": "Insert IT"
+   "status": "covered",
+   "via": "Die Stadtreiniger Kassel",
+   "note": ""
   },
   {
    "city": "Hagen",
    "state": "NW",
    "pop": 190,
-   "status": "missing",
-   "via": "",
-   "note": "Abfall+ App-Backend"
+   "status": "covered",
+   "via": "HEB Hagener Entsorgungsbetrieb",
+   "note": ""
   },
   {
    "city": "Potsdam",
    "state": "BB",
    "pop": 185,
-   "status": "missing",
-   "via": "",
-   "note": "Stadt Potsdam (Rhythmus-Rechnung)"
+   "status": "covered",
+   "via": "STEP Stadtentsorgung Potsdam",
+   "note": ""
   },
   {
    "city": "Saarbrücken",
    "state": "SL",
    "pop": 180,
-   "status": "missing",
-   "via": "",
-   "note": "ATHOS-Servlet"
+   "status": "covered",
+   "via": "ZKE Zentraler Kommunaler Entsorgungsbetrieb Saarbrücken",
+   "note": ""
   },
   {
    "city": "Hamm",
    "state": "NW",
    "pop": 180,
-   "status": "missing",
-   "via": "",
-   "note": "Müllmax (IP-Sperre!)"
+   "status": "covered",
+   "via": "ASH Abfallwirtschaft und Stadtreinigung Hamm",
+   "note": ""
   },
   {
    "city": "Ludwigshafen am Rhein",
@@ -509,40 +534,40 @@
    "city": "Oldenburg",
    "state": "NI",
    "pop": 170,
-   "status": "missing",
-   "via": "",
-   "note": "Abfall+ App-Backend"
+   "status": "covered",
+   "via": "Abfallwirtschaftsbetrieb Stadt Oldenburg",
+   "note": ""
   },
   {
    "city": "Osnabrück",
    "state": "NI",
    "pop": 165,
-   "status": "missing",
-   "via": "",
+   "status": "covered",
+   "via": "Osnabrücker ServiceBetrieb",
    "note": ""
   },
   {
    "city": "Leverkusen",
    "state": "NW",
    "pop": 165,
-   "status": "missing",
-   "via": "",
-   "note": "Abfall+ App-Backend"
+   "status": "covered",
+   "via": "AVEA Leverkusen",
+   "note": ""
   },
   {
    "city": "Darmstadt",
    "state": "HE",
    "pop": 160,
    "status": "covered",
-   "via": "MyMüll App (bundesweit, per Ort)",
+   "via": "EAD Darmstadt",
    "note": ""
   },
   {
    "city": "Heidelberg",
    "state": "BW",
    "pop": 160,
-   "status": "missing",
-   "via": "",
+   "status": "covered",
+   "via": "Stadt Heidelberg, Abfallwirtschaft und Stadtreinigung",
    "note": ""
   },
   {
@@ -565,24 +590,24 @@
    "city": "Herne",
    "state": "NW",
    "pop": 155,
-   "status": "missing",
-   "via": "",
-   "note": "Insert IT"
+   "status": "covered",
+   "via": "entsorgung herne",
+   "note": ""
   },
   {
    "city": "Paderborn",
    "state": "NW",
    "pop": 155,
    "status": "covered",
-   "via": "MyMüll App (bundesweit, per Ort)",
+   "via": "ASP Paderborn (Online-Abfallkalender der Stadt)",
    "note": ""
   },
   {
    "city": "Neuss",
    "state": "NW",
    "pop": 155,
-   "status": "missing",
-   "via": "",
+   "status": "covered",
+   "via": "Stadt Neuss Abfallwirtschaft",
    "note": ""
   },
   {
@@ -597,81 +622,81 @@
    "city": "Offenbach am Main",
    "state": "HE",
    "pop": 130,
-   "status": "missing",
-   "via": "",
-   "note": "Insert IT"
+   "status": "covered",
+   "via": "ESO Stadtservice Offenbach",
+   "note": ""
   },
   {
    "city": "Fürth",
    "state": "BY",
    "pop": 130,
-   "status": "missing",
-   "via": "",
+   "status": "covered",
+   "via": "Stadt Fürth, Amt für Abfallwirtschaft",
    "note": ""
   },
   {
    "city": "Würzburg",
    "state": "BY",
    "pop": 130,
-   "status": "missing",
-   "via": "",
-   "note": "Abfall+ App-Backend"
+   "status": "covered",
+   "via": "Stadt Würzburg (Die Stadtreiniger)",
+   "note": ""
   },
   {
    "city": "Ulm",
    "state": "BW",
    "pop": 125,
    "status": "covered",
-   "via": "MyMüll App (bundesweit, per Ort)",
+   "via": "EBU Ulm",
    "note": ""
   },
   {
    "city": "Heilbronn",
    "state": "BW",
    "pop": 125,
-   "status": "missing",
-   "via": "",
+   "status": "covered",
+   "via": "Heilbronner Entsorgungsbetriebe",
    "note": ""
   },
   {
    "city": "Pforzheim",
    "state": "BW",
    "pop": 125,
-   "status": "missing",
-   "via": "",
-   "note": "ATHOS-Servlet"
+   "status": "covered",
+   "via": "Eigenbetrieb Abfallwirtschaft Pforzheim",
+   "note": ""
   },
   {
    "city": "Wolfsburg",
    "state": "NI",
    "pop": 125,
-   "status": "missing",
-   "via": "",
+   "status": "covered",
+   "via": "WAS Wolfsburger Abfallwirtschaft und Straßenreinigung",
    "note": ""
   },
   {
    "city": "Göttingen",
    "state": "NI",
    "pop": 120,
-   "status": "missing",
-   "via": "",
-   "note": "abfall.io v3 (GraphQL)"
+   "status": "covered",
+   "via": "GEB Göttinger Entsorgungsbetriebe",
+   "note": ""
   },
   {
    "city": "Bottrop",
    "state": "NW",
    "pop": 120,
-   "status": "missing",
-   "via": "",
+   "status": "covered",
+   "via": "BEST Bottrop",
    "note": ""
   },
   {
    "city": "Reutlingen",
    "state": "BW",
    "pop": 115,
-   "status": "missing",
-   "via": "",
-   "note": "abfall.io v3 (GraphQL)"
+   "status": "covered",
+   "via": "Landkreis Reutlingen, TBR Technische Betriebsdienste Reutlingen",
+   "note": ""
   },
   {
    "city": "Koblenz",
@@ -685,8 +710,8 @@
    "city": "Bremerhaven",
    "state": "HB",
    "pop": 115,
-   "status": "missing",
-   "via": "",
+   "status": "covered",
+   "via": "BEG Bremerhavener Entsorgungsgesellschaft",
    "note": ""
   },
   {
@@ -709,32 +734,32 @@
    "city": "Erlangen",
    "state": "BY",
    "pop": 115,
-   "status": "missing",
-   "via": "",
+   "status": "covered",
+   "via": "Stadt Erlangen Abfallwirtschaft",
    "note": ""
   },
   {
    "city": "Remscheid",
    "state": "NW",
    "pop": 110,
-   "status": "missing",
-   "via": "",
-   "note": "Müllmax (IP-Sperre!)"
+   "status": "covered",
+   "via": "Technische Betriebe Remscheid",
+   "note": ""
   },
   {
    "city": "Jena",
    "state": "TH",
    "pop": 110,
-   "status": "missing",
-   "via": "",
+   "status": "covered",
+   "via": "KommunalService Jena",
    "note": ""
   },
   {
    "city": "Trier",
    "state": "RP",
    "pop": 110,
-   "status": "missing",
-   "via": "",
+   "status": "covered",
+   "via": "A.R.T. Zweckverband Abfallwirtschaft Region Trier",
    "note": ""
   },
   {
@@ -742,31 +767,31 @@
    "state": "NI",
    "pop": 105,
    "status": "covered",
-   "via": "MyMüll App (bundesweit, per Ort)",
+   "via": "SRB Stadt Salzgitter (MyMüll)",
    "note": ""
   },
   {
    "city": "Moers",
    "state": "NW",
    "pop": 105,
-   "status": "missing",
-   "via": "",
+   "status": "covered",
+   "via": "ENNI Stadt & Service Niederrhein",
    "note": ""
   },
   {
    "city": "Siegen",
    "state": "NW",
    "pop": 105,
-   "status": "missing",
-   "via": "",
+   "status": "covered",
+   "via": "Universitätsstadt Siegen",
    "note": ""
   },
   {
    "city": "Hildesheim",
    "state": "NI",
    "pop": 100,
-   "status": "missing",
-   "via": "",
+   "status": "covered",
+   "via": "ZAH Zweckverband Abfallwirtschaft Hildesheim",
    "note": ""
   },
   {
@@ -784,6 +809,120 @@
    "status": "covered",
    "via": "AWG Kreis Warendorf (mit GEG Kreis Gütersloh)",
    "note": ""
+  }
+ ],
+ "history": [
+  {
+   "date": "17.09.2026",
+   "title": "Ausgangslage",
+   "providers": 132,
+   "towns": 3707,
+   "cities": 25,
+   "what": "Die sieben größten Städte (Berlin, Hamburg, München, Köln, Frankfurt, Stuttgart, Düsseldorf) plus 13 Vendor-Familien."
+  },
+  {
+   "date": "18.09.2026",
+   "title": "Batch 1 — Leipzig, Dortmund, Essen",
+   "providers": 143,
+   "towns": null,
+   "cities": null,
+   "what": "Drei neue Familien: srl (Leipzig), athos (Dortmund + Schaumburg, Hameln-Pyrmont, LK Karlsruhe), abfallplus (Essen + Duisburg, Reutlingen, Märkisch-Oderland, Nordsachsen, Osterholz)."
+  },
+  {
+   "date": "18.09.2026",
+   "title": "Batch 2 — Dresden, Hannover, Bielefeld, Wuppertal",
+   "providers": 147,
+   "towns": 4042,
+   "cities": 34,
+   "what": "Drei neue Familien: srdd (Dresden), aha (21 Kommunen der Region Hannover), awgwuppertal; Bielefeld als fünfter Athos-Mandant. Stuttgarts eigener GIS-Ausfall wird nicht mehr als „neu verbinden“ gemeldet."
+  },
+  {
+   "date": "18.09.2026",
+   "title": "Batch 3: Insert IT, Kiel — und ein Ehrlichkeits-Check",
+   "providers": 156,
+   "towns": 3800,
+   "cities": 38,
+   "what": "Mannheim, Kassel, Lübeck, Herne, Offenbach (Insert IT), Kiel (ABK); Krefeld jetzt über GSAKs eigenen Kalender. MyMüll nur noch, wo die Stadt es selbst als offiziellen Kalender nennt (Darmstadt, Kreis Paderborn, Salzgitter) — daher weniger Orte. Die Live-Prüfung jeder Stadt nahm Ulm (leerer MyMüll-Eintrag) und Reutlingen (Stadt ohne Straßen gelistet) aus der Zählung."
+  },
+  {
+   "date": "18.09.2026",
+   "title": "Batch 4: Bonn, Augsburg, Würzburg, Leverkusen, Oldenburg",
+   "providers": 161,
+   "towns": 3805,
+   "cities": 43,
+   "what": "Alle fünf direkt von der Stadt: Bonn und Augsburg über ihre Athos-Portale, Würzburg aus den offenen Daten der Stadt (DL-DE-BY-2.0), Leverkusen von AVEAs eigenen Straßenseiten, Oldenburg aus dem Kalender auf oldenburg.de. Das Abfall+-App-Backend blieb bewusst ungenutzt. Hagen und Freiburg funktionieren technisch, warten aber auf die Restmüll-Rhythmus-Frage."
+  },
+  {
+   "date": "18.09.2026",
+   "title": "Batch 5: 19 Städte, zwölf neue Adapter",
+   "providers": 179,
+   "towns": 4670,
+   "cities": 62,
+   "what": "Alle direkt vom Entsorger oder aus dem Kalender, den seine eigene Seite einbettet. Müllmax nur, wo die Stadt es selbst einbindet: Bochum, Hamm, Remscheid, Münster, Mainz. ABIS: Gelsenkirchen, Bottrop. Eigene Seiten: Trier (A.R.T., mit vier Landkreisen — 850 Orte), Wolfsburg, Braunschweig, Wiesbaden, Fürth, Heilbronn, Moers, Halle, Jena, Karlsruhe. Ulm über AWIDO, wie die EBU es einbindet."
+  },
+  {
+   "date": "18.09.2026",
+   "title": "Batch 6: sechs Städte, fünf neue Adapter",
+   "providers": 185,
+   "towns": 4676,
+   "cities": 68,
+   "what": "Chemnitz und Erfurt (hausmuell.info — ASR bettet es ein, erfurt.de verlinkt die Stadtwerke), Magdeburg (SAB, von magdeburg.de eingebunden), Potsdam (Stadtwerke Potsdam, pro Adresse statt der Rhythmus-Rechnung der Stadt), Osnabrück (OSB, eigene Seite), Erlangen (Mein-Abfallkalender, von erlangen.de verlinkt). Dazu: Statusfilter in der Städtetabelle."
+  },
+  {
+   "date": "18.09.2026",
+   "title": "Göttingen — und die Rhythmus-Städte einzeln geprüft",
+   "providers": 186,
+   "towns": 4677,
+   "cities": 69,
+   "what": "Göttingen war falsch einsortiert: die GEB der Stadt liefert ein ICS pro Adresse, keine Rhythmus-Frage nötig. Die anderen zehn live geprüft — alle fragen wirklich nach dem Rhythmus; Heidelberg sogar pro Tonne."
+  },
+  {
+   "date": "18.09.2026",
+   "title": "Die Rhythmus-Frage: fünf Städte",
+   "providers": 191,
+   "towns": 4682,
+   "cities": 74,
+   "what": "Freiburg, Hagen, Pforzheim, Saarbrücken und Neuss fragen beim Verbinden, wie oft die Restmülltonne geleert wird — wie die Kalender der Städte selbst. Angeboten wird nur, was die Adresse wirklich hat. Dazu: Saarbrückens gleichnamige Straßen in verschiedenen Stadtteilen werden jetzt unterschieden."
+  },
+  {
+   "date": "19.09.2026",
+   "title": "Die übrigen Rhythmus-Städte: fünf Adapter",
+   "providers": 196,
+   "towns": 4706,
+   "cities": 79,
+   "what": "Mönchengladbach, Siegen, Hildesheim, Heidelberg und Bremerhaven fragen jetzt beim Verbinden nach dem Rhythmus. Heidelberg als einzige Stadt für drei Tonnen auf einmal (Restabfall, Altpapier, Gelbe Tonne). Hildesheim bringt den ganzen Landkreis mit — 20 Gemeinden. Bremerhaven zeigt nur die nächsten 30 Tage, mehr veröffentlicht die BEG nicht lesbar."
+  },
+  {
+   "date": "19.09.2026",
+   "title": "Die letzten Städte: Rostock und Reutlingen",
+   "providers": 198,
+   "towns": 4708,
+   "cities": 80,
+   "what": "Reutlingen über den offiziellen TBR-Kalender (AbfallPlus) — fragt nach dem Restmüll-Rhythmus. Rostock über die Stadtentsorgung; das Formular verlangt „zur Abfrage berechtigt“, Aporah setzt es beim Verbinden der eigenen Adresse (siehe Entscheidung oben). Koblenz ist nicht machbar: Rest- und Biotonne gibt es nur telefonisch, 2026 nicht einmal die Wertstoff-ICS."
+  },
+  {
+   "date": "als Nächstes",
+   "title": "Testen",
+   "providers": null,
+   "towns": null,
+   "cities": null,
+   "what": "Alle Großstädte außer Koblenz sind abgedeckt. Jetzt: deployen, die sieben Städte oben testen, dann die übrigen Schritt für Schritt abhaken. Danach entscheiden die „Anfragen“ aus der App, welcher Ort als Nächstes kommt."
+  },
+  {
+   "date": "19.09.2026",
+   "title": "Darmstadt direkt vom EAD · Drittanbieter-Liste",
+   "providers": 199,
+   "towns": 4708,
+   "cities": 80,
+   "what": "Darmstadt kommt jetzt aus dem eigenen Kalender des EAD statt über MyMüll (181/181 Termine gleich wie die ICS vom EAD) und fragt den Restabfall-Rhythmus nach Deckelfarbe — vorher zeigte Darmstadt alle drei Restabfall-Rhythmen gleichzeitig. Paderborn als eigene Zeile: der Online-Abfallkalender auf paderborn.de ist das MyMüll-Web-Modul (32/32 Termine gleich wie die ICS der Stadt). Neu: Abschnitt „Drittanbieter“ — welche Großstadt über die Domain eines Software-Anbieters läuft und ob die Stadtseite ihn heute noch einbindet."
+  },
+  {
+   "date": "19.09.2026",
+   "title": "Upload-Flow für 11 Städte · robots.txt-Prüfung aller Hosts",
+   "providers": 199,
+   "towns": 4708,
+   "cities": 69,
+   "what": "Jede URL eines Live-Probe-Laufs (1.132 Anfragen, 115 Hosts) gegen die robots.txt ihres Hosts geprüft. Düsseldorf, Rostock und Dresden (echte Nutzungsbedingung „nicht kommerziell“) sowie Paderborn, Kreis Paderborn, Salzgitter, Ingolstadt, Recklinghausen, Stuttgart, Trier, Mönchengladbach, Siegen und alle 21 Jumomind-Kreise (robots.txt sperrt) laufen jetzt über den Datei-Upload: die App erkennt die Stadt, fragt den Anbieter nichts und schickt den Haushalt mit Link zur Stadtseite zum Upload. AWIDO bleibt live — nur der ICS-Ersatzweg über /Customer/ war gesperrt und ist entfernt. Würzburg bleibt live (offene Lizenz, Quelle an jedem Termin). Nach der Umstellung geht keine einzige Anfrage mehr an einen gesperrten Pfad."
   }
  ]
 }

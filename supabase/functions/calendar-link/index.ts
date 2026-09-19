@@ -3,7 +3,7 @@
 ///   POST { action: 'check',  provider, url | ics }
 ///     -> { ok: true, name, events, covers_to }
 ///   POST { action: 'add',    provider, url | (ics, file_name), name,
-///                            connection_id? | account }
+///                            connection_id? | account, abfall_town? }
 ///     -> { connection_id, external_id, name }
 ///   POST { action: 'remove', connection_id, external_id }
 ///     -> { ok: true, remaining }
@@ -33,7 +33,9 @@ import { callerId, corsHeaders, fail, json, serviceClient } from "../_shared/htt
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { assertPublicUrl } from "../_shared/net.ts";
 import { membershipOf } from "../_shared/calendar.ts";
-import { canAddCalendarAccount } from "../_shared/entitlements.ts";
+import { BIN_FILE_ACCOUNT, canAddCalendarAccount } from "../_shared/entitlements.ts";
+import { BIN_FILE_MAX_BYTES, looksLikeBinCalendar } from "../_shared/abfall/bin_file.ts";
+import { isUploadOnlyTown } from "../_shared/abfall/resolve.ts";
 import {
   assertCalendarFile,
   type FeedEntry,
@@ -96,6 +98,10 @@ Deno.serve(async (req) => {
     account?: string;
     connection_id?: string;
     external_id?: string;
+    /// Set by the Abfall sheet of a town whose provider we may not fetch from:
+    /// the file is that household's waste calendar, and goes onto the free
+    /// BIN_FILE_ACCOUNT connection once it is proved to be one.
+    abfall_town?: string;
   };
   try {
     body = await req.json();
@@ -121,6 +127,26 @@ Deno.serve(async (req) => {
   // route that stays current.
   const uploaded = typeof body.ics === "string";
   if (uploaded && provider !== "ical") return fail("Für diesen Anbieter geht nur ein Link.");
+
+  // The Abfall file: free like every Abfall calendar, so it is checked to be
+  // one — the town is upload-only, the file names pickups, and it is the size
+  // a year of bins is. Refused outright rather than quietly counted, because
+  // the household came here from the Müllabfuhr row and a paywall for its
+  // bins would be the wrong answer to a wrong file.
+  const binTown = typeof body.abfall_town === "string" ? body.abfall_town.trim().slice(0, 120) : "";
+  const binFile = uploaded && !!binTown;
+  if (binTown && !uploaded) return fail("Für die Müllabfuhr geht hier nur eine Datei.");
+  if (binFile) {
+    if (!isUploadOnlyTown(binTown)) {
+      return fail("Für diesen Ort verbindet die Müllabfuhr den Kalender direkt — bitte dort verbinden.");
+    }
+    if ((body.ics as string).length > BIN_FILE_MAX_BYTES) {
+      return fail("Diese Datei ist zu groß für einen Abfallkalender.");
+    }
+    if (!looksLikeBinCalendar(body.ics as string)) {
+      return fail("Das sieht nicht nach einem Abfallkalender aus. Bitte die Datei von der Seite der Stadt wählen.");
+    }
+  }
 
   let prepared: { payload: Payload; probe: FeedProbe };
 
@@ -177,7 +203,7 @@ Deno.serve(async (req) => {
     });
   }
 
-  return await add(db, membership.familyId, uid, provider, payload, probe.name, body);
+  return await add(db, membership.familyId, uid, provider, payload, probe.name, body, binFile);
 });
 
 /// What the caller handed us, once it has been proved to be a calendar.
@@ -209,6 +235,7 @@ async function add(
   payload: Payload,
   probedName: string | null,
   body: { name?: string; account?: string; connection_id?: string },
+  binFile = false,
 ): Promise<Response> {
   // A file has no host. "datei" stands in wherever the host was doing work
   // beyond display — the account key, above all, which has to be stable and
@@ -220,8 +247,8 @@ async function add(
   // `external_account` is what makes two children at one school two connections
   // rather than an upsert collision, so it carries the label the user gave as
   // well as the host.
-  const account = (body.account?.trim() || "").slice(0, 60);
-  const key = `${host}/${slug(account) || "kalender"}`;
+  const account = binFile ? "" : (body.account?.trim() || "").slice(0, 60);
+  const key = binFile ? BIN_FILE_ACCOUNT : `${host}/${slug(account) || "kalender"}`;
 
   // Adding to an account the household already has — the whole reason a
   // connection holds a list.
@@ -238,17 +265,25 @@ async function add(
   //
   // The family filter is the tenant boundary: service_role sees every
   // connection.
-  const target = body.connection_id ?? await accountWithKey(db, familyId, provider, key);
+  // The Abfall file always goes to the household's one Abfall-file connection,
+  // whatever id an older build sends.
+  const target = (binFile ? null : body.connection_id) ?? await accountWithKey(db, familyId, provider, key);
 
   if (target) {
     const { data: found } = await db
       .from("calendar_connections")
-      .select("id, config, selected_calendars, calendar_names, calendar_owners")
+      .select("id, external_account, config, selected_calendars, calendar_names, calendar_owners")
       .eq("id", target)
       .eq("family_id", familyId)
       .maybeSingle();
 
     if (!found) return fail("Die Verbindung wurde nicht gefunden.", 404);
+    // The free Abfall-file connection holds bin files and nothing else — a
+    // `connection_id` pointing at it must not carry a link or another file in
+    // past the plan's count.
+    if ((found.external_account === BIN_FILE_ACCOUNT) !== binFile) {
+      return fail("Dieser Kalender gehört nicht zu dieser Verbindung.");
+    }
 
     // A connection made before the URLs were sealed still carries them in
     // `config`. Migrating here rather than adding beside them keeps this
@@ -340,7 +375,9 @@ async function add(
 
   // A new account: nothing here answers to this school under this name.
   const label = LABELS[provider];
-  const displayName = account
+  const displayName = binFile
+    ? "Müllabfuhr"
+    : account
     ? `${label} · ${account}`
     : payload.kind === "file"
     ? `${label} (${payload.fileName})`
@@ -359,7 +396,7 @@ async function add(
   // on the limit hears about the limit and not about a link that in fact works.
   if (!await canAddCalendarAccount(db, familyId, { provider, externalAccount: key })) {
     return fail(
-      "Mit dem kostenlosen Zugang lässt sich ein Kalender verbinden. Mit Aporah Plus sind es beliebig viele.",
+      "Mit dem kostenlosen Zugang lassen sich zwei Kalender verbinden — Ferien und Müllabfuhr zählen nicht mit. Mit Aporah Plus sind es beliebig viele.",
       402,
     );
   }

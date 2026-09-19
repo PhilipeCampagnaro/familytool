@@ -1,0 +1,861 @@
+{
+ "checked": "2026-09-19",
+ "vendor_domain": {
+  "Essen": {
+   "vendor": "AbfallPlus (abfall.io)",
+   "host": "api.abfall.io",
+   "url": "https://www.ebe-essen.de/abfuhrkalender/",
+   "status": "ok",
+   "note": ""
+  },
+  "Duisburg": {
+   "vendor": "AbfallPlus (abfall.io)",
+   "host": "api.abfall.io",
+   "url": "https://www.wb-duisburg.de/allgemein/online-abfallkalender",
+   "status": "ok",
+   "note": "Widget lädt per JavaScript (api.abfall.io/…/awk_widgets.js)."
+  },
+  "Freiburg im Breisgau": {
+   "vendor": "AbfallPlus (abfall.io)",
+   "host": "api.abfall.io",
+   "url": "https://www.abfallwirtschaft-freiburg.de/de/privathaushalte/abfuhrtermine.html",
+   "status": "ok",
+   "note": ""
+  },
+  "Hagen": {
+   "vendor": "AbfallPlus (abfall.io)",
+   "host": "api.abfall.io",
+   "url": "https://www.heb-hagen.de/rund-um-den-muell/termine/abfuhrkalender-wann-kommt-die-muellabfuhr.html",
+   "status": "ok",
+   "note": "Bindet genau unseren AbfallPlus-Schlüssel ein (8fb8b2b0…)."
+  },
+  "Ludwigshafen am Rhein": {
+   "vendor": "AbfallPlus (abfall.io)",
+   "host": "api.abfall.io",
+   "url": "https://www.ludwigshafen.de/buergerservice/abfall-und-wertstoffkalender",
+   "status": "ok",
+   "note": ""
+  },
+  "Reutlingen": {
+   "vendor": "AbfallPlus (abfall.io)",
+   "host": "api.abfall.io",
+   "url": "https://www.tbr-reutlingen.de/de/Abfallwirtschaft/Muellabfuhr/Entsorgungskalender-Muellwecker",
+   "status": "ok",
+   "note": ""
+  },
+  "Aachen": {
+   "vendor": "regio iT AbfallNavi",
+   "host": "abfallapp.regioit.de",
+   "url": "https://www.aachen.de/abfallkalender",
+   "status": "ok",
+   "note": ""
+  },
+  "Nürnberg": {
+   "vendor": "regio iT AbfallNavi",
+   "host": "abfallapp.regioit.de",
+   "url": "https://www.nuernberg.de/internet/abfallwirtschaft/abfallkalender_app.html",
+   "status": "ok",
+   "note": ""
+  },
+  "Mülheim an der Ruhr": {
+   "vendor": "regio iT AbfallNavi",
+   "host": "abfallapp.regioit.de",
+   "url": "https://www.mheg.de/",
+   "status": "ok",
+   "note": "MEG verlinkt abfallnavi.de/muelheim und die regio-iT-App."
+  },
+  "Oberhausen": {
+   "vendor": "regio iT AbfallNavi",
+   "host": "abfallapp.regioit.de",
+   "url": "https://www.oberhausen.de/abfallkalender",
+   "status": "ok",
+   "note": ""
+  },
+  "Solingen": {
+   "vendor": "regio iT AbfallNavi",
+   "host": "abfallapp.regioit.de",
+   "url": "https://www.solingen.de/inhalt/abfall-navi",
+   "status": "ok",
+   "note": "Stadtseite „AbfallNavi“ auf regio-iT-Infrastruktur; der Host selbst war hinter der Firewall nicht direkt zu sehen — schwächster Beleg der Liste."
+  },
+  "Cottbus": {
+   "vendor": "regio iT AbfallNavi",
+   "host": "abfallapp.regioit.de",
+   "url": "https://www.cottbus.de/abfallkalender",
+   "status": "ok",
+   "note": ""
+  },
+  "Bergisch Gladbach": {
+   "vendor": "regio iT AbfallNavi",
+   "host": "abfallapp.regioit.de",
+   "url": "https://www.bergischgladbach.de/abfallapp.aspx",
+   "status": "ok",
+   "note": "Die Stadt empfiehlt die regio-iT-App „Abfall-App AWB GL“, keine Web-Ansicht."
+  },
+  "Gütersloh": {
+   "vendor": "regio iT AbfallNavi",
+   "host": "abfallapp.regioit.de",
+   "url": "https://www.awg-waf.de/abfallkalender",
+   "status": "ok",
+   "note": "Über den Kreis Warendorf (AWG) — Güterslohs eigene AbfallNavi-Instanz ist seit 2026 leer und bewusst nicht genutzt."
+  },
+  "Mannheim": {
+   "vendor": "Insert IT",
+   "host": "www.insert-it.de",
+   "url": "https://www.mannheim.de/de/service-bieten/umwelt/stadtraumservice-mannheim/abfallwirtschaft/abfallkalender/abfallkalender-online",
+   "status": "ok",
+   "note": "iframe auf insert-it.de/BmsAbfallkalenderMannheim."
+  },
+  "Kassel": {
+   "vendor": "Insert IT",
+   "host": "www.insert-it.de",
+   "url": "https://www.stadtreiniger.de/abfallkalender/index.php",
+   "status": "ok",
+   "note": ""
+  },
+  "Lübeck": {
+   "vendor": "Insert IT",
+   "host": "www.insert-it.de",
+   "url": "https://www.entsorgung.luebeck.de/gewerbekunden/online_abfuhrkalender/index.html",
+   "status": "ok",
+   "note": ""
+  },
+  "Herne": {
+   "vendor": "Insert IT",
+   "host": "www.insert-it.de",
+   "url": "http://www.entsorgung-herne.de/abfallkalender/",
+   "status": "ok",
+   "note": ""
+  },
+  "Krefeld": {
+   "vendor": "Insert IT",
+   "host": "www.insert-it.de",
+   "url": "https://www.gsak.de/de/services-fuer-krefeld/abfuhrkalender",
+   "status": "ok",
+   "note": ""
+  },
+  "Offenbach am Main": {
+   "vendor": "Insert IT",
+   "host": "www.insert-it.de",
+   "url": "https://www.eso-offenbach.de/abfallkalender",
+   "status": "ok",
+   "note": ""
+  },
+  "Bochum": {
+   "vendor": "MüllMax",
+   "host": "www.muellmax.de",
+   "url": "https://www.usb-bochum.de/info/leerungstermine/",
+   "status": "ok",
+   "note": ""
+  },
+  "Münster": {
+   "vendor": "MüllMax",
+   "host": "www.muellmax.de",
+   "url": "https://awm.stadt-muenster.de/verwertung-entsorgung/online-entsorgungskalender",
+   "status": "ok",
+   "note": ""
+  },
+  "Mainz": {
+   "vendor": "MüllMax",
+   "host": "www.muellmax.de",
+   "url": "https://mz.kaw-mainz-bingen.de/wir-kommen-zu-ihnen/abfallkalender",
+   "status": "ok",
+   "note": ""
+  },
+  "Hamm": {
+   "vendor": "MüllMax",
+   "host": "www.muellmax.de",
+   "url": "https://www.hamm.de/ash/abfuhrkalender",
+   "status": "ok",
+   "note": ""
+  },
+  "Remscheid": {
+   "vendor": "MüllMax",
+   "host": "www.muellmax.de",
+   "url": "https://www.tbr-info.de/abfuhrkalender.html",
+   "status": "ok",
+   "note": ""
+  },
+  "Regensburg": {
+   "vendor": "AWIDO (Cubefour)",
+   "host": "awido.cubefour.de",
+   "url": "https://www.regensburg.de/abfallkalender",
+   "status": "ok",
+   "note": ""
+  },
+  "Ulm": {
+   "vendor": "AWIDO (Cubefour)",
+   "host": "awido.cubefour.de",
+   "url": "https://www.ebu-ulm.de/abfall/abfuhrkalender.php",
+   "status": "ok",
+   "note": ""
+  },
+  "Ingolstadt": {
+   "vendor": "Jumomind (App der Stadt)",
+   "host": "ingol.jumomind.com",
+   "url": "https://www.in-kb.de/abfallkalender",
+   "status": "ok",
+   "note": ""
+  },
+  "Recklinghausen": {
+   "vendor": "Jumomind (App der KSR)",
+   "host": "ksr.jumomind.com",
+   "url": "https://www.zbh-ksr.de/",
+   "status": "open",
+   "note": "Die KSR bewirbt die Jumomind-App (unsere Quelle), ihr Web-Kalender läuft aber inzwischen über recklinghausen.buergerportal.digital — ein anderer Anbieter. Termine gegen den Web-Kalender abgleichen; weicht es ab, auf das Bürgerportal umstellen."
+  },
+  "Paderborn": {
+   "vendor": "MyMüll / Jumomind (Web-Modul der Stadt)",
+   "host": "service.mymuell.de",
+   "url": "https://www.paderborn.de/microsite/asp/abfallentsorgung/abfuhrtermine_pb.php",
+   "status": "ok",
+   "note": "Die Stadtseite bindet embed.js?m=asp ein; die ICS von dort ist mit unseren Terminen identisch (32/32)."
+  },
+  "Salzgitter": {
+   "vendor": "MyMüll / Jumomind (Web-Modul der Stadt)",
+   "host": "mymuell.jumomind.com",
+   "url": "https://www2.salzgitter.de/leben/srb/abfallkalender-online.php",
+   "status": "ok",
+   "note": "iframe auf mymuell.jumomind.com/webmodul/salzgitter (hinter dem Cookie-Hinweis)."
+  },
+  "Bremen": {
+   "vendor": "C-Trace",
+   "host": "web.c-trace.de",
+   "url": "https://www.die-bremer-stadtreinigung.de/abfallkalender",
+   "status": "ok",
+   "note": "Die Seite der Stadtreinigung fragt C-Trace selbst über ihren Server ab (/api/c-trace/…)."
+  },
+  "Gelsenkirchen": {
+   "vendor": "ABIS (flynet)",
+   "host": "gelsendienste.abisapp.de",
+   "url": "https://www.gelsendienste.de/privathaushalte/abfallkalender/",
+   "status": "ok",
+   "note": ""
+  },
+  "Bottrop": {
+   "vendor": "ABIS (flynet)",
+   "host": "best.abisapp.de",
+   "url": "https://www.best-bottrop.de/abfuhrtermine-0910213539.html",
+   "status": "ok",
+   "note": ""
+  },
+  "Chemnitz": {
+   "vendor": "hausmuell.info (aturis)",
+   "host": "asc.hausmuell.info",
+   "url": "https://www.asr-chemnitz.de/kundenportal/entsorgungskalender",
+   "status": "ok",
+   "note": ""
+  },
+  "Neuss": {
+   "vendor": "Mein-Abfallkalender",
+   "host": "neuss.mein-abfallkalender.online",
+   "url": "https://neuss.mein-abfallkalender.online/",
+   "status": "ok",
+   "note": ""
+  },
+  "Erlangen": {
+   "vendor": "Mein-Abfallkalender",
+   "host": "erlangen.mein-abfallkalender.online",
+   "url": "https://www.erlangen.de/abfallkalender",
+   "status": "ok",
+   "note": ""
+  },
+  "Magdeburg": {
+   "vendor": "metageneric (Agentur-Hosting)",
+   "host": "sab.ssl.metageneric.de",
+   "url": "https://www.magdeburg.de/Start/B%C3%BCrger-Stadt/System/Abfuhrkalender/",
+   "status": "ok",
+   "note": ""
+  },
+  "Hildesheim": {
+   "vendor": "Schmidt & Tooren (abfuhrkalender.de)",
+   "host": "hildesheim.abfuhrkalender.de",
+   "url": "https://www.zah-hildesheim.de/termine/#Abfuhrplan",
+   "status": "ok",
+   "note": "iframe auf hildesheim.abfuhrkalender.de (hinter dem Cookie-Hinweis). Betreiber: Schmidt & Tooren GbR („Grün-Orange“)."
+  },
+  "Würzburg": {
+   "vendor": "Opendatasoft (Open-Data-Portal der Stadt)",
+   "host": "wuerzburg.opendatasoft.com",
+   "url": "https://opendata.wuerzburg.de/api/explore/v2.1/catalog/datasets/abfallkalender-wuerzburg",
+   "status": "ok",
+   "note": "opendata.wuerzburg.de ist das Open-Data-Portal der Stadt (Herausgeber: Stadt Würzburg, Die Stadtreiniger; DL-DE-BY-2.0) — technisch bei Opendatasoft gehostet."
+  }
+ },
+ "own_domain_vendor_software": {
+  "Dortmund": "Athos auf kundenportal.edg.de",
+  "Bielefeld": "Athos auf anwendungen.bielefeld.de",
+  "Bonn": "Athos auf www5.bonn.de",
+  "Augsburg": "Athos auf abfall.augsburg.de",
+  "Saarbrücken": "Athos auf info.zke-sb.de",
+  "Pforzheim": "Athos auf onlineservices.abfallwirtschaft-pforzheim.de",
+  "Erfurt": "hausmuell.info auf abfallkalender.stadtwerke-erfurt.de"
+ },
+ "moved_off": {
+  "Darmstadt": "Bis 19.09. über MyMüll; jetzt direkt vom EAD-Kalender (ead.darmstadt.de). 181/181 Termine identisch mit der ICS des EAD."
+ },
+ "terms": {
+  "Paderborn": {
+   "source": "Jumomind / Junker Digital (Inh. Lars Junker)",
+   "verdict": "boiler",
+   "quote": "Impressum: Standard-Urheberrechtsabsatz („nur für den privaten, nicht kommerziellen Gebrauch“). Keine Nutzungs- oder API-Bedingungen. robots.txt aller *.jumomind.com: Disallow: /",
+   "robots": true,
+   "fix": "Upload-Flow (ICS von der Stadtseite)"
+  },
+  "Salzgitter": {
+   "source": "Jumomind / Junker Digital (Inh. Lars Junker)",
+   "verdict": "boiler",
+   "quote": "Impressum: Standard-Urheberrechtsabsatz („nur für den privaten, nicht kommerziellen Gebrauch“). Keine Nutzungs- oder API-Bedingungen. robots.txt aller *.jumomind.com: Disallow: /",
+   "robots": true,
+   "fix": "Upload-Flow (ICS von der Stadtseite)"
+  },
+  "Ingolstadt": {
+   "source": "Jumomind / Junker Digital (Inh. Lars Junker)",
+   "verdict": "boiler",
+   "quote": "Impressum: Standard-Urheberrechtsabsatz („nur für den privaten, nicht kommerziellen Gebrauch“). Keine Nutzungs- oder API-Bedingungen. robots.txt aller *.jumomind.com: Disallow: /",
+   "robots": true,
+   "fix": "Upload-Flow (ICS von der Stadtseite)"
+  },
+  "Recklinghausen": {
+   "source": "Jumomind / Junker Digital (Inh. Lars Junker)",
+   "verdict": "boiler",
+   "quote": "Impressum: Standard-Urheberrechtsabsatz („nur für den privaten, nicht kommerziellen Gebrauch“). Keine Nutzungs- oder API-Bedingungen. robots.txt aller *.jumomind.com: Disallow: /",
+   "robots": true,
+   "fix": "Upload-Flow (ICS von der Stadtseite)"
+  },
+  "Regensburg": {
+   "source": "AWIDO / CubeFour GmbH",
+   "verdict": "silent",
+   "quote": "robots.txt awido.cubefour.de: Disallow: /Customer/ — dort lag nur der ICS-Ersatzweg, der entfernt ist. Die Termine kommen über /WebServices/, das frei ist.",
+   "robots": false,
+   "fix": "Bleibt live: nur noch /WebServices/ (ICS-Ersatzweg über /Customer/ am 19.09.2026 entfernt)."
+  },
+  "Ulm": {
+   "source": "AWIDO / CubeFour GmbH",
+   "verdict": "silent",
+   "quote": "robots.txt awido.cubefour.de: Disallow: /Customer/ — dort lag nur der ICS-Ersatzweg, der entfernt ist. Die Termine kommen über /WebServices/, das frei ist.",
+   "robots": false,
+   "fix": "Bleibt live: nur noch /WebServices/ (ICS-Ersatzweg über /Customer/ am 19.09.2026 entfernt)."
+  },
+  "Essen": {
+   "source": "AbfallPlus (Abfall+ GmbH & Co. KG)",
+   "verdict": "boiler",
+   "quote": "Abfall+ GmbH & Co. KG: Standard-Urheberrechtsabsatz im Impressum. SaaS-AGB verbieten „automatisierte Zugriffe, Massendatenabfragen“ — bindet aber nur die zahlende Kommune. Kein robots.txt.",
+   "robots": false,
+   "fix": ""
+  },
+  "Duisburg": {
+   "source": "AbfallPlus (Abfall+ GmbH & Co. KG)",
+   "verdict": "boiler",
+   "quote": "Abfall+ GmbH & Co. KG: Standard-Urheberrechtsabsatz im Impressum. SaaS-AGB verbieten „automatisierte Zugriffe, Massendatenabfragen“ — bindet aber nur die zahlende Kommune. Kein robots.txt.",
+   "robots": false,
+   "fix": ""
+  },
+  "Freiburg im Breisgau": {
+   "source": "AbfallPlus (Abfall+ GmbH & Co. KG)",
+   "verdict": "boiler",
+   "quote": "Abfall+ GmbH & Co. KG: Standard-Urheberrechtsabsatz im Impressum. SaaS-AGB verbieten „automatisierte Zugriffe, Massendatenabfragen“ — bindet aber nur die zahlende Kommune. Kein robots.txt.",
+   "robots": false,
+   "fix": ""
+  },
+  "Hagen": {
+   "source": "AbfallPlus (Abfall+ GmbH & Co. KG)",
+   "verdict": "boiler",
+   "quote": "Abfall+ GmbH & Co. KG: Standard-Urheberrechtsabsatz im Impressum. SaaS-AGB verbieten „automatisierte Zugriffe, Massendatenabfragen“ — bindet aber nur die zahlende Kommune. Kein robots.txt.",
+   "robots": false,
+   "fix": ""
+  },
+  "Ludwigshafen am Rhein": {
+   "source": "AbfallPlus (Abfall+ GmbH & Co. KG)",
+   "verdict": "boiler",
+   "quote": "Abfall+ GmbH & Co. KG: Standard-Urheberrechtsabsatz im Impressum. SaaS-AGB verbieten „automatisierte Zugriffe, Massendatenabfragen“ — bindet aber nur die zahlende Kommune. Kein robots.txt.",
+   "robots": false,
+   "fix": ""
+  },
+  "Reutlingen": {
+   "source": "AbfallPlus (Abfall+ GmbH & Co. KG)",
+   "verdict": "boiler",
+   "quote": "Abfall+ GmbH & Co. KG: Standard-Urheberrechtsabsatz im Impressum. SaaS-AGB verbieten „automatisierte Zugriffe, Massendatenabfragen“ — bindet aber nur die zahlende Kommune. Kein robots.txt.",
+   "robots": false,
+   "fix": ""
+  },
+  "Aachen": {
+   "source": "regio iT AbfallNavi",
+   "verdict": "boiler",
+   "quote": "regio iT GmbH: allgemeiner Urheberrechtsvorbehalt für die eigene Homepage; keine Nutzungsbedingungen für die Daten („Als Entsorgungsbetrieb stellen Sie Ihre Daten selbst zusammen“). Kein robots.txt.",
+   "robots": false,
+   "fix": ""
+  },
+  "Nürnberg": {
+   "source": "regio iT AbfallNavi",
+   "verdict": "boiler",
+   "quote": "regio iT GmbH: allgemeiner Urheberrechtsvorbehalt für die eigene Homepage; keine Nutzungsbedingungen für die Daten („Als Entsorgungsbetrieb stellen Sie Ihre Daten selbst zusammen“). Kein robots.txt.",
+   "robots": false,
+   "fix": ""
+  },
+  "Mülheim an der Ruhr": {
+   "source": "regio iT AbfallNavi",
+   "verdict": "boiler",
+   "quote": "regio iT GmbH: allgemeiner Urheberrechtsvorbehalt für die eigene Homepage; keine Nutzungsbedingungen für die Daten („Als Entsorgungsbetrieb stellen Sie Ihre Daten selbst zusammen“). Kein robots.txt.",
+   "robots": false,
+   "fix": ""
+  },
+  "Oberhausen": {
+   "source": "regio iT AbfallNavi",
+   "verdict": "boiler",
+   "quote": "regio iT GmbH: allgemeiner Urheberrechtsvorbehalt für die eigene Homepage; keine Nutzungsbedingungen für die Daten („Als Entsorgungsbetrieb stellen Sie Ihre Daten selbst zusammen“). Kein robots.txt.",
+   "robots": false,
+   "fix": ""
+  },
+  "Solingen": {
+   "source": "regio iT AbfallNavi",
+   "verdict": "boiler",
+   "quote": "regio iT GmbH: allgemeiner Urheberrechtsvorbehalt für die eigene Homepage; keine Nutzungsbedingungen für die Daten („Als Entsorgungsbetrieb stellen Sie Ihre Daten selbst zusammen“). Kein robots.txt.",
+   "robots": false,
+   "fix": ""
+  },
+  "Cottbus": {
+   "source": "regio iT AbfallNavi",
+   "verdict": "boiler",
+   "quote": "regio iT GmbH: allgemeiner Urheberrechtsvorbehalt für die eigene Homepage; keine Nutzungsbedingungen für die Daten („Als Entsorgungsbetrieb stellen Sie Ihre Daten selbst zusammen“). Kein robots.txt.",
+   "robots": false,
+   "fix": ""
+  },
+  "Bergisch Gladbach": {
+   "source": "regio iT AbfallNavi",
+   "verdict": "boiler",
+   "quote": "regio iT GmbH: allgemeiner Urheberrechtsvorbehalt für die eigene Homepage; keine Nutzungsbedingungen für die Daten („Als Entsorgungsbetrieb stellen Sie Ihre Daten selbst zusammen“). Kein robots.txt.",
+   "robots": false,
+   "fix": ""
+  },
+  "Gütersloh": {
+   "source": "regio iT AbfallNavi",
+   "verdict": "boiler",
+   "quote": "regio iT GmbH: allgemeiner Urheberrechtsvorbehalt für die eigene Homepage; keine Nutzungsbedingungen für die Daten („Als Entsorgungsbetrieb stellen Sie Ihre Daten selbst zusammen“). Kein robots.txt.",
+   "robots": false,
+   "fix": ""
+  },
+  "Mannheim": {
+   "source": "Insert IT",
+   "verdict": "boiler",
+   "quote": "Insert Information Technologies GmbH: Standard-Urheberrechtsabsatz; insert-it.de hat kein Impressum und kein robots.txt.",
+   "robots": false,
+   "fix": ""
+  },
+  "Kassel": {
+   "source": "Insert IT",
+   "verdict": "boiler",
+   "quote": "Insert Information Technologies GmbH: Standard-Urheberrechtsabsatz; insert-it.de hat kein Impressum und kein robots.txt.",
+   "robots": false,
+   "fix": ""
+  },
+  "Lübeck": {
+   "source": "Insert IT",
+   "verdict": "boiler",
+   "quote": "Insert Information Technologies GmbH: Standard-Urheberrechtsabsatz; insert-it.de hat kein Impressum und kein robots.txt.",
+   "robots": false,
+   "fix": ""
+  },
+  "Herne": {
+   "source": "Insert IT",
+   "verdict": "boiler",
+   "quote": "Insert Information Technologies GmbH: Standard-Urheberrechtsabsatz; insert-it.de hat kein Impressum und kein robots.txt.",
+   "robots": false,
+   "fix": ""
+  },
+  "Krefeld": {
+   "source": "Insert IT",
+   "verdict": "boiler",
+   "quote": "Insert Information Technologies GmbH: Standard-Urheberrechtsabsatz; insert-it.de hat kein Impressum und kein robots.txt.",
+   "robots": false,
+   "fix": ""
+  },
+  "Offenbach am Main": {
+   "source": "Insert IT",
+   "verdict": "boiler",
+   "quote": "Insert Information Technologies GmbH: Standard-Urheberrechtsabsatz; insert-it.de hat kein Impressum und kein robots.txt.",
+   "robots": false,
+   "fix": ""
+  },
+  "Bochum": {
+   "source": "MüllMax (Grafik-Partner GmbH)",
+   "verdict": "boiler",
+   "quote": "Grafik-Partner GmbH: altes Haftungsausschluss-Muster (Grafiken, Sounds, Texte). robots.txt sperrt Start.php nur für den Mandanten rsa — unsere (usb, ash, tbr, awm, ebm) sind frei.",
+   "robots": false,
+   "fix": ""
+  },
+  "Münster": {
+   "source": "MüllMax (Grafik-Partner GmbH)",
+   "verdict": "boiler",
+   "quote": "Grafik-Partner GmbH: altes Haftungsausschluss-Muster (Grafiken, Sounds, Texte). robots.txt sperrt Start.php nur für den Mandanten rsa — unsere (usb, ash, tbr, awm, ebm) sind frei.",
+   "robots": false,
+   "fix": ""
+  },
+  "Mainz": {
+   "source": "MüllMax (Grafik-Partner GmbH)",
+   "verdict": "boiler",
+   "quote": "Grafik-Partner GmbH: altes Haftungsausschluss-Muster (Grafiken, Sounds, Texte). robots.txt sperrt Start.php nur für den Mandanten rsa — unsere (usb, ash, tbr, awm, ebm) sind frei.",
+   "robots": false,
+   "fix": ""
+  },
+  "Hamm": {
+   "source": "MüllMax (Grafik-Partner GmbH)",
+   "verdict": "boiler",
+   "quote": "Grafik-Partner GmbH: altes Haftungsausschluss-Muster (Grafiken, Sounds, Texte). robots.txt sperrt Start.php nur für den Mandanten rsa — unsere (usb, ash, tbr, awm, ebm) sind frei.",
+   "robots": false,
+   "fix": ""
+  },
+  "Remscheid": {
+   "source": "MüllMax (Grafik-Partner GmbH)",
+   "verdict": "boiler",
+   "quote": "Grafik-Partner GmbH: altes Haftungsausschluss-Muster (Grafiken, Sounds, Texte). robots.txt sperrt Start.php nur für den Mandanten rsa — unsere (usb, ash, tbr, awm, ebm) sind frei.",
+   "robots": false,
+   "fix": ""
+  },
+  "Gelsenkirchen": {
+   "source": "ABIS / flynet (FLYer Kommunikationsgesellschaft mbH)",
+   "verdict": "boiler",
+   "quote": "Standard-Urheberrechtsabsatz; AGB binden nur Vertragskunden. robots.txt lässt /api/street und /abfuhrkalender frei.",
+   "robots": false,
+   "fix": ""
+  },
+  "Bottrop": {
+   "source": "ABIS / flynet (FLYer Kommunikationsgesellschaft mbH)",
+   "verdict": "boiler",
+   "quote": "Standard-Urheberrechtsabsatz; AGB binden nur Vertragskunden. robots.txt lässt /api/street und /abfuhrkalender frei.",
+   "robots": false,
+   "fix": ""
+  },
+  "Neuss": {
+   "source": "Mein-Abfallkalender (Michael Krissel)",
+   "verdict": "silent",
+   "quote": "Kein Urheberrechts- oder Nutzungsabsatz; „im Auftrag der Stadt“. robots.txt lässt unsere Pfade frei.",
+   "robots": false,
+   "fix": ""
+  },
+  "Erlangen": {
+   "source": "Mein-Abfallkalender (Michael Krissel)",
+   "verdict": "silent",
+   "quote": "Kein Urheberrechts- oder Nutzungsabsatz; „im Auftrag der Stadt“. robots.txt lässt unsere Pfade frei.",
+   "robots": false,
+   "fix": ""
+  },
+  "Bremen": {
+   "source": "C-Trace GmbH",
+   "verdict": "silent",
+   "quote": "Impressum ohne Nutzungsabsatz; AGB sind B2B-Lizenzbedingungen. robots.txt von web.c-trace.de nicht erreichbar (503).",
+   "robots": false,
+   "fix": ""
+  },
+  "Chemnitz": {
+   "source": "hausmuell.info (ATURIS)",
+   "verdict": "boiler",
+   "quote": "Muster-Absatz: Vervielfältigung „zu anderem als zum privaten oder sonstigen eigenen Gebrauch“ nur mit Zustimmung. Kein robots.txt.",
+   "robots": false,
+   "fix": ""
+  },
+  "Magdeburg": {
+   "source": "metageneric (für SAB)",
+   "verdict": "silent",
+   "quote": "Impressum nennt nur die Stadt Magdeburg/SAB; kein Nutzungsabsatz; kein robots.txt.",
+   "robots": false,
+   "fix": ""
+  },
+  "Hildesheim": {
+   "source": "Schmidt & Tooren GbR",
+   "verdict": "boiler",
+   "quote": "Standard-Urheberrechtsabsatz; das Produkt bietet Kommunen selbst eine REST-API an. Kein robots.txt.",
+   "robots": false,
+   "fix": ""
+  },
+  "Würzburg": {
+   "source": "Stadt Würzburg (Open Data)",
+   "verdict": "open",
+   "quote": "Datensatz unter DL-DE-BY-2.0 — kommerzielle Nutzung ausdrücklich erlaubt, Pflicht: „Quelle: Stadt Würzburg – opendata.wuerzburg.de“. Aber robots.txt: Disallow: /api/ (trifft unseren Export).",
+   "robots": true,
+   "fix": "Bleibt live: DL-DE-BY-2.0 erlaubt die kommerzielle Nutzung; die Quellenangabe steht an jedem Termin. robots.txt der Plattform sperrt /api/ wie auch den Export — die Lizenz ist hier die Erlaubnis."
+  },
+  "Berlin": {
+   "source": "BSR",
+   "verdict": "boiler",
+   "quote": "„Bitte frage uns, wenn du Inhalte unserer Webseite verwenden möchtest.“ robots.txt frei.",
+   "robots": false,
+   "fix": ""
+  },
+  "Hamburg": {
+   "source": "Stadtreinigung Hamburg",
+   "verdict": "silent",
+   "quote": "Nur Haftungshinweise. robots.txt erlaubt alles.",
+   "robots": false,
+   "fix": ""
+  },
+  "München": {
+   "source": "AWM",
+   "verdict": "boiler",
+   "quote": "„außer zum privaten Gebrauch ohne unsere ausdrückliche Zustimmung weder ganz noch teilweise … verwendet werden“.",
+   "robots": false,
+   "fix": ""
+  },
+  "Köln": {
+   "source": "AWB Köln",
+   "verdict": "boiler",
+   "quote": "Verwertung außerhalb der Schranken des Urheberrechts nur mit schriftlicher Zustimmung. robots.txt nimmt /api bewusst aus.",
+   "robots": false,
+   "fix": ""
+  },
+  "Frankfurt am Main": {
+   "source": "FES",
+   "verdict": "silent",
+   "quote": "Kein Nutzungsabsatz. robots.txt erlaubt alles.",
+   "robots": false,
+   "fix": ""
+  },
+  "Stuttgart": {
+   "source": "Abfallwirtschaft Stuttgart",
+   "verdict": "boiler",
+   "quote": "„Eine Vervielfältigung ist nur zum privaten Gebrauch zulässig.“ robots.txt service.stuttgart.de: Disallow: / (nur Suchmaschinen erlaubt).",
+   "robots": true,
+   "fix": "Upload / Link einfügen (die Stadt bietet ein Abo-ICS an)."
+  },
+  "Düsseldorf": {
+   "source": "AWISTA Kommunal GmbH",
+   "verdict": "terms",
+   "quote": "„gestattet Ihnen, die … veröffentlichten Dokumente ausschließlich nicht kommerziell zu kopieren und zu nutzen“ — echte Bedingung, nicht nur Muster.",
+   "robots": false,
+   "fix": "Upload / Link einfügen."
+  },
+  "Leipzig": {
+   "source": "Stadtreinigung Leipzig",
+   "verdict": "silent",
+   "quote": "Kein Nutzungsabsatz. robots.txt: Crawl-delay: 30.",
+   "robots": false,
+   "fix": ""
+  },
+  "Dortmund": {
+   "source": "EDG",
+   "verdict": "silent",
+   "quote": "Nur Link-Haftung. Kein robots.txt.",
+   "robots": false,
+   "fix": ""
+  },
+  "Dresden": {
+   "source": "Landeshauptstadt Dresden",
+   "verdict": "terms",
+   "quote": "Stadtplan-Nutzungsbedingungen: gewerbliche Nutzung einzelner Inhalte/Daten nur nach Rückfrage beim Geoservice.",
+   "robots": false,
+   "fix": "Upload / Link einfügen."
+  },
+  "Hannover": {
+   "source": "aha",
+   "verdict": "silent",
+   "quote": "Kein Nutzungsabsatz. robots.txt trifft unseren Pfad nicht.",
+   "robots": false,
+   "fix": ""
+  },
+  "Wuppertal": {
+   "source": "AWG Wuppertal",
+   "verdict": "boiler",
+   "quote": "„Kommerzielle Nutzung zur Weiterveröffentlichung oder kostenlosen Verteilung ist nur in Absprache mit der AWG zulässig.“ Kein robots.txt.",
+   "robots": false,
+   "fix": ""
+  },
+  "Bielefeld": {
+   "source": "Stadt Bielefeld",
+   "verdict": "boiler",
+   "quote": "„Eine Vervielfältigung ist lediglich zum privaten Gebrauch gestattet.“",
+   "robots": false,
+   "fix": ""
+  },
+  "Bonn": {
+   "source": "bonnorange AöR",
+   "verdict": "boiler",
+   "quote": "Impressum: Standard-Absatz (wie MyMüll). ABER: dieselben Termine als CSV unter CC BY 4.0 auf opendata.bonn.de.",
+   "robots": false,
+   "fix": "Auf die offene CSV umstellen → sauber erlaubt."
+  },
+  "Karlsruhe": {
+   "source": "Stadt Karlsruhe (TSK)",
+   "verdict": "silent",
+   "quote": "Kein Absatz für Kalenderdaten; Lizenzbedingungen betreffen nur Medien.",
+   "robots": false,
+   "fix": ""
+  },
+  "Augsburg": {
+   "source": "Stadt Augsburg (AWS)",
+   "verdict": "boiler",
+   "quote": "Nur „zum privaten und sonstigen eigenen Gebrauch im Rahmen des § 53 UrhG“; nennt § 5 UrhG (amtliche Werke) als Ausnahme.",
+   "robots": false,
+   "fix": ""
+  },
+  "Wiesbaden": {
+   "source": "ELW",
+   "verdict": "boiler",
+   "quote": "Standard-Muster (Grafiken, Texte …).",
+   "robots": false,
+   "fix": ""
+  },
+  "Mönchengladbach": {
+   "source": "mags AöR",
+   "verdict": "boiler",
+   "quote": "„weder für private noch für geschäftliche Zwecke Elemente der Seite verwendet“ ohne Zustimmung. robots.txt: Disallow: /*?* — trifft unser proxy_dates.php?…",
+   "robots": true,
+   "fix": "Upload / Link einfügen."
+  },
+  "Braunschweig": {
+   "source": "ALBA Braunschweig GmbH",
+   "verdict": "boiler",
+   "quote": "Standard-Absatz wie MyMüll, plus „Einspeicherung … in Datenbanken“. robots.txt: Crawl-delay: 240.",
+   "robots": false,
+   "fix": ""
+  },
+  "Kiel": {
+   "source": "ABK",
+   "verdict": "silent",
+   "quote": "Kein Nutzungsabsatz.",
+   "robots": false,
+   "fix": ""
+  },
+  "Halle (Saale)": {
+   "source": "HWS",
+   "verdict": "silent",
+   "quote": "Kein Nutzungsabsatz.",
+   "robots": false,
+   "fix": ""
+  },
+  "Erfurt": {
+   "source": "SWE Stadtwirtschaft",
+   "verdict": "boiler",
+   "quote": "„Die Vervielfältigung von Informationen oder Daten … bedarf der vorherigen Zustimmung“ (Muster, nennt aber „Daten“).",
+   "robots": false,
+   "fix": ""
+  },
+  "Rostock": {
+   "source": "Stadtentsorgung Rostock GmbH",
+   "verdict": "terms",
+   "quote": "„gestattet Ihnen … ausschließlich nicht kommerziell zu kopieren und zu nutzen“ — echte Bedingung; dazu das Häkchen „zur Abfrage berechtigt“.",
+   "robots": false,
+   "fix": "Upload / Link einfügen."
+  },
+  "Potsdam": {
+   "source": "STEP / Stadtwerke Potsdam",
+   "verdict": "boiler",
+   "quote": "Weitergabe und Vervielfältigung ohne Genehmigung nicht gestattet (allgemeiner Vorbehalt).",
+   "robots": false,
+   "fix": ""
+  },
+  "Saarbrücken": {
+   "source": "ZKE",
+   "verdict": "silent",
+   "quote": "Kein Nutzungsabsatz.",
+   "robots": false,
+   "fix": ""
+  },
+  "Oldenburg": {
+   "source": "Stadt Oldenburg",
+   "verdict": "silent",
+   "quote": "Kein Nutzungsabsatz; robots.txt trifft unseren Pfad nicht.",
+   "robots": false,
+   "fix": ""
+  },
+  "Osnabrück": {
+   "source": "Stadt Osnabrück",
+   "verdict": "boiler",
+   "quote": "„dürfen nur zum privaten Gebrauch vervielfältigt … werden“ (Muster).",
+   "robots": false,
+   "fix": ""
+  },
+  "Leverkusen": {
+   "source": "AVEA",
+   "verdict": "boiler",
+   "quote": "Standard-Muster (Grafiken, Texte); robots.txt trifft unseren Pfad nicht.",
+   "robots": false,
+   "fix": ""
+  },
+  "Darmstadt": {
+   "source": "EAD",
+   "verdict": "boiler",
+   "quote": "Nutzungsbedingungen: Verwendung in anderen Publikationen nur nach Genehmigung; für den Kalender keine besonderen Bedingungen.",
+   "robots": false,
+   "fix": ""
+  },
+  "Heidelberg": {
+   "source": "Stadt Heidelberg",
+   "verdict": "silent",
+   "quote": "Nur Gewährleistungsausschluss; CC BY des Datenportals deckt den Abfall-Host nicht ab.",
+   "robots": false,
+   "fix": ""
+  },
+  "Fürth": {
+   "source": "Stadt Fürth",
+   "verdict": "boiler",
+   "quote": "Nur „zum privaten und sonstigen eigenen Gebrauch im Rahmen des § 53 UrhG“ (Impressum der Stadt war gesperrt, zitiert vom Service-Portal).",
+   "robots": false,
+   "fix": ""
+  },
+  "Heilbronn": {
+   "source": "Stadt Heilbronn",
+   "verdict": "boiler",
+   "quote": "eRecht24-Standardabsatz.",
+   "robots": false,
+   "fix": ""
+  },
+  "Pforzheim": {
+   "source": "Stadt Pforzheim",
+   "verdict": "boiler",
+   "quote": "„Eine freie Verwendung ist nicht erlaubt“ (bezogen auf Bilder, Grafiken).",
+   "robots": false,
+   "fix": ""
+  },
+  "Wolfsburg": {
+   "source": "WAS",
+   "verdict": "silent",
+   "quote": "Kein Nutzungsabsatz.",
+   "robots": false,
+   "fix": ""
+  },
+  "Göttingen": {
+   "source": "GEB",
+   "verdict": "silent",
+   "quote": "Kein Nutzungsabsatz.",
+   "robots": false,
+   "fix": ""
+  },
+  "Bremerhaven": {
+   "source": "BEG",
+   "verdict": "boiler",
+   "quote": "Standard-Muster (Grafiken, Texte).",
+   "robots": false,
+   "fix": ""
+  },
+  "Jena": {
+   "source": "KSJ",
+   "verdict": "boiler",
+   "quote": "eRecht24-Absatz, wörtlich wie MyMüll.",
+   "robots": false,
+   "fix": ""
+  },
+  "Trier": {
+   "source": "A.R.T.",
+   "verdict": "boiler",
+   "quote": "Allgemeiner Urheberrechtsvorbehalt. robots.txt redaktion.art-trier.de: Disallow: / — trifft unsere API.",
+   "robots": true,
+   "fix": "Upload / Link einfügen."
+  },
+  "Moers": {
+   "source": "ENNI",
+   "verdict": "boiler",
+   "quote": "„Die Vervielfältigung von Informationen oder Daten … bedarf der vorherigen Zustimmung“. ABER: Stadt Moers veröffentlicht den Kalender unter dl-de-zero-2.0.",
+   "robots": false,
+   "fix": "Auf den offenen Datensatz umstellen → sauber erlaubt."
+  },
+  "Siegen": {
+   "source": "Stadt Siegen",
+   "verdict": "boiler",
+   "quote": "Allgemeiner Vorbehalt. robots.txt: Disallow: /*?tx_ und /*&cHash= — trifft unser Formular und den ICS-Link.",
+   "robots": true,
+   "fix": "Upload / Link einfügen."
+  }
+ },
+ "terms_checked": "2026-09-19",
+ "upload_checked": "2026-09-19: jede URL eines Live-Probe-Laufs gegen die robots.txt ihres Hosts geprüft (115 Hosts). Gesperrt: alle 22 *.jumomind.com, mags.de, redaktion.art-trier.de, service.stuttgart.de, www.siegen.de — dazu echte Nutzungsbedingungen bei AWISTA, SRO und Dresden. Nach der Umstellung geht keine Anfrage mehr an diese Hosts."
+}

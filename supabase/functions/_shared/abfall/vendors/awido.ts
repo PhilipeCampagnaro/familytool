@@ -3,14 +3,11 @@
 import {
   type AbfallConfig,
   type AbfallProvider,
-  fetchWithTimeout,
   getJson,
   type HausNr,
-  parseIcs,
   type StreetOption,
   type SyncedEvent,
   type Town,
-  UA,
   type VendorAdapter,
 } from "../core.ts";
 
@@ -43,8 +40,18 @@ async function searchStreetsAwido(town: Town, query: string): Promise<StreetOpti
 // AWIDO: one getData call returns the full calendar year as JSON — pickup dates
 // (dt=YYYYMMDD, fr=fraction codes) plus the fraction-code -> name map (fracts).
 // Entries with fr=null are public holidays, not pickups. A picked house number
-// (hnrId = addon GUID) replaces the street oid. A few clients don't serve the
-// JSON payload at all; for those we fall back to the official ICS export.
+// (hnrId = addon GUID) replaces the street oid.
+//
+// **Only /WebServices/ is ours to call.** awido.cubefour.de's robots.txt
+// disallows /Customer/, which is where the per-street ICS export lives, so the
+// fallback to it that stood here is gone (2026-09-19): a client without the
+// JSON payload fails like any other upstream error. The live probe never
+// reached for it.
+// Fractions that are not a bin at the kerb: EBU Ulm's feed carries its Repair
+// Café (76 a year, with Neu-Ulm addresses), swap days, clean-ups, events and the
+// clubs' own paper collections beside the pickups.
+const NOT_A_PICKUP = /veranstaltung|warentausch|reparatur|putzete|vereins/i
+
 async function readAwido(cfg: AbfallConfig): Promise<SyncedEvent[]> {
   if (!cfg.client || !cfg.oid) throw new Error('reconnect_required')
   const oid = (typeof cfg.hnrId === 'string' && cfg.hnrId) || cfg.oid
@@ -52,13 +59,9 @@ async function readAwido(cfg: AbfallConfig): Promise<SyncedEvent[]> {
     fracts?: Array<{ snm: string; nm: string }>
     calendar?: Array<{ dt?: string; fr?: string[] | null }>
   }
-  try {
-    data = await getJson(
-      `${AWIDO_BASE}/getData/${oid}?fractions=&client=${cfg.client}`,
-    ) as typeof data
-  } catch {
-    return readAwidoIcs(cfg, oid)
-  }
+  data = await getJson(
+    `${AWIDO_BASE}/getData/${oid}?fractions=&client=${cfg.client}`,
+  ) as typeof data
   const fname = new Map<string, string>()
   for (const f of (data.fracts || [])) fname.set(f.snm, f.nm)
 
@@ -71,6 +74,7 @@ async function readAwido(cfg: AbfallConfig): Promise<SyncedEvent[]> {
     const end = new Date(start)
     end.setUTCDate(end.getUTCDate() + 1)
     for (const fr of item.fr) {
+      if (NOT_A_PICKUP.test(fname.get(fr) || '')) continue
       events.push({
         uid: `abfall:awido:${cfg.client}:${oid}:${item.dt}:${fr}`,
         title: fname.get(fr) || fr || 'Abfuhr',
@@ -83,41 +87,6 @@ async function readAwido(cfg: AbfallConfig): Promise<SyncedEvent[]> {
     }
   }
   return events
-}
-
-// Fallback for AWIDO clients without the JSON payload: the per-oid ICS export,
-// fetched for this year + next (mirrors the awgbassum year handling).
-async function readAwidoIcs(cfg: AbfallConfig, oid: string): Promise<SyncedEvent[]> {
-  const thisYear = new Date().getUTCFullYear()
-  const start = new Date(Date.UTC(thisYear - 1, 0, 1))
-  const end = new Date(Date.UTC(thisYear + 2, 0, 1))
-  const out: SyncedEvent[] = []
-  const seen = new Set<string>()
-  for (const year of [thisYear, thisYear + 1]) {
-    // An empty reminder= makes the endpoint answer with an HTML page instead of
-    // ICS; the widget always sends a concrete value, so we mirror it.
-    const url = `https://awido.cubefour.de/Customer/${cfg.client}/KalenderICS.aspx`
-      + `?oid=${encodeURIComponent(oid)}&jahr=${year}&fraktionen=&reminder=${encodeURIComponent('-1.17:00')}`
-    let ics: string
-    try {
-      const res = await fetchWithTimeout(url, { headers: { Accept: 'text/calendar', 'User-Agent': UA } })
-      if (!res.ok) continue
-      ics = await res.text()
-    } catch { continue }
-    if (!ics.includes('BEGIN:VEVENT')) continue
-    for (const ev of parseIcs(ics, start, end)) {
-      const key = `${ev.startsAt.slice(0, 10)}:${ev.title}`
-      if (seen.has(key)) continue
-      seen.add(key)
-      out.push({
-        ...ev,
-        uid: `abfall:awido:${cfg.client}:${oid}:${key}`,
-        notes: null,
-        location: cfg.label ?? ev.location ?? null,
-      })
-    }
-  }
-  return out
 }
 
 async function towns(p: AbfallProvider): Promise<Town[]> {

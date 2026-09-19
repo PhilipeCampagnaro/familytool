@@ -15,7 +15,8 @@ import 'calendar_event.dart';
 /// The WMO code buckets, collapsed to the eight the app has an icon for.
 enum WeatherCondition { clear, partlyCloudy, cloudy, fog, drizzle, rain, snow, storm }
 
-/// Open-Meteo's `weather_code` (WMO 4677) narrowed to a [WeatherCondition].
+/// A WMO 4677 weather code narrowed to a [WeatherCondition]. The app stores
+/// WMO codes whatever the provider — see [brightSkyForecast] for the mapping.
 ///
 /// The unlisted codes are all variations the buckets already cover (freezing
 /// drizzle sits with drizzle, hail with the storm it falls out of), so an
@@ -43,7 +44,7 @@ class WeatherReading {
   /// Chance of precipitation in percent, or null when the provider omitted it.
   final int? precipitation;
 
-  /// Decides sun vs moon. Open-Meteo answers it per hour, which is the only
+  /// Decides sun vs moon. The provider answers it per hour, which is the only
   /// honest way to do it — sunset moves by two hours across a German year.
   final bool isDay;
 
@@ -144,7 +145,8 @@ class GeoPoint {
   Map<String, dynamic> toMap() => {'lat': latitude, 'lon': longitude, 'name': name};
 }
 
-/// Open-Meteo's `hourly` block: parallel arrays, one entry per hour.
+/// An hourly forecast as parallel arrays, one entry per hour — Open-Meteo's
+/// shape, which is still the cache format.
 ///
 /// Kept in the provider's own shape rather than exploded into a list of
 /// objects, because that is also how it is cached — and re-encoding 384 hours
@@ -276,8 +278,8 @@ String eventWeatherKey(CalendarEvent event, DateTime day) =>
 /// What follows the last number in an address line — which in German is the
 /// town. `"Weyher Str 100 28816 Stuhr"` -> `"Stuhr"`.
 ///
-/// Open-Meteo's geocoder searches place *names*: the whole line is a miss, and
-/// so is `"28816 Stuhr"`, because a postal code is not a name either. Commas
+/// A geocoder may not place the whole line, and `"28816 Stuhr"` is no better,
+/// because a postal code is not a name either. Commas
 /// are the obvious way to find the town in a line like that, but people write
 /// an address on one line at least as often as with them, and then there is
 /// nothing to split on — so the anchor is the last number instead, which covers
@@ -293,6 +295,58 @@ String placeAfterNumber(String line) {
   final match = RegExp(r'.*\d+\s*[a-zA-ZäöüÄÖÜ]?\s+').firstMatch(text);
   return match == null ? '' : text.substring(match.end).trim();
 }
+
+/// Bright Sky's `weather` list (the DWD's MOSMIX forecast, and observations
+/// for the hours already gone) as an [HourlyForecast].
+///
+/// Bright Sky names a sky rather than numbering it, so each icon is turned back
+/// into the WMO code the rest of the app — the icon files, the colours, the
+/// cache — already speaks. Its icons also carry the day/night split for the two
+/// skies where it matters (`clear-night`, `partly-cloudy-night`); every other
+/// sky is drawn the same by day and night, so those hours read as day.
+///
+/// Timestamps come with an offset and are turned into device-local time, which
+/// is how an appointment's start is held too.
+HourlyForecast? brightSkyForecast(List<dynamic> hours) {
+  final times = <DateTime>[];
+  final temperature = <double?>[];
+  final codes = <int?>[];
+  final precipitation = <int?>[];
+  final isDay = <bool>[];
+
+  for (final h in hours) {
+    if (h is! Map) continue;
+    final time = DateTime.tryParse(h['timestamp'] as String? ?? '');
+    if (time == null) continue;
+    final icon = h['icon'] as String?;
+    times.add(time.toLocal());
+    temperature.add((h['temperature'] as num?)?.toDouble());
+    codes.add(_brightSkyCode(icon, h['condition'] as String?));
+    precipitation.add((h['precipitation_probability'] as num?)?.toInt());
+    isDay.add(!(icon?.endsWith('-night') ?? false));
+  }
+  if (times.isEmpty) return null;
+  return HourlyForecast(
+    times: times,
+    temperature: temperature,
+    codes: codes,
+    precipitation: precipitation,
+    isDay: isDay,
+  );
+}
+
+int? _brightSkyCode(String? icon, String? condition) => switch (icon ?? condition) {
+  'clear-day' || 'clear-night' => 0,
+  'partly-cloudy-day' || 'partly-cloudy-night' => 2,
+  'cloudy' || 'wind' || 'dry' => 3,
+  'fog' => 45,
+  'rain' => 61,
+  'sleet' => 66,
+  'snow' => 71,
+  'thunderstorm' => 95,
+  'hail' => 96,
+  _ => null,
+};
 
 /// The countries a German-language family app plausibly writes into an address,
 /// in both spellings. Never a useful answer: "Deutschland" geocodes happily to

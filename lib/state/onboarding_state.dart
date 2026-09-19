@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../data/repositories/calendar_connection_repository.dart';
 import '../l10n/l10n.dart';
 import '../models/calendar_connection.dart';
 import 'calendar_connections_state.dart';
@@ -31,9 +32,56 @@ class LocalCalendars {
   /// The Bundesland code behind the address, for the Schulferien feed.
   final String? ferienState;
 
-  const LocalCalendars({this.abfall, this.ferienState});
+  /// The bins this address makes the household name a rhythm for, and the
+  /// answers so far — the same question the connect sheet asks (see
+  /// [RhythmChoice]). Empty almost everywhere.
+  final List<RhythmChoice> rhythms;
+  final Map<String, String> rhythm;
 
-  bool get hasAbfall => abfall?.connectable == true;
+  /// The entry picked off the vendor's own house list, where the typed number
+  /// did not settle it — none of it matched, or more than one did, or the
+  /// street is split into collection areas. See `settleHouseNumber` in
+  /// `abfall/resolve.ts`, which answers this itself nearly everywhere.
+  final HouseNumber? house;
+
+  const LocalCalendars({
+    this.abfall,
+    this.ferienState,
+    this.rhythms = const [],
+    this.rhythm = const {},
+    this.house,
+  });
+
+  LocalCalendars withRhythm(String bin, String option) => LocalCalendars(
+    abfall: abfall,
+    ferienState: ferienState,
+    rhythms: rhythms,
+    rhythm: {...rhythm, bin: option},
+    house: house,
+  );
+
+  /// Another house, whose rhythms are its own — asked again, answers cleared.
+  LocalCalendars withHouse(HouseNumber? picked, {List<RhythmChoice> rhythms = const []}) =>
+      LocalCalendars(abfall: abfall, ferienState: ferienState, rhythms: rhythms, house: picked);
+
+  /// Every rhythm question answered, or none asked.
+  bool get rhythmAnswered => rhythms.every((c) => c.options.any((o) => o.id == rhythm[c.bin]));
+
+  /// Whether the waste vendor asks this household anything before its calendar
+  /// can be connected: which house on its list, how often a bin is emptied.
+  /// Those are answered on their own, before the calendars are shown.
+  bool get hasWasteQuestions {
+    final a = abfall;
+    return a != null && a.supported && a.config != null && (a.houseNumbers.isNotEmpty || rhythms.isNotEmpty);
+  }
+
+  /// The house picked where the vendor needs one to name a schedule at all.
+  bool get houseAnswered => abfall?.needsHouseNumber != true || house != null;
+
+  bool get hasAbfall {
+    final a = abfall;
+    return a != null && a.supported && a.config != null && houseAnswered;
+  }
   bool get hasFerien => ferienState != null;
   bool get any => hasAbfall || hasFerien;
 
@@ -72,6 +120,23 @@ class OnboardingState {
   final bool searchingAddress;
   final GeoAddress? pickedAddress;
 
+  /// A street picked without its house, waiting for the number typed under
+  /// it. See [OnboardingNotifier.askHouseNumber].
+  final GeoAddress? streetOnly;
+
+  /// Whether the waste questions — which house on the vendor's list, how often
+  /// a bin is emptied — have been answered and put away. Until then the card
+  /// asks them on their own, under the address, and the two calendar rows with
+  /// their switches wait — see [OnboardingNotifier.finishWasteQuestions].
+  final bool wasteDone;
+
+  /// The card is asking the waste questions rather than showing the calendars:
+  /// the vendor asks something, and the answers have not been put away yet.
+  bool get askingWaste {
+    final f = found;
+    return f != null && f.hasWasteQuestions && !wasteDone;
+  }
+
   /// The spinner between picking an address and knowing what lives there.
   final bool lookingUp;
 
@@ -99,6 +164,8 @@ class OnboardingState {
     this.addressResults = const [],
     this.searchingAddress = false,
     this.pickedAddress,
+    this.streetOnly,
+    this.wasteDone = false,
     this.lookingUp = false,
     this.found,
     this.connecting = false,
@@ -118,12 +185,15 @@ class OnboardingState {
     List<GeoAddress>? addressResults,
     bool? searchingAddress,
     GeoAddress? pickedAddress,
+    GeoAddress? streetOnly,
+    bool? wasteDone,
     bool? lookingUp,
     LocalCalendars? found,
     bool? connecting,
     String? addressError,
     bool? requestingTrash,
     bool clearPickedAddress = false,
+    bool clearStreetOnly = false,
     bool clearFound = false,
     bool clearAddressError = false,
   }) {
@@ -139,6 +209,8 @@ class OnboardingState {
       addressResults: addressResults ?? this.addressResults,
       searchingAddress: searchingAddress ?? this.searchingAddress,
       pickedAddress: clearPickedAddress ? null : (pickedAddress ?? this.pickedAddress),
+      streetOnly: clearStreetOnly ? null : (streetOnly ?? this.streetOnly),
+      wasteDone: wasteDone ?? this.wasteDone,
       lookingUp: lookingUp ?? this.lookingUp,
       found: clearFound ? null : (found ?? this.found),
       connecting: connecting ?? this.connecting,
@@ -240,6 +312,34 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
     return text;
   }
 
+  /// A street picked without its house: held under the field while the number
+  /// is typed, rather than looked up. Returns false for a pick that is already
+  /// a whole address, which the caller then hands to [pickAddress].
+  bool askHouseNumber(GeoAddress found) {
+    if (found.prefix || found.hasHouseNumber) return false;
+    _addressDebounce?.cancel();
+    state = state.copyWith(
+      streetOnly: found,
+      address: found.label,
+      addressResults: const [],
+      searchingAddress: false,
+      clearAddressError: true,
+    );
+    return true;
+  }
+
+  /// The number typed under [OnboardingState.streetOnly]: to the lookup as a
+  /// whole address, or back under the card when it is no house number.
+  Future<void> confirmHouseNumber(String typed) async {
+    final street = state.streetOnly;
+    if (street == null) return;
+    if (!isHouseNumber(typed)) {
+      state = state.copyWith(addressError: L.s.houseNumberInvalid);
+      return;
+    }
+    await pickAddress(street.withHouseNumber(typed));
+  }
+
   /// Picking an address *is* the question this step asks. Everything else — the
   /// waste vendor, the Bundesland, both calendars — follows from it without
   /// anybody being asked a second time.
@@ -248,10 +348,15 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
   /// so it is recorded as "no waste calendar for this address" and the Ferien
   /// half still stands: half an answer beats a dead end in a wizard nobody
   /// asked to be in.
+  ///
+  /// A vendor that knows the street and not the house hands the step back to
+  /// the number, with what was typed still in it — the fix is usually a digit.
   Future<void> pickAddress(GeoAddress found) async {
     _addressDebounce?.cancel();
     state = state.copyWith(
       pickedAddress: found,
+      clearStreetOnly: true,
+      wasteDone: false,
       address: found.label,
       addressResults: const [],
       searchingAddress: false,
@@ -261,14 +366,31 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
     );
 
     AbfallCoverage? coverage;
+    var rhythms = const <RhythmChoice>[];
     try {
-      coverage = await _ref.read(calendarConnectionRepositoryProvider).resolveAddress(found);
+      final repo = _ref.read(calendarConnectionRepositoryProvider);
+      coverage = await repo.resolveAddress(found);
+      if (coverage.supported && coverage.needsHouseNumber && coverage.houseNumbers.isEmpty && found.hasHouseNumber) {
+        if (!mounted) return;
+        state = state.copyWith(
+          lookingUp: false,
+          streetOnly: found.withoutHouseNumber,
+          clearPickedAddress: true,
+          clearFound: true,
+          addressError: L.s.houseNumberUnknown,
+        );
+        return;
+      }
+      // Asked with the lookup rather than on the way out, so the question is on
+      // the card before anybody taps on. A failure here is the lookup failing.
+      if (coverage.connectable) rhythms = await repo.abfallRhythms(coverage.config!);
     } catch (_) {
       coverage = null;
+      rhythms = const [];
     }
     if (!mounted) return;
 
-    final result = LocalCalendars(abfall: coverage, ferienState: ferienStateOf(found));
+    final result = LocalCalendars(abfall: coverage, ferienState: ferienStateOf(found), rhythms: rhythms);
     state = state.copyWith(
       lookingUp: false,
       found: result,
@@ -279,6 +401,61 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
     );
   }
 
+  /// A house off the vendor's list. Another house can have other rhythms, so
+  /// they are asked again for it; tapping the picked one again unpicks it.
+  Future<void> pickHouse(HouseNumber picked) async {
+    final found = state.found;
+    final config = found?.abfall?.config;
+    if (found == null || config == null) return;
+    final house = found.house?.id == picked.id ? null : picked;
+    final ask = ++_houseAsk;
+    state = state.copyWith(found: found.withHouse(house), lookingUp: house != null, clearAddressError: true);
+    if (house == null) return;
+    var rhythms = const <RhythmChoice>[];
+    String? error;
+    try {
+      rhythms = await _ref
+          .read(calendarConnectionRepositoryProvider)
+          .abfallRhythms(CalendarConnectionRepository.abfallConfig(config, houseNumber: house));
+    } catch (_) {
+      error = L.s.calendarsConnectFailed;
+    }
+    if (!mounted || ask != _houseAsk) return;
+    state = state.copyWith(
+      found: state.found?.withHouse(house, rhythms: rhythms),
+      lookingUp: false,
+      addressError: error,
+    );
+  }
+
+  /// Bumped per house picked, so a slow rhythm answer for a house since
+  /// changed is dropped.
+  int _houseAsk = 0;
+
+  /// A rhythm chip: how often this household's bin is emptied.
+  void pickRhythm(String bin, String option) {
+    final found = state.found;
+    if (found == null) return;
+    state = state.copyWith(found: found.withRhythm(bin, option), clearAddressError: true);
+  }
+
+  /// "Weiter" under the waste questions: put them away and show the two
+  /// calendars. False, with the reason under the card, while one is open.
+  bool finishWasteQuestions() {
+    final found = state.found;
+    if (found == null) return false;
+    if (!found.houseAnswered) {
+      state = state.copyWith(addressError: L.s.pickHouseNumberHint);
+      return false;
+    }
+    if (!found.rhythmAnswered) {
+      state = state.copyWith(addressError: L.s.pickRhythmFirst);
+      return false;
+    }
+    state = state.copyWith(wasteDone: true, clearAddressError: true);
+    return true;
+  }
+
   /// "Anfragen" on the Müllabfuhr row: files the town so we go and find its
   /// vendor. The row flips to "angefragt" on the answer and stays there — the
   /// server remembers the request, so a replayed tour finds it already set.
@@ -287,7 +464,7 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
     final address = state.pickedAddress;
     final coverage = found?.abfall;
     if (found == null || address == null || coverage == null) return;
-    if (coverage.supported || coverage.requested || state.requestingTrash) return;
+    if (coverage.supported || coverage.uploadOnly || coverage.requested || state.requestingTrash) return;
     state = state.copyWith(requestingTrash: true, clearAddressError: true);
     try {
       await _ref
@@ -313,6 +490,8 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
       searchingAddress: false,
       lookingUp: false,
       clearPickedAddress: true,
+      clearStreetOnly: true,
+      wasteDone: false,
       clearFound: true,
       clearAddressError: true,
     );
@@ -335,7 +514,11 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
   Future<bool> connectLocalCalendars() async {
     final address = state.pickedAddress;
     if (address != null) {
-      unawaited(_ref.read(familyProvider.notifier).saveAddress(address.label));
+      // The postcode and town, not the street: all the household row is read
+      // for is the weather's fallback place and the event form's search bias,
+      // and both are a town. The street and house live on the Abfall
+      // subscription, which is the one thing that needs them.
+      unawaited(_ref.read(familyProvider.notifier).saveAddress(address.townLine));
     }
 
     final found = state.found;
@@ -370,6 +553,12 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
     final wantFerien = state.ferienCalendar && found.hasFerien && !hasFerienAlready;
     final wantAbfall = state.trashCalendar && found.hasAbfall && !hasAbfallAlready;
     if (!wantFerien && !wantAbfall) return true;
+    // Nothing connects until the rhythm is named: the server would refuse it,
+    // and half a tour connected is harder to explain than a question on screen.
+    if (wantAbfall && !found.rhythmAnswered) {
+      state = state.copyWith(addressError: L.s.pickRhythmFirst);
+      return false;
+    }
 
     state = state.copyWith(connecting: true, clearAddressError: true);
     final connections = _ref.read(calendarConnectionsProvider.notifier);
@@ -391,6 +580,8 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
         await connections.connectAbfall(
           config: found.abfall!.config!,
           label: address!.label,
+          houseNumber: found.house,
+          rhythm: found.rhythm,
           displayName: _wasteName(address, found.abfall!),
         );
       } catch (_) {

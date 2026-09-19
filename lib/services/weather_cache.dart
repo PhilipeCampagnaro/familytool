@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:path_provider/path_provider.dart';
 
-/// The device's copy of what Open-Meteo has already answered.
+/// The device's copy of what the weather providers have already answered.
 ///
 /// Two things are worth keeping between launches, for opposite reasons:
 ///
@@ -23,8 +23,8 @@ class WeatherCache {
 
   final String fileName;
 
-  /// How long a forecast is served before it is fetched again. Open-Meteo
-  /// updates hourly, so anything shorter is requests for identical numbers.
+  /// How long a forecast is served before it is fetched again. The DWD's
+  /// forecast updates hourly, so anything shorter is requests for identical numbers.
   static const forecastTtl = Duration(hours: 1);
 
   /// A ceiling on the point cache, so a family that travels does not grow this

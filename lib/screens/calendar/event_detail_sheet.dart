@@ -521,6 +521,17 @@ class _WeatherCard extends StatelessWidget {
               // weather rather than as decoration, so it keeps full weight
               // instead of the tertiary grey a caption would take.
               Text(weather.label, style: AppText.label.copyWith(color: shade(skin.ink, .78))),
+              // The source credit both licences ask for — the forecast is the
+              // Deutscher Wetterdienst's (CC BY 4.0) and the place was found in
+              // OpenStreetMap (ODbL). Here rather than on a credits page, so it
+              // sits beside the data it credits. See weather_repository.dart.
+              const SizedBox(height: 4),
+              Text(
+                L.s.weatherAttribution,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppText.microLabel.copyWith(color: shade(skin.ink, .55)),
+              ),
             ],
           ),
         ],

@@ -45,6 +45,7 @@
 
 export type {
   AbfallConfig,
+  RhythmChoice,
   GeoAddress,
   ResolveResult,
   StreetOption,
@@ -56,8 +57,11 @@ export { geocode } from "./abfall/geo.ts";
 export { ADAPTERS, adapterFor } from "./abfall/registry.ts";
 export {
   aggregateTowns,
+  cleanRhythm,
+  openRhythms,
   readAbfallEvents,
   resolveAddress,
+  rhythmChoices,
   searchStreets,
 } from "./abfall/resolve.ts";
 export { normalizeIcsUrl, readIcsUrl } from "./abfall/vendors/ics.ts";

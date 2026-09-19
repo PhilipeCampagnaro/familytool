@@ -28,6 +28,7 @@ import 'state/spend_state.dart';
 import 'theme/app_icons.dart';
 import 'theme/app_theme.dart';
 import 'theme/tokens.dart';
+import 'widgets/app_lock_gate.dart';
 import 'widgets/bottom_nav.dart';
 import 'widgets/more_shelf.dart';
 import 'widgets/paywall_sheet.dart';
@@ -110,7 +111,7 @@ class AporahApp extends ConsumerWidget {
         // them. The interface language decides both.
         child: MediaQuery(
           data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: alwaysUse24HourFormat),
-          child: _DismissKeyboardOnTap(child: child ?? const SizedBox.shrink()),
+          child: _DismissKeyboardOnTap(child: AppLockGate(child: child ?? const SizedBox.shrink())),
         ),
       ),
       // Not `const`: a canonicalised instance would make the element below

@@ -34,6 +34,12 @@ class CalendarSource {
   /// [binColorFor]. A feed is otherwise an ordinary read-only calendar.
   final String feedKind;
 
+  /// A waste calendar — an address feed or the uploaded Abfall file. It has no
+  /// colour of its own anywhere it is named: each pickup wears its bin's, so a
+  /// dot for the calendar would be one more colour meaning nothing. It gets the
+  /// bin glyph instead.
+  bool get isAbfall => feedKind == 'abfall';
+
   /// **Whose day this calendar belongs to** — the chip it appears under, and
   /// what that chip is called. `calendar-events` resolves both.
   ///

@@ -509,6 +509,8 @@ class StringsDe extends AppStrings {
   @override
   String get allItems => 'Alle Artikel';
   @override
+  String get whichList => 'In welche Liste?';
+  @override
   String get itemLabel => 'Artikel';
   @override
   String attachmentCount(int count) => count == 1 ? '1 Anhang' : '$count Anhänge';
@@ -736,6 +738,8 @@ class StringsDe extends AppStrings {
   @override
   String temperature(int degrees) => '$degrees°';
   @override
+  String get weatherAttribution => 'DWD · OpenStreetMap';
+  @override
   String get weatherClear => 'Klar';
   @override
   String get weatherPartlyCloudy => 'Heiter';
@@ -932,9 +936,72 @@ class StringsDe extends AppStrings {
   @override
   String get wasteRequestFailed => 'Die Anfrage ist nicht angekommen. Versuch es gleich noch einmal.';
   @override
+  String wasteUploadOnlyBody(String town) =>
+      '$town gibt seine Abfuhrtermine nicht für den automatischen Abruf durch Apps frei — so holt ihr euren Abfallkalender trotzdem in wenigen Schritten hierher.';
+  @override
+  String get openTownCalendarPage => 'Abfallkalender der Stadt öffnen';
+  @override
+  String get wasteUploadOnlyShort => 'Nur als Datei — tippen zum Hinzufügen';
+  @override
+  List<String> get binFileStepsInApp => [
+    'Öffnet unten den Abfallkalender der Stadt.',
+    'Wählt eure Straße.',
+    'Tippt auf den Download als iCal oder ICS.',
+    'Aporah erkennt die Datei automatisch und holt sie direkt hierher.',
+  ];
+  @override
+  List<String> get binFileStepsBrowser => [
+    'Öffnet unten den Abfallkalender der Stadt.',
+    'Wählt eure Straße.',
+    'Tippt auf den Download als iCal oder ICS.',
+    'Ladet die Datei danach hier mit „Kalenderdatei hochladen“ hoch.',
+  ];
+  @override
+  String get calendarPagePrompt => 'Wählt eure Straße und tippt auf den iCal-Export';
+  @override
+  String get calendarPageNotCalendar => 'Das ist keine Kalenderdatei. Sucht auf der Seite nach „iCal“ oder „ICS“.';
+  @override
+  String get calendarPageFailed => 'Die Datei ließ sich nicht laden. Versucht es noch einmal.';
+  @override
+  String get ok => 'OK';
+  @override
+  String get wasteUploadOnlyLater => 'Nur als Datei erhältlich — ihr könnt sie später als Kalenderdatei hinzufügen.';
+  @override
   String get wasteNeedsHouseNumber => 'Bitte mit Hausnummer eingeben — hier gilt der Abfuhrplan pro Haus.';
   @override
+  String get houseNumberAsk =>
+      'Und die Hausnummer?';
+  @override
+  String get houseNumberAskHint =>
+      'Damit wir den Abfuhrplan für genau euer Haus finden.';
+  @override
+  String get houseNumberPlaceholder =>
+      'z. B. 12a';
+  @override
+  String get houseNumberInvalid =>
+      'Bitte eine Hausnummer wie 12 oder 12a eingeben.';
+  @override
+  String get houseNumberUnknown =>
+      'Diese Hausnummer kennt die Müllabfuhr nicht — bitte prüfen.';
+  @override
+  String get addressPrivacyNote =>
+      'Die Adresse wird nur genutzt, um Müllabfuhr, Ferien und Wetter für euch zu finden.';
+  @override
+  String get onboardRhythmTitle => 'Noch eine Frage zu eurer Müllabfuhr';
+  @override
   String get pickHouseNumberHint => 'Hier gilt der Abfuhrplan pro Haus — bitte eure Hausnummer wählen.';
+  @override
+  String rhythmQuestion(String bin) => '$bin — wie oft geleert?';
+  @override
+  String get rhythmHint => 'Steht auf dem Aufkleber eurer Tonne — dieselbe Frage stellt der Kalender der Stadt. Angezeigt wird nur dieser Rhythmus.';
+  @override
+  String get pickRhythmFirst => 'Bitte wählt noch, wie oft eure Tonne geleert wird.';
+  @override
+  String get rhythmWeekly => 'wöchentlich';
+  @override
+  String rhythmEveryWeeks(int n) => 'alle $n Wochen';
+  @override
+  String get checkingRhythm => 'Abfuhrrhythmus wird geprüft …';
   @override
   String get checkingLinkEllipsis => 'Link wird geprüft …';
   @override
@@ -1223,6 +1290,8 @@ class StringsDe extends AppStrings {
   @override
   String get removePhoto => 'Foto entfernen';
   @override
+  String get removeSymbol => 'Symbol entfernen';
+  @override
   String get avatarUploadFailed => 'Das Profilbild konnte nicht hochgeladen werden.';
   @override
   String get avatarRemoveFailed => 'Das Profilbild konnte nicht entfernt werden.';
@@ -1490,6 +1559,17 @@ class StringsDe extends AppStrings {
   @override
   String get renameFamilyBody => 'Der Name steht auf dem Familien-Chip in Kalender und Board.';
   @override
+  String get renamePerson => 'Person umbenennen';
+  @override
+  String get renamePersonBody =>
+      'Der Name steht auf ihrem Chip in Kalender und Board und auf jedem Kalender, der ihr zugeordnet ist.';
+  @override
+  String get removePersonQuestion => 'Person entfernen?';
+  @override
+  String removePersonBody(String name) =>
+      '„$name" hat kein Konto und steht nur auf den Kalendern, die ihr zugeordnet sind. '
+      'Diese Kalender gehören danach wieder der ganzen Familie – getrennt wird nichts.';
+  @override
   String get familyRenameFailed => 'Der Name konnte nicht geändert werden.';
 
   @override
@@ -1652,6 +1732,9 @@ class StringsDe extends AppStrings {
 
   @override
   String spendShowAllCount(int count) => 'Alle $count anzeigen';
+
+  @override
+  String get spendTotal => 'Gesamt';
 
   @override
   String get spendIslandThinking => 'Ich rechne nach';
@@ -1881,12 +1964,6 @@ class StringsDe extends AppStrings {
   @override
   String get spendSearchAction => 'Ausgaben durchsuchen';
   @override
-  String get spendViewAll => 'Alle';
-  @override
-  String get spendViewMembers => 'Personen';
-  @override
-  String get spendViewMerchants => 'Geschäfte';
-  @override
   String get spendViewCategories => 'Kategorien';
   @override
   String get spendNoMatches => 'Keine Ausgaben passen dazu.';
@@ -2112,7 +2189,7 @@ class StringsDe extends AppStrings {
   String get notificationsPageDesc => 'Was Aporah dir aufs Handy schickt – und wann.';
   @override
   String get searchTermsNotifications =>
-      'mitteilungen benachrichtigungen erinnerung push notification tagesüberblick abfall müll tonne';
+      'mitteilungen benachrichtigungen erinnerung push notification tagesüberblick abfall müll tonne budget ausgaben';
   @override
   String get notificationsAllowTitle => 'Mitteilungen erlauben';
   @override
@@ -2139,6 +2216,10 @@ class StringsDe extends AppStrings {
   String get notifyTaskTimesTitle => 'To-dos mit Uhrzeit';
   @override
   String get notifyTaskTimesSubtitle => 'Zur Uhrzeit, die du gesetzt hast';
+  @override
+  String get notifyBudgetsTitle => 'Budgets';
+  @override
+  String get notifyBudgetsSubtitle => 'Wenn ein Budget dem Monat vorausläuft oder überschritten ist';
   @override
   String get notifyTime => 'Uhrzeit';
   @override
@@ -2175,10 +2256,50 @@ class StringsDe extends AppStrings {
   @override
   String noticeTaskDue(String time) => 'Fällig um $time';
   @override
+  String noticeBudgetAheadOne(String category) => '$category läuft dem Monat voraus';
+  @override
+  String noticeBudgetAheadMany(int count) => '$count Budgets laufen dem Monat voraus';
+  @override
+  String noticeBudgetOverOne(String category) => '$category ist überschritten';
+  @override
+  String noticeBudgetOverMany(int count) => '$count Budgets sind überschritten';
+  @override
+  String noticeBudgetAmount(String spent, String limit) => '$spent von $limit';
+  @override
   String joinAnd(List<String> parts) =>
       parts.length < 2 ? parts.join() : '${parts.sublist(0, parts.length - 1).join(', ')} und ${parts.last}';
   @override
   String get rateApp => 'Aporah bewerten';
   @override
   String get searchTermsRate => 'bewerten bewertung sterne app store rezension rate review';
+
+  // -------------------------------------------------------------- app lock --
+  @override
+  String get appLockSubtitle => 'Beim Öffnen der App fragen';
+  @override
+  String get appLockLockedTitle => 'Aporah ist gesperrt';
+  @override
+  String get appLockUnlockReason => 'Aporah entsperren';
+  @override
+  String get appLockEnableReason => 'App-Sperre einschalten';
+  @override
+  String get appLockDisableReason => 'App-Sperre ausschalten';
+  @override
+  String unlockWith(String method) => 'Mit $method entsperren';
+  @override
+  String get biometricFingerprint => 'Fingerabdruck';
+  @override
+  String get biometricFace => 'Gesichtserkennung';
+  @override
+  String get biometricGeneric => 'Biometrie';
+  @override
+  String get biometricPasscode => 'Gerätecode';
+  @override
+  String get searchTermsAppLock => 'face id touch id optic id fingerabdruck gesicht app-sperre sperre sperren entsperren biometrie sicherheit code datenschutz';
+  @override
+  String get biometricFaceId => 'Face ID';
+  @override
+  String get biometricTouchId => 'Touch ID';
+  @override
+  String get biometricOpticId => 'Optic ID';
 }

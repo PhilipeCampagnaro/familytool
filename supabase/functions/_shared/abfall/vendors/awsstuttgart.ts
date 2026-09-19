@@ -149,7 +149,14 @@ async function awsFetchIcs(street: string, hnr: string): Promise<string | null> 
   const res = await fetchWithTimeout(`${AWS_ICS}?${qs}`, {
     headers: { 'User-Agent': UA, Accept: 'text/calendar, */*' },
   })
-  if (res.status === 404) return null
+  if (res.status === 404) {
+    // The city's own GIS being down is also a 404 — `{"message":"Failed to
+    // connect to gis6.stuttgart.de …","success":false}` (2026-09-18). That is an
+    // outage, not a vanished address, and must not ask the household to reconnect.
+    const body = await res.text().catch(() => '')
+    if (/Failed to connect|Couldn.t connect|timed out/i.test(body)) throw new Error('abfall upstream 503')
+    return null
+  }
   if (!res.ok) throw new Error(`abfall upstream ${res.status}`)
   const ics = (await res.text()).replace(/^\uFEFF/, '')
   if (!ics.includes('BEGIN:VEVENT')) return null

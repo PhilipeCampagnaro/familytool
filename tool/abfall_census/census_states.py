@@ -56,6 +56,7 @@ ASSIGN = {
     'regioit-awvlippe': ('Abfallwirtschaftsverband Lippe', 'NW'),
     'regioit-kranenburg': ('Gemeinde Kranenburg', 'NW'),
     # awido
+    'awido-ebu': ('EBU Ulm', 'BW'),
     'awido-aic-fdb': ('Landratsamt Aichach-Friedberg', 'BY'),
     'awido-ansbach': ('Landkreis Ansbach', 'BY'),
     'awido-awb-ak': ('AWB Landkreis Altenkirchen', 'RP'),

@@ -9,6 +9,7 @@ import '../state/spend_state.dart';
 import '../theme/app_icons.dart';
 import '../theme/tokens.dart';
 import '../widgets/anchored_menu.dart';
+import '../widgets/app_sheet.dart' show CardDivider;
 import '../widgets/bottom_nav.dart';
 import '../widgets/collapsing_header.dart';
 import '../widgets/empty_state.dart';
@@ -114,7 +115,7 @@ class SpendScreen extends ConsumerWidget {
         else ...[
           _BreakdownCard(summary: summary),
           const SizedBox(height: AppSpacing.blockGap),
-          _TransactionList(rows: summary.rows),
+          _TransactionList(summary: summary),
         ],
 
         // The way through to Apple Pay capture — one row, only while this phone
@@ -891,6 +892,13 @@ class SpendCard extends StatelessWidget {
   final Widget child;
   final Widget? trailing;
 
+  /// A line under [child], inside the card and below a rule — where the two
+  /// list cards print what they add up to. It is the card's job rather than
+  /// the list's because only the card knows whether its child bleeds to the
+  /// edges, and a total that sat at a different inset from the rows above it
+  /// read as a sixth row that had slipped.
+  final Widget? footer;
+
   /// A tap on the title, for the one card whose heading is a picker.
   final GlobalKey? titleKey;
   final VoidCallback? onTitleTap;
@@ -906,6 +914,7 @@ class SpendCard extends StatelessWidget {
     required this.title,
     required this.child,
     this.trailing,
+    this.footer,
     this.titleKey,
     this.onTitleTap,
     this.bleedChild = false,
@@ -921,7 +930,13 @@ class SpendCard extends StatelessWidget {
         ),
         if (onTitleTap != null) ...[
           const SizedBox(width: 5),
-          AppIcon(AppIcons.caretDown, size: AppGlyph.inline, flat: true, color: AppColors.muted),
+          // **Up *and* down, because this swaps between peers rather than
+          // opening something.** A lone caret-down is the app's disclosure
+          // mark — a section folding out, a card growing — and this heading
+          // does neither: it replaces what the card is showing with one of
+          // four. The pair is what the metric chip nine points above it
+          // already wears, and what `InlineDropdown` wears everywhere else.
+          AppIcon(AppIcons.caretUpDown, size: AppGlyph.inline, flat: true, color: AppColors.muted),
         ],
       ],
     );
@@ -969,19 +984,34 @@ class SpendCard extends StatelessWidget {
               : head,
           const SizedBox(height: 14),
           child,
-          if (bleedChild) const SizedBox(height: AppSpacing.cardPad),
+          // The footer carries the card's bottom padding where it is there, so
+          // a bled card does not stack the two.
+          if (footer case final foot?)
+            Padding(
+              padding: bleedChild
+                  ? const EdgeInsets.fromLTRB(AppSpacing.cardPad, 0, AppSpacing.cardPad, AppSpacing.cardPad)
+                  : EdgeInsets.zero,
+              child: foot,
+            )
+          else if (bleedChild)
+            const SizedBox(height: AppSpacing.cardPad),
         ],
       ),
     );
   }
 }
 
-/// The link in a card's heading that opens the page holding the rest of it.
+/// The link in a card's heading that opens the page behind it.
 ///
-/// **It is only ever drawn where there is something behind it.** "Alle
-/// anzeigen" over a list that is already all of them is a promise of a page
-/// with nothing new on it, which is how a reader learns to stop tapping the
-/// ones that do have more.
+/// **It is drawn whether or not the card is holding back rows**, and that is
+/// the point: the explore page is not "the same list, longer". It is the
+/// search field, the category picker and the filter chips, and a week with
+/// four payments in it is exactly when somebody wants to go and ask a wider
+/// question. The link used to appear only once the card had more to give, so
+/// the way through vanished on the narrow ranges — a heading that says "27
+/// Zahlungen" and cannot be tapped teaches the same lesson as one that leads
+/// nowhere. The count is not lost to that: it rides inside the link's own
+/// words on the payments card.
 class _ShowAll extends StatelessWidget {
   final String label;
   final Widget Function() page;
@@ -1005,6 +1035,47 @@ class _ShowAll extends StatelessWidget {
   }
 }
 
+/// The line at the foot of a list card: what everything above it comes to.
+///
+/// **The same figure the chart at the top of the page prints, deliberately.**
+/// It is not a sum of the rows on the card — five categories of fourteen, ten
+/// payments of two hundred — but of the whole stretch the page is showing, so
+/// the foot of the card and the headline can never disagree. What it buys is
+/// the scroll: somebody comparing two ranges or reading down a breakdown is at
+/// the bottom of the page, and the total was a screen and a half away.
+///
+/// Drawn under a rule rather than as one more row, and the label sits in the
+/// secondary ink, because it answers a different question from the lines above
+/// it and a bold "Gesamt" in the same weight as "Lebensmittel" reads as a
+/// category somebody invented.
+class SpendTotalRow extends StatelessWidget {
+  final int cents;
+  final String currency;
+
+  const SpendTotalRow({super.key, required this.cents, this.currency = 'EUR'});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Padding(padding: const EdgeInsets.only(top: 8, bottom: 10), child: CardDivider()),
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                L.s.spendTotal,
+                style: AppText.itemTitle.copyWith(color: AppColors.inkSecondary),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Text(formatMoneyShort(cents, currency: currency), style: AppText.itemTitle),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
 /// Where the money went — by category, by shop, or by who paid.
 ///
 /// **One card with a picker rather than three cards down the page.** They are
@@ -1013,7 +1084,8 @@ class _ShowAll extends StatelessWidget {
 /// why it carries a caret: a reader looking for "wo am meisten" looks at the
 /// heading that currently says something else.
 ///
-/// **Five rows, and "alle anzeigen" for the rest.** Five is what the ring shows
+/// **Five rows, and "alle anzeigen" for the rest — and for the filters even
+/// where there is no rest.** Five is what the ring shows
 /// and the two have to agree — a card listing fourteen categories under a
 /// drawing of five is a card contradicting the picture above it. The full list
 /// is a page rather than a longer card, because a breakdown somebody is reading
@@ -1055,12 +1127,16 @@ class _BreakdownCardState extends ConsumerState<_BreakdownCard> {
             ),
         ],
       ),
-      trailing: spendBreakdownRows(summary, _by, members).length <= rows.length
-          ? null
-          : _ShowAll(
-              label: L.s.spendShowAll,
-              page: () => SpendExplorePage(view: SpendExploreView.of(_by)),
-            ),
+      // Always, even where the five rows are already every one there is —
+      // see [_ShowAll]. The page this leads to is the filters, not a longer
+      // copy of this card.
+      trailing: _ShowAll(
+        label: L.s.spendShowAll,
+        page: () => SpendExplorePage(view: SpendExploreView.of(_by)),
+      ),
+      // Whatever the grouping, the rows are a cut of the same money, so the
+      // three of them foot up to the one figure the chart above prints.
+      footer: SpendTotalRow(cents: summary.totalCents, currency: spendCurrency(summary.rows)),
       child: Column(
         children: [
           for (final row in rows)
@@ -1111,24 +1187,27 @@ const int _purchasePreview = 10;
 /// tab bar — the charts, the breakdown and the wallet card included. The count
 /// that used to sit in the heading is not lost: it is inside the link, because
 /// a heading on a phone holds a title and one other thing.
+///
+/// **The link is there on a short week too**, where the heading used to print
+/// the count as plain text and the way through to search simply went — see
+/// [_ShowAll]. The count says the same thing inside the link as beside it.
 class _TransactionList extends ConsumerWidget {
-  final List<Spend> rows;
+  final SpendSummary summary;
 
-  const _TransactionList({required this.rows});
+  const _TransactionList({required this.summary});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final rows = summary.rows;
     final shown = rows.take(_purchasePreview).toList();
 
     return SpendCard(
       title: L.s.spendAllPurchases,
       bleedChild: true,
-      trailing: rows.length <= shown.length
-          ? Text(
-              L.s.spendCountShort(rows.length),
-              style: AppText.body.copyWith(color: AppColors.inkSecondary),
-            )
-          : _ShowAll(label: L.s.spendShowAllCount(rows.length), page: () => SpendExplorePage()),
+      trailing: _ShowAll(label: L.s.spendShowAllCount(rows.length), page: () => SpendExplorePage()),
+      // The range's total, not the ten rows' — the card is a window on the
+      // stretch and its foot says what the stretch came to.
+      footer: SpendTotalRow(cents: summary.totalCents, currency: spendCurrency(rows)),
       child: Column(children: [for (final spend in shown) SpendRow(spend: spend)]),
     );
   }

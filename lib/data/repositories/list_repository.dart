@@ -432,6 +432,25 @@ class ListRepository {
     return ShoppingListItem.fromMap(row);
   }
 
+  /// The picture on its own, or `null` for none — which on a Lebensmittel list
+  /// is the general shopping cart the row falls back to.
+  ///
+  /// Its own statement beside [setUnit] for the same reason: the icon comes out
+  /// of the picker while the name and the count are typed into the row, and an
+  /// edit of one must not restate the other. It matters more here than
+  /// anywhere, because `editItem` *derives* the icon from the name — writing
+  /// both together would hand the matcher back the decision the reader just
+  /// took off it.
+  Future<ShoppingListItem> setIcon(String itemId, String? iconKey) async {
+    final row = await _db
+        .from('list_items')
+        .update({'icon_asset': iconKey})
+        .eq('id', itemId)
+        .select(_itemColumns)
+        .single();
+    return ShoppingListItem.fromMap(row);
+  }
+
   /// The link on its own, or `null` to take it off again.
   ///
   /// Its own statement for the same reason [setUnit] is: the URL is pasted into

@@ -4,6 +4,7 @@ import '../models/calendar_connection.dart';
 import '../state/family_state.dart';
 import '../state/onboarding_state.dart';
 import '../theme/tokens.dart';
+import '../widgets/rhythm_picker.dart';
 import '../widgets/action_bar.dart';
 import '../widgets/app_sheet.dart';
 import '../widgets/confirmation.dart';
@@ -12,6 +13,8 @@ import '../widgets/family_avatar_button.dart';
 import '../widgets/glass.dart';
 import '../widgets/inline_dropdown.dart';
 import '../widgets/native_switch.dart';
+import '../widgets/address_privacy_note.dart';
+import '../widgets/house_number_field.dart';
 import '../widgets/settings_chrome.dart';
 import '../widgets/step_dots.dart';
 import '../widgets/toast_chip.dart';
@@ -989,6 +992,8 @@ class _AddressStep extends ConsumerStatefulWidget {
 
 class _AddressStepState extends ConsumerState<_AddressStep> {
   late final TextEditingController _addressController;
+  final _houseNrController = TextEditingController();
+  final _houseNrFocus = FocusNode();
 
   /// Whether the address field holds the keyboard. See the note on [action]
   /// below for why "Weiter" cares.
@@ -1003,23 +1008,48 @@ class _AddressStepState extends ConsumerState<_AddressStep> {
   @override
   void dispose() {
     _addressController.dispose();
+    _houseNrController.dispose();
+    _houseNrFocus.dispose();
     super.dispose();
   }
 
   OnboardingNotifier get _onboarding => ref.read(onboardingProvider.notifier);
 
-  void _pick(GeoAddress found) {
+  Future<void> _pick(GeoAddress found) async {
     // A bare postcode goes back into the field so the street can be typed after
-    // it; anything else is the answer, and the lookup starts on the spot.
+    // it; a street without its house asks for the number under it; anything
+    // else is the answer, and the lookup starts on the spot.
     final prefix = _onboarding.prefixQueryFor(found);
     if (prefix != null) {
       _addressController.text = prefix;
       _addressController.selection = TextSelection.collapsed(offset: prefix.length);
       return;
     }
+    if (_onboarding.askHouseNumber(found)) {
+      _addressController.text = found.label;
+      _houseNrController.clear();
+      _houseNrFocus.requestFocus();
+      return;
+    }
     FocusScope.of(context).unfocus();
     _addressController.text = found.label;
-    _onboarding.pickAddress(found);
+    await _onboarding.pickAddress(found);
+    _backToNumberIfRefused(found.houseNumber);
+  }
+
+  Future<void> _confirmHouseNumber() async {
+    final typed = _houseNrController.text;
+    FocusScope.of(context).unfocus();
+    await _onboarding.confirmHouseNumber(typed);
+    _backToNumberIfRefused(typed);
+  }
+
+  /// The vendor knew the street and not the house: the number field is back,
+  /// holding what was tried, with the keyboard up.
+  void _backToNumberIfRefused(String? tried) {
+    if (!mounted || ref.read(onboardingProvider).streetOnly == null) return;
+    _houseNrController.text = tried?.trim() ?? '';
+    _houseNrFocus.requestFocus();
   }
 
   /// The step's own way forward: file the address, create whatever is still
@@ -1029,6 +1059,18 @@ class _AddressStepState extends ConsumerState<_AddressStep> {
   Future<void> _continue() async {
     final state = ref.read(onboardingProvider);
     if (state.connecting) return;
+    // The waste questions are a stage of this step: "Weiter" puts them away
+    // and shows the calendars, and only the next "Weiter" leaves.
+    if (state.askingWaste) {
+      _onboarding.finishWasteQuestions();
+      return;
+    }
+    // A number typed and never sent — the keyboard dragged away before "Fertig"
+    // — is sent now rather than left behind with the calendar it would find.
+    if (state.streetOnly != null && _houseNrController.text.trim().isNotEmpty) {
+      await _confirmHouseNumber();
+      return;
+    }
     if (await _onboarding.connectLocalCalendars()) _onboarding.next();
   }
 
@@ -1101,7 +1143,15 @@ class _AddressStepState extends ConsumerState<_AddressStep> {
                   ],
                 ),
                 secondChild: const SizedBox(width: double.infinity),
-                crossFadeState: _typing ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+                // Folded, too, for everything the address still asks after the
+                // pick — the house number, the lookup, the rhythm questions —
+                // so those get the screen the suggestions had, and the hero
+                // comes back only with the answer: the calendars and their
+                // switches. Folding once and opening once, rather than opening
+                // between a pick and the question it raises.
+                crossFadeState: _typing || state.streetOnly != null || state.lookingUp || state.askingWaste
+                    ? CrossFadeState.showSecond
+                    : CrossFadeState.showFirst,
                 duration: const Duration(milliseconds: 260),
                 sizeCurve: Curves.easeOutCubic,
                 // Bottom-aligned, so the block slides up out of sight under
@@ -1140,7 +1190,12 @@ class _AddressStepState extends ConsumerState<_AddressStep> {
                     // from index 0 to index 1 is unmounted and rebuilt, which
                     // is the same trap [PinnedActionLayout] fell into with the
                     // body it sometimes wrapped in a `Stack`.
-                    if (state.found != null) GroupLabel(L.s.onboardFoundForYou) else const SizedBox.shrink(),
+                    if (state.askingWaste)
+                      GroupLabel(L.s.onboardRhythmTitle)
+                    else if (state.found != null)
+                      GroupLabel(L.s.onboardFoundForYou)
+                    else
+                      const SizedBox.shrink(),
                     SectionCard(
                       radius: AppRadii.card,
                       onSurface: true,
@@ -1149,7 +1204,8 @@ class _AddressStepState extends ConsumerState<_AddressStep> {
                   ],
                 ),
               ),
-              if (state.found case final found?) ...[
+              AddressPrivacyNote(),
+              if (state.found case final found? when !state.askingWaste) ...[
                 const SizedBox(height: 10),
                 SettingsNote(found.any ? L.s.onboardRenameLater : L.s.onboardNothingForAddress),
               ],
@@ -1168,6 +1224,26 @@ class _AddressStepState extends ConsumerState<_AddressStep> {
   /// address we settled on — so the step never grows a second half.
   List<Widget> _addressRows(OnboardingState state) {
     final picked = state.pickedAddress;
+    final street = state.streetOnly;
+    if (picked == null && street != null) {
+      return [
+        SettingsRow(
+          icon: AppIcons.house,
+          title: street.streetLine,
+          subtitle: street.townLine,
+          trailing: _clearButton(),
+        ),
+        FieldGroup(
+          label: L.s.houseNumberAsk,
+          hint: L.s.houseNumberAskHint,
+          child: HouseNumberField(
+            controller: _houseNrController,
+            focusNode: _houseNrFocus,
+            onSubmitted: _confirmHouseNumber,
+          ),
+        ),
+      ];
+    }
     if (picked == null) {
       return [
         FieldGroup(
@@ -1198,7 +1274,8 @@ class _AddressStepState extends ConsumerState<_AddressStep> {
         for (final found in state.addressResults)
           SettingsRow(
             icon: found.prefix ? AppIcons.mapPin : AppIcons.house,
-            title: found.label,
+            title: found.streetLine,
+            subtitle: found.townLine,
             onTap: () => _pick(found),
           ),
       ];
@@ -1207,23 +1284,63 @@ class _AddressStepState extends ConsumerState<_AddressStep> {
     return [
       SettingsRow(
         icon: AppIcons.house,
-        title: picked.label,
-        trailing: GestureDetector(
-          onTap: () {
-            _addressController.clear();
-            _onboarding.resetAddress();
-          },
-          behavior: HitTestBehavior.opaque,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-            child: AppIcon(AppIcons.x, size: 17, color: AppColors.muted),
-          ),
-        ),
+        title: picked.streetLine,
+        subtitle: picked.townLine,
+        trailing: _clearButton(),
       ),
       if (state.lookingUp) _BusyRow(L.s.onboardFindingCalendars),
-      if (state.found case final found?) ..._calendarRows(found, state),
+      // **The questions first, the switches after.** Whatever the waste vendor
+      // asks — the house off its list, a bin's rhythm — is asked on its own,
+      // in the search layout. A question under the Müllabfuhr switch put a form
+      // inside a list of toggles; the calendars it was for follow on "Weiter".
+      if (state.found case final found? when state.askingWaste)
+        ..._wasteQuestions(found)
+      else if (state.found case final found?)
+        ..._calendarRows(found, state),
     ];
   }
+
+  /// Everything the waste vendor asks before its calendar can be connected, in
+  /// the order it is asked: which house on its list, where the typed number
+  /// did not settle that, then how often each bin is emptied — for that house.
+  List<Widget> _wasteQuestions(LocalCalendars found) {
+    final coverage = found.abfall!;
+    return [
+      if (coverage.houseNumbers.isNotEmpty)
+        FieldGroup(
+          label: L.s.houseNumber,
+          hint: coverage.needsHouseNumber ? L.s.pickHouseNumberHint : L.s.multipleDistrictsHint,
+          child: Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final house in coverage.houseNumbers)
+                AnswerChip(
+                  label: house.nr,
+                  selected: found.house?.id == house.id,
+                  onTap: () => _onboarding.pickHouse(house),
+                ),
+            ],
+          ),
+        ),
+      if (found.rhythms.isNotEmpty)
+        RhythmPicker(choices: found.rhythms, picked: found.rhythm, onPick: _onboarding.pickRhythm),
+    ];
+  }
+
+  /// The X on the address row: back to an empty field.
+  Widget _clearButton() => GestureDetector(
+    onTap: () {
+      _addressController.clear();
+      _houseNrController.clear();
+      _onboarding.resetAddress();
+    },
+    behavior: HitTestBehavior.opaque,
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+      child: AppIcon(AppIcons.x, size: 17, color: AppColors.muted),
+    ),
+  );
 
   /// The two feeds the address produced — **rows of the address card, not a
   /// card of their own.**
@@ -1249,6 +1366,8 @@ class _AddressStepState extends ConsumerState<_AddressStep> {
             ? where
             : coverage?.needsHouseNumber == true
             ? L.s.wasteNeedsHouseNumber
+            : coverage?.uploadOnly == true
+            ? L.s.wasteUploadOnlyLater
             : coverage?.requested == true
             ? L.s.wasteRequested
             : L.s.wasteRequestHint,
@@ -1258,7 +1377,8 @@ class _AddressStepState extends ConsumerState<_AddressStep> {
         // find one. A lookup that *failed* (coverage null) offers nothing —
         // there is no town to file — and a vendor that only wants the house
         // number is not missing either.
-        missingAction: coverage == null || coverage.requested || coverage.needsHouseNumber
+        // A town served only by a file has nothing for us to set up either.
+        missingAction: coverage == null || coverage.requested || coverage.needsHouseNumber || coverage.uploadOnly
             ? null
             : _MissingAction(
                 label: L.s.wasteRequestAction,

@@ -13,8 +13,11 @@ import UIKit
   private var notificationsChannel: FlutterMethodChannel?
   private var reviewChannel: FlutterMethodChannel?
   private var shareChannel: FlutterMethodChannel?
+  private var biometricsChannel: FlutterMethodChannel?
+  private var calendarPageChannel: FlutterMethodChannel?
   private let localNotifications = LocalNotifications()
   private let mediaPicker = MediaPicker()
+  private let calendarPageBrowser = CalendarPageBrowser()
   private let mapSnapshot = MapSnapshot()
   private let nativeMenu = NativeMenu()
 
@@ -147,6 +150,25 @@ import UIKit
         ShareSheet.handle(call, result: result)
       }
       shareChannel = channel
+    }
+    // The app lock — Face ID, Touch ID or Optic ID, with the passcode behind
+    // them. See BiometricLock.swift and lib/state/app_lock_state.dart.
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "AporahBiometrics") {
+      let channel = FlutterMethodChannel(name: "aporah/biometrics", binaryMessenger: registrar.messenger())
+      channel.setMethodCallHandler { call, result in
+        BiometricLock.handle(call, result: result)
+      }
+      biometricsChannel = channel
+    }
+    // A town's waste-calendar page, opened in the app so its iCal export comes
+    // back as a file rather than going to Apple Calendar — see
+    // CalendarPageBrowser.swift and lib/services/calendar_page_browser.dart.
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "AporahCalendarPage") {
+      let channel = FlutterMethodChannel(name: "aporah/calendarPage", binaryMessenger: registrar.messenger())
+      channel.setMethodCallHandler { [calendarPageBrowser] call, result in
+        calendarPageBrowser.handle(call, result: result)
+      }
+      calendarPageChannel = channel
     }
   }
 }

@@ -938,7 +938,7 @@ class _ItemIcon extends StatelessWidget {
 
   final double? imageSize;
 
-  const _ItemIcon({super.key, required this.iconKey, this.size = 42, this.imageSize});
+  const _ItemIcon({required this.iconKey, this.size = 42, this.imageSize});
 
   @override
   Widget build(BuildContext context) {
@@ -993,6 +993,12 @@ class _ListDetail extends ConsumerWidget {
     // The grid, on this device only — see [ListViewMode]. `viewModeFor` already
     // refuses it for "Alle Artikel", which has no menu to switch from.
     final cards = state.viewModeFor(open.id) == ListViewMode.cards;
+
+    // Where a typed article goes from here — the list you are in, or the one
+    // the pooled view's add line is pointed at. Same question
+    // `ListNotifier.addItem` asks, through the same getter, so the chip cannot
+    // name one list while the write picks another.
+    final target = summary ? state.summaryTarget : open;
 
     // The article the undo pill is offering to put back: the one that just
     // moved, and only while it is *done*. Undoing it moves it again, which
@@ -1192,7 +1198,16 @@ class _ListDetail extends ConsumerWidget {
                     // for one article, not one of the articles, and a tile
                     // shaped like the others that opened a keyboard instead of
                     // checking something off would be the one tile that lies.
-                    _AddItemRow(grocery: summary || open.kind == ListKind.grocery),
+                    // In the pooled view the line files into **one** list —
+                    // the one its own chip names — rather than into "all of
+                    // them", which was never a place an article could go. That
+                    // list also decides whether the line behaves as a
+                    // Lebensmittel one, so the picture it previews is the
+                    // picture the article is about to get.
+                    _AddItemRow(
+                      grocery: (target ?? open).kind == ListKind.grocery,
+                      target: summary ? target : null,
+                    ),
                     if (!summary && !cards)
                       for (var i = 0; i < openItems.length; i++)
                         // Divider inside the collapsing block so it folds away with
@@ -1465,7 +1480,13 @@ bool _itemMatches(ShoppingListItem item, String query) {
 class _AddItemRow extends ConsumerStatefulWidget {
   final bool grocery;
 
-  const _AddItemRow({required this.grocery});
+  /// The list a typed article will be filed into, when that is a question the
+  /// reader can answer — the pooled "Alle Artikel" view, and only there. Null
+  /// inside a real list, where the list you are in is the answer and a chip
+  /// naming it would be the header repeated at the bottom of the screen.
+  final ShoppingList? target;
+
+  const _AddItemRow({required this.grocery, this.target});
 
   @override
   ConsumerState<_AddItemRow> createState() => _AddItemRowState();
@@ -1481,29 +1502,105 @@ class _AddItemRowState extends ConsumerState<_AddItemRow> {
   /// nobody can see they are still in.
   String? _unit;
 
+  /// A picture the reader chose by hand, out of [showIconPicker] — null while
+  /// the matcher is still the one answering, which is the ordinary case.
+  String? _pickedIcon;
+
+  /// The guessed picture was taken off with its own x: this article gets no
+  /// icon, and its row draws the general shopping cart [_ItemIcon] falls back
+  /// to. It is *not* "no picture at all" — on a Lebensmittel list even an
+  /// unmatched line still looks like shopping — it is "not that one".
+  ///
+  /// Sticky, because the guess is recomputed on every keystroke: without this
+  /// the wrong Paprika came back on the next letter typed, which is the
+  /// keystroke right after the reader said no to it.
+  bool _iconOff = false;
+
+  /// Both of the above, back to "ask the matcher" — after an add, and whenever
+  /// the line stops being a food line under a changed target list.
+  void _resetIcon() {
+    _pickedIcon = null;
+    _iconOff = false;
+  }
+
+  @override
+  void didUpdateWidget(_AddItemRow old) {
+    super.didUpdateWidget(old);
+    // The target list can change under a half-typed article — that is what the
+    // chip is for — and a Bohrmaschine has no business carrying the "Bund" the
+    // last list's chip put there. No `setState`: we are inside the rebuild that
+    // brought the new target.
+    if (!widget.grocery) {
+      _unit = null;
+      _resetIcon();
+    }
+  }
+
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
   }
 
+  /// [iconKey] is a suggestion chip's own picture, which comes with the article
+  /// it names and so outranks anything standing on the line.
   void _add(String text, {String? iconKey}) {
-    ref.read(listProvider.notifier).addItem(text, iconKey: iconKey, unit: _unit);
+    final chosen = iconKey ?? _pickedIcon;
+    ref.read(listProvider.notifier).addItem(
+      text,
+      iconKey: chosen,
+      // Nothing left for the matcher to do once the reader has answered — see
+      // [ListNotifier.addItem].
+      matchIcon: chosen == null && !_iconOff,
+      unit: _unit,
+    );
     _controller.clear();
     setState(() {
       _draft = '';
       _unit = null;
+      _resetIcon();
+    });
+  }
+
+  /// Corrects the picture by hand, in the same sheet every other icon in the
+  /// app is corrected in — seeded with what is on the line, so the grid opens
+  /// on the guess being overruled rather than at the top of the catalog.
+  Future<void> _pickIcon(String? current) async {
+    final picked = await showIconPicker(
+      context,
+      selected: current,
+      name: _draft,
+      subject: IconSubject.groceryArticle,
+    );
+    if (picked == null || !mounted) return;
+    setState(() {
+      _pickedIcon = picked;
+      _iconOff = false;
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final typed = _draft.trim().isNotEmpty;
     // The same call [ListNotifier.addItem] stores with, so the preview is the
     // icon the row will get.
     // Lebensmittel only, like the row it previews: nothing picks a symbol for a
     // Sonstige article any more (see [planItemIconKey]), so the circle stays a
     // circle until the reader chooses one themselves.
-    final preview = widget.grocery ? suggestIcon(_draft, subject: IconSubject.groceryArticle) : null;
+    final suggestion = widget.grocery ? suggestIcon(_draft, subject: IconSubject.groceryArticle)?.key : null;
+    // What will actually be stored: the reader's own pick, nothing where they
+    // took the guess off, or the guess.
+    final preview = _pickedIcon ?? (_iconOff ? null : suggestion);
+    // Whether there is a picture in the slot at all. With the guess taken off
+    // there still is one — the general cart the row will draw — so the line
+    // keeps showing what it is about to store instead of pretending the
+    // article arrives bare.
+    final showPicture = widget.grocery && typed && (preview != null || _iconOff);
+    // Whenever there is a picture, guessed or chosen. It is the only way to
+    // arrive at *no* picture — the picker's grid has no empty tile in it, on
+    // purpose, because nine tenths of the time it is opened to put something
+    // right rather than to take something away.
+    final canClear = widget.grocery && typed && preview != null;
     final suggestions = widget.grocery
         ? [
             for (final icon in groceryIconSuggestions(_draft))
@@ -1513,7 +1610,16 @@ class _AddItemRowState extends ConsumerState<_AddItemRow> {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 13),
+          // **9 on the left rather than 15, with the slot 6pt wider to match.**
+          // The picture is drawn 36pt across in what used to be a 24pt column,
+          // and a box that stops short of the picture it draws cannot be
+          // tapped on the part that sticks out: a render box hit-tests nothing
+          // outside its own bounds, so the left edge of the art — and, with a
+          // badge over it, the middle — answered nothing at all. Widening the
+          // box here moves nothing on screen: 9 + 36 + 6 is exactly the
+          // 15 + 24 + 12 it replaces, so the circle, the picture and the words
+          // all land where they did.
+          padding: const EdgeInsets.fromLTRB(9, 13, 15, 13),
           child: Row(
             children: [
               // One slot, not two. The empty check circle is what an add line
@@ -1528,47 +1634,83 @@ class _AddItemRowState extends ConsumerState<_AddItemRow> {
               // above it began at the checkbox — the add line read as indented
               // rather than as the next row. There is nothing to check off yet
               // and no article yet either, so the one circle carries both.
-              SizedBox(
-                width: 24,
-                height: 24,
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 160),
-                  child: preview == null
-                      ? AppIcon(
-                          AppIcons.circle,
-                          key: const ValueKey('empty'),
-                          size: 24,
-                          color: AppColors.idleRing,
-                        )
-                      // Drawn over the slot rather than inside it: the circle is
-                      // 24 because a checkbox is, and a photograph of a Paprika
-                      // shrunk to a checkbox is a smudge. The slot keeps its
-                      // width so the words don't move, and the picture spills
-                      // symmetrically into the padding either side of it —
-                      // close to the 42 it will be drawn at once the article is
-                      // in the list.
-                      : OverflowBox(
-                          maxWidth: 36,
-                          maxHeight: 36,
-                          child: widget.grocery
-                              ? _ItemIcon(
-                                  key: ValueKey(preview.key),
-                                  iconKey: preview.key,
-                                  size: 36,
-                                  imageSize: 36,
+              // The picture is a **control** as soon as there is one: the
+              // matcher is a guess, and a guess you can see and can't touch is
+              // worse than no guess at all. Tapping it opens the picker; the
+              // little x takes it off. Both inside the field's own tap region,
+              // or the pointer-down would be the tap that drops the focus and
+              // the keyboard would leave with the draft half typed — the same
+              // trap [_UnitButton] documents.
+              TextFieldTapRegion(
+                child: SizedBox(
+                  // The picture's own width, so all of it takes taps. It is
+                  // still the check circle's column: the circle is centred in
+                  // here and lands on the 15pt margin every row below it starts
+                  // at.
+                  width: 36,
+                  height: 24,
+                  child: Stack(
+                    // The picture is 36 tall in a 24 box and the badge hangs
+                    // off its corner; Stack clips by default.
+                    clipBehavior: Clip.none,
+                    children: [
+                      GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: showPicture ? () => _pickIcon(preview) : null,
+                        child: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 160),
+                          child: !showPicture
+                              ? Align(
+                                  key: const ValueKey('empty'),
+                                  child: AppIcon(AppIcons.circle, size: 24, color: AppColors.idleRing),
                                 )
-                              : KeyedSubtree(
-                                  key: ValueKey(preview.key),
-                                  child: IconTile(
-                                    iconKey: preview.key,
-                                    size: 36,
-                                    imageSize: AppText.markImage(36),
-                                  ),
+                              // Taller than the box rather than inside it: the
+                              // circle is 24 because a checkbox is, and a
+                              // photograph of a Paprika shrunk to a checkbox is
+                              // a smudge. It spills into the row's own vertical
+                              // padding — close to the 42 it will be drawn at
+                              // once the article is in the list.
+                              : OverflowBox(
+                                  key: ValueKey(preview ?? 'general'),
+                                  maxHeight: 36,
+                                  // A null key here is the general cart, which
+                                  // is exactly what the row will draw for an
+                                  // article carrying no icon.
+                                  child: _ItemIcon(iconKey: preview, size: 36, imageSize: 36),
                                 ),
                         ),
+                      ),
+                      if (canClear)
+                        // The picture's top-left corner, half on the art and
+                        // half off it, which is where a phone puts this badge
+                        // everywhere else. On this art that corner is also the
+                        // emptiest part of it — the grocery pictures are
+                        // re-framed to an ~86% subject fill, so a tomato's own
+                        // edge is well inside the badge.
+                        //
+                        // **It hangs out by 4pt and no further.** Whatever of
+                        // it falls outside the box above takes no taps, and it
+                        // must leave the picture the bigger half: the middle of
+                        // the art is where a thumb goes to *correct* the
+                        // picture, and a badge that claimed it turned the
+                        // commonest tap on the line into the rarest action.
+                        Positioned(
+                          left: -4,
+                          top: -4,
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: () => setState(() {
+                              _iconOff = true;
+                              _pickedIcon = null;
+                            }),
+                            child: _ClearIconBadge(),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 6),
               Expanded(
                 child: TextField(
                   controller: _controller,
@@ -1579,7 +1721,14 @@ class _AddItemRowState extends ConsumerState<_AddItemRow> {
                     isDense: true,
                   ),
                   textInputAction: TextInputAction.done,
-                  onChanged: (v) => setState(() => _draft = v),
+                  onChanged: (v) => setState(() {
+                    _draft = v;
+                    // An emptied line is a new question: the picture the last
+                    // article's name was given, or had taken off, has nothing
+                    // left to be about. Held any longer it would be a setting
+                    // with nothing on screen saying it is in force.
+                    if (v.trim().isEmpty) _resetIcon();
+                  }),
                   onSubmitted: (v) => _add(v),
                 ),
               ),
@@ -1591,6 +1740,14 @@ class _AddItemRowState extends ConsumerState<_AddItemRow> {
               if (widget.grocery && _draft.trim().isNotEmpty) ...[
                 const SizedBox(width: 8),
                 _UnitButton(current: _unit, chip: true, onPicked: (u) => setState(() => _unit = u)),
+              ],
+              // Rightmost, and there whether anything is being typed or not:
+              // it says where the line is pointed, which is worth knowing
+              // *before* the article is named rather than after. Outside the
+              // unit chip so the two don't swap places as the draft empties.
+              if (widget.target case final target?) ...[
+                const SizedBox(width: 8),
+                _TargetListButton(list: target),
               ],
             ],
           ),
@@ -1616,6 +1773,133 @@ class _AddItemRowState extends ConsumerState<_AddItemRow> {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// The x over the guessed picture on the add line: takes it off and leaves the
+/// article the general shopping cart instead.
+///
+/// It is deliberately *not* the app's bare [AppIcons.x] with padding around it,
+/// which is how every other "take this off" in the app is drawn. Those all sit
+/// on a card; this one sits on full-colour art drawn for white paper, where a
+/// grey glyph lands on a tomato as often as on the background. So it brings its
+/// own ground — and with the ground it is the badge every photo grid on the
+/// phone puts in that corner, which is the one place it does not need a label.
+///
+/// 18pt across, and **not a pixel of padding around it** — it is drawn over
+/// another control, so every extra millimetre of target is a millimetre taken
+/// off the picture's own. Under the 44 a button is owed, which is the trade the
+/// corner of a 36pt picture forces; what makes it safe is that nothing here is
+/// destructive — the picture it takes off is a guess nobody typed, and the
+/// picker is one tap away either way.
+class _ClearIconBadge extends StatelessWidget {
+  static const _size = 18.0;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: _size,
+      height: _size,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: AppColors.surfaceAlt,
+        shape: BoxShape.circle,
+        // The ring is what tells it from the white the grocery art is drawn on
+        // — and on dark, from the white disc the art keeps under it.
+        border: Border.all(color: AppColors.hairline),
+      ),
+      child: AppIcon(AppIcons.x, size: 11, color: AppColors.inkSecondary),
+    );
+  }
+}
+
+/// The list chip at the end of the pooled view's add line: the icon of the list
+/// the next article lands in, and the menu that points it somewhere else.
+///
+/// It exists because "Alle Artikel" is a fine place to *read* a shopping list
+/// and was no place to write one. The line filed into whichever list came
+/// first, silently — so the one view a family keeps open all day was the one
+/// where remembering the Zahnpasta put it in the Baumarkt list. The chip is the
+/// smallest honest fix: the target is now named on the line that uses it, and
+/// naming it makes it changeable in the same gesture.
+///
+/// The icon alone, not the name. The menu spells every list out and ticks the
+/// one in force, and a name here would either squeeze the field it sits beside
+/// or ellipsize into "Wochen…" — the icon is what the reader already picks
+/// their lists out by on the overview.
+class _TargetListButton extends ConsumerStatefulWidget {
+  final ShoppingList list;
+
+  const _TargetListButton({required this.list});
+
+  @override
+  ConsumerState<_TargetListButton> createState() => _TargetListButtonState();
+}
+
+class _TargetListButtonState extends ConsumerState<_TargetListButton> {
+  final _anchorKey = GlobalKey();
+
+  Future<void> _pick() async {
+    final state = ref.read(listProvider);
+    final notifier = ref.read(listProvider.notifier);
+    await showAnchoredMenu(
+      context: context,
+      anchorKey: _anchorKey,
+      title: L.s.whichList,
+      items: [
+        for (final l in state.lists)
+          // A guest list is never a destination — see
+          // [ListScreenState.summaryTargetId].
+          if (!state.guestListIds.contains(l.id))
+            AnchoredMenuItem(
+              label: l.name,
+              // The tick, exactly as [_UnitButton] does it: UIKit's own where
+              // UIKit draws the menu, and a glyph in the icon column where the
+              // app draws its panel. The list's own icon can come to neither —
+              // a `UIMenu` row takes an SF Symbol and a grocery picture is a
+              // PNG.
+              selected: l.id == widget.list.id,
+              icon: l.id == widget.list.id ? AppIcons.check : AppIcons.circle,
+              onSelected: () => notifier.setSummaryTarget(l.id),
+            ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return TextFieldTapRegion(
+      // Without this the chip's own tap is the tap that takes the focus off the
+      // field — the keyboard goes away on pointer-down and the draft is left
+      // sitting there while the menu opens over it. Same fix, same reason as
+      // [_UnitButton]'s.
+      child: GestureDetector(
+        key: _anchorKey,
+        behavior: HitTestBehavior.opaque,
+        onTap: _pick,
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(7, 4, 5, 4),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceAlt,
+            borderRadius: BorderRadius.circular(AppRadii.chip),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // No disc: the chip is already the ground this icon sits on, and
+              // a disc inside it would be a second one — see [IconTile.disc].
+              IconTile(
+                iconKey: widget.list.iconKey,
+                size: 22,
+                imageSize: AppText.markImage(22),
+              ),
+              const SizedBox(width: 2),
+              AppIcon(AppIcons.caretDown, size: 12, color: AppColors.mutedLight),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -1785,9 +2069,9 @@ class _ItemRowState extends ConsumerState<_ItemRow> {
             // space, so the two at the same nominal size read as two
             // different sizes — the photo as the loudest thing on the screen,
             // the article beside it as an afterthought.
-            SizedBox(
-              width: 42,
-              height: 42,
+            _RowPicture(
+              item: item,
+              photo: photo,
               child: Center(
                 child: ClipOval(
                   // The copy on this device while the session that picked it
@@ -1799,7 +2083,7 @@ class _ItemRowState extends ConsumerState<_ItemRow> {
             ),
             const SizedBox(width: 12),
           ] else if (_isGroceryList(ref, item.listId)) ...[
-            _ItemIcon(iconKey: item.iconKey),
+            _RowPicture(item: item, child: _ItemIcon(iconKey: item.iconKey)),
             const SizedBox(width: 12),
           ] else if (_listHasSymbols(ref, item.listId)) ...[
             _SymbolSlot(iconKey: item.iconKey),
@@ -1939,6 +2223,106 @@ class _ItemRowState extends ConsumerState<_ItemRow> {
             child: RowMenuButton(items: _itemMenu(context, ref, item)),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// The picture in front of an article on its row — the grocery art or the
+/// photo that replaced it — as a control of its own.
+///
+/// **The first tap puts the x on it; it does not act.** A picture is the
+/// biggest thing on the row and a thumb lands on it by accident, so a tap that
+/// changed it straight away would be a mis-tap with consequences. With the x
+/// showing, the x takes the picture off — a grocery picture goes back to the
+/// general cart, a photo comes off the article — and a second tap on the
+/// grocery art opens the picker to put the right one in. Tapping anywhere else
+/// puts the x away again.
+///
+/// An article already wearing the general cart has nothing to take off, so its
+/// first tap goes straight to the picker.
+class _RowPicture extends ConsumerStatefulWidget {
+  final ShoppingListItem item;
+
+  /// The attached photo drawn in the slot, when there is one — the x then
+  /// removes that rather than the grocery picture under it.
+  final ItemAttachment? photo;
+  final Widget child;
+
+  const _RowPicture({required this.item, this.photo, required this.child});
+
+  @override
+  ConsumerState<_RowPicture> createState() => _RowPictureState();
+}
+
+class _RowPictureState extends ConsumerState<_RowPicture> {
+  bool _armed = false;
+
+  void _onTap() {
+    final photo = widget.photo;
+    if (photo == null && widget.item.iconKey == null) {
+      _editItemIcon(context, ref, widget.item);
+      return;
+    }
+    if (!_armed) {
+      setState(() => _armed = true);
+      return;
+    }
+    setState(() => _armed = false);
+    // A photo has no picker behind it — the art under it is not what the row
+    // shows — so the second tap only puts the x away.
+    if (photo == null) _editItemIcon(context, ref, widget.item);
+  }
+
+  void _clear() {
+    setState(() => _armed = false);
+    final notifier = ref.read(listProvider.notifier);
+    if (widget.photo case final photo?) {
+      notifier.removeAttachment(widget.item, photo);
+    } else {
+      notifier.setItemIcon(widget.item, null);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return TapRegion(
+      onTapOutside: _armed ? (_) => setState(() => _armed = false) : null,
+      child: SizedBox(
+        width: 42,
+        height: 42,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: _onTap,
+                child: widget.child,
+              ),
+            ),
+            // Inside the slot's own box rather than hanging off it: a render
+            // box takes no taps outside its bounds, and the badge sitting on
+            // the picture's corner is still on the picture.
+            Positioned(
+              left: 0,
+              top: 0,
+              child: IgnorePointer(
+                ignoring: !_armed,
+                child: AnimatedScale(
+                  scale: _armed ? 1 : 0,
+                  duration: const Duration(milliseconds: 140),
+                  curve: Curves.easeOutBack,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: _clear,
+                    child: _ClearIconBadge(),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -2705,6 +3089,22 @@ Future<void> _deleteItem(BuildContext context, WidgetRef ref, ShoppingListItem i
   }
 }
 
+/// Corrects the picture in front of an article, from its own row menu.
+///
+/// Seeded with the article's name and its current picture, so the picker opens
+/// on the guess being overruled — the same call the add line makes while the
+/// article is still being typed.
+Future<void> _editItemIcon(BuildContext context, WidgetRef ref, ShoppingListItem item) async {
+  final picked = await showIconPicker(
+    context,
+    selected: item.iconKey,
+    name: item.text,
+    subject: IconSubject.groceryArticle,
+  );
+  if (picked == null) return;
+  await ref.read(listProvider.notifier).setItemIcon(item, picked);
+}
+
 /// The row menu shared by an open item and a checked-off one.
 ///
 /// Labels are the bare noun — "Foto", not "Foto hinzufügen". Every row of a
@@ -2743,6 +3143,34 @@ List<AnchoredMenuItem> _itemMenu(BuildContext context, WidgetRef ref, ShoppingLi
       symbol: 'link',
       onSelected: () => _editLink(context, ref, item),
     ),
+    // The picture in front of the article, on a Lebensmittel list only — a
+    // Sonstige row draws none, so there would be nothing to correct. It is the
+    // same picker the add line opens, reached from the place the mistake is
+    // actually noticed: the matcher's guess looks right while you are typing
+    // and wrong once the row is sitting in the list.
+    // `ref.read`, not [_isGroceryList]'s watch: this menu is also built inside
+    // the grid tile's long-press callback, and a watch outside a build throws.
+    if (ref.read(listProvider).listById(item.listId)?.kind == ListKind.grocery) ...[
+      AnchoredMenuItem(
+        label: L.s.symbol,
+        icon: AppIcons.image,
+        symbol: 'photo',
+        onSelected: () => _editItemIcon(context, ref, item),
+      ),
+      // Back to the general shopping cart, which is what a Lebensmittel row
+      // with no icon draws — so this row takes the wrong picture off rather
+      // than leaving a hole. Only while there is one: it is the guess it
+      // removes, and there is nothing to remove from a row that matched
+      // nothing.
+      if (item.iconKey != null)
+        AnchoredMenuItem(
+          label: L.s.removeSymbol,
+          icon: AppIcons.x,
+          symbol: 'xmark',
+          destructive: true,
+          onSelected: () => ref.read(listProvider.notifier).setItemIcon(item, null),
+        ),
+    ],
     // The two system pickers, straight through to UIKit — see
     // lib/services/media_picker.dart. No Files row: what an article on a
     // shopping list wants beside it is a picture of the thing, and the

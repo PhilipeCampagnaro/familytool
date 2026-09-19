@@ -259,7 +259,7 @@ Outside the 16-day horizon there is simply no entry, and the strip reserves the 
 | Reading, WMO→condition→icon/skin, hourly parsing, sample time + key | [lib/models/weather.dart](../lib/models/weather.dart) |
 | The icons themselves (Meteocons, MIT, **recoloured** — see below) | [assets/weather/](../assets/weather/) |
 | `WeatherSkin` / `AppSkies` — the forecast card's wash and ink | [lib/theme/tokens.dart](../lib/theme/tokens.dart) |
-| Open-Meteo HTTP, geocode + forecast, in-flight de-dup | [lib/data/repositories/weather_repository.dart](../lib/data/repositories/weather_repository.dart) |
+| Photon geocode + Bright Sky forecast, in-flight de-dup | [lib/data/repositories/weather_repository.dart](../lib/data/repositories/weather_repository.dart) |
 | Device cache (places forever, forecasts 1 h) | [lib/services/weather_cache.dart](../lib/services/weather_cache.dart) |
 | `weatherProvider`, resolve pass, forecast window | [lib/state/weather_state.dart](../lib/state/weather_state.dart) |
 
@@ -272,29 +272,40 @@ Outside the 16-day horizon there is simply no entry, and the strip reserves the 
   on the dark surface, which is the pair that had to hold at once because one file is drawn on both
   grounds. Sun and moon were already legible and are untouched. MIT permits it; the licence stays in
   the folder. `WeatherReading.iconAsset` says the same thing beside the mapping.
-- **Provider: Open-Meteo** — free, no API key, and nothing in the payload that names the household,
-  so it is called **straight from the app**. It is the one external service with no Edge Function
-  in front of it, deliberately: a proxy would add a hop, a deploy and a place for household
-  addresses to be logged.
-  - **What that costs, stated honestly.** This used to be written as "no personal data on the
-    wire", which is wrong. The request carries a coordinate and an hour, and because it leaves the
-    phone, Open-Meteo also sees the **user's IP address** — which the Edge Function route would
-    have hidden behind Supabase's. An IP plus a residential coordinate plus a timestamp is personal
-    data under the DSGVO, so this is a trade, not a freebie. It stays the right trade: Open-Meteo
-    is German-hosted, so there is no third-country transfer to paper over, the coordinate is an
-    *appointment's* town rather than the device's GPS, and a forecast request reveals far less than
-    the proxy's own logs would have accumulated. But the service belongs in the
-    Datenschutzerklärung, and if the app ever needs to shrink its external footprint, this is the
-    one place where moving *behind* an Edge Function would improve privacy rather than not.
-- Hourly/16-day forecast:
-  `GET https://api.open-meteo.com/v1/forecast?latitude=..&longitude=..&hourly=temperature_2m,weather_code,precipitation_probability,is_day&forecast_days=16&timezone=auto`
-  Geocoding (place → lat/lon):
-  `https://geocoding-api.open-meteo.com/v1/search?name=<query>&count=5&language=de&format=json`
-  (`current=…` is unused — every reading the app shows is a future hour, which the hourly block
-  already covers.)
-- **`timezone=auto` is load-bearing.** Hours come back local to the forecast point and without a
-  zone suffix, which is exactly what an event's own local start is — so `DateTime.parse` gives
-  something that compares directly, with no conversion anywhere.
+- **Providers: Bright Sky (forecast) and Photon (places), since 2026-09-18.** Open-Meteo served
+  both until then and was dropped because its free API is **non-commercial only** — its terms name
+  "apps that have subscriptions" as commercial, and Aporah Plus is one; the paid plan was the
+  alternative. The replacements are free for commercial use, need no key, and both require a
+  credit, which `_WeatherCard` prints ("DWD · OpenStreetMap"):
+  - **Bright Sky** (`api.brightsky.dev/weather?lat&lon&date&last_date`) is a free JSON front for
+    the **Deutscher Wetterdienst's** open data (MOSMIX forecast, observations for past hours). The
+    data is the DWD's under CC BY 4.0 / GeoNutzV — commercial reuse allowed, the DWD named as the
+    source. Horizon **10 days** (was 16). Hourly, and it names a sky (`partly-cloudy-night`, `rain`)
+    rather than numbering it, so `brightSkyForecast` in `models/weather.dart` maps each icon back to
+    a WMO code and the cache, icons and skins are untouched. Its reach is Germany and its
+    surroundings — the launch market. **If the app ships abroad, MET Norway's `locationforecast`
+    is the worldwide equivalent** on the same terms (CC BY 4.0, free, a User-Agent required, cache
+    responses, ≤ 20 req/s per application in total).
+  - **Photon** (`photon.komoot.io/api/?q&limit&lang=de`) — OpenStreetMap data (ODbL), free under
+    fair use; the Abfall address search already uses it server-side. It knows **addresses**, which
+    Open-Meteo's geocoder never did, and it matches names fuzzily and globally, which is the new
+    risk: "Kita Sonnenschein" is somewhere in Berlin, "Raum" comes back as "Raumbach". So
+    `_fetchPlace` accepts the whole line only if the hit's city/postcode/district/county mentions a
+    town the line names, and a town-only query only if Photon calls the hit a `city`/`district`
+    *and* its name is in the query. Everything else is a miss, and a miss falls back to the home
+    town — a wrong town's weather is worse than the household's own.
+  - **What that costs, stated honestly.** A place name or coordinate and an hour leave the phone
+    with the **user's IP address**, which the Edge Function route would have hidden behind
+    Supabase's. An IP plus a residential place plus a timestamp is personal data under the DSGVO,
+    so both providers belong in the Datenschutzerklärung. **Where each is hosted is not yet
+    checked** — Open-Meteo's German hosting was part of the old argument, and it has to be
+    re-established for these two before the privacy text is written. If the app ever needs to
+    shrink its external footprint, this is the one place where moving *behind* an Edge Function
+    would improve privacy rather than not.
+- **Times are made device-local.** Bright Sky answers with offsets; `date`/`last_date` are sent as
+  local midnight *with* the phone's offset (a bare date is read as UTC midnight and drops the first
+  two hours of a German day), and each timestamp is `.toLocal()`ed, which is how an event's start is
+  held too.
 - **Location, per event**: the event's own free-text `loc` — the same string that already opens
   Maps — geocoded, falling back to the household's town when it is empty *or* unplaceable
   ("Turnhalle" is far more often the family's own town than somewhere else). The home town is
@@ -694,7 +705,7 @@ The single largest thing in the old codebase (~1,400 lines) and the least portab
 Vendor families, each one API pattern covering many municipalities: `regioit` (AbfallNavi, 27
 regions, JSON `/rest/orte → strassen → termine`), `awido` (Cubefour, ~46 clients / 1,550 towns —
 `client=` is a *path* segment on `getPlaces` and a *query* param everywhere else, which cost a
-day), `jumomind` (MyMuell, ~22 services / 1,100 towns — send `Accept-Encoding: identity`, their
+day), `jumomind` (~21 authority apps; the nationwide MyMüll host is removed — send `Accept-Encoding: identity`, their
 servers mis-serve some compressed responses), `abfallio` (abfall.io legacy widget — not JSON at
 all but a multi-step HTML form whose hidden inputs carry accumulating server state; 17 of 44 keys
 have since migrated to a v3 app API and 401), `ctrace` (no street enumeration exists, so coverage
@@ -956,13 +967,394 @@ the next refresh is what the household sees; no reconnect, no re-upload. The sha
   München's shape. But the address is a uuid rather than a signed link, and a uuid captured by the
   Wayback Machine in **December 2025** returns the 2026 calendar when fetched today — so the year
   advances underneath a key that does not change, and nobody has to reconnect.
+- **Leipzig is a calendar year** (today → the last published pickup, 24 December on 2026-09-18);
+  `year`/`date` are ignored, so 2027 appears when the city publishes it. **The Athos portal**
+  (Dortmund, Schaumburg, Hameln-Pyrmont, Landkreis Karlsruhe) is the same, read from whichever of
+  its two sources reaches further. **AbfallPlus v3 takes a free date range**, so the read asks up
+  to the end of next year and there is no rollover at all — Osterholz already shows January 2027.
+
+**Leipzig, Dortmund and Essen (2026-09-18) — three families, and what each one teaches.**
+
+- **Leipzig (`srl.ts`) is Hamburg's shape.** `rest/Navision/Streets?search=` sits in the Alpine.js
+  `x-data` of the city's own page and returns every house on the street with its `position_nos`;
+  the ICS is those numbers comma-joined. Three traps: without `name` *and* `mode` the ICS answers
+  "Curently in Maintenance Mode." with a 200, so that text is not an outage signal; without
+  `time_allday=true` every pickup is a 05:30–13:30 "(Abholzeit)" block; and the UIDs are random per
+  request, so ours are built from the houses and the day. DTEND equals DTSTART, and is moved to the
+  next day.
+- **Dortmund (`athos.ts`) is a platform, not a city.** EDG's iframe is an Athos "WasteManagement"
+  servlet, and the same product runs Schaumburg, Hameln-Pyrmont and Landkreis Karlsruhe — so the
+  one adapter brought four providers. It is a **stateful** form walk (GET → CITYCHANGED →
+  STREETCHANGED → forward; skip one and it answers "Bitte wählen Sie eine vollständige Adresse"),
+  and it differs per tenant in ways read off the form rather than configured: `Ort` is a
+  **first letter** in Dortmund and a town elsewhere, the house number a `<select>` or a text field,
+  and the `ApplicationName` itself differs by build (Hameln's wrong one lands on "Willkommen", no
+  error). **Its own iCal link is keyless (`AboID` is unchecked) but its horizon is a tenant
+  setting** — two pickups per bin in Dortmund, the year in Schaumburg — while the result page is
+  the reverse, so the read takes both and keeps whichever reaches further, never merging them.
+- **Essen (`abfallplus.ts`) was never missing a vendor, only a protocol.** The page embeds
+  `<abfallplus-publisher key=…>` — an abfall.io key — and the same `waction=init` the legacy widget
+  posts now answers JSON with an `apiKey` for `widgets.abfall.io/graphql`. That is why keys looked
+  dead to `abfallio.ts`. The old `abfallkalender.ebe-essen.de` is NXDOMAIN. **Which bins are the
+  household's is `PUB_ABFALLTYPEN.checked`**; asking for everything gives Essen's twenty district
+  Schadstoffmobil stops. Duisburg, Reutlingen, Märkisch-Oderland, Nordsachsen and Osterholz came
+  with it. **Three that answer are left out on purpose** — Göttingen and Schwarzwald-Baar publish
+  every rhythm of one bin side by side for the household to tick, and Calw plans per Ortsteil —
+  see the note on `ABFALLPLUS` in `abfall_providers.ts`.
+- **The postcode fallback in `resolve.ts` can hand a town somebody else's street.** An address in
+  a town nobody serves is retried under each place sharing its postcode, so "Torgauer Straße,
+  04838 Eilenburg" (not ASG Nordsachsen's) resolved to *Mockrehna's* Torgauer Straße. AbfallPlus
+  now accepts a different city only when the geocoded town is one of its districts (`inCity`).
+  **The same hole is open for every other Landkreis family** (regio-iT, AWIDO, Athos, …), whose
+  towns carry no postcodes; it is noted here rather than fixed, because narrowing the fallback
+  changes resolution for 140 providers and wants its own census.
+
+**Dresden, Hannover, Bielefeld and Wuppertal (2026-09-18, second batch).**
+
+- **Bielefeld is Athos again, one build further on.** The production path is
+  `WasteManagementBielefeldTest` (the one without "Test" is a 404), the whole page arrives as
+  `var text = '<!DOCTYPE HTML>…'` for an iframe to write, the form carries ticked bin checkboxes and
+  a `Zeitraum` radio of **October-to-September years**, and labels are numbered where the dates are
+  not (`Label1M` / `TermineDatumM_1`). `athos.ts` now unwraps the script, posts back whatever is
+  ticked, and walks every `Zeitraum` and joins them — on 18 September the ticked year starts in a
+  fortnight and today's pickups are only in the other.
+- **Dresden (`srdd.ts`) is an Apache Wicket app**, so the session is a cookie set inside a 302 (a
+  cookieless fetch loops 20 redirects) and each step is an Ajax behaviour: POST the street to set
+  the model, GET the house `<select>`, POST "Jetzt finden" for the `STANDORT`. **The select's ids
+  are not the STANDORT** (Neumarkt 6: 71676 vs 80542). The ICS then takes any
+  `DATUM_VON`/`DATUM_BIS`, so there is no rollover. Incorporated villages repeat street names with a
+  tag — "Dorfstraße (CB)" — and only a postcode we can place picks a tagged twin. A house picked
+  from the list is stored as `h<app id>` and looked up on every read, because the client connects
+  with the chip's id and that id is not the calendar's.
+- **Hannover (`aha.ts`) brought the whole Region**: 21 municipalities on one stateless TYPO3 form
+  whose last POST *is* the ICS. Street labels carry their district ("Voltastr. / Vahrenwald"), and
+  since the geocoder gives none, every same-named candidate is asked for the house number and only
+  those that know it survive; two survivors become chips. The **Ladeort** is where the bins are
+  emptied — a corner house has two — and the one written as the household's own door wins. A
+  calendar year: today to 31 December, `jahr` ignored.
+- **Wuppertal (`awgwuppertal.ts`) plans per street**, except where it doesn't: the form's 303 goes
+  either to the street's calendar or to a list of houses, each linking its own month view. Every
+  link is **cHash-signed and an unsigned one is a 404**, so the read walks the form each time and
+  takes every `action=ics` year the page offers — 2026 and 2027 on 18 September, which is the whole
+  rollover. "Restmüll-50%" (the fortnightly tariff) is dropped: it only ever shares a day with the
+  weekly "Restmüll".
+- **Stuttgart reports its own outage as a 404.** `api/ical` answered `{"message":"Failed to
+  connect to gis6.stuttgart.de …"}` with a 404 during this batch's probe, which the adapter read as
+  a vanished address and turned into `reconnect_required`. It is now an upstream error, so a
+  connected household waits out the outage instead of being told to reconnect.
+- **Next:** Bonn, Augsburg, Freiburg, Hagen, Oldenburg, Leverkusen and Würzburg all sit on the
+  Abfall+ **app** backend — one more platform, seven cities.
+
+**The last cities (2026-09-19): Rostock, Reutlingen — and why not Koblenz.** Reutlingen was never
+the Landkreis's to serve: the city collects itself (TBR), and tbr-reutlingen.de embeds its own
+AbfallPlus publisher key (`1bf5dd38…`; the `bcb02770…` legacy script in the sidebar answers 401).
+It needed one provider row, and asks Restmüll 2-/4-wöchentlich through the existing radiogroup
+path. **Rostock** is `vendors/sro.ts`: the Stadtentsorgung's search answers an address key only when
+"Ich bin als Eigentümer, Mieter oder Beauftragter zur Abfrage … berechtigt" is ticked. What that box
+guards is the result page's container numbers; we tick it once, at connect, for the address the
+household is connecting, store the key, and read only the ICS (`(period)/year` plus the
+period-less next dates, which cross New Year — `(period)/next` is a 500). If that is ever judged
+wrong, the fix is an in-app confirmation rather than dropping the city. **Koblenz** is declined:
+Rest- and Biotonne days are given out by phone only, holiday shifts as a JPG, and for 2026 not even
+the Wertstoff ICS files are linked. A partial calendar without the grey bin would look complete and
+be wrong, so the town stays on "Anfragen".
+
+**The other five rhythm cities (2026-09-19): Mönchengladbach, Siegen, Hildesheim, Heidelberg,
+Bremerhaven.** One adapter each; the question already existed. With the Landkreis Hildesheim
+coming along whole, 20 more Gemeinden. Three of the five do not print their rhythms side by side
+at all, and that is the thing to know before touching them: **the adapter makes the rhythms into
+lines**, so the shared mechanism never learns the difference.
+
+- **mags (`mags.ts`)** — `mags.de/proxy/proxy_dates.php` answers JSON per street, number and
+  year, and `turnus=1|2|4` changes the grey bin and nothing else. The read asks all three and titles
+  the grey bin "Restmüll: Wöchentlich/2-wöchentlich/4-wöchentlich"; six requests (three turnus ×
+  this and next year). An unknown number answers the street's plan.
+- **Siegen (`citko.ts`)** — a TYPO3 `citko_abfall` form. The ICS link on the answer page is signed
+  (`cHash`) and cannot be built by hand, so every read posts the form (three requests, no session).
+  The ICS prints "Restmüll - 2-wöchentlich" and "- 4-wöchentlich" itself.
+- **ZAH Hildesheim (`zah.ts`)** — ASP.NET postbacks (Gemeinde → Ortsteil "Alle" → street) find the
+  street; the ICS (`ICalendar/Index.aspx?year=&streetID=`) is stateless and the street ids are
+  unique across the Landkreis. **A day both rhythms share is written once**, as "Restabfall
+  (14tägige und vierwöchentliche Abfuhr" (sic, no bracket), so it is read as two lines, one per
+  rhythm; "(verschoben)" goes to the notes. Long streets are split into entries named in free German
+  ("Bahnhofsallee 1-12 / 38-40", "Goschenstr. ohne Nr. 31-41"): plain ranges pick by number,
+  anything with "ohne"/"gerade" becomes chips in the vendor's words, and the same name in two
+  Ortsteile gets the Ortsteil from the ICS `LOCATION`.
+- **Heidelberg (`heidelberg.ts`) has no dates, only a rule** — per bin a weekday and a week code
+  (`U` odd ISO weeks, `G` even, `A` the weeks matching the house number's parity), plus holiday
+  shifts and one Christmas-tree day. Its page asks the rhythm of **three** bins — Restabfall,
+  Altpapier, Gelbe Tonne — so the read writes out weekly and fortnightly for each and the household
+  answers three questions. Bio is not asked: the page offers weekly or "keine Abholung", and
+  fortnightly only for the outlying streets flagged `true` in `/streetnames`. **A household with no
+  Biotonne still sees Bio** — the question machinery has no "none" option, and inventing one for a
+  single city was not worth it. The rule is written out to the year's end or the last published
+  shift, never past what the city has planned. Street entries carry their numbers ("Nr. 1-81A,
+  4-58"): a range with two odd ends is the odd side.
+- **BEG Bremerhaven (`beg.ts`)** — a Rails session: token, two `PATCH`es (street, number), `POST`,
+  and two redirects that each set a cookie the next needs, so the chain is followed by hand. The
+  "14-tägliche Abfuhr" box is the rhythm; the read walks the session twice. **Only the next 30 days
+  are published** in a readable form (the year is a PDF), so the calendar never shows more than a
+  month ahead. BEG abbreviates "Bgm.-Smidt-Straße".
+
+**The rhythm question (2026-09-18).** Freiburg, Hagen, Pforzheim, Saarbrücken and Neuss publish
+every Restmüll rhythm side by side and leave the household to pick the one on its bin sticker, as
+their own pages do. The household now picks it when connecting; 191 providers, 74 of 81.
+
+- **The mechanism is shared and names no vendor.** An adapter that opts in implements
+  `rhythm(title)` — which of its titles are one bin in different rhythms; `restRhythm` in
+  `abfall/core.ts` covers "Restmüll: 2-wöchentlich", "Restabfalltonne (14-täglich)", "Restmüll rote
+  Woche", "Restmüll-Pink". `abfall-lookup`'s `rhythms` action reads the address and returns every
+  bin with **two or more options among its own dates** — never the vendor's full menu: Saarbrücken
+  offers weekly Restmüll city-wide and Bahnhofstraße 10 has none, so a menu would let a household
+  pick a rhythm that yields no Restmüll. Each option carries its measured interval (median gap,
+  snapped to 7/14/28), because Neuss's "Grau"/"Pink" name a lid, not a rhythm. The pick is
+  `config.rhythm` (`{bin: option}`), part of the feed key; the read keeps that line only, renamed
+  to the bin with the rhythm in the notes. A config without a pick keeps every line, which is what a
+  connection made before the question has always shown. **`calendar-feed` refuses an unanswered
+  question** ("Bitte angeben, wie oft eure Tonne geleert wird."), the same way it refuses an empty
+  calendar.
+- **The app asks it in both places a bin calendar connects**, with one widget
+  (`lib/widgets/rhythm_picker.dart`): the connect sheet's details step (asked after the address,
+  or again after the house chip, since another house can have other rhythms) and a row under the
+  onboarding's Müllabfuhr line. Only bins that really have a choice appear, so almost every
+  address never sees it. The only way to change it later is to reconnect the calendar.
+- **abfall.io (Freiburg, Hagen):** a `radiogroup` in `PUB_ABFALLTYPEN` *with a ticked member* is
+  the widget pre-selecting one rhythm, so every member is read (Freiburg ticked weekly; every
+  Freiburg household would otherwise have got weekly). A group with nothing ticked (Essen's mobile
+  stops) stays out. Hagen ticks nothing and is read whole, less `skipTypes` (Umweltmobil,
+  Grünschnittsammlung — city-wide stops). **Both publishers' street postcodes are wrong** (every
+  Freiburg street claims 79112, every Hagen one 50895), so `wrongPostcodes` turns that check off.
+- **Athos (Pforzheim, Saarbrücken):** Saarbrücken asks which containers the household has and
+  answers an unticked form with no list; every box is ticked. Pforzheim prints weekly and
+  fortnightly under one "Restmüll", told apart only by key (`RM7`, `RM14`), so a label two keys
+  share gets the rhythm its key names; its 1,100-litre "Großmüllbehälter" is the third Restmüll
+  answer. **Saarbrücken lists one street name once per Ortsteil** (four Bahnhofstraßen). The Athos
+  read used to match loosely, which would have read the first in the list for all of them; it now
+  matches the stored option exactly. The probe tries each candidate with the house number, and when
+  several have it (Bahnhofstraße 31: Hauptbahnhof and Dudweiler) the chips name the Ortsteil and
+  carry their street in the id (`"<street>|<nr>"`).
+- **Neuss (`meinabfall`)** wraps the bin name in a link where Erlangen prints text; the row regex
+  takes both.
+- **The regression probe records the question** (`rhythm` in `probe_results.json`, a summary line
+  at the end). A provider that starts asking without anybody adding it is a regression: on the run
+  that added this, only Freiburg, Hagen and Pforzheim asked, at their probe addresses.
+
+**Göttingen, and the eleven "rhythm" cities checked one by one (2026-09-18).** 186 providers, 69 of
+81 (68 on the artifact). The rhythm list had been written from four verified cities and then
+copied onto seven that were not; checking each live found one that was wrong and a note that was
+false for five.
+
+- **Göttingen (`geb.ts`) never needed the question.** It had been judged by the *Landkreis's*
+  abfall.io calendar, which does list every rhythm; the city's GEB runs its own and answers each
+  address with an ICS of that house's registered bins. The street list is JSON inside the
+  Abfuhrkalender page; there is **no house list**, and an unknown number — or a house whose bins
+  are registered under a neighbour's, which GEB's page warns about — answers a calendar with no
+  events, so the probe returns `needsHouseNumber` with no chips and the app asks for the number.
+  The year is in the path (`/2026/forward.php`); next year 404s until published.
+- **The ten that do ask, and what each asks.** Freiburg and Hagen (abfall.io) and Pforzheim and
+  Saarbrücken (Athos): Restmüll weekly / 2- / 4-weekly, Hagen as "rote/grüne Woche". Neuss: grey
+  lid weekly, pink lid fortnightly — same weekday. Mönchengladbach (mags.de, Vue app over
+  `proxy_dates.php`, `turnus` 1/2/4), Siegen (TYPO3 `citko_abfall`, "Restmüll - 2-/4-wöchentlich"),
+  Hildesheim (ZAH, an ASP.NET postback app at `hildesheim.abfuhrkalender.de` behind a Borlabs
+  blocker), Heidelberg (`garbage.datenplattform.heidelberg.de`) and Bremerhaven (BEG, 30 days
+  machine-readable). **Only the first five have an adapter**; the other five need one as well as
+  the question. **Heidelberg asks per bin** — Rest, Bio, Gelb and Papier each weekly or
+  fortnightly, Bio also "keine Abholung" — so the question has to be per bin with the vendor's own
+  labels, not one fixed Restmüll picker.
+
+**Six cities, five new families (2026-09-18, sixth batch).** 185 providers, 68 of 81 big cities
+(67 on the artifact, which does not count Reutlingen). What is left needs a decision, not a source:
+the rhythm question (eleven cities), Rostock's self-declaration, Koblenz and Reutlingen.
+
+- **hausmuell.info (`hausmuell.ts`, aturis) is two generations of one product**, told apart by the
+  provider's `client`. Chemnitz (`proxy`, embedded by ASR) sends everything through `proxy.php` and
+  keys the ICS on an *egebiet* id that comes with each house; **leave out `hidden_id_ort=0`,
+  `hidden_id_ortsteil=0` or any `showBins*` flag and the ICS is an empty 200**. Erfurt (`direct`,
+  linked from erfurt.de) keys it on street + house + **`hidden_id_zusatz`, which is the house id
+  again** unless `check_zusatz.php` says the building is split. `hnrId` is `"hnr|egebiet"` or
+  `"hnr|zusatz"`.
+- **Magdeburg (`sab.ts`) renames its endpoint every season** (`index.2025_2026.php`), so it is found
+  on each read: `index.php` names `js/sab2026_2025.js`, which names the endpoint. Dates are HTML
+  under one `<h3>` per bin — and the Gelbe Tonne's size picker opens an **empty `<h3>`** in the
+  middle of its own section, which first cost it every date. House entries can be ranges
+  ("7-9a").
+- **Potsdam (`swp.ts`) uses the operator, not the city.** potsdam.de's calendar asks for the
+  Leerungsrhythmus; the Stadtwerke's `garbageservice-web` API knows it per address. The dates POST
+  wants a JSON body (empty link maps will do) and **answers 406 to `Accept: text/html`**.
+- **Osnabrück (`osb.ts`) collects two bins per date** — Restmüll with Altpapier, Gelbe Tonne with
+  Biotonne — so each date cell is written out as two events. Years come from the `<h4>` above the
+  cells, which read "Di 22.09.".
+- **Erlangen (`meinabfall.ts`, krissel.it's Mein-Abfallkalender) is a platform** with a subdomain
+  per tenant. Its ICS asks for an e-mail address and DSGVO consent, so the HTML list is read
+  instead, always with `column_order=da_wa_we`. Street entries carry free-text ranges and validity
+  ("gültig bis 31.12.2025", "(ab 1.01.2021)"); expired ones are dropped and the range picks the
+  entry. **Neuss is a tenant of the same platform** but lists grey and pink Restmüll side by side,
+  so it waits on the rhythm question, not on code.
+- GELSENDIENSTE's street search took 4–15 s during this batch's probe; the city check passed.
+
+**Nineteen cities, twelve new families (2026-09-18, fifth batch).** 179 providers, 62 of 81 big
+cities. Every source is the authority's own site or the widget its own page embeds; five research
+passes looked each city up there first.
+
+- **Müllmax (`muellmax.ts`) is allowed only where the authority embeds it** — usb (Bochum), ash
+  (Hamm), tbr (Remscheid), awm (Münster), ebm (Mainz), each an iframe on the city's own page. It is
+  a server-side wizard carried by a hidden `mm_ses`, no cookie; `?abfuhr` starts at the street page
+  (Remscheid first asks Remscheid or Wuppertal). **The street search is fuzzy** — Hamm answers
+  "Amselweg" with Amselstraße — so the name sent always comes from the page's own `<datalist>`.
+  Six requests per refresh. Münster also publishes the plan as open data (a yearly zip); the
+  wizard was preferred because it needs no yearly re-index.
+- **ABIS (`abis.ts`, flynet)** serves Gelsenkirchen and Bottrop from `<tenant>.abisapp.de`. The
+  house number is free text and never checked (9999 gets a calendar), so the street is what
+  refuses a made-up address. The ICS already runs to the end of next year. GELSENDIENSTE plans
+  2- and 4-weekly Restabfall on paper only; the API shows the weekly bin.
+- **A.R.T. (`art.ts`) is Trier plus four Landkreise** — 848 Orte from one Strapi search. A village
+  planned as a whole has a row with no street and takes any street, **but only when the geocoder
+  names that village**: the town matcher also tries "Konz-Kommlingen" for an address in "Konz".
+  The ICS feed never refuses: an unknown key is one "Wichtiger Hinweis!" event.
+- **Karlsruhe (`tsk.ts`) never refuses either**: an unknown street is answered with the first street
+  in the list and some numbers with a catch-all span, so the calendar is only believed when its
+  `X-WR-CALNAME` is the address asked for.
+- **Wolfsburg (`waswob.ts`)** answers an unknown address with a 502, so the street list (which
+  carries every house number) is asked first. **Heilbronn (`heilbronn.ts`)** is two whole-city
+  JSON files: connecting stores the five district codes, and a refresh reads only the dates. The
+  `*_big_*` series are 770/1100-litre containers and left out.
+- The rest are one plain city source each: **Braunschweig** (`albabs.ts`, ALBA's TYPO3 plugin; two
+  bins of one kind are two events a day), **Wiesbaden** (`elw.ts`; its districts include Mainz-
+  Kastel/-Kostheim, which are Wiesbaden's), **Fürth** (`fuerth.ts`, the city, not the Landkreis),
+  **Moers** (`enni.ts`; the ICS slug is taken from the form's redirect, never built), **Halle**
+  (`hws.ts`; one event carries every bin of the day, comma-separated), **Jena** (`ksj.ts`; an
+  unknown street answers a Java exception with 200). **Ulm** is the AWIDO client `ebu`, which EBU
+  embeds; its feed also carries the Repair Café and events, now filtered out for every AWIDO client.
+- `core.ts` gained `icsDays` (a whole-day ICS read by hand — ALBA writes DTEND equal to DTSTART,
+  and Siegen-style `T220000Z` midnights are moved to Berlin first) and `dayEvents`.
+- **Found and not built yet:** Chemnitz and Erfurt (hausmuell.info, which both authorities embed),
+  Magdeburg, Potsdam (the Stadtwerke route needs no rhythm; the city's own does), Osnabrück,
+  Erlangen. **Waiting on a decision:** the Restmüll-rhythm question now blocks eleven big cities
+  (add Mönchengladbach, Neuss, Siegen, Hildesheim, Heidelberg, Bremerhaven); Rostock's form
+  requires the user to declare they are owner or tenant, which the household should tick itself.
+  **Koblenz does not publish its Rest/Bio days at all** (by phone only).
+
+**Bonn, Augsburg, Würzburg, Leverkusen and Oldenburg (2026-09-18, fourth batch).**
+
+- **The Abfall+ app backend was not needed, and should not be.** All seven cities it was queued
+  for publish on their own sites, and the app route works by impersonating the authority's Android
+  app — an emulator user agent, a fresh client uuid per request. Every city was looked up on its
+  own page first, and that is the order to keep.
+- **Bonn and Augsburg are Athos tenants** (`www5.bonn.de/WasteManagementBonnOrange`,
+  `abfall.augsburg.de/WasteManagementAugsburg`). Augsburg's result page is a third layout: a
+  `Headinfo<X>` heading per bin over cells named `…DialogComponent.Date<X>`, and the ids disagree
+  ("HeadinfoPap" over "DatePapier"), so a date belongs to the heading above it. Its `Zeitraum`
+  also offers "the next 4 pickups" and "the next 3 months"; only periods named "Jahres…" are
+  walked now, which Bielefeld's Oct–Sep years also are.
+- **Würzburg (`wuerzburg.ts`) is open data** — the city's own export on opendatasoft, licensed
+  DL-DE-BY-2.0, so every event names the source in its notes. It plans by district (17), and the
+  city's Abfallkalender page maps 1,113 streets to the same district ids. The export is a rolling
+  today-to-31-December; check in December that 2027 follows (the page's year picker already has it).
+- **Leverkusen (`avea.ts`) is AVEA's own site**: street pages by letter and a plain
+  `abfuhrkalender-export/ical/<area>/<street id>/<year>/export.ics`. It labels its two Restmüll
+  rhythms apart ("Restmülltonne", "Restmülltonne 4-wöchentlich"), so unlike Pforzheim both are
+  kept.
+- **Oldenburg (`oldenburg.ts`) is the city's TYPO3 "CollectionCalendar" plugin**, whose ICS export
+  is a plain GET that ignores its own cHash. It never says no — an unknown number is an empty
+  calendar — so empty *is* not-found, and three street names exist twice with one empty twin.
+  "Sommerbiotonne" is a booked extra the export returns for everyone and is not asked for.
+- **Leverkusen and Würzburg split long streets by number in the street's name** ("Bergische
+  Landstraße 1 - 71 und 2 - 88", "Frankenstraße 1-197 ung./2-210 ger. Nr.", "ab 13"). `splitSpans`
+  / `inSpans` in `core.ts` read both notations; two spans without "ung."/"ger." are the two sides.
+- **Hagen and Freiburg join the rhythm queue.** Both embed the AbfallPlus widget on their own
+  pages, and both make the household choose its Restmüll rhythm (Hagen: weekly / rote / grüne
+  Woche; Freiburg: weekly / 14-täglich / 4-wöchentlich). Their keys are noted beside Göttingen's in
+  `abfall_providers.ts`. Six authorities, two of them big cities, now wait on that one question.
+
+**Mannheim, Kassel, Lübeck, Herne, Offenbach and Kiel (2026-09-18, third batch).**
+
+- **Insert IT (`insertit.ts`) is one ASP.NET app per city** under
+  `www.insert-it.de/BmsAbfallkalender<Slug>/`: `GetStreets?text=` → `GetLocations?streetId=` →
+  `Calender?bmsLocationId=&year=` (ICS). The page loads Friendly Captcha for its mail form; the
+  three calls don't ask for it. The street search is a literal prefix match that folds nothing,
+  and each city spells its own way ("Hauptstr." in Mannheim, "Hauptstraße" in Lübeck). **One house
+  can sit in several locations and all of them are needed**: Herne's Bahnhofstr. has a "7" carrying
+  only the Wertstofftonne and a "7-7c" carrying all three bins. Every location naming the house is
+  fetched, and if every bin they share falls on the same days they are merged (`hnrId` =
+  `"9980+24462"`); if one bin has two rhythms they are different buildings and the household
+  picks. The feed's UIDs are new random uuids on every download. Krefeld runs it too but is already
+  served by MüllALARM; Hattingen's 2026 calendar held a handful of dates per bin and was left out.
+- **Kiel (`abki.ts`) is three JSON GETs** behind ABK's Leerungstermine page. **The street list is
+  Kendo server filtering**: unfiltered it returns the 115 streets under "A" and looks complete. The
+  Termine are the containers actually standing at the address, with size and rhythm — not a menu
+  of rhythms. House numbers are text with odd/even spans ("1 -11"). **The Gelbe Tonne is not in
+  it** (Kiel publishes it on a separate Remondis page), so a Kiel household gets Rest, Papier and
+  Bio only.
+- **MyMüll only where the authority itself names it.** The nationwide `jumomind-mymuell` host
+  re-published ~300 towns' schedules under the app's own brand, and Abfall takes a calendar from
+  the authority's own service. It is replaced by `MYMUELL_OFFICIAL`: one row per Bundesland with a
+  town allowlist, each checked on the authority's own site — paderborn.de's Abfuhrtermine page
+  embeds the MyMüll web module for ASP (`service.mymuell.de/embed.js?m=asp`; the ICS it hands out
+  matched ours date for date), A.V.E. runs it for the other nine Kreis municipalities, and
+  Salzgitter's "Online-Abfallkalender" *is* the MyMüll web module. Ulm is out: its entry was a shell
+  (1,166 streets, `dates` empty in every area). One row per state also closes the state guard's one
+  gap. A new MyMüll town needs the same check before it goes on a list — and **app badges on the
+  page are not that check.** Darmstadt was allowlisted because EAD shows the MyMüll badges, but the
+  calendar beside them is EAD's own (`vendors/ead.ts`, 2026-09-19): 181 of 181 dates matched EAD's
+  ICS, and it asks the Restabfall rhythm by lid colour, where the MyMüll copy printed all three
+  rhythms at once and never asked. Look for the authority's own calendar first, always.
+  **Since 2026-09-19 every MyMüll row is upload-only anyway** — see the next point.
+- **Upload-only: a town we recognise and never fetch.** A provider row with `upload` in
+  `abfall_providers.ts` is one whose operator either restricts the dates to non-commercial use in
+  real terms of use (AWISTA Düsseldorf, SRO Rostock, Dresden — a free feature in an app with a paid
+  tier is still commercial) or whose `robots.txt` disallows the path the dates live on (all 22
+  `*.jumomind.com` hosts, MyMüll included, answer `Disallow: /`; mags Mönchengladbach, A.R.T. Trier,
+  Stuttgart, Siegen). `resolve.ts` takes those towns from the registry (`town`, `cities`, or the
+  generated `abfall/upload_towns.ts` — re-run `tool/abfall_census/gen_upload_towns.py` after a
+  census), answers `uploadOnly` with the town's own calendar `page` and **no request to the vendor**,
+  and refuses a stored config of an upload-only family before the adapter is reached. The app shows
+  "Nur als Datei", links the page, and closes the Abfall sheet into the `ical` tile's upload in its
+  **bin-file mode** (`binFileTown`): no link field, no account name, **no plan gate** — the file is
+  Abfall and free, and `calendar-link` checks it (`abfall/bin_file.ts`, `isUploadOnlyTown`) before
+  putting it on the uncounted `abfall:datei` connection. Postcode fallback still runs first, so a
+  provider we may read wins. **It is Abfall everywhere the household looks**, although `provider` is
+  `ical`: `CalendarConnectionsState.of` lists it on the Müllabfuhr page and not under iCal, and
+  `calendar-events` sends its calendars with `feed_kind: 'abfall'`, which is what the bin colours
+  and the evening-before reminder key on — without that the bins were an ordinary calendar nobody
+  was reminded of.
+  **How this was checked, and how to re-check it:** run `probe.ts` with `fetch` wrapped to log every
+  URL, then match each against its host's `robots.txt` (Google's longest-match rules, `*` and `$`).
+  After the switch the only hit left is Würzburg's opendatasoft `/api/`, kept on purpose: the data is
+  DL-DE-BY-2.0, which grants commercial use, and every event carries the source. AWIDO stays live
+  because only its `/Customer/` ICS export is disallowed; the adapter's fallback to it is removed and
+  `getData` under `/WebServices/` is all it calls. **A new vendor gets the same check before it
+  ships**: its terms page, its imprint (the eRecht24 "privat, nicht kommerziell" paragraph alone is
+  boilerplate about the site's texts, not a restriction on the dates) and its `robots.txt` against
+  the exact paths the adapter requests.
+- **On an iPhone the town's page opens inside the app, because Safari would eat the file.** Safari
+  hands a `text/calendar` response straight to Apple Calendar's "Add" sheet, so an iPhone never has
+  an `.ics` to upload. `CalendarPageBrowser.swift` (channel `aporah/calendarPage`,
+  `lib/services/calendar_page_browser.dart`) loads the town's page in a `WKWebView` with a
+  non-persistent store; any calendar response, `webcal://` link or `download` link becomes a
+  `WKDownload`, is kept only if it opens with `BEGIN:VCALENDAR`, and comes back in the media
+  picker's shape. From the Abfall sheet the file is carried to the `ical` bin-file sheet, which
+  checks it on open. It is a browser the household drives, not a fetch of ours — the provider is
+  still never contacted by the server. Android's browser saves to Downloads, so there the page
+  opens outside as before.
+- **The census counted towns, and a town is not an address.** A live check of two real addresses
+  per covered city (`city_check.ts`, feeding the artifact's Verlässlichkeit column) found
+  Reutlingen listed by the Landkreis's AbfallPlus with no streets at all — the city runs its own
+  collection — and Krefeld served through Schönmackers' MüllALARM key with half its streets
+  missing, where the city's own GSAK calendar is on Insert IT. Krefeld now goes there.
+- **Pforzheim and Saarbrücken run Athos but stay out**: both forms make the household tick its own
+  Restmüll rhythm (Pforzheim 7- or 14-täglich, Saarbrücken weekly, 2- or 4-weekly) and print every
+  rhythm under the one label "Restmüll". With Göttingen and Schwarzwald-Baar that makes four
+  authorities waiting on one missing feature — a "which Restmüll rhythm is yours?" question in the
+  connect flow. Kiel also has an Athos portal (`abki.de/WasteManagementKiel`), but it is the
+  customer login, not the calendar.
 
 **The live probe of every provider (2026-09-17, one real address each) found three that deliver
 nothing, and none of them is an adapter fault.** `regioit-gt2` (Gütersloh) still lists 1,100
 streets but every `termine` call is `[]` — the city left AbfallNavi and the instance is a shell, so
 it is removed rather than left resolving Gütersloh as "verbunden" with an empty calendar. The
 abfall.io keys for ASO Osterholz and Landkreis Kitzingen now 401 (both authorities moved to the
-v3 widget; Osterholz is reachable again through the v3 GraphQL family, which is not built). And
+v3 widget; Osterholz is reachable again through the v3 GraphQL family `abfallplus`, built
+2026-09-18 — the legacy row stays because it still 401s and the probe expects it to). And
 Landau's C-Trace instance stores its streets abbreviated — "Königstr." answers, "Königstraße" is a
 500 — where the geocoder writes them out, so `probeCtrace` now retries the other spelling
 (`streetSpellings`). Re-run `deno run --allow-net census.ts` and the probe after touching the
@@ -1002,8 +1394,8 @@ worth knowing before touching `townMatches` again.
   `matchTownAndStreet` drops a
   candidate whose state contradicts the geocoded address. That is the postcode's information in the
   form the vendors actually give us: **none of them publishes a PLZ per town, but each serves
-  exactly one Bundesland.** The exception is `jumomind-mymuell`, which serves ~300 towns nationwide
-  and so has no state to check against; its collisions are the one gap left. Where a vendor *does*
+  exactly one Bundesland.** The one exception, the nationwide `jumomind-mymuell`, was removed on
+  2026-09-18 (see the third-batch note), so there is no gap left. Where a vendor *does*
   return a postcode it is used literally instead — see the FES Frankfurt note above, which is what
   keeps Frankfurt (Oder) out of Hessen.
 
@@ -1046,6 +1438,34 @@ Waiblingen/awido 131, Darmstadt/jumomind 50, Bremen/ctrace 63, Lienen/abfallio 5
 Stuhr/awgbassum 23, Berlin/bsr 92 (Karl-Marx-Allee 1) and 244 (no. 100), Frankfurt/fes 156
 (Frankenallee 2), München/awm 96 (Francestr. 10, byte-for-byte the file that address's own download
 produces). Worth re-running after any change to these files — the vendors move.
+
+#### The house number is asked in the picker (2026-09-19)
+
+Both address pickers (onboarding and the Abfall connect sheet) show a suggestion as two lines:
+street and number, then postcode and town. A single line cut off before the town, and the town
+is what tells two Hauptstraßen apart. **A street picked without a number is not an answer yet**:
+the card keeps the street and opens a "Hausnummer" field under it (`HouseNumberField`, iOS's
+numbers-and-punctuation keyboard so "12a" can be typed), and only the whole address goes to
+`resolve`. On the server, `settleHouseNumber` in `abfall/resolve.ts` takes the entry that *is* the
+typed number out of a vendor's house list (abfall.io, AbfallPlus, AWIDO, jumomind), or the only
+entry of a one-entry list ("Alle Hausnummern"), and writes it into the config as the chip would
+have. So the chip step now appears only where the number matches nothing or more than one entry.
+Probe vendors (Heidelberg, Rostock, BEG, …) already used the number. A number the vendor rejects
+sends the household back to the field, still filled in, with "Diese Hausnummer kennt die Müllabfuhr
+nicht". Tested live: AbfallPlus on 4 streets with 27–199 numbers, AWIDO Waiblingen ("40 /2"),
+Lienen, Rostock, Reutlingen, Heidelberg (12 → "Nr. 55, 2-36", the even side).
+
+**Onboarding asks every waste question on its own stage, before the calendars.** After the pick,
+the address step stays in its search layout (hero folded, card at the top) through the house-number
+field, the lookup, and whatever the vendor still asks: the house off its list, where the typed number
+did not settle it (`LocalCalendars.house`, whose rhythms are then asked again), and each bin's
+rhythm. "Weiter" puts the answers away (`finishWasteQuestions`), and only then do the hero and the
+Müllabfuhr/Ferien switches come back. Before this, onboarding had no house list at all: a
+number that matched nothing was a dead end, and a street split into collection areas was connected
+without asking.
+
+The rhythm question draws the bin beside its name (`binIconFor` in `abfall_bins.dart`: bin, leaf,
+stack of paper, recycling arrows, in the bin's colour), the way the cities' own forms do.
 
 ### Event dedup
 

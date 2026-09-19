@@ -7,7 +7,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/repositories/calendar_connection_repository.dart';
 import '../models/entitlements.dart';
 import '../models/calendar_connection.dart';
+import '../models/picked_file.dart';
 import '../models/who.dart';
+import '../services/calendar_page_browser.dart';
 import '../services/external_links.dart';
 import '../services/media_picker.dart';
 import '../state/calendar_connections_state.dart';
@@ -16,13 +18,18 @@ import '../state/family_state.dart';
 import '../state/notification_state.dart';
 import '../theme/tokens.dart';
 import '../widgets/paywall_sheet.dart';
+import '../widgets/person_actions.dart';
+import '../widgets/rhythm_picker.dart';
 import '../widgets/anchored_menu.dart';
 import '../widgets/app_sheet.dart';
 import '../widgets/avatar.dart';
 import '../widgets/confirmation.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/error_note.dart';
+import '../widgets/glass.dart';
+import '../widgets/address_privacy_note.dart';
 import '../widgets/glyph_tile.dart';
+import '../widgets/house_number_field.dart';
 import '../widgets/settings_chrome.dart';
 import '../widgets/step_dots.dart';
 import '../widgets/swipe_actions.dart';
@@ -249,18 +256,7 @@ class _ProviderPageState extends ConsumerState<_ProviderPage> with WidgetsBindin
   /// let through, or "Erneut verbinden" would put a paywall in front of
   /// repairing a calendar free entitles them to. The Edge Functions
   /// make the same exception; this is the polite half of the same rule.
-  Future<bool> _allowedToConnect() async {
-    if (_provider == CalendarProvider.ferien || _provider == CalendarProvider.abfall) return true;
-
-    final state = ref.read(calendarConnectionsProvider);
-    if (state.of(_provider).isNotEmpty) return true;
-
-    final accounts = state.connections
-        .where((c) => c.provider != CalendarProvider.ferien && c.provider != CalendarProvider.abfall)
-        .length;
-    if (!mounted) return false;
-    return requireAnother(context, ref, Feature.calendarAccounts, accounts);
-  }
+  Future<bool> _allowedToConnect() => allowedToConnect(context, ref, _provider);
 
   Future<void> _start() async {
     if (!await _allowedToConnect()) return;
@@ -393,7 +389,9 @@ class _ProviderPageState extends ConsumerState<_ProviderPage> with WidgetsBindin
               ),
             ],
           )
-        else if (_provider.isLinkProvider || connections.any((c) => c.isLinked))
+        // The Abfall file is linked too, but it sits in Müllabfuhr's flat list
+        // beside the address feeds rather than as an account card of its own.
+        else if (_provider.isLinkProvider || connections.any((c) => c.isLinked && !c.isBinFile))
           // One card per *account*, because that is what a link provider is:
           // Alice's IServ holds her Aufgaben, her Klausurplan and her
           // Klassenkalender, and each of them was pasted separately. A flat
@@ -627,15 +625,24 @@ Future<void> showCalendarConnectSheet(
   CalendarProvider provider, {
   CalendarConnection? connection,
   List<RemoteCalendar> calendars = const [],
+  String? binFileTown,
+  String? binFilePage,
+  PickedFile? binFile,
 }) async {
   final flow = _ConnectFlow(
     provider: provider,
+    binFileTown: binFileTown,
+    binFilePage: binFilePage,
     notifier: ref.read(calendarConnectionsProvider.notifier),
     repository: ref.read(calendarConnectionRepositoryProvider),
     findConnection: (id) => _byId(ref.read(calendarConnectionsProvider).connections, id),
     connection: connection,
     calendars: calendars,
   );
+  // A file already fetched off the town's page in the Abfall sheet: checked
+  // straight away, so this sheet opens on "Datei wird geprüft…" rather than
+  // asking for it a second time.
+  if (binFile != null) unawaited(flow.checkFile(binFile));
 
   await showAppSheet<void>(
     context: context,
@@ -649,6 +656,40 @@ Future<void> showCalendarConnectSheet(
   // Not disposed on the spot: the sheet's own widgets are still mounted — and
   // still reading the controllers — while the route animates out.
   unawaited(Future<void>.delayed(const Duration(milliseconds: 400), flow.dispose));
+
+  // An upload-only Abfall town: the file goes in through the `ical` tile's
+  // upload, which is the one place a calendar file is taken — so the sheet
+  // closes and that one opens in its bin-file mode. **No plan gate**: the file
+  // is Abfall, and Abfall is free; the server proves it is one before it lands
+  // on the uncounted connection (BIN_FILE_ACCOUNT in entitlements.ts).
+  final town = flow.coverage?.town.isNotEmpty == true ? flow.coverage!.town : flow.address?.town;
+  if (flow.openFileInstead && town != null && context.mounted) {
+    await showCalendarConnectSheet(
+      context,
+      ref,
+      CalendarProvider.ical,
+      binFileTown: town,
+      binFilePage: flow.coverage?.page,
+      binFile: flow.carriedFile,
+    );
+  }
+}
+
+/// Whether the plan lets this household add a [provider] account — the gate
+/// in front of every tile, and in front of the upload an upload-only Abfall
+/// town is sent to. See `_allowedToConnect` for the rules.
+Future<bool> allowedToConnect(BuildContext context, WidgetRef ref, CalendarProvider provider) async {
+  if (provider == CalendarProvider.ferien || provider == CalendarProvider.abfall) return true;
+
+  final state = ref.read(calendarConnectionsProvider);
+  if (state.of(provider).isNotEmpty) return true;
+
+  final accounts = state.connections
+      // The Abfall file is Abfall, and free like it — see binFileAccount.
+      .where((c) => c.provider != CalendarProvider.ferien && c.provider != CalendarProvider.abfall && !c.isBinFile)
+      .length;
+  if (!context.mounted) return false;
+  return requireAnother(context, ref, Feature.calendarAccounts, accounts);
 }
 
 /// One connected calendar: its name, when it last synced, a blue tick — and the
@@ -873,6 +914,9 @@ class _CalendarDetailBodyState extends ConsumerState<_CalendarDetailBody> {
   /// `calendars.name`. Two calendars sharing a name would share a swatch until
   /// the read lands, which is a cosmetic tie in a circle nobody is reading for
   /// identity.
+  bool _isAbfall(ConnectedCalendar entry) =>
+      entry.connection.provider == CalendarProvider.abfall || entry.connection.isBinFile;
+
   Color _swatchColor(ConnectedCalendar entry) {
     if (entry.chosenColor case final argb?) return Color(argb);
     for (final source in ref.watch(calendarProvider).calendars) {
@@ -930,11 +974,15 @@ class _CalendarDetailBodyState extends ConsumerState<_CalendarDetailBody> {
                   // never collide: the tick only exists once the name has been
                   // edited, and it appears to the right of this rather than in
                   // its place.
-                  _ColorSwatchButton(
-                    color: _swatchColor(entry),
-                    open: _pickingColor,
-                    onTap: () => setState(() => _pickingColor = !_pickingColor),
-                  ),
+                  // Abfall has no colour to pick: every pickup wears its bin's.
+                  if (_isAbfall(entry))
+                    GlyphTile(icon: AppIcons.trash)
+                  else
+                    _ColorSwatchButton(
+                      color: _swatchColor(entry),
+                      open: _pickingColor,
+                      onTap: () => setState(() => _pickingColor = !_pickingColor),
+                    ),
                   _NameSaveButton(name: _name, current: entry.name, busy: _savingName, onTap: _saveName),
                 ],
               ),
@@ -1283,6 +1331,22 @@ class _OwnerPickerState extends ConsumerState<_OwnerPicker> {
     super.dispose();
   }
 
+  /// The connection as it is now, not as it was when the sheet opened: a
+  /// person renamed or removed from this picker rewrites its owner map, and a
+  /// pick merged into the stale copy would write the old name straight back.
+  CalendarConnection _live(List<CalendarConnection> connections) =>
+      connections.firstWhere((c) => c.id == widget.connection.id, orElse: () => widget.connection);
+
+  Future<void> _renamePerson(String name) async {
+    setState(() => _picked = null);
+    await showRenamePersonSheet(context: context, ref: ref, name: name);
+  }
+
+  void _removePerson(String name) {
+    setState(() => _picked = null);
+    confirmRemovePerson(context: context, ref: ref, name: name);
+  }
+
   Future<void> _pick(String owner) async {
     if (_saving != null) return;
     setState(() {
@@ -1293,7 +1357,7 @@ class _OwnerPickerState extends ConsumerState<_OwnerPicker> {
     try {
       await ref
           .read(calendarConnectionsProvider.notifier)
-          .setCalendarOwner(widget.connection, widget.externalId, owner);
+          .setCalendarOwner(_live(ref.read(calendarConnectionsProvider).connections), widget.externalId, owner);
     } catch (_) {
       if (!mounted) return;
       setState(() {
@@ -1340,7 +1404,10 @@ class _OwnerPickerState extends ConsumerState<_OwnerPicker> {
     final household = ref.watch(familyProvider).household;
     final members = ref.watch(householdMembersProvider);
     final connections = ref.watch(calendarConnectionsProvider).connections;
-    final current = _picked ?? widget.connection.ownerOf(widget.externalId);
+    final current = _picked ?? _live(connections).ownerOf(widget.externalId);
+    // Renaming or removing somebody rewrites calendars across the household,
+    // which RLS leaves to an admin; everybody else can still pick them.
+    final canManage = ref.watch(isAdminProvider);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1379,17 +1446,24 @@ class _OwnerPickerState extends ConsumerState<_OwnerPicker> {
                 onTap: () => _pick('member:${m.id}'),
               ),
             for (final name in _knownPeople(connections))
-              _OwnerRow(
-                face: _ownerFace(label: name),
+              _withPersonActions(
+                enabled: canManage && _saving == null,
                 name: name,
-                // Said out loud, because without it these rows are
-                // indistinguishable from the members above them — and somebody
-                // reading this list would reasonably conclude the household has
-                // members it does not have.
-                subtitle: L.s.noAccountYet,
-                selected: current.toLowerCase() == 'person:${name.toLowerCase()}',
-                busy: _saving == 'person:$name',
-                onTap: () => _pick('person:$name'),
+                child: _OwnerRow(
+                  face: _ownerFace(label: name),
+                  name: name,
+                  // Said out loud, because without it these rows are
+                  // indistinguishable from the members above them — and somebody
+                  // reading this list would reasonably conclude the household has
+                  // members it does not have.
+                  subtitle: L.s.noAccountYet,
+                  selected: current.toLowerCase() == 'person:${name.toLowerCase()}',
+                  busy: _saving == 'person:$name',
+                  onTap: () => _pick('person:$name'),
+                  more: canManage && _saving == null
+                    ? PersonMoreButton(onRename: () => _renamePerson(name), onRemove: () => _removePerson(name))
+                    : null,
+                ),
               ),
             // Last row of the same card rather than a card of its own: typing a
             // name is one more way of answering the one question the card asks,
@@ -1409,6 +1483,24 @@ class _OwnerPickerState extends ConsumerState<_OwnerPicker> {
           child: Text(L.s.assignCalendarNotVisibility, style: AppText.label.copyWith(fontSize: 12)),
         ),
       ],
+    );
+  }
+
+  /// Swipe to rename or remove somebody without an account — the same two
+  /// things Settings → Familie offers on their row there.
+  Widget _withPersonActions({required bool enabled, required String name, required Widget child}) {
+    if (!enabled) return child;
+    return SwipeActionsRow(
+      actions: [
+        SwipeAction(
+          icon: AppIcons.pencilSimple,
+          color: Theme.of(context).colorScheme.primary,
+          onTap: () => _renamePerson(name),
+        ),
+        SwipeAction(icon: AppIcons.trash, color: AppColors.danger, onTap: () => _removePerson(name)),
+      ],
+      // Opaque, so the actions stay hidden until the row slides off them.
+      child: ColoredBox(color: AppColors.surface, child: child),
     );
   }
 
@@ -1476,7 +1568,9 @@ class _NewPersonRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 6, 8, 6),
+      // The owner rows' 12pt above and below, so this row is as tall as the
+      // people above it — the arrow's 40pt tap target fits inside the face's.
+      padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
       child: Row(
         children: [
           // The same 40pt circle the faces occupy, so the field's baseline sits
@@ -1546,6 +1640,10 @@ class _OwnerRow extends StatelessWidget {
 
   final VoidCallback onTap;
 
+  /// A "…" after the tick, for a person without an account — renamed or
+  /// removed from here, where they were typed in. Null on every other row.
+  final Widget? more;
+
   const _OwnerRow({
     required this.face,
     required this.name,
@@ -1553,6 +1651,7 @@ class _OwnerRow extends StatelessWidget {
     required this.busy,
     required this.onTap,
     this.subtitle,
+    this.more,
   });
 
   @override
@@ -1561,7 +1660,7 @@ class _OwnerRow extends StatelessWidget {
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: EdgeInsets.fromLTRB(16, 12, more == null ? 16 : 6, 12),
         child: Row(
           children: [
             face,
@@ -1588,6 +1687,9 @@ class _OwnerRow extends StatelessWidget {
                   ? AppIcon(AppIcons.check, size: 19, color: Theme.of(context).colorScheme.primary)
                   : null,
             ),
+            // After the tick, the way a connected calendar's row ends on its
+            // badge and then its dots.
+            if (more != null) ...[const SizedBox(width: 4), more!],
           ],
         ),
       ),
@@ -1655,6 +1757,8 @@ class _ConnectFlow extends ChangeNotifier {
     required this.findConnection,
     this.connection,
     this.calendars = const [],
+    this.binFileTown,
+    this.binFilePage,
   }) {
     // Everything the account offers, all ticked. Starting from "all" rather
     // than "none" matches what the connection already means the moment it
@@ -1666,6 +1770,18 @@ class _ConnectFlow extends ChangeNotifier {
   }
 
   final CalendarProvider provider;
+
+  /// Set when an upload-only Abfall town sent the household here: the `ical`
+  /// sheet takes the town's waste calendar as a file and nothing else — no
+  /// link, no account name — and the server puts it on the free Abfall-file
+  /// connection once the town and the file check out.
+  final String? binFileTown;
+  bool get isBinFile => binFileTown != null;
+
+  /// The town's own calendar page, when the provider row names one — opened in
+  /// the app on iOS so its export comes back as a file (calendar_page_browser.dart).
+  final String? binFilePage;
+
   final CalendarConnectionsNotifier notifier;
   final CalendarConnectionRepository repository;
   final CalendarConnection? Function(String id) findConnection;
@@ -1726,9 +1842,26 @@ class _ConnectFlow extends ChangeNotifier {
   List<GeoAddress> results = const [];
   bool searching = false;
   GeoAddress? address;
+
+  /// A street picked without its house, waiting for the number — typed into
+  /// [houseNr] on this same step rather than picked off a list on the next.
+  GeoAddress? streetOnly;
+  final houseNr = TextEditingController();
+  final houseNrFocus = FocusNode();
   bool resolving = false;
   AbfallCoverage? coverage;
   HouseNumber? houseNumber;
+
+  /// The bins this address makes the household name a rhythm for — asked once
+  /// the address is whole (after the house chip, where there is one) — and the
+  /// answers so far, bin to option. See [RhythmChoice].
+  List<RhythmChoice> rhythms = const [];
+  final Map<String, String> rhythm = {};
+  bool checkingRhythm = false;
+
+  /// Bumped per ask, so a slow answer for a house chip the household has since
+  /// changed is dropped rather than shown.
+  int _rhythmAsk = 0;
 
   // -- pick (accounts)
   final Set<String> selected = {};
@@ -1758,6 +1891,20 @@ class _ConnectFlow extends ChangeNotifier {
   bool get isFerien => provider == CalendarProvider.ferien;
   bool get isAbfall => provider == CalendarProvider.abfall;
 
+  /// Set when an upload-only Abfall town sends the household to the file
+  /// upload: the sheet closes and `showCalendarConnectSheet` opens the `ical`
+  /// one in its place.
+  bool openFileInstead = false;
+
+  /// The calendar file fetched off the town's page from the Abfall sheet,
+  /// handed to the `ical` sheet that opens in its place.
+  PickedFile? carriedFile;
+
+  void useFileInstead(BuildContext context) {
+    openFileInstead = true;
+    Navigator.of(context).pop();
+  }
+
   /// True on the pasted-link flow, which is now the front door for IServ,
   /// WebUntis and the generic iCal tile alike. Everything downstream — the
   /// account name, the naming step, the submit — is the same conversation.
@@ -1766,7 +1913,7 @@ class _ConnectFlow extends ChangeNotifier {
   /// Every pasted link is asked whose it is, because the answer is what decides
   /// which account it joins — Alice's second IServ link says "Alice" and lands
   /// on Alice's card.
-  bool get needsAccountName => isLink;
+  bool get needsAccountName => isLink && !isBinFile;
 
   /// Whether this step offers the file route at all.
   ///
@@ -1778,11 +1925,11 @@ class _ConnectFlow extends ChangeNotifier {
   /// `UIDocumentPickerViewController` and nothing stood behind the channel
   /// anywhere else; `media_picker.dart` now answers on Android too, so the
   /// question here is only whether there is a system file picker at all.
-  bool get canUploadFile =>
-      provider == CalendarProvider.ical &&
-      isLink &&
-      !kIsWeb &&
-      (defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.android);
+  bool get canUploadFile => provider == CalendarProvider.ical && isLink && devicePicksFiles;
+
+  /// Whether this device has a file picker at all.
+  bool get devicePicksFiles =>
+      !kIsWeb && (defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.android);
 
   /// The steps this flow walks, in order.
   ///
@@ -1810,7 +1957,7 @@ class _ConnectFlow extends ChangeNotifier {
     final found = coverage;
     return isAbfall &&
         found != null &&
-        (!found.supported || found.houseNumbers.isNotEmpty || found.needsHouseNumber);
+        (!found.supported || found.houseNumbers.isNotEmpty || found.needsHouseNumber || rhythms.isNotEmpty);
   }
 
   int get index => steps.indexOf(step);
@@ -1833,6 +1980,7 @@ class _ConnectFlow extends ChangeNotifier {
       }
       return found.street == null ? found.town : '${found.street}, ${found.town}';
     }
+    if (isBinFile) return '${L.s.wasteCalendar} · $binFileTown';
     if (isLink) {
       final typed = account.text.trim();
       if (typed.isNotEmpty) return '${provider.label} · $typed';
@@ -1913,6 +2061,10 @@ class _ConnectFlow extends ChangeNotifier {
         }
         _advance();
       case _Step.address:
+        if (coverage == null && streetOnly != null) {
+          await confirmHouseNumber(context);
+          return;
+        }
         if (coverage == null) {
           _fail(L.s.pickYourAddressFirst);
           return;
@@ -1928,7 +2080,22 @@ class _ConnectFlow extends ChangeNotifier {
             _fail(coverage!.houseNumbers.isEmpty ? L.s.wasteNeedsHouseNumber : L.s.pickHouseNumberHint);
             return;
           }
+          if (checkingRhythm) return;
+          if (rhythms.any((c) => !c.options.any((o) => o.id == rhythm[c.bin]))) {
+            _fail(L.s.pickRhythmFirst);
+            return;
+          }
           _advance();
+        } else if (coverage?.uploadOnly == true) {
+          // The header's "weiter" does what the blue button does.
+          final page = coverage?.page;
+          if (page != null && calendarPageBrowserAvailable) {
+            await fetchFromPage(context, page);
+          } else if (page != null) {
+            await openExternalUrl(page);
+          } else if (context.mounted) {
+            await pickFile(context);
+          }
         } else {
           await _checkIcs();
         }
@@ -1994,6 +2161,7 @@ class _ConnectFlow extends ChangeNotifier {
   }
 
   String _nameSuggestion() {
+    if (isBinFile) return L.s.wasteCalendar;
     // What the feed calls itself, where it says. WebUntis sets X-WR-CALNAME;
     // IServ's plugin feeds do not, so this is usually empty and the user names
     // the calendar — which is the honest outcome, since only they know whether
@@ -2155,11 +2323,25 @@ class _ConnectFlow extends ChangeNotifier {
       return;
     }
 
+    if (!found.hasHouseNumber) {
+      // The street, not yet the house: the number is asked right here, under
+      // it. Every vendor that plans per house needs it, and asking now is what
+      // spares the household a second step of chips to find their house in.
+      streetOnly = found;
+      results = const [];
+      error = null;
+      _notify();
+      houseNrFocus.requestFocus();
+      return;
+    }
+
     FocusScope.of(context).unfocus();
     address = found;
+    streetOnly = null;
     results = const [];
     coverage = null;
     houseNumber = null;
+    _clearRhythm();
     error = null;
     resolving = true;
     _notify();
@@ -2167,7 +2349,22 @@ class _ConnectFlow extends ChangeNotifier {
     try {
       final resolved = await repository.resolveAddress(found);
       if (_disposed) return;
+      if (resolved.supported && resolved.needsHouseNumber && resolved.houseNumbers.isEmpty) {
+        // The vendor knows the street and not this house. Back to the number,
+        // with what was typed still in it — the fix is usually one digit.
+        address = null;
+        streetOnly = found.withoutHouseNumber;
+        houseNr.text = found.houseNumber ?? '';
+        resolving = false;
+        _fail(L.s.houseNumberUnknown);
+        houseNrFocus.requestFocus();
+        return;
+      }
       coverage = resolved;
+      // Asked before advancing, so the details step exists by the time the
+      // flow decides whether to show it.
+      if (resolved.connectable) await _loadRhythms();
+      if (_disposed) return;
       resolving = false;
       _advance();
     } catch (e) {
@@ -2177,15 +2374,32 @@ class _ConnectFlow extends ChangeNotifier {
     }
   }
 
+  /// The number under a street picked without one: checked for shape here, and
+  /// then the lookup runs on the whole address exactly as for a suggestion that
+  /// came with its number.
+  Future<void> confirmHouseNumber(BuildContext context) async {
+    final street = streetOnly;
+    if (street == null) return;
+    final typed = houseNr.text.trim();
+    if (!isHouseNumber(typed)) {
+      _fail(L.s.houseNumberInvalid);
+      return;
+    }
+    await pickAddress(context, street.withHouseNumber(typed));
+  }
+
   /// Back to an empty field, from the X on the address row. The query goes too:
   /// leaving the old address in the field made the card claim "Keine Adresse
   /// gefunden" about the address it had just resolved.
   void resetAddress() {
     query.clear();
     icsUrl.clear();
+    houseNr.clear();
+    streetOnly = null;
     address = null;
     coverage = null;
     houseNumber = null;
+    _clearRhythm();
     results = const [];
     error = null;
     _notify();
@@ -2194,7 +2408,55 @@ class _ConnectFlow extends ChangeNotifier {
   void pickHouseNumber(HouseNumber picked) {
     houseNumber = houseNumber?.id == picked.id ? null : picked;
     error = null;
+    // Another house can have other rhythms — Saarbrücken's Bahnhofstraße 31 in
+    // Dudweiler has no weekly Restmüll, the one at the Hauptbahnhof does.
+    _clearRhythm();
     _notify();
+    if (houseNumber != null) unawaited(_loadRhythms());
+  }
+
+  void pickRhythm(String bin, String option) {
+    rhythm[bin] = option;
+    error = null;
+    _notify();
+  }
+
+  void _clearRhythm() {
+    _rhythmAsk++;
+    rhythms = const [];
+    rhythm.clear();
+    checkingRhythm = false;
+  }
+
+  /// Whether this address makes the household name a rhythm, and which. Empty
+  /// almost everywhere. A lookup that fails says so under the step: the server
+  /// would refuse the connection anyway if a question it knows of went
+  /// unanswered, so there is nothing to gain by pretending there is none.
+  Future<void> _loadRhythms() async {
+    final found = coverage;
+    final config = found?.config;
+    if (found == null || config == null) return;
+    final ask = ++_rhythmAsk;
+    checkingRhythm = true;
+    _notify();
+    try {
+      final choices = await repository.abfallRhythms(
+        CalendarConnectionRepository.abfallConfig(config, houseNumber: houseNumber),
+      );
+      if (_disposed || ask != _rhythmAsk) return;
+      rhythms = choices;
+      // A choice with exactly one option this household can see is no longer
+      // a choice, and the server agrees; nothing to pre-pick either way.
+      rhythm.removeWhere((bin, _) => !choices.any((c) => c.bin == bin));
+    } catch (e) {
+      if (_disposed || ask != _rhythmAsk) return;
+      error = connectErrorText(e);
+    } finally {
+      if (!_disposed && ask == _rhythmAsk) {
+        checkingRhythm = false;
+        _notify();
+      }
+    }
   }
 
   // -- link -------------------------------------------------------------------
@@ -2256,7 +2518,33 @@ class _ConnectFlow extends ChangeNotifier {
 
     final file = await pickAttachment(AttachmentSource.files);
     if (file == null || _disposed) return;
+    // From the Abfall sheet the picker opens right there, and the file is
+    // carried to the upload sheet — not a second sheet asking for it again.
+    if (isAbfall) {
+      carriedFile = file;
+      if (context.mounted) useFileInstead(context);
+      return;
+    }
+    await checkFile(file);
+  }
 
+  /// The town's page, opened in the app: the household picks their street and
+  /// taps the export there, and the file comes back here instead of going to
+  /// Apple Calendar. From the Abfall sheet it is carried over to the upload
+  /// sheet; on the upload sheet it is checked like a picked file.
+  Future<void> fetchFromPage(BuildContext context, String page) async {
+    if (busy) return;
+    FocusScope.of(context).unfocus();
+
+    final file = await fetchCalendarFromPage(page);
+    if (file == null || _disposed) return;
+    if (!isAbfall) return checkFile(file);
+    carriedFile = file;
+    if (context.mounted) useFileInstead(context);
+  }
+
+  /// Reads a file off the device and proves it is a calendar before going on.
+  Future<void> checkFile(PickedFile file) async {
     // Reading also deletes the picker's copy: from here the calendar exists as
     // a sealed row on the server, and a spare plaintext one in our sandbox is
     // nothing but a liability.
@@ -2277,7 +2565,7 @@ class _ConnectFlow extends ChangeNotifier {
     _notify();
 
     try {
-      final probe = await notifier.checkCalendarLink(provider: provider, ics: text);
+      final probe = await notifier.checkCalendarLink(provider: provider, ics: text, abfallTown: binFileTown);
       if (_disposed) return;
       busy = false;
       pickedIcs = text;
@@ -2392,6 +2680,7 @@ class _ConnectFlow extends ChangeNotifier {
           config: coverage!.config!,
           label: address!.label,
           houseNumber: houseNumber,
+          rhythm: {for (final c in rhythms) c.bin: ?rhythm[c.bin]},
           displayName: label,
         );
         // The evening-before reminder is what makes a bin calendar worth
@@ -2415,7 +2704,11 @@ class _ConnectFlow extends ChangeNotifier {
           fileName: pickedFileName,
           name: label,
           account: account.text.trim(),
+          abfallTown: binFileTown,
         );
+        // Same moment as a live Abfall connection: the evening-before reminder
+        // is what a bin calendar is for.
+        if (isBinFile) unawaited(notices.ensureAccess());
       } else if (hasPicker) {
         // The picked calendars and what to call each of them: one write,
         // because they are one decision. It has to land before the follow-up
@@ -2459,6 +2752,8 @@ class _ConnectFlow extends ChangeNotifier {
       controller.dispose();
     }
     searchFocus.dispose();
+    houseNr.dispose();
+    houseNrFocus.dispose();
     name.dispose();
     super.dispose();
   }
@@ -2617,6 +2912,20 @@ class _LinkStep extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final steps = flow.provider.linkSteps;
+
+    // The Abfall file: one thing to do here, so one row. No link field — a
+    // pasted link would be fetched on a schedule from a host that asked us not
+    // to, and it would count against the plan like any other.
+    if (flow.isBinFile) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _BinFileActions(flow: flow, page: flow.binFilePage),
+          _StepError(flow.error),
+          if (flow.busy) _StepBusyRow(L.s.checkingFileEllipsis),
+        ],
+      );
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -3297,12 +3606,33 @@ class _AddressStep extends StatelessWidget {
       children: [
         SectionCard(radius: AppRadii.card, children: dividedRows(inset: true, _rows(context))),
         _StepError(flow.error),
+        AddressPrivacyNote(),
       ],
     );
   }
 
   List<Widget> _rows(BuildContext context) {
     final address = flow.address;
+    final street = flow.streetOnly;
+    if (address == null && street != null) {
+      return [
+        SettingsRow(
+          icon: AppIcons.house,
+          title: street.streetLine,
+          subtitle: street.townLine,
+          trailing: _ClearButton(onTap: flow.resetAddress),
+        ),
+        FieldGroup(
+          label: L.s.houseNumberAsk,
+          hint: L.s.houseNumberAskHint,
+          child: HouseNumberField(
+            controller: flow.houseNr,
+            focusNode: flow.houseNrFocus,
+            onSubmitted: () => flow.confirmHouseNumber(context),
+          ),
+        ),
+      ];
+    }
     if (address == null) {
       return [
         FieldGroup(
@@ -3332,7 +3662,8 @@ class _AddressStep extends StatelessWidget {
         for (final found in flow.results)
           SettingsRow(
             icon: found.prefix ? AppIcons.mapPin : AppIcons.house,
-            title: found.label,
+            title: found.streetLine,
+            subtitle: found.townLine,
             onTap: () => flow.pickAddress(context, found),
           ),
       ];
@@ -3348,27 +3679,24 @@ class _AddressStep extends StatelessWidget {
       FieldGroup(label: L.s.yourAddress),
       SettingsRow(
         icon: AppIcons.house,
-        title: address.label,
+        // The street and house only: the town is in the line under it
+        // whenever a vendor was found, and in the sheet's headline always.
+        title: address.streetLine,
         subtitle: flow.resolving
             ? L.s.searchingVendor
             : failed
             ? L.s.tapToRetry
             : coverage!.supported
             ? L.s.foundVendor('${coverage.town}${coverage.street == null ? '' : ', ${coverage.street}'}')
+            : coverage.uploadOnly
+            ? L.s.wasteUploadOnlyShort
             : L.s.noVendorFoundTapForLink,
         onTap: flow.resolving
             ? null
             : failed
             ? () => flow.pickAddress(context, address)
             : () => flow.next(context),
-        trailing: GestureDetector(
-          onTap: flow.resetAddress,
-          behavior: HitTestBehavior.opaque,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-            child: AppIcon(AppIcons.x, size: 17, color: AppColors.muted),
-          ),
-        ),
+        trailing: _ClearButton(onTap: flow.resetAddress),
       ),
       if (flow.resolving) _BusyRow(L.s.askingNearbyVendors),
     ];
@@ -3391,7 +3719,9 @@ class _DetailsStep extends StatelessWidget {
   Widget build(BuildContext context) {
     final coverage = flow.coverage!;
     final supported = coverage.supported;
+    final uploadOnly = !supported && coverage.uploadOnly;
     final town = coverage.town.isNotEmpty ? coverage.town : (flow.address?.town ?? '');
+    final page = coverage.page;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -3399,68 +3729,174 @@ class _DetailsStep extends StatelessWidget {
         _StepHeadline(provider: flow.provider, name: flow.headline),
         const SizedBox(height: 14),
         Text(
-          supported ? L.s.wasteIntro : L.s.noVendorForTown(town),
+          supported
+              ? L.s.wasteIntro
+              : uploadOnly
+              ? L.s.wasteUploadOnlyBody(town)
+              : L.s.noVendorForTown(town),
           style: AppText.body.copyWith(color: AppColors.muted),
         ),
         const SizedBox(height: 18),
-        SectionCard(
-          radius: AppRadii.card,
-          children: dividedRows(inset: true, [
-            if (supported && coverage.needsHouseNumber && coverage.houseNumbers.isEmpty)
-              // Nothing to pick from: the number has to be typed on the step
-              // before. Said in the vendor's own words rather than as an error.
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 14),
-                child: Text(L.s.wasteNeedsHouseNumber, style: AppText.body.copyWith(color: AppColors.muted)),
-              )
-            else if (supported)
-              FieldGroup(
-                label: L.s.houseNumber,
-                hint: coverage.needsHouseNumber ? L.s.pickHouseNumberHint : L.s.multipleDistrictsHint,
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    for (final houseNumber in coverage.houseNumbers)
-                      _Chip(
-                        label: houseNumber.nr,
-                        selected: flow.houseNumber?.id == houseNumber.id,
-                        onTap: () => flow.pickHouseNumber(houseNumber),
-                      ),
-                  ],
-                ),
-              )
-            else
-              FieldGroup(
-                label: L.s.calendarLinkIcs,
-                hint: L.s.calendarLinkHint,
-                child: FieldBox(
-                  child: TextField(
-                    controller: flow.icsUrl,
-                    keyboardType: TextInputType.url,
-                    autocorrect: false,
-                    enableSuggestions: false,
-                    textInputAction: TextInputAction.done,
-                    style: AppText.searchInput,
-                    decoration: const InputDecoration(
-                      border: InputBorder.none,
-                      hintText: 'https://…',
-                      isDense: true,
-                    ),
-                    onSubmitted: (_) => flow.next(context),
+        // A town whose provider we may not read: no link field and no request —
+        // there is nothing we are allowed to set up. The town's own page, then
+        // the upload, as two buttons rather than two rows.
+        if (uploadOnly)
+          _BinFileActions(flow: flow, page: page)
+        else
+          SectionCard(
+            radius: AppRadii.card,
+            children: dividedRows(inset: true, [
+              if (supported && coverage.needsHouseNumber && coverage.houseNumbers.isEmpty)
+                // Nothing to pick from: the number has to be typed on the step
+                // before. Said in the vendor's own words rather than as an error.
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 14),
+                  child: Text(L.s.wasteNeedsHouseNumber, style: AppText.body.copyWith(color: AppColors.muted)),
+                )
+              // A whole address that only asks the rhythm has nothing to say
+              // about the house, so this group is left out.
+              else if (supported && coverage.houseNumbers.isNotEmpty)
+                FieldGroup(
+                  label: L.s.houseNumber,
+                  hint: coverage.needsHouseNumber ? L.s.pickHouseNumberHint : L.s.multipleDistrictsHint,
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final houseNumber in coverage.houseNumbers)
+                        _Chip(
+                          label: houseNumber.nr,
+                          selected: flow.houseNumber?.id == houseNumber.id,
+                          onTap: () => flow.pickHouseNumber(houseNumber),
+                        ),
+                    ],
                   ),
                 ),
-              ),
-            // The other way out of an unserved town: have us add its vendor.
-            // Below the link field rather than above it, because a household
-            // holding the link is done now and one without it is done in a
-            // few days.
-            if (!supported) _RequestRow(flow: flow),
-          ]),
-        ),
+              if (!supported && !uploadOnly)
+                FieldGroup(
+                  label: L.s.calendarLinkIcs,
+                  hint: L.s.calendarLinkHint,
+                  child: FieldBox(
+                    child: TextField(
+                      controller: flow.icsUrl,
+                      keyboardType: TextInputType.url,
+                      autocorrect: false,
+                      enableSuggestions: false,
+                      textInputAction: TextInputAction.done,
+                      style: AppText.searchInput,
+                      decoration: const InputDecoration(
+                        border: InputBorder.none,
+                        hintText: 'https://…',
+                        isDense: true,
+                      ),
+                      onSubmitted: (_) => flow.next(context),
+                    ),
+                  ),
+                ),
+              if (supported && flow.rhythms.isNotEmpty)
+                RhythmPicker(choices: flow.rhythms, picked: flow.rhythm, onPick: flow.pickRhythm),
+              // The other way out of an unserved town: have us add its vendor.
+              // Below the link field rather than above it, because a household
+              // holding the link is done now and one without it is done in a
+              // few days.
+              if (!supported && !uploadOnly) _RequestRow(flow: flow),
+            ]),
+          ),
         _StepError(flow.error),
+        if (flow.checkingRhythm) _StepBusyRow(L.s.checkingRhythm),
         if (flow.busy) _StepBusyRow(L.s.checkingLinkEllipsis),
       ],
+    );
+  }
+}
+
+/// The two ways a waste calendar comes in as a file, as buttons: the town's
+/// own page (blue, the one to take) and a file already on the phone (glass,
+/// with the upload arrow). Shared by the Abfall step of an upload-only town and
+/// the upload sheet it hands over to.
+///
+/// On iOS the page opens inside the app, because Safari hands the town's .ics
+/// straight to Apple Calendar and leaves nothing to upload; elsewhere it opens
+/// in the browser, which saves the file where the picker finds it.
+class _BinFileActions extends StatelessWidget {
+  final _ConnectFlow flow;
+  final String? page;
+
+  const _BinFileActions({required this.flow, required this.page});
+
+  @override
+  Widget build(BuildContext context) {
+    final page = this.page;
+    final inApp = page != null && calendarPageBrowserAvailable;
+    final steps = inApp ? L.s.binFileStepsInApp : L.s.binFileStepsBrowser;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // The way there, numbered, then the buttons that start it — the card
+        // says what will happen on the town's page before anybody is on it.
+        if (page != null) ...[
+          SectionCard(
+            radius: AppRadii.card,
+            children: dividedRows(inset: true, [
+              for (final (index, line) in steps.indexed) _BinFileStepRow(number: index + 1, text: line),
+            ]),
+          ),
+          const SizedBox(height: 18),
+          GlassAccentButton(
+            label: L.s.openTownCalendarPage,
+            icon: AppIcons.arrowSquareOut,
+            expand: true,
+            enabled: !flow.busy,
+            onTap: () => inApp ? flow.fetchFromPage(context, page) : openExternalUrl(page),
+          ),
+          const SizedBox(height: 12),
+        ],
+        if (flow.devicePicksFiles)
+          GlassPillButton(
+            label: L.s.uploadCalendarFile,
+            icon: AppIcons.uploadSimple,
+            expand: true,
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+            onTap: () => flow.pickFile(context),
+          ),
+      ],
+    );
+  }
+}
+
+/// One numbered step of [_BinFileActions]' card — a settings row's geometry
+/// (the leading slot a [GlyphTile] would fill, the same padding), with the
+/// number where the icon goes and the line allowed to wrap.
+class _BinFileStepRow extends StatelessWidget {
+  final int number;
+  final String text;
+
+  const _BinFileStepRow({required this.number, required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = Theme.of(context).colorScheme.primary;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 13),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 34,
+            height: 34,
+            child: Center(
+              child: Container(
+                width: 26,
+                height: 26,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(color: accent.withValues(alpha: 0.12), shape: BoxShape.circle),
+                child: Text('$number', style: AppText.rowTitle.copyWith(color: accent, fontWeight: FontWeight.w600)),
+              ),
+            ),
+          ),
+          const SizedBox(width: 13),
+          Expanded(child: Text(text, style: AppText.rowTitle)),
+        ],
+      ),
     );
   }
 }
@@ -3537,6 +3973,24 @@ class _BusyRow extends StatelessWidget {
             child: Text(label, style: AppText.body.copyWith(color: AppColors.muted)),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// The X at the end of an address row: back to an empty field.
+class _ClearButton extends StatelessWidget {
+  final VoidCallback onTap;
+  const _ClearButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+        child: AppIcon(AppIcons.x, size: 17, color: AppColors.muted),
       ),
     );
   }

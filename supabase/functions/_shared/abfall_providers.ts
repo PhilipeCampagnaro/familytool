@@ -52,12 +52,13 @@
 export interface AbfallProvider {
   id: string
   name: string
-  family: 'regioit' | 'awido' | 'jumomind' | 'abfallio' | 'ctrace' | 'awgbassum' | 'bsr' | 'fes' | 'awm' | 'awbkoeln' | 'srh' | 'awsstuttgart' | 'awista'
+  family: 'regioit' | 'awido' | 'jumomind' | 'abfallio' | 'ctrace' | 'awgbassum' | 'bsr' | 'fes' | 'awm' | 'awbkoeln' | 'srh' | 'awsstuttgart' | 'awista' | 'srl' | 'athos' | 'abfallplus' | 'srdd' | 'aha' | 'awgwuppertal' | 'insertit' | 'abki' | 'wuerzburg' | 'avea' | 'oldenburg'
+    | 'art' | 'waswob' | 'albabs' | 'elw' | 'fuerth' | 'heilbronn' | 'abis' | 'enni' | 'muellmax' | 'hws' | 'ksj' | 'tsk' | 'hausmuell' | 'sab' | 'swp' | 'osb' | 'meinabfall' | 'geb' | 'mags' | 'citko' | 'zah' | 'heidelberg' | 'beg' | 'sro' | 'ead'
   state?: string        // Bundesland, for display/grouping (optional)
   // regioit:
   region?: string       // AbfallNavi host slug; towns fetched live
   // awido:
-  client?: string       // AWIDO customer slug (the `client=` path segment)
+  client?: string       // AWIDO customer slug (the `client=` path segment); insertit: the BmsAbfallkalender<Slug> path slug
   // jumomind:
   service?: string      // Jumomind service id (the `{service}.jumomind.com` host)
   // abfallio:
@@ -68,7 +69,20 @@ export interface AbfallProvider {
   icalFile?: string     // export path segment: 'cal' (default) or 'downloadcal'
   // awgbassum:
   host?: string         // domain, e.g. 'www.awg-bassum.de'
-  cities?: string[]     // served municipalities (exact names for the ?city= param)
+  cities?: string[]     // awgbassum: served municipalities (exact ?city= names); jumomind: town allowlist
+  notTowns?: string[]   // abfallio: towns on the key that are taken from the town's own service instead
+  skipTypes?: string[]  // abfallplus: wasteType ids that are city-wide stops, not anybody's bin
+  wrongPostcodes?: boolean // abfallplus: the publisher's street postcodes are not the streets' own
+  // **Served by upload only: nothing is ever requested from this provider.**
+  // Its operator either reserves the data for non-commercial use in real terms
+  // of use (`terms` — a free feature inside an app with a paid tier is still
+  // commercial), or its robots.txt disallows the path the dates live on
+  // (`robots`). Checked 2026-09-19 against every request the live probe makes;
+  // tool/abfall_census/third_party.json holds the quotes. The town is still
+  // recognised — from `town`, `cities` or abfall/upload_towns.ts, never from
+  // the vendor — so the household is told why and sent to the file upload,
+  // with `page` being where the town hands out its calendar.
+  upload?: { why: 'terms' | 'robots'; page?: string }
 }
 
 // regio-iT / AbfallNavi — one entry per host slug; towns resolved live. Slugs are
@@ -148,6 +162,7 @@ const AWIDO: Array<[string, string]> = [
   ['lra-mue', 'Landkreis Mühldorf a. Inn'],
   ['lra-regensburg', 'Landratsamt Regensburg'],
   ['lra-schweinfurt', 'Landkreis Schweinfurt'],
+  ['ebu', 'EBU Entsorgungs-Betriebe der Stadt Ulm'],
   ['memmingen', 'Stadt Memmingen'],
   ['neustadt', 'Neustadt a.d. Waldnaab'],
   ['pullach', 'Pullach im Isartal'],
@@ -166,10 +181,12 @@ const AWIDO_PROVIDERS: AbfallProvider[] = AWIDO.map(([client, name]) => ({
   id: `awido-${client}`, name, family: 'awido' as const, client,
 }))
 
-// Jumomind / MyMuell — one entry per service host; towns resolved live via
-// r=cities_web. All 22 services below were validated with a live census
-// (2026-07): every host answers with at least one town. `mymuell` alone serves
-// ~300 towns nationwide. Slug list sourced from the HA project (jumomind_de.py).
+// Jumomind — one entry per service host; towns resolved live via r=cities_web.
+// Each host is one authority's own branded app. **`mymuell` is deliberately not
+// here** (removed 2026-09-18): the MyMüll app re-publishes ~300 towns'
+// schedules under its own brand, and Abfall takes a calendar from the
+// authority's own service or not at all. Its Ulm entry was also a shell — 1,166
+// streets, no dates in any area. Slug list from the HA project (jumomind_de.py).
 const JUMOMIND: Array<[string, string]> = [
   ['zaw', 'ZAW Darmstadt-Dieburg'],
   ['aoe', 'Landkreis Altötting'],
@@ -183,7 +200,6 @@ const JUMOMIND: Array<[string, string]> = [
   ['ksr', 'ZBH Recklinghausen'],
   ['rhe', 'RH Entsorgung (Rhein-Hunsrück)'],
   ['udg', 'UDG Uckermark'],
-  ['mymuell', 'MyMuell App'],
   ['esn', 'Neustadt an der Weinstraße'],
   ['zac', 'ZA Celle'],
   ['ben', 'AWB Grafschaft Bentheim'],
@@ -194,9 +210,41 @@ const JUMOMIND: Array<[string, string]> = [
   ['mkk', 'Main-Kinzig-Kreis'],
   ['wol', 'ALW Wolfenbüttel'],
 ]
+// **Every *.jumomind.com host answers robots.txt with `Disallow: /`** (checked
+// 2026-09-19, all 22), so the whole family is upload-only: the towns are still
+// recognised from abfall/upload_towns.ts and nothing is requested from them.
+// The page is where the town's own calendar is, where we know it.
+const JUMOMIND_PAGES: Record<string, string> = {
+  ingol: 'https://www.in-kb.de/abfallkalender',
+  ksr: 'https://recklinghausen.buergerportal.digital/calendar',
+}
 const JUMOMIND_PROVIDERS: AbfallProvider[] = JUMOMIND.map(([service, name]) => ({
   id: `jumomind-${service}`, name, family: 'jumomind' as const, service,
+  upload: { why: 'robots' as const, page: JUMOMIND_PAGES[service] },
 }))
+
+// MyMüll only where the authority itself names it as its calendar, checked on
+// its own site (2026-09-18) — never the nationwide list. `cities` is the
+// allowlist: a town is taken when its MyMüll name is one of these or starts
+// with one plus "-" (Kreis Paderborn lists villages as "Büren-Ahden"). One row
+// per Bundesland, so the state guard holds.
+//   Paderborn's own Abfuhrtermine page on paderborn.de embeds the MyMüll web
+//   module for ASP (embed.js?m=asp) and A.V.E. uses it for the other nine Kreis
+//   municipalities; Salzgitter's "Online-Abfallkalender" is the MyMüll web
+//   module. Darmstadt is no longer here: EAD's page only shows the app's
+//   badges beside a calendar of its own (vendors/ead.ts).
+const MYMUELL_OFFICIAL: AbfallProvider[] = [
+  { id: 'jumomind-mymuell-asp', name: 'ASP Paderborn (Online-Abfallkalender der Stadt)', family: 'jumomind', service: 'mymuell', state: 'NW',
+    cities: ['Paderborn'],
+    upload: { why: 'robots', page: 'https://www.paderborn.de/microsite/asp/abfallentsorgung/abfuhrtermine_pb.php' } },
+  { id: 'jumomind-mymuell-ave', name: 'A.V.E. Kreis Paderborn (MyMüll)', family: 'jumomind', service: 'mymuell', state: 'NW',
+    cities: ['Altenbeken', 'Bad Lippspringe', 'Bad Wünnenberg', 'Borchen', 'Büren', 'Delbrück',
+      'Hövelhof', 'Lichtenau', 'Salzkotten'],
+    upload: { why: 'robots', page: 'https://www.ave-kreis-paderborn.de/beratungsservice/abfallkalender/' } },
+  { id: 'jumomind-mymuell-srb', name: 'SRB Stadt Salzgitter (MyMüll)', family: 'jumomind', service: 'mymuell', state: 'NI',
+    cities: ['Salzgitter'],
+    upload: { why: 'robots', page: 'https://www.salzgitter.de/leben/srb/abfallkalender-online.php' } },
+]
 
 // abfall.io / AbfallPlus (legacy widget API) — one entry per authority key.
 // Keys sourced from the HA project (service/AbfallIO.py) and censused live
@@ -232,10 +280,60 @@ const ABFALLIO: Array<[string, string, string?]> = [
   ['4f06df48f154246415e57ce12b26abe5', 'Amt Putlitz/Berge (Prignitz)'],
   ['b870ecfa6e1f882680758d374ba3fa2d', 'Stadt Wittenberge (Prignitz)'],
 ]
+// Towns on a key that come from the town's own service instead. MüllALARM is
+// Schönmackers' app — the contracted collector in most of its towns — but
+// Krefeld's own GSAK publishes on Insert IT, and the key's Krefeld lacked whole
+// streets (Hochstraße).
+const ABFALLIO_NOT_TOWNS: Record<string, string[]> = { 'e5543a3e': ['Krefeld'] }
+
 const ABFALLIO_PROVIDERS: AbfallProvider[] = ABFALLIO.map(([key, name, town]) => ({
   id: `abfallio-${key.slice(0, 8)}`, name, family: 'abfallio' as const, key,
   ...(town ? { town } : {}),
+  ...(ABFALLIO_NOT_TOWNS[key.slice(0, 8)] ? { notTowns: ABFALLIO_NOT_TOWNS[key.slice(0, 8)] } : {}),
 }))
+
+// AbfallPlus publisher widgets (v3, GraphQL) — the same kind of key, embedded as
+// `<abfallplus-publisher key=…>`. See abfall/vendors/abfallplus.ts.
+const ABFALLPLUS: AbfallProvider[] = [
+  // ebe-essen.de/abfuhrkalender; the old abfallkalender.ebe-essen.de is NXDOMAIN.
+  { id: 'abfallplus-51be67f3', name: 'EBE Entsorgungsbetriebe Essen', family: 'abfallplus', state: 'NW',
+    key: '51be67f3758f1fb57b420efe065c0663', town: 'Essen' },
+  // Keys from the Home Assistant project's AbfallIOGraphQL list, each answering
+  // the v3 API live on 2026-09-18. Osterholz's is the one that replaced the dead
+  // legacy key above.
+  //
+  // **Freiburg** (ASF, city 5846) and **Hagen** (HEB, city 2657) publish every
+  // Restmüll rhythm side by side — Freiburg's "Restabfalltonne" wöchentlich /
+  // 14-täglich / vierwöchentlich, Hagen's wöchentlich / rote Woche / grüne Woche
+  // — and the household picks its own when it connects (RhythmChoice in
+  // abfall/core.ts). **Neither publisher's street postcodes are real** — every
+  // Freiburg street claims 79112 and every Hagen one 50895 — so they are not
+  // compared (`wrongPostcodes`); both are one city, not a Landkreis. Hagen's
+  // Umweltmobil (223) and Grünschnittsammlung (267) are city-wide stops, not
+  // the household's.
+  { id: 'abfallplus-ba5c0a03', name: 'ASF Abfallwirtschaft und Stadtreinigung Freiburg', family: 'abfallplus', state: 'BW',
+    key: 'ba5c0a03ba41d81479797313161ced08', town: 'Freiburg im Breisgau', wrongPostcodes: true },
+  { id: 'abfallplus-8fb8b2b0', name: 'HEB Hagener Entsorgungsbetrieb', family: 'abfallplus', state: 'NW',
+    key: '8fb8b2b06139c9575b69493a4c86a7b9', town: 'Hagen', skipTypes: ['223', '267'], wrongPostcodes: true },
+  // tbr-reutlingen.de's Entsorgungskalender embeds this key. The city has its
+  // own collection, which the Landkreis key (15f69fab) lists without a street.
+  { id: 'abfallplus-1bf5dd38', name: 'TBR Technische Betriebsdienste Reutlingen', family: 'abfallplus', state: 'BW',
+    key: '1bf5dd3852fd8c24ec5679c53f678540', town: 'Reutlingen' },
+  // Answering but deliberately NOT listed, because the calendar would be wrong:
+  //  - Landkreis Göttingen (4b5702d7…) and Schwarzwald-Baar-Kreis (30628292…)
+  //    publish every rhythm of one bin side by side, like Freiburg; they can
+  //    come in the same way, once somebody checks their titles tag cleanly.
+  //    (The city of Göttingen is GEB's own calendar, vendors/geb.ts.)
+  //  - AWG Landkreis Calw (0813ea99…) plans per Ortsteil ("Kernstadt (ohne
+  //    Monhardt)", "Berneck", each "alle Straßen"), and the geocoder rarely
+  //    names the Ortsteil; guessing it hands out a neighbouring village's days.
+  //  - KELL Landkreis Leipzig and AWB Böblingen answer with no cities at all.
+  { id: 'abfallplus-efb75cbd', name: 'Landkreis Märkisch-Oderland', family: 'abfallplus', state: 'BB', key: 'efb75cbd1f08fae1d4e47ae72a85c655' },
+  { id: 'abfallplus-15f69fab', name: 'Landkreis Reutlingen', family: 'abfallplus', state: 'BW', key: '15f69fab91c4cae50d9dbb5bcfd383f0' },
+  { id: 'abfallplus-80acad6c', name: 'Wirtschaftsbetriebe Duisburg', family: 'abfallplus', state: 'NW', key: '80acad6c77fe9342ebafad29a8c58bf6', town: 'Duisburg' },
+  { id: 'abfallplus-2085afd9', name: 'ASG Nordsachsen', family: 'abfallplus', state: 'SN', key: '2085afd95285e645e15ee9623d0c5172' },
+  { id: 'abfallplus-8b016df0', name: 'ASO Abfall-Service Osterholz', family: 'abfallplus', state: 'NI', key: '8b016df0116d1d5094fa339bebea0c65' },
+]
 
 // C-Trace — ASP.NET waste calendars (session redirect + plain-text Ort/Strasse/
 // Hausnr params -> ICS). No street enumeration; the adapter validates coverage
@@ -312,11 +410,169 @@ const AWB_KOELN: AbfallProvider[] = [
 // AWISTA Kommunal, Düsseldorf. The calendar is addressed by a uuid the city's own
 // address search hands out; see abfall/vendors/awista.ts.
 const AWISTA: AbfallProvider[] = [
-  { id: 'awista-duesseldorf', name: 'AWISTA Kommunal Düsseldorf', family: 'awista', state: 'NW', town: 'Düsseldorf' },
+  { id: 'awista-duesseldorf', name: 'AWISTA Kommunal Düsseldorf', family: 'awista', state: 'NW', town: 'Düsseldorf',
+    upload: { why: 'terms', page: 'https://www.awista-kommunal.de/abfallkalender' } },
 ]
 
 const AWS_STUTTGART: AbfallProvider[] = [
-  { id: 'aws-stuttgart', name: 'Abfallwirtschaft Stuttgart', family: 'awsstuttgart', state: 'BW', town: 'Stuttgart' },
+  { id: 'aws-stuttgart', name: 'Abfallwirtschaft Stuttgart', family: 'awsstuttgart', state: 'BW', town: 'Stuttgart',
+    upload: { why: 'robots', page: 'https://www.stuttgart.de/abfallkalender' } },
+]
+
+// Stadtreinigung Leipzig. One keyless street search lists every house with the
+// position numbers its ICS is read by; see abfall/vendors/srl.ts.
+const SRL: AbfallProvider[] = [
+  { id: 'srl-leipzig', name: 'Stadtreinigung Leipzig', family: 'srl', state: 'SN', town: 'Leipzig' },
+]
+
+// Dresden's AbfallApp; see abfall/vendors/srdd.ts.
+const SRDD: AbfallProvider[] = [
+  { id: 'srdd-dresden', name: 'Stadtreinigung Dresden', family: 'srdd', state: 'SN', town: 'Dresden',
+    upload: { why: 'terms', page: 'https://www.dresden.de/abfuhrkalender' } },
+]
+
+// The Region Hannover's 21 municipalities, Hannover itself included; the towns
+// are the Gemeinde options on aha's own form. See abfall/vendors/aha.ts.
+const AWGW: AbfallProvider[] = [
+  { id: 'awg-wuppertal', name: 'AWG Abfallwirtschaftsgesellschaft Wuppertal', family: 'awgwuppertal', state: 'NW', town: 'Wuppertal' },
+]
+
+// Insert IT BmsAbfallkalender — one app per city on www.insert-it.de; `client` is
+// the path slug after "BmsAbfallkalender". Krefeld's is GSAK's own calendar and
+// replaces the MüllALARM key's Krefeld (which lacked streets like Hochstraße).
+// Hattingen runs it too, but its 2026 calendar held a handful of dates per bin
+// when it was surveyed (2026-09-18).
+const INSERTIT: AbfallProvider[] = [
+  { id: 'insertit-mannheim', name: 'Abfallwirtschaft Mannheim', family: 'insertit', state: 'BW', client: 'Mannheim', town: 'Mannheim' },
+  { id: 'insertit-kassel', name: 'Die Stadtreiniger Kassel', family: 'insertit', state: 'HE', client: 'Kassel', town: 'Kassel' },
+  { id: 'insertit-luebeck', name: 'Entsorgungsbetriebe Lübeck', family: 'insertit', state: 'SH', client: 'Luebeck', town: 'Lübeck' },
+  { id: 'insertit-herne', name: 'entsorgung herne', family: 'insertit', state: 'NW', client: 'Herne', town: 'Herne' },
+  { id: 'insertit-krefeld', name: 'GSAK Krefeld', family: 'insertit', state: 'NW', client: 'Krefeld', town: 'Krefeld' },
+  { id: 'insertit-offenbach', name: 'ESO Stadtservice Offenbach', family: 'insertit', state: 'HE', client: 'Offenbach', town: 'Offenbach am Main' },
+]
+
+const ABKI: AbfallProvider[] = [
+  { id: 'abk-kiel', name: 'ABK Abfallwirtschaftsbetrieb Kiel', family: 'abki', state: 'SH', town: 'Kiel' },
+]
+
+// Würzburg: the city's own open data (DL-DE-BY-2.0) and street page; Leverkusen:
+// AVEA's own street pages and ICS; Oldenburg: the city's TYPO3 plugin. One
+// vendor file each.
+const CITY_OWN: AbfallProvider[] = [
+  { id: 'stadt-wuerzburg', name: 'Stadt Würzburg (Die Stadtreiniger)', family: 'wuerzburg', state: 'BY', town: 'Würzburg' },
+  { id: 'avea-leverkusen', name: 'AVEA Leverkusen', family: 'avea', state: 'NW', town: 'Leverkusen' },
+  // The city, not the Landkreis (abfallio 27708a01): oldenburg.de's own plugin.
+  { id: 'stadt-oldenburg', name: 'Abfallwirtschaftsbetrieb Stadt Oldenburg', family: 'oldenburg', state: 'NI', town: 'Oldenburg' },
+  // Batch 5 (2026-09-18): each the authority's own site or the widget its own
+  // page embeds. One vendor file each, except where noted.
+  { id: 'art-trier', name: 'A.R.T. Zweckverband Abfallwirtschaft Region Trier', family: 'art', state: 'RP',
+    upload: { why: 'robots', page: 'https://www.art-trier.de/abfuhrtermin' } },
+  { id: 'was-wolfsburg', name: 'WAS Wolfsburger Abfallwirtschaft und Straßenreinigung', family: 'waswob', state: 'NI', town: 'Wolfsburg' },
+  { id: 'alba-braunschweig', name: 'ALBA Braunschweig', family: 'albabs', state: 'NI', town: 'Braunschweig' },
+  { id: 'elw-wiesbaden', name: 'ELW Entsorgungsbetriebe der Landeshauptstadt Wiesbaden', family: 'elw', state: 'HE', town: 'Wiesbaden' },
+  { id: 'stadt-fuerth', name: 'Stadt Fürth, Amt für Abfallwirtschaft', family: 'fuerth', state: 'BY', town: 'Fürth' },
+  { id: 'stadt-heilbronn', name: 'Heilbronner Entsorgungsbetriebe', family: 'heilbronn', state: 'BW', town: 'Heilbronn' },
+  { id: 'enni-moers', name: 'ENNI Stadt & Service Niederrhein', family: 'enni', state: 'NW', town: 'Moers' },
+  { id: 'hws-halle', name: 'HWS Hallesche Wasser und Stadtwirtschaft', family: 'hws', state: 'ST', town: 'Halle (Saale)' },
+  { id: 'ksj-jena', name: 'KommunalService Jena', family: 'ksj', state: 'TH', town: 'Jena' },
+  { id: 'tsk-karlsruhe', name: 'Team Sauberes Karlsruhe', family: 'tsk', state: 'BW', town: 'Karlsruhe' },
+  { id: 'sab-magdeburg', name: 'SAB Städtischer Abfallwirtschaftsbetrieb Magdeburg', family: 'sab', state: 'ST', town: 'Magdeburg' },
+  // Not potsdam.de's calendar, which asks for the Leerungsrhythmus: the
+  // operator's own service knows it per address.
+  { id: 'swp-potsdam', name: 'STEP Stadtentsorgung Potsdam', family: 'swp', state: 'BB', town: 'Potsdam' },
+  { id: 'osb-osnabrueck', name: 'Osnabrücker ServiceBetrieb', family: 'osb', state: 'NI', town: 'Osnabrück' },
+  // Not the Landkreis Göttingen's abfall.io key further up: the city runs its
+  // own calendar, which knows each house's bins and so asks for no rhythm.
+  { id: 'geb-goettingen', name: 'GEB Göttinger Entsorgungsbetriebe', family: 'geb', state: 'NI', town: 'Göttingen' },
+  // The five below print every rhythm of a bin, or take it as a question, and
+  // leave the household to name its own (RhythmChoice in abfall/core.ts).
+  { id: 'mags-moenchengladbach', name: 'mags Mönchengladbacher Abfall-, Grün- und Straßenbetriebe', family: 'mags', state: 'NW', town: 'Mönchengladbach',
+    upload: { why: 'robots', page: 'https://mags.de/online-abfuhrkalender/' } },
+  { id: 'stadt-siegen', name: 'Universitätsstadt Siegen', family: 'citko', state: 'NW', town: 'Siegen',
+    upload: { why: 'robots', page: 'https://www.siegen.de/leben-in-siegen/buergerservice/abfallentsorgung/abfallkalender' } },
+  // The whole Landkreis: one Gemeinde per town, from vendors/zah.ts.
+  { id: 'zah-hildesheim', name: 'ZAH Zweckverband Abfallwirtschaft Hildesheim', family: 'zah', state: 'NI' },
+  { id: 'stadt-heidelberg', name: 'Stadt Heidelberg, Abfallwirtschaft und Stadtreinigung', family: 'heidelberg', state: 'BW', town: 'Heidelberg' },
+  { id: 'beg-bremerhaven', name: 'BEG Bremerhavener Entsorgungsgesellschaft', family: 'beg', state: 'HB', town: 'Bremerhaven' },
+  // The search asks the household to confirm it may look the address up; see
+  // abfall/vendors/sro.ts for why connecting one's own address is that.
+  { id: 'sro-rostock', name: 'Stadtentsorgung Rostock', family: 'sro', state: 'MV', town: 'Rostock',
+    upload: { why: 'terms', page: 'https://www.stadtentsorgung-rostock.de/service-center/abfuhrkalender' } },
+  // Street entries split by house number, and the Restabfall rhythm is the
+  // household's (lid colour); see abfall/vendors/ead.ts.
+  { id: 'ead-darmstadt', name: 'EAD Darmstadt', family: 'ead', state: 'HE', town: 'Darmstadt' },
+]
+
+// ABIS (flynet) — the calendar GELSENDIENSTE and BEST run on their own sites;
+// `host` is the tenant.
+const ABIS: AbfallProvider[] = [
+  { id: 'abis-gelsenkirchen', name: 'GELSENDIENSTE', family: 'abis', state: 'NW', town: 'Gelsenkirchen', host: 'gelsendienste.abisapp.de' },
+  { id: 'abis-bottrop', name: 'BEST Bottrop', family: 'abis', state: 'NW', town: 'Bottrop', host: 'best.abisapp.de' },
+]
+
+// hausmuell.info (aturis) — ASR Chemnitz embeds it on asr-chemnitz.de, and
+// erfurt.de links SWE's own install. `client` is the software generation.
+const HAUSMUELL: AbfallProvider[] = [
+  { id: 'hausmuell-asr-chemnitz', name: 'ASR Abfallentsorgung Chemnitz', family: 'hausmuell', state: 'SN', town: 'Chemnitz',
+    host: 'asc.hausmuell.info', client: 'proxy' },
+  { id: 'hausmuell-swe-erfurt', name: 'SWE Stadtwirtschaft Erfurt', family: 'hausmuell', state: 'TH', town: 'Erfurt',
+    host: 'abfallkalender.stadtwerke-erfurt.de', client: 'direct' },
+]
+
+// Mein-Abfallkalender (krissel.it) — erlangen.de links it as the city's own.
+// `client` is the subdomain.
+const MEINABFALL: AbfallProvider[] = [
+  { id: 'meinabfall-erlangen', name: 'Stadt Erlangen Abfallwirtschaft', family: 'meinabfall', state: 'BY', town: 'Erlangen', client: 'erlangen' },
+  // Neuss lists grey (weekly) and pink (fortnightly) Restmüll side by side; the
+  // household picks its lid colour (RhythmChoice in abfall/core.ts).
+  { id: 'meinabfall-neuss', name: 'Stadt Neuss Abfallwirtschaft', family: 'meinabfall', state: 'NW', town: 'Neuss', client: 'neuss' },
+]
+
+// Müllmax — **only the tenants whose authority embeds it on its own page**
+// (checked 2026-09-18): usb-bochum.de, hamm.de/ash, tbr-info.de,
+// awm.stadt-muenster.de, mz.kaw-mainz-bingen.de. `client` is the tenant path.
+// Münster also publishes the same plan as open data (DL-DE-BY-2.0, one zip a
+// year); the wizard was taken because it needs no yearly re-index.
+const MUELLMAX: AbfallProvider[] = [
+  { id: 'muellmax-usb', name: 'USB Umweltservice Bochum', family: 'muellmax', state: 'NW', town: 'Bochum', client: 'usb' },
+  { id: 'muellmax-ash', name: 'ASH Abfallwirtschaft und Stadtreinigung Hamm', family: 'muellmax', state: 'NW', town: 'Hamm', client: 'ash' },
+  { id: 'muellmax-tbr', name: 'Technische Betriebe Remscheid', family: 'muellmax', state: 'NW', town: 'Remscheid', client: 'tbr' },
+  { id: 'muellmax-awm', name: 'AWM Abfallwirtschaftsbetriebe Münster', family: 'muellmax', state: 'NW', town: 'Münster', client: 'awm' },
+  { id: 'muellmax-ebm', name: 'Entsorgungsbetrieb der Stadt Mainz', family: 'muellmax', state: 'RP', town: 'Mainz', client: 'ebm' },
+]
+
+const AHA: AbfallProvider[] = [
+  { id: 'aha-region-hannover', name: 'aha Zweckverband Abfallwirtschaft Region Hannover', family: 'aha', state: 'NI' },
+]
+
+// The Athos "WasteManagement" portal, a platform: `host` is the tenant's base
+// URL, `town` the area it serves. See abfall/vendors/athos.ts.
+const ATHOS: AbfallProvider[] = [
+  { id: 'athos-edg-dortmund', name: 'EDG Entsorgung Dortmund', family: 'athos', state: 'NW', town: 'Dortmund',
+    host: 'https://kundenportal.edg.de/WasteManagementDortmund' },
+  // Bielefeld's production path is `…Test`; the one without it answers 404.
+  { id: 'athos-umweltbetrieb-bielefeld', name: 'Umweltbetrieb Bielefeld', family: 'athos', state: 'NW', town: 'Bielefeld',
+    host: 'https://anwendungen.bielefeld.de/WasteManagementBielefeldTest' },
+  // No `town`: a Landkreis tenant's towns are the Ort options on its own form.
+  { id: 'athos-aws-schaumburg', name: 'Abfallwirtschaft Schaumburg', family: 'athos', state: 'NI',
+    host: 'https://kundenlogin.aws-shg.de/WasteManagementSchaumburg' },
+  { id: 'athos-kaw-hameln-pyrmont', name: 'KAW Landkreis Hameln-Pyrmont', family: 'athos', state: 'NI',
+    host: 'https://om.kaw-hameln.de/WasteManagementHameln' },
+  { id: 'athos-awb-lk-karlsruhe', name: 'AWB Landkreis Karlsruhe', family: 'athos', state: 'BW',
+    host: 'https://waste.awb-landkreis-karlsruhe.de/WasteManagementKarlsruheHaushalteBlank' },
+  { id: 'athos-bonnorange-bonn', name: 'bonnorange Bonn', family: 'athos', state: 'NW', town: 'Bonn',
+    host: 'https://www5.bonn.de/WasteManagementBonnOrange' },
+  { id: 'athos-aws-augsburg', name: 'AWS Abfallwirtschafts- und Stadtreinigungsbetrieb Augsburg', family: 'athos', state: 'BY', town: 'Augsburg',
+    host: 'https://abfall.augsburg.de/WasteManagementAugsburg' },
+  // Pforzheim and ZKE Saarbrücken make the household name its own Restmüll
+  // rhythm. Saarbrücken asks with a checkbox per container and answers none
+  // ticked with no list; Pforzheim prints weekly and fortnightly under one
+  // "Restmüll", told apart only by key (RM7, RM14). Both are read in full and
+  // the household picks (RhythmChoice in abfall/core.ts; athos.ts for both).
+  { id: 'athos-pforzheim', name: 'Eigenbetrieb Abfallwirtschaft Pforzheim', family: 'athos', state: 'BW', town: 'Pforzheim',
+    host: 'https://onlineservices.abfallwirtschaft-pforzheim.de/WasteManagementPforzheim' },
+  { id: 'athos-zke-saarbruecken', name: 'ZKE Zentraler Kommunaler Entsorgungsbetrieb Saarbrücken', family: 'athos', state: 'SL', town: 'Saarbrücken',
+    host: 'https://info.zke-sb.de/WasteManagementSaarbruecken' },
 ]
 
 const SRH: AbfallProvider[] = [
@@ -337,12 +593,18 @@ const SRH: AbfallProvider[] = [
 //
 // Verified against the live town lists rather than guessed: every entry was
 // checked by geocoding sample towns of that provider (tool/abfall_census).
-// `jumomind-mymuell` is deliberately absent — it serves ~300 towns nationwide,
-// so it has no single state, and an address it might wrongly match is caught by
-// nothing here. That is the one gap, and it is written down rather than hidden.
+// Every provider now serves one state: the nationwide `jumomind-mymuell`, which
+// had none and was the guard's one gap, was replaced on 2026-09-18 by one
+// allowlisted row per state (MYMUELL_OFFICIAL).
 const PROVIDER_STATES: Record<string, string> = {
   'abfallio-040b38fe': 'NI',
   'abfallio-1e959241': 'BB',
+  'abfallplus-51be67f3': 'NW',
+  'abfallplus-efb75cbd': 'BB',
+  'abfallplus-15f69fab': 'BW',
+  'abfallplus-80acad6c': 'NW',
+  'abfallplus-2085afd9': 'SN',
+  'abfallplus-8b016df0': 'NI',
   'abfallio-248deacb': 'RP',
   'abfallio-27708a01': 'NI',
   'abfallio-31fb9c7d': 'BY',
@@ -400,6 +662,7 @@ const PROVIDER_STATES: Record<string, string> = {
   'awido-lra-mue': 'BY',
   'awido-lra-regensburg': 'BY',
   'awido-lra-schweinfurt': 'BY',
+  'awido-ebu': 'BW',
   'awido-memmingen': 'BY',
   'awido-neustadt': 'BY',
   'awido-pullach': 'BY',
@@ -418,6 +681,15 @@ const PROVIDER_STATES: Record<string, string> = {
   'srh-hamburg': 'HH',
   'aws-stuttgart': 'BW',
   'awista-duesseldorf': 'NW',
+  'srl-leipzig': 'SN',
+  'srdd-dresden': 'SN',
+  'aha-region-hannover': 'NI',
+  'awg-wuppertal': 'NW',
+  'athos-edg-dortmund': 'NW',
+  'athos-umweltbetrieb-bielefeld': 'NW',
+  'athos-aws-schaumburg': 'NI',
+  'athos-kaw-hameln-pyrmont': 'NI',
+  'athos-awb-lk-karlsruhe': 'BW',
   'bsr-berlin': 'BE',
   'ctrace-arnsberg': 'NW',
   'ctrace-bremen': 'HB',
@@ -475,7 +747,7 @@ const PROVIDER_STATES: Record<string, string> = {
 }
 
 export const ABFALL_PROVIDERS: AbfallProvider[] = [
-  ...REGIOIT, ...AWIDO_PROVIDERS, ...JUMOMIND_PROVIDERS, ...ABFALLIO_PROVIDERS,
+  ...REGIOIT, ...AWIDO_PROVIDERS, ...JUMOMIND_PROVIDERS, ...MYMUELL_OFFICIAL, ...ABFALLIO_PROVIDERS,
   ...CTRACE, ...AWG_BASSUM, ...BSR, ...FES, ...AWM, ...AWB_KOELN, ...SRH, ...AWS_STUTTGART,
-  ...AWISTA,
+  ...AWISTA, ...SRL, ...SRDD, ...AHA, ...AWGW, ...INSERTIT, ...ABKI, ...CITY_OWN, ...ABIS, ...MUELLMAX, ...HAUSMUELL, ...MEINABFALL, ...ATHOS, ...ABFALLPLUS,
 ].map((p) => (p.state ? p : { ...p, ...(PROVIDER_STATES[p.id] ? { state: PROVIDER_STATES[p.id] } : {}) }))

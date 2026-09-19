@@ -1,0 +1,5 @@
+/* iOS shows these itself, in the phone's language — not the app's own
+   language setting, which it cannot see. English (en.lproj) is the fallback
+   for a phone in a language we don't ship. */
+"NSCameraUsageDescription" = "Damit du ein Foto direkt zu einem Artikel aufnehmen kannst.";
+"NSFaceIDUsageDescription" = "Damit du Aporah mit Face ID entsperren kannst.";

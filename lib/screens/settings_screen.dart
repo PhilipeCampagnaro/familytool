@@ -5,6 +5,7 @@ import '../models/entitlements.dart';
 import '../services/spend_intent.dart';
 import '../services/app_review.dart';
 import '../services/local_notifications.dart';
+import '../state/app_lock_state.dart';
 import '../state/auth_state.dart';
 import '../state/calendar_connections_state.dart';
 import '../state/entitlement_state.dart';
@@ -14,6 +15,7 @@ import '../state/onboarding_state.dart';
 import '../state/settings_state.dart';
 import '../state/spend_state.dart';
 import '../theme/tokens.dart';
+import '../widgets/app_lock_gate.dart';
 import '../widgets/app_sheet.dart';
 import '../widgets/avatar.dart';
 import '../widgets/collapsing_header.dart';
@@ -144,6 +146,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final tone = AppTones.list[me?.tone ?? state.avatarTone];
 
     final members = ref.watch(householdMembersProvider);
+    final appLock = ref.watch(appLockProvider);
 
     final groups = <List<({String terms, Widget row})>>[
       [
@@ -225,6 +228,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               icon: AppIcons.bell,
               title: L.s.notificationsTitle,
               onTap: () => _push(context, NotificationsPage()),
+            ),
+          ),
+        // Named after this phone's sensor — Face ID, Touch ID, a fingerprint —
+        // because that is what the user is looking for, not "App-Sperre". Absent
+        // where the phone has no screen lock, since there is nothing to lock with.
+        if (appLock.available)
+          (
+            terms: L.s.searchTermsAppLock,
+            row: SettingsRow(
+              icon: biometricGlyph(appLock.kind),
+              title: L.s.unlockWith(biometricMethodName(appLock.kind)),
+              subtitle: L.s.appLockSubtitle,
+              trailing: NativeSwitch(
+                value: appLock.enabled,
+                onChanged: (v) => ref.read(appLockProvider.notifier).setEnabled(v),
+              ),
             ),
           ),
         (

@@ -18,6 +18,8 @@ library;
 
 import 'package:flutter/material.dart';
 
+import '../theme/app_icons.dart';
+
 /// Bin colours as the German waste system actually paints them, nudged for
 /// screen: the real yellow and the real grey are both hard to see as a 9pt dot.
 class BinColors {
@@ -110,3 +112,18 @@ Color? binColorFor(String title) {
   }
   return null;
 }
+
+/// The bin's glyph, beside its colour — for the rhythm question, where the
+/// household reads a bin's name off its own sticker and a picture of the bin
+/// says which one is meant before the word does. The same four shapes the
+/// cities' own forms draw: a bin, a leaf, a stack of paper, the recycling
+/// arrows. Null, like [binColorFor], for a fraction we don't recognise.
+IconData? binIconFor(String title) => switch (binColorFor(title)) {
+  BinColors.rest => AppIcons.trash,
+  BinColors.bio => AppIcons.leaf,
+  BinColors.paper => AppIcons.stack,
+  BinColors.packaging => AppIcons.recycle,
+  BinColors.glass => AppIcons.wine,
+  BinColors.bulky => AppIcons.package,
+  _ => null,
+};

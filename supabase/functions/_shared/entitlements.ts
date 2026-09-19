@@ -65,6 +65,18 @@ export async function planOf(db: SupabaseClient, familyId: string): Promise<Plan
   return Date.now() < until + EXPIRY_GRACE_MS ? "plus" : "free";
 }
 
+/// The `external_account` of a household's **Abfall file** — the waste calendar
+/// of a town whose provider we may not fetch from (`upload` in
+/// abfall_providers.ts), handed over as an uploaded .ics. It is Abfall, so it
+/// is free like every other Abfall calendar and is not counted below. One key
+/// per household, so every bin file lands on the one connection.
+///
+/// Only `calendar-link` writes it, and only after `looksLikeBinCalendar` and
+/// `isUploadOnlyTown` agree; a hostname cannot contain a colon, so no pasted
+/// link's key can ever take this shape. **This is the whole Plus exception:**
+/// the free plan counts every connection except Ferien, Abfall and this one.
+export const BIN_FILE_ACCOUNT = "abfall:datei";
+
 /// Whether this household may connect the account it is trying to connect.
 ///
 /// Counts `calendar_connections` rows — the account, not the calendars inside
@@ -75,7 +87,9 @@ export async function planOf(db: SupabaseClient, familyId: string): Promise<Plan
 /// **Ferien and Abfall are not counted and must never be.** They are
 /// `family_feeds` subscriptions to a shared `public_feeds` row — a hundred
 /// households on one street cause one daily fetch between them — so they cost
-/// nothing per family and are part of the free product.
+/// nothing per family and are part of the free product. The Abfall file
+/// (BIN_FILE_ACCOUNT) is the one Abfall calendar that is a connection row, and
+/// is skipped here for the same reason.
 ///
 /// **A reconnect is always allowed, and getting this wrong would be worse than
 /// having no limit at all.** All three connect routes `upsert` on
@@ -90,6 +104,7 @@ export async function canAddCalendarAccount(
   familyId: string,
   account: { provider: string; externalAccount: string },
 ): Promise<boolean> {
+  if (account.externalAccount === BIN_FILE_ACCOUNT) return true;
   const limit = LIMITS[await planOf(db, familyId)].calendarAccounts;
   if (limit === null) return true;
 
@@ -105,7 +120,8 @@ export async function canAddCalendarAccount(
   const { count } = await db
     .from("calendar_connections")
     .select("id", { count: "exact", head: true })
-    .eq("family_id", familyId);
+    .eq("family_id", familyId)
+    .neq("external_account", BIN_FILE_ACCOUNT);
 
   return (count ?? 0) < limit;
 }

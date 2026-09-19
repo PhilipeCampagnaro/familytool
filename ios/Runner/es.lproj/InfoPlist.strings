@@ -1,0 +1,3 @@
+/* See de.lproj/InfoPlist.strings. */
+"NSCameraUsageDescription" = "Para que puedas hacer una foto de un artículo al momento.";
+"NSFaceIDUsageDescription" = "Para que puedas desbloquear Aporah con Face ID.";

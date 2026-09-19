@@ -15,7 +15,9 @@ import '../../widgets/error_note.dart';
 import '../../widgets/family_avatar_button.dart';
 import '../../widgets/glyph_tile.dart';
 import '../../widgets/inline_dropdown.dart';
+import '../../widgets/person_actions.dart';
 import '../../widgets/rename_sheet.dart';
+import '../../widgets/swipe_actions.dart';
 import '../../widgets/settings_chrome.dart';
 import '../../l10n/l10n.dart';
 import '../../theme/app_icons.dart';
@@ -116,13 +118,11 @@ class FamilyPage extends ConsumerWidget {
                   // Kindergarten calendar was assigned to them — so this is
                   // derived from the calendars rather than read from a table.
                   //
-                  // Read-only on purpose. There is no row to rename, no role to
-                  // give somebody who cannot log in, and nothing to delete: the
-                  // way to remove one of these is to reassign their calendars,
-                  // which is done where they are assigned. What this fixes is
-                  // that the family list used to answer "who is in this
-                  // household?" with only the half that has passwords.
-                  for (final person in _peopleWithoutAccounts(ref)) _PersonRow(name: person),
+                  // An admin renames or removes one right here — tap to rename,
+                  // or the swipe and the "…", which both offer the two. Either rewrites every calendar
+                  // that names them (removing hands those back to the family),
+                  // exactly as the owner picker on the calendar does.
+                  for (final person in _peopleWithoutAccounts(ref)) _PersonRow(name: person, canManage: isAdmin),
                   for (final invite in family.invites)
                     SettingsRow(
                       // Sized like the avatar beside it, so the merged list has
@@ -657,30 +657,25 @@ List<String> _peopleWithoutAccounts(WidgetRef ref) {
 /// One person in the household who has no account: their face, their name, and
 /// a line saying so.
 ///
-/// Deliberately shaped like [_MemberRow] and deliberately without its controls.
-/// A role picker on somebody who cannot sign in would be a control with nothing
-/// behind it, and the tone comes from the name rather than from a `profiles`
-/// row because there is no profile to have stored one.
-class _PersonRow extends StatelessWidget {
+/// Shaped like [_MemberRow] but without its role picker — a role on somebody
+/// who cannot sign in would be a control with nothing behind it. What an admin
+/// gets instead is the name and the removal, the only two things there are.
+class _PersonRow extends ConsumerWidget {
   final String name;
+  final bool canManage;
 
-  const _PersonRow({required this.name});
+  const _PersonRow({required this.name, required this.canManage});
 
   @override
-  Widget build(BuildContext context) {
-    final tone = AppTones.list[name.hashCode.abs() % AppTones.list.length];
+  Widget build(BuildContext context, WidgetRef ref) {
+    void rename() => showRenamePersonSheet(context: context, ref: ref, name: name);
+    void remove() => confirmRemovePerson(context: context, ref: ref, name: name);
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    final row = Padding(
+      padding: EdgeInsets.fromLTRB(16, 14, canManage ? 6 : 16, 14),
       child: Row(
         children: [
-          Avatar(
-            size: 40,
-            bg: tone.bg,
-            fg: tone.fg,
-            initials: name.isEmpty ? '?' : name.substring(0, 1).toUpperCase(),
-            fontSize: 14,
-          ),
+          personFace(name),
           const SizedBox(width: 13),
           Expanded(
             child: Column(
@@ -692,8 +687,20 @@ class _PersonRow extends StatelessWidget {
               ],
             ),
           ),
+          if (canManage) PersonMoreButton(onRename: rename, onRemove: remove),
         ],
       ),
+    );
+
+    if (!canManage) return row;
+    return SwipeActionsRow(
+      onTap: rename,
+      actions: [
+        SwipeAction(icon: AppIcons.pencilSimple, color: Theme.of(context).colorScheme.primary, onTap: rename),
+        SwipeAction(icon: AppIcons.trash, color: AppColors.danger, onTap: remove),
+      ],
+      // Opaque, so the actions stay hidden until the row slides off them.
+      child: ColoredBox(color: AppColors.surface, child: row),
     );
   }
 }

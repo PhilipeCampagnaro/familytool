@@ -1229,7 +1229,10 @@ class _AllCalendarsChipState extends ConsumerState<_AllCalendarsChip> {
         options.add(
           NativeMenuOption(
             src.name,
-            color: src.color,
+            // A waste calendar's entries wear their bins' colours, so the
+            // calendar itself is a bin glyph rather than one more dot.
+            symbol: src.isAbfall ? 'trash' : null,
+            color: src.isAbfall ? null : src.color,
             section: section,
             sectionTitle: title,
             selected: filter == null || filter.contains(src.id),
@@ -1247,7 +1250,7 @@ class _AllCalendarsChipState extends ConsumerState<_AllCalendarsChip> {
       onKeptOpen: (index) {
         final id = ids[index];
         if (id == null) {
-          notifier.clearCalendarFilter();
+          notifier.toggleAllCalendars();
         } else {
           notifier.toggleCalendarAnywhere(id);
         }
@@ -1266,7 +1269,7 @@ class _AllCalendarsChipState extends ConsumerState<_AllCalendarsChip> {
         // The route stays open while the rows are ticked: picking three
         // calendars out of eight is one gesture, not three.
         onToggle: (id) => notifier.toggleCalendarAnywhere(id),
-        onAll: () => notifier.clearCalendarFilter(),
+        onAll: () => notifier.toggleAllCalendars(),
       ),
     );
   }

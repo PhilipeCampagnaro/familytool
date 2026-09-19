@@ -100,6 +100,15 @@ class ListScreenState {
   /// re-draw the other parent's screen from across town.
   final Set<String> cardListIds;
 
+  /// Which real list the pooled "Alle Artikel" view files a typed article
+  /// into, as the reader picked it from the add line's own chip — or null,
+  /// which means "whichever comes first" and is what a fresh install has.
+  ///
+  /// Read through [summaryTargetId] rather than directly: a pick can outlive
+  /// the list it names (deleted here, or unshared from the other side), and it
+  /// arrives from `shared_preferences` a moment after the screen does.
+  final String? summaryTargetChoice;
+
   const ListScreenState({
     this.isDetail = false,
     this.openId = summaryListId,
@@ -115,6 +124,7 @@ class ListScreenState {
     this.loading = true,
     this.error,
     this.cardListIds = const {},
+    this.summaryTargetChoice,
   });
 
   /// Whether this account is looking at somebody else's list through an
@@ -133,6 +143,32 @@ class ListScreenState {
   /// empty row where the "create your first list" hint belongs.
   bool get showSummary => !isGuest && lists.length >= 2;
 
+  /// The list a typed article lands in while the pooled view is open —
+  /// [summaryTargetChoice] where it still names a list this account may write
+  /// to, and otherwise the first real one. Null only when there is no list at
+  /// all, which is nothing to file under.
+  ///
+  /// A guest list is never it: pooling somebody else's list into the summary is
+  /// already refused ([isGuest]), and filing into one would be the same
+  /// mistake from the other direction.
+  String? get summaryTargetId {
+    final picked = summaryTargetChoice;
+    if (picked != null && !guestListIds.contains(picked) && lists.any((l) => l.id == picked)) {
+      return picked;
+    }
+    for (final l in lists) {
+      if (!guestListIds.contains(l.id)) return l.id;
+    }
+    return null;
+  }
+
+  /// The list itself, for the add line's chip — it draws that list's own icon,
+  /// so an id is not enough.
+  ShoppingList? get summaryTarget {
+    final id = summaryTargetId;
+    return id == null ? null : listById(id);
+  }
+
   ListScreenState copyWith({
     bool? isDetail,
     String? openId,
@@ -149,6 +185,7 @@ class ListScreenState {
     String? error,
     bool clearError = false,
     Set<String>? cardListIds,
+    String? summaryTargetChoice,
   }) {
     return ListScreenState(
       isDetail: isDetail ?? this.isDetail,
@@ -165,6 +202,7 @@ class ListScreenState {
       loading: loading ?? this.loading,
       error: clearError ? null : (error ?? this.error),
       cardListIds: cardListIds ?? this.cardListIds,
+      summaryTargetChoice: summaryTargetChoice ?? this.summaryTargetChoice,
     );
   }
 
@@ -247,6 +285,7 @@ class DeletedListItem {
 class ListNotifier extends StateNotifier<ListScreenState> {
   ListNotifier(this._repo, this._photos, this._userId, this._familyId) : super(const ListScreenState()) {
     _loadViewModes();
+    _loadSummaryTarget();
     if (_userId != null) load();
   }
 
@@ -315,6 +354,47 @@ class ListNotifier extends StateNotifier<ListScreenState> {
       await prefs.setStringList(_prefsCardListsKey, ids.toList());
     } catch (_) {
       // Same as above — the switch still holds for this session.
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Where the pooled view files into
+  // ---------------------------------------------------------------------------
+
+  static const _prefsSummaryTargetKey = 'list_summary_target';
+
+  /// Best-effort like the view modes, and for the same reason it lives beside
+  /// them rather than on a column: which list I file into from "Alle Artikel"
+  /// is mine, on this device, and a column would move the other parent's chip
+  /// while they were typing. A device that can't read it simply starts at the
+  /// first list again — see [ListScreenState.summaryTargetId].
+  Future<void> _loadSummaryTarget() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final id = prefs.getString(_prefsSummaryTargetKey);
+      if (id == null || id.isEmpty || !mounted) return;
+      state = state.copyWith(summaryTargetChoice: id);
+    } catch (_) {
+      // No local storage — the first list it is.
+    }
+  }
+
+  /// Points the pooled view's add line at [listId], and remembers it.
+  ///
+  /// Nothing validates the id here: [ListScreenState.summaryTargetId] is the
+  /// one place that decides whether a pick still names a list, so a list
+  /// deleted later needs no cleanup pass.
+  void setSummaryTarget(String listId) {
+    state = state.copyWith(summaryTargetChoice: listId);
+    _persistSummaryTarget(listId);
+  }
+
+  Future<void> _persistSummaryTarget(String listId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_prefsSummaryTargetKey, listId);
+    } catch (_) {
+      // Same as above — the pick still holds for this session.
     }
   }
 
@@ -883,7 +963,15 @@ class ListNotifier extends StateNotifier<ListScreenState> {
   /// [parseArticleQuantity], which leaves the line alone whenever it isn't sure.
   /// A unit read out of the text beats [unit] from the add row's chip: it is
   /// the more specific of the two and it is the one just typed.
-  Future<void> addItem(String text, {String? iconKey, String? unit}) async {
+  /// [matchIcon] is the add line saying whether the picture is still the
+  /// matcher's business. It is false when the reader has already answered —
+  /// they took the guessed picture off with its own little x — and then no
+  /// icon is stored at all, which on a Lebensmittel list draws the general
+  /// shopping cart (see `_ItemIcon`). Without it a cleared picture came
+  /// straight back: `iconKey: null` means "you decide" everywhere else in this
+  /// file, and the matcher decided the same thing it had just been overruled
+  /// on.
+  Future<void> addItem(String text, {String? iconKey, bool matchIcon = true, String? unit}) async {
     final trimmed = text.trim();
     if (trimmed.isEmpty) return;
 
@@ -901,7 +989,8 @@ class ListNotifier extends StateNotifier<ListScreenState> {
     // takes the icon the reader chose and nothing otherwise — see
     // [planItemIconKey] for why the matcher stopped guessing here.
     final icon =
-        iconKey ?? (grocery ? suggestIcon(article.text, subject: IconSubject.groceryArticle)?.key : null);
+        iconKey ??
+        (grocery && matchIcon ? suggestIcon(article.text, subject: IconSubject.groceryArticle)?.key : null);
 
     final optimistic = ShoppingListItem(
       id: _tempId(),
@@ -936,15 +1025,12 @@ class ListNotifier extends StateNotifier<ListScreenState> {
     }
   }
 
-  /// Which list a typed article lands in. In the pooled view that is the first
-  /// real list; with no list at all there is nothing to file it under.
-  String? _targetListId() {
-    if (state.openId != summaryListId) return state.openId;
-    for (final l in state.lists) {
-      if (!state.guestListIds.contains(l.id)) return l.id;
-    }
-    return null;
-  }
+  /// Which list a typed article lands in: the one you are in, or — in the
+  /// pooled view — the one its add line says it will file into. That used to be
+  /// "the first real list", silently, which made "Alle Artikel" the one place
+  /// where typing an article put it somewhere the screen never named.
+  String? _targetListId() =>
+      state.openId == summaryListId ? state.summaryTargetId : state.openId;
 
   /// Writes back what was typed into an article's row — its name and the
   /// quantity line under it.
@@ -1007,6 +1093,39 @@ class ListNotifier extends StateNotifier<ListScreenState> {
 
     try {
       final saved = await _repo.setUnit(item.id, unit);
+      if (!mounted) return;
+      _replaceItem(item.listId, item.id, saved);
+    } catch (_) {
+      if (!mounted) return;
+      _patchItem(item.listId, item.id, (_) => item);
+      _fail(L.s.changeSaveFailed);
+    }
+  }
+
+  /// Corrects the picture in front of an article, or takes it off with `null`.
+  ///
+  /// The matcher is a guess made from a name, and a guess is wrong often enough
+  /// that it has to be answerable — `Paprika Gewürz` is a jar of spice and gets
+  /// a pepper. Taking it off is not "no picture": a Lebensmittel row with no
+  /// icon draws the general shopping cart, which is the honest answer where
+  /// nothing recognised the line.
+  ///
+  /// Beside [setUnit] and written the same way, optimistically and one column
+  /// at a time. Note that renaming the article puts the matcher back in charge
+  /// — see [editItem], where a changed name re-matches — so this is a decision
+  /// about *this* name rather than a lock on the row.
+  Future<void> setItemIcon(ShoppingListItem item, String? iconKey) async {
+    if (_isTemp(item.id)) return;
+    if (iconKey == item.iconKey) return;
+
+    _patchItem(
+      item.listId,
+      item.id,
+      (i) => i.copyWith(iconKey: iconKey, clearIconKey: iconKey == null),
+    );
+
+    try {
+      final saved = await _repo.setIcon(item.id, iconKey);
       if (!mounted) return;
       _replaceItem(item.listId, item.id, saved);
     } catch (_) {

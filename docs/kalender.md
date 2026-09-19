@@ -302,7 +302,10 @@ built from the row was one person: two children at once, or a child's Klausurpla
 family calendar, could not be expressed and the only way to see both was to give up and show
 everything. "Alle" is the chip that stands for nobody in particular, so the selection belonging to
 nobody in particular hangs off it. The panel lists every calendar under its account's caption,
-plus an "Alle" row at the top as the way back; `toggleCalendarAnywhere` adds to and removes from
+plus an "Alle" row at the top that is **a checkbox over all of them** (`toggleAllCalendars`):
+ticked, it unticks every calendar at once, leaving the empty hand-picked set; unticked, it ticks
+them all back to `null`. It used to only ever reset, so tapping it while lit did nothing and there
+was no way to start from none. `toggleCalendarAnywhere` adds to and removes from
 whatever is showing rather than replacing it, which is exactly what an account's own popup must
 not do. Ticking every calendar back on returns to `null` rather than to a hand-picked set holding
 all of them today, so an account connected tomorrow joins it instead of arriving hidden.

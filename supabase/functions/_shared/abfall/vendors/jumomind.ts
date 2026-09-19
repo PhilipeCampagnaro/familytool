@@ -94,7 +94,10 @@ async function towns(p: AbfallProvider): Promise<Town[]> {
   const cities = await getJson(
     jumoUrl(p.service, 'r=cities_web'), JUMO_HEADERS,
   ) as Array<{ id: string; name: string; area_id: string; has_streets: boolean }>
-  return (Array.isArray(cities) ? cities : []).map((c) => ({
+  // An allowlisted host (MyMüll) serves only the towns named on its row.
+  const allowed = (name: string) => !p.cities ||
+    p.cities.some((c) => name === c || name.startsWith(`${c}-`) || name.startsWith(`${c} -`))
+  return (Array.isArray(cities) ? cities : []).filter((c) => allowed(c.name)).map((c) => ({
     vendor: 'jumomind', name: c.name, provider: p.id, service: p.service,
     cityId: c.id, areaId: c.area_id, hasStreets: !!c.has_streets,
   }))

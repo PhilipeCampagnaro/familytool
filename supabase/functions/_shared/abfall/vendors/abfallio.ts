@@ -209,6 +209,11 @@ async function readAbfallio(cfg: AbfallConfig): Promise<SyncedEvent[]> {
 }
 
 async function towns(p: AbfallProvider): Promise<Town[]> {
+  const all = await allTowns(p)
+  return p.notTowns ? all.filter((t) => !p.notTowns!.includes(t.name)) : all
+}
+
+async function allTowns(p: AbfallProvider): Promise<Town[]> {
   if (!p.key) return []
   const page = await abfallioPost(p.key, 'init', new Map())
   const kommunen = page.selects.get('f_id_kommune')

@@ -24,7 +24,8 @@ become true.
   the bins, a to-do's hour), so there is nothing for quiet hours to silence. It returns with push
   (N5), where somebody else's action picks the time.
 - **Defaults:** brief on where iOS can deliver it provisionally, off on Android (no quiet grant
-  there); Abfall on; to-dos with a time on. The real prompt is asked when a reminder is set, a
+  there); Abfall on; to-dos with a time on; Ausgaben's goals on, which it can afford to be because
+  a household with no goals never hears from it, and which names no hour at all. The real prompt is asked when a reminder is set, a
   switch is turned on, or an Abfall calendar is connected — never at launch.
 - **A CalDAV occurrence that is moved loses its reminder.** A one-off follows its appointment
   anywhere (keyed on calendar + uid); an occurrence of a series is also keyed on its start, because
@@ -206,7 +207,59 @@ a 7-day streak is a small win the user just caused.
 is an inventory, inventories are filled in sittings, and nothing in a box has a deadline. If the
 household wants to know what changed, the app is where that lives.
 
-### Ausgaben
+### Ausgaben — a goal running hot (local, built)
+
+**Two notices per category per month at most, and the early one is pace, not a percentage.**
+
+- **Läuft voraus** — the goal has crossed `SpendBudgetStatus.ahead`, *and* the month is at least a
+  quarter gone *and* at least half the goal is spent. Those two floors are the whole difference
+  between this and a percentage trigger: `share > monthElapsed + .1` on the 2nd of the month is one
+  weekly shop, and without them every household with a grocery goal is told it is overspending in
+  the first week of every month. `SpendBudgetProgress.noticeLevel` holds the rule, beside `status`
+  rather than in the scheduler — see the goals section of [spend.md](spend.md).
+- **Überschritten** — past the limit.
+
+Four things about it that are not obvious and are all load-bearing:
+
+- **A flat 75 % or 80 % was the obvious design and is the wrong one.** Every household that spends
+  evenly crosses it around the 23rd of every month, in every category, for ever. A notice that
+  fires on a schedule and says nothing is precisely what the top of this file is about; and 100 %
+  alone is a receipt, because the money has already gone.
+- **No hour of its own, and it was given one and then taken away again.** The evening — 19:00,
+  beside the brief and the bins — is the obvious shape, and it is wrong here: a goal has no
+  deadline to count back from, so holding the news would mean the app knew at 14:00 and said so at
+  19:00, sitting for five hours on the one thing it was asked to watch. It goes out when the
+  derivation finds it. `kBudgetNoticeLead` is a minute rather than nothing because
+  `LocalNotifications.swift` drops a request under a second in the past, and because every
+  derivation calls `replaceAll` — a notice due in half a second would be cancelled and re-sent by
+  the next poke, which is debounced at 800ms and can land first.
+- **"When it happens" means "when the device works it out", and that is a real limit rather than a
+  detail.** Nothing is derived on a phone the app is not running on, so a tap that blows a goal
+  while the phone is locked is noticed on the next foreground or resume — which is exactly when
+  `spendProvider.refresh` runs. It is the same boundary that puts *"a spend was filed while the
+  phone was locked"* in N5: only the server can speak for a device that is asleep, and that needs
+  push.
+- **Coalesced**: every crossing one derivation finds is one notice, because three goals are one
+  piece of news about one month. They share the derivation's single `now`, which is what lands them
+  on one instant. One goal names its figures ("320 € von 500 €"); several are listed by name.
+- **This is the one kind with no time of its own, so it is the one kind that remembers.** The other
+  four are anchored to something the device already knows, so re-deriving lands on the same
+  instant. A goal simply *is* over, from now until the month ends — re-derived every foreground, it
+  would be announced every evening for the rest of the month, which is the "follows somebody
+  around" failure a tracker is built to avoid. `NotificationSettings.announcedBudgets` maps
+  `budgetNoticeKey` (category + calendar month + level) to the moment it was pinned to, and the
+  calendar month being *in the key* is what makes it self-expiring: April has never seen March's
+  key, so nothing anywhere has to reset it. The value is a time rather than a flag because even a
+  notice that fires at once is *scheduled* — until that minute is up the derivation must keep
+  emitting it, or `replaceAll` would take back the one it just sent.
+
+**Plus and admin, and both are checked twice.** The card in Settings → Mitteilungen is absent
+unless `spendAvailable`, `Feature.spend` and `isAdminProvider` all say yes — absent rather than
+disabled, because a switch that can never fire is a question the user has to answer for themselves
+— and the scheduler re-asks the entitlement, because a lapsed Plus household keeps its
+`spend_budgets` rows and would otherwise go on being told about a page it can no longer open.
+
+### Ausgaben — a payment nobody typed (push, N5)
 
 The strongest push case in the app, and the only one where **the app acted on its own**:
 
@@ -371,8 +424,12 @@ through Google**, and keeping it out matches the app's stance on the Maps key an
       calendar's defaults), Graph `reminderMinutesBeforeStart`, CalDAV `VALARM`; never for a pasted
       feed. `CalendarEvent.providerReminderMinutes` replaced the dead string and the row reads it.
       **Written, not type-checked, not deployed** — `supabase functions deploy calendar-events`.
-- [x] **N2 — Settings: Mitteilungen.** Grant state with the action that fits it, three switches,
-      two times, four languages. Quiet hours dropped — see above.
+- [x] **N2 — Settings: Mitteilungen.** Grant state with the action that fits it, four switches,
+      two times, four languages. Quiet hours dropped — see above. **A card binds a switch to the
+      hour it fires at, so the two switches with no hour — to-dos, which bring their own, and
+      Ausgaben's goals, which have none — share the last card.** The goals switch is Plus + admin
+      only and is the only row on the page that is not always there; it costs nothing when it is
+      absent, because the card stands on the to-do row without it.
 - [x] **N3 — Rating.** `ReviewPrompt` plus both channels. Fixed the 13.0/15.0 line in CLAUDE.md.
       Still needs the App Store id before the iOS Settings row appears.
 - [ ] **N4 — Push infrastructure.** Table, `push-send`, APNs `.p8`, FCM project, per-recipient

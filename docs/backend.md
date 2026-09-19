@@ -421,6 +421,18 @@ as and what a feed used to be pinned to in code. The grants on this table are **
 a new column is invisible until it is named in a `grant`; the row's policies (read: the household,
 write: the household minus the kids) already decide who may touch it at all.
 
+**The address a household typed is one of those decisions.** `calendar-feed` writes the label
+("Adlerstraße 12, 69123 Heidelberg") into `family_feeds.display_name` and strips it from the config
+before the shared row is created; the shared row is named plain "Abfallkalender", and its events
+carry no `location`. It used to keep the first subscriber's whole label in `config.label`, in
+`name`, and as the location of every event, so a neighbour on a street-level schedule would have
+read the first household's house number. Nothing is lost by it: `feedKeyOf` already left the label
+out of the key. The config itself still holds the street, and the house where the vendor plans per
+house, which is exactly what a household must have typed to share the row. `families.address`
+holds only the postcode and town (weather and the event form's search bias need no more). Both are
+what the shield line under the address pickers (`AddressPrivacyNote`) promises, so change neither
+without changing it.
+
 **A school calendar's link is a credential, and is stored like every other one.** IServ plugin
 feeds and WebUntis subscriptions have no username or password — the tokenised URL *is* the whole
 capability — so it is sealed under `CALENDAR_SECRET_KEY` and kept in

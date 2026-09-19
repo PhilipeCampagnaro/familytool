@@ -14,7 +14,6 @@ import '../../widgets/anchored_menu.dart';
 import '../../widgets/collapsing_header.dart';
 import '../../widgets/glass.dart';
 import '../../widgets/native_search_field.dart';
-import '../../widgets/segmented_control.dart';
 import '../spend_screen.dart';
 import 'spend_breakdown.dart';
 import 'spend_budgets.dart';
@@ -27,13 +26,6 @@ enum SpendExploreView {
   merchants,
   categories;
 
-  String get label => switch (this) {
-    SpendExploreView.all => L.s.spendViewAll,
-    SpendExploreView.members => L.s.spendViewMembers,
-    SpendExploreView.merchants => L.s.spendViewMerchants,
-    SpendExploreView.categories => L.s.spendViewCategories,
-  };
-
   /// The breakdown this view lists, or null for the payments themselves.
   SpendGrouping? get grouping => switch (this) {
     SpendExploreView.all => null,
@@ -41,6 +33,23 @@ enum SpendExploreView {
     SpendExploreView.merchants => SpendGrouping.merchant,
     SpendExploreView.categories => SpendGrouping.category,
   };
+
+  /// What the card below the chart calls itself — **and the words in the
+  /// picker are the same words**, so the row with the tick beside it reads
+  /// exactly like the heading it is standing under. The three breakdowns
+  /// borrow their headings from [SpendGrouping], which is what Ausgaben's own
+  /// card prints, so the page behind the link and the card in front of it
+  /// never call one thing two names.
+  ///
+  /// They used to be shorter — "Alle", "Personen" — because four of them had
+  /// to fit across a pill; a dropdown has the width of the card.
+  String get title => grouping?.title ?? L.s.spendAllPurchases;
+
+  IconData get icon => grouping?.icon ?? AppIcons.receipt;
+
+  /// The glyph UIKit draws in its own menu. Validated against the runtime's
+  /// own list — see `showAnchoredMenu`.
+  String get symbol => grouping?.symbol ?? 'list.bullet';
 
   static SpendExploreView of(SpendGrouping grouping) => switch (grouping) {
     SpendGrouping.category => SpendExploreView.categories,
@@ -109,6 +118,10 @@ class _SpendExplorePageState extends ConsumerState<SpendExplorePage> {
 
   final _categoryAnchor = GlobalKey();
 
+  /// The heading of the card below the chart, which is the view picker — the
+  /// same control Ausgaben's breakdown card wears, for the same reason.
+  final _viewAnchor = GlobalKey();
+
   void _toggleCategory(SpendCategory c) => setState(() {
     _categories = _categories.contains(c) ? ({..._categories}..remove(c)) : {..._categories, c};
     _view = SpendExploreView.all;
@@ -168,6 +181,30 @@ class _SpendExplorePageState extends ConsumerState<SpendExplorePage> {
       ],
     );
   }
+
+  /// Which of the four cuts the card below the chart is showing.
+  ///
+  /// **The heading is the control, and the pill it replaced is gone.** Four
+  /// segments across a phone spent a full row saying "there are four of
+  /// these" and had to abbreviate all four to fit; the card underneath then
+  /// printed a heading of its own saying the same thing in different words.
+  /// One heading that can be tapped is the pattern Ausgaben's breakdown card
+  /// already set, and a reader looking for "nach Person" looks at the heading
+  /// that currently says something else.
+  void _pickView() => showAnchoredMenu(
+    context: context,
+    anchorKey: _viewAnchor,
+    items: [
+      for (final view in SpendExploreView.values)
+        AnchoredMenuItem(
+          label: view.title,
+          icon: view.icon,
+          symbol: view.symbol,
+          selected: view == _view,
+          onSelected: () => setState(() => _view = view),
+        ),
+    ],
+  );
 
   bool _accepts(Spend s, Map<String, String> names, String query) {
     if (_categories.isNotEmpty && !_categories.contains(s.category)) return false;
@@ -326,17 +363,6 @@ class _SpendExplorePageState extends ConsumerState<SpendExplorePage> {
                     ),
                     const SizedBox(height: AppSpacing.blockGap),
 
-                    SegmentedControl<SpendExploreView>(
-                      pill: true,
-                      value: _view,
-                      onChanged: (view) => setState(() => _view = view),
-                      options: [
-                        for (final view in SpendExploreView.values)
-                          SegmentedOption(value: view, label: view.label),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.blockGap),
-
                     _content(summary, members),
                   ],
                 ),
@@ -361,29 +387,44 @@ class _SpendExplorePageState extends ConsumerState<SpendExplorePage> {
   }
 
   Widget _content(SpendSummary summary, List<HouseholdMember> members) {
+    // The picker stays reachable on an empty search too: the four cuts are how
+    // somebody gets *away* from a filter that found nothing.
     if (summary.isEmpty) {
       return SpendCard(
-        title: _view.label,
+        title: _view.title,
+        titleKey: _viewAnchor,
+        onTitleTap: _pickView,
         child: Text(L.s.spendNoMatches, style: AppText.body.copyWith(color: AppColors.inkSecondary)),
       );
     }
 
+    final currency = spendCurrency(summary.rows);
+
     final grouping = _view.grouping;
     if (grouping == null) {
       return SpendCard(
-        title: L.s.spendAllPurchases,
+        title: _view.title,
+        titleKey: _viewAnchor,
+        onTitleTap: _pickView,
         bleedChild: true,
+        // No link here: this page *is* the rest of them. The count keeps the
+        // slot the link takes on Ausgaben.
         trailing: Text(
           L.s.spendCountShort(summary.rows.length),
           style: AppText.body.copyWith(color: AppColors.inkSecondary),
         ),
+        // The whole point of the foot on this page: a filter is on, the list
+        // is long, and the figure it adds up to is a screen above.
+        footer: SpendTotalRow(cents: summary.totalCents, currency: currency),
         child: Column(children: [for (final spend in summary.rows) SpendRow(spend: spend)]),
       );
     }
 
-    final currency = spendCurrency(summary.rows);
     return SpendCard(
-      title: grouping.title,
+      title: _view.title,
+      titleKey: _viewAnchor,
+      onTitleTap: _pickView,
+      footer: SpendTotalRow(cents: summary.totalCents, currency: currency),
       child: Column(
         children: [
           for (final entry in spendBreakdownRows(summary, grouping, members))

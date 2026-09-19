@@ -455,6 +455,16 @@ class CalendarConnection {
     };
   }
 
+  /// The `external_account` of the household's **Abfall file**: the waste
+  /// calendar of a town whose provider we may not fetch from, uploaded as a
+  /// file. It is Abfall, so it is free and is not counted against the plan's
+  /// calendar accounts — here or in `canAddCalendarAccount` on the server,
+  /// which holds the same string as `BIN_FILE_ACCOUNT`.
+  static const binFileAccount = 'abfall:datei';
+
+  /// Whether this is the Abfall file — see [binFileAccount].
+  bool get isBinFile => account == binFileAccount;
+
   static CalendarConnection? fromMap(Map<String, dynamic> map) {
     final provider = providerFromWire(map['provider'] as String? ?? '');
     // A provider this build does not know about is skipped rather than rendered
@@ -597,6 +607,46 @@ class GeoAddress {
     prefix: map['prefix'] == true,
   );
 
+  /// The two lines a suggestion is drawn in: the street and number, then the
+  /// postcode and town. One line of "Adlerstraße 12, 69123 Heidelberg" was cut
+  /// off before the town on a phone, and the town is what tells two
+  /// Hauptstraßen apart. A bare postcode reads as the postcode over its town.
+  String get streetLine {
+    if (prefix) return postcode ?? label;
+    final line = [street, ?houseNumber].join(' ').trim();
+    return line.isEmpty ? label : line;
+  }
+
+  String get townLine => prefix ? town : [?postcode, town].join(' ').trim();
+
+  /// Whether the geocoder named the house. A street without one is not an
+  /// answer yet: the pickers ask for the number on the spot, because a vendor
+  /// that plans per house cannot name a schedule without it.
+  bool get hasHouseNumber => (houseNumber ?? '').trim().isNotEmpty;
+
+  /// This street with the number the household typed, labelled as the geocoder
+  /// would have labelled it.
+  GeoAddress withHouseNumber(String nr) {
+    final at = nr.trim();
+    return GeoAddress(
+      label: [[street, at].join(' '), townLine].where((s) => s.trim().isNotEmpty).join(', '),
+      street: street,
+      town: town,
+      houseNumber: at,
+      postcode: postcode,
+      state: state,
+    );
+  }
+
+  /// This address without its house — for handing the number field back.
+  GeoAddress get withoutHouseNumber => GeoAddress(
+    label: [street, townLine].where((s) => s.trim().isNotEmpty).join(', '),
+    street: street,
+    town: town,
+    postcode: postcode,
+    state: state,
+  );
+
   Map<String, dynamic> toMap() => {
     'label': label,
     'street': street,
@@ -608,6 +658,12 @@ class GeoAddress {
   };
 }
 
+/// Whether [typed] reads as a German house number: "12", "12a", "12 a",
+/// "12-14", "53/1". Checked before the lookup so a slip of the thumb is told
+/// about under the field rather than by a vendor that knows no such house.
+bool isHouseNumber(String typed) =>
+    RegExp(r'^\d{1,4}\s*[a-zA-Z]?(\s*[-/]\s*\d{1,4}\s*[a-zA-Z]?)?$').hasMatch(typed.trim());
+
 /// One selectable house number on a resolved street.
 class HouseNumber {
   /// Numeric only for regio-iT. AWIDO sends an addon GUID, abfall.io a form
@@ -618,6 +674,43 @@ class HouseNumber {
   final String nr;
 
   const HouseNumber({required this.id, required this.nr});
+}
+
+/// A bin whose collection rhythm the household has to name, because the vendor
+/// prints every rhythm side by side and leaves that to the bin sticker —
+/// Freiburg's "Restabfalltonne" weekly, fortnightly or four-weekly, Neuss's grey
+/// and pink lids. [options] are the ones this address has dates for, never the
+/// vendor's full menu. [bin] and each option's [RhythmOption.id] are the
+/// vendor's own German words (market data, like the bin keywords) and go back
+/// to the server untouched.
+class RhythmChoice {
+  final String bin;
+  final List<RhythmOption> options;
+
+  const RhythmChoice({required this.bin, required this.options});
+
+  /// Null for anything that is not a bin with at least two options: a question
+  /// with one answer is not a question.
+  static RhythmChoice? fromMap(Map<String, dynamic> map) {
+    final bin = map['bin'];
+    final raw = map['options'];
+    if (bin is! String || bin.isEmpty || raw is! List) return null;
+    final options = <RhythmOption>[
+      for (final o in raw)
+        if (o is Map && o['id'] is String && (o['id'] as String).isNotEmpty)
+          RhythmOption(id: o['id'] as String, every: (o['every'] as num?)?.toInt()),
+    ];
+    return options.length < 2 ? null : RhythmChoice(bin: bin, options: options);
+  }
+}
+
+/// One answer: the vendor's words, and how many days apart its dates really
+/// fall (7, 14, 28) — measured by the server, because "Grau" says nothing.
+class RhythmOption {
+  final String id;
+  final int? every;
+
+  const RhythmOption({required this.id, this.every});
 }
 
 /// Whether a picked address is served by a waste vendor we can read.
@@ -652,6 +745,14 @@ class AbfallCoverage {
   /// the choices when the number exists in more than one postcode.
   final bool needsHouseNumber;
 
+  /// The town is served, but only by a provider whose terms or robots.txt rule
+  /// out fetching its dates for us (`upload` in the server's
+  /// `abfall_providers.ts`). Not [supported], nothing to request either: the
+  /// household downloads the file from the town and adds it through the `ical`
+  /// tile's upload. [page] is where the town hands the file out, when known.
+  final bool uploadOnly;
+  final String? page;
+
   const AbfallCoverage({
     required this.supported,
     required this.town,
@@ -660,6 +761,8 @@ class AbfallCoverage {
     this.config,
     this.requested = false,
     this.needsHouseNumber = false,
+    this.uploadOnly = false,
+    this.page,
   });
 
   factory AbfallCoverage.fromMap(Map<String, dynamic> map) => AbfallCoverage(
@@ -670,7 +773,13 @@ class AbfallCoverage {
     config: map['config'] is Map ? Map<String, dynamic>.from(map['config'] as Map) : null,
     requested: map['requested'] == true,
     needsHouseNumber: map['needsHouseNumber'] == true,
+    uploadOnly: map['uploadOnly'] == true,
+    page: _httpsUrl(map['page']),
   );
+
+  /// Only an https link is opened from here — it came off the network.
+  static String? _httpsUrl(Object? raw) =>
+      raw is String && raw.startsWith('https://') && raw.length < 300 ? raw : null;
 
   AbfallCoverage asRequested() => AbfallCoverage(
     supported: supported,
@@ -680,6 +789,8 @@ class AbfallCoverage {
     config: config,
     requested: true,
     needsHouseNumber: needsHouseNumber,
+    uploadOnly: uploadOnly,
+    page: page,
   );
 
   /// Whether [config] can be connected as it stands.

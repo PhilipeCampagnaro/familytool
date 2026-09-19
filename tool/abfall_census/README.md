@@ -13,6 +13,7 @@ deno run --allow-net --allow-read --allow-write --allow-env census.ts     # → 
 deno run --allow-net --allow-read --allow-write --allow-env probe.ts      # → probe_results.json (~30 s, one real address per provider)
 python3 finish_states.py                                                  # → census_states.json + growth.json cities (Photon cache, Nominatim for the rest)
 python3 build_artifact.py                                                 # → abfall_coverage.html
+python3 gen_upload_towns.py                                               # → _shared/abfall/upload_towns.ts (after a census)
 ```
 
 Then republish `abfall_coverage.html` to the artifact URL in the plan.

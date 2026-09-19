@@ -34,6 +34,7 @@ import {
   readRemoteEvents,
   ReconnectRequired,
 } from "../_shared/providers.ts";
+import { BIN_FILE_ACCOUNT } from "../_shared/entitlements.ts";
 import { subscribedFeeds } from "../_shared/feeds.ts";
 import { migrateLegacyFeeds, redact } from "../_shared/ics_feed.ts";
 
@@ -246,6 +247,12 @@ async function readConnection(
       // After the read, so a calendar that cannot be reached does not get a row
       // written for it on the way past.
       const row = await upsertCalendar(db, connection, cal, index, owners);
+      // The Abfall file is the household's Müllabfuhr, held as an `ical`
+      // connection only because it came as a file (BIN_FILE_ACCOUNT). Marked
+      // like the address feeds so the app colours it by bin and reminds the
+      // evening before — both key on `feed_kind`, and without it the uploaded
+      // bins were an ordinary calendar that nobody was told about.
+      if (connection.external_account === BIN_FILE_ACCOUNT) row.feed_kind = "abfall";
       calendars.push(row);
       for (const e of read) events.push(toWire(row.id, e));
     } catch (e) {

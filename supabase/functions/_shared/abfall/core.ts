@@ -21,7 +21,8 @@ export interface HausNr { id: string | number; nr: string }
 // so nothing parses it on the way in or out.
 export interface AbfallConfig {
   vendor: 'regioit' | 'awido' | 'jumomind' | 'abfallio' | 'ctrace' | 'ics' | 'awgbassum' | 'bsr' | 'fes' | 'awm' | 'awbkoeln' | 'srh'
-    | 'awsstuttgart' | 'awista'
+    | 'awsstuttgart' | 'awista' | 'srl' | 'athos' | 'abfallplus' | 'srdd' | 'aha' | 'awgwuppertal' | 'insertit' | 'abki' | 'wuerzburg' | 'avea' | 'oldenburg'
+    | 'art' | 'waswob' | 'albabs' | 'elw' | 'fuerth' | 'heilbronn' | 'abis' | 'enni' | 'muellmax' | 'hws' | 'ksj' | 'tsk' | 'hausmuell' | 'sab' | 'swp' | 'osb' | 'meinabfall' | 'geb' | 'mags' | 'citko' | 'zah' | 'heidelberg' | 'beg' | 'sro' | 'ead'
   label?: string          // human address label, for display / event location
   // regioit (AbfallNavi):
   region?: string         // host slug, e.g. 'aachen'
@@ -53,7 +54,7 @@ export interface AbfallConfig {
   client?: string         // customer slug, e.g. 'rmk'
   oid?: string            // street key (GUID) for getData
   // jumomind (Jumomind / MyMuell app API; `service` shared with ctrace):
-  service?: string        // jumomind: host id, e.g. 'mymuell'; ctrace: service path
+  service?: string        // jumomind: host id, e.g. 'ingol'; ctrace: service path
   cityId?: string
   areaId?: string
   // awgbassum (per-street ICS template):
@@ -61,6 +62,15 @@ export interface AbfallConfig {
   city?: string           // ?city= value
   street?: string         // ?street= display value
   slug?: string           // ?slug= value (the site's street key)
+  // aha (Region Hannover): `city` is the Gemeinde, `hnr` the number, `zusatz`
+  // its letter, `hnrId` "<strasse option>|<ladeort>".
+  zusatz?: string
+  // The household's answer to "how often is this bin emptied?", keyed by the
+  // bin as the vendor names it: { "Restmüll": "2-wöchentlich" }. Only where the
+  // vendor publishes every rhythm side by side and leaves the household to pick
+  // (see RhythmChoice). Part of the feed key, so neighbours on different
+  // rhythms get different feeds.
+  rhythm?: Record<string, string>
 }
 
 // Some vendor endpoints (e.g. AWG Bassum's /ajax/ street search) 406 a request
@@ -89,7 +99,8 @@ export function decodeEntities(s: string): string {
 // A selectable town. Carries whatever the vendor family needs to resolve streets.
 export interface Town {
   vendor: 'regioit' | 'awido' | 'jumomind' | 'abfallio' | 'ctrace' | 'awgbassum' | 'bsr' | 'fes' | 'awm' | 'awbkoeln' | 'srh'
-    | 'awsstuttgart' | 'awista'
+    | 'awsstuttgart' | 'awista' | 'srl' | 'athos' | 'abfallplus' | 'srdd' | 'aha' | 'awgwuppertal' | 'insertit' | 'abki' | 'wuerzburg' | 'avea' | 'oldenburg'
+    | 'art' | 'waswob' | 'albabs' | 'elw' | 'fuerth' | 'heilbronn' | 'abis' | 'enni' | 'muellmax' | 'hws' | 'ksj' | 'tsk' | 'hausmuell' | 'sab' | 'swp' | 'osb' | 'meinabfall' | 'geb' | 'mags' | 'citko' | 'zah' | 'heidelberg' | 'beg' | 'sro' | 'ead'
   name: string            // display name (town / city)
   provider: string        // provider id, for debugging / de-dup
   region?: string         // regioit
@@ -149,6 +160,12 @@ export interface ResolveResult {
   // client asks for the number instead of connecting a calendar that would
   // fail on its first sync — or, worse, show the neighbour's bins.
   needsHouseNumber?: boolean
+  // The town is served, but by a provider we may not fetch from (`upload` in
+  // abfall_providers.ts): `supported` is false, nothing was asked of the
+  // vendor, and the client sends the household to the file upload. `page` is
+  // where the town hands out its calendar, when we know it.
+  uploadOnly?: boolean
+  page?: string
 }
 
 // Fold a name to plain a–z so that two spellings of the same street compare
@@ -298,11 +315,144 @@ export function germanSpellings(street: string): string[] {
 //                 the vendor needs the house number to name a schedule at all.
 //   houseNumbers  extra numbers for a street matched the generic way, when the
 //                 vendor keeps them behind a further call.
+//   rhythm        which of the vendor's titles are one bin in different
+//                 rhythms. Left out: every title is its own bin, and the
+//                 household is never asked.
 export interface VendorAdapter {
   family: string
   towns?(p: AbfallProvider): Town[] | Promise<Town[]>
   searchStreets?(town: Town, query: string, hint?: string): Promise<StreetOption[]>
   probe?(town: Town, addr: GeoAddress): Promise<ResolveResult | null>
   houseNumbers?(opt: StreetOption): Promise<HausNr[] | undefined>
+  rhythm?(title: string): RhythmTag | null
   read(cfg: AbfallConfig): Promise<SyncedEvent[]>
+}
+
+// ── Rhythms the household has to name ───────────────────────────────────────
+//
+// Some vendors print every rhythm of a bin side by side — "Restmüll: Wöchentlich",
+// "Restmüll: 2-wöchentlich", "Restmüll: 4-wöchentlich" — and leave the household
+// to tick the one on its bin sticker, exactly as their own web page does. Showing
+// all of them would put three Restmüll days in a fortnight on a calendar that has
+// one. So the adapter reads them all, tags which titles are variants of one bin,
+// and the household's pick (`AbfallConfig.rhythm`) keeps one.
+//
+// **The options are the ones this address has, never the vendor's full menu.**
+// Saarbrücken offers weekly Restmüll city-wide, and Bahnhofstraße has no weekly
+// dates at all: a menu would let a household pick a rhythm that yields no
+// Restmüll, and nothing downstream would notice the bin had gone missing.
+
+/// One title read as a bin and its rhythm: "Restmüll: 2-wöchentlich" ->
+/// { bin: "Restmüll", option: "2-wöchentlich" }.
+export interface RhythmTag { bin: string; option: string }
+
+/// One option of a choice: the vendor's own words, and how many days apart its
+/// dates actually fall (7, 14, 28), measured rather than read off the label —
+/// Neuss says "Grau" and "Pink" and means weekly and fortnightly.
+export interface RhythmOption { id: string; every: number | null }
+
+/// A bin the household has to answer for, with the options its address has.
+export interface RhythmChoice { bin: string; options: RhythmOption[] }
+
+/// The common case, shared by the adapters that opt in: a Restmüll title with a
+/// rhythm after it — "Restabfalltonne (14-täglich)", "Restmüll rote Woche",
+/// "Restmüll: 2-wöchentlich", "Restmüll - 4-wöchentlich", "Restmüll-Pink". A
+/// bare "Restmüll" is not a variant of anything.
+export function restRhythm(title: string): RhythmTag | null {
+  const m = (title || '').trim().match(/^(Rest(?:abfall|müll)[a-zäöüß]*)(?:\s*[:(–-]\s*|\s+)(.+?)\)?$/i)
+  if (!m) return null
+  const option = m[2].replace(/(\d)-\s+/g, '$1-').replace(/\s+/g, ' ').trim()
+  return option ? { bin: m[1], option: option.charAt(0).toUpperCase() + option.slice(1) } : null
+}
+
+// ── House-number spans written into a street's name ─────────────────────────
+//
+// Some vendors split a long street into entries named for the numbers they
+// cover, in free German: "Bergische Landstraße 1 - 71 und 2 - 88",
+// "… 73 - Ende und 90 - Ende", "Frankenstraße 1-197 ung./2-210 ger. Nr.",
+// "Friedrich-Ebert-Ring ab 13", "Rottendorfer Straße 15a-Ende", "… 117".
+// Two spans without "ung."/"ger." are the two sides of the street, so each takes
+// the parity of its first number; a lone span takes both sides.
+
+export interface NrSpan { from: [number, string]; to: [number, string] | null; parity: 0 | 1 | null }
+
+/// Split "Frankenstraße 1-197 ung./2-210 ger. Nr." into the street and its
+/// spans; a name with no numbers in it has no spans (the whole street).
+export function splitSpans(name: string): { street: string; spans: NrSpan[] } {
+  const m = name.match(/^(.*?)\s+((?:ab\s+)?\d.*)$/i)
+  if (!m) return { street: name.trim(), spans: [] }
+  const parts = m[2].split(/\s+und\s+|\s*\/\s*/i).map((p) => p.trim()).filter(Boolean)
+  const spans: NrSpan[] = []
+  for (const part of parts) {
+    const s = part.match(/^(?:ab\s*)?(\d+)\s*([a-z]?)\b\s*(?:(?:-|bis)\s*(?:(\d+)\s*([a-z]?)\b|Ende))?/i)
+    if (!s) continue
+    const open = /^ab\b/i.test(part) || /(?:-|bis)\s*Ende/i.test(part)
+    const from: [number, string] = [Number(s[1]), (s[2] || '').toLowerCase()]
+    const to: [number, string] | null = s[3] ? [Number(s[3]), (s[4] || '').toLowerCase()] : open ? null : from
+    const parity = /\bung/i.test(part) ? 1 : /\bger/i.test(part) ? 0 : null
+    spans.push({ from, to, parity })
+  }
+  if (spans.length > 1) for (const sp of spans) if (sp.parity === null) sp.parity = (sp.from[0] % 2) as 0 | 1
+  return { street: m[1].trim(), spans }
+}
+
+/// Does a house number ("12", "15a") fall inside any of the spans?
+export function inSpans(spans: NrSpan[], houseNumber: string): boolean {
+  const m = (houseNumber || '').trim().toLowerCase().replace(/\s+/g, '').match(/^(\d+)([a-z]?)/)
+  if (!m) return false
+  const want: [number, string] = [Number(m[1]), m[2]]
+  const cmp = (a: [number, string], b: [number, string]) => a[0] - b[0] || a[1].localeCompare(b[1])
+  return spans.some((sp) =>
+    (sp.parity === null || want[0] % 2 === sp.parity) &&
+    cmp(sp.from, want) <= 0 &&
+    (sp.to === null || cmp(want, [sp.to[0], sp.to[1] || 'zz']) <= 0))
+}
+
+// ── Whole-day ICS, read by hand ─────────────────────────────────────────────
+//
+// Several city calendars write every pickup as a bare `DTSTART;VALUE=DATE`,
+// some with DTEND equal to DTSTART (ALBA) — a zero-length day the general parser
+// may drop. For those the date is all there is to read, so it is read directly.
+// A timed DTSTART in UTC ("…T220000Z", local midnight) is moved to Berlin first.
+export function icsDays(ics: string): Array<{ day: string; title: string }> {
+  const out: Array<{ day: string; title: string }> = []
+  const unfolded = ics.replace(/\r?\n[ \t]/g, '')
+  for (const b of unfolded.split('BEGIN:VEVENT').slice(1)) {
+    const d = b.match(/\nDTSTART(?:;[^:\r\n]*)?:(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})\d{2}(Z)?)?/)
+    const s = b.match(/\nSUMMARY(?:;[^:\r\n]*)?:([^\r\n]*)/)
+    if (!d || !s) continue
+    let day = `${d[1]}-${d[2]}-${d[3]}`
+    if (d[6]) {
+      const t = new Date(`${day}T${d[4]}:${d[5]}:00Z`)
+      day = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Berlin' }).format(t)
+    }
+    const title = s[1].replace(/\\([,;\\])/g, '$1').replace(/\\n/gi, ' ').trim()
+    out.push({ day, title })
+  }
+  return out
+}
+
+/// Whole-day events from (day, title) pairs, one per bin per day.
+export function dayEvents(
+  rows: Array<{ day: string; title: string; notes?: string | null }>, uidBase: string, location: string | null,
+): SyncedEvent[] {
+  const out: SyncedEvent[] = []
+  const seen = new Set<string>()
+  for (const { day, title, notes } of rows) {
+    if (!title || !/^\d{4}-\d{2}-\d{2}$/.test(day)) continue
+    const k = `${day}:${title}`
+    if (seen.has(k)) continue
+    seen.add(k)
+    const start = new Date(`${day}T00:00:00Z`)
+    out.push({
+      uid: `${uidBase}:${k}`,
+      title,
+      notes: notes ?? null,
+      location,
+      startsAt: start.toISOString(),
+      endsAt: new Date(start.getTime() + 86_400_000).toISOString(),
+      allDay: true,
+    })
+  }
+  return out
 }

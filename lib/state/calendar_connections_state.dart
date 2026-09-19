@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/repositories/calendar_connection_repository.dart';
@@ -32,9 +33,12 @@ class CalendarConnectionsState {
 
   /// A household connects one Google account, not one per provider — but it may
   /// well connect two, so this returns all of them.
+  /// The connections a provider's page and row show. The Abfall file is an
+  /// `ical` connection underneath (see [CalendarConnection.binFileAccount]) but
+  /// it is the household's Müllabfuhr, so it is listed there and not under iCal.
   List<CalendarConnection> of(CalendarProvider provider) => [
     for (final c in connections)
-      if (c.provider == provider) c,
+      if (c.isBinFile ? provider == CalendarProvider.abfall : c.provider == provider) c,
   ];
 
   bool get anyNeedsAttention => connections.any((c) => c.needsAttention);
@@ -129,9 +133,10 @@ class CalendarConnectionsNotifier extends StateNotifier<CalendarConnectionsState
     required Map<String, dynamic> config,
     required String label,
     HouseNumber? houseNumber,
+    Map<String, String>? rhythm,
     String? displayName,
   }) async => _afterConnect(
-    await _repo.connectAbfall(config: config, label: label, houseNumber: houseNumber),
+    await _repo.connectAbfall(config: config, label: label, houseNumber: houseNumber, rhythm: rhythm),
     displayName: displayName,
     isFeed: true,
   );
@@ -152,7 +157,8 @@ class CalendarConnectionsNotifier extends StateNotifier<CalendarConnectionsState
     required CalendarProvider provider,
     String? url,
     String? ics,
-  }) => _repo.checkCalendarLink(provider: provider, url: url, ics: ics);
+    String? abfallTown,
+  }) => _repo.checkCalendarLink(provider: provider, url: url, ics: ics, abfallTown: abfallTown);
 
   /// Adds one pasted calendar — to a new account, or to one that exists.
   ///
@@ -166,6 +172,7 @@ class CalendarConnectionsNotifier extends StateNotifier<CalendarConnectionsState
     String? ics,
     String? fileName,
     String? account,
+    String? abfallTown,
   }) async {
     final result = await _repo.addCalendarLink(
       provider: provider,
@@ -174,6 +181,7 @@ class CalendarConnectionsNotifier extends StateNotifier<CalendarConnectionsState
       fileName: fileName,
       name: name,
       account: account,
+      abfallTown: abfallTown,
     );
     // No `displayName` to apply: the account was named on the way in, and the
     // calendar's own name went with the link. So this only re-reads and kicks
@@ -302,6 +310,51 @@ class CalendarConnectionsNotifier extends StateNotifier<CalendarConnectionsState
   Future<void> setCalendarOwner(CalendarConnection connection, String? externalId, String owner) async {
     await _repo.setCalendarOwner(connection: connection, externalId: externalId, owner: owner);
     unawaited(_settle());
+  }
+
+  /// Renames somebody without an account — or, with [to] null, removes them.
+  ///
+  /// There is no row to change: such a person *is* the `'person:<Name>'`
+  /// written on the calendars assigned to them, so this rewrites every one of
+  /// those. Removing hands their calendars back to the household, which is what
+  /// a calendar nobody was assigned to already means; nothing is disconnected.
+  ///
+  /// A connection's own `owner_label` is not client-writable, so where that is
+  /// the name, the account's `'*'` entry overrides it — the precedence
+  /// [CalendarConnection.ownerOf] and `calendar-events` both already read.
+  /// Matched case-insensitively, like every other place that groups by name.
+  ///
+  /// Waits for the list to re-read, unlike a single pick: the rows being
+  /// edited are the ones that change, and they should not flash the old name.
+  Future<void> renamePerson(String from, String? to) async {
+    final old = from.trim().toLowerCase();
+    final target = to == null || to.trim().isEmpty ? 'family' : 'person:${to.trim()}';
+    bool names(String owner) => owner.startsWith('person:') && owner.substring(7).trim().toLowerCase() == old;
+
+    // Read fresh first: Settings → Familie may be the first thing to touch this
+    // provider, and each write replaces a whole map, so a stale one would
+    // quietly undo somebody else's pick.
+    await load();
+    if (state.error case final message?) throw StateError(message);
+
+    final writes = <Future<void>>[];
+    for (final c in state.connections) {
+      if (c.isFeed) {
+        if (names(c.ownerOf(null))) {
+          writes.add(_repo.setCalendarOwner(connection: c, externalId: null, owner: target));
+        }
+        continue;
+      }
+      final owners = {for (final e in c.calendarOwners.entries) e.key: names(e.value) ? target : e.value};
+      final label = c.ownerLabel?.trim().toLowerCase();
+      if (label == old && c.ownerMemberId == null && !owners.containsKey('*')) owners['*'] = target;
+      if (!mapEquals(owners, c.calendarOwners)) {
+        writes.add(_repo.setCalendarOwners(connection: c, owners: owners));
+      }
+    }
+    await Future.wait(writes);
+    await load();
+    unawaited(_onCalendarChanged?.call());
   }
 
   /// Stops reading one calendar of an account, leaving the account connected.

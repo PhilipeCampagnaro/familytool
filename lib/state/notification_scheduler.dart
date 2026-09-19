@@ -4,13 +4,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../l10n/l10n.dart';
 import '../models/calendar_event.dart';
+import '../models/entitlements.dart';
+import '../models/spend.dart';
+import '../models/spend_budget.dart';
 import '../models/task.dart';
 import '../services/local_notifications.dart';
+import '../services/spend_intent.dart';
 import 'auth_state.dart';
 import 'board_state.dart';
 import 'calendar_state.dart';
+import 'entitlement_state.dart';
 import 'notification_state.dart';
 import 'settings_state.dart';
+import 'spend_state.dart';
 
 /// Below iOS's 64, which silently drops everything past the soonest 64 pending
 /// requests. The margin is not for safety: it is so nothing we send is ever the
@@ -22,6 +28,31 @@ const kNoticeBudget = 60;
 /// being opened — and the further ahead a notice is written, the likelier the
 /// appointment under it has moved.
 const kNoticeHorizon = Duration(days: 14);
+
+/// How far ahead "at once" is scheduled for a budget notice.
+///
+/// **Not zero, for two reasons that both have to hold.** `LocalNotifications.swift`
+/// drops anything under a second, because a request in the past is a request
+/// that never arrives; and every derivation calls `replaceAll`, so a notice due
+/// in half a second would be cancelled and re-sent by the next poke — which,
+/// debounced at 800ms, can easily land first. A minute clears both and is still
+/// "when it happened" to anybody reading it.
+///
+/// It is also what makes the crossings found in one derivation coalesce: they
+/// share a single `now`, so they land on a single instant and become one
+/// notice.
+const kBudgetNoticeLead = Duration(minutes: 1);
+
+/// What one derivation produced: the notices themselves, and the evening each
+/// budget notice was pinned to.
+///
+/// **The stamps have to come back out because a budget notice has no natural
+/// time.** Every other kind is anchored to something the device already knows —
+/// an appointment, a pickup, an hour on a to-do — so re-deriving it lands on the
+/// same instant. A budget simply *is* over, from now until the month ends, and
+/// only a record of when it was announced stops it being announced again every
+/// evening. See `NotificationSettings.announcedBudgets`.
+typedef NoticePlan = ({List<ScheduledNotice> notices, Map<String, DateTime> budgetStamps});
 
 /// **Every notification this device should post, derived from scratch.**
 ///
@@ -38,15 +69,19 @@ const kNoticeHorizon = Duration(days: 14);
 /// * the morning brief — skipped on a day with nothing in it, rather than
 ///   saying so;
 /// * a to-do that names an hour, for whoever it is assigned to or anybody when
-///   it is nobody's.
-List<ScheduledNotice> composeNotices({
+///   it is nobody's;
+/// * a budget running ahead of its month or past its limit — the one kind with
+///   no time of its own, which is why [NoticePlan] carries the stamps back out.
+NoticePlan composeNotices({
   required DateTime now,
   required NotificationSettings settings,
   required CalendarScreenState calendar,
   required List<BoardTask> tasks,
+  required List<SpendBudgetProgress> budgets,
   required String? userId,
 }) {
   final out = <ScheduledNotice>[];
+  final stamps = <String, DateTime>{};
   final until = now.add(kNoticeHorizon);
   bool inWindow(DateTime at) => at.isAfter(now) && at.isBefore(until);
 
@@ -194,9 +229,62 @@ List<ScheduledNotice> composeNotices({
     }
   }
 
+  // -- Budgets that need looking at ---------------------------------------------
+  //
+  // **The only kind here with no time of its own, and it is not given one.** A
+  // budget crosses its line when a payment lands; holding the news to a chosen
+  // hour would mean the app knew at 14:00 and said so at 19:00, which is an app
+  // sitting on the one thing it was asked to watch. So it goes out when it is
+  // found — and because a derivation finds every crossing at once, the ones
+  // found together are one notice: three budgets are one piece of news about
+  // one month.
+  if (settings.budgets) {
+    final month = DateTime(now.year, now.month);
+    final pending = <(SpendBudgetStatus, DateTime), List<SpendBudgetProgress>>{};
+    for (final p in budgets) {
+      final level = p.noticeLevel;
+      if (level == null) continue;
+      final key = budgetNoticeKey(p.budget.category, month, level);
+      // A moment already chosen for this budget is kept rather than pushed
+      // along by each re-derivation, and a key whose moment has been and gone
+      // is spent for the month.
+      final at = settings.announcedBudgets[key] ?? now.add(kBudgetNoticeLead);
+      if (!at.isAfter(now)) continue;
+      stamps[key] = at;
+      (pending[(level, at)] ??= []).add(p);
+    }
+    for (final MapEntry(key: (level, at), value: group) in pending.entries) {
+      if (!inWindow(at)) continue;
+      final one = group.length == 1 ? group.single : null;
+      out.add(
+        ScheduledNotice(
+          id: 'budget:${level.name}:${at.millisecondsSinceEpoch}',
+          at: at,
+          title: switch ((level, one)) {
+            (SpendBudgetStatus.over, final p?) => L.s.noticeBudgetOverOne(p.budget.category.label),
+            (SpendBudgetStatus.over, _) => L.s.noticeBudgetOverMany(group.length),
+            (_, final p?) => L.s.noticeBudgetAheadOne(p.budget.category.label),
+            _ => L.s.noticeBudgetAheadMany(group.length),
+          },
+          body: one != null
+              ? L.s.noticeBudgetAmount(
+                  formatMoney(one.spentCents),
+                  formatMoney(one.budget.amountCents),
+                )
+              : L.s.joinAnd([for (final p in group) p.budget.category.label]),
+          thread: 'budgets',
+        ),
+      );
+    }
+  }
+
   out.sort((a, b) => a.at.compareTo(b.at));
-  return out.length > kNoticeBudget ? out.sublist(0, kNoticeBudget) : out;
+  return (
+    notices: out.length > kNoticeBudget ? out.sublist(0, kNoticeBudget) : out,
+    budgetStamps: stamps,
+  );
 }
+
 
 bool _sameDay(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
 
@@ -237,20 +325,31 @@ class NoticeScheduler {
     // them. Signed out is the exception: there, empty is the right answer.
     if (userId != null && ((!calendar.loaded && calendar.eventsByDay.isEmpty) || board.loading)) return;
 
-    final notices = userId == null || !settings.access.delivers
-        ? const <ScheduledNotice>[]
+    // **Two gates, and the plan one is not the platform one.** `spendAvailable`
+    // is why `SpendScreen` exists at all; the entitlement is whether this
+    // household still has Ausgaben. A lapsed Plus keeps its budget rows in the
+    // database, so without this check a free household would go on being told
+    // about a page it can no longer open.
+    final budgets = spendAvailable && _ref.read(entitlementProvider).allows(Feature.spend)
+        ? _ref.read(spendProvider).budgetProgress
+        : const <SpendBudgetProgress>[];
+
+    final plan = userId == null || !settings.access.delivers
+        ? (notices: const <ScheduledNotice>[], budgetStamps: const <String, DateTime>{})
         : composeNotices(
             now: DateTime.now(),
             settings: settings,
             calendar: calendar,
             tasks: board.tasks,
+            budgets: budgets,
             userId: userId,
           );
 
-    final signature = '${L.s.localeCode}\n${notices.map((n) => n.signature).join('\n')}';
+    final signature = '${L.s.localeCode}\n${plan.notices.map((n) => n.signature).join('\n')}';
     if (signature == _lastSignature) return;
     _lastSignature = signature;
-    await _os.replaceAll(notices, channelName: L.s.notificationsTitle);
+    await _os.replaceAll(plan.notices, channelName: L.s.notificationsTitle);
+    _ref.read(notificationSettingsProvider.notifier).recordBudgetNotices(plan.budgetStamps);
 
     if (userId != null && calendar.loaded) {
       _ref
@@ -274,6 +373,17 @@ final noticeSchedulerProvider = Provider<NoticeScheduler>((ref) {
   ref.listen(calendarProvider.select((s) => s.eventsByDay), (_, _) => scheduler.poke());
   ref.listen(calendarProvider.select((s) => s.calendars), (_, _) => scheduler.poke());
   ref.listen(boardProvider.select((s) => s.tasks), (_, _) => scheduler.poke());
+  // Not read at all off iOS and Android: watching it there would have
+  // `spendProvider` query a table on a platform where Ausgaben never ships.
+  if (spendAvailable) {
+    // The three lists the progress is folded out of, not the fold itself: that
+    // builds a new list every read and would poke on every tap of the range
+    // slicer.
+    ref.listen(
+      spendProvider.select((s) => (s.budgets, s.spends, s.monthSpends)),
+      (_, _) => scheduler.poke(),
+    );
+  }
   ref.listen(notificationSettingsProvider, (_, _) => scheduler.poke());
   ref.listen(settingsProvider.select((s) => s.language), (_, _) => scheduler.poke());
   ref.listen(currentUserIdProvider, (_, _) => scheduler.poke());

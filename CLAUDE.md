@@ -70,11 +70,16 @@ task:
   Mo/Do tracker reports five failures a week of a perfect record.
 - **Localization: German, English, Portuguese and Spanish, and every user-facing string goes
   through [lib/l10n/](lib/l10n/).** `AppStrings` declares them and `StringsDe`/`StringsEn`/
-  `StringsPt`/`StringsEs` answer them — 925 members each — and `L.s.someString` reads the live one.
+  `StringsPt`/`StringsEs` answer them — 965 members each — and `L.s.someString` reads the live one.
   Because `AppStrings` is abstract, a string you add to one language and forget in another **fails
   to compile** — that is the point, so don't work around it with a map or a `??`. Portuguese is
-  **Brazilian (pt-BR)** and Spanish is peninsular (es-ES); `appSupportedLocales` carries bare
-  language codes, so a pt-PT or es-MX phone resolves to them rather than falling back to German.
+  **Brazilian (pt-BR)** and Spanish is peninsular (es-ES), matched on bare language codes, so a
+  pt-PT or es-MX phone resolves to them. **A fresh install follows the phone's language, not its
+  location, and English when the phone speaks none of the four** (`deviceLanguage()` in
+  [lib/state/settings_state.dart](lib/state/settings_state.dart)) — which is what makes the sign-in
+  page and the welcome tour readable before anybody can reach Settings. Picking a language there is
+  stored and wins from then on; until then nothing is written. iOS's own permission texts (Face ID,
+  camera) live in `ios/Runner/<lang>.lproj/InfoPlist.strings` and follow the phone regardless.
   Brazilian is a decision, not a default — *senha*, *celular*, *ônibus*, and **"Carregando…"** where
   Portugal says *"A carregar…"*. Money follows it: `money()` puts the symbol **before** the number
   (`R$ 1.234,56`), which is the one place pt-BR does not simply inherit the German shape.
@@ -88,7 +93,7 @@ task:
   - **What is German market data rather than German text, and is therefore still German-only:**
     the Feiertage (`german_holidays.dart`; a Portuguese or Spanish household sees **no public
     holidays at all** — see the note in [lib/state/holidays_state.dart](lib/state/holidays_state.dart)),
-    the Ferien Bundesland picker, the thirteen waste-vendor families in `abfall/vendors/`, and IServ/WebUntis.
+    the Ferien Bundesland picker, the forty-nine waste-vendor families in `abfall/vendors/`, and IServ/WebUntis.
     Translating the UI did not port any of it, and that is written down rather than hidden.
   - `L.s` is a global swapped in `AporahApp.build`, exactly like `AppColors.palette`, so it works
     in notifiers, models and repositories where there is no `BuildContext` — which is most of the
@@ -186,33 +191,42 @@ task:
   the whole school year rather than the feed's twelve weeks, and **Hausaufgaben, which the Board
   no longer shows**, with it. That is the trade; it was made deliberately.
   Read the school-calendar section of [docs/ported-features.md](docs/ported-features.md) before
-  touching any of it, in particular the `TZID="+02:00"` trap. **Abfall's thirteen German waste-vendor
+  touching any of it, in particular the `TZID="+02:00"` trap. **Abfall's forty-nine German waste-vendor
   families are one file each in
   [supabase/functions/_shared/abfall/vendors/](supabase/functions/_shared/abfall/vendors/), behind a
   registry** — `abfall.ts` itself is now only the public face, and `abfall/resolve.ts` names no
   vendor at all. Adding a city is **one new vendor file, one provider row in `abfall_providers.ts`,
-  and two lines in `abfall/registry.ts`** — Düsseldorf, the thirteenth, cost exactly that; the `VendorAdapter` contract in `abfall/core.ts` says
-  what an adapter may implement and what leaving a member out means. Don't reintroduce a
+  and two lines in `abfall/registry.ts`** — Düsseldorf, Leipzig, Dortmund and Essen each cost exactly that; the `VendorAdapter` contract in `abfall/core.ts` says
+  what an adapter may implement and what leaving a member out means. A vendor that prints every rhythm of a bin side by side implements `rhythm` and the household
+  picks its own when connecting (`RhythmChoice` in `abfall/core.ts`); the options are the ones the
+  address has, never the vendor's menu. Don't reintroduce a
   `if (vendor === …)` chain in the shared half — there were four of them, and adding a vendor to
   three looked exactly like success. See the Abfall section of
   [docs/ported-features.md](docs/ported-features.md) before touching them, and re-run the live
-  end-to-end probe described there afterwards. **A town nobody serves is not a dead end**: the
+  end-to-end probe described there afterwards. **A provider flagged `upload` is never fetched** —
+  its terms reserve the dates for non-commercial use or its `robots.txt` disallows our path — so its
+  towns resolve to "Nur als Datei" and the household is sent to the `ical` tile's upload, whose
+  file lands on the one connection the plan does not count (`abfall:datei`); check a new vendor's
+  terms and `robots.txt` before it ships. **A town nobody serves is not a dead end**: the
   Müllabfuhr row offers "Anfragen", which files the town in `public.abfall_requests` — the queue
   that decides which vendor comes next — and the coverage artifact linked from
   [docs/production-plan.md](docs/production-plan.md) is the census of what is served today.
-- **Weather is per event, comes from Open-Meteo, and is decoration.** `weatherProvider`
+- **Weather is per event, comes from the DWD via Bright Sky, and is decoration.** `weatherProvider`
   ([lib/state/weather_state.dart](lib/state/weather_state.dart)) resolves each appointment's place
   and hour and hands the agenda row and detail sheet a `WeatherReading`; `CalendarEvent` carries no
-  weather, because weather is not a property of an event. This is the **one external service the
-  app calls directly** — no key, and nothing that names the household. It is *not* "no personal
-  data on the wire": the request carries a coordinate and an hour, and because it leaves the phone
-  rather than an Edge Function, Open-Meteo also sees the **user's IP**, which with a residential
-  coordinate is personal data under the DSGVO. That is a defensible trade rather than a free one —
-  Open-Meteo is German-hosted, so no third-country transfer, and a proxy would buy privacy at the
-  cost of a hop, a deploy and a place where household addresses could be logged. It belongs in the
-  Datenschutzerklärung either way. Location is the event's own `loc` with the household's town from
-  `families.address` as fallback, **never device GPS**, and every failure resolves to "no icon on
-  that row" rather than an error. See the weather section of
+  weather, because weather is not a property of an event. The forecast is the Deutscher
+  Wetterdienst's open data through `api.brightsky.dev`, and places are found with Photon
+  (`photon.komoot.io`, OpenStreetMap) — **both free for commercial use with a credit, which the
+  weather card prints** ("DWD · OpenStreetMap"). **Not Open-Meteo**: its free tier is
+  non-commercial and names subscription apps as commercial, so it was replaced on 2026-09-18
+  rather than paid for; don't put it back without a paid plan. These are the **external services
+  the app calls directly** — no key, and nothing that names the household. It is *not* "no
+  personal data on the wire": a place name or coordinate and an hour leave the phone with the
+  **user's IP**, which with a residential place is personal data under the DSGVO. A proxy would buy
+  privacy at the cost of a hop, a deploy and a place where household addresses could be logged. Both
+  belong in the Datenschutzerklärung. Location is the event's own `loc` with the household's town
+  from `families.address` as fallback, **never device GPS**, and every failure resolves to "no icon
+  on that row" rather than an error. See the weather section of
   [docs/ported-features.md](docs/ported-features.md) before changing any of it.
 - **All four screens are on Supabase.** One repository each in
   [lib/data/repositories/](lib/data/repositories/), and they are deliberately the same shape: the

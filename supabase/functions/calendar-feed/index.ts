@@ -30,7 +30,7 @@
 import { callerId, corsHeaders, fail, json, serviceClient } from "../_shared/http.ts";
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { membershipOf } from "../_shared/calendar.ts";
-import type { AbfallConfig } from "../_shared/abfall.ts";
+import { type AbfallConfig, cleanRhythm, openRhythms } from "../_shared/abfall.ts";
 import { FEED_COLOR, type FeedKind, feedKeyOf, readFeedEvents } from "../_shared/feeds.ts";
 
 /// The sixteen Bundesländer, as OpenHolidays' ISO subdivision suffixes. An
@@ -97,11 +97,31 @@ Deno.serve(async (req) => {
     const label = (body.label ?? "").trim();
     if (!label) return fail("Es fehlt die Adresse.");
 
+    // Where the vendor prints every rhythm of a bin side by side, a config that
+    // does not say which is the household's would show all of them at once —
+    // three Restmüll days a fortnight. Refused like an empty calendar is. A read
+    // that fails here is left to the verify below, which says so properly.
+    const rhythm = cleanRhythm(config.rhythm);
+    const cfg: AbfallConfig = { ...config, rhythm };
+    const open = await openRhythms(cfg).catch(() => []);
+    if (open.length) {
+      return fail("Bitte angeben, wie oft eure Tonne geleert wird.");
+    }
+
+    // **The label is this household's and goes on this household's row only.**
+    // The feed is shared by everybody on the street, so anything written into
+    // it — its config, its name, the `location` of every event read from it —
+    // is shown to the neighbours too. It used to carry the first subscriber's
+    // whole address, house number included. The config still names the street
+    // (and the house, where the vendor plans per house), which is exactly what
+    // a household must have typed to be sharing the feed at all.
+    const { label: _stale, ...shared } = cfg;
     return await subscribe(db, {
       familyId: membership.familyId,
       uid,
       kind: "abfall",
-      config: { ...config, label },
+      config: shared,
+      feedName: "Abfallkalender",
       name: `Abfallkalender (${label})`.slice(0, 120),
     });
   }
@@ -116,7 +136,11 @@ async function subscribe(
     uid: string;
     kind: FeedKind;
     config: Record<string, unknown>;
+    /// The household's name for it, on its own `family_feeds` row.
     name: string;
+    /// The shared row's name, when it must not be the household's — see the
+    /// Abfall branch.
+    feedName?: string;
   },
 ): Promise<Response> {
   const feedKey = await feedKeyOf(args.kind, args.config);
@@ -151,7 +175,7 @@ async function subscribe(
       .insert({
         kind: args.kind,
         feed_key: feedKey,
-        name: args.name,
+        name: args.feedName ?? args.name,
         color: FEED_COLOR[args.kind] | 0,
         config: args.config,
         events,

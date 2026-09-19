@@ -181,8 +181,7 @@ class _FlutterGlassApproximation extends StatelessWidget {
   double get _lift => accent ? 0.06 : (AppColors.isDark ? 0.10 : 0.3);
 
   /// The specular and the rim, dimmed to a sheen on an accent.
-  Color _sheen(Color color, {required double factor}) =>
-      accent ? color.withValues(alpha: color.a * factor) : color;
+  Color _sheen(Color color, {required double factor}) => accent ? color.withValues(alpha: color.a * factor) : color;
 
   @override
   Widget build(BuildContext context) {
@@ -217,10 +216,7 @@ class _FlutterGlassApproximation extends StatelessWidget {
                 gradient: RadialGradient(
                   center: const Alignment(-0.6, -0.8),
                   radius: 1.2,
-                  colors: [
-                    _sheen(AppColors.glassSpecular, factor: 0.3),
-                    AppColors.glassSpecular.withValues(alpha: 0),
-                  ],
+                  colors: [_sheen(AppColors.glassSpecular, factor: 0.3), AppColors.glassSpecular.withValues(alpha: 0)],
                 ),
               ),
             ),
@@ -367,7 +363,12 @@ class _FrostedHeaderBackgroundState extends State<FrostedHeaderBackground> {
   /// Uniform indices follow the declaration order in the .frag, counting two
   /// floats per `vec2` and skipping samplers. 0–1 are `uTextureSize`, which the
   /// engine fills in.
-  void _configure(FragmentShader shader, {required double heightPx, required double sigmaPx, required bool horizontal}) {
+  void _configure(
+    FragmentShader shader, {
+    required double heightPx,
+    required double sigmaPx,
+    required bool horizontal,
+  }) {
     shader
       ..setFloat(2, heightPx)
       ..setFloat(3, sigmaPx)
@@ -791,12 +792,7 @@ class _GlassIconGroupState extends State<GlassIconGroup> {
                       scale: _pressed == i ? 0.82 : 1.0,
                       duration: const Duration(milliseconds: 120),
                       curve: Curves.easeOut,
-                      child: AppIcon(
-                        widget.actions[i].icon,
-                        size: widget.iconSize,
-                        color: AppColors.ink,
-                        flat: true,
-                      ),
+                      child: AppIcon(widget.actions[i].icon, size: widget.iconSize, color: AppColors.ink, flat: true),
                     ),
                   ),
                 ),
@@ -835,28 +831,71 @@ class GlassPillButton extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
 
-  const GlassPillButton({super.key, required this.label, required this.onTap});
+  /// Optional glyph before the label — "Kalenderdatei hochladen" carries the
+  /// upload arrow, the header pills don't.
+  final IconData? icon;
+
+  /// Stretches to the width it's given, like [GlassAccentButton.expand] — for a
+  /// pill stacked under an accent one, so the two read as one pair.
+  final bool expand;
 
   /// The padding that, with the label inside it, *is* this pill's size — on
   /// both paths. The native button is handed the box this produces rather than
-  /// measuring the word itself; see [NativeGlassButtons.sizer].
-  static const _padding = EdgeInsets.symmetric(horizontal: 18, vertical: 10);
+  /// measuring the word itself; see [NativeGlassButtons.sizer]. Pass
+  /// [GlassAccentButton]'s own to match its height beside it.
+  final EdgeInsetsGeometry padding;
 
-  Widget get _label => Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.rowTitle);
+  const GlassPillButton({
+    super.key,
+    required this.label,
+    required this.onTap,
+    this.icon,
+    this.expand = false,
+    this.padding = const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+  });
+
+  Widget get _body => Padding(
+    padding: padding,
+    child: SizedBox(width: expand ? double.infinity : null, child: _label),
+  );
+
+  Widget get _label {
+    final text = Text(
+      label,
+      textAlign: TextAlign.center,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: AppText.rowTitle,
+    );
+    final glyph = icon;
+    if (glyph == null) return text;
+    return Row(
+      mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        AppIcon(glyph, size: AppText.rowTitle.fontSize! * 1.4, color: AppColors.ink, flat: true),
+        const SizedBox(width: 9),
+        Flexible(child: text),
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     if (nativeGlassActive(context)) {
       return NativeGlassButtons(
-        buttons: [NativeGlassButton(label: label, title: label, titleStyle: AppText.rowTitle, onTap: onTap)],
+        buttons: [
+          NativeGlassButton(icon: icon, label: label, title: label, titleStyle: AppText.rowTitle, onTap: onTap),
+        ],
         tint: AppColors.ink,
-        sizer: Padding(padding: _padding, child: _label),
+        iconSize: AppText.rowTitle.fontSize! * 1.4,
+        sizer: _body,
       );
     }
     return _PressableGlass(
       onTap: onTap,
       borderRadius: BorderRadius.circular(AppRadii.bar),
-      child: Padding(padding: _padding, child: _label),
+      child: _body,
     );
   }
 }

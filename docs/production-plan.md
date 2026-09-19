@@ -49,7 +49,14 @@ conclusions that bind code are here.
 - **Two** connected calendar accounts, plus Ferien and Abfall (shared feeds, near-zero marginal
   cost). Raised from one on 2026-09-16: a household is at least two adults, and a free tier
   holding one account is a calendar app for one parent — most families would never have seen the
-  app do the thing it is for. The third account is where Plus starts.
+  app do the thing it is for. The third account is where Plus starts. **Abfall stays free where
+  it has to come as a file too** (2026-09-19): in a town whose provider we may not fetch from, the
+  household uploads the town's ICS, and that file lands on one fixed connection
+  (`external_account = 'abfall:datei'`, `BIN_FILE_ACCOUNT` in `_shared/entitlements.ts`) that
+  `canAddCalendarAccount` does not count. `calendar-link` only puts a file there when the town is
+  upload-only, four in five events are named like a pickup, and it is under 512 KB — so the free slot
+  holds bins and nothing else. Cost: ~50 KB of database per household, no extra function call, no
+  outside request.
 - All of Kalender, Home and Board, including **creating, editing and deleting events**
 - Three trackers, unlimited lists and articles, one Box, up to four people
 - Weather, the German holidays, all four languages
@@ -462,9 +469,20 @@ longer than the engineering.
       ceiling at tens of thousands of households. Sensitive-scope review takes months.
 - [ ] **Microsoft Graph** equivalent.
 - [ ] An AVV with Supabase.
-- [ ] Datenschutzerklärung covering the user's IP reaching Open-Meteo with a residential
-      coordinate, the sealed school-calendar credentials in `calendar_connection_secrets`, and both
-      stores as processors. This was already the open item on the WebUntis work.
+- [ ] **Abfall sources: a lawyer's read, or the vendors' written OK** (raised 2026-09-18). The dates
+      are facts, but the databases behind them can carry the § 87b UrhG database right, and each
+      backend has its own terms. Aporah asks per household on demand and stores nothing, which is
+      close to ordinary use. Risk by source, lowest first: the authority's own subscribe/ICS links
+      (made for calendar apps); the vendor widgets authorities embed (Insert IT, Athos, regio iT,
+      AbfallPlus — public but undocumented); **MyMüll, highest** — Jumomind's own backend, where a
+      city recommending the app makes the *data* official but grants no third-party API right.
+      Cheapest fix: ask Jumomind (and ideally Insert IT and Athos) for permission, with a credit
+      line in the app.
+- [ ] Datenschutzerklärung covering the user's IP reaching Bright Sky (the DWD's weather) and
+      Photon (place lookup) together with a residential place — check where each is hosted first;
+      Open-Meteo, which this item used to name, is gone because its free tier is non-commercial —
+      the sealed school-calendar credentials in `calendar_connection_secrets`, and both stores as
+      processors. This was already the open item on the WebUntis work.
 - [ ] Enrol in the App Store Small Business Program **before the first sale** — €0.63 per
       subscriber per month, one form.
 - [ ] Register for Google Play (€25 one-off).
@@ -475,6 +493,21 @@ longer than the engineering.
       stays true for neither; both verify their own signature, which makes this the third and
       fourth pinned exception and each needs the same comment in `config.toml` explaining why.
 - [ ] Restore purchases, and a household that already has Plus not being charged twice.
+- [ ] **Launch in the German storefront only** (decided 2026-09-18). App Store Connect → Pricing
+      and Availability, and Play Console → Countries/regions, set to Germany alone; adding a
+      country later is a checkbox, not a build or a review. A pilot with one market answers "does
+      this work, will families pay" cleanly, where five markets at once muddy it. **The four
+      languages stay** — availability follows the store account's country, not the phone's
+      language, so an English- or Portuguese-speaking family living in Germany gets every German
+      feature in its own language. Austria and Switzerland are *not* the free extension they look
+      like: their Ferien, Feiertage and waste collection are not the German ones.
+      **Growing afterwards is one country at a time**, and the order and prerequisites are already
+      researched in [research/](research/Family%20calendar%20sources%20PT%20ES%20BR%20US.md):
+      first a country on the household that hides Abfall/Ferien/IServ/WebUntis outside Germany
+      (without it a Lisbon family's welcome tour asks for their Bundesland), then check that
+      Apple's Wallet "Transaction" trigger exists in that storefront. Portugal, Spain and Brazil are
+      nearest — translated, and the merchant classifier already knows their chains; the US has
+      neither the classifier nor a free school or bin source.
 - [ ] Store listings, screenshots and privacy labels in German, English, Portuguese and Spanish.
       **Four sets of screenshots is now the standing cost of every UI change** — that is the tax the
       extra two languages bought, and it is worth stating before the next redesign.
@@ -485,9 +518,9 @@ longer than the engineering.
 
 - **Write-back as a paid feature.** See above.
 - **Gating household members below four.** A family organizer that stops at two people is not one.
-- **Charging for weather, the Feiertage or the language switch.** They cost nothing — Open-Meteo is
-  called from the device, the holidays are computed in Dart — and free features that cost nothing
-  are what make the free tier worth recommending.
+- **Charging for weather, the Feiertage or the language switch.** They cost nothing — the DWD's
+  forecast (via Bright Sky) is called from the device, the holidays are computed in Dart — and free
+  features that cost nothing are what make the free tier worth recommending.
 - **An Android equivalent of Ausgaben.** Google's Wallet API issues passes and reads no
   transactions. There is nothing to build.
 
@@ -543,6 +576,54 @@ and the tidiest: a calendar year, but keyed on a uuid that demonstrably survives
       city is now one new file plus four lines instead of an edit to four dispatch chains. Proved
       behaviour-preserving by diffing the full 130-provider probe against a pre-refactor baseline:
       identical, line for line.
+- [x] **Göttingen** (2026-09-18) — `geb`, the city's own per-address ICS; it had been filed under
+      the rhythm question by mistake. 186 providers, 69 of 81. The other ten rhythm cities were
+      each checked live: five have adapters and wait only on the question, five need an adapter
+      too, and Heidelberg asks per bin. See ported-features.md.
+- [x] **The rhythm question in the connect flow** (2026-09-18) — per bin, only the options the
+      address has, in the vendor's own words plus the measured interval; in the connect sheet and
+      the onboarding. Freiburg, Hagen, Pforzheim, Saarbrücken and Neuss connect with it.
+      `calendar-feed` refuses an unanswered question. See ported-features.md.
+- [x] **Rostock and Reutlingen; Koblenz declined** (2026-09-19) — `sro` (new) and the TBR's own
+      AbfallPlus key. 198 providers, 80 of 81 cities. Rostock's form asks for "zur Abfrage
+      berechtigt", which `sro.ts` ticks for the address being connected — **confirm or reverse that
+      before deploying.** Koblenz publishes no Rest/Bio dates at all (phone only). See ported-features.md.
+- [x] **Mönchengladbach, Siegen, Hildesheim, Heidelberg, Bremerhaven** (2026-09-19) — `mags`,
+      `citko`, `zah` (the whole Landkreis Hildesheim), `heidelberg`, `beg`. Heidelberg asks three
+      bins at once; Bremerhaven publishes only 30 days ahead. See ported-features.md.
+- [x] **Chemnitz, Erfurt, Magdeburg, Potsdam, Osnabrück, Erlangen** (2026-09-18, sixth batch) —
+      `hausmuell` (two generations), `sab`, `swp`, `osb`, `meinabfall`. 185 providers, 68 of 81
+      cities. Everything that needed only a source is built; the rest waits on the rhythm
+      question, Rostock's self-declaration, Koblenz and Reutlingen. The artifact's city table now
+      filters by status. See the sixth-batch section of ported-features.md.
+- [x] **Nineteen more cities** (2026-09-18, fifth batch) — Bochum, Hamm, Remscheid, Münster and
+      Mainz (`muellmax`, only where the city embeds it), Gelsenkirchen and Bottrop (`abis`), Trier
+      with four Landkreise (`art`), Wolfsburg, Braunschweig, Wiesbaden, Fürth, Heilbronn, Moers,
+      Halle, Jena, Karlsruhe (one city-own file each), Ulm (AWIDO `ebu`). 179 providers, 62 of 81
+      cities; probe green but for the two dead abfall.io keys and Stuttgart. The rhythm question
+      now blocks eleven cities. See the fifth-batch section of ported-features.md.
+- [x] **Bonn, Augsburg, Würzburg, Leverkusen, Oldenburg** (2026-09-18, fourth batch) — two more
+      Athos tenants and three city-own sources (`wuerzburg` open data, `avea`, `oldenburg`); the
+      Abfall+ app backend was skipped on purpose. 161 providers, 43 of 81 cities. Hagen and
+      Freiburg wait on the Restmüll-rhythm question with Pforzheim and Saarbrücken. See the
+      fourth-batch section of ported-features.md.
+- [x] **Mannheim, Kassel, Lübeck, Herne, Offenbach, Kiel** (2026-09-18, third batch) — two new
+      families, `insertit` (five cities on one platform) and `abki` (Kiel). 153 providers, probe
+      green but for the two dead abfall.io keys and Stuttgart's GIS outage. Pforzheim and
+      Saarbrücken are blocked on a Restmüll-rhythm picker. See the third-batch section of
+      ported-features.md.
+- [x] **Dresden, Hannover, Bielefeld, Wuppertal** (2026-09-18, second batch) — three new families,
+      `srdd` (Dresden), `aha` (the Region Hannover's 21 municipalities) and `awgwuppertal`, and
+      Bielefeld as a fifth Athos tenant once `athos.ts` learned its script-wrapped, two-year form.
+      147 providers, probe green but for the two dead abfall.io keys and Stuttgart's own GIS
+      outage (which no longer reads as a reconnect). See the second-batch section of
+      ported-features.md.
+- [x] **Leipzig, Dortmund, Essen** (2026-09-18) — the three largest cities still missing, as three
+      new families: `srl` (Leipzig), `athos` (Dortmund, plus Schaumburg, Hameln-Pyrmont and
+      Landkreis Karlsruhe on the same portal) and `abfallplus` (Essen, plus Duisburg, Reutlingen,
+      Märkisch-Oderland, Nordsachsen and Osterholz on the v3 widget). 143 providers, probe green
+      but for the two long-dead abfall.io keys. See the Leipzig/Dortmund/Essen section of
+      ported-features.md, including the postcode-fallback hole it found.
 - [x] **Düsseldorf — AWISTA Kommunal** (2026-09-17), the thirteenth family and the last of the
       seven largest cities, again from an ICS a household had downloaded. The uuid in that file is
       the whole address, and nothing in the file says how to get one: the city's site is a Next.js

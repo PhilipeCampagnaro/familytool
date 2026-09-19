@@ -116,7 +116,7 @@ Deno.serve(async (req) => {
     externalAccount: username,
   })) {
     return fail(
-      "Mit dem kostenlosen Zugang lässt sich ein Kalender verbinden. Mit Aporah Plus sind es beliebig viele.", 402,
+      "Mit dem kostenlosen Zugang lassen sich zwei Kalender verbinden — Ferien und Müllabfuhr zählen nicht mit. Mit Aporah Plus sind es beliebig viele.", 402,
     );
   }
 

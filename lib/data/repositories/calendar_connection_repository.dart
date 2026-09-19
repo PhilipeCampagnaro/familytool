@@ -239,8 +239,13 @@ class CalendarConnectionRepository {
   /// Scoped by `feed_id` alone, exactly like [_setFeedOwner] beside it — RLS is
   /// what decides which family's subscription row this can reach, and a client
   /// filter would be the tenant check written twice in the weaker place.
+  ///
+  /// The column is a signed `integer`, and an opaque ARGB colour (`0xFF…`) is
+  /// above its range, so the value is wrapped to signed 32-bit first — the same
+  /// `| 0` `calendar-events` applies to the map above on its way to
+  /// `calendars.color`. Written unwrapped, Postgres refuses every opaque colour.
   Future<void> _setFeedColor(CalendarConnection connection, int color) async {
-    await _db.from('family_feeds').update({'color': color}).eq('feed_id', connection.id);
+    await _db.from('family_feeds').update({'color': color.toSigned(32)}).eq('feed_id', connection.id);
   }
 
   /// Says whose calendar one of an account's calendars is.
@@ -269,6 +274,12 @@ class CalendarConnectionRepository {
           'calendar_owners': {...connection.calendarOwners, externalId ?? '*': owner},
         })
         .eq('id', connection.id);
+  }
+
+  /// Replaces the whole owner map at once — for renaming or removing a person
+  /// without an account, which can touch several of an account's calendars.
+  Future<void> setCalendarOwners({required CalendarConnection connection, required Map<String, String> owners}) async {
+    await _db.from('calendar_connections').update({'calendar_owners': owners}).eq('id', connection.id);
   }
 
   /// The same decision for a Ferien or Abfall subscription, which has no
@@ -314,11 +325,13 @@ class CalendarConnectionRepository {
     required CalendarProvider provider,
     String? url,
     String? ics,
+    String? abfallTown,
   }) async {
     final body = await _invoke('calendar-link', {
       'action': 'check',
       'provider': provider.wire,
       if (ics != null) 'ics': ics else 'url': url?.trim() ?? '',
+      'abfall_town': ?abfallTown,
     });
     return (
       name: body['name'] as String?,
@@ -350,6 +363,11 @@ class CalendarConnectionRepository {
   /// already holds under the same name **replaces** it rather than adding a
   /// second calendar — which is how a household keeps a downloaded Abfuhrplan
   /// current when next year's comes out.
+  ///
+  /// [abfallTown] marks the file as the household's waste calendar, for a town
+  /// whose provider we may not fetch from. The function checks the town and
+  /// the file's contents and puts it on the free Abfall-file connection
+  /// ([CalendarConnection.binFileAccount]), which the plan does not count.
   Future<({String? connectionId, String? externalId})> addCalendarLink({
     required CalendarProvider provider,
     required String name,
@@ -357,6 +375,7 @@ class CalendarConnectionRepository {
     String? ics,
     String? fileName,
     String? account,
+    String? abfallTown,
   }) async {
     final body = await _invoke('calendar-link', {
       'action': 'add',
@@ -365,6 +384,7 @@ class CalendarConnectionRepository {
       'file_name': ?fileName,
       'name': name.trim(),
       if (account != null && account.trim().isNotEmpty) 'account': account.trim(),
+      'abfall_town': ?abfallTown,
     });
     return (connectionId: body['connection_id'] as String?, externalId: body['external_id'] as String?);
   }
@@ -404,18 +424,44 @@ class CalendarConnectionRepository {
 
   /// [config] is the vendor configuration the resolve step produced, passed back
   /// exactly as it arrived. [houseNumber] is merged in when the street has more
-  /// than one collection zone.
+  /// than one collection zone, and [rhythm] — bin to option, see
+  /// [RhythmChoice] — when the vendor makes the household name its own.
   Future<String?> connectAbfall({
     required Map<String, dynamic> config,
     required String label,
     HouseNumber? houseNumber,
+    Map<String, String>? rhythm,
   }) async {
     final body = await _invoke('calendar-feed', {
       'provider': 'abfall',
       'label': label,
-      'config': {...config, if (houseNumber != null) 'hnrId': houseNumber.id},
+      'config': abfallConfig(config, houseNumber: houseNumber, rhythm: rhythm),
     });
     return body['feed_id'] as String?;
+  }
+
+  /// The config as it goes back to the server: the resolved one plus whatever
+  /// the household picked on top of it.
+  static Map<String, dynamic> abfallConfig(
+    Map<String, dynamic> config, {
+    HouseNumber? houseNumber,
+    Map<String, String>? rhythm,
+  }) => {
+    ...config,
+    if (houseNumber != null) 'hnrId': houseNumber.id,
+    if (rhythm != null && rhythm.isNotEmpty) 'rhythm': rhythm,
+  };
+
+  /// The bins whose collection rhythm this address makes the household name,
+  /// with only the options it has dates for. Asked once the config names a
+  /// whole address — after the house number, where there was one to pick.
+  /// Empty almost everywhere.
+  Future<List<RhythmChoice>> abfallRhythms(Map<String, dynamic> config) async {
+    final body = await _invoke('abfall-lookup', {'action': 'rhythms', 'config': config});
+    return [
+      for (final c in (body['rhythms'] as List<dynamic>? ?? const []))
+        if (c is Map) ?RhythmChoice.fromMap(Map<String, dynamic>.from(c)),
+    ];
   }
 
   // -------------------------------------------------------------------------

@@ -1,0 +1,2455 @@
+{
+ "Ulm": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Olgastraße 10, 89073 Ulm",
+    "outcome": "ok",
+    "events": 98,
+    "bins": [
+     "Biotonne",
+     "Gelber Sack",
+     "Restmüll",
+     "Blaue Tonne",
+     "Christbaumabfuhr"
+    ],
+    "next": "2026-09-24"
+   },
+   {
+    "address": "Abteistraße 5, 89077 Ulm",
+    "outcome": "ok",
+    "events": 96,
+    "bins": [
+     "Gelber Sack",
+     "Restmüll",
+     "Biotonne",
+     "Christbaumabfuhr",
+     "Blaue Tonne"
+    ],
+    "next": "2026-09-21"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Darmstadt": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Rheinstraße 10, 64283 Darmstadt",
+    "outcome": "ok",
+    "events": 50,
+    "bins": [
+     "Restabfall 2-wö.",
+     "Restabfall wö.",
+     "Bioabfall",
+     "Altpapier",
+     "Wertstofftonne",
+     "Restabfall 4-wö."
+    ],
+    "next": "2026-09-22"
+   },
+   {
+    "address": "Luisenplatz 5, 64283 Darmstadt",
+    "outcome": "ok",
+    "events": 50,
+    "bins": [
+     "Restabfall 2-wö.",
+     "Restabfall wö.",
+     "Bioabfall",
+     "Altpapier",
+     "Wertstofftonne",
+     "Restabfall 4-wö."
+    ],
+    "next": "2026-09-22"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Paderborn": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Westernstraße 10, 33098 Paderborn",
+    "outcome": "ok",
+    "events": 32,
+    "bins": [
+     "Saison-BIO",
+     "Biotonne",
+     "Wertstofftonne",
+     "Restabfalltonne rot",
+     "Restabfalltonne grau",
+     "Altpapiertonne"
+    ],
+    "next": "2026-09-22"
+   },
+   {
+    "address": "Am Abdinghof 11, 33098 Paderborn",
+    "outcome": "ok",
+    "events": 32,
+    "bins": [
+     "Saison-BIO",
+     "Biotonne",
+     "Wertstofftonne",
+     "Restabfalltonne rot",
+     "Restabfalltonne grau",
+     "Altpapiertonne"
+    ],
+    "next": "2026-09-22"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Leipzig": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Karl-Liebknecht-Straße 1a, 04275 Leipzig",
+    "outcome": "ok",
+    "events": 36,
+    "bins": [
+     "Biotonne",
+     "Gelbe Tonne",
+     "Blaue Tonne",
+     "Restabfalltonne"
+    ],
+    "next": "2026-09-25"
+   },
+   {
+    "address": "Martin-Luther-Ring 4, 04109 Leipzig",
+    "outcome": "ok",
+    "events": 90,
+    "bins": [
+     "Gelbe Tonne",
+     "Blaue Tonne",
+     "Restabfalltonne"
+    ],
+    "next": "2026-09-21"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Salzgitter": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Joachim-Campe-Straße 6, 38226 Salzgitter",
+    "outcome": "ok",
+    "events": 25,
+    "bins": [
+     "Restabfall (bis 240l)",
+     "Bioabfall",
+     "Gelbe Tonne",
+     "Altpapier (120l, 240l)"
+    ],
+    "next": "2026-09-22"
+   },
+   {
+    "address": "Berliner Straße 10, 38226 Salzgitter",
+    "outcome": "ok",
+    "events": 25,
+    "bins": [
+     "Restabfall (bis 240l)",
+     "Gelbe Tonne",
+     "Bioabfall",
+     "Altpapier (120l, 240l)"
+    ],
+    "next": "2026-09-22"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Regensburg": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Maximilianstraße 10, 93047 Regensburg",
+    "outcome": "ok",
+    "events": 91,
+    "bins": [
+     "Papiertonne",
+     "kleine Restmülltonne 60 l , 80 l , 120 l, 240 l",
+     "große Restmülltonne 770 l , 1100 l ",
+     "Gelber Sack"
+    ],
+    "next": "2026-09-23"
+   },
+   {
+    "address": "Neupfarrplatz 1, 93047 Regensburg",
+    "outcome": "ok",
+    "events": 65,
+    "bins": [
+     "Papiertonne",
+     "kleine Restmülltonne 60 l , 80 l , 120 l, 240 l",
+     "Gelber Sack"
+    ],
+    "next": "2026-09-23"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Stuttgart": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Wachenheimer Straße 3, 70376 Stuttgart",
+    "outcome": "pick"
+   },
+   {
+    "address": "Marktplatz 1, 70173 Stuttgart",
+    "outcome": "none"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Hamburg": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Fraenkelstraße 3, 22307 Hamburg",
+    "outcome": "ok",
+    "events": 47,
+    "bins": [
+     "Blaue Papiertonne",
+     "Schwarze Restmülltonne",
+     "Gelbe Wertstofftonne/-sack",
+     "Laubsäcke"
+    ],
+    "next": "2026-09-22"
+   },
+   {
+    "address": "Osterstraße 10, 20259 Hamburg",
+    "outcome": "ok",
+    "events": 49,
+    "bins": [
+     "Schwarze Restmülltonne",
+     "Gelbe Wertstofftonne/-sack",
+     "Laubsäcke"
+    ],
+    "next": "2026-09-22"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Cottbus": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Neumarkt 5, 03046 Cottbus",
+    "outcome": "ok",
+    "events": 209,
+    "bins": [
+     "Hausmüll Container",
+     "Leichtverpackungen Container",
+     "Altpapier Container"
+    ],
+    "next": "2026-09-22"
+   },
+   {
+    "address": "Karl-Marx-Straße 10, 03044 Cottbus",
+    "outcome": "ok",
+    "events": 365,
+    "bins": [
+     "Hausmüll Container",
+     "Bioabfälle",
+     "Hausmüll",
+     "Leichtverpackungen",
+     "Altpapier",
+     "Leichtverpackungen Container",
+     "Altpapier Container"
+    ],
+    "next": "2026-09-22"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Frankfurt am Main": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Frankenallee 2, 60327 Frankfurt am Main",
+    "outcome": "ok",
+    "events": 156,
+    "bins": [
+     "Restabfall",
+     "Papier 2",
+     "Altpapier",
+     "Bioabfall",
+     "Verpackung"
+    ],
+    "next": "2026-09-22"
+   },
+   {
+    "address": "Römerberg 23, 60311 Frankfurt am Main",
+    "outcome": "ok",
+    "events": 131,
+    "bins": [
+     "Verpackung",
+     "Restabfall",
+     "Bioabfall",
+     "Altpapier"
+    ],
+    "next": "2026-09-22"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Reutlingen": {
+  "at": "2026-09-19",
+  "checks": [
+   {
+    "address": "Wilhelmstraße 10, 72764 Reutlingen",
+    "outcome": "ok",
+    "events": 52,
+    "bins": [
+     "Bioabfall",
+     "Gelbe Tonne",
+     "Restmüll 2-wöchentlich",
+     "Altpapier",
+     "Restmüll 4-wöchentlich",
+     "Schadstoffmobil",
+     "Grüngut"
+    ],
+    "next": "2026-09-23"
+   },
+   {
+    "address": "Marktplatz 22, 72764 Reutlingen",
+    "outcome": "ok",
+    "events": 52,
+    "bins": [
+     "Bioabfall",
+     "Gelbe Tonne",
+     "Restmüll 2-wöchentlich",
+     "Altpapier",
+     "Restmüll 4-wöchentlich",
+     "Schadstoffmobil",
+     "Grüngut"
+    ],
+    "next": "2026-09-23"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Düsseldorf": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Askanierstraße 3, 40547 Düsseldorf",
+    "outcome": "ok",
+    "events": 55,
+    "bins": [
+     "Restmüll",
+     "Wertstofftonne",
+     "Papier"
+    ],
+    "next": "2026-09-21"
+   },
+   {
+    "address": "Bilker Allee 1, 40219 Düsseldorf",
+    "outcome": "ok",
+    "events": 40,
+    "bins": [
+     "Restmüll",
+     "Wertstofftonne"
+    ],
+    "next": "2026-09-21"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Bremen": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Obernstraße 10, 28195 Bremen",
+    "outcome": "ok",
+    "events": 63,
+    "bins": [
+     "Bioabfall",
+     "Restmüll",
+     "Papier / Gelber Sack",
+     "Tannenbaumabfuhr"
+    ],
+    "next": "2026-09-23"
+   },
+   {
+    "address": "Am Markt 21, 28195 Bremen",
+    "outcome": "ok",
+    "events": 63,
+    "bins": [
+     "Bioabfall",
+     "Restmüll",
+     "Papier / Gelber Sack",
+     "Tannenbaumabfuhr"
+    ],
+    "next": "2026-09-23"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Duisburg": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Königstraße 10, 47051 Duisburg",
+    "outcome": "ok",
+    "events": 46,
+    "bins": [
+     "Hausmüll",
+     "Papierbündel",
+     "Schadstoffmobil"
+    ],
+    "next": "2026-09-22"
+   },
+   {
+    "address": "Burgplatz 19, 47051 Duisburg",
+    "outcome": "ok",
+    "events": 51,
+    "bins": [
+     "Hausmüll",
+     "Altpapier",
+     "Wertstofftonne",
+     "Schadstoffmobil"
+    ],
+    "next": "2026-09-22"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Oldenburg": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Achternstraße 10, 26122 Oldenburg",
+    "outcome": "ok",
+    "events": 25,
+    "bins": [
+     "Bioabfall",
+     "Restabfall",
+     "Gelber Sack/Tonne",
+     "Altpapier"
+    ],
+    "next": "2026-09-23"
+   },
+   {
+    "address": "Donnerschweer Straße 350, 26123 Oldenburg",
+    "outcome": "ok",
+    "events": 25,
+    "bins": [
+     "Bioabfall",
+     "Restabfall",
+     "Gelber Sack/Tonne",
+     "Altpapier"
+    ],
+    "next": "2026-09-25"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Mülheim an der Ruhr": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Schloßstraße 10, 45468 Mülheim an der Ruhr",
+    "outcome": "ok",
+    "events": 65,
+    "bins": [
+     "Restmüll",
+     "Altpapier",
+     "Gelbe Tonne"
+    ],
+    "next": "2026-09-22"
+   },
+   {
+    "address": "Ruhrstraße 10, 45468 Mülheim an der Ruhr",
+    "outcome": "ok",
+    "events": 143,
+    "bins": [
+     "Restmüll",
+     "Altpapier",
+     "Gelbe Tonne",
+     "Biotonne"
+    ],
+    "next": "2026-09-21"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Krefeld": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Hochstraße 12, 47798 Krefeld",
+    "outcome": "ok",
+    "events": 116,
+    "bins": [
+     "Biomüll",
+     "Restabfall",
+     "LVP",
+     "PPK"
+    ],
+    "next": "2026-09-21"
+   },
+   {
+    "address": "Von-der-Leyen-Platz 1, 47798 Krefeld",
+    "outcome": "ok",
+    "events": 538,
+    "bins": [
+     "PPK",
+     "Restabfall",
+     "LVP"
+    ],
+    "next": "2026-09-21"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Bergisch Gladbach": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Hauptstraße 10, 51465 Bergisch Gladbach",
+    "outcome": "ok",
+    "events": 106,
+    "bins": [
+     "Restmüll",
+     "Restmüll 4W rot",
+     "Restmüll 4W grün",
+     "Biomüll",
+     "Altpapier",
+     "Gelber Sack / Tonne",
+     "Weihnachtsbaum"
+    ],
+    "next": "2026-09-24"
+   },
+   {
+    "address": "Konrad-Adenauer-Platz 1, 51465 Bergisch Gladbach",
+    "outcome": "ok",
+    "events": 106,
+    "bins": [
+     "Restmüll",
+     "Restmüll 4W rot",
+     "Restmüll 4W grün",
+     "Biomüll",
+     "Altpapier",
+     "Gelber Sack / Tonne",
+     "Weihnachtsbaum"
+    ],
+    "next": "2026-09-24"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Lübeck": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Breite Straße 10, 23552 Lübeck",
+    "outcome": "ok",
+    "events": 75,
+    "bins": [
+     "PPK",
+     "Restabfall",
+     "Bioabfall"
+    ],
+    "next": "2026-09-24"
+   },
+   {
+    "address": "Königstraße 20, 23552 Lübeck",
+    "outcome": "ok",
+    "events": 26,
+    "bins": [
+     "Restabfall"
+    ],
+    "next": "2026-09-29"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Hannover": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Voltastraße 25, 30165 Hannover",
+    "outcome": "ok",
+    "events": 37,
+    "bins": [
+     "Restabfall",
+     "Bioabfall",
+     "Papier",
+     "Leichtverpackungen"
+    ],
+    "next": "2026-09-22"
+   },
+   {
+    "address": "Lister Meile 10, 30161 Hannover",
+    "outcome": "pick"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Berlin": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Karl-Marx-Allee 1, 10178 Berlin",
+    "outcome": "ok",
+    "events": 92,
+    "bins": [
+     "Biogut/Hausmüll",
+     "Wertstoffe (ALBA)"
+    ],
+    "next": "2026-09-25"
+   },
+   {
+    "address": "Rathausstraße 15, 10178 Berlin",
+    "outcome": "ok",
+    "events": 153,
+    "bins": [
+     "Biogut/Hausmüll",
+     "Wertstoffe (ALBA)"
+    ],
+    "next": "2026-09-22"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Oberhausen": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Schwartzstraße 72, 46045 Oberhausen",
+    "outcome": "ok",
+    "events": 230,
+    "bins": [
+     "Restmüll wö.",
+     "Restmüll 2 wö.",
+     "Restmüll 4 wö.",
+     "Restabfall Container",
+     "Bioabfall",
+     "Papier Container",
+     "Papier",
+     "Gelbe Tonne/Gelber Sack"
+    ],
+    "next": "2026-09-24"
+   },
+   {
+    "address": "Marktstraße 10, 46045 Oberhausen",
+    "outcome": "ok",
+    "events": 173,
+    "bins": [
+     "Restmüll wö.",
+     "Restmüll 2 wö.",
+     "Restmüll 4 wö.",
+     "Restabfall Container",
+     "Bioabfall",
+     "Papier Container",
+     "Papier",
+     "Gelbe Tonne/Gelber Sack"
+    ],
+    "next": "2026-09-24"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Recklinghausen": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Breite Straße 10, 45657 Recklinghausen",
+    "outcome": "ok",
+    "events": 22,
+    "bins": [
+     "Wertstoff",
+     "Restmüll",
+     "Papier"
+    ],
+    "next": "2026-09-23"
+   },
+   {
+    "address": "Rathausplatz 3, 45657 Recklinghausen",
+    "outcome": "ok",
+    "events": 7,
+    "bins": [
+     "Papier"
+    ],
+    "next": "2026-09-25"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Ingolstadt": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Ludwigstraße 10, 85049 Ingolstadt",
+    "outcome": "ok",
+    "events": 34,
+    "bins": [
+     "Restmüll",
+     "GelberSack",
+     "Papier"
+    ],
+    "next": "2026-09-22"
+   },
+   {
+    "address": "Rathausplatz 2, 85049 Ingolstadt",
+    "outcome": "ok",
+    "events": 34,
+    "bins": [
+     "Restmüll",
+     "GelberSack",
+     "Papier"
+    ],
+    "next": "2026-09-21"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Gütersloh": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Berliner Straße 70, 33330 Gütersloh",
+    "outcome": "ok",
+    "events": 96,
+    "bins": [
+     "Restabfall 2-wöchentlich",
+     "Restabfall 4-wöchentlich",
+     "Papiertonne 4-wöchentlich",
+     "Gelbe Tonne 1,1 cbm 2-wöchentlich",
+     "Gelbe Tonne",
+     "Schadstoffmobil",
+     "Aktenvernichter",
+     "Saison-Biotonne"
+    ],
+    "next": "2026-09-19"
+   },
+   {
+    "address": "Kökerstraße 10, 33330 Gütersloh",
+    "outcome": "ok",
+    "events": 96,
+    "bins": [
+     "Restabfall 2-wöchentlich",
+     "Restabfall 4-wöchentlich",
+     "Papiertonne 4-wöchentlich",
+     "Gelbe Tonne 1,1 cbm 2-wöchentlich",
+     "Gelbe Tonne",
+     "Schadstoffmobil",
+     "Aktenvernichter",
+     "Saison-Biotonne"
+    ],
+    "next": "2026-09-19"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Solingen": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Hauptstraße 10, 42651 Solingen",
+    "outcome": "ok",
+    "events": 131,
+    "bins": [
+     "Bio",
+     "Restmüll",
+     "Blaue Tonne",
+     "Gelbe Tonne",
+     "Restmüll 2 wö",
+     "Weihnachtsbaum"
+    ],
+    "next": "2026-09-23"
+   },
+   {
+    "address": "Kölner Straße 10, 42651 Solingen",
+    "outcome": "ok",
+    "events": 131,
+    "bins": [
+     "Bio",
+     "Restmüll",
+     "Blaue Tonne",
+     "Gelbe Tonne",
+     "Restmüll 2 wö",
+     "Weihnachtsbaum"
+    ],
+    "next": "2026-09-23"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Essen": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Rüttenscheider Straße 102, 45130 Essen",
+    "outcome": "ok",
+    "events": 38,
+    "bins": [
+     "Graue Tonne",
+     "Gelbe Tonne",
+     "Blaue Tonne"
+    ],
+    "next": "2026-09-24"
+   },
+   {
+    "address": "Rüttenscheider Straße 50, 45130 Essen",
+    "outcome": "ok",
+    "events": 37,
+    "bins": [
+     "Graue Tonne",
+     "Gelbe Tonne",
+     "Blaue Tonne"
+    ],
+    "next": "2026-09-24"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Nürnberg": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Almoshofer Hauptstraße 10, 90427 Nürnberg",
+    "outcome": "ok",
+    "events": 168,
+    "bins": [
+     "Restabfall",
+     "Bioabfall",
+     "Papiertonne",
+     "Gelbe Tonne",
+     "Papiertonne 1100"
+    ],
+    "next": "2026-09-25"
+   },
+   {
+    "address": "Hauptmarkt 18, 90403 Nürnberg",
+    "outcome": "ok",
+    "events": 262,
+    "bins": [
+     "Restabfall",
+     "Bioabfall",
+     "Papiertonne",
+     "Gelbe Tonne",
+     "Papiertonne 1100"
+    ],
+    "next": "2026-09-22"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Würzburg": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Abtsleitenweg 5, 97074 Würzburg",
+    "outcome": "ok",
+    "events": 36,
+    "bins": [
+     "Papier",
+     "Gelbe Säcke",
+     "Biomüll",
+     "Restmüll"
+    ],
+    "next": "2026-09-21"
+   },
+   {
+    "address": "Frankenstraße 199, 97078 Würzburg",
+    "outcome": "ok",
+    "events": 35,
+    "bins": [
+     "Restmüll",
+     "Biomüll",
+     "Papier",
+     "Gelbe Säcke"
+    ],
+    "next": "2026-09-22"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Aachen": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Templergraben 55, 52062 Aachen",
+    "outcome": "ok",
+    "events": 157,
+    "bins": [
+     "Bio 2wö",
+     "Gelber Sack",
+     "Altpapier 4wö",
+     "Restabfall",
+     "Restabfall 2wö",
+     "Restabfall 4wö",
+     "Weihnachtsbaum"
+    ],
+    "next": "2026-09-24"
+   },
+   {
+    "address": "Markt 1, 52062 Aachen",
+    "outcome": "ok",
+    "events": 300,
+    "bins": [
+     "Bio 2wö",
+     "Gelber Sack",
+     "Altpapier 4wö",
+     "Altpapier 4wö 770",
+     "Restabfall",
+     "Restabfall 1100",
+     "Restabfall 2wö",
+     "Restabfall 2wö 1100"
+    ],
+    "next": "2026-09-24"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Mannheim": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Hauptstraße 10, 68259 Mannheim",
+    "outcome": "ok",
+    "events": 67,
+    "bins": [
+     "Papier",
+     "Weihnachtsbaum",
+     "Rest",
+     "Wertstoff",
+     "Grünschnitt"
+    ],
+    "next": "2026-09-22"
+   },
+   {
+    "address": "Waldhofstraße 10, 68169 Mannheim",
+    "outcome": "ok",
+    "events": 138,
+    "bins": [
+     "Rest",
+     "Wertstoff",
+     "Papier",
+     "Weihnachtsbaum",
+     "Bio",
+     "Grünschnitt"
+    ],
+    "next": "2026-09-21"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Leverkusen": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Ölbachstraße 5, 51381 Leverkusen",
+    "outcome": "ok",
+    "events": 107,
+    "bins": [
+     "Restmülltonne",
+     "Biotonne",
+     "Gelber Sack",
+     "Papiertonne",
+     "Weihnachtsbaumsammlung",
+     "Restmülltonne 4-wöchentlich"
+    ],
+    "next": "2026-09-24"
+   },
+   {
+    "address": "Bergische Landstraße 95, 51375 Leverkusen",
+    "outcome": "ok",
+    "events": 105,
+    "bins": [
+     "Restmülltonne",
+     "Biotonne",
+     "Gelber Sack",
+     "Papiertonne",
+     "Weihnachtsbaumsammlung",
+     "Restmülltonne 4-wöchentlich"
+    ],
+    "next": "2026-09-22"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "München": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Francéstraße 10, 80997 München",
+    "outcome": "ok",
+    "events": 96,
+    "bins": [
+     "Restmülltonne",
+     "Achtung: Restmülltonne",
+     "Papiertonne",
+     "Achtung: Papiertonne",
+     "Biotonne",
+     "Achtung: Biotonne"
+    ],
+    "next": "2026-09-23"
+   },
+   {
+    "address": "Leopoldstraße 10, 80802 München",
+    "outcome": "ok",
+    "events": 96,
+    "bins": [
+     "Restmülltonne",
+     "Achtung: Restmülltonne",
+     "Papiertonne",
+     "Achtung: Papiertonne",
+     "Biotonne",
+     "Achtung: Biotonne"
+    ],
+    "next": "2026-09-22"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Köln": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Bergisch Gladbacher Straße 102, 51065 Köln",
+    "outcome": "ok",
+    "events": 107,
+    "bins": [
+     "Restmüll (grau)",
+     "Wertstoff (gelb)",
+     "Papier (blau)",
+     "Weihnachtsbaum"
+    ],
+    "next": "2026-09-24"
+   },
+   {
+    "address": "Venloer Straße 10, 50672 Köln",
+    "outcome": "pick"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Offenbach am Main": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Kaiserstraße 3, 63065 Offenbach am Main",
+    "outcome": "ok",
+    "events": 147,
+    "bins": [
+     "Biomüll",
+     "Restmüll",
+     "Altpapier",
+     "Grünschnitt / Weihnachtsbäume",
+     "DSD"
+    ],
+    "next": "2026-09-22"
+   },
+   {
+    "address": "Berliner Straße 100, 63065 Offenbach am Main",
+    "outcome": "ok",
+    "events": 121,
+    "bins": [
+     "DSD",
+     "Biomüll",
+     "Restmüll",
+     "Grünschnitt / Weihnachtsbäume"
+    ],
+    "next": "2026-09-22"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Kiel": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Holstenstraße 14, 24103 Kiel",
+    "outcome": "ok",
+    "events": 66,
+    "bins": [
+     "Restabfall",
+     "Papier",
+     "Bioabfall"
+    ],
+    "next": "2026-09-21"
+   },
+   {
+    "address": "Westring 100, 24114 Kiel",
+    "outcome": "ok",
+    "events": 66,
+    "bins": [
+     "Restabfall",
+     "Papier",
+     "Bioabfall"
+    ],
+    "next": "2026-09-29"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Bielefeld": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Eckendorfer Straße 57, 33609 Bielefeld",
+    "outcome": "ok",
+    "events": 142,
+    "bins": [
+     "Restmüll",
+     "Biotonne",
+     "Papiertonne",
+     "Wertstofftonne"
+    ],
+    "next": "2026-09-21"
+   },
+   {
+    "address": "Stapenhorststraße 10, 33615 Bielefeld",
+    "outcome": "ok",
+    "events": 221,
+    "bins": [
+     "Restmüll",
+     "Biotonne",
+     "Papiertonne",
+     "Wertstofftonne"
+    ],
+    "next": "2026-09-21"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Bonn": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Kaiserstraße 10, 53113 Bonn",
+    "outcome": "ok",
+    "events": 89,
+    "bins": [
+     "Restmüll",
+     "Biotonne",
+     "Papiertonne",
+     "alle gelben Behälter, gelbe Säcke",
+     "nur gelbe Großbehälter",
+     "Sperrmüll"
+    ],
+    "next": "2026-09-21"
+   },
+   {
+    "address": "Adenauerallee 100, 53113 Bonn",
+    "outcome": "ok",
+    "events": 89,
+    "bins": [
+     "Restmüll",
+     "Biotonne",
+     "Papiertonne",
+     "alle gelben Behälter, gelbe Säcke",
+     "nur gelbe Großbehälter",
+     "Sperrmüll"
+    ],
+    "next": "2026-09-21"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Ludwigshafen am Rhein": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Bismarckstraße 10, 67059 Ludwigshafen am Rhein",
+    "outcome": "ok",
+    "events": 90,
+    "bins": [
+     "Restabfall",
+     "Altpapier",
+     "Leichtverpackungen",
+     "Wertstoffhof Süd",
+     "Wertstoffhof West",
+     "Wertstoffhof Nord",
+     "Grünabfallsammlung"
+    ],
+    "next": "2026-09-19"
+   },
+   {
+    "address": "Rathausplatz 20, 67059 Ludwigshafen am Rhein",
+    "outcome": "ok",
+    "events": 70,
+    "bins": [
+     "Restabfall",
+     "Altpapier",
+     "Leichtverpackungen",
+     "Wertstoffhof Süd",
+     "Wertstoffhof West",
+     "Wertstoffhof Nord",
+     "Grünabfallsammlung"
+    ],
+    "next": "2026-09-19"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Augsburg": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Frölichstraße 10, 86150 Augsburg",
+    "outcome": "ok",
+    "events": 30,
+    "bins": [
+     "Restmüll",
+     "Bioabfälle",
+     "Papier & Pappe",
+     "Kunststoffe & Metalle",
+     "Sondermülltag"
+    ],
+    "next": "2026-09-23"
+   },
+   {
+    "address": "Maximilianstraße 10, 86150 Augsburg",
+    "outcome": "ok",
+    "events": 30,
+    "bins": [
+     "Restmüll",
+     "Bioabfälle",
+     "Papier & Pappe",
+     "Kunststoffe & Metalle",
+     "Sondermülltag"
+    ],
+    "next": "2026-09-24"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Wuppertal": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Kaiserstraße 10, 42329 Wuppertal",
+    "outcome": "ok",
+    "events": 244,
+    "bins": [
+     "Restmüll",
+     "Bio",
+     "Papier",
+     "Gelb",
+     "Weihnachtsbaumabholung",
+     "Sperrmüll"
+    ],
+    "next": "2026-09-21"
+   },
+   {
+    "address": "Uellendahler Straße 4a, 42107 Wuppertal",
+    "outcome": "ok",
+    "events": 246,
+    "bins": [
+     "Restmüll",
+     "Gelb",
+     "Bio",
+     "Papier",
+     "Weihnachtsbaumabholung",
+     "Sperrmüll"
+    ],
+    "next": "2026-09-25"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Dortmund": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Hohe Straße 20, 44139 Dortmund",
+    "outcome": "ok",
+    "events": 33,
+    "bins": [
+     "Restabfall",
+     "Bioabfall",
+     "Altpapier",
+     "Wertstoffe"
+    ],
+    "next": "2026-09-24"
+   },
+   {
+    "address": "Friedensplatz 1, 44135 Dortmund",
+    "outcome": "ok",
+    "events": 37,
+    "bins": [
+     "Restabfall",
+     "Wertstoffe"
+    ],
+    "next": "2026-09-21"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Dresden": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Neumarkt 6, 01067 Dresden",
+    "outcome": "ok",
+    "events": 296,
+    "bins": [
+     "Blaue Tonne",
+     "Gelbe Tonne",
+     "Bio-Tonne",
+     "Restabfall"
+    ],
+    "next": "2026-09-21"
+   },
+   {
+    "address": "Dr.-Külz-Ring 12, 01067 Dresden",
+    "outcome": "ok",
+    "events": 222,
+    "bins": [
+     "Restabfall",
+     "Blaue Tonne",
+     "Gelbe Tonne"
+    ],
+    "next": "2026-09-23"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Kassel": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Wilhelmshöher Allee 102, 34119 Kassel",
+    "outcome": "ok",
+    "events": 157,
+    "bins": [
+     "Bioabfall",
+     "DSD",
+     "Restabfall"
+    ],
+    "next": "2026-09-23"
+   },
+   {
+    "address": "Obere Königsstraße 8, 34117 Kassel",
+    "outcome": "ok",
+    "events": 470,
+    "bins": [
+     "Altpapier",
+     "Restabfall",
+     "DSD"
+    ],
+    "next": "2026-09-21"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Herne": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Bahnhofstraße 7b, 44623 Herne",
+    "outcome": "ok",
+    "events": 186,
+    "bins": [
+     "Wertstofftonne/Sack",
+     "Restmüll",
+     "Papiertonne"
+    ],
+    "next": "2026-09-22"
+   },
+   {
+    "address": "Friedrich-Ebert-Platz 2, 44623 Herne",
+    "outcome": "ok",
+    "events": 188,
+    "bins": [
+     "Wertstofftonne/Sack",
+     "Biomüll",
+     "Restmüll",
+     "Papiertonne"
+    ],
+    "next": "2026-09-22"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Fürth": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Königstraße 3, 90762 Fürth",
+    "outcome": "ok",
+    "events": 106,
+    "bins": [
+     "Restabfall",
+     "Bioabfall",
+     "Altpapier",
+     "Gelber Sack"
+    ],
+    "next": "2026-09-23"
+   },
+   {
+    "address": "Schwabacher Straße 50, 90762 Fürth",
+    "outcome": "ok",
+    "events": 78,
+    "bins": [
+     "Restabfall",
+     "Bioabfall",
+     "Gelber Sack"
+    ],
+    "next": "2026-09-23"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Jena": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Magdelstieg 103, 07745 Jena",
+    "outcome": "ok",
+    "events": 44,
+    "bins": [
+     "Bioabfall",
+     "Leichtverpackung",
+     "Restabfall",
+     "Papier"
+    ],
+    "next": "2026-09-22"
+   },
+   {
+    "address": "Ahornweg 1, 07751 Jena",
+    "outcome": "ok",
+    "events": 53,
+    "bins": [
+     "Bioabfall",
+     "Leichtverpackung",
+     "Papier",
+     "Restabfall"
+    ],
+    "next": "2026-09-24"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Wolfsburg": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Kleiststraße 5, 38440 Wolfsburg",
+    "outcome": "ok",
+    "events": 31,
+    "bins": [
+     "Altpapier",
+     "Bioabfall",
+     "Restabfall",
+     "Wertstofftonne"
+    ],
+    "next": "2026-09-21"
+   },
+   {
+    "address": "Porschestraße 1, 38440 Wolfsburg",
+    "outcome": "ok",
+    "events": 57,
+    "bins": [
+     "Wertstofftonne",
+     "Restabfall",
+     "Altpapier"
+    ],
+    "next": "2026-09-21"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Moers": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Homberger Straße 70, 47441 Moers",
+    "outcome": "ok",
+    "events": 27,
+    "bins": [
+     "Restabfall",
+     "Papier",
+     "Gelber Sack",
+     "Biotonne",
+     "Grünschnitt"
+    ],
+    "next": "2026-09-21"
+   },
+   {
+    "address": "Uerdinger Straße 10, 47441 Moers",
+    "outcome": "ok",
+    "events": 28,
+    "bins": [
+     "Restabfall",
+     "Papier",
+     "Gelber Sack",
+     "Biotonne",
+     "Grünschnitt"
+    ],
+    "next": "2026-09-21"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Heilbronn": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Allee 5, 74072 Heilbronn",
+    "outcome": "ok",
+    "events": 113,
+    "bins": [
+     "Papier",
+     "Restmüll",
+     "Grüngut",
+     "Biomüll",
+     "Gelber Sack",
+     "Christbaum"
+    ],
+    "next": "2026-09-24"
+   },
+   {
+    "address": "Arndtstraße 10, 74074 Heilbronn",
+    "outcome": "ok",
+    "events": 113,
+    "bins": [
+     "Grüngut",
+     "Restmüll",
+     "Gelber Sack",
+     "Biomüll",
+     "Papier",
+     "Christbaum"
+    ],
+    "next": "2026-09-22"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Münster": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Hammer Straße 72, 48153 Münster",
+    "outcome": "ok",
+    "events": 40,
+    "bins": [
+     "Restabfalltonne",
+     "Papiertonne",
+     "Biotonne",
+     "Sperrgut und Grünabfall",
+     "Wertstofftonne"
+    ],
+    "next": "2026-09-22"
+   },
+   {
+    "address": "Aakamp 5, 48147 Münster",
+    "outcome": "ok",
+    "events": 41,
+    "bins": [
+     "Restabfalltonne",
+     "Papiertonne",
+     "Biotonne",
+     "Sperrgut und Grünabfall",
+     "Wertstofftonne"
+    ],
+    "next": "2026-09-21"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Karlsruhe": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Rheinstraße 20, 76185 Karlsruhe",
+    "outcome": "ok",
+    "events": 34,
+    "bins": [
+     "Restmüll",
+     "Bioabfall",
+     "Wertstoff",
+     "Papier"
+    ],
+    "next": "2026-09-23"
+   },
+   {
+    "address": "Moltkestraße 5, 76133 Karlsruhe",
+    "outcome": "ok",
+    "events": 31,
+    "bins": [
+     "Restmüll",
+     "Bioabfall",
+     "Wertstoff",
+     "Papier"
+    ],
+    "next": "2026-09-24"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Bochum": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Königsallee 16, 44789 Bochum",
+    "outcome": "ok",
+    "events": 27,
+    "bins": [
+     "Restmüll",
+     "Altpapier",
+     "kombinierte Wertstofftonne"
+    ],
+    "next": "2026-09-24"
+   },
+   {
+    "address": "Hattinger Straße 200, 44795 Bochum",
+    "outcome": "ok",
+    "events": 20,
+    "bins": [
+     "Restmüll",
+     "Altpapier",
+     "kombinierte Wertstofftonne"
+    ],
+    "next": "2026-09-21"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Hamm": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Oststraße 3, 59065 Hamm",
+    "outcome": "ok",
+    "events": 17,
+    "bins": [
+     "Restmüll-Tonne",
+     "Wertstoff-Tonne",
+     "Altpapier-Tonne",
+     "Altpapier-Container",
+     "Grünabfälle (straßenweise)"
+    ],
+    "next": "2026-09-30"
+   },
+   {
+    "address": "Werler Straße 100, 59063 Hamm",
+    "outcome": "ok",
+    "events": 16,
+    "bins": [
+     "Restmüll-Tonne",
+     "Wertstoff-Tonne",
+     "Altpapier-Tonne",
+     "Grünabfälle (straßenweise)"
+    ],
+    "next": "2026-10-01"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Trier": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Saarstraße 10, 54290 Trier",
+    "outcome": "ok",
+    "events": 13,
+    "bins": [
+     "Restabfall",
+     "Papier & Gelber Sack"
+    ],
+    "next": "2026-09-21"
+   },
+   {
+    "address": "Adelheidstraße 5, 54290 Trier",
+    "outcome": "ok",
+    "events": 11,
+    "bins": [
+     "Restabfall",
+     "Papier & Gelber Sack"
+    ],
+    "next": "2026-09-21"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Wiesbaden": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Rheinstraße 1, 65185 Wiesbaden",
+    "outcome": "ok",
+    "events": 150,
+    "bins": [
+     "Wertstoffe",
+     "Bioabfall",
+     "Restabfall",
+     "Altpapier",
+     "Baumsammlung"
+    ],
+    "next": "2026-09-21"
+   },
+   {
+    "address": "Hauptstraße 10, 65207 Wiesbaden",
+    "outcome": "ok",
+    "events": 123,
+    "bins": [
+     "Altpapier",
+     "Wertstoffe",
+     "Bioabfall",
+     "Restabfall",
+     "Baumsammlung"
+    ],
+    "next": "2026-09-22"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Halle (Saale)": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Adam-Kuckhoff-Straße 11, 06108 Halle (Saale)",
+    "outcome": "ok",
+    "events": 268,
+    "bins": [
+     "Restmüll (Graue Tonne)",
+     "Papier/Pappe (Blaue Tonne)",
+     "Verpackungsabfälle (Gelbe Tonne)",
+     "Biomüll (Braune Tonne)"
+    ],
+    "next": "2026-09-23"
+   },
+   {
+    "address": "Adolfstraße 4, 06114 Halle (Saale)",
+    "outcome": "ok",
+    "events": 265,
+    "bins": [
+     "Restmüll (Graue Tonne)",
+     "Papier/Pappe (Blaue Tonne)",
+     "Verpackungsabfälle (Gelbe Tonne)",
+     "Biomüll (Braune Tonne)"
+    ],
+    "next": "2026-09-22"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Remscheid": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Alleestraße 50, 42853 Remscheid",
+    "outcome": "ok",
+    "events": 19,
+    "bins": [
+     "Restmülltonne wöchentlich",
+     "Altpapiercontainer"
+    ],
+    "next": "2026-09-23"
+   },
+   {
+    "address": "Hastener Straße 10, 42855 Remscheid",
+    "outcome": "ok",
+    "events": 8,
+    "bins": [
+     "Restmülltonne 2-wöchentlich"
+    ],
+    "next": "2026-09-22"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Braunschweig": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Kastanienallee 10, 38102 Braunschweig",
+    "outcome": "ok",
+    "events": 121,
+    "bins": [
+     "Altpapier",
+     "Biotonne",
+     "LVP",
+     "Restmüll"
+    ],
+    "next": "2026-09-21"
+   },
+   {
+    "address": "Bohlweg 5, 38100 Braunschweig",
+    "outcome": "ok",
+    "events": 119,
+    "bins": [
+     "Restmüll",
+     "LVP"
+    ],
+    "next": "2026-09-22"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Mainz": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Kaiserstraße 10, 55116 Mainz",
+    "outcome": "ok",
+    "events": 33,
+    "bins": [
+     "Restabfall-Tonne",
+     "Papier-Tonne",
+     "Glas-Tonne",
+     "Gelber Sack"
+    ],
+    "next": "2026-09-23"
+   },
+   {
+    "address": "Hauptstraße 9, 55120 Mainz",
+    "outcome": "ok",
+    "events": 49,
+    "bins": [
+     "Restabfall-Behälter",
+     "Papier-Behälter",
+     "Glas-Tonne",
+     "Bio-Tonne",
+     "Gelber Sack"
+    ],
+    "next": "2026-09-22"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Bottrop": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Horster Straße 228, 46238 Bottrop",
+    "outcome": "ok",
+    "events": 201,
+    "bins": [
+     "Biotonne",
+     "Graue Tonne",
+     "Gelbe Tonne",
+     "Papiertonne"
+    ],
+    "next": "2026-09-21"
+   },
+   {
+    "address": "Kirchhellener Straße 100, 46236 Bottrop",
+    "outcome": "ok",
+    "events": 200,
+    "bins": [
+     "Graue Tonne",
+     "Gelbe Tonne",
+     "Biotonne",
+     "Papiertonne"
+    ],
+    "next": "2026-09-22"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Gelsenkirchen": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Ackerstraße 10, 45881 Gelsenkirchen",
+    "outcome": "ok",
+    "events": 209,
+    "bins": [
+     "Graue Tonne",
+     "Gelbe Tonne",
+     "Blaue Tonne",
+     "Braune Tonne"
+    ],
+    "next": "2026-09-21"
+   },
+   {
+    "address": "Horster Straße 100, 45897 Gelsenkirchen",
+    "outcome": "ok",
+    "events": 209,
+    "bins": [
+     "Graue Tonne",
+     "Gelbe Tonne",
+     "Braune Tonne",
+     "Blaue Tonne"
+    ],
+    "next": "2026-09-21"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Potsdam": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Zeppelinstraße 11, 14471 Potsdam",
+    "outcome": "ok",
+    "events": 44,
+    "bins": [
+     "Hausmüll",
+     "Biotonne",
+     "Wertstofftonne",
+     "Papier und Pappe"
+    ],
+    "next": "2026-09-22"
+   },
+   {
+    "address": "Birkenweg 5, 14476 Potsdam",
+    "outcome": "ok",
+    "events": 32,
+    "bins": [
+     "Hausmüll",
+     "Biotonne",
+     "Wertstofftonne",
+     "Papier und Pappe"
+    ],
+    "next": "2026-09-21"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Magdeburg": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Abendstraße 10, 39124 Magdeburg",
+    "outcome": "ok",
+    "events": 31,
+    "bins": [
+     "Restabfall",
+     "Bioabfall",
+     "Altpapier"
+    ],
+    "next": "2026-09-21"
+   },
+   {
+    "address": "Breiter Weg 1, 39104 Magdeburg",
+    "outcome": "ok",
+    "events": 46,
+    "bins": [
+     "Restabfall",
+     "Bioabfall",
+     "Altpapier"
+    ],
+    "next": "2026-09-21"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Chemnitz": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Reichenhainer Straße 1, 09111 Chemnitz",
+    "outcome": "ok",
+    "events": 39,
+    "bins": [
+     "Restabfall",
+     "Leichtstoffverpackungen",
+     "Pappe, Papier & Kart."
+    ],
+    "next": "2026-09-21"
+   },
+   {
+    "address": "Zschopauer Straße 28, 09126 Chemnitz",
+    "outcome": "ok",
+    "events": 76,
+    "bins": [
+     "Restabfall",
+     "Bio",
+     "Leichtstoffverpackungen",
+     "Pappe, Papier & Kart."
+    ],
+    "next": "2026-09-21"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Osnabrück": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Lotter Straße 10, 49078 Osnabrück",
+    "outcome": "ok",
+    "events": 30,
+    "bins": [
+     "Restmüll",
+     "Altpapier",
+     "Gelbe Tonne",
+     "Biotonne"
+    ],
+    "next": "2026-09-22"
+   },
+   {
+    "address": "Rheiner Landstraße 211, 49078 Osnabrück",
+    "outcome": "ok",
+    "events": 30,
+    "bins": [
+     "Gelbe Tonne",
+     "Biotonne",
+     "Restmüll",
+     "Altpapier"
+    ],
+    "next": "2026-09-25"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Erfurt": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Juri-Gagarin-Ring 1, 99084 Erfurt",
+    "outcome": "ok",
+    "events": 76,
+    "bins": [
+     "Hausmüll",
+     "Biomüll",
+     "gelbe Tonne",
+     "Papier"
+    ],
+    "next": "2026-09-22"
+   },
+   {
+    "address": "Magdeburger Allee 50, 99086 Erfurt",
+    "outcome": "ok",
+    "events": 20,
+    "bins": [
+     "Hausmüll",
+     "Biomüll"
+    ],
+    "next": "2026-09-25"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Erlangen": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Adlerstraße 5, 91054 Erlangen",
+    "outcome": "ok",
+    "events": 130,
+    "bins": [
+     "Biomüll",
+     "Restmüll",
+     "Papiertonne",
+     "Gelber Sack"
+    ],
+    "next": "2026-09-22"
+   },
+   {
+    "address": "Hauptstraße 5, 91054 Erlangen",
+    "outcome": "ok",
+    "events": 130,
+    "bins": [
+     "Biomüll",
+     "Restmüll",
+     "Papiertonne",
+     "Gelber Sack"
+    ],
+    "next": "2026-09-22"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Göttingen": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Weender Landstraße 50, 37073 Göttingen",
+    "outcome": "ok",
+    "events": 33,
+    "bins": [
+     "Restmülltonne",
+     "Biotonne",
+     "Gelber Sack",
+     "Papiertonne",
+     "Baum- und Strauchschnittsammlung"
+    ],
+    "next": "2026-09-22"
+   },
+   {
+    "address": "Albrechtstraße 1, 37085 Göttingen",
+    "outcome": "ok",
+    "events": 31,
+    "bins": [
+     "Restmülltonne",
+     "Biotonne",
+     "Gelber Sack",
+     "Papiertonne",
+     "Baum- und Strauchschnittsammlung"
+    ],
+    "next": "2026-09-21"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Hagen": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Elberfelder Straße 10, 58095 Hagen",
+    "outcome": "ok",
+    "events": 56,
+    "bins": [
+     "Restmüll rote Woche",
+     "Restmüll wöchentlich",
+     "Wertstofftonne",
+     "Restmüll grüne Woche",
+     "Altpapier"
+    ],
+    "next": "2026-09-22"
+   },
+   {
+    "address": "Bergstraße 20, 58095 Hagen",
+    "outcome": "pick",
+    "events": 56,
+    "numbers": [
+     "Bergischer Ring bis Elberfelderstr.",
+     "Schulstr. bis Bergischer Ring"
+    ],
+    "bins": [
+     "Restmüll rote Woche",
+     "Restmüll wöchentlich",
+     "Wertstofftonne",
+     "Restmüll grüne Woche",
+     "Altpapier"
+    ],
+    "next": "2026-09-22"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Freiburg im Breisgau": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Kaiser-Joseph-Straße 200, 79098 Freiburg im Breisgau",
+    "outcome": "ok",
+    "events": 61,
+    "bins": [
+     "Restabfalltonne (wöchentlich)",
+     "Restabfalltonne (14-täglich)",
+     "Papiertonne",
+     "Gelber Sack",
+     "Restabfalltonne (vierwöchentlich)",
+     "Schnittgutsammlung"
+    ],
+    "next": "2026-09-23"
+   },
+   {
+    "address": "Habsburgerstraße 100, 79104 Freiburg im Breisgau",
+    "outcome": "ok",
+    "events": 83,
+    "bins": [
+     "Restabfalltonne (wöchentlich)",
+     "Biotonne",
+     "Papiertonne",
+     "Restabfalltonne (14-täglich)",
+     "Gelber Sack",
+     "Restabfalltonne (vierwöchentlich)",
+     "Schnittgutsammlung"
+    ],
+    "next": "2026-09-23"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Saarbrücken": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Mainzer Straße 2, 66111 Saarbrücken",
+    "outcome": "ok",
+    "events": 45,
+    "bins": [
+     "Restmüll: Wöchentlich",
+     "Restmüll: 2-wöchentlich",
+     "Restmüll: 4- wöchentlich",
+     "Biomüll",
+     "Papiertonne",
+     "Gelbe Tonne"
+    ],
+    "next": "2026-09-21"
+   },
+   {
+    "address": "Bahnhofstraße 31, 66111 Saarbrücken",
+    "outcome": "pick",
+    "events": 30,
+    "numbers": [
+     "31 · Dudweiler-Mitte, Wilhelmshöhe-Fröhn",
+     "31 · Hauptbahnhof, St.Johanner Markt"
+    ],
+    "bins": [
+     "Restmüll: 2-wöchentlich",
+     "Restmüll: 4- wöchentlich",
+     "Biomüll",
+     "Papiertonne",
+     "Gelbe Tonne"
+    ],
+    "next": "2026-09-23"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Pforzheim": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Bahnhofstraße 10, 75172 Pforzheim",
+    "outcome": "ok",
+    "events": 52,
+    "bins": [
+     "Restmüll (wöchentlich)",
+     "Restmüll (14-täglich)",
+     "Großmüllbehälter 1100 L",
+     "Biobehälter",
+     "Papierbehälter",
+     "Gelbe Tonne"
+    ],
+    "next": "2026-09-24"
+   },
+   {
+    "address": "Zerrennerstraße 20, 75172 Pforzheim",
+    "outcome": "ok",
+    "events": 52,
+    "bins": [
+     "Restmüll (wöchentlich)",
+     "Restmüll (14-täglich)",
+     "Großmüllbehälter 1100 L",
+     "Biobehälter",
+     "Papierbehälter",
+     "Gelbe Tonne"
+    ],
+    "next": "2026-09-24"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Neuss": {
+  "at": "2026-09-18",
+  "checks": [
+   {
+    "address": "Abteiweg 1, 41469 Neuss",
+    "outcome": "ok",
+    "events": 156,
+    "bins": [
+     "Gelbe Tonne / Gelber Sack",
+     "Restmüll-Grau",
+     "Restmüll-Pink",
+     "Papiertonne",
+     "Biotonne",
+     "Schadstoffmobil"
+    ],
+    "next": "2026-09-23"
+   },
+   {
+    "address": "Krefelder Straße 10, 41460 Neuss",
+    "outcome": "ok",
+    "events": 174,
+    "bins": [
+     "Biotonne",
+     "Restmüll-Grau",
+     "Restmüll-Pink",
+     "Gelbe Tonne / Gelber Sack",
+     "Papiertonne",
+     "Schadstoffmobil"
+    ],
+    "next": "2026-09-22"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Mönchengladbach": {
+  "at": "2026-09-19",
+  "checks": [
+   {
+    "address": "Hindenburgstraße 10, 41061 Mönchengladbach",
+    "outcome": "ok",
+    "events": 203,
+    "bins": [
+     "Restmüll: Wöchentlich",
+     "Restmüll: 2-wöchentlich",
+     "Altpapier",
+     "Bioabfall",
+     "Verpackungen",
+     "Weihnachtsbäume",
+     "Elektrokleingeräte-Sammlung",
+     "Grünschnitt"
+    ],
+    "next": "2026-09-22"
+   },
+   {
+    "address": "Bismarckstraße 20, 41061 Mönchengladbach",
+    "outcome": "ok",
+    "events": 203,
+    "bins": [
+     "Restmüll: Wöchentlich",
+     "Restmüll: 2-wöchentlich",
+     "Altpapier",
+     "Bioabfall",
+     "Verpackungen",
+     "Weihnachtsbäume",
+     "Elektrokleingeräte-Sammlung",
+     "Grünschnitt"
+    ],
+    "next": "2026-09-22"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Heidelberg": {
+  "at": "2026-09-19",
+  "checks": [
+   {
+    "address": "Bergheimer Straße 10, 69115 Heidelberg",
+    "outcome": "ok",
+    "events": 298,
+    "bins": [
+     "Restabfall: Wöchentlich",
+     "Restabfall: 14-täglich",
+     "Altpapier: Wöchentlich",
+     "Gelbe Tonne / Gelber Sack: Wöchentlich",
+     "Gelbe Tonne / Gelber Sack: 14-täglich",
+     "Bioabfall",
+     "Altpapier: 14-täglich",
+     "Weihnachtsbaumabholung"
+    ],
+    "next": "2026-09-23"
+   },
+   {
+    "address": "Hauptstraße 50, 69117 Heidelberg",
+    "outcome": "ok",
+    "events": 298,
+    "bins": [
+     "Restabfall: Wöchentlich",
+     "Restabfall: 14-täglich",
+     "Altpapier: Wöchentlich",
+     "Gelbe Tonne / Gelber Sack: Wöchentlich",
+     "Gelbe Tonne / Gelber Sack: 14-täglich",
+     "Bioabfall",
+     "Altpapier: 14-täglich",
+     "Weihnachtsbaumabholung"
+    ],
+    "next": "2026-09-23"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Hildesheim": {
+  "at": "2026-09-19",
+  "checks": [
+   {
+    "address": "Almsstraße 1, 31134 Hildesheim",
+    "outcome": "ok",
+    "events": 26,
+    "bins": [
+     "Gelbe Tonne",
+     "Restabfall (14-täglich)",
+     "Bioabfall",
+     "Restabfall (Vierwöchentlich)",
+     "Altpapier"
+    ],
+    "next": "2026-09-24"
+   },
+   {
+    "address": "Bahnhofsallee 20, 31134 Hildesheim",
+    "outcome": "ok",
+    "events": 26,
+    "bins": [
+     "Gelbe Tonne",
+     "Restabfall (14-täglich)",
+     "Bioabfall",
+     "Restabfall (Vierwöchentlich)",
+     "Altpapier"
+    ],
+    "next": "2026-09-24"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Bremerhaven": {
+  "at": "2026-09-19",
+  "checks": [
+   {
+    "address": "Bürgermeister-Smidt-Straße 10, 27568 Bremerhaven",
+    "outcome": "ok",
+    "events": 9,
+    "bins": [
+     "Restmüll: Wöchentlich",
+     "Altpapier",
+     "Gelber Sack",
+     "Restmüll: 14-täglich"
+    ],
+    "next": "2026-09-22"
+   },
+   {
+    "address": "Hafenstraße 100, 27576 Bremerhaven",
+    "outcome": "ok",
+    "events": 9,
+    "bins": [
+     "Gelber Sack",
+     "Restmüll: Wöchentlich",
+     "Altpapier",
+     "Restmüll: 14-täglich"
+    ],
+    "next": "2026-09-23"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Siegen": {
+  "at": "2026-09-19",
+  "checks": [
+   {
+    "address": "Koblenzer Straße 10, 57072 Siegen",
+    "outcome": "ok",
+    "events": 29,
+    "bins": [
+     "Biomüll",
+     "Gelbe Tonne / Gelber Sack",
+     "Restmüll - 2-wöchentlich",
+     "Papier / Kartonagen",
+     "Restmüll - 4-wöchentlich"
+    ],
+    "next": "2026-09-22"
+   },
+   {
+    "address": "Sandstraße 20, 57072 Siegen",
+    "outcome": "ok",
+    "events": 28,
+    "bins": [
+     "Gelbe Tonne / Gelber Sack",
+     "Restmüll - 2-wöchentlich",
+     "Biomüll",
+     "Restmüll - 4-wöchentlich",
+     "Papier / Kartonagen"
+    ],
+    "next": "2026-09-22"
+   }
+  ],
+  "fakeRefused": true
+ },
+ "Rostock": {
+  "at": "2026-09-19",
+  "checks": [
+   {
+    "address": "Lange Straße 10, 18055 Rostock",
+    "outcome": "ok",
+    "events": 80,
+    "bins": [
+     "Gelbe Tonne, Leichtverpackungen",
+     "Blaue Tonne, Papier und Karton",
+     "Schwarze Hausmülltonne"
+    ],
+    "next": "2026-09-24"
+   },
+   {
+    "address": "Kröpeliner Straße 5, 18055 Rostock",
+    "outcome": "ok",
+    "events": 52,
+    "bins": [
+     "Schwarze Hausmülltonne"
+    ],
+    "next": "2026-09-25"
+   }
+  ],
+  "fakeRefused": true
+ }
+}

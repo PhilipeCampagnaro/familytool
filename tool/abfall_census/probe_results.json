@@ -1,7 +1,30 @@
 {
- "at": "2026-09-17T12:58:31.954Z",
- "elapsedMs": 25301,
+ "at": "2026-09-19T09:31:52.631Z",
+ "elapsedMs": 53619,
  "results": [
+  {
+   "provider": "regioit-bav",
+   "name": "bav",
+   "family": "regioit",
+   "town": "Burscheid",
+   "street": "Hauptstraße",
+   "events": 85,
+   "from": "2026-01-07",
+   "to": "2026-12-30",
+   "bins": [
+    "Restmülltonne",
+    "Papiertonne",
+    "Weihnachtsbaum",
+    "Gelber Sack / Tonne",
+    "Biotonne",
+    "Schadstoffmobil"
+   ],
+   "ms": 422,
+   "triedTowns": [
+    "Burscheid"
+   ],
+   "rhythm": []
+  },
   {
    "provider": "regioit-aw-bgl2",
    "name": "aw-bgl2",
@@ -19,10 +42,11 @@
     "Altpapier",
     "Gelber Sack / Tonne"
    ],
-   "ms": 359,
+   "ms": 680,
    "triedTowns": [
     "Bergisch Gladbach"
-   ]
+   ],
+   "rhythm": []
   },
   {
    "provider": "regioit-aachen",
@@ -41,32 +65,11 @@
     "Restabfall 770",
     "Restabfall 2wö"
    ],
-   "ms": 397,
+   "ms": 694,
    "triedTowns": [
     "Aachen"
-   ]
-  },
-  {
-   "provider": "regioit-bav",
-   "name": "bav",
-   "family": "regioit",
-   "town": "Burscheid",
-   "street": "Hauptstraße",
-   "events": 85,
-   "from": "2026-01-07",
-   "to": "2026-12-30",
-   "bins": [
-    "Restmülltonne",
-    "Papiertonne",
-    "Weihnachtsbaum",
-    "Gelber Sack / Tonne",
-    "Biotonne",
-    "Schadstoffmobil"
    ],
-   "ms": 429,
-   "triedTowns": [
-    "Burscheid"
-   ]
+   "rhythm": []
   },
   {
    "provider": "regioit-zew2",
@@ -85,10 +88,31 @@
     "Restabfall 770",
     "Restabfall 2wö"
    ],
-   "ms": 566,
+   "ms": 901,
    "triedTowns": [
     "Aachen"
-   ]
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "regioit-dorsten",
+   "name": "dorsten",
+   "family": "regioit",
+   "town": "Dorsten",
+   "street": "Hauptstraße",
+   "events": 130,
+   "from": "2026-01-05",
+   "to": "2026-12-29",
+   "bins": [
+    "Biomüll",
+    "Wertstofftonne",
+    "Papier"
+   ],
+   "ms": 541,
+   "triedTowns": [
+    "Dorsten"
+   ],
+   "rhythm": []
   },
   {
    "provider": "regioit-din",
@@ -107,30 +131,11 @@
     "Sperrmüll",
     "Gelbe(r) Sack / Tonne"
    ],
-   "ms": 465,
+   "ms": 828,
    "triedTowns": [
     "Dinslaken"
-   ]
-  },
-  {
-   "provider": "regioit-dorsten",
-   "name": "dorsten",
-   "family": "regioit",
-   "town": "Dorsten",
-   "street": "Hauptstraße",
-   "events": 117,
-   "from": "2026-01-06",
-   "to": "2026-12-29",
-   "bins": [
-    "Restmüll",
-    "Biomüll",
-    "Wertstofftonne",
-    "Papier"
    ],
-   "ms": 432,
-   "triedTowns": [
-    "Dorsten"
-   ]
+   "rhythm": []
   },
   {
    "provider": "regioit-coe",
@@ -148,10 +153,11 @@
     "Papier",
     "Schadstoffmobil"
    ],
-   "ms": 387,
+   "ms": 520,
    "triedTowns": [
     "Ascheberg"
-   ]
+   ],
+   "rhythm": []
   },
   {
    "provider": "regioit-hlv",
@@ -170,10 +176,11 @@
     "Sperrmüll",
     "Elektroschrott"
    ],
-   "ms": 651,
+   "ms": 809,
    "triedTowns": [
     "Halver"
-   ]
+   ],
+   "rhythm": []
   },
   {
    "provider": "regioit-pi",
@@ -192,10 +199,11 @@
     "Papiertonne",
     "Gelbe Tonne"
    ],
-   "ms": 420,
+   "ms": 516,
    "triedTowns": [
     "Appen"
-   ]
+   ],
+   "rhythm": []
   },
   {
    "provider": "regioit-krhs",
@@ -214,10 +222,11 @@
     "Altpapier",
     "Glas"
    ],
-   "ms": 539,
+   "ms": 873,
    "triedTowns": [
     "Erkelenz"
-   ]
+   ],
+   "rhythm": []
   },
   {
    "provider": "regioit-krwaf",
@@ -236,10 +245,11 @@
     "Schadstoffmobil",
     "Aktenvernichter"
    ],
-   "ms": 489,
+   "ms": 761,
    "triedTowns": [
     "Ahlen"
-   ]
+   ],
+   "rhythm": []
   },
   {
    "provider": "regioit-nds",
@@ -258,10 +268,33 @@
     "Gelbe Wertstoffbehälter -2 wö.-",
     "Weihnachtsbaum"
    ],
-   "ms": 458,
+   "ms": 577,
    "triedTowns": [
     "Norderstedt"
-   ]
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "regioit-wml2",
+   "name": "wml2",
+   "family": "regioit",
+   "town": "Ahaus",
+   "street": "G.-Hauptmann-Straße",
+   "events": 73,
+   "from": "2026-01-06",
+   "to": "2026-12-29",
+   "bins": [
+    "Restmüll",
+    "Bioabfall",
+    "Altpapier",
+    "Gelbe Tonne",
+    "Schadstoffmobil in Ihrer Nähe"
+   ],
+   "ms": 441,
+   "triedTowns": [
+    "Ahaus"
+   ],
+   "rhythm": []
   },
   {
    "provider": "regioit-stl",
@@ -280,31 +313,11 @@
     "Biotonne",
     "Papiertonne"
    ],
-   "ms": 653,
+   "ms": 1307,
    "triedTowns": [
     "Lüdenscheid"
-   ]
-  },
-  {
-   "provider": "regioit-nuernberg",
-   "name": "nuernberg",
-   "family": "regioit",
-   "town": "Nürnberg",
-   "street": "Almoshofer Hauptstrasse",
-   "events": 168,
-   "from": "2026-01-03",
-   "to": "2026-12-24",
-   "bins": [
-    "Restabfall",
-    "Bioabfall",
-    "Papiertonne",
-    "Gelbe Tonne",
-    "Papiertonne 1100"
    ],
-   "ms": 404,
-   "triedTowns": [
-    "Nürnberg"
-   ]
+   "rhythm": []
   },
   {
    "provider": "regioit-solingen",
@@ -323,71 +336,33 @@
     "Restmüll 2 wö",
     "Weihnachtsbaum"
    ],
-   "ms": 454,
+   "ms": 767,
    "triedTowns": [
     "Solingen"
-   ]
-  },
-  {
-   "provider": "regioit-wml2",
-   "name": "wml2",
-   "family": "regioit",
-   "town": "Ahaus",
-   "street": "G.-Hauptmann-Straße",
-   "events": 73,
-   "from": "2026-01-06",
-   "to": "2026-12-29",
-   "bins": [
-    "Restmüll",
-    "Bioabfall",
-    "Altpapier",
-    "Gelbe Tonne",
-    "Schadstoffmobil in Ihrer Nähe"
    ],
-   "ms": 379,
-   "triedTowns": [
-    "Ahaus"
-   ]
+   "rhythm": []
   },
   {
-   "provider": "regioit-cottbus",
-   "name": "cottbus",
+   "provider": "regioit-nuernberg",
+   "name": "nuernberg",
    "family": "regioit",
-   "town": "Cottbus",
-   "street": "Dissenchener Hauptstraße",
-   "events": 65,
+   "town": "Nürnberg",
+   "street": "Almoshofer Hauptstrasse",
+   "events": 168,
    "from": "2026-01-03",
-   "to": "2026-12-23",
+   "to": "2026-12-24",
    "bins": [
-    "Bioabfälle",
-    "Hausmüll",
-    "Leichtverpackungen",
-    "Altpapier"
-   ],
-   "ms": 425,
-   "triedTowns": [
-    "Cottbus"
-   ]
-  },
-  {
-   "provider": "regioit-muelheim",
-   "name": "muelheim",
-   "family": "regioit",
-   "town": "Mülheim",
-   "street": "Am Hauptbahnhof",
-   "events": 326,
-   "from": "2026-01-02",
-   "to": "2026-12-31",
-   "bins": [
-    "Restmüll",
-    "Altpapier",
+    "Restabfall",
+    "Bioabfall",
+    "Papiertonne",
     "Gelbe Tonne",
-    "Biotonne"
+    "Papiertonne 1100"
    ],
-   "ms": 330,
+   "ms": 962,
    "triedTowns": [
-    "Mülheim"
-   ]
+    "Nürnberg"
+   ],
+   "rhythm": []
   },
   {
    "provider": "regioit-kronberg",
@@ -406,10 +381,53 @@
     "Biotonne",
     "Gelber Sack"
    ],
-   "ms": 484,
+   "ms": 535,
    "triedTowns": [
     "Kronberg"
-   ]
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "regioit-cottbus",
+   "name": "cottbus",
+   "family": "regioit",
+   "town": "Cottbus",
+   "street": "Dissenchener Hauptstraße",
+   "events": 65,
+   "from": "2026-01-03",
+   "to": "2026-12-23",
+   "bins": [
+    "Bioabfälle",
+    "Hausmüll",
+    "Leichtverpackungen",
+    "Altpapier"
+   ],
+   "ms": 666,
+   "triedTowns": [
+    "Cottbus"
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "regioit-muelheim",
+   "name": "muelheim",
+   "family": "regioit",
+   "town": "Mülheim",
+   "street": "Am Hauptbahnhof",
+   "events": 326,
+   "from": "2026-01-02",
+   "to": "2026-12-31",
+   "bins": [
+    "Restmüll",
+    "Altpapier",
+    "Gelbe Tonne",
+    "Biotonne"
+   ],
+   "ms": 643,
+   "triedTowns": [
+    "Mülheim"
+   ],
+   "rhythm": []
   },
   {
    "provider": "regioit-viersen",
@@ -428,76 +446,11 @@
     "Restabfall 2 wö",
     "Restabfall 4 wö"
    ],
-   "ms": 416,
+   "ms": 641,
    "triedTowns": [
     "Brüggen"
-   ]
-  },
-  {
-   "provider": "regioit-cux",
-   "name": "cux",
-   "family": "regioit",
-   "town": "Cuxhaven",
-   "street": "Hauptstraße (Hs. Nr. 1-57 u. 2-46)",
-   "events": 87,
-   "from": "2026-01-12",
-   "to": "2026-12-30",
-   "bins": [
-    "Restmüll",
-    "Biomüll",
-    "Altpapier",
-    "Gelbe Tonne",
-    "Weihnachtsbaumsammlung",
-    "Schadstoffmobil Außenbezirke"
    ],
-   "ms": 467,
-   "triedTowns": [
-    "Cuxhaven"
-   ]
-  },
-  {
-   "provider": "regioit-portawestfalica",
-   "name": "portawestfalica",
-   "family": "regioit",
-   "town": "Porta Westfalica",
-   "street": "Gerhart-Hauptmann-Straße",
-   "events": 106,
-   "from": "2026-01-06",
-   "to": "2026-12-29",
-   "bins": [
-    "Gelbe Tonne",
-    "Restmülltonne",
-    "Papiertonne",
-    "Biomülltonne",
-    "Saison Biomülltonne",
-    "Schadstoffmobil"
-   ],
-   "ms": 487,
-   "triedTowns": [
-    "Porta Westfalica"
-   ]
-  },
-  {
-   "provider": "regioit-oberhausen",
-   "name": "oberhausen",
-   "family": "regioit",
-   "town": "Oberhausen",
-   "street": "Schulstraße",
-   "events": 199,
-   "from": "2026-01-05",
-   "to": "2027-01-11",
-   "bins": [
-    "Restmüll wö.",
-    "Restmüll 2 wö.",
-    "Restabfall Container",
-    "Bioabfall",
-    "Papier",
-    "Gelbe Tonne/Gelber Sack"
-   ],
-   "ms": 691,
-   "triedTowns": [
-    "Oberhausen"
-   ]
+   "rhythm": []
   },
   {
    "provider": "regioit-unna",
@@ -516,54 +469,80 @@
     "Wertstofftonne",
     "Wertstoffcontainer"
    ],
-   "ms": 412,
+   "ms": 389,
    "triedTowns": [
     "Bergkamen"
-   ]
-  },
-  {
-   "provider": "regioit-frankenthal",
-   "name": "frankenthal",
-   "family": "regioit",
-   "town": "Frankenthal",
-   "street": "Gerhart-Hauptmann-Straße",
-   "events": 89,
-   "from": "2026-01-03",
-   "to": "2026-12-28",
-   "bins": [
-    "Bioabfall",
-    "Wertstoffe",
-    "Altpapier",
-    "Restabfall",
-    "Weihnachtsbaumabfuhr",
-    "Schadstoff EWF-Betriebsgelände"
    ],
-   "ms": 340,
-   "triedTowns": [
-    "Frankenthal"
-   ]
+   "rhythm": []
   },
   {
-   "provider": "regioit-kranenburg",
-   "name": "kranenburg",
+   "provider": "regioit-cux",
+   "name": "cux",
    "family": "regioit",
-   "town": "Kranenburg",
-   "street": "Hauptstraße",
-   "events": 194,
-   "from": "2025-01-02",
+   "town": "Cuxhaven",
+   "street": "Hauptstraße (Hs. Nr. 1-57 u. 2-46)",
+   "events": 87,
+   "from": "2026-01-12",
    "to": "2026-12-30",
    "bins": [
     "Restmüll",
     "Biomüll",
     "Altpapier",
     "Gelbe Tonne",
-    "Spermüll/Altholz",
-    "Glas"
+    "Weihnachtsbaumsammlung",
+    "Schadstoffmobil Außenbezirke"
    ],
-   "ms": 306,
+   "ms": 650,
    "triedTowns": [
-    "Kranenburg"
-   ]
+    "Cuxhaven"
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "regioit-oberhausen",
+   "name": "oberhausen",
+   "family": "regioit",
+   "town": "Oberhausen",
+   "street": "Schulstraße",
+   "events": 199,
+   "from": "2026-01-05",
+   "to": "2027-01-11",
+   "bins": [
+    "Restmüll wö.",
+    "Restmüll 2 wö.",
+    "Restabfall Container",
+    "Bioabfall",
+    "Papier",
+    "Gelbe Tonne/Gelber Sack"
+   ],
+   "ms": 1014,
+   "triedTowns": [
+    "Oberhausen"
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "regioit-portawestfalica",
+   "name": "portawestfalica",
+   "family": "regioit",
+   "town": "Porta Westfalica",
+   "street": "Gerhart-Hauptmann-Straße",
+   "events": 106,
+   "from": "2026-01-06",
+   "to": "2026-12-29",
+   "bins": [
+    "Gelbe Tonne",
+    "Restmülltonne",
+    "Papiertonne",
+    "Biomülltonne",
+    "Saison Biomülltonne",
+    "Schadstoffmobil"
+   ],
+   "ms": 759,
+   "triedTowns": [
+    "Porta Westfalica"
+   ],
+   "rhythm": []
   },
   {
    "provider": "awido-aic-fdb",
@@ -582,10 +561,34 @@
     "Papiercontainer 2-wöchentlich",
     "Biotonne"
    ],
-   "ms": 261,
+   "ms": 297,
    "triedTowns": [
     "Adelzhausen"
-   ]
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "regioit-kranenburg",
+   "name": "kranenburg",
+   "family": "regioit",
+   "town": "Kranenburg",
+   "street": "Hauptstraße",
+   "events": 194,
+   "from": "2025-01-02",
+   "to": "2026-12-30",
+   "bins": [
+    "Restmüll",
+    "Biomüll",
+    "Altpapier",
+    "Gelbe Tonne",
+    "Spermüll/Altholz",
+    "Glas"
+   ],
+   "ms": 440,
+   "triedTowns": [
+    "Kranenburg"
+   ],
+   "rhythm": []
   },
   {
    "provider": "regioit-awvlippe",
@@ -604,10 +607,11 @@
     "Restmüll",
     "Schadstoffmobil"
    ],
-   "ms": 488,
+   "ms": 843,
    "triedTowns": [
     "Augustdorf"
-   ]
+   ],
+   "rhythm": []
   },
   {
    "provider": "awido-ansbach",
@@ -625,54 +629,11 @@
     "Gelber Sack",
     "Mobile Problemabfallsammlung"
    ],
-   "ms": 296,
+   "ms": 313,
    "triedTowns": [
     "Adelshofen"
-   ]
-  },
-  {
-   "provider": "awido-awb-duerkheim",
-   "name": "AWB Landkreis Bad Dürkheim",
-   "family": "awido",
-   "town": "Bad Dürkheim",
-   "street": "Hauptstraße",
-   "events": 131,
-   "from": "2026-01-03",
-   "to": "2026-12-23",
-   "bins": [
-    "Papier",
-    "Bio",
-    "Restmüll",
-    "Gelber Sack",
-    "Weihnachtsbäume",
-    "Restmüll 4-wöchentlich"
    ],
-   "ms": 352,
-   "triedTowns": [
-    "Bad Dürkheim"
-   ]
-  },
-  {
-   "provider": "awido-awld",
-   "name": "Abfallwirtschaft Lahn-Dill-Kreis",
-   "family": "awido",
-   "town": "Aßlar",
-   "street": "Aßlar",
-   "events": 152,
-   "from": "2026-01-03",
-   "to": "2026-12-30",
-   "bins": [
-    "Schadstoffe",
-    "Restabfall",
-    "Restabfall 1.100",
-    "Altpapier",
-    "Bioabfall",
-    "Bioabfall 1.100"
-   ],
-   "ms": 389,
-   "triedTowns": [
-    "Aßlar"
-   ]
+   "rhythm": []
   },
   {
    "provider": "awido-awb-ak",
@@ -691,31 +652,57 @@
     "Restabfalltonne",
     "Gelbe Tonne"
    ],
-   "ms": 591,
+   "ms": 422,
    "triedTowns": [
     "VG Altenkirchen - Flammersfeld"
-   ]
+   ],
+   "rhythm": []
   },
   {
-   "provider": "awido-awv-isar-inn",
-   "name": "Abfallwirtschaft Isar-Inn",
+   "provider": "awido-awb-duerkheim",
+   "name": "AWB Landkreis Bad Dürkheim",
    "family": "awido",
-   "town": "Arnstorf",
-   "street": "Bahnhofstr.",
-   "events": 80,
-   "from": "2026-01-10",
-   "to": "2026-12-29",
+   "town": "Bad Dürkheim",
+   "street": "Hauptstraße",
+   "events": 131,
+   "from": "2026-01-03",
+   "to": "2026-12-23",
    "bins": [
+    "Papier",
+    "Bio",
     "Restmüll",
-    "Biotonne",
-    "Gelbe Tonne",
-    "Papiertonne",
-    "Problemmüllsammlung"
+    "Gelber Sack",
+    "Weihnachtsbäume",
+    "Restmüll 4-wöchentlich"
    ],
-   "ms": 501,
+   "ms": 344,
    "triedTowns": [
-    "Arnstorf"
-   ]
+    "Bad Dürkheim"
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "awido-awld",
+   "name": "Abfallwirtschaft Lahn-Dill-Kreis",
+   "family": "awido",
+   "town": "Aßlar",
+   "street": "Aßlar",
+   "events": 152,
+   "from": "2026-01-03",
+   "to": "2026-12-30",
+   "bins": [
+    "Schadstoffe",
+    "Restabfall",
+    "Restabfall 1.100",
+    "Altpapier",
+    "Bioabfall",
+    "Bioabfall 1.100"
+   ],
+   "ms": 349,
+   "triedTowns": [
+    "Aßlar"
+   ],
+   "rhythm": []
   },
   {
    "provider": "awido-awv-nordschwaben",
@@ -733,10 +720,54 @@
     "Papiertonne",
     "Schadstoffmobil"
    ],
-   "ms": 332,
+   "ms": 390,
    "triedTowns": [
     "Aislingen"
-   ]
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "awido-awv-isar-inn",
+   "name": "Abfallwirtschaft Isar-Inn",
+   "family": "awido",
+   "town": "Arnstorf",
+   "street": "Bahnhofstr.",
+   "events": 80,
+   "from": "2026-01-10",
+   "to": "2026-12-29",
+   "bins": [
+    "Restmüll",
+    "Biotonne",
+    "Gelbe Tonne",
+    "Papiertonne",
+    "Problemmüllsammlung"
+   ],
+   "ms": 496,
+   "triedTowns": [
+    "Arnstorf"
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "awido-azv-hef-rof",
+   "name": "AZV Hersfeld-Rotenburg",
+   "family": "awido",
+   "town": "Alheim",
+   "street": "Obergude",
+   "events": 85,
+   "from": "2026-01-02",
+   "to": "2026-12-31",
+   "bins": [
+    "Bioabfall",
+    "Hausmüll",
+    "Wertstoffe",
+    "Sonderabfall"
+   ],
+   "ms": 701,
+   "triedTowns": [
+    "Alheim"
+   ],
+   "rhythm": []
   },
   {
    "provider": "awido-coburg",
@@ -755,30 +786,11 @@
     "Problemmüll (gewerblich)",
     "Problemmüll wöchentlich"
    ],
-   "ms": 338,
+   "ms": 400,
    "triedTowns": [
     "Ahorn"
-   ]
-  },
-  {
-   "provider": "awido-azv-hef-rof",
-   "name": "AZV Hersfeld-Rotenburg",
-   "family": "awido",
-   "town": "Alheim",
-   "street": "Obergude",
-   "events": 85,
-   "from": "2026-01-02",
-   "to": "2026-12-31",
-   "bins": [
-    "Bioabfall",
-    "Hausmüll",
-    "Wertstoffe",
-    "Sonderabfall"
    ],
-   "ms": 707,
-   "triedTowns": [
-    "Alheim"
-   ]
+   "rhythm": []
   },
   {
    "provider": "awido-ebe",
@@ -797,31 +809,11 @@
     "Problemmüll",
     "Gartenabfall"
    ],
-   "ms": 518,
+   "ms": 483,
    "triedTowns": [
     "Anzing"
-   ]
-  },
-  {
-   "provider": "awido-erding",
-   "name": "Landkreis Erding",
-   "family": "awido",
-   "town": "Berglern",
-   "street": "Kirchplatz",
-   "events": 95,
-   "from": "2026-01-02",
-   "to": "2026-12-31",
-   "bins": [
-    "Biotonne",
-    "Gelber Sack",
-    "Restmüll",
-    "Papiertonne",
-    "Problemmüll"
    ],
-   "ms": 398,
-   "triedTowns": [
-    "Berglern"
-   ]
+   "rhythm": []
   },
   {
    "provider": "awido-bgl",
@@ -840,32 +832,33 @@
     "Gelber Sack",
     "Problemmüll"
    ],
-   "ms": 825,
+   "ms": 863,
    "triedTowns": [
     "Ainring"
-   ]
+   ],
+   "rhythm": []
   },
   {
-   "provider": "awido-ffb",
-   "name": "AWB Landkreis Fürstenfeldbruck",
+   "provider": "awido-erding",
+   "name": "Landkreis Erding",
    "family": "awido",
-   "town": "Adelshofen",
-   "street": "Hauptstr.",
-   "events": 132,
+   "town": "Berglern",
+   "street": "Kirchplatz",
+   "events": 95,
    "from": "2026-01-02",
-   "to": "2026-12-30",
+   "to": "2026-12-31",
    "bins": [
-    "Papiercontainer 2-wöchentlich",
-    "Papiertonne 4-wöchentlich",
-    "Restmülltonne 40-240 Liter",
-    "Restmüllcontainer 660-1100 Liter",
-    "Biotonne 60–240 Liter",
-    "Wertstofftonne 80-1100 Liter"
+    "Biotonne",
+    "Gelber Sack",
+    "Restmüll",
+    "Papiertonne",
+    "Problemmüll"
    ],
-   "ms": 463,
+   "ms": 475,
    "triedTowns": [
-    "Adelshofen"
-   ]
+    "Berglern"
+   ],
+   "rhythm": []
   },
   {
    "provider": "awido-fulda",
@@ -884,32 +877,34 @@
     "Papier-Tonne",
     "Restmüll grün 4-wöchentlich "
    ],
-   "ms": 364,
+   "ms": 416,
    "triedTowns": [
     "Bad Salzschlirf"
-   ]
+   ],
+   "rhythm": []
   },
   {
-   "provider": "awido-fulda-stadt",
-   "name": "Stadt Fulda",
+   "provider": "awido-ffb",
+   "name": "AWB Landkreis Fürstenfeldbruck",
    "family": "awido",
-   "town": "Fulda",
-   "street": "Gerhart-Hauptmann-Straße",
-   "events": 91,
-   "from": "2026-01-05",
-   "to": "2026-12-28",
+   "town": "Adelshofen",
+   "street": "Hauptstr.",
+   "events": 132,
+   "from": "2026-01-02",
+   "to": "2026-12-30",
    "bins": [
-    "Restmüll 14-täglich",
-    "Gelbe Tonne",
-    "Bio-Tonne",
-    "Restmüll grün 4-wöchentlich",
-    "Papier-Tonne",
-    "Sperrmüll"
+    "Papiercontainer 2-wöchentlich",
+    "Papiertonne 4-wöchentlich",
+    "Restmülltonne 40-240 Liter",
+    "Restmüllcontainer 660-1100 Liter",
+    "Biotonne 60–240 Liter",
+    "Wertstofftonne 80-1100 Liter"
    ],
-   "ms": 519,
+   "ms": 493,
    "triedTowns": [
-    "Fulda"
-   ]
+    "Adelshofen"
+   ],
+   "rhythm": []
   },
   {
    "provider": "awido-eww-suew",
@@ -928,10 +923,34 @@
     "Restmüll blau",
     "Problemabfall Anlieferung"
    ],
-   "ms": 789,
+   "ms": 645,
    "triedTowns": [
     "VG Annweiler"
-   ]
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "awido-fulda-stadt",
+   "name": "Stadt Fulda",
+   "family": "awido",
+   "town": "Fulda",
+   "street": "Gerhart-Hauptmann-Straße",
+   "events": 91,
+   "from": "2026-01-05",
+   "to": "2026-12-28",
+   "bins": [
+    "Restmüll 14-täglich",
+    "Gelbe Tonne",
+    "Bio-Tonne",
+    "Restmüll grün 4-wöchentlich",
+    "Papier-Tonne",
+    "Sperrmüll"
+   ],
+   "ms": 700,
+   "triedTowns": [
+    "Fulda"
+   ],
+   "rhythm": []
   },
   {
    "provider": "awido-gotha",
@@ -948,53 +967,11 @@
     "Gelbe Tonne",
     "Papiertonne"
    ],
-   "ms": 418,
+   "ms": 561,
    "triedTowns": [
     "Bad Tabarz"
-   ]
-  },
-  {
-   "provider": "awido-kaufbeuren",
-   "name": "Stadt Kaufbeuren",
-   "family": "awido",
-   "town": "Kaufbeuren",
-   "street": "Hauptstraße   ",
-   "events": 140,
-   "from": "2026-01-02",
-   "to": "2026-12-30",
-   "bins": [
-    "Biomüll",
-    "Restmüll",
-    "Gelber Sack",
-    "Blaue Tonne",
-    "Giftmobil"
    ],
-   "ms": 334,
-   "triedTowns": [
-    "Kaufbeuren"
-   ]
-  },
-  {
-   "provider": "awido-kaw-guenzburg",
-   "name": "Landkreis Günzburg",
-   "family": "awido",
-   "town": "Aichen",
-   "street": "Aichen",
-   "events": 229,
-   "from": "2026-01-02",
-   "to": "2027-12-27",
-   "bins": [
-    "Problemmüll",
-    "Bioabfall",
-    "Gelbe Tonne",
-    "Restmüll",
-    "Papiertonne",
-    "Veranstaltung"
-   ],
-   "ms": 315,
-   "triedTowns": [
-    "Aichen"
-   ]
+   "rhythm": []
   },
   {
    "provider": "awido-gifhorn",
@@ -1013,10 +990,77 @@
     "Weihnachts&shy;bäume",
     "Repair Café"
    ],
-   "ms": 714,
+   "ms": 705,
    "triedTowns": [
     "Boldecker Land"
-   ]
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "awido-kaufbeuren",
+   "name": "Stadt Kaufbeuren",
+   "family": "awido",
+   "town": "Kaufbeuren",
+   "street": "Hauptstraße   ",
+   "events": 140,
+   "from": "2026-01-02",
+   "to": "2026-12-30",
+   "bins": [
+    "Biomüll",
+    "Restmüll",
+    "Gelber Sack",
+    "Blaue Tonne",
+    "Giftmobil"
+   ],
+   "ms": 292,
+   "triedTowns": [
+    "Kaufbeuren"
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "awido-kaw-guenzburg",
+   "name": "Landkreis Günzburg",
+   "family": "awido",
+   "town": "Aichen",
+   "street": "Aichen",
+   "events": 224,
+   "from": "2026-01-02",
+   "to": "2027-12-27",
+   "bins": [
+    "Problemmüll",
+    "Bioabfall",
+    "Gelbe Tonne",
+    "Restmüll",
+    "Papiertonne"
+   ],
+   "ms": 344,
+   "triedTowns": [
+    "Aichen"
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "awido-kelheim",
+   "name": "Landkreis Kelheim",
+   "family": "awido",
+   "town": "Gemeinde Elsendorf",
+   "street": "Weingarten",
+   "events": 160,
+   "from": "2026-01-05",
+   "to": "2027-12-29",
+   "bins": [
+    "Restmüll",
+    "Biotonne",
+    "Papierabfuhr",
+    "Gelber Sack",
+    "Problemmüll"
+   ],
+   "ms": 587,
+   "triedTowns": [
+    "Gemeinde Elsendorf"
+   ],
+   "rhythm": []
   },
   {
    "provider": "awido-kreis-tir",
@@ -1035,31 +1079,11 @@
     "Gelber Sack",
     "Fälligkeit Müllgebühren"
    ],
-   "ms": 293,
+   "ms": 370,
    "triedTowns": [
     "Bad Neualbenreuth"
-   ]
-  },
-  {
-   "provider": "awido-kelheim",
-   "name": "Landkreis Kelheim",
-   "family": "awido",
-   "town": "Gemeinde Elsendorf",
-   "street": "Weingarten",
-   "events": 160,
-   "from": "2026-01-05",
-   "to": "2027-12-29",
-   "bins": [
-    "Restmüll",
-    "Biotonne",
-    "Papierabfuhr",
-    "Gelber Sack",
-    "Problemmüll"
    ],
-   "ms": 561,
-   "triedTowns": [
-    "Gemeinde Elsendorf"
-   ]
+   "rhythm": []
   },
   {
    "provider": "awido-koenigstein",
@@ -1078,10 +1102,11 @@
     "Papiermüll",
     "Schadstoffmobil"
    ],
-   "ms": 554,
+   "ms": 482,
    "triedTowns": [
     "Falkenstein"
-   ]
+   ],
+   "rhythm": []
   },
   {
    "provider": "awido-kulmbach",
@@ -1100,10 +1125,11 @@
     "Papiertonne",
     "Altmetall und bestimmte Elektrogroßgeräte"
    ],
-   "ms": 321,
+   "ms": 336,
    "triedTowns": [
     "Grafengehaig"
-   ]
+   ],
+   "rhythm": []
   },
   {
    "provider": "awido-landkreisbetriebe",
@@ -1122,31 +1148,11 @@
     "Problemmüll",
     "Fälligkeit Abfallgebühr"
    ],
-   "ms": 234,
+   "ms": 304,
    "triedTowns": [
     "Aresing"
-   ]
-  },
-  {
-   "provider": "awido-kronach",
-   "name": "Landkreis Kronach",
-   "family": "awido",
-   "town": "Kronach",
-   "street": "Gerhart-Hauptmann-Straße",
-   "events": 190,
-   "from": "2026-01-07",
-   "to": "2026-12-29",
-   "bins": [
-    "Restmüll",
-    "Gelbe Tonne",
-    "Problemabfall Umland",
-    "Papiertonne",
-    "Problemabfall Kronach"
    ],
-   "ms": 712,
-   "triedTowns": [
-    "Kronach"
-   ]
+   "rhythm": []
   },
   {
    "provider": "awido-lkgi",
@@ -1165,10 +1171,11 @@
     "Restabfall 4-wöchentlich",
     "Altpapier"
    ],
-   "ms": 327,
+   "ms": 320,
    "triedTowns": [
     "Allendorf (Lumda)"
-   ]
+   ],
+   "rhythm": []
   },
   {
    "provider": "awido-lichtenfels",
@@ -1186,10 +1193,11 @@
     "Problemmüll",
     "Problemmüll - kostenpflichtig"
    ],
-   "ms": 425,
+   "ms": 364,
    "triedTowns": [
     "Altenkunstadt"
-   ]
+   ],
+   "rhythm": []
   },
   {
    "provider": "awido-lra-ab",
@@ -1208,10 +1216,33 @@
     "Papiertonne",
     "Schadstoffsammlung"
    ],
-   "ms": 406,
+   "ms": 361,
    "triedTowns": [
     "Alzenau"
-   ]
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "awido-lra-dah",
+   "name": "Landratsamt Dachau",
+   "family": "awido",
+   "town": "Altomünster",
+   "street": "Ruppertskirchen",
+   "events": 94,
+   "from": "2026-01-05",
+   "to": "2026-12-28",
+   "bins": [
+    "Restmüll",
+    "Gelbe Tonne",
+    "Papiertonne",
+    "Biotonne",
+    "Giftmobil Recyclinghof"
+   ],
+   "ms": 433,
+   "triedTowns": [
+    "Altomünster"
+   ],
+   "rhythm": []
   },
   {
    "provider": "awido-lra-mue",
@@ -1230,52 +1261,33 @@
     "Kinderflohmarkt",
     "Modeflohmarkt"
    ],
-   "ms": 535,
+   "ms": 361,
    "triedTowns": [
     "Ampfing"
-   ]
+   ],
+   "rhythm": []
   },
   {
-   "provider": "awido-lra-dah",
-   "name": "Landratsamt Dachau",
+   "provider": "awido-kronach",
+   "name": "Landkreis Kronach",
    "family": "awido",
-   "town": "Altomünster",
-   "street": "Ruppertskirchen",
-   "events": 94,
-   "from": "2026-01-05",
-   "to": "2026-12-28",
+   "town": "Kronach",
+   "street": "Gerhart-Hauptmann-Straße",
+   "events": 190,
+   "from": "2026-01-07",
+   "to": "2026-12-29",
    "bins": [
     "Restmüll",
     "Gelbe Tonne",
+    "Problemabfall Umland",
     "Papiertonne",
-    "Biotonne",
-    "Giftmobil Recyclinghof"
+    "Problemabfall Kronach"
    ],
-   "ms": 654,
+   "ms": 1907,
    "triedTowns": [
-    "Altomünster"
-   ]
-  },
-  {
-   "provider": "awido-lra-schweinfurt",
-   "name": "Landkreis Schweinfurt",
-   "family": "awido",
-   "town": "Abersfeld",
-   "street": "Abersfeld",
-   "events": 81,
-   "from": "2026-01-02",
-   "to": "2027-03-11",
-   "bins": [
-    "Biotonne",
-    "Restmülltonne",
-    "Gelbe Tonne / Gelber Sack",
-    "Papiertonne",
-    "Problemmüll"
+    "Kronach"
    ],
-   "ms": 455,
-   "triedTowns": [
-    "Abersfeld"
-   ]
+   "rhythm": []
   },
   {
    "provider": "awido-lra-regensburg",
@@ -1294,10 +1306,33 @@
     "Sperrmüll-Sammlung",
     "Papiertonne"
    ],
-   "ms": 706,
+   "ms": 705,
    "triedTowns": [
     "Alteglofsheim"
-   ]
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "awido-lra-schweinfurt",
+   "name": "Landkreis Schweinfurt",
+   "family": "awido",
+   "town": "Abersfeld",
+   "street": "Abersfeld",
+   "events": 81,
+   "from": "2026-01-02",
+   "to": "2027-03-11",
+   "bins": [
+    "Biotonne",
+    "Restmülltonne",
+    "Gelbe Tonne / Gelber Sack",
+    "Papiertonne",
+    "Problemmüll"
+   ],
+   "ms": 436,
+   "triedTowns": [
+    "Abersfeld"
+   ],
+   "rhythm": []
   },
   {
    "provider": "awido-memmingen",
@@ -1312,10 +1347,11 @@
     "Restmülltonne",
     "Biotonne"
    ],
-   "ms": 204,
+   "ms": 221,
    "triedTowns": [
     "Memmingen"
-   ]
+   ],
+   "rhythm": []
   },
   {
    "provider": "awido-neustadt",
@@ -1334,10 +1370,33 @@
     "Papiertonne Bergler",
     "Sperrmüllsammlung"
    ],
-   "ms": 294,
+   "ms": 290,
    "triedTowns": [
     "Altenstadt/WN"
-   ]
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "awido-ebu",
+   "name": "EBU Entsorgungs-Betriebe der Stadt Ulm",
+   "family": "awido",
+   "town": "Ulm",
+   "street": "Gerhart-Hauptmann-Weg",
+   "events": 96,
+   "from": "2026-01-08",
+   "to": "2026-12-30",
+   "bins": [
+    "Restmüll",
+    "Blaue Tonne",
+    "Biotonne",
+    "Gelber Sack",
+    "Christbaumabfuhr"
+   ],
+   "ms": 348,
+   "triedTowns": [
+    "Ulm"
+   ],
+   "rhythm": []
   },
   {
    "provider": "awido-pullach",
@@ -1345,7 +1404,7 @@
    "family": "awido",
    "town": "Pullach",
    "street": "Schulstraße",
-   "events": 275,
+   "events": 263,
    "from": "2026-01-03",
    "to": "2027-12-28",
    "bins": [
@@ -1353,13 +1412,14 @@
     "Gelber Sack",
     "Giftmobil",
     "Restmüll",
-    "Reparatur Café Pullach",
-    "Papiertonne"
+    "Papiertonne",
+    "Aktenvernichtung"
    ],
-   "ms": 415,
+   "ms": 323,
    "triedTowns": [
     "Pullach"
-   ]
+   ],
+   "rhythm": []
   },
   {
    "provider": "awido-regensburg",
@@ -1376,10 +1436,11 @@
     "Papiertonne",
     "Gelber Sack"
    ],
-   "ms": 498,
+   "ms": 399,
    "triedTowns": [
     "Regensburg"
-   ]
+   ],
+   "rhythm": []
   },
   {
    "provider": "awido-rosenheim",
@@ -1395,10 +1456,11 @@
     "Hausmüll Container",
     "Problemmüll"
    ],
-   "ms": 417,
+   "ms": 307,
    "triedTowns": [
     "Albaching"
-   ]
+   ],
+   "rhythm": []
   },
   {
    "provider": "awido-roth",
@@ -1416,10 +1478,11 @@
     "Gelber Sack",
     "Umweltmobil"
    ],
-   "ms": 303,
+   "ms": 310,
    "triedTowns": [
     "Abenberg"
-   ]
+   ],
+   "rhythm": []
   },
   {
    "provider": "awido-unterhaching",
@@ -1438,54 +1501,11 @@
     "Papiercontainer wöchentlich",
     "Gelbe Tonne* 14-täglich"
    ],
-   "ms": 308,
+   "ms": 379,
    "triedTowns": [
     "Unterhaching"
-   ]
-  },
-  {
-   "provider": "awido-unterschleissheim",
-   "name": "Stadt Unterschleißheim",
-   "family": "awido",
-   "town": "Unterschleißheim",
-   "street": "Gerhard-Hauptmann-Str.",
-   "events": 143,
-   "from": "2026-01-05",
-   "to": "2026-12-29",
-   "bins": [
-    "Restmüll",
-    "Biotonne",
-    "Gelbe Tonne / Container",
-    "Papiertonne",
-    "Giftmobil",
-    "Aktenvernichtungsmobil"
    ],
-   "ms": 282,
-   "triedTowns": [
-    "Unterschleißheim"
-   ]
-  },
-  {
-   "provider": "awido-rmk",
-   "name": "Abfallwirtschaft Rems-Murr",
-   "family": "awido",
-   "town": "Alfdorf",
-   "street": "Hauptstraße",
-   "events": 112,
-   "from": "2026-01-05",
-   "to": "2026-12-30",
-   "bins": [
-    "Papiertonne / Container",
-    "Biotonne",
-    "Restmülltonne 2-wöchentliche Leerung",
-    "Restmülltonne 4-wöchentliche Leerung",
-    "Christbäume",
-    "Gelbe Tonne / Container"
-   ],
-   "ms": 1279,
-   "triedTowns": [
-    "Alfdorf"
-   ]
+   "rhythm": []
   },
   {
    "provider": "awido-tuebingen",
@@ -1504,32 +1524,57 @@
     "RM-Container 14-tägig",
     "Altpapier-Tonne"
    ],
-   "ms": 826,
+   "ms": 580,
    "triedTowns": [
     "Ammerbuch"
-   ]
+   ],
+   "rhythm": []
   },
   {
-   "provider": "jumomind-zaw",
-   "name": "ZAW Darmstadt-Dieburg",
-   "family": "jumomind",
-   "town": "Alsbach-Hähnlein",
-   "street": "Hauptstr.",
-   "events": 37,
-   "from": "2026-09-18",
+   "provider": "awido-unterschleissheim",
+   "name": "Stadt Unterschleißheim",
+   "family": "awido",
+   "town": "Unterschleißheim",
+   "street": "Gerhard-Hauptmann-Str.",
+   "events": 143,
+   "from": "2026-01-05",
+   "to": "2026-12-29",
+   "bins": [
+    "Restmüll",
+    "Biotonne",
+    "Gelbe Tonne / Container",
+    "Papiertonne",
+    "Giftmobil",
+    "Aktenvernichtungsmobil"
+   ],
+   "ms": 221,
+   "triedTowns": [
+    "Unterschleißheim"
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "awido-rmk",
+   "name": "Abfallwirtschaft Rems-Murr",
+   "family": "awido",
+   "town": "Alfdorf",
+   "street": "Hauptstraße",
+   "events": 112,
+   "from": "2026-01-05",
    "to": "2026-12-30",
    "bins": [
-    "Restmüll Container wöchentlich",
-    "Bioabfall",
-    "Schadstoffmobil",
-    "Restmüll Tonnen und Container 14-täglich",
-    "Papier Tonnen und Container",
-    "Gelber Sack"
+    "Papiertonne / Container",
+    "Biotonne",
+    "Restmülltonne 2-wöchentliche Leerung",
+    "Restmülltonne 4-wöchentliche Leerung",
+    "Christbäume",
+    "Gelbe Tonne / Container"
    ],
-   "ms": 86,
+   "ms": 1320,
    "triedTowns": [
-    "Alsbach-Hähnlein"
-   ]
+    "Alfdorf"
+   ],
+   "rhythm": []
   },
   {
    "provider": "awido-wgv",
@@ -1547,10 +1592,179 @@
     "Verpackungstonne",
     "Papierabfall"
    ],
-   "ms": 632,
+   "ms": 610,
    "triedTowns": [
     "Bad Heilbrunn"
-   ]
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "jumomind-zaw",
+   "name": "ZAW Darmstadt-Dieburg",
+   "family": "jumomind",
+   "town": "Alsbach-Hähnlein",
+   "street": null,
+   "events": 0,
+   "from": null,
+   "to": null,
+   "bins": [],
+   "ms": 3,
+   "triedTowns": [],
+   "upload": "robots"
+  },
+  {
+   "provider": "jumomind-aoe",
+   "name": "Landkreis Altötting",
+   "family": "jumomind",
+   "town": "Altötting",
+   "street": null,
+   "events": 0,
+   "from": null,
+   "to": null,
+   "bins": [],
+   "ms": 1,
+   "triedTowns": [],
+   "upload": "robots"
+  },
+  {
+   "provider": "jumomind-lka",
+   "name": "MKW Aurich",
+   "family": "jumomind",
+   "town": "Aurich",
+   "street": null,
+   "events": 0,
+   "from": null,
+   "to": null,
+   "bins": [],
+   "ms": 0,
+   "triedTowns": [],
+   "upload": "robots"
+  },
+  {
+   "provider": "jumomind-hom",
+   "name": "Bad Homburg v.d.H.",
+   "family": "jumomind",
+   "town": "Bad Homburg",
+   "street": null,
+   "events": 0,
+   "from": null,
+   "to": null,
+   "bins": [],
+   "ms": 1,
+   "triedTowns": [],
+   "upload": "robots"
+  },
+  {
+   "provider": "jumomind-bdg",
+   "name": "Kreiswerke Barnim",
+   "family": "jumomind",
+   "town": "Ahrensfelde",
+   "street": null,
+   "events": 0,
+   "from": null,
+   "to": null,
+   "bins": [],
+   "ms": 1,
+   "triedTowns": [],
+   "upload": "robots"
+  },
+  {
+   "provider": "jumomind-hat",
+   "name": "Hattersheim am Main",
+   "family": "jumomind",
+   "town": "Hattersheim",
+   "street": null,
+   "events": 0,
+   "from": null,
+   "to": null,
+   "bins": [],
+   "ms": 1,
+   "triedTowns": [],
+   "upload": "robots"
+  },
+  {
+   "provider": "jumomind-ingol",
+   "name": "Ingolstadt",
+   "family": "jumomind",
+   "town": "Ingolstadt",
+   "street": null,
+   "events": 0,
+   "from": null,
+   "to": null,
+   "bins": [],
+   "ms": 0,
+   "triedTowns": [],
+   "upload": "robots"
+  },
+  {
+   "provider": "jumomind-lue",
+   "name": "Lübbecke",
+   "family": "jumomind",
+   "town": "Alswede",
+   "street": null,
+   "events": 0,
+   "from": null,
+   "to": null,
+   "bins": [],
+   "ms": 0,
+   "triedTowns": [],
+   "upload": "robots"
+  },
+  {
+   "provider": "jumomind-sbm",
+   "name": "Minden",
+   "family": "jumomind",
+   "town": "Minden",
+   "street": null,
+   "events": 0,
+   "from": null,
+   "to": null,
+   "bins": [],
+   "ms": 0,
+   "triedTowns": [],
+   "upload": "robots"
+  },
+  {
+   "provider": "jumomind-ksr",
+   "name": "ZBH Recklinghausen",
+   "family": "jumomind",
+   "town": "Recklinghausen",
+   "street": null,
+   "events": 0,
+   "from": null,
+   "to": null,
+   "bins": [],
+   "ms": 1,
+   "triedTowns": [],
+   "upload": "robots"
+  },
+  {
+   "provider": "jumomind-rhe",
+   "name": "RH Entsorgung (Rhein-Hunsrück)",
+   "family": "jumomind",
+   "town": "Alterkülz",
+   "street": null,
+   "events": 0,
+   "from": null,
+   "to": null,
+   "bins": [],
+   "ms": 1,
+   "triedTowns": [],
+   "upload": "robots"
+  },
+  {
+   "provider": "jumomind-udg",
+   "name": "UDG Uckermark",
+   "family": "jumomind",
+   "town": "Angermünde",
+   "street": null,
+   "events": 0,
+   "from": null,
+   "to": null,
+   "bins": [],
+   "ms": 0,
+   "triedTowns": [],
+   "upload": "robots"
   },
   {
    "provider": "awido-zv-muc-so",
@@ -1569,96 +1783,165 @@
     "Wertstoffmobil",
     "Giftmobil"
    ],
-   "ms": 398,
+   "ms": 497,
    "triedTowns": [
     "Aying"
-   ]
+   ],
+   "rhythm": []
   },
   {
-   "provider": "jumomind-lka",
-   "name": "MKW Aurich",
+   "provider": "jumomind-zac",
+   "name": "ZA Celle",
    "family": "jumomind",
-   "town": "Aurich",
-   "street": "Am Schulzentrum (Haxtum)",
-   "events": 25,
-   "from": "2026-09-17",
-   "to": "2026-12-23",
-   "bins": [
-    "Biotonne (grün)",
-    "Altpapiertonne (blau)",
-    "Gelbe Tonne",
-    "Restabfalltonne (schwarz)",
-    "Mobile Schadstoffsammlung",
-    "Strauchabfuhr"
-   ],
-   "ms": 277,
-   "triedTowns": [
-    "Aurich"
-   ]
+   "town": "Adelheidsdorf",
+   "street": null,
+   "events": 0,
+   "from": null,
+   "to": null,
+   "bins": [],
+   "ms": 1,
+   "triedTowns": [],
+   "upload": "robots"
   },
   {
-   "provider": "jumomind-aoe",
-   "name": "Landkreis Altötting",
+   "provider": "jumomind-ben",
+   "name": "AWB Grafschaft Bentheim",
    "family": "jumomind",
-   "town": "Altötting",
-   "street": "Bahnhofplatz",
-   "events": 25,
-   "from": "2026-09-23",
-   "to": "2026-12-19",
-   "bins": [
-    "Problemmüll",
-    "Gelbe Säcke/Tonne",
-    "Restmüllcontainer",
-    "Restmülltonne",
-    "Papiertonne"
-   ],
-   "ms": 342,
-   "triedTowns": [
-    "Altötting"
-   ]
+   "town": "Bad Bentheim",
+   "street": null,
+   "events": 0,
+   "from": null,
+   "to": null,
+   "bins": [],
+   "ms": 0,
+   "triedTowns": [],
+   "upload": "robots"
   },
   {
-   "provider": "jumomind-hom",
-   "name": "Bad Homburg v.d.H.",
+   "provider": "jumomind-enwi",
+   "name": "enwi Landkreis Harz",
    "family": "jumomind",
-   "town": "Bad Homburg",
-   "street": "Hauptstraße",
-   "events": 40,
-   "from": "2026-09-17",
-   "to": "2026-12-29",
-   "bins": [
-    "Restmülltonne",
-    "Bioabfall",
-    "Grünabfall",
-    "Gelbe Säcke",
-    "Papiertonne"
-   ],
-   "ms": 150,
-   "triedTowns": [
-    "Bad Homburg"
-   ]
+   "town": "Abbenrode",
+   "street": null,
+   "events": 0,
+   "from": null,
+   "to": null,
+   "bins": [],
+   "ms": 1,
+   "triedTowns": [],
+   "upload": "robots"
   },
   {
-   "provider": "jumomind-hat",
-   "name": "Hattersheim am Main",
+   "provider": "jumomind-hox",
+   "name": "Abfallservice Kreis Höxter",
    "family": "jumomind",
-   "town": "Hattersheim",
-   "street": "Hauptmannweg",
-   "events": 49,
-   "from": "2026-09-17",
-   "to": "2026-12-31",
-   "bins": [
-    "Bioabfälle",
-    "Leichtverpackungen",
-    "Elektrogeräte",
-    "Altpapier",
-    "Sperrmüll",
-    "Restmüll"
-   ],
-   "ms": 125,
-   "triedTowns": [
-    "Hattersheim"
-   ]
+   "town": "Bad Driburg",
+   "street": null,
+   "events": 0,
+   "from": null,
+   "to": null,
+   "bins": [],
+   "ms": 1,
+   "triedTowns": [],
+   "upload": "robots"
+  },
+  {
+   "provider": "jumomind-kbl",
+   "name": "KBL Langen",
+   "family": "jumomind",
+   "town": "Langen",
+   "street": null,
+   "events": 0,
+   "from": null,
+   "to": null,
+   "bins": [],
+   "ms": 1,
+   "triedTowns": [],
+   "upload": "robots"
+  },
+  {
+   "provider": "jumomind-ros",
+   "name": "Rosbach v.d. Höhe",
+   "family": "jumomind",
+   "town": "Rosbach",
+   "street": null,
+   "events": 0,
+   "from": null,
+   "to": null,
+   "bins": [],
+   "ms": 1,
+   "triedTowns": [],
+   "upload": "robots"
+  },
+  {
+   "provider": "jumomind-mkk",
+   "name": "Main-Kinzig-Kreis",
+   "family": "jumomind",
+   "town": "Birstein",
+   "street": null,
+   "events": 0,
+   "from": null,
+   "to": null,
+   "bins": [],
+   "ms": 0,
+   "triedTowns": [],
+   "upload": "robots"
+  },
+  {
+   "provider": "jumomind-wol",
+   "name": "ALW Wolfenbüttel",
+   "family": "jumomind",
+   "town": "Abbenrode",
+   "street": null,
+   "events": 0,
+   "from": null,
+   "to": null,
+   "bins": [],
+   "ms": 0,
+   "triedTowns": [],
+   "upload": "robots"
+  },
+  {
+   "provider": "jumomind-mymuell-asp",
+   "name": "ASP Paderborn (Online-Abfallkalender der Stadt)",
+   "family": "jumomind",
+   "town": "Paderborn",
+   "street": null,
+   "events": 0,
+   "from": null,
+   "to": null,
+   "bins": [],
+   "ms": 1,
+   "triedTowns": [],
+   "upload": "robots"
+  },
+  {
+   "provider": "jumomind-mymuell-ave",
+   "name": "A.V.E. Kreis Paderborn (MyMüll)",
+   "family": "jumomind",
+   "town": "Altenbeken",
+   "street": null,
+   "events": 0,
+   "from": null,
+   "to": null,
+   "bins": [],
+   "ms": 1,
+   "triedTowns": [],
+   "upload": "robots"
+  },
+  {
+   "provider": "jumomind-mymuell-srb",
+   "name": "SRB Stadt Salzgitter (MyMüll)",
+   "family": "jumomind",
+   "town": "Salzgitter",
+   "street": null,
+   "events": 0,
+   "from": null,
+   "to": null,
+   "bins": [],
+   "ms": 0,
+   "triedTowns": [],
+   "upload": "robots"
   },
   {
    "provider": "awido-zaso",
@@ -1675,321 +1958,11 @@
     "Altpapier",
     "Schadstoffmobil"
    ],
-   "ms": 1065,
+   "ms": 907,
    "triedTowns": [
     "SLF-RU-Allendorf"
-   ]
-  },
-  {
-   "provider": "jumomind-bdg",
-   "name": "Kreiswerke Barnim",
-   "family": "jumomind",
-   "town": "Ahrensfelde-Ahrensfelde",
-   "street": "Gartenweg",
-   "events": 22,
-   "from": "2026-09-21",
-   "to": "2026-12-28",
-   "bins": [
-    "Bio 14-tgl.",
-    "Hausmüll 21-tgl.",
-    "Papier 28-tgl.",
-    "Gelbe Tonne 21-tgl."
    ],
-   "ms": 239,
-   "triedTowns": [
-    "Ahrensfelde-Ahrensfelde"
-   ]
-  },
-  {
-   "provider": "jumomind-lue",
-   "name": "Lübbecke",
-   "family": "jumomind",
-   "town": "Alswede",
-   "street": "Gerhart-Hauptmann-Str.",
-   "events": 40,
-   "from": "2026-09-28",
-   "to": "2026-12-28",
-   "bins": [
-    "Biotonne",
-    "Sperrmüll",
-    "Biotonne Saison",
-    "Papier-Container",
-    "Papiertonne",
-    "Restmülltonne"
-   ],
-   "ms": 119,
-   "triedTowns": [
-    "Alswede"
-   ]
-  },
-  {
-   "provider": "jumomind-rhe",
-   "name": "RH Entsorgung (Rhein-Hunsrück)",
-   "family": "jumomind",
-   "town": "Alterkülz",
-   "street": "Hauptstraße",
-   "events": 18,
-   "from": "2026-09-28",
-   "to": "2026-12-30",
-   "bins": [
-    "Papier",
-    "Bioabfall",
-    "Restmüll",
-    "Gelbe Tonne"
-   ],
-   "ms": 77,
-   "triedTowns": [
-    "Alterkülz"
-   ]
-  },
-  {
-   "provider": "jumomind-udg",
-   "name": "UDG Uckermark",
-   "family": "jumomind",
-   "town": "Angermünde",
-   "street": "Bahnhofsplatz",
-   "events": 16,
-   "from": "2026-09-23",
-   "to": "2026-12-30",
-   "bins": [
-    "Blaue Tonne",
-    "Restmüll",
-    "Gelbe Tonne"
-   ],
-   "ms": 167,
-   "triedTowns": [
-    "Angermünde"
-   ]
-  },
-  {
-   "provider": "jumomind-mymuell",
-   "name": "MyMuell App",
-   "family": "jumomind",
-   "town": "Abens",
-   "street": "Abens",
-   "events": 17,
-   "from": "2026-09-23",
-   "to": "2026-12-30",
-   "bins": [
-    "Wertstofftonne",
-    "Rest- und Biomüll",
-    "Papiertonne",
-    "Baum- und Strauchschnitt"
-   ],
-   "ms": 55,
-   "triedTowns": [
-    "Abens"
-   ]
-  },
-  {
-   "provider": "jumomind-sbm",
-   "name": "Minden",
-   "family": "jumomind",
-   "town": "Minden",
-   "street": "Gerhart-Hauptmann-Str.",
-   "events": 26,
-   "from": "2026-09-18",
-   "to": "2026-12-30",
-   "bins": [
-    "Schadstoffanlieferung",
-    "Biotonne 120l-240l",
-    "Papiertonne 120l-240l",
-    "Gelbe Tonne",
-    "Restmülltonne 80l-240l"
-   ],
-   "ms": 458,
-   "triedTowns": [
-    "Minden"
-   ]
-  },
-  {
-   "provider": "jumomind-ingol",
-   "name": "Ingolstadt",
-   "family": "jumomind",
-   "town": "Ingolstadt",
-   "street": "Elisabeth-Schwarzhaupt-Str.",
-   "events": 26,
-   "from": "2026-09-22",
-   "to": "2026-12-29",
-   "bins": [
-    "Restmüll",
-    "GelberSack",
-    "Papier",
-    "Biomüll"
-   ],
-   "ms": 621,
-   "triedTowns": [
-    "Ingolstadt"
-   ]
-  },
-  {
-   "provider": "jumomind-ksr",
-   "name": "ZBH Recklinghausen",
-   "family": "jumomind",
-   "town": "Recklinghausen",
-   "street": "August-Cohaupt-Str.",
-   "events": 29,
-   "from": "2026-09-21",
-   "to": "2026-12-28",
-   "bins": [
-    "Papier",
-    "Wertstoff",
-    "Bio",
-    "Restmüll"
-   ],
-   "ms": 479,
-   "triedTowns": [
-    "Recklinghausen"
-   ]
-  },
-  {
-   "provider": "jumomind-esn",
-   "name": "Neustadt an der Weinstraße",
-   "family": "jumomind",
-   "town": "Neustadt",
-   "street": "Gerhart-Hauptmann-Straße (Kernstadt)",
-   "events": 48,
-   "from": "2026-09-17",
-   "to": "2026-12-30",
-   "bins": [
-    "Bioabfall",
-    "Glas",
-    "Papierabfall",
-    "Grünabfall",
-    "Leichtverpackungen",
-    "Restabfall"
-   ],
-   "ms": 165,
-   "triedTowns": [
-    "Neustadt"
-   ]
-  },
-  {
-   "provider": "jumomind-zac",
-   "name": "ZA Celle",
-   "family": "jumomind",
-   "town": "Adelheidsdorf",
-   "street": "Hauptstraße (Großmoor)",
-   "events": 28,
-   "from": "2026-09-17",
-   "to": "2027-01-02",
-   "bins": [
-    "Bioabfall",
-    "Gelbe Tonne",
-    "Restmüll",
-    "Papier"
-   ],
-   "ms": 82,
-   "triedTowns": [
-    "Adelheidsdorf"
-   ]
-  },
-  {
-   "provider": "jumomind-enwi",
-   "name": "enwi Landkreis Harz",
-   "family": "jumomind",
-   "town": "Abbenrode",
-   "street": "Abbenrode",
-   "events": 50,
-   "from": "2026-09-18",
-   "to": "2026-12-29",
-   "bins": [
-    "Hausmüll (4-Rad)",
-    "Papier (4-Rad)",
-    "Gelbe Säcke/Tonnen",
-    "Hausmüll (2-Rad)",
-    "Bioabfälle",
-    "Schadstoffsammlung am Mobil"
-   ],
-   "ms": 65,
-   "triedTowns": [
-    "Abbenrode"
-   ]
-  },
-  {
-   "provider": "jumomind-ben",
-   "name": "AWB Grafschaft Bentheim",
-   "family": "jumomind",
-   "town": "Bad Bentheim",
-   "street": "Am Hauptdiek, Bad Bentheim, zwischen Vennweg und Zum Golfplatz",
-   "events": 17,
-   "from": "2026-09-22",
-   "to": "2026-12-22",
-   "bins": [
-    "Gelbe Tonne",
-    "Restabfalltonne",
-    "Papiertonne",
-    "Schadstoffmobil in Ortsnähe",
-    "Grüngutabholung"
-   ],
-   "ms": 170,
-   "triedTowns": [
-    "Bad Bentheim"
-   ]
-  },
-  {
-   "provider": "jumomind-kbl",
-   "name": "KBL Langen",
-   "family": "jumomind",
-   "town": "Langen",
-   "street": "Elisabeth-Schwarzhaupt-Straße 27, 57, 61 – 83, 38, 40, 42, 44, 46",
-   "events": 38,
-   "from": "2026-09-23",
-   "to": "2026-12-30",
-   "bins": [
-    "Verpackung",
-    "Restmüll Container - wöchentlich",
-    "Restmüll Tonne und Container - 14 täglich",
-    "Altpapier",
-    "Bioabfall"
-   ],
-   "ms": 121,
-   "triedTowns": [
-    "Langen"
-   ]
-  },
-  {
-   "provider": "jumomind-hox",
-   "name": "Abfallservice Kreis Höxter",
-   "family": "jumomind",
-   "town": "Bad Driburg",
-   "street": "Gerhart-Hauptmann-Str.(Dringenberg)",
-   "events": 58,
-   "from": "2026-09-17",
-   "to": "2026-12-31",
-   "bins": [
-    "Altpapier",
-    "Altpapier 1.100l 4-wö",
-    "Wertstoffsammlung ",
-    "Restmüll 1.100l wö",
-    "Restmüll 1.100l 4-wö",
-    "Altpapier 1.100l 2-wö"
-   ],
-   "ms": 173,
-   "triedTowns": [
-    "Bad Driburg"
-   ]
-  },
-  {
-   "provider": "jumomind-ros",
-   "name": "Rosbach v.d. Höhe",
-   "family": "jumomind",
-   "town": "Rosbach",
-   "street": "Gerhart-Hauptmann-Straße",
-   "events": 25,
-   "from": "2026-09-18",
-   "to": "2026-12-29",
-   "bins": [
-    "Gelbe Tonne",
-    "Bioabfall",
-    "Papier",
-    "Restmüll",
-    "Grünabfall"
-   ],
-   "ms": 162,
-   "triedTowns": [
-    "Rosbach"
-   ]
+   "rhythm": []
   },
   {
    "provider": "abfallio-040b38fe",
@@ -2020,47 +1993,19 @@
    "error": "aggregateTowns returned no towns for this provider"
   },
   {
-   "provider": "jumomind-mkk",
-   "name": "Main-Kinzig-Kreis",
+   "provider": "jumomind-esn",
+   "name": "Neustadt an der Weinstraße",
    "family": "jumomind",
-   "town": "Birstein",
-   "street": "Hauptstraße (Birstein)",
-   "events": 31,
-   "from": "2026-09-17",
-   "to": "2026-12-30",
-   "bins": [
-    "Sonderabfall",
-    "Biotonne",
-    "Restmüll",
-    "Papiertonne",
-    "Gelbe Säcke/Tonnen",
-    "Leuchtmittel/Kork/Elektro"
-   ],
-   "ms": 127,
-   "triedTowns": [
-    "Birstein"
-   ]
-  },
-  {
-   "provider": "jumomind-wol",
-   "name": "ALW Wolfenbüttel",
-   "family": "jumomind",
-   "town": "Abbenrode",
-   "street": "Bostengarten",
-   "events": 33,
-   "from": "2026-09-17",
-   "to": "2026-12-31",
-   "bins": [
-    "Bioabfall",
-    "Restabfall",
-    "Wertstoff",
-    "Papier und Pappe",
-    "Baumschnitt"
-   ],
-   "ms": 249,
-   "triedTowns": [
-    "Abbenrode"
-   ]
+   "town": "Neustadt",
+   "street": null,
+   "events": 0,
+   "from": null,
+   "to": null,
+   "bins": [],
+   "ms": 519,
+   "triedTowns": [],
+   "upload": "robots",
+   "error": "expected uploadOnly, got supported=true"
   },
   {
    "provider": "abfallio-3ca331fb",
@@ -2079,32 +2024,11 @@
     "Schadstoffmobil",
     "Gelber Sack"
    ],
-   "ms": 298,
+   "ms": 374,
    "triedTowns": [
     "Aalen"
-   ]
-  },
-  {
-   "provider": "abfallio-27708a01",
-   "name": "Landkreis Oldenburg",
-   "family": "abfallio",
-   "town": "Dötlingen",
-   "street": "Dötlingen",
-   "events": 40,
-   "from": "2026-08-18",
-   "to": "2026-12-29",
-   "bins": [
-    "Restabfall 2-wö",
-    "Papier",
-    "Bioabfall 2-wö",
-    "Leichtverpackung",
-    "Restabfall 4-wö",
-    "Problemstoffsammlung"
    ],
-   "ms": 583,
-   "triedTowns": [
-    "Dötlingen"
-   ]
+   "rhythm": []
   },
   {
    "provider": "abfallio-e21758b9",
@@ -2112,20 +2036,44 @@
    "family": "abfallio",
    "town": "Altenberge",
    "street": "Altenberge",
-   "events": 37,
-   "from": "2026-08-19",
+   "events": 36,
+   "from": "2026-08-26",
    "to": "2026-12-30",
    "bins": [
-    "Biomüll",
     "Restmüll",
     "Gelber Sack/Gelbe Tonne",
+    "Biomüll",
     "Papier",
     "Schadstoffmobil"
    ],
-   "ms": 926,
+   "ms": 953,
    "triedTowns": [
     "Altenberge"
-   ]
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "abfallio-27708a01",
+   "name": "Landkreis Oldenburg",
+   "family": "abfallio",
+   "town": "Dötlingen",
+   "street": "Dötlingen",
+   "events": 39,
+   "from": "2026-08-24",
+   "to": "2026-12-29",
+   "bins": [
+    "Papier",
+    "Bioabfall 2-wö",
+    "Leichtverpackung",
+    "Restabfall 2-wö",
+    "Restabfall 4-wö",
+    "Problemstoffsammlung"
+   ],
+   "ms": 568,
+   "triedTowns": [
+    "Dötlingen"
+   ],
+   "rhythm": []
   },
   {
    "provider": "abfallio-914fb9d0",
@@ -2133,21 +2081,22 @@
    "family": "abfallio",
    "town": "Altlußheim",
    "street": "Hauptstr.",
-   "events": 102,
-   "from": "2026-08-18",
+   "events": 98,
+   "from": "2026-08-20",
    "to": "2026-12-31",
    "bins": [
-    "Sperrmüll + Altholz",
-    "Biomüll 2-/4-Radbehälter 14-täglich",
-    "Grüne Tonne plus 4-Radbehälter wöchentlich",
-    "Grünschnitt",
     "Rest-/Biomüll 4-Radbehälter wöchentlich",
-    "Restmüll 2-/4-Radbehälter 14-täglich"
+    "Restmüll 2-/4-Radbehälter 14-täglich",
+    "Grüne Tonne plus 4-Radbehälter wöchentlich",
+    "Alttextilien + Schuhe (2-wöchentlich)",
+    "Grüne Tonne plus 2-/4-Radbehälter 14-täglich",
+    "Sperrmüll + Altholz"
    ],
-   "ms": 765,
+   "ms": 744,
    "triedTowns": [
     "Altlußheim"
-   ]
+   ],
+   "rhythm": []
   },
   {
    "provider": "abfallio-c22b850e",
@@ -2164,10 +2113,11 @@
     "Biomüll",
     "Gelbe Tonne"
    ],
-   "ms": 871,
+   "ms": 607,
    "triedTowns": [
     "Amberg"
-   ]
+   ],
+   "rhythm": []
   },
   {
    "provider": "abfallio-645adb3c",
@@ -2175,7 +2125,7 @@
    "family": "abfallio",
    "town": "Ahausen",
    "street": "Hauptstr.",
-   "events": 66,
+   "events": 67,
    "from": "2026-08-20",
    "to": "2026-12-28",
    "bins": [
@@ -2186,10 +2136,11 @@
     "Hausmüll vierwöchentliche Termine",
     "Gelbe Tonne"
    ],
-   "ms": 1028,
+   "ms": 991,
    "triedTowns": [
     "Ahausen"
-   ]
+   ],
+   "rhythm": []
   },
   {
    "provider": "abfallio-248deacb",
@@ -2197,21 +2148,68 @@
    "family": "abfallio",
    "town": "Ailertchen",
    "street": "Hauptstraße",
-   "events": 29,
-   "from": "2026-08-19",
+   "events": 28,
+   "from": "2026-08-26",
    "to": "2026-12-30",
    "bins": [
-    "Restabfall",
     "Bioabfall",
     "Altpapier",
     "Gelber Sack",
+    "Restabfall",
     "Sonderabfall",
     "Grünabfall"
    ],
-   "ms": 787,
+   "ms": 554,
    "triedTowns": [
     "Ailertchen"
-   ]
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "abfallio-31fb9c7d",
+   "name": "Landkreis Weißenburg-Gunzenhausen",
+   "family": "abfallio",
+   "town": "Absberg",
+   "street": "Absberg",
+   "events": 67,
+   "from": "2026-08-25",
+   "to": "2026-12-29",
+   "bins": [
+    "braune Biotonne",
+    "grüne Papiertonne und grüner 1,1m³ Papiercontainer",
+    "graue Restmülltonne",
+    "Sondermüll Gunzenhausen",
+    "Sondermüll Polsingen",
+    "Sondermüll Westheim"
+   ],
+   "ms": 1637,
+   "triedTowns": [
+    "Absberg"
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "abfallio-e5543a3e",
+   "name": "MüllALARM / Schönmackers",
+   "family": "abfallio",
+   "town": "Aldenhoven",
+   "street": "Schulstraße",
+   "events": 39,
+   "from": "2026-08-25",
+   "to": "2026-12-31",
+   "bins": [
+    "Bioabfall",
+    "Leichtverpackungen",
+    "Restabfall roter Deckel",
+    "Restabfall",
+    "Papier",
+    "Grünbündel"
+   ],
+   "ms": 4178,
+   "triedTowns": [
+    "Aldenhoven"
+   ],
+   "rhythm": []
   },
   {
    "provider": "abfallio-bd0c2d01",
@@ -2228,54 +2226,11 @@
     "Gelber Sack",
     "Hackgutabholdienst"
    ],
-   "ms": 927,
+   "ms": 689,
    "triedTowns": [
     "Landshut"
-   ]
-  },
-  {
-   "provider": "abfallio-e5543a3e",
-   "name": "MüllALARM / Schönmackers",
-   "family": "abfallio",
-   "town": "Aldenhoven",
-   "street": "Schulstraße",
-   "events": 41,
-   "from": "2026-08-18",
-   "to": "2026-12-31",
-   "bins": [
-    "Restabfall",
-    "Papier",
-    "Bioabfall",
-    "Leichtverpackungen",
-    "Restabfall roter Deckel",
-    "Grünbündel"
    ],
-   "ms": 3233,
-   "triedTowns": [
-    "Aldenhoven"
-   ]
-  },
-  {
-   "provider": "abfallio-31fb9c7d",
-   "name": "Landkreis Weißenburg-Gunzenhausen",
-   "family": "abfallio",
-   "town": "Absberg",
-   "street": "Absberg",
-   "events": 68,
-   "from": "2026-08-18",
-   "to": "2026-12-29",
-   "bins": [
-    "braune Biotonne",
-    "grüne Papiertonne und grüner 1,1m³ Papiercontainer",
-    "graue Restmülltonne",
-    "Sondermüll Gunzenhausen",
-    "Sondermüll Polsingen",
-    "Sondermüll Westheim"
-   ],
-   "ms": 1744,
-   "triedTowns": [
-    "Absberg"
-   ]
+   "rhythm": []
   },
   {
    "provider": "abfallio-49fe8a63",
@@ -2283,21 +2238,22 @@
    "family": "abfallio",
    "town": "Beverstedt",
    "street": "Hauptstraße",
-   "events": 56,
-   "from": "2026-08-18",
+   "events": 54,
+   "from": "2026-08-21",
    "to": "2026-12-29",
    "bins": [
-    "Bioabfall, 14-tägliche Abfuhr",
-    "Restmüll 1.100l, wöchentliche Abfuhr",
     "Gelber Sack, 14-tägliche Abfuhr",
     "Restmüll, 14-tägliche Abfuhr",
+    "Restmüll 1.100l, wöchentliche Abfuhr",
     "Altpapier",
+    "Bioabfall, 14-tägliche Abfuhr",
     "Mobile Schadstoffsammlung"
    ],
-   "ms": 1847,
+   "ms": 2274,
    "triedTowns": [
     "Beverstedt"
-   ]
+   ],
+   "rhythm": []
   },
   {
    "provider": "abfallio-6efba91e",
@@ -2305,21 +2261,22 @@
    "family": "abfallio",
    "town": "Ludwigshafen am Rhein",
    "street": "Gerhart-Hauptmann-Straße",
-   "events": 72,
-   "from": "2026-08-18",
+   "events": 70,
+   "from": "2026-08-25",
    "to": "2026-12-29",
    "bins": [
-    "Restabfall",
-    "Biotonne",
     "Altpapier",
     "Leichtverpackungen",
+    "Biotonne",
+    "Restabfall",
     "Wertstoffhof Süd",
     "Wertstoffhof West"
    ],
-   "ms": 1035,
+   "ms": 864,
    "triedTowns": [
     "Ludwigshafen am Rhein"
-   ]
+   ],
+   "rhythm": []
   },
   {
    "provider": "abfallio-1e959241",
@@ -2327,21 +2284,22 @@
    "family": "abfallio",
    "town": "Abbendorf",
    "street": "Abbendorf",
-   "events": 37,
-   "from": "2026-08-18",
+   "events": 36,
+   "from": "2026-08-25",
    "to": "2026-12-31",
    "bins": [
-    "Hausmüll",
     "Leichtverpackungen (gelber Sack)",
     "Papier, Pappe, Kartonagen",
     "Biogut Typ B",
+    "Hausmüll",
     "Schadstoffe",
     "Fälligkeit Abfallgebühr"
    ],
-   "ms": 962,
+   "ms": 886,
    "triedTowns": [
     "Abbendorf"
-   ]
+   ],
+   "rhythm": []
   },
   {
    "provider": "abfallio-af91b65d",
@@ -2349,20 +2307,43 @@
    "family": "abfallio",
    "town": "Baek",
    "street": "Baek",
-   "events": 36,
-   "from": "2026-08-18",
+   "events": 34,
+   "from": "2026-08-20",
    "to": "2026-12-28",
    "bins": [
+    "Hausmüll",
     "Leichtverpackungen (gelber Sack)",
     "Biogut Typ B",
+    "Papier, Pappe, Kartonagen",
+    "Fälligkeit Abfallgebühr"
+   ],
+   "ms": 713,
+   "triedTowns": [
+    "Baek"
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "abfallio-3cefa45a",
+   "name": "Gemeinde Gumtow (Prignitz)",
+   "family": "abfallio",
+   "town": "Bärensprung",
+   "street": "Bärensprung",
+   "events": 34,
+   "from": "2026-08-26",
+   "to": "2026-12-30",
+   "bins": [
+    "Biogut Typ B",
+    "Leichtverpackungen (gelber Sack)",
     "Hausmüll",
     "Papier, Pappe, Kartonagen",
     "Fälligkeit Abfallgebühr"
    ],
-   "ms": 875,
+   "ms": 814,
    "triedTowns": [
-    "Baek"
-   ]
+    "Bärensprung"
+   ],
+   "rhythm": []
   },
   {
    "provider": "abfallio-798f59a7",
@@ -2381,31 +2362,11 @@
     "Fälligkeit Abfallgebühr",
     "Schadstoffe"
    ],
-   "ms": 763,
+   "ms": 798,
    "triedTowns": [
     "Birkholz"
-   ]
-  },
-  {
-   "provider": "abfallio-3cefa45a",
-   "name": "Gemeinde Gumtow (Prignitz)",
-   "family": "abfallio",
-   "town": "Bärensprung",
-   "street": "Bärensprung",
-   "events": 35,
-   "from": "2026-08-19",
-   "to": "2026-12-30",
-   "bins": [
-    "Hausmüll",
-    "Biogut Typ B",
-    "Leichtverpackungen (gelber Sack)",
-    "Papier, Pappe, Kartonagen",
-    "Fälligkeit Abfallgebühr"
    ],
-   "ms": 1022,
-   "triedTowns": [
-    "Bärensprung"
-   ]
+   "rhythm": []
   },
   {
    "provider": "abfallio-bb937857",
@@ -2424,10 +2385,27 @@
     "Fälligkeit Abfallgebühr",
     "Schadstoffe"
    ],
-   "ms": 685,
+   "ms": 834,
    "triedTowns": [
     "Baarz"
-   ]
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "regioit-frankenthal",
+   "name": "frankenthal",
+   "family": "regioit",
+   "town": "Frankenthal",
+   "street": "Gerhart-Hauptmann-Straße",
+   "events": 0,
+   "from": null,
+   "to": null,
+   "bins": [],
+   "ms": 15222,
+   "triedTowns": [
+    "Frankenthal"
+   ],
+   "error": "The operation was aborted due to timeout"
   },
   {
    "provider": "abfallio-4638881e",
@@ -2445,10 +2423,33 @@
     "Papier, Pappe, Kartonagen",
     "Fälligkeit Abfallgebühr"
    ],
-   "ms": 700,
+   "ms": 665,
    "triedTowns": [
     "Bergsoll"
-   ]
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "abfallio-d92f59ef",
+   "name": "Stadt Pritzwalk (Prignitz)",
+   "family": "abfallio",
+   "town": "Alt Krüssow",
+   "street": "Alt Krüssow",
+   "events": 33,
+   "from": "2026-09-01",
+   "to": "2026-12-30",
+   "bins": [
+    "Leichtverpackungen (gelber Sack)",
+    "Biogut Typ B",
+    "Hausmüll",
+    "Papier, Pappe, Kartonagen",
+    "Fälligkeit Abfallgebühr"
+   ],
+   "ms": 702,
+   "triedTowns": [
+    "Alt Krüssow"
+   ],
+   "rhythm": []
   },
   {
    "provider": "abfallio-9fb3e2e5",
@@ -2467,10 +2468,11 @@
     "Fälligkeit Abfallgebühr",
     "Schadstoffe"
    ],
-   "ms": 635,
+   "ms": 1315,
    "triedTowns": [
     "Dergenthin"
-   ]
+   ],
+   "rhythm": []
   },
   {
    "provider": "abfallio-a0461612",
@@ -2489,31 +2491,11 @@
     "Papier, Pappe, Kartonagen",
     "Fälligkeit Abfallgebühr"
    ],
-   "ms": 767,
+   "ms": 1144,
    "triedTowns": [
     "Bendelin"
-   ]
-  },
-  {
-   "provider": "abfallio-d92f59ef",
-   "name": "Stadt Pritzwalk (Prignitz)",
-   "family": "abfallio",
-   "town": "Alt Krüssow",
-   "street": "Alt Krüssow",
-   "events": 36,
-   "from": "2026-08-18",
-   "to": "2026-12-30",
-   "bins": [
-    "Leichtverpackungen (gelber Sack)",
-    "Biogut Typ B",
-    "Hausmüll",
-    "Papier, Pappe, Kartonagen",
-    "Fälligkeit Abfallgebühr"
    ],
-   "ms": 699,
-   "triedTowns": [
-    "Alt Krüssow"
-   ]
+   "rhythm": []
   },
   {
    "provider": "ctrace-bremen",
@@ -2530,10 +2512,11 @@
     "Papier / Gelber Sack",
     "Tannenbaumabfuhr"
    ],
-   "ms": 413,
+   "ms": 428,
    "triedTowns": [
     "Obernstraße"
-   ]
+   ],
+   "rhythm": []
   },
   {
    "provider": "abfallio-4f06df48",
@@ -2541,21 +2524,22 @@
    "family": "abfallio",
    "town": "Berge",
    "street": "Berge",
-   "events": 36,
-   "from": "2026-08-18",
+   "events": 35,
+   "from": "2026-08-20",
    "to": "2026-12-24",
    "bins": [
-    "Papier, Pappe, Kartonagen",
     "Leichtverpackungen (gelber Sack)",
     "Hausmüll",
     "Biogut",
     "Schadstoffe",
+    "Papier, Pappe, Kartonagen",
     "Fälligkeit Abfallgebühr"
    ],
-   "ms": 822,
+   "ms": 1417,
    "triedTowns": [
     "Berge"
-   ]
+   ],
+   "rhythm": []
   },
   {
    "provider": "abfallio-b870ecfa",
@@ -2574,10 +2558,11 @@
     "Fälligkeit Abfallgebühr",
     "Schadstoffe"
    ],
-   "ms": 789,
+   "ms": 774,
    "triedTowns": [
     "Bentwisch"
-   ]
+   ],
+   "rhythm": []
   },
   {
    "provider": "ctrace-arnsberg",
@@ -2596,10 +2581,11 @@
     "Mobile Schadstoffsammlung info über Presse",
     "Bringhof geschlossen"
    ],
-   "ms": 604,
+   "ms": 731,
    "triedTowns": [
     "Hauptstraße"
-   ]
+   ],
+   "rhythm": []
   },
   {
    "provider": "ctrace-oberursel",
@@ -2607,8 +2593,8 @@
    "family": "ctrace",
    "town": "Oberursel",
    "street": "Hauptstr.",
-   "events": 65,
-   "from": "2026-09-17",
+   "events": 63,
+   "from": "2026-09-19",
    "to": "2026-12-31",
    "bins": [
     "Restabfall",
@@ -2618,10 +2604,11 @@
     "Grünschnitt Straßensammlung",
     "Anmeldefrist Grünschnittsammlung  bis 15.10.2026 online (wie Sperrmüll) oder telefonisch unter 06171 502-333"
    ],
-   "ms": 534,
+   "ms": 586,
    "triedTowns": [
     "Hauptstraße"
-   ]
+   ],
+   "rhythm": []
   },
   {
    "provider": "awg-bassum",
@@ -2637,10 +2624,11 @@
     "Restabfall",
     "Bioabfall"
    ],
-   "ms": 515,
+   "ms": 541,
    "triedTowns": [
     "Affinghausen"
-   ]
+   ],
+   "rhythm": []
   },
   {
    "provider": "ctrace-landau",
@@ -2659,11 +2647,12 @@
     "LVP",
     "Tannenbaum"
    ],
-   "ms": 865,
+   "ms": 898,
    "triedTowns": [
     "Marktstraße",
     "Bahnhofstraße"
-   ]
+   ],
+   "rhythm": []
   },
   {
    "provider": "fes-frankfurt",
@@ -2681,10 +2670,30 @@
     "Bioabfall",
     "Verpackung"
    ],
-   "ms": 509,
+   "ms": 549,
    "triedTowns": [
     "Frankenallee"
-   ]
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "bsr-berlin",
+   "name": "BSR Berliner Stadtreinigung",
+   "family": "bsr",
+   "town": "Berlin",
+   "street": "Karl-Marx-Allee",
+   "events": 92,
+   "from": "2026-08-06",
+   "to": "2027-10-01",
+   "bins": [
+    "Biogut/Hausmüll",
+    "Wertstoffe (ALBA)"
+   ],
+   "ms": 1300,
+   "triedTowns": [
+    "Karl-Marx-Allee"
+   ],
+   "rhythm": []
   },
   {
    "provider": "awbkoeln-koeln",
@@ -2701,28 +2710,39 @@
     "Papier (blau)",
     "Weihnachtsbaum"
    ],
-   "ms": 439,
+   "ms": 910,
    "triedTowns": [
     "Bergisch Gladbacher Straße"
-   ]
+   ],
+   "rhythm": []
   },
   {
-   "provider": "bsr-berlin",
-   "name": "BSR Berliner Stadtreinigung",
-   "family": "bsr",
-   "town": "Berlin",
-   "street": "Karl-Marx-Allee",
-   "events": 92,
-   "from": "2026-08-06",
-   "to": "2027-10-01",
-   "bins": [
-    "Biogut/Hausmüll",
-    "Wertstoffe (ALBA)"
-   ],
-   "ms": 1173,
-   "triedTowns": [
-    "Karl-Marx-Allee"
-   ]
+   "provider": "aws-stuttgart",
+   "name": "Abfallwirtschaft Stuttgart",
+   "family": "awsstuttgart",
+   "town": "Stuttgart",
+   "street": null,
+   "events": 0,
+   "from": null,
+   "to": null,
+   "bins": [],
+   "ms": 177,
+   "triedTowns": [],
+   "upload": "robots"
+  },
+  {
+   "provider": "awista-duesseldorf",
+   "name": "AWISTA Kommunal Düsseldorf",
+   "family": "awista",
+   "town": "Düsseldorf",
+   "street": null,
+   "events": 0,
+   "from": null,
+   "to": null,
+   "bins": [],
+   "ms": 170,
+   "triedTowns": [],
+   "upload": "terms"
   },
   {
    "provider": "srh-hamburg",
@@ -2731,18 +2751,54 @@
    "town": "Hamburg",
    "street": "Fraenkelstraße",
    "events": 48,
-   "from": "2026-09-17",
-   "to": "2027-01-14",
+   "from": "2026-09-22",
+   "to": "2027-01-19",
    "bins": [
-    "Schwarze Restmülltonne",
     "Blaue Papiertonne",
+    "Schwarze Restmülltonne",
     "Gelbe Wertstofftonne/-sack",
     "Laubsäcke"
    ],
-   "ms": 583,
+   "ms": 770,
    "triedTowns": [
     "Fränkelstraße"
-   ]
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "srdd-dresden",
+   "name": "Stadtreinigung Dresden",
+   "family": "srdd",
+   "town": "Dresden",
+   "street": null,
+   "events": 0,
+   "from": null,
+   "to": null,
+   "bins": [],
+   "ms": 152,
+   "triedTowns": [],
+   "upload": "terms"
+  },
+  {
+   "provider": "srl-leipzig",
+   "name": "Stadtreinigung Leipzig",
+   "family": "srl",
+   "town": "Leipzig",
+   "street": "Karl-Liebknecht-Straße",
+   "events": 36,
+   "from": "2026-09-18",
+   "to": "2026-12-24",
+   "bins": [
+    "Biotonne",
+    "Gelbe Tonne",
+    "Blaue Tonne",
+    "Restabfalltonne"
+   ],
+   "ms": 385,
+   "triedTowns": [
+    "Karl-Liebknecht-Straße"
+   ],
+   "rhythm": []
   },
   {
    "provider": "awm-muenchen",
@@ -2761,49 +2817,1335 @@
     "Biotonne",
     "Achtung: Biotonne"
    ],
-   "ms": 1052,
+   "ms": 1767,
    "triedTowns": [
     "Francéstraße"
-   ]
-  },
-  {
-   "provider": "awista-duesseldorf",
-   "name": "AWISTA Kommunal Düsseldorf",
-   "family": "awista",
-   "town": "Düsseldorf",
-   "street": "Askanierstrasse",
-   "events": 55,
-   "from": "2026-09-14",
-   "to": "2026-12-31",
-   "bins": [
-    "Restmüll",
-    "Wertstofftonne",
-    "Papier"
    ],
-   "ms": 508,
-   "triedTowns": [
-    "Askanierstrasse"
-   ]
+   "rhythm": []
   },
   {
-   "provider": "aws-stuttgart",
-   "name": "Abfallwirtschaft Stuttgart",
-   "family": "awsstuttgart",
-   "town": "Stuttgart",
-   "street": "Wachenheimer Str.",
-   "events": 33,
-   "from": "2026-09-17",
+   "provider": "aha-region-hannover",
+   "name": "aha Zweckverband Abfallwirtschaft Region Hannover",
+   "family": "aha",
+   "town": "Hannover",
+   "street": "Voltastr.",
+   "events": 37,
+   "from": "2026-09-22",
+   "to": "2026-12-29",
+   "bins": [
+    "Restabfall",
+    "Bioabfall",
+    "Papier",
+    "Leichtverpackungen"
+   ],
+   "ms": 1021,
+   "triedTowns": [
+    "Voltastraße"
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "insertit-luebeck",
+   "name": "Entsorgungsbetriebe Lübeck",
+   "family": "insertit",
+   "town": "Lübeck",
+   "street": "Breite Straße",
+   "events": 75,
+   "from": "2026-01-02",
    "to": "2026-12-31",
    "bins": [
+    "PPK",
+    "Restabfall",
+    "Bioabfall"
+   ],
+   "ms": 670,
+   "triedTowns": [
+    "Breite Straße"
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "insertit-mannheim",
+   "name": "Abfallwirtschaft Mannheim",
+   "family": "insertit",
+   "town": "Mannheim",
+   "street": "Hauptstr.",
+   "events": 67,
+   "from": "2026-01-07",
+   "to": "2026-12-29",
+   "bins": [
+    "Papier",
+    "Weihnachtsbaum",
+    "Rest",
+    "Wertstoff",
+    "Grünschnitt"
+   ],
+   "ms": 1691,
+   "triedTowns": [
+    "Hauptstraße"
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "awg-wuppertal",
+   "name": "AWG Abfallwirtschaftsgesellschaft Wuppertal",
+   "family": "awgwuppertal",
+   "town": "Wuppertal",
+   "street": "Kaiserstraße",
+   "events": 244,
+   "from": "2026-01-05",
+   "to": "2027-12-27",
+   "bins": [
     "Restmüll",
+    "Bio",
+    "Papier",
+    "Gelb",
+    "Weihnachtsbaumabholung",
+    "Sperrmüll"
+   ],
+   "ms": 1906,
+   "triedTowns": [
+    "Kaiserstraße"
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "insertit-kassel",
+   "name": "Die Stadtreiniger Kassel",
+   "family": "insertit",
+   "town": "Kassel",
+   "street": "Wilhelmshöher Allee",
+   "events": 157,
+   "from": "2026-01-03",
+   "to": "2027-12-31",
+   "bins": [
+    "Bioabfall",
+    "DSD",
+    "Restabfall"
+   ],
+   "ms": 1967,
+   "triedTowns": [
+    "Wilhelmshöher Allee"
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "insertit-krefeld",
+   "name": "GSAK Krefeld",
+   "family": "insertit",
+   "town": "Krefeld",
+   "street": "Hochstraße",
+   "events": 116,
+   "from": "2026-01-05",
+   "to": "2026-12-28",
+   "bins": [
     "Biomüll",
+    "Restabfall",
+    "LVP",
+    "PPK"
+   ],
+   "ms": 564,
+   "triedTowns": [
+    "Hochstraße"
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "insertit-offenbach",
+   "name": "ESO Stadtservice Offenbach",
+   "family": "insertit",
+   "town": "Offenbach am Main",
+   "street": "Kaiserstraße",
+   "events": 147,
+   "from": "2026-01-06",
+   "to": "2026-12-30",
+   "bins": [
+    "Biomüll",
+    "Restmüll",
+    "Altpapier",
+    "Grünschnitt / Weihnachtsbäume",
+    "DSD"
+   ],
+   "ms": 1167,
+   "triedTowns": [
+    "Kaiserstraße"
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "stadt-wuerzburg",
+   "name": "Stadt Würzburg (Die Stadtreiniger)",
+   "family": "wuerzburg",
+   "town": "Würzburg",
+   "street": "Frankenstraße",
+   "events": 34,
+   "from": "2026-09-24",
+   "to": "2026-12-31",
+   "bins": [
+    "Papier",
+    "Gelbe Säcke",
+    "Biomüll",
+    "Restmüll"
+   ],
+   "ms": 698,
+   "triedTowns": [
+    "Frankenstraße"
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "stadt-oldenburg",
+   "name": "Abfallwirtschaftsbetrieb Stadt Oldenburg",
+   "family": "oldenburg",
+   "town": "Oldenburg",
+   "street": "Donnerschweer Straße",
+   "events": 24,
+   "from": "2026-09-25",
+   "to": "2026-12-21",
+   "bins": [
+    "Restabfall",
+    "Gelber Sack/Tonne",
+    "Bioabfall",
+    "Altpapier"
+   ],
+   "ms": 310,
+   "triedTowns": [
+    "Donnerschweer Straße"
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "art-trier",
+   "name": "A.R.T. Zweckverband Abfallwirtschaft Region Trier",
+   "family": "art",
+   "town": "Trier",
+   "street": null,
+   "events": 0,
+   "from": null,
+   "to": null,
+   "bins": [],
+   "ms": 175,
+   "triedTowns": [],
+   "upload": "robots"
+  },
+  {
+   "provider": "avea-leverkusen",
+   "name": "AVEA Leverkusen",
+   "family": "avea",
+   "town": "Leverkusen",
+   "street": "Bergische Landstraße",
+   "events": 105,
+   "from": "2026-01-06",
+   "to": "2026-12-29",
+   "bins": [
+    "Restmülltonne",
+    "Biotonne",
+    "Gelber Sack",
+    "Papiertonne",
+    "Weihnachtsbaumsammlung",
+    "Restmülltonne 4-wöchentlich"
+   ],
+   "ms": 668,
+   "triedTowns": [
+    "Bergische Landstraße"
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "was-wolfsburg",
+   "name": "WAS Wolfsburger Abfallwirtschaft und Straßenreinigung",
+   "family": "waswob",
+   "town": "Wolfsburg",
+   "street": "Kleiststraße",
+   "events": 31,
+   "from": "2026-09-21",
+   "to": "2027-02-17",
+   "bins": [
+    "Altpapier",
+    "Bioabfall",
+    "Restabfall",
+    "Wertstofftonne"
+   ],
+   "ms": 455,
+   "triedTowns": [
+    "Kleiststraße"
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "abk-kiel",
+   "name": "ABK Abfallwirtschaftsbetrieb Kiel",
+   "family": "abki",
+   "town": "Kiel",
+   "street": "Holstenstraße",
+   "events": 66,
+   "from": "2026-01-02",
+   "to": "2026-12-31",
+   "bins": [
+    "Restabfall",
+    "Papier",
+    "Bioabfall"
+   ],
+   "ms": 1857,
+   "triedTowns": [
+    "Holstenstraße"
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "stadt-fuerth",
+   "name": "Stadt Fürth, Amt für Abfallwirtschaft",
+   "family": "fuerth",
+   "town": "Fürth",
+   "street": "Königstraße",
+   "events": 106,
+   "from": "2026-01-02",
+   "to": "2026-12-31",
+   "bins": [
+    "Restabfall",
+    "Bioabfall",
     "Altpapier",
     "Gelber Sack"
    ],
-   "ms": 872,
+   "ms": 592,
    "triedTowns": [
-    "Wachenheimer Straße"
+    "Königstraße"
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "elw-wiesbaden",
+   "name": "ELW Entsorgungsbetriebe der Landeshauptstadt Wiesbaden",
+   "family": "elw",
+   "town": "Wiesbaden",
+   "street": "Rheinstraße",
+   "events": 150,
+   "from": "2026-01-06",
+   "to": "2027-01-07",
+   "bins": [
+    "Wertstoffe",
+    "Bioabfall",
+    "Restabfall",
+    "Altpapier",
+    "Baumsammlung"
+   ],
+   "ms": 1029,
+   "triedTowns": [
+    "Rheinstraße"
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "stadt-heilbronn",
+   "name": "Heilbronner Entsorgungsbetriebe",
+   "family": "heilbronn",
+   "town": "Heilbronn",
+   "street": "Allee",
+   "events": 113,
+   "from": "2025-11-04",
+   "to": "2027-01-28",
+   "bins": [
+    "Papier",
+    "Restmüll",
+    "Grüngut",
+    "Biomüll",
+    "Gelber Sack",
+    "Christbaum"
+   ],
+   "ms": 501,
+   "triedTowns": [
+    "Allee"
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "enni-moers",
+   "name": "ENNI Stadt & Service Niederrhein",
+   "family": "enni",
+   "town": "Moers",
+   "street": "Homberger Straße",
+   "events": 27,
+   "from": "2026-09-21",
+   "to": "2026-12-29",
+   "bins": [
+    "Restabfall",
+    "Papier",
+    "Gelber Sack",
+    "Biotonne",
+    "Grünschnitt"
+   ],
+   "ms": 472,
+   "triedTowns": [
+    "Homberger Straße"
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "ksj-jena",
+   "name": "KommunalService Jena",
+   "family": "ksj",
+   "town": "Jena",
+   "street": "Magdelstieg",
+   "events": 44,
+   "from": "2026-09-01",
+   "to": "2026-12-29",
+   "bins": [
+    "Bioabfall",
+    "Leichtverpackung",
+    "Restabfall",
+    "Papier"
+   ],
+   "ms": 390,
+   "triedTowns": [
+    "Magdelstieg"
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "alba-braunschweig",
+   "name": "ALBA Braunschweig",
+   "family": "albabs",
+   "town": "Braunschweig",
+   "street": "Kastanienallee",
+   "events": 121,
+   "from": "2026-01-02",
+   "to": "2027-01-05",
+   "bins": [
+    "Altpapier",
+    "Biotonne",
+    "LVP",
+    "Restmüll"
+   ],
+   "ms": 2304,
+   "triedTowns": [
+    "Kastanienallee"
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "hws-halle",
+   "name": "HWS Hallesche Wasser und Stadtwirtschaft",
+   "family": "hws",
+   "town": "Halle (Saale)",
+   "street": "Adam-Kuckhoff-Str",
+   "events": 268,
+   "from": "2026-01-07",
+   "to": "2027-12-29",
+   "bins": [
+    "Restmüll (Graue Tonne)",
+    "Papier/Pappe (Blaue Tonne)",
+    "Verpackungsabfälle (Gelbe Tonne)",
+    "Biomüll (Braune Tonne)"
+   ],
+   "ms": 856,
+   "triedTowns": [
+    "Adam-Kuckhoff-Straße"
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "tsk-karlsruhe",
+   "name": "Team Sauberes Karlsruhe",
+   "family": "tsk",
+   "town": "Karlsruhe",
+   "street": "Rheinstraße",
+   "events": 33,
+   "from": "2026-09-23",
+   "to": "2026-12-30",
+   "bins": [
+    "Restmüll",
+    "Bioabfall",
+    "Wertstoff",
+    "Papier"
+   ],
+   "ms": 572,
+   "triedTowns": [
+    "Rheinstraße"
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "swp-potsdam",
+   "name": "STEP Stadtentsorgung Potsdam",
+   "family": "swp",
+   "town": "Potsdam",
+   "street": "Zeppelinstr.",
+   "events": 44,
+   "from": "2026-09-22",
+   "to": "2026-12-29",
+   "bins": [
+    "Hausmüll",
+    "Biotonne",
+    "Wertstofftonne",
+    "Papier und Pappe"
+   ],
+   "ms": 421,
+   "triedTowns": [
+    "Zeppelinstraße"
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "sab-magdeburg",
+   "name": "SAB Städtischer Abfallwirtschaftsbetrieb Magdeburg",
+   "family": "sab",
+   "town": "Magdeburg",
+   "street": "Abendstraße",
+   "events": 37,
+   "from": "2026-09-21",
+   "to": "2026-12-29",
+   "bins": [
+    "Restabfall",
+    "Bioabfall",
+    "Altpapier",
+    "Gelbe Tonne"
+   ],
+   "ms": 570,
+   "triedTowns": [
+    "Abendstraße"
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "mags-moenchengladbach",
+   "name": "mags Mönchengladbacher Abfall-, Grün- und Straßenbetriebe",
+   "family": "mags",
+   "town": "Mönchengladbach",
+   "street": null,
+   "events": 0,
+   "from": null,
+   "to": null,
+   "bins": [],
+   "ms": 190,
+   "triedTowns": [],
+   "upload": "robots"
+  },
+  {
+   "provider": "stadt-siegen",
+   "name": "Universitätsstadt Siegen",
+   "family": "citko",
+   "town": "Siegen",
+   "street": null,
+   "events": 0,
+   "from": null,
+   "to": null,
+   "bins": [],
+   "ms": 175,
+   "triedTowns": [],
+   "upload": "robots"
+  },
+  {
+   "provider": "osb-osnabrueck",
+   "name": "Osnabrücker ServiceBetrieb",
+   "family": "osb",
+   "town": "Osnabrück",
+   "street": "Lotter Straße",
+   "events": 30,
+   "from": "2026-09-22",
+   "to": "2026-12-29",
+   "bins": [
+    "Restmüll",
+    "Altpapier",
+    "Gelbe Tonne",
+    "Biotonne"
+   ],
+   "ms": 747,
+   "triedTowns": [
+    "Lotter Straße"
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "geb-goettingen",
+   "name": "GEB Göttinger Entsorgungsbetriebe",
+   "family": "geb",
+   "town": "Göttingen",
+   "street": "Weender Landstr.",
+   "events": 33,
+   "from": "2026-09-15",
+   "to": "2026-12-30",
+   "bins": [
+    "Restmülltonne",
+    "Biotonne",
+    "Gelber Sack",
+    "Papiertonne",
+    "Baum- und Strauchschnittsammlung"
+   ],
+   "ms": 795,
+   "triedTowns": [
+    "Weender Landstraße"
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "stadt-heidelberg",
+   "name": "Stadt Heidelberg, Abfallwirtschaft und Stadtreinigung",
+   "family": "heidelberg",
+   "town": "Heidelberg",
+   "street": "Bergheimer Straße",
+   "events": 298,
+   "from": "2026-01-08",
+   "to": "2027-01-14",
+   "bins": [
+    "Restabfall: Wöchentlich",
+    "Restabfall: 14-täglich",
+    "Altpapier: Wöchentlich",
+    "Gelbe Tonne / Gelber Sack: Wöchentlich",
+    "Gelbe Tonne / Gelber Sack: 14-täglich",
+    "Bioabfall"
+   ],
+   "ms": 375,
+   "triedTowns": [
+    "Bergheimer Straße"
+   ],
+   "rhythm": [
+    "Restabfall: Wöchentlich/14-täglich",
+    "Altpapier: Wöchentlich/14-täglich",
+    "Gelbe Tonne / Gelber Sack: Wöchentlich/14-täglich"
    ]
+  },
+  {
+   "provider": "zah-hildesheim",
+   "name": "ZAH Zweckverband Abfallwirtschaft Hildesheim",
+   "family": "zah",
+   "town": "Hildesheim",
+   "street": "Almsstr.",
+   "events": 26,
+   "from": "2026-09-24",
+   "to": "2026-12-31",
+   "bins": [
+    "Gelbe Tonne",
+    "Restabfall (14-täglich)",
+    "Bioabfall",
+    "Restabfall (Vierwöchentlich)",
+    "Altpapier"
+   ],
+   "ms": 749,
+   "triedTowns": [
+    "Almsstraße"
+   ],
+   "rhythm": [
+    "Restabfall: 14-täglich/Vierwöchentlich"
+   ]
+  },
+  {
+   "provider": "sro-rostock",
+   "name": "Stadtentsorgung Rostock",
+   "family": "sro",
+   "town": "Rostock",
+   "street": null,
+   "events": 0,
+   "from": null,
+   "to": null,
+   "bins": [],
+   "ms": 169,
+   "triedTowns": [],
+   "upload": "terms"
+  },
+  {
+   "provider": "ead-darmstadt",
+   "name": "EAD Darmstadt",
+   "family": "ead",
+   "town": "Darmstadt",
+   "street": "Rheinstraße",
+   "events": 181,
+   "from": "2026-01-02",
+   "to": "2026-12-31",
+   "bins": [
+    "Grüne Altpapier-Tonne",
+    "Restabfall-Tonne: Wöchentlich (Deckel schwarz)",
+    "Braune Bioabfall-Tonne",
+    "Gelbe Wertstoff-Tonne",
+    "Restabfall-Tonne: 14-täglich (Deckel orange)",
+    "Restabfall-Tonne: 4-wöchentlich (Deckel rot)"
+   ],
+   "ms": 698,
+   "triedTowns": [
+    "Rheinstraße"
+   ],
+   "rhythm": [
+    "Restabfall-Tonne: Wöchentlich (Deckel schwarz)/14-täglich (Deckel orange)/4-wöchentlich (Deckel rot)"
+   ]
+  },
+  {
+   "provider": "abis-gelsenkirchen",
+   "name": "GELSENDIENSTE",
+   "family": "abis",
+   "town": "Gelsenkirchen",
+   "street": "Ackerstr.",
+   "events": 209,
+   "from": "2026-03-23",
+   "to": "2027-12-28",
+   "bins": [
+    "Graue Tonne",
+    "Gelbe Tonne",
+    "Blaue Tonne",
+    "Braune Tonne"
+   ],
+   "ms": 670,
+   "triedTowns": [
+    "Ackerstraße"
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "abis-bottrop",
+   "name": "BEST Bottrop",
+   "family": "abis",
+   "town": "Bottrop",
+   "street": "Horster Straße",
+   "events": 200,
+   "from": "2026-03-20",
+   "to": "2027-12-31",
+   "bins": [
+    "Graue Tonne",
+    "Gelbe Tonne",
+    "Biotonne",
+    "Papiertonne"
+   ],
+   "ms": 511,
+   "triedTowns": [
+    "Horster Straße"
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "muellmax-usb",
+   "name": "USB Umweltservice Bochum",
+   "family": "muellmax",
+   "town": "Bochum",
+   "street": "Königsallee",
+   "events": 26,
+   "from": "2026-09-24",
+   "to": "2026-12-31",
+   "bins": [
+    "Restmüll",
+    "Altpapier",
+    "kombinierte Wertstofftonne"
+   ],
+   "ms": 1174,
+   "triedTowns": [
+    "Königsallee"
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "muellmax-ash",
+   "name": "ASH Abfallwirtschaft und Stadtreinigung Hamm",
+   "family": "muellmax",
+   "town": "Hamm",
+   "street": "Oststraße",
+   "events": 17,
+   "from": "2026-09-30",
+   "to": "2026-12-22",
+   "bins": [
+    "Restmüll-Tonne",
+    "Wertstoff-Tonne",
+    "Altpapier-Tonne",
+    "Altpapier-Container",
+    "Grünabfälle (straßenweise)"
+   ],
+   "ms": 1030,
+   "triedTowns": [
+    "Oststraße"
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "beg-bremerhaven",
+   "name": "BEG Bremerhavener Entsorgungsgesellschaft",
+   "family": "beg",
+   "town": "Bremerhaven",
+   "street": "Bgm.-Smidt-Straße",
+   "events": 9,
+   "from": "2026-09-22",
+   "to": "2026-10-13",
+   "bins": [
+    "Restmüll: Wöchentlich",
+    "Altpapier",
+    "Gelber Sack",
+    "Restmüll: 14-täglich"
+   ],
+   "ms": 2619,
+   "triedTowns": [
+    "Bürgermeister-Smidt-Straße"
+   ],
+   "rhythm": [
+    "Restmüll: Wöchentlich/14-täglich"
+   ]
+  },
+  {
+   "provider": "muellmax-awm",
+   "name": "AWM Abfallwirtschaftsbetriebe Münster",
+   "family": "muellmax",
+   "town": "Münster",
+   "street": "Hammer Straße",
+   "events": 40,
+   "from": "2026-09-22",
+   "to": "2026-12-29",
+   "bins": [
+    "Restabfalltonne",
+    "Papiertonne",
+    "Biotonne",
+    "Sperrgut und Grünabfall",
+    "Wertstofftonne"
+   ],
+   "ms": 810,
+   "triedTowns": [
+    "Hammer Straße"
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "muellmax-tbr",
+   "name": "Technische Betriebe Remscheid",
+   "family": "muellmax",
+   "town": "Remscheid",
+   "street": "Alleestraße",
+   "events": 19,
+   "from": "2026-09-23",
+   "to": "2026-12-30",
+   "bins": [
+    "Restmülltonne wöchentlich",
+    "Altpapiercontainer"
+   ],
+   "ms": 1216,
+   "triedTowns": [
+    "Alleestraße"
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "muellmax-ebm",
+   "name": "Entsorgungsbetrieb der Stadt Mainz",
+   "family": "muellmax",
+   "town": "Mainz",
+   "street": "Kaiserstraße",
+   "events": 33,
+   "from": "2026-09-23",
+   "to": "2026-12-29",
+   "bins": [
+    "Restabfall-Tonne",
+    "Papier-Tonne",
+    "Glas-Tonne",
+    "Gelber Sack"
+   ],
+   "ms": 912,
+   "triedTowns": [
+    "Kaiserstraße"
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "hausmuell-asr-chemnitz",
+   "name": "ASR Abfallentsorgung Chemnitz",
+   "family": "hausmuell",
+   "town": "Chemnitz",
+   "street": "Zschopauer Str.",
+   "events": 76,
+   "from": "2026-09-21",
+   "to": "2027-01-28",
+   "bins": [
+    "Restabfall",
+    "Bio",
+    "Leichtstoffverpackungen",
+    "Pappe, Papier & Kart."
+   ],
+   "ms": 441,
+   "triedTowns": [
+    "Zschopauer Straße"
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "insertit-herne",
+   "name": "entsorgung herne",
+   "family": "insertit",
+   "town": "Herne",
+   "street": "Bahnhofstr.",
+   "events": 186,
+   "from": "2025-12-30",
+   "to": "2028-01-01",
+   "bins": [
+    "Wertstofftonne/Sack",
+    "Restmüll",
+    "Papiertonne"
+   ],
+   "ms": 10042,
+   "triedTowns": [
+    "Bahnhofstraße"
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "hausmuell-swe-erfurt",
+   "name": "SWE Stadtwirtschaft Erfurt",
+   "family": "hausmuell",
+   "town": "Erfurt",
+   "street": "Juri-Gagarin-Ring",
+   "events": 75,
+   "from": "2026-09-22",
+   "to": "2026-12-31",
+   "bins": [
+    "Hausmüll",
+    "Biomüll",
+    "Gelbe Tonne",
+    "Papier"
+   ],
+   "ms": 910,
+   "triedTowns": [
+    "Juri-Gagarin-Ring"
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "athos-umweltbetrieb-bielefeld",
+   "name": "Umweltbetrieb Bielefeld",
+   "family": "athos",
+   "town": "Bielefeld",
+   "street": "Eckendorfer Straße",
+   "events": 142,
+   "from": "2025-10-09",
+   "to": "2027-09-23",
+   "bins": [
+    "Restmüll (M)",
+    "Biotonne (B)",
+    "Papiertonne (P)",
+    "Wertstofftonne"
+   ],
+   "ms": 2154,
+   "triedTowns": [
+    "Eckendorfer Straße"
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "athos-aws-schaumburg",
+   "name": "Abfallwirtschaft Schaumburg",
+   "family": "athos",
+   "town": "Stadthagen",
+   "street": "Obernstr.",
+   "events": 31,
+   "from": "2026-09-23",
+   "to": "2026-12-30",
+   "bins": [
+    "Restabfall",
+    "Bioabfall",
+    "Altpapier",
+    "Leichtverpackungen",
+    "Sommerbiotonne"
+   ],
+   "ms": 2465,
+   "triedTowns": [
+    "Obernstraße"
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "athos-edg-dortmund",
+   "name": "EDG Entsorgung Dortmund",
+   "family": "athos",
+   "town": "Dortmund",
+   "street": "Hohe Str.",
+   "events": 33,
+   "from": "2026-09-24",
+   "to": "2026-12-31",
+   "bins": [
+    "Restabfall",
+    "Bioabfall",
+    "Altpapier",
+    "Wertstoffe"
+   ],
+   "ms": 5334,
+   "triedTowns": [
+    "Hohe Straße"
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "athos-awb-lk-karlsruhe",
+   "name": "AWB Landkreis Karlsruhe",
+   "family": "athos",
+   "town": "Bretten",
+   "street": "Melanchthonstr.",
+   "events": 18,
+   "from": "2026-09-19",
+   "to": "2026-12-23",
+   "bins": [
+    "Wertstoff (gewerblich)",
+    "Restabfall (gewerblich)",
+    "Mobile Schadstoffsammlung"
+   ],
+   "ms": 1147,
+   "triedTowns": [
+    "Melanchthonstraße"
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "athos-kaw-hameln-pyrmont",
+   "name": "KAW Landkreis Hameln-Pyrmont",
+   "family": "athos",
+   "town": "Aerzen",
+   "street": "Ahorn",
+   "events": 28,
+   "from": "2026-09-21",
+   "to": "2026-12-29",
+   "bins": [
+    "Restabfalltonne",
+    "Bioabfall",
+    "Altpapier",
+    "Gelber Sack",
+    "Grünschnitt"
+   ],
+   "ms": 1795,
+   "triedTowns": [
+    "Ahorn"
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "athos-bonnorange-bonn",
+   "name": "bonnorange Bonn",
+   "family": "athos",
+   "town": "Bonn",
+   "street": "Kaiserstr.",
+   "events": 89,
+   "from": "2026-01-06",
+   "to": "2026-12-23",
+   "bins": [
+    "Restmüll (RM)",
+    "Biotonne (B)",
+    "Papiertonne (P)",
+    "alle gelben Behälter, gelbe Säcke (G)",
+    "nur gelbe Großbehälter (GB)",
+    "Sperrmüll (S)"
+   ],
+   "ms": 1662,
+   "triedTowns": [
+    "Kaiserstraße"
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "meinabfall-erlangen",
+   "name": "Stadt Erlangen Abfallwirtschaft",
+   "family": "meinabfall",
+   "town": "Erlangen",
+   "street": "Hauptstraße",
+   "events": 131,
+   "from": "2026-01-06",
+   "to": "2026-12-29",
+   "bins": [
+    "Biomüll",
+    "Restmüll",
+    "Papiertonne",
+    "Gelber Sack",
+    "Gartenabfall"
+   ],
+   "ms": 9588,
+   "triedTowns": [
+    "Hauptstraße"
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "meinabfall-neuss",
+   "name": "Stadt Neuss Abfallwirtschaft",
+   "family": "meinabfall",
+   "town": "Neuss",
+   "street": "Abteiweg",
+   "events": 156,
+   "from": "2026-01-03",
+   "to": "2026-12-30",
+   "bins": [
+    "Gelbe Tonne / Gelber Sack",
+    "Restmüll-Grau",
+    "Restmüll-Pink",
+    "Papiertonne",
+    "Biotonne",
+    "Schadstoffmobil"
+   ],
+   "ms": 9868,
+   "triedTowns": [
+    "Abteiweg"
+   ],
+   "rhythm": [
+    "Restmüll: Grau/Pink"
+   ]
+  },
+  {
+   "provider": "athos-aws-augsburg",
+   "name": "AWS Abfallwirtschafts- und Stadtreinigungsbetrieb Augsburg",
+   "family": "athos",
+   "town": "Augsburg",
+   "street": "Frölichstraße",
+   "events": 30,
+   "from": "2026-09-23",
+   "to": "2026-12-30",
+   "bins": [
+    "Restmüll",
+    "Bioabfälle",
+    "Papier & Pappe",
+    "Kunststoffe & Metalle",
+    "Sondermülltag"
+   ],
+   "ms": 2900,
+   "triedTowns": [
+    "Frölichstraße"
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "abfallplus-ba5c0a03",
+   "name": "ASF Abfallwirtschaft und Stadtreinigung Freiburg",
+   "family": "abfallplus",
+   "town": "Freiburg im Breisgau",
+   "street": "Kaiser-Joseph-Straße",
+   "events": 61,
+   "from": "2026-08-05",
+   "to": "2026-12-30",
+   "bins": [
+    "Restabfalltonne (wöchentlich)",
+    "Restabfalltonne (14-täglich)",
+    "Papiertonne",
+    "Gelber Sack",
+    "Restabfalltonne (vierwöchentlich)",
+    "Schnittgutsammlung"
+   ],
+   "ms": 470,
+   "triedTowns": [
+    "Kaiser-Joseph-Straße"
+   ],
+   "rhythm": [
+    "Restabfalltonne: Wöchentlich/14-täglich/Vierwöchentlich"
+   ]
+  },
+  {
+   "provider": "abfallplus-8fb8b2b0",
+   "name": "HEB Hagener Entsorgungsbetrieb",
+   "family": "abfallplus",
+   "town": "Hagen",
+   "street": "Elberfelder Straße",
+   "events": 56,
+   "from": "2026-08-04",
+   "to": "2026-12-29",
+   "bins": [
+    "Restmüll rote Woche",
+    "Restmüll wöchentlich",
+    "Wertstofftonne",
+    "Restmüll grüne Woche",
+    "Altpapier"
+   ],
+   "ms": 370,
+   "triedTowns": [
+    "Elberfelder Straße"
+   ],
+   "rhythm": [
+    "Restmüll: Wöchentlich/Grüne Woche/Rote Woche"
+   ]
+  },
+  {
+   "provider": "athos-zke-saarbruecken",
+   "name": "ZKE Zentraler Kommunaler Entsorgungsbetrieb Saarbrücken",
+   "family": "athos",
+   "town": "Saarbrücken",
+   "street": "Mainzer Straße",
+   "events": 45,
+   "from": "2026-09-21",
+   "to": "2026-12-28",
+   "bins": [
+    "Restmüll: Wöchentlich",
+    "Restmüll: 2-wöchentlich",
+    "Restmüll: 4- wöchentlich",
+    "Biomüll",
+    "Papiertonne",
+    "Gelbe Tonne"
+   ],
+   "ms": 1548,
+   "triedTowns": [
+    "Mainzer Straße"
+   ],
+   "rhythm": [
+    "Restmüll: Wöchentlich/2-wöchentlich/4-wöchentlich"
+   ]
+  },
+  {
+   "provider": "abfallplus-1bf5dd38",
+   "name": "TBR Technische Betriebsdienste Reutlingen",
+   "family": "abfallplus",
+   "town": "Reutlingen",
+   "street": "Wilhelmstraße",
+   "events": 52,
+   "from": "2026-08-05",
+   "to": "2026-12-30",
+   "bins": [
+    "Bioabfall",
+    "Gelbe Tonne",
+    "Restmüll 2-wöchentlich",
+    "Altpapier",
+    "Restmüll 4-wöchentlich",
+    "Schadstoffmobil"
+   ],
+   "ms": 240,
+   "triedTowns": [
+    "Wilhelmstraße"
+   ],
+   "rhythm": [
+    "Restmüll: 2-wöchentlich/4-wöchentlich"
+   ]
+  },
+  {
+   "provider": "abfallplus-51be67f3",
+   "name": "EBE Entsorgungsbetriebe Essen",
+   "family": "abfallplus",
+   "town": "Essen",
+   "street": "Rüttenscheider Str.",
+   "events": 38,
+   "from": "2026-08-06",
+   "to": "2026-12-31",
+   "bins": [
+    "Graue Tonne",
+    "Gelbe Tonne",
+    "Blaue Tonne"
+   ],
+   "ms": 1241,
+   "triedTowns": [
+    "Rüttenscheider Straße"
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "abfallplus-efb75cbd",
+   "name": "Landkreis Märkisch-Oderland",
+   "family": "abfallplus",
+   "town": "Bad Freienwalde",
+   "street": "Königstraße",
+   "events": 41,
+   "from": "2026-08-04",
+   "to": "2026-12-29",
+   "bins": [
+    "Biotonne",
+    "Hausmüll",
+    "Pappe, Papier und Kartonage",
+    "Gelbe Tonne",
+    "Schadstoffe"
+   ],
+   "ms": 316,
+   "triedTowns": [
+    "Königstraße"
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "abfallplus-2085afd9",
+   "name": "ASG Nordsachsen",
+   "family": "abfallplus",
+   "town": "Torgau",
+   "street": "Leipziger Straße",
+   "events": 27,
+   "from": "2026-08-05",
+   "to": "2026-12-23",
+   "bins": [
+    "Gelber Sack / Gelbe Tonne",
+    "Restabfall",
+    "Papier"
+   ],
+   "ms": 278,
+   "triedTowns": [
+    "Leipziger Straße"
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "abfallplus-15f69fab",
+   "name": "Landkreis Reutlingen",
+   "family": "abfallplus",
+   "town": "Bad Urach",
+   "street": "Hauptstrasse",
+   "events": 38,
+   "from": "2026-08-05",
+   "to": "2026-12-31",
+   "bins": [
+    "Biotonne",
+    "Restmülltonne",
+    "Papiertonne",
+    "Gelber Sack",
+    "Problemstoffmobil"
+   ],
+   "ms": 466,
+   "triedTowns": [
+    "Hauptstraße"
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "abfallplus-80acad6c",
+   "name": "Wirtschaftsbetriebe Duisburg",
+   "family": "abfallplus",
+   "town": "Duisburg",
+   "street": "Königstr.",
+   "events": 46,
+   "from": "2026-08-04",
+   "to": "2026-12-30",
+   "bins": [
+    "Hausmüll",
+    "Papierbündel",
+    "Schadstoffmobil"
+   ],
+   "ms": 462,
+   "triedTowns": [
+    "Königstraße"
+   ],
+   "rhythm": []
+  },
+  {
+   "provider": "athos-pforzheim",
+   "name": "Eigenbetrieb Abfallwirtschaft Pforzheim",
+   "family": "athos",
+   "town": "Pforzheim",
+   "street": "Bahnhofstraße",
+   "events": 52,
+   "from": "2026-09-24",
+   "to": "2026-12-28",
+   "bins": [
+    "Restmüll (wöchentlich)",
+    "Restmüll (14-täglich)",
+    "Großmüllbehälter 1100 L",
+    "Biobehälter",
+    "Papierbehälter",
+    "Gelbe Tonne"
+   ],
+   "ms": 3428,
+   "triedTowns": [
+    "Bahnhofstraße"
+   ],
+   "rhythm": [
+    "Restmüll: Wöchentlich/14-täglich/Großmüllbehälter 1100 L"
+   ]
+  },
+  {
+   "provider": "abfallplus-8b016df0",
+   "name": "ASO Abfall-Service Osterholz",
+   "family": "abfallplus",
+   "town": "Osterholz-Scharmbeck",
+   "street": "Bahnhofstraße",
+   "events": 55,
+   "from": "2026-08-11",
+   "to": "2027-01-29",
+   "bins": [
+    "Bioabfall 60-240 Liter",
+    "Altpapier Blaue Tonne",
+    "Gelbe Säcke",
+    "Restmüll 60-240 Liter",
+    "Mobile Problemabfallsammlung",
+    "Sammlung Tannenbäume"
+   ],
+   "ms": 764,
+   "triedTowns": [
+    "Bahnhofstraße"
+   ],
+   "rhythm": []
   }
  ],
  "e2e": [
@@ -2824,7 +4166,7 @@
     "Restabfall 2wö",
     "Restabfall 4wö"
    ],
-   "ms": 277,
+   "ms": 687,
    "triedTowns": [
     "Aachen"
    ]
@@ -2846,29 +4188,29 @@
     "Gelbe Tonne / Container",
     "Christbäume"
    ],
-   "ms": 1525,
+   "ms": 1625,
    "triedTowns": [
     "Waiblingen"
    ]
   },
   {
-   "provider": "e2e:Darmstadt (jumomind)",
+   "provider": "e2e:Darmstadt (ead)",
    "name": "Rheinstraße, 64283 Darmstadt",
    "family": "resolveAddress",
    "town": "Darmstadt",
-   "street": "Rheinstraße 1-41, 2-38",
-   "events": 50,
-   "from": "2026-09-22",
+   "street": "Rheinstraße",
+   "events": 180,
+   "from": "2026-01-06",
    "to": "2026-12-29",
    "bins": [
-    "Restabfall 2-wö.",
-    "Restabfall wö.",
-    "Bioabfall",
-    "Altpapier",
-    "Wertstofftonne",
-    "Restabfall 4-wö."
+    "Restabfall-Tonne: Wöchentlich (Deckel schwarz)",
+    "Grüne Altpapier-Tonne",
+    "Gelbe Wertstoff-Tonne",
+    "Restabfall-Tonne: 14-täglich (Deckel orange)",
+    "Braune Bioabfall-Tonne",
+    "Restabfall-Tonne: 4-wöchentlich (Deckel rot)"
    ],
-   "ms": 227,
+   "ms": 383,
    "triedTowns": [
     "Darmstadt"
    ]
@@ -2888,7 +4230,7 @@
     "Verpackungstonne",
     "Bioabfall"
    ],
-   "ms": 446,
+   "ms": 476,
    "triedTowns": [
     "Stuhr"
    ]
@@ -2899,18 +4241,18 @@
    "family": "resolveAddress",
    "town": "Lienen",
    "street": "Lienen",
-   "events": 50,
-   "from": "2026-08-19",
+   "events": 49,
+   "from": "2026-08-20",
    "to": "2026-12-31",
    "bins": [
-    "Gelber Sack/Gelbe Tonne",
     "Biomüll",
     "Grünabfall",
     "Papier",
+    "Gelber Sack/Gelbe Tonne",
     "Restmüll 4-Wo",
     "Schadstoffmobil"
    ],
-   "ms": 733,
+   "ms": 657,
    "triedTowns": [
     "Lienen"
    ]
@@ -2928,7 +4270,7 @@
     "Biogut/Hausmüll",
     "Wertstoffe (ALBA)"
    ],
-   "ms": 1126,
+   "ms": 1314,
    "triedTowns": [
     "Berlin"
    ]
@@ -2949,7 +4291,7 @@
     "Bioabfall",
     "Verpackung"
    ],
-   "ms": 390,
+   "ms": 396,
    "triedTowns": [
     "Frankfurt am Main"
    ]
@@ -2971,7 +4313,7 @@
     "Biotonne",
     "Achtung: Biotonne"
    ],
-   "ms": 655,
+   "ms": 782,
    "triedTowns": [
     "München"
    ]

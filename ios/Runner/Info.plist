@@ -12,7 +12,13 @@
 	     PHPickerViewController and the file picker UIDocumentPickerViewController,
 	     both of which run out of process and hand over just what was picked. -->
 	<key>NSCameraUsageDescription</key>
-	<string>Damit du ein Foto direkt zu einem Artikel aufnehmen kannst.</string>
+	<string>So you can take a photo of an item straight away.</string>
+	<!-- Required before the first Face ID prompt, or iOS terminates the app.
+	     Touch ID and Optic ID need no key. See BiometricLock.swift.
+	     Both texts here are the English fallback; the translations are in
+	     <lang>.lproj/InfoPlist.strings. -->
+	<key>NSFaceIDUsageDescription</key>
+	<string>So you can unlock Aporah with Face ID.</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>

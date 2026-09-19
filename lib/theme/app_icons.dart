@@ -127,6 +127,7 @@ abstract final class AppIcons {
   static const eyeSlash = IconData(0xe225, fontFamily: _family);
   static const eyeglasses = IconData(0xe7bb, fontFamily: _family);
   static const fileText = IconData(0xe23b, fontFamily: _family);
+  static const uploadSimple = IconData(0xe4c1, fontFamily: _family);
   static const flame = IconData(0xe625, fontFamily: _family);
   static const flower = IconData(0xe75f, fontFamily: _family);
   static const flowerTulip = IconData(0xeacd, fontFamily: _family);
@@ -159,6 +160,8 @@ abstract final class AppIcons {
   static const listChecks = IconData(0xeadd, fontFamily: _family);
   static const listPlus = IconData(0xe2f9, fontFamily: _family);
   static const lock = IconData(0xe2fb, fontFamily: _family);
+  static const fingerprint = IconData(0xe23f, fontFamily: _family);
+  static const scanSmiley = IconData(0xebb5, fontFamily: _family);
   static const magnifyingGlass = IconData(0xe30d, fontFamily: _family);
   static const mapPin = IconData(0xe317, fontFamily: _family);
   static const mapTrifold = IconData(0xe31b, fontFamily: _family);
@@ -324,6 +327,7 @@ const Map<int, IconData> _underLayers = {
   0xe225: IconData(0xe224, fontFamily: _family),
   0xe7bb: IconData(0xe7ba, fontFamily: _family),
   0xe23b: IconData(0xe23a, fontFamily: _family),
+  0xe4c1: IconData(0xe4c0, fontFamily: _family),
   0xe625: IconData(0xe624, fontFamily: _family),
   0xe75f: IconData(0xe75e, fontFamily: _family),
   0xeacd: IconData(0xeacc, fontFamily: _family),
@@ -356,6 +360,8 @@ const Map<int, IconData> _underLayers = {
   0xeadd: IconData(0xeadc, fontFamily: _family),
   0xe2f9: IconData(0xe2f8, fontFamily: _family),
   0xe2fb: IconData(0xe2fa, fontFamily: _family),
+  0xe23f: IconData(0xe23e, fontFamily: _family),
+  0xebb5: IconData(0xebb4, fontFamily: _family),
   0xe30d: IconData(0xe30c, fontFamily: _family),
   0xe317: IconData(0xe316, fontFamily: _family),
   0xe31b: IconData(0xe31a, fontFamily: _family),
@@ -556,6 +562,7 @@ const Map<int, IconData> _flat = {
   0xe225: IconData(0xe224, fontFamily: _flatFamily),
   0xe7bb: IconData(0xe7ba, fontFamily: _flatFamily),
   0xe23b: IconData(0xe23a, fontFamily: _flatFamily),
+  0xe4c1: IconData(0xe4c0, fontFamily: _flatFamily),
   0xe625: IconData(0xe624, fontFamily: _flatFamily),
   0xe75f: IconData(0xe75e, fontFamily: _flatFamily),
   0xeacd: IconData(0xeacc, fontFamily: _flatFamily),
@@ -588,6 +595,8 @@ const Map<int, IconData> _flat = {
   0xeadd: IconData(0xeadc, fontFamily: _flatFamily),
   0xe2f9: IconData(0xe2f8, fontFamily: _flatFamily),
   0xe2fb: IconData(0xe2fa, fontFamily: _flatFamily),
+  0xe23f: IconData(0xe23e, fontFamily: _flatFamily),
+  0xebb5: IconData(0xebb4, fontFamily: _flatFamily),
   0xe30d: IconData(0xe30c, fontFamily: _flatFamily),
   0xe317: IconData(0xe316, fontFamily: _flatFamily),
   0xe31b: IconData(0xe31a, fontFamily: _flatFamily),

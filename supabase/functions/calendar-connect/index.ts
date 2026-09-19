@@ -265,7 +265,7 @@ function backToApp(status: "ok" | "error" | "limit", provider?: string): Respons
   const message = status === "ok"
     ? "Kalender verbunden. Du kannst dieses Fenster schließen."
     : status === "limit"
-    ? "Mit dem kostenlosen Zugang lässt sich ein Kalender verbinden. Du kannst dieses Fenster schließen."
+    ? "Mit dem kostenlosen Zugang lassen sich zwei Kalender verbinden — Ferien und Müllabfuhr zählen nicht mit. Du kannst dieses Fenster schließen."
     : "Die Verbindung hat nicht geklappt. Du kannst dieses Fenster schließen.";
 
   return new Response(

@@ -309,7 +309,12 @@ class FieldGroup extends StatelessWidget {
   final String? hint;
   final Widget? child;
 
-  const FieldGroup({super.key, required this.label, this.hint, this.child});
+  /// Drawn before the label, on its line — the bin beside "Restmüll — wie oft
+  /// geleert?". The hint and the field stay flush with the label's left edge
+  /// rather than the glyph's, so a group with one lines up with one without.
+  final Widget? leading;
+
+  const FieldGroup({super.key, required this.label, this.hint, this.child, this.leading});
 
   @override
   Widget build(BuildContext context) {
@@ -320,7 +325,16 @@ class FieldGroup extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: AppText.sectionHeading),
+          if (leading case final glyph?)
+            Row(
+              children: [
+                glyph,
+                const SizedBox(width: 8),
+                Expanded(child: Text(label, style: AppText.sectionHeading)),
+              ],
+            )
+          else
+            Text(label, style: AppText.sectionHeading),
           if (hint != null) ...[
             const SizedBox(height: 4),
             Text(hint!, style: AppText.body.copyWith(color: AppColors.muted)),

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' show PlatformDispatcher;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../l10n/l10n.dart';
@@ -76,20 +77,49 @@ const _prefsLanguageKey = 'settings_language';
 /// here now. The roster, the roles and the invitations moved to
 /// `family_state.dart`, where they are rows rather than session-local mock data
 /// — a role that only this device believes in is worse than no role at all.
+/// The language a fresh install opens in: **the phone's, not the place's.**
+///
+/// Walks the phone's own ordered list of preferred languages and takes the
+/// first one the app speaks, so an iPhone set to French-then-Portuguese opens
+/// in Portuguese. Location was considered and is the wrong signal: it says
+/// where a family is, not what it reads — a Brazilian household in Munich
+/// reads Portuguese — and asking for it would make a location prompt the first
+/// thing the app says, before the sign-in page.
+///
+/// **English when nothing matches**, as the most widely read second language.
+/// That is only the *first-launch* fallback; `stringsFor` still falls back to
+/// German for a stored code it does not recognise, which is a downgrade guard,
+/// not a choice of language.
+AppLanguage deviceLanguage() {
+  for (final locale in PlatformDispatcher.instance.locales) {
+    for (final language in AppLanguage.values) {
+      if (language.name == locale.languageCode) return language;
+    }
+  }
+  return AppLanguage.en;
+}
+
 class SettingsNotifier extends StateNotifier<SettingsScreenState> {
-  SettingsNotifier() : super(const SettingsScreenState()) {
+  /// Seeded with the phone's language synchronously, not after `_load`: the
+  /// sign-in page is the first thing a new user sees, and it would otherwise
+  /// draw one frame in the default language before switching.
+  SettingsNotifier() : super(SettingsScreenState(language: deviceLanguage())) {
     _load();
   }
+
+  /// Whether the user picked a language in Settings. Until they do, the app
+  /// follows the phone, and nothing is written — otherwise flipping dark mode
+  /// would quietly freeze today's phone language as a choice nobody made.
+  bool _languageChosen = false;
 
   Future<void> _load() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final darkMode = prefs.getBool(_prefsDarkModeKey) ?? false;
       final languageName = prefs.getString(_prefsLanguageKey);
-      final language = AppLanguage.values.firstWhere(
-        (l) => l.name == languageName,
-        orElse: () => AppLanguage.de,
-      );
+      final stored = AppLanguage.values.where((l) => l.name == languageName).firstOrNull;
+      _languageChosen = stored != null;
+      final language = stored ?? deviceLanguage();
       if (!mounted) return;
       state = state.copyWith(darkMode: darkMode, language: language);
     } catch (_) {
@@ -101,7 +131,7 @@ class SettingsNotifier extends StateNotifier<SettingsScreenState> {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool(_prefsDarkModeKey, state.darkMode);
-      await prefs.setString(_prefsLanguageKey, state.language.name);
+      if (_languageChosen) await prefs.setString(_prefsLanguageKey, state.language.name);
     } catch (_) {
       // Same as above — persistence is best-effort.
     }
@@ -117,6 +147,7 @@ class SettingsNotifier extends StateNotifier<SettingsScreenState> {
   }
 
   void setLanguage(AppLanguage language) {
+    _languageChosen = true;
     state = state.copyWith(language: language);
     _persist();
   }

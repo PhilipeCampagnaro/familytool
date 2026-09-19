@@ -7,6 +7,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../l10n/l10n.dart';
 import '../models/calendar_event.dart';
+import '../models/spend.dart';
+import '../models/spend_budget.dart';
 import '../services/local_notifications.dart';
 
 /// "Remind me before this appointment" — **on this device, for this person.**
@@ -85,6 +87,16 @@ String reminderLabel(int minutes, {required bool allDay}) {
   return L.s.reminderMinutesBefore(minutes);
 }
 
+/// What a budget has already been told about, for one category, one calendar
+/// month and one [SpendBudgetStatus].
+///
+/// **The month is in the key, which is what makes the whole thing self-expiring
+/// rather than something that has to be reset.** A budget that was blown in
+/// March says nothing in April because April's key has never been seen, and
+/// there is no first-of-the-month job anywhere that has to remember to run.
+String budgetNoticeKey(SpendCategory category, DateTime month, SpendBudgetStatus level) =>
+    '${category.wire}|${month.year}-${month.month}|${level.name}';
+
 /// What this device will be told, and whether the OS will let it through.
 class NotificationSettings {
   final bool loaded;
@@ -102,6 +114,27 @@ class NotificationSettings {
   /// A to-do that names an hour. Setting one is the user asking to be reminded.
   final bool taskTimes;
 
+  /// A budget running ahead of the month, or past its limit. **Plus and admin
+  /// only**, like Ausgaben itself — a household without budgets never hears
+  /// from it, which is what lets it default on.
+  final bool budgets;
+
+  /// What has already been said, `budgetNoticeKey` → the moment its notice was
+  /// scheduled for.
+  ///
+  /// **A budget crossing a line is not an appointment: it has no time of its
+  /// own, and it stays crossed.** So where the other four kinds are re-derived
+  /// from scratch every time with nothing remembered, this one has to remember
+  /// or a blown budget would be announced every evening for the rest of the
+  /// month — the exact "follows somebody around" failure a tracker is built to
+  /// avoid.
+  ///
+  /// The value is a time rather than a flag because even a notice that fires at
+  /// once is *scheduled*, a minute out: until that minute is up the derivation
+  /// has to keep emitting it, or `replaceAll` would take back the one it just
+  /// sent. Once the time is past, the key is spent for the month.
+  final Map<String, DateTime> announcedBudgets;
+
   final List<EventReminder> reminders;
 
   const NotificationSettings({
@@ -112,6 +145,8 @@ class NotificationSettings {
     this.abfall = true,
     this.abfallMinutes = 19 * 60,
     this.taskTimes = true,
+    this.budgets = true,
+    this.announcedBudgets = const {},
     this.reminders = const [],
   });
 
@@ -130,6 +165,8 @@ class NotificationSettings {
     bool? abfall,
     int? abfallMinutes,
     bool? taskTimes,
+    bool? budgets,
+    Map<String, DateTime>? announcedBudgets,
     List<EventReminder>? reminders,
   }) => NotificationSettings(
     loaded: loaded ?? this.loaded,
@@ -139,6 +176,8 @@ class NotificationSettings {
     abfall: abfall ?? this.abfall,
     abfallMinutes: abfallMinutes ?? this.abfallMinutes,
     taskTimes: taskTimes ?? this.taskTimes,
+    budgets: budgets ?? this.budgets,
+    announcedBudgets: announcedBudgets ?? this.announcedBudgets,
     reminders: reminders ?? this.reminders,
   );
 }
@@ -148,6 +187,8 @@ const _kBriefMinutes = 'notify_brief_minutes';
 const _kAbfall = 'notify_abfall';
 const _kAbfallMinutes = 'notify_abfall_minutes';
 const _kTaskTimes = 'notify_task_times';
+const _kBudgets = 'notify_budgets';
+const _kAnnouncedBudgets = 'notify_budgets_announced';
 const _kReminders = 'notify_event_reminders';
 
 class NotificationSettingsNotifier extends StateNotifier<NotificationSettings> {
@@ -176,6 +217,8 @@ class NotificationSettingsNotifier extends StateNotifier<NotificationSettings> {
         abfall: prefs.getBool(_kAbfall),
         abfallMinutes: prefs.getInt(_kAbfallMinutes),
         taskTimes: prefs.getBool(_kTaskTimes),
+        budgets: prefs.getBool(_kBudgets),
+        announcedBudgets: _decodeAnnounced(prefs.getString(_kAnnouncedBudgets)),
         reminders: [
           if (decoded is List)
             for (final item in decoded) ?EventReminder.fromJson(item),
@@ -197,6 +240,14 @@ class NotificationSettingsNotifier extends StateNotifier<NotificationSettings> {
       await prefs.setBool(_kAbfall, state.abfall);
       await prefs.setInt(_kAbfallMinutes, state.abfallMinutes);
       await prefs.setBool(_kTaskTimes, state.taskTimes);
+      await prefs.setBool(_kBudgets, state.budgets);
+      await prefs.setString(
+        _kAnnouncedBudgets,
+        jsonEncode({
+          for (final MapEntry(key: k, value: at) in state.announcedBudgets.entries)
+            k: at.millisecondsSinceEpoch,
+        }),
+      );
       await prefs.setString(_kReminders, jsonEncode([for (final r in state.reminders) r.toJson()]));
     } catch (_) {
       // Best-effort, like every other preference in the app.
@@ -249,6 +300,38 @@ class NotificationSettingsNotifier extends StateNotifier<NotificationSettings> {
 
   void setTaskTimes(bool value) => _set(state.copyWith(taskTimes: value), asks: value);
 
+  void setBudgets(bool value) => _set(state.copyWith(budgets: value), asks: value);
+
+  /// Records what the scheduler has just put on the device, so the same budget
+  /// is not announced again tomorrow evening.
+  ///
+  /// **Keys whose moment has passed are kept and everything else is replaced by
+  /// [pending].** Kept, because a notice that has fired is spent for the month;
+  /// replaced, because a budget that fell back under its pace before the
+  /// evening came had its notice taken off the device again and should be free
+  /// to re-arm. Keys from other months are dropped here rather than anywhere
+  /// else — it is the only place this map is written.
+  void recordBudgetNotices(Map<String, DateTime> pending) {
+    final now = DateTime.now();
+    final month = '${now.year}-${now.month}';
+    final next = <String, DateTime>{
+      for (final MapEntry(key: k, value: at) in state.announcedBudgets.entries)
+        if (!at.isAfter(now) && k.contains('|$month|')) k: at,
+      ...pending,
+    };
+    if (_sameAnnounced(next, state.announcedBudgets)) return;
+    state = state.copyWith(announcedBudgets: next);
+    unawaited(_persist());
+  }
+
+  static bool _sameAnnounced(Map<String, DateTime> a, Map<String, DateTime> b) {
+    if (a.length != b.length) return false;
+    for (final MapEntry(key: k, value: v) in a.entries) {
+      if (b[k] != v) return false;
+    }
+    return true;
+  }
+
   void _set(NotificationSettings next, {bool asks = false}) {
     state = next;
     unawaited(_persist());
@@ -299,6 +382,20 @@ final notificationSettingsProvider =
     StateNotifierProvider<NotificationSettingsNotifier, NotificationSettings>(
       (ref) => NotificationSettingsNotifier(),
     );
+
+Map<String, DateTime> _decodeAnnounced(String? raw) {
+  if (raw == null) return const {};
+  try {
+    final decoded = jsonDecode(raw);
+    if (decoded is! Map) return const {};
+    return {
+      for (final MapEntry(key: k, value: v) in decoded.entries)
+        if (k is String && v is int) k: DateTime.fromMillisecondsSinceEpoch(v),
+    };
+  } catch (_) {
+    return const {};
+  }
+}
 
 @visibleForTesting
 String debugReminderKey(EventReminder r) => '${r.calendarId}|${r.uid}|${r.startsAt}';

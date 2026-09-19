@@ -956,6 +956,20 @@ class CalendarNotifier extends StateNotifier<CalendarScreenState> {
     state = state.copyWith(calendarFilter: next, filterGroupId: kPickedCalendarFilterId);
   }
 
+  /// The "Alle" row inside a multi-select menu: a checkbox over all of them.
+  ///
+  /// Lit (nothing filtered) it unticks every calendar at once; unlit it ticks
+  /// them all back. Emptied is a hand-picked set of none rather than "Alle",
+  /// exactly as unticking the last row one by one leaves it — so the next tick
+  /// adds one calendar back instead of reading as "all except that one".
+  void toggleAllCalendars() {
+    if (state.calendarFilter == null) {
+      state = state.copyWith(calendarFilter: <String>{}, filterGroupId: kPickedCalendarFilterId);
+    } else {
+      clearCalendarFilter();
+    }
+  }
+
   /// "Alle" — clears any active calendar filter so every source shows again.
   ///
   void clearCalendarFilter() => state = state.copyWith(clearCalendarFilter: true);

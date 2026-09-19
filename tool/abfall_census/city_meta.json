@@ -1,0 +1,1375 @@
+{
+ "Berlin": {
+  "tests": [
+   {
+    "street": "Karl-Marx-Allee",
+    "nr": "1",
+    "plz": "10178"
+   },
+   {
+    "street": "Rathausstraße",
+    "nr": "15",
+    "plz": "10178"
+   }
+  ],
+  "url": "https://www.bsr.de/abfuhrkalender-20520.php",
+  "note": ""
+ },
+ "Hamburg": {
+  "tests": [
+   {
+    "street": "Fraenkelstraße",
+    "nr": "3",
+    "plz": "22307"
+   },
+   {
+    "street": "Osterstraße",
+    "nr": "10",
+    "plz": "20259"
+   }
+  ],
+  "url": "https://www.stadtreinigung.hamburg/privatkunden/abfuhrkalender/",
+  "note": ""
+ },
+ "München": {
+  "tests": [
+   {
+    "street": "Francéstraße",
+    "nr": "10",
+    "plz": "80997"
+   },
+   {
+    "street": "Leopoldstraße",
+    "nr": "10",
+    "plz": "80802"
+   }
+  ],
+  "url": null,
+  "note": ""
+ },
+ "Köln": {
+  "tests": [
+   {
+    "street": "Bergisch Gladbacher Straße",
+    "nr": "102",
+    "plz": "51065"
+   },
+   {
+    "street": "Venloer Straße",
+    "nr": "10",
+    "plz": "50672"
+   }
+  ],
+  "url": null,
+  "note": "Die Liste führt Stellplätze, nicht Häuser — einzelne Hausnummern fehlen."
+ },
+ "Frankfurt am Main": {
+  "tests": [
+   {
+    "street": "Frankenallee",
+    "nr": "2",
+    "plz": "60327"
+   },
+   {
+    "street": "Römerberg",
+    "nr": "23",
+    "plz": "60311"
+   }
+  ],
+  "url": "https://www.fes-frankfurt.de/services/abfallkalender",
+  "note": ""
+ },
+ "Stuttgart": {
+  "tests": [
+   {
+    "street": "Wachenheimer Straße",
+    "nr": "3",
+    "plz": "70376"
+   },
+   {
+    "street": "Marktplatz",
+    "nr": "1",
+    "plz": "70173"
+   }
+  ],
+  "url": null,
+  "note": "Seit 18.09. vormittags ist der Stadt-Server (gis6.stuttgart.de) nicht erreichbar — Ausfall bei der Stadt, nicht bei uns.",
+  "outage": true
+ },
+ "Düsseldorf": {
+  "tests": [
+   {
+    "street": "Askanierstraße",
+    "nr": "3",
+    "plz": "40547"
+   },
+   {
+    "street": "Bilker Allee",
+    "nr": "1",
+    "plz": "40219"
+   }
+  ],
+  "url": "https://www.awista-kommunal.de/abfallkalender",
+  "note": "Rate-Limit nach ~10 Abfragen; beim Testen Pausen machen."
+ },
+ "Leipzig": {
+  "tests": [
+   {
+    "street": "Karl-Liebknecht-Straße",
+    "nr": "1a",
+    "plz": "04275"
+   },
+   {
+    "street": "Martin-Luther-Ring",
+    "nr": "4",
+    "plz": "04109"
+   }
+  ],
+  "url": null,
+  "note": ""
+ },
+ "Dortmund": {
+  "tests": [
+   {
+    "street": "Hohe Straße",
+    "nr": "20",
+    "plz": "44139"
+   },
+   {
+    "street": "Friedensplatz",
+    "nr": "1",
+    "plz": "44135"
+   }
+  ],
+  "url": "https://kundenportal.edg.de/WasteManagementDortmund/WasteManagementServlet?SubmitAction=wasteDisposalServices&InFrameMode=TRUE",
+  "note": ""
+ },
+ "Essen": {
+  "tests": [
+   {
+    "street": "Rüttenscheider Straße",
+    "nr": "102",
+    "plz": "45130"
+   },
+   {
+    "street": "Rüttenscheider Straße",
+    "nr": "50",
+    "plz": "45130"
+   }
+  ],
+  "url": null,
+  "note": ""
+ },
+ "Bremen": {
+  "tests": [
+   {
+    "street": "Obernstraße",
+    "nr": "10",
+    "plz": "28195"
+   },
+   {
+    "street": "Am Markt",
+    "nr": "21",
+    "plz": "28195"
+   }
+  ],
+  "url": "https://www.die-bremer-stadtreinigung.de/abfallkalender",
+  "note": "Plant pro Straße, nicht pro Haus."
+ },
+ "Dresden": {
+  "tests": [
+   {
+    "street": "Neumarkt",
+    "nr": "6",
+    "plz": "01067"
+   },
+   {
+    "street": "Dr.-Külz-Ring",
+    "nr": "12",
+    "plz": "01067"
+   }
+  ],
+  "url": null,
+  "note": ""
+ },
+ "Hannover": {
+  "tests": [
+   {
+    "street": "Voltastraße",
+    "nr": "25",
+    "plz": "30165"
+   },
+   {
+    "street": "Lister Meile",
+    "nr": "10",
+    "plz": "30161"
+   }
+  ],
+  "url": "https://www.aha-region.de/abholtermine/abfuhrkalender",
+  "note": ""
+ },
+ "Nürnberg": {
+  "tests": [
+   {
+    "street": "Almoshofer Hauptstraße",
+    "nr": "10",
+    "plz": "90427"
+   },
+   {
+    "street": "Hauptmarkt",
+    "nr": "18",
+    "plz": "90403"
+   }
+  ],
+  "url": null,
+  "note": ""
+ },
+ "Duisburg": {
+  "tests": [
+   {
+    "street": "Königstraße",
+    "nr": "10",
+    "plz": "47051"
+   },
+   {
+    "street": "Burgplatz",
+    "nr": "19",
+    "plz": "47051"
+   }
+  ],
+  "url": "https://www.wb-duisburg.de/abfallkalender/",
+  "note": ""
+ },
+ "Wuppertal": {
+  "tests": [
+   {
+    "street": "Kaiserstraße",
+    "nr": "10",
+    "plz": "42329"
+   },
+   {
+    "street": "Uellendahler Straße",
+    "nr": "4a",
+    "plz": "42107"
+   }
+  ],
+  "url": "https://awg-wuppertal.de/privatkunden/abfallkalender.html",
+  "note": ""
+ },
+ "Bielefeld": {
+  "tests": [
+   {
+    "street": "Eckendorfer Straße",
+    "nr": "57",
+    "plz": "33609"
+   },
+   {
+    "street": "Stapenhorststraße",
+    "nr": "10",
+    "plz": "33615"
+   }
+  ],
+  "url": "https://anwendungen.bielefeld.de/WasteManagementBielefeldTest/WasteManagementServlet?SubmitAction=wasteDisposalServices&InFrameMode=TRUE",
+  "note": ""
+ },
+ "Mannheim": {
+  "tests": [
+   {
+    "street": "Hauptstraße",
+    "nr": "10",
+    "plz": "68259"
+   },
+   {
+    "street": "Waldhofstraße",
+    "nr": "10",
+    "plz": "68169"
+   }
+  ],
+  "url": "https://www.insert-it.de/BmsAbfallkalenderMannheim",
+  "note": "Quadrate-Adressen (Q 5, …) ungetestet."
+ },
+ "Kassel": {
+  "tests": [
+   {
+    "street": "Wilhelmshöher Allee",
+    "nr": "102",
+    "plz": "34119"
+   },
+   {
+    "street": "Obere Königsstraße",
+    "nr": "8",
+    "plz": "34117"
+   }
+  ],
+  "url": "https://www.insert-it.de/BmsAbfallkalenderKassel",
+  "note": ""
+ },
+ "Lübeck": {
+  "tests": [
+   {
+    "street": "Breite Straße",
+    "nr": "10",
+    "plz": "23552"
+   },
+   {
+    "street": "Königstraße",
+    "nr": "20",
+    "plz": "23552"
+   }
+  ],
+  "url": "https://www.insert-it.de/BmsAbfallkalenderLuebeck",
+  "note": ""
+ },
+ "Herne": {
+  "tests": [
+   {
+    "street": "Bahnhofstraße",
+    "nr": "7b",
+    "plz": "44623"
+   },
+   {
+    "street": "Friedrich-Ebert-Platz",
+    "nr": "2",
+    "plz": "44623"
+   }
+  ],
+  "url": "https://www.insert-it.de/BmsAbfallkalenderHerne",
+  "note": ""
+ },
+ "Offenbach am Main": {
+  "tests": [
+   {
+    "street": "Kaiserstraße",
+    "nr": "3",
+    "plz": "63065"
+   },
+   {
+    "street": "Berliner Straße",
+    "nr": "100",
+    "plz": "63065"
+   }
+  ],
+  "url": "https://www.insert-it.de/BmsAbfallkalenderOffenbach",
+  "note": ""
+ },
+ "Kiel": {
+  "tests": [
+   {
+    "street": "Holstenstraße",
+    "nr": "14",
+    "plz": "24103"
+   },
+   {
+    "street": "Westring",
+    "nr": "100",
+    "plz": "24114"
+   }
+  ],
+  "url": "https://www.abki.de/dienste/entsorgung-und-recycling/beh%C3%A4lter/leerungstermine.html",
+  "note": "Gelbe Tonne fehlt — Kiel veröffentlicht sie getrennt (Remondis)."
+ },
+ "Aachen": {
+  "tests": [
+   {
+    "street": "Templergraben",
+    "nr": "55",
+    "plz": "52062"
+   },
+   {
+    "street": "Markt",
+    "nr": "1",
+    "plz": "52062"
+   }
+  ],
+  "url": "https://www.aachen.de/abfallkalender",
+  "note": ""
+ },
+ "Krefeld": {
+  "tests": [
+   {
+    "street": "Hochstraße",
+    "nr": "12",
+    "plz": "47798"
+   },
+   {
+    "street": "Von-der-Leyen-Platz",
+    "nr": "1",
+    "plz": "47798"
+   }
+  ],
+  "url": "https://www.insert-it.de/BmsAbfallkalenderKrefeld",
+  "note": ""
+ },
+ "Oberhausen": {
+  "tests": [
+   {
+    "street": "Schwartzstraße",
+    "nr": "72",
+    "plz": "46045"
+   },
+   {
+    "street": "Marktstraße",
+    "nr": "10",
+    "plz": "46045"
+   }
+  ],
+  "url": null,
+  "note": ""
+ },
+ "Ludwigshafen am Rhein": {
+  "tests": [
+   {
+    "street": "Bismarckstraße",
+    "nr": "10",
+    "plz": "67059"
+   },
+   {
+    "street": "Rathausplatz",
+    "nr": "20",
+    "plz": "67059"
+   }
+  ],
+  "url": null,
+  "note": ""
+ },
+ "Mülheim an der Ruhr": {
+  "tests": [
+   {
+    "street": "Schloßstraße",
+    "nr": "10",
+    "plz": "45468"
+   },
+   {
+    "street": "Ruhrstraße",
+    "nr": "10",
+    "plz": "45468"
+   }
+  ],
+  "url": "https://www.muelheim-ruhr.de/abfallkalender",
+  "note": ""
+ },
+ "Darmstadt": {
+  "tests": [
+   {
+    "street": "Rheinstraße",
+    "nr": "105",
+    "plz": "64295"
+   },
+   {
+    "street": "Rheinstraße",
+    "nr": "12",
+    "plz": "64283"
+   }
+  ],
+  "url": "https://ead.darmstadt.de/unser-angebot/privathaushalte/abfallkalender/",
+  "note": "Direkt aus dem eigenen Abfallkalender des EAD (ead.darmstadt.de) — nicht mehr über MyMüll. Fragt beim Verbinden nach dem Restabfall-Rhythmus (Deckel schwarz wöchentlich, orange 14-täglich, rot 4-wöchentlich). Abgeglichen mit der ICS-Datei vom EAD: 181 von 181 Terminen identisch.",
+  "rhythm": {
+   "bins": [
+    "Restabfall-Tonne"
+   ],
+   "test": "Rheinstraße 105, 64295",
+   "expect": "Drei Optionen nach Deckelfarbe: „Wöchentlich (Deckel schwarz)“ / „14-täglich (Deckel orange)“ / „4-wöchentlich (Deckel rot)“. Rot → Restabfall 16.10., 13.11., 11.12.; orange → 02.10., 16.10., 30.10."
+  }
+ },
+ "Solingen": {
+  "tests": [
+   {
+    "street": "Hauptstraße",
+    "nr": "10",
+    "plz": "42651"
+   },
+   {
+    "street": "Kölner Straße",
+    "nr": "10",
+    "plz": "42651"
+   }
+  ],
+  "url": "https://www.solingen.de/abfallkalender",
+  "note": ""
+ },
+ "Regensburg": {
+  "tests": [
+   {
+    "street": "Maximilianstraße",
+    "nr": "10",
+    "plz": "93047"
+   },
+   {
+    "street": "Neupfarrplatz",
+    "nr": "1",
+    "plz": "93047"
+   }
+  ],
+  "url": "https://www.regensburg.de/abfallkalender",
+  "note": ""
+ },
+ "Paderborn": {
+  "tests": [
+   {
+    "street": "Westernstraße",
+    "nr": "10",
+    "plz": "33098"
+   },
+   {
+    "street": "Am Abdinghof",
+    "nr": "11",
+    "plz": "33098"
+   }
+  ],
+  "url": "https://www.paderborn.de/microsite/asp/abfallentsorgung/abfuhrtermine_pb.php",
+  "note": "Offizieller Online-Abfallkalender der Stadt auf paderborn.de (ASP). Die Seite bindet das Web-Modul von MyMüll ein (service.mymuell.de/embed.js?m=asp) — nicht nur die App. Abgeglichen mit der ICS-Datei von dort: alle 32 Termine identisch.",
+  "expect": "Keine Frage. Westernstraße 10: Biotonne + Saison-BIO 22.09., Restabfall grau + rot + Wertstofftonne 29.09., Papiertonne 06.10. — genau wie die ICS-Datei der Stadt."
+ },
+ "Ingolstadt": {
+  "tests": [
+   {
+    "street": "Ludwigstraße",
+    "nr": "10",
+    "plz": "85049"
+   },
+   {
+    "street": "Rathausplatz",
+    "nr": "2",
+    "plz": "85049"
+   }
+  ],
+  "url": "https://www.in-kb.de/abfallkalender",
+  "note": ""
+ },
+ "Ulm": {
+  "tests": [
+   {
+    "street": "Olgastraße",
+    "nr": "10",
+    "plz": "89073"
+   },
+   {
+    "street": "Abteistraße",
+    "nr": "5",
+    "plz": "89077"
+   }
+  ],
+  "url": "https://www.ebu-ulm.de/abfall/abfuhrkalender.php",
+  "note": ""
+ },
+ "Reutlingen": {
+  "url": "https://www.tbr-reutlingen.de/de/Abfallwirtschaft/Muellabfuhr/Entsorgungskalender-Muellwecker",
+  "tests": [
+   {
+    "street": "Wilhelmstraße",
+    "nr": "10",
+    "plz": "72764"
+   },
+   {
+    "street": "Marktplatz",
+    "nr": "22",
+    "plz": "72764"
+   }
+  ],
+  "note": "Über den offiziellen Abfuhrkalender der TBR (AbfallPlus-Widget auf tbr-reutlingen.de). Fragt beim Verbinden nach dem Restmüll-Rhythmus.",
+  "rhythm": {
+   "bins": [
+    "Restmüll"
+   ],
+   "test": "Wilhelmstraße 10, 72764",
+   "expect": "„2-wöchentlich“ / „4-wöchentlich“. 4-wöchentlich → Restmüll 23.09., 21.10., 18.11."
+  }
+ },
+ "Recklinghausen": {
+  "tests": [
+   {
+    "street": "Breite Straße",
+    "nr": "10",
+    "plz": "45657"
+   },
+   {
+    "street": "Rathausplatz",
+    "nr": "3",
+    "plz": "45657"
+   }
+  ],
+  "url": null,
+  "note": ""
+ },
+ "Bergisch Gladbach": {
+  "tests": [
+   {
+    "street": "Hauptstraße",
+    "nr": "10",
+    "plz": "51465"
+   },
+   {
+    "street": "Konrad-Adenauer-Platz",
+    "nr": "1",
+    "plz": "51465"
+   }
+  ],
+  "url": null,
+  "note": ""
+ },
+ "Salzgitter": {
+  "tests": [
+   {
+    "street": "Joachim-Campe-Straße",
+    "nr": "6",
+    "plz": "38226"
+   },
+   {
+    "street": "Berliner Straße",
+    "nr": "10",
+    "plz": "38226"
+   }
+  ],
+  "url": "https://www.salzgitter.de/leben/srb/abfallkalender-online.php",
+  "note": "Offiziell über die MyMüll-App (der Online-Abfallkalender der Stadt ist das MyMüll-Webmodul)."
+ },
+ "Cottbus": {
+  "tests": [
+   {
+    "street": "Neumarkt",
+    "nr": "5",
+    "plz": "03046"
+   },
+   {
+    "street": "Karl-Marx-Straße",
+    "nr": "10",
+    "plz": "03044"
+   }
+  ],
+  "url": "https://www.cottbus.de/abfallkalender",
+  "note": ""
+ },
+ "Gütersloh": {
+  "tests": [
+   {
+    "street": "Berliner Straße",
+    "nr": "70",
+    "plz": "33330"
+   },
+   {
+    "street": "Kökerstraße",
+    "nr": "10",
+    "plz": "33330"
+   }
+  ],
+  "url": null,
+  "note": ""
+ },
+ "Bonn": {
+  "tests": [
+   {
+    "street": "Kaiserstraße",
+    "nr": "10",
+    "plz": "53113"
+   },
+   {
+    "street": "Adenauerallee",
+    "nr": "100",
+    "plz": "53113"
+   }
+  ],
+  "url": "https://www5.bonn.de/WasteManagementBonnOrange/WasteManagementServlet?SubmitAction=wasteDisposalServices&InFrameMode=TRUE",
+  "note": ""
+ },
+ "Augsburg": {
+  "tests": [
+   {
+    "street": "Frölichstraße",
+    "nr": "10",
+    "plz": "86150"
+   },
+   {
+    "street": "Maximilianstraße",
+    "nr": "10",
+    "plz": "86150"
+   }
+  ],
+  "url": "https://abfall.augsburg.de/WasteManagementAugsburg/WasteManagementServlet?SubmitAction=wasteDisposalServices&InFrameMode=TRUE",
+  "note": "Die Jahresübersicht beginnt am Tag der Abfrage — frühere Termine des Jahres fehlen."
+ },
+ "Würzburg": {
+  "tests": [
+   {
+    "street": "Abtsleitenweg",
+    "nr": "5",
+    "plz": "97074"
+   },
+   {
+    "street": "Frankenstraße",
+    "nr": "199",
+    "plz": "97078"
+   }
+  ],
+  "url": "https://www.wuerzburg.de/themen/umwelt-klima/abfall-und-stadtreinigung/abfallkalender",
+  "note": "Offene Daten der Stadt (DL-DE-BY-2.0); der Export reicht von heute bis 31.12. — im Dezember prüfen, dass 2027 folgt."
+ },
+ "Leverkusen": {
+  "tests": [
+   {
+    "street": "Ölbachstraße",
+    "nr": "5",
+    "plz": "51381"
+   },
+   {
+    "street": "Bergische Landstraße",
+    "nr": "95",
+    "plz": "51375"
+   }
+  ],
+  "url": "https://www.avea.de/privathaushalte/abfallentsorgung-leverkusen/abfuhrkalender/",
+  "note": "Zwei Restmüll-Zeilen (2- und 4-wöchentlich) — die Familie erkennt ihre eigene am Namen."
+ },
+ "Oldenburg": {
+  "tests": [
+   {
+    "street": "Achternstraße",
+    "nr": "10",
+    "plz": "26122"
+   },
+   {
+    "street": "Donnerschweer Straße",
+    "nr": "350",
+    "plz": "26123"
+   }
+  ],
+  "url": "https://www.oldenburg.de/startseite/stadtraum/umwelt/abfall-entsorgung/awb-von-a-bis-z/abfuhrkalender.html",
+  "note": "Die Stadt sagt nie „nicht gefunden“ — eine falsche Hausnummer ergibt einen leeren Kalender, und die App fragt die Nummer neu ab."
+ },
+ "Freiburg im Breisgau": {
+  "tests": [
+   {
+    "street": "Kaiser-Joseph-Straße",
+    "nr": "200",
+    "plz": "79098"
+   },
+   {
+    "street": "Habsburgerstraße",
+    "nr": "100",
+    "plz": "79104"
+   }
+  ],
+  "note": "Fragt beim Verbinden nach dem Restmüll-Rhythmus — nur die Optionen, die die Adresse wirklich hat.",
+  "rhythm": {
+   "bins": [
+    "Restmüll"
+   ],
+   "test": "Kaiser-Joseph-Straße 200, 79098",
+   "expect": "„Wöchentlich“ / „14-täglich“ / „Vierwöchentlich“."
+  }
+ },
+ "Hagen": {
+  "tests": [
+   {
+    "street": "Elberfelder Straße",
+    "nr": "10",
+    "plz": "58095"
+   },
+   {
+    "street": "Bergstraße",
+    "nr": "20",
+    "plz": "58095"
+   }
+  ],
+  "note": "Fragt beim Verbinden nach dem Restmüll-Rhythmus — nur die Optionen, die die Adresse wirklich hat.",
+  "rhythm": {
+   "bins": [
+    "Restmüll"
+   ],
+   "test": "Elberfelder Straße 10, 58095",
+   "expect": "„Wöchentlich“ / „Rote Woche · alle 2 Wochen“ / „Grüne Woche · alle 2 Wochen“."
+  }
+ },
+ "Pforzheim": {
+  "tests": [
+   {
+    "street": "Bahnhofstraße",
+    "nr": "10",
+    "plz": "75172"
+   },
+   {
+    "street": "Zerrennerstraße",
+    "nr": "20",
+    "plz": "75172"
+   }
+  ],
+  "note": "Fragt beim Verbinden nach dem Restmüll-Rhythmus — nur die Optionen, die die Adresse wirklich hat.",
+  "rhythm": {
+   "bins": [
+    "Restmüll"
+   ],
+   "test": "Bahnhofstraße 10, 75172",
+   "expect": "„Wöchentlich“ / „14-täglich“ / „Großmüllbehälter 1100 L · alle 2 Wochen“."
+  }
+ },
+ "Saarbrücken": {
+  "tests": [
+   {
+    "street": "Mainzer Straße",
+    "nr": "2",
+    "plz": "66111"
+   },
+   {
+    "street": "Bahnhofstraße",
+    "nr": "31",
+    "plz": "66111"
+   }
+  ],
+  "note": "Fragt beim Verbinden nach dem Restmüll-Rhythmus — nur die Optionen, die die Adresse wirklich hat.",
+  "rhythm": {
+   "bins": [
+    "Restmüll"
+   ],
+   "test": "Mainzer Straße 2, 66111",
+   "expect": "„2-wöchentlich“ / „4-wöchentlich“ — kein wöchentlich, weil die Adresse keins hat."
+  }
+ },
+ "Göttingen": {
+  "url": "https://www.geb-goettingen.de/abfall/abfallwirtschaft-in-der-stadt-goettingen/abfuhrkalender/",
+  "tests": [
+   {
+    "street": "Weender Landstraße",
+    "nr": "50",
+    "plz": "37073"
+   },
+   {
+    "street": "Albrechtstraße",
+    "nr": "1",
+    "plz": "37085"
+   }
+  ],
+  "note": ""
+ },
+ "Trier": {
+  "tests": [
+   {
+    "street": "Saarstraße",
+    "nr": "10",
+    "plz": "54290"
+   },
+   {
+    "street": "Adelheidstraße",
+    "nr": "5",
+    "plz": "54290"
+   }
+  ],
+  "url": "https://www.art-trier.de/abfuhrtermin",
+  "note": ""
+ },
+ "Wolfsburg": {
+  "tests": [
+   {
+    "street": "Kleiststraße",
+    "nr": "5",
+    "plz": "38440"
+   },
+   {
+    "street": "Porschestraße",
+    "nr": "1",
+    "plz": "38440"
+   }
+  ],
+  "url": "https://abfuhrtermine.waswob.de/",
+  "note": ""
+ },
+ "Braunschweig": {
+  "tests": [
+   {
+    "street": "Kastanienallee",
+    "nr": "10",
+    "plz": "38102"
+   },
+   {
+    "street": "Bohlweg",
+    "nr": "5",
+    "plz": "38100"
+   }
+  ],
+  "url": "https://www.alba-bs.de/service/abfuhrtermine.html",
+  "note": ""
+ },
+ "Wiesbaden": {
+  "tests": [
+   {
+    "street": "Rheinstraße",
+    "nr": "1",
+    "plz": "65185"
+   },
+   {
+    "street": "Hauptstraße",
+    "nr": "10",
+    "plz": "65207"
+   }
+  ],
+  "url": "https://www.elw.de/abfallkalender",
+  "note": ""
+ },
+ "Fürth": {
+  "tests": [
+   {
+    "street": "Königstraße",
+    "nr": "3",
+    "plz": "90762"
+   },
+   {
+    "street": "Schwabacher Straße",
+    "nr": "50",
+    "plz": "90762"
+   }
+  ],
+  "url": "https://abfallwirtschaft.fuerth.eu/",
+  "note": ""
+ },
+ "Heilbronn": {
+  "tests": [
+   {
+    "street": "Allee",
+    "nr": "5",
+    "plz": "74072"
+   },
+   {
+    "street": "Arndtstraße",
+    "nr": "10",
+    "plz": "74074"
+   }
+  ],
+  "url": "https://abfallwirtschaft.heilbronn.de/abfuhrtermine",
+  "note": ""
+ },
+ "Gelsenkirchen": {
+  "tests": [
+   {
+    "street": "Ackerstraße",
+    "nr": "10",
+    "plz": "45881"
+   },
+   {
+    "street": "Horster Straße",
+    "nr": "100",
+    "plz": "45897"
+   }
+  ],
+  "url": "https://www.gelsendienste.de/privathaushalte/abfallkalender/",
+  "note": ""
+ },
+ "Bottrop": {
+  "tests": [
+   {
+    "street": "Horster Straße",
+    "nr": "228",
+    "plz": "46238"
+   },
+   {
+    "street": "Kirchhellener Straße",
+    "nr": "100",
+    "plz": "46236"
+   }
+  ],
+  "url": "https://www.best-bottrop.de/abfuhrtermine-0910213539.html",
+  "note": ""
+ },
+ "Moers": {
+  "tests": [
+   {
+    "street": "Homberger Straße",
+    "nr": "70",
+    "plz": "47441"
+   },
+   {
+    "street": "Uerdinger Straße",
+    "nr": "10",
+    "plz": "47441"
+   }
+  ],
+  "url": "https://abfallkalender.enni.de/",
+  "note": ""
+ },
+ "Bochum": {
+  "tests": [
+   {
+    "street": "Königsallee",
+    "nr": "16",
+    "plz": "44789"
+   },
+   {
+    "street": "Hattinger Straße",
+    "nr": "200",
+    "plz": "44795"
+   }
+  ],
+  "url": "https://www.usb-bochum.de/info/leerungstermine/",
+  "note": ""
+ },
+ "Hamm": {
+  "tests": [
+   {
+    "street": "Oststraße",
+    "nr": "3",
+    "plz": "59065"
+   },
+   {
+    "street": "Werler Straße",
+    "nr": "100",
+    "plz": "59063"
+   }
+  ],
+  "url": "https://www.hamm.de/ash/abfuhrkalender",
+  "note": ""
+ },
+ "Remscheid": {
+  "tests": [
+   {
+    "street": "Alleestraße",
+    "nr": "50",
+    "plz": "42853"
+   },
+   {
+    "street": "Hastener Straße",
+    "nr": "10",
+    "plz": "42855"
+   }
+  ],
+  "url": "https://www.tbr-info.de/abfuhrkalender.html",
+  "note": ""
+ },
+ "Münster": {
+  "tests": [
+   {
+    "street": "Hammer Straße",
+    "nr": "72",
+    "plz": "48153"
+   },
+   {
+    "street": "Aakamp",
+    "nr": "5",
+    "plz": "48147"
+   }
+  ],
+  "url": "https://awm.stadt-muenster.de/verwertung-entsorgung/online-entsorgungskalender",
+  "note": ""
+ },
+ "Mainz": {
+  "tests": [
+   {
+    "street": "Kaiserstraße",
+    "nr": "10",
+    "plz": "55116"
+   },
+   {
+    "street": "Hauptstraße",
+    "nr": "9",
+    "plz": "55120"
+   }
+  ],
+  "url": "https://mz.kaw-mainz-bingen.de/wir-kommen-zu-ihnen/abfallkalender",
+  "note": ""
+ },
+ "Halle (Saale)": {
+  "tests": [
+   {
+    "street": "Adam-Kuckhoff-Straße",
+    "nr": "11",
+    "plz": "06108"
+   },
+   {
+    "street": "Adolfstraße",
+    "nr": "4",
+    "plz": "06114"
+   }
+  ],
+  "url": "https://hws-halle.de/produkte-dienstleistungen/entsorgung/entsorgungskalender",
+  "note": ""
+ },
+ "Jena": {
+  "tests": [
+   {
+    "street": "Magdelstieg",
+    "nr": "103",
+    "plz": "07745"
+   },
+   {
+    "street": "Ahornweg",
+    "nr": "1",
+    "plz": "07751"
+   }
+  ],
+  "url": "https://ksj.jena.de/entsorgungstermine",
+  "note": ""
+ },
+ "Karlsruhe": {
+  "tests": [
+   {
+    "street": "Rheinstraße",
+    "nr": "20",
+    "plz": "76185"
+   },
+   {
+    "street": "Moltkestraße",
+    "nr": "5",
+    "plz": "76133"
+   }
+  ],
+  "url": "https://tsk.karlsruhe.de/abfuhrkalender",
+  "note": ""
+ },
+ "Chemnitz": {
+  "url": "https://www.asr-chemnitz.de/kundenportal/entsorgungskalender",
+  "tests": [
+   {
+    "street": "Reichenhainer Straße",
+    "nr": "1",
+    "plz": "09111"
+   },
+   {
+    "street": "Zschopauer Straße",
+    "nr": "28",
+    "plz": "09126"
+   }
+  ],
+  "note": ""
+ },
+ "Erfurt": {
+  "url": "https://abfallkalender.stadtwerke-erfurt.de/",
+  "tests": [
+   {
+    "street": "Juri-Gagarin-Ring",
+    "nr": "1",
+    "plz": "99084"
+   },
+   {
+    "street": "Magdeburger Allee",
+    "nr": "50",
+    "plz": "99086"
+   }
+  ],
+  "note": ""
+ },
+ "Magdeburg": {
+  "url": "https://www.magdeburg.de/Start/B%C3%BCrger-Stadt/System/Abfuhrkalender/",
+  "tests": [
+   {
+    "street": "Abendstraße",
+    "nr": "10",
+    "plz": "39124"
+   },
+   {
+    "street": "Breiter Weg",
+    "nr": "1",
+    "plz": "39104"
+   }
+  ],
+  "note": ""
+ },
+ "Potsdam": {
+  "url": "https://www.swp-potsdam.de/de/entsorgung/abfallkalender/",
+  "tests": [
+   {
+    "street": "Zeppelinstraße",
+    "nr": "11",
+    "plz": "14471"
+   },
+   {
+    "street": "Birkenweg",
+    "nr": "5",
+    "plz": "14476"
+   }
+  ],
+  "note": ""
+ },
+ "Osnabrück": {
+  "url": "https://nachhaltig.osnabrueck.de/de/abfall/muellabfuhr/muellabfuhr-digital/online-abfuhrkalender/",
+  "tests": [
+   {
+    "street": "Lotter Straße",
+    "nr": "10",
+    "plz": "49078"
+   },
+   {
+    "street": "Rheiner Landstraße",
+    "nr": "211",
+    "plz": "49078"
+   }
+  ],
+  "note": ""
+ },
+ "Erlangen": {
+  "url": "https://erlangen.mein-abfallkalender.online/",
+  "tests": [
+   {
+    "street": "Adlerstraße",
+    "nr": "5",
+    "plz": "91054"
+   },
+   {
+    "street": "Hauptstraße",
+    "nr": "5",
+    "plz": "91054"
+   }
+  ],
+  "note": ""
+ },
+ "Rostock": {
+  "url": "https://www.stadtentsorgung-rostock.de/service-center/abfuhrkalender",
+  "tests": [
+   {
+    "street": "Lange Straße",
+    "nr": "10",
+    "plz": "18055"
+   },
+   {
+    "street": "Kröpeliner Straße",
+    "nr": "5",
+    "plz": "18055"
+   }
+  ],
+  "note": "Das Formular der Stadtentsorgung verlangt das Häkchen „Ich bin als Eigentümer, Mieter oder Beauftragter zur Abfrage berechtigt“. Aporah setzt es beim Verbinden der eigenen Haushaltsadresse und liest danach nur die Abfuhrtage (keine Behälternummern).",
+  "decision": "Rostock setzt beim Verbinden das Häkchen „zur Abfrage berechtigt“ im Namen des Haushalts. Wenn du das nicht willst: vor dem Deploy sagen — dann baue ich stattdessen eine Bestätigung in der App (4 Sprachen).",
+  "expect": "Keine Frage. Gelbe und Blaue Tonne Do 24.09., 08.10.; Schwarze Hausmülltonne Di 29.09., 13.10. Ohne Hausnummer oder mit 9999 → fragt nach der Nummer."
+ },
+ "Mönchengladbach": {
+  "url": "https://mags.de/online-abfuhrkalender/",
+  "tests": [
+   {
+    "street": "Hindenburgstraße",
+    "nr": "10",
+    "plz": "41061"
+   },
+   {
+    "street": "Bismarckstraße",
+    "nr": "20",
+    "plz": "41061"
+   }
+  ],
+  "note": "Fragt beim Verbinden nach dem Restmüll-Rhythmus (wöchentlich, 2- oder 4-wöchentlich), wie mags selbst.",
+  "rhythm": {
+   "bins": [
+    "Restmüll"
+   ],
+   "test": "Hindenburgstraße 10, 41061",
+   "expect": "„Wöchentlich“ / „2-wöchentlich“ / „4-wöchentlich“. 4-wöchentlich → Restmüll 06.10., 03.11.; die übrigen Tonnen unverändert."
+  }
+ },
+ "Neuss": {
+  "url": "https://neuss.mein-abfallkalender.online/",
+  "tests": [
+   {
+    "street": "Abteiweg",
+    "nr": "1",
+    "plz": "41469"
+   },
+   {
+    "street": "Krefelder Straße",
+    "nr": "10",
+    "plz": "41460"
+   }
+  ],
+  "note": "Fragt beim Verbinden nach dem Restmüll-Rhythmus — nur die Optionen, die die Adresse wirklich hat.",
+  "rhythm": {
+   "bins": [
+    "Restmüll"
+   ],
+   "test": "Abteiweg 1, 41469",
+   "expect": "„Grau · wöchentlich“ / „Pink · alle 2 Wochen“."
+  }
+ },
+ "Siegen": {
+  "url": "https://www.siegen.de/leben-in-siegen/buergerservice/abfallentsorgung/abfallkalender",
+  "tests": [
+   {
+    "street": "Koblenzer Straße",
+    "nr": "10",
+    "plz": "57072"
+   },
+   {
+    "street": "Sandstraße",
+    "nr": "20",
+    "plz": "57072"
+   }
+  ],
+  "note": "Fragt beim Verbinden nach dem Restmüll-Rhythmus — nur die Optionen, die die Adresse wirklich hat.",
+  "rhythm": {
+   "bins": [
+    "Restmüll"
+   ],
+   "test": "Koblenzer Straße 10, 57072",
+   "expect": "„2-wöchentlich“ / „4-wöchentlich“. 4-wöchentlich → Restmüll 13.10., 10.11."
+  }
+ },
+ "Hildesheim": {
+  "url": "https://www.zah-hildesheim.de/termine/#Abfuhrplan",
+  "tests": [
+   {
+    "street": "Almsstraße",
+    "nr": "1",
+    "plz": "31134"
+   },
+   {
+    "street": "Bahnhofsallee",
+    "nr": "20",
+    "plz": "31134"
+   }
+  ],
+  "note": "Fragt beim Verbinden nach dem Restabfall-Rhythmus (14-täglich oder vierwöchentlich). Der ganze Landkreis ist mit abgedeckt — alle 20 Gemeinden.",
+  "rhythm": {
+   "bins": [
+    "Restabfall"
+   ],
+   "test": "Almsstraße 1, 31134",
+   "expect": "„14-täglich“ / „Vierwöchentlich“. Vierwöchentlich → Restabfall 08.10., 05.11.; 14-täglich zusätzlich 24.09., 22.10."
+  }
+ },
+ "Heidelberg": {
+  "url": "https://abfallkalender.heidelberg.de/",
+  "tests": [
+   {
+    "street": "Bergheimer Straße",
+    "nr": "10",
+    "plz": "69115"
+   },
+   {
+    "street": "Hauptstraße",
+    "nr": "50",
+    "plz": "69117"
+   }
+  ],
+  "note": "Fragt beim Verbinden für drei Tonnen nach dem Rhythmus — Restabfall, Altpapier, Gelbe Tonne, je wöchentlich oder 14-täglich. Bio wird nicht gefragt (immer wöchentlich); wer keine Biotonne hat, sieht sie trotzdem.",
+  "rhythm": {
+   "bins": [
+    "Restabfall",
+    "Altpapier",
+    "Gelbe Tonne / Gelber Sack"
+   ],
+   "test": "Bergheimer Straße 10, 69115",
+   "expect": "Drei Fragen, je „Wöchentlich“ / „14-täglich“. Alle drei auf 14-täglich: Restabfall und Gelbe Tonne mittwochs in geraden Wochen (30.09., 14.10.), Altpapier mittwochs in ungeraden (23.09., 07.10.), Bioabfall jeden Mittwoch."
+  }
+ },
+ "Bremerhaven": {
+  "url": "https://kalender.beg-logistics.de",
+  "tests": [
+   {
+    "street": "Bürgermeister-Smidt-Straße",
+    "nr": "10",
+    "plz": "27568"
+   },
+   {
+    "street": "Hafenstraße",
+    "nr": "100",
+    "plz": "27576"
+   }
+  ],
+  "note": "Fragt beim Verbinden nach dem Restmüll-Rhythmus. Die BEG veröffentlicht maschinenlesbar nur die nächsten 30 Tage — der Kalender zeigt nie weiter als einen Monat voraus.",
+  "rhythm": {
+   "bins": [
+    "Restmüll"
+   ],
+   "test": "Bürgermeister-Smidt-Straße 10, 27568",
+   "expect": "„Wöchentlich“ / „14-täglich“. Nur ein Monat sichtbar; 14-täglich → Restmüll 29.09., 13.10."
+  }
+ },
+ "Koblenz": {
+  "url": "https://servicebetrieb.koblenz.de/abfallwirtschaft/entsorgungstermine-digital/",
+  "todo": {
+   "who": "nicht machbar",
+   "text": "Kein offizieller digitaler Kalender: Rest-/Biotonne gibt es nur telefonisch (0261 129-4545), die Feiertagsverlegungen nur als Bild, und für 2026 sind nicht einmal die Wertstoff-ICS mehr verlinkt (nur 2025). Wir bieten Koblenz nicht an — „Anfragen“ bleibt, und sobald die Stadt etwas veröffentlicht, ist es ein kleiner Adapter."
+  }
+ }
+}
