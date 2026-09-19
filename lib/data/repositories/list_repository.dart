@@ -103,7 +103,7 @@ class ListRepository {
   /// still says what to buy — so they load after the articles are on screen
   /// (see [ListNotifier.load]) rather than in front of them.
   Future<ListSnapshot> fetchAll() async {
-    final listRows = await _db.from('lists').select(_listColumns).order('position').order('created_at');
+    final listRows = await _db.from('lists').select(_listColumns).order('position', ascending: true).order('created_at', ascending: true);
     if (listRows.isEmpty) return ListSnapshot.empty;
 
     final ids = [for (final r in listRows) r['id'] as String];
@@ -120,8 +120,11 @@ class ListRepository {
           .from('list_items')
           .select(_itemColumns)
           .inFilter('list_id', ids)
-          .order('position')
-          .order('created_at'),
+          // Newest article first — `addItem` files it one below the lowest —
+          // and on a tie, the one written last: two phones adding at the same
+          // moment both pick the same position.
+          .order('position', ascending: true)
+          .order('created_at', ascending: false),
       // Own grants only — `guest_access_select` also returns the guests *on* my
       // household's lists, which are somebody else's grants and would wrongly
       // mark my own lists as foreign.
@@ -202,7 +205,7 @@ class ListRepository {
         .from('list_item_attachments')
         .select(_attachmentColumns)
         .inFilter('item_id', ids)
-        .order('created_at');
+        .order('created_at', ascending: true);
 
     final byItem = <String, List<ItemAttachment>>{};
     for (final r in rows) {

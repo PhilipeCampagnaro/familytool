@@ -49,14 +49,14 @@ class CalendarConnectionRepository {
   /// the caller's household, and the app must not second-guess them.
   Future<List<CalendarConnection>> fetchAll() async {
     final results = await Future.wait([
-      _db.from('calendar_connections').select(_columns).order('position'),
+      _db.from('calendar_connections').select(_columns).order('position', ascending: true),
       _db
           .from('family_feeds')
           .select(
             'display_name, created_by, position, owner_member_id, owner_label, '
             'public_feeds!inner (id, kind, feed_key, name, status, status_detail, synced_at)',
           )
-          .order('position'),
+          .order('position', ascending: true),
     ]);
 
     return [

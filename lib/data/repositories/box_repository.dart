@@ -59,7 +59,7 @@ class BoxRepository {
   /// the three reads after them know nothing about each other, so they go
   /// together rather than one behind the next.
   Future<BoxSnapshot> fetchAll() async {
-    final boxRows = await _db.from('boxes').select(_boxColumns).order('position').order('created_at');
+    final boxRows = await _db.from('boxes').select(_boxColumns).order('position', ascending: true).order('created_at', ascending: true);
     if (boxRows.isEmpty) return BoxSnapshot.empty;
 
     final ids = [for (final r in boxRows) r['id'] as String];
@@ -70,8 +70,8 @@ class BoxRepository {
           .from('box_items')
           .select(_itemColumns)
           .inFilter('box_id', ids)
-          .order('position')
-          .order('created_at'),
+          .order('position', ascending: true)
+          .order('created_at', ascending: true),
       // Own grants only — `guest_access_select` also returns the guests *on* my
       // household's boxes, which are somebody else's grants.
       _db.from('guest_access').select('resource_id').eq('resource_kind', 'box').eq('user_id', _uid),

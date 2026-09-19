@@ -562,7 +562,7 @@ class HouseholdNotifier extends StateNotifier<FamilyState> {
           .select('id, email, name, role, expires_at')
           .eq('family_id', familyId)
           .eq('status', 'pending')
-          .order('created_at');
+          .order('created_at', ascending: true);
       return [
         for (final r in rows)
           PendingInvite(

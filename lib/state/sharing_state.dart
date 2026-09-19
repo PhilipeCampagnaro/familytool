@@ -141,7 +141,7 @@ class SharingNotifier extends StateNotifier<SharingState> {
           .eq('resource_kind', _target.kind.wire)
           .eq('resource_id', _target.id)
           .isFilter('revoked_at', null)
-          .order('created_at');
+          .order('created_at', ascending: true);
 
       final guestRows = await _db
           .from('guest_access')
