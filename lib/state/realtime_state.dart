@@ -131,7 +131,15 @@ class FamilyChannel {
   /// a resume and the rejoin it causes cost one read, not two.
   void catchUp() => _queue(FamilyChange.catchUp);
 
-  void _receive(Map<String, dynamic> payload) {
+  void _receive(Map<String, dynamic> message) {
+    // **The callback is handed the whole envelope** — `{type, event, payload}` —
+    // not the payload inside it, whatever the parameter's name in
+    // `onBroadcast` suggests. Reading `table` off the top level found nothing,
+    // and for the channel's first week every message that reached a phone was
+    // dropped here without a trace. The fallback is for a client version that
+    // one day unwraps it.
+    final inner = message['payload'];
+    final payload = inner is Map ? Map<String, dynamic>.from(inner) : message;
     final table = payload['table'];
     if (table is! String || table.isEmpty) return;
 
