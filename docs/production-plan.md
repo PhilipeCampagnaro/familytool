@@ -704,4 +704,69 @@ and the tidiest: a calendar year, but keyed on a uuid that demonstrably survives
       then fell the same way, the second of them from nothing but a household's own webcal link.
 - [ ] Two abfall.io keys are dead (Osterholz, Kitzingen) and stay listed as dead until the v3
       family replaces them.
+- [ ] **Every town gets its official calendar page, and "Anfragen" goes** (started 2026-09-19).
+      The register is Destatis' Gemeindeverzeichnis (401 Kreise, 10,940 Gemeinden, 30.06.2026) in
+      [tool/abfall_authorities/](../tool/abfall_authorities/). Agents research, per county, who
+      publishes the calendar and where; a script then fetches every URL. NRW pilot first (153
+      unserved towns), then the other fifteen Länder. After that the app shows the in-app
+      page browser and the upload for every unserved town, and `calendar-link` takes a bin file
+      from any town.
+      **Research done 2026-09-19:** all 7,872 unserved towns (39.3M people) have an official page
+      except three, and 423 of the 426 distinct URLs pass the fetch check. 82% of towns offer iCal,
+      7.6% are PDF only (mostly TH, RP and SN). Tracked in the
+      [Abfuhrkalender Atlas](https://claude.ai/artifact/DbMc4mfPLtfuVkw3HoCnUz).
+      A recount with the census's district names stripped ("Altenbeken-Buke") found 104 of those
+      towns already recognised, Kreis Paderborn among them (MyMüll, upload). A PDF-only town gets
+      its page and the upload like any other; the PDF parser is built but parked (see step 2).
+      The bigger lever turned out to be live coverage, not the upload: most counties run a vendor
+      the registry already reads. Jumomind does not count, because robots.txt disallows every
+      `*.jumomind.com` host.
+  - [x] **Step 1: provider rows for counties on vendors we already read** (2026-09-19). 43 rows
+        (22 Athos, 18 abfall.io/AbfallPlus, 1 AWIDO, 2 Müllmax), each config pulled from the
+        authority's own page by `find_configs.py`, read by `probe_candidates.ts`, gated by
+        `gate_candidates.py` (robots.txt for the adapter's exact path, terms) and then resolved end
+        to end by `probe.ts`, which now carries a test address for each. About 1,400 atlas towns
+        and 7.7M people went live; the census stands at 241 providers and 6,416 towns.
+        Rhein-Hunsrück moved from upload (`jumomind-rhe`, removed) to its own Athos portal.
+        **Deploy the Edge Functions for this to reach the app.**
+  - [ ] Held back from step 1, each for a reason written beside the rows in
+        `abfall_providers.ts`: container sizes or rhythms printed side by side with no choice
+        (Zollernalb, Traunstein, Nordfriesland, Tuttlingen, Oberallgäu, Vorpommern-Rügen, like
+        Göttingen), Neuwied's county-wide Schadstoffmobil stops, two Athos hosts with a broken
+        certificate chain (Donau-Wald, Main-Spessart), Böblingen's publisher answering with no
+        towns, six Athos tenants without a working test address yet, and EVS (the whole Saarland)
+        and the c-trace county services, which need one row per town. AbfallPlus streets split
+        into number ranges ("Hauptstraße 1+3, 2-26") do not resolve yet.
+  - [ ] Advantic's Abfallmodul (5 counties plus the Herford towns): the one new vendor file.
+  - [x] **Step 2: the page and the upload replace "Anfragen"** for every other town (2026-09-19).
+        `abfall/town_pages.ts` (485 pages, 6,355 keys) answers last in `resolveAddress`;
+        "Anfragen", its `request` action and the client code are gone. Upload rows and atlas towns
+        are matched by `townKey` — "Buch am Erlbach" no longer reaches Altötting's MyMüll page, and
+        now resolves live to Landshut's abfall.io. The details step's instructions follow the
+        page's format. **Deploy `abfall-lookup` and `calendar-link` (for `isUploadOnlyTown`).**
+  - [ ] 134 towns share a name with a town elsewhere in their Land that has a different page, so
+        they get the upload without a page; the register's postcode could tell them apart.
+  - [ ] AbfallPlus towns split into districts (Mülheim-Kärlich: Kärlich, Mülheim, …) find no
+        street, because the adapter searches the city and not its districts.
+  - [ ] **PDF plans — parked 2026-09-19. Built, not deployed, and not to be invested in for now.**
+        The client is done behind `pdfUploadAvailable = false`: the page browser keeps the PDF,
+        a base64 upload, an 8 MB cap and a Bezirk step. The parser is `_shared/abfall/pdf/` plus
+        `calendar-link`'s `body.pdf` branch. The harness in `tool/abfall_pdf/` fails on any wrong
+        date. The bar is 0 wrong Rest/Bio/Papier/Gelb dates wherever the parser answers;
+        everything else is refused with a reason.
+        - **Pilot:** 12 PDFs, each labelled twice from images. The labellers agreed on 369 of
+          373 dates. The parser read 4 of the 12 with **0 wrong dates** and refused 8. Across one
+          calendar per publisher it reads 12 of 65. Refusals: colour-only legend 17, not a
+          calendar or an unknown layout 11, unsupported layout 8, separate tours per bin 6, month
+          not fully readable 6, weekday mismatch 4, no household bins 1.
+        - **Left before `pdfUploadAvailable` is flipped:** colour legends (the largest refusal
+          group) and a labelled set of about 40 or more PDFs with 0 wrong dates.
+        - **Open UX point:** calendars that run separate tours per bin come out as up to 16
+          combined choices ("Restmüll 1 · Papier 2 · Gelber Sack 1"). One question per bin
+          would read better, but the contract has a single `choice`.
+        - **Why parked:** PDF-only is about 7% of unserved atlas towns, mostly small ones, and
+          they still get their official page. Every other file town already has iCal. Coverage,
+          plus layouts that change every year, doesn't justify the spend yet.
+        - **Revisit if** households in PDF-only towns ask for it, or a major publisher turns out
+          to be PDF-only.
 

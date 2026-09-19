@@ -1,0 +1,21 @@
+{
+  "id": "14b6545e582a",
+  "labeller": "b",
+  "calendar": true,
+  "year": 2026,
+  "covers": "2026-01-01..2026-12-31",
+  "district": "Tour A + Tour 1",
+  "codes": ["A", "1"],
+  "legend": {"grey box (Restmüll-Touren A-D)": "rest", "brown box (Biomüll-Touren A-D)": "bio", "yellow box (Gelber-Sack-Touren 1+2)": "gelb", "blue box (Papier-Touren 1+2)": "papier", "red 'G'/'G (RH)' (Giftmobil)": "schadstoff", "red 'Sperrmüll 1/2'": "sperr"},
+  "window": ["2026-01", "2026-02", "2026-03", "2026-09"],
+  "bins": {
+    "rest": ["2026-01-12", "2026-01-26", "2026-02-09", "2026-02-23", "2026-03-09", "2026-03-23", "2026-09-07", "2026-09-21"],
+    "bio": ["2026-01-14", "2026-01-28", "2026-02-11", "2026-02-25", "2026-03-11", "2026-03-25", "2026-09-09", "2026-09-23"],
+    "papier": ["2026-01-08", "2026-01-15", "2026-01-22", "2026-01-29", "2026-02-05", "2026-02-12", "2026-02-19", "2026-02-26", "2026-03-05", "2026-03-12", "2026-03-19", "2026-03-26", "2026-09-03", "2026-09-10", "2026-09-17", "2026-09-24"],
+    "gelb": ["2026-01-14", "2026-01-28", "2026-02-11", "2026-02-25", "2026-03-11", "2026-03-25", "2026-09-09", "2026-09-23"],
+    "sperr": ["2026-03-07", "2026-09-26"],
+    "schadstoff": ["2026-01-22", "2026-02-12", "2026-03-12", "2026-09-05", "2026-09-17"]
+  },
+  "unsure": [],
+  "notes": "Two independent district systems: Restmüll/Biomüll use letters A-D (a street list on page 4 assigns each street one letter per bin, e.g. 'B B 1 1'), Gelber Sack/Papier use numbers 1-2 (Tour 1/2). Took the first of each: 'A' and '1'. Restmüll and Biomüll for a given letter are each collected every 2 weeks; the printed grouping always shows Biomüll/Gelber-Sack-Tour-1 as 'AB' plus a separate '1' box on the same Wednesday, and Gelber Sack Tour 1 only happens on that Wednesday once every 4 weeks (monthly), while Papier Tour 1 is printed on every Thursday of the year (weekly) - both read exactly as printed, not smoothed to a more usual-looking schedule. Sperrmüll and the Giftmobil ('G'/'G (RH)') are not tour-specific: Sperrmüll's own 'Tour 1'/'Tour 2' labelling (stated on page 3 to match the Gelber-Sack-Tour street list) lines up with the chosen '1', and its two 2026 dates (07.03, 26.09) matched exactly what the grid showed; Giftmobil serves the whole Gemeinde at two stops each date it runs (once a month, plus one extra Rathaus-only Saturday in the window, 2026-09-05, marked 'G (RH)'), so both were counted as schadstoff regardless of district. Aktenvernichtung, Laubsammlung and Straßenreinigung ('S') are printed but are not in the labelled bin set, so they are omitted; no glas or gruen (Grünschnitt) pickups are printed at all in this calendar."
+}

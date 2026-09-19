@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -6,6 +7,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../data/repositories/calendar_connection_repository.dart';
 import '../l10n/l10n.dart';
 import '../models/calendar_connection.dart';
+import '../models/picked_file.dart';
+import '../services/calendar_page_browser.dart';
+import '../services/media_picker.dart';
 import 'calendar_connections_state.dart';
 import 'family_state.dart';
 
@@ -70,9 +74,14 @@ class LocalCalendars {
   /// Whether the waste vendor asks this household anything before its calendar
   /// can be connected: which house on its list, how often a bin is emptied.
   /// Those are answered on their own, before the calendars are shown.
+  ///
+  /// A town that hands its calendar out as a file asks for the file, the same
+  /// way and in the same place: its page and the upload, under the address.
   bool get hasWasteQuestions {
     final a = abfall;
-    return a != null && a.supported && a.config != null && (a.houseNumbers.isNotEmpty || rhythms.isNotEmpty);
+    if (a == null) return false;
+    if (!a.supported) return a.uploadOnly;
+    return a.config != null && (a.houseNumbers.isNotEmpty || rhythms.isNotEmpty);
   }
 
   /// The house picked where the vendor needs one to name a schedule at all.
@@ -137,6 +146,16 @@ class OnboardingState {
     return f != null && f.hasWasteQuestions && !wasteDone;
   }
 
+  /// The town's calendar as a file, taken on the waste stage of a town that
+  /// hands out nothing else: the spinner while it is checked and connected,
+  /// whether it went in, and — for a printed plan holding several Bezirke —
+  /// the plan waiting for the household to say which one is theirs.
+  final bool binFileBusy;
+  final bool binFileAdded;
+  final String? binFilePdf;
+  final String? binFileName;
+  final List<PdfDistrict> binFileChoices;
+
   /// The spinner between picking an address and knowing what lives there.
   final bool lookingUp;
 
@@ -147,10 +166,6 @@ class OnboardingState {
 
   final bool connecting;
   final String? addressError;
-
-  /// The spinner on the Müllabfuhr row's "Anfragen" while the request is on
-  /// its way. Whether it *went* lives on `found.abfall.requested`.
-  final bool requestingTrash;
 
   const OnboardingState({
     this.done,
@@ -166,11 +181,15 @@ class OnboardingState {
     this.pickedAddress,
     this.streetOnly,
     this.wasteDone = false,
+    this.binFileBusy = false,
+    this.binFileAdded = false,
+    this.binFilePdf,
+    this.binFileName,
+    this.binFileChoices = const [],
     this.lookingUp = false,
     this.found,
     this.connecting = false,
     this.addressError,
-    this.requestingTrash = false,
   });
 
   OnboardingState copyWith({
@@ -187,11 +206,16 @@ class OnboardingState {
     GeoAddress? pickedAddress,
     GeoAddress? streetOnly,
     bool? wasteDone,
+    bool? binFileBusy,
+    bool? binFileAdded,
+    String? binFilePdf,
+    String? binFileName,
+    List<PdfDistrict>? binFileChoices,
+    bool clearBinFilePlan = false,
     bool? lookingUp,
     LocalCalendars? found,
     bool? connecting,
     String? addressError,
-    bool? requestingTrash,
     bool clearPickedAddress = false,
     bool clearStreetOnly = false,
     bool clearFound = false,
@@ -211,11 +235,15 @@ class OnboardingState {
       pickedAddress: clearPickedAddress ? null : (pickedAddress ?? this.pickedAddress),
       streetOnly: clearStreetOnly ? null : (streetOnly ?? this.streetOnly),
       wasteDone: wasteDone ?? this.wasteDone,
+      binFileBusy: binFileBusy ?? this.binFileBusy,
+      binFileAdded: binFileAdded ?? this.binFileAdded,
+      binFilePdf: clearBinFilePlan ? null : (binFilePdf ?? this.binFilePdf),
+      binFileName: clearBinFilePlan ? null : (binFileName ?? this.binFileName),
+      binFileChoices: clearBinFilePlan ? const [] : (binFileChoices ?? this.binFileChoices),
       lookingUp: lookingUp ?? this.lookingUp,
       found: clearFound ? null : (found ?? this.found),
       connecting: connecting ?? this.connecting,
       addressError: clearAddressError ? null : (addressError ?? this.addressError),
-      requestingTrash: requestingTrash ?? this.requestingTrash,
     );
   }
 }
@@ -439,6 +467,106 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
     state = state.copyWith(found: found.withRhythm(bin, option), clearAddressError: true);
   }
 
+  /// A file the household fetched off the town's page or picked from the
+  /// phone, on the waste stage of a town that hands out nothing else: checked
+  /// and connected right here, onto the free Abfall-file connection — what the
+  /// `ical` sheet's bin-file mode does from Kalender, without a second sheet
+  /// over the tour.
+  Future<void> useBinFile(PickedFile file) async {
+    final town = _binFileTown;
+    if (town == null || state.binFileBusy) return;
+    final bytes = await readPickedBytes(file);
+    if (!mounted) return;
+    if (bytes == null || bytes.isEmpty) {
+      state = state.copyWith(addressError: L.s.calendarFileUnreadable);
+      return;
+    }
+    final connections = _ref.read(calendarConnectionsProvider.notifier);
+    state = state.copyWith(binFileBusy: true, clearAddressError: true, clearBinFilePlan: true);
+    try {
+      if (isPdfBytes(bytes)) {
+        if (!pdfUploadAvailable) throw _Refused(L.s.pdfNotReadableYet);
+        if (bytes.length > pdfUploadMaxBytes) throw _Refused(L.s.fileTooLarge);
+        final pdf = base64Encode(bytes);
+        final probe = await connections.checkCalendarLink(
+          provider: CalendarProvider.ical,
+          pdf: pdf,
+          fileName: file.name,
+          abfallTown: town,
+        );
+        if (!mounted) return;
+        if (probe.choices.length > 1) {
+          // Which Bezirk is theirs is asked here, as chips, before anything
+          // is connected.
+          state = state.copyWith(binFileBusy: false, binFilePdf: pdf, binFileName: file.name, binFileChoices: probe.choices);
+          return;
+        }
+        await _addBinFile(town, pdf: pdf, fileName: file.name, choice: probe.choices.firstOrNull?.id);
+      } else {
+        final ics = _decode(bytes);
+        await connections.checkCalendarLink(provider: CalendarProvider.ical, ics: ics, abfallTown: town);
+        if (!mounted) return;
+        await _addBinFile(town, ics: ics, fileName: file.name);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      state = state.copyWith(
+        binFileBusy: false,
+        addressError: _errorText(e),
+      );
+    }
+  }
+
+  /// The Bezirk of a printed plan, picked off its chips: connects it.
+  Future<void> pickBinFileDistrict(String id) async {
+    final town = _binFileTown;
+    final pdf = state.binFilePdf;
+    if (town == null || pdf == null || state.binFileBusy) return;
+    state = state.copyWith(binFileBusy: true, clearAddressError: true);
+    try {
+      await _addBinFile(town, pdf: pdf, fileName: state.binFileName, choice: id);
+    } catch (e) {
+      if (!mounted) return;
+      state = state.copyWith(binFileBusy: false, addressError: _errorText(e));
+    }
+  }
+
+  String? get _binFileTown {
+    final coverage = state.found?.abfall;
+    final town = coverage?.town.isNotEmpty == true ? coverage!.town : state.pickedAddress?.town;
+    return town == null || town.isEmpty ? null : town;
+  }
+
+  Future<void> _addBinFile(String town, {String? ics, String? pdf, String? fileName, String? choice}) async {
+    await _ref.read(calendarConnectionsProvider.notifier).addCalendarLink(
+      provider: CalendarProvider.ical,
+      name: L.s.wasteCalendar,
+      ics: ics,
+      pdf: pdf,
+      choice: choice,
+      fileName: fileName,
+      abfallTown: town,
+    );
+    if (!mounted) return;
+    state = state.copyWith(binFileBusy: false, binFileAdded: true, trashConnected: true, clearBinFilePlan: true);
+  }
+
+  /// Everything caught, never one named type: an error nobody predicted must
+  /// not leave the spinner running.
+  static String _errorText(Object e) => switch (e) {
+    _Refused(:final message) => message,
+    CalendarConnectionException(:final message) => message,
+    _ => L.s.somethingWentWrong,
+  };
+
+  static String _decode(List<int> bytes) {
+    try {
+      return utf8.decode(bytes);
+    } on FormatException {
+      return latin1.decode(bytes, allowInvalid: true);
+    }
+  }
+
   /// "Weiter" under the waste questions: put them away and show the two
   /// calendars. False, with the reason under the card, while one is open.
   bool finishWasteQuestions() {
@@ -454,31 +582,6 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
     }
     state = state.copyWith(wasteDone: true, clearAddressError: true);
     return true;
-  }
-
-  /// "Anfragen" on the Müllabfuhr row: files the town so we go and find its
-  /// vendor. The row flips to "angefragt" on the answer and stays there — the
-  /// server remembers the request, so a replayed tour finds it already set.
-  Future<void> requestTrash() async {
-    final found = state.found;
-    final address = state.pickedAddress;
-    final coverage = found?.abfall;
-    if (found == null || address == null || coverage == null) return;
-    if (coverage.supported || coverage.uploadOnly || coverage.requested || state.requestingTrash) return;
-    state = state.copyWith(requestingTrash: true, clearAddressError: true);
-    try {
-      await _ref
-          .read(calendarConnectionRepositoryProvider)
-          .requestAbfall(address, stateCode: found.ferienState);
-      if (!mounted) return;
-      state = state.copyWith(
-        requestingTrash: false,
-        found: LocalCalendars(abfall: coverage.asRequested(), ferienState: found.ferienState),
-      );
-    } catch (_) {
-      if (!mounted) return;
-      state = state.copyWith(requestingTrash: false, addressError: L.s.wasteRequestFailed);
-    }
   }
 
   /// Back to an empty field, from the X on the address row.
@@ -632,3 +735,10 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
 final onboardingProvider = StateNotifierProvider<OnboardingNotifier, OnboardingState>(
   (ref) => OnboardingNotifier(ref),
 );
+
+/// A file refused on the device, before anything was sent — its sentence is
+/// the one to show.
+class _Refused implements Exception {
+  final String message;
+  const _Refused(this.message);
+}

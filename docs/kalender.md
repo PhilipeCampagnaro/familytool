@@ -221,7 +221,10 @@ between 0 and that number so the extent and the space the panel occupies are the
 same frame. The panel is `null` while shut rather than zero-height, or the rows would lay themselves
 out against a tight zero and overflow. `firstStepsOpenProvider` holds the flag because three widgets
 need it and none contains the others. Setup outranks every status the ladder could print, since a
-household with no calendar connected has nothing true to say about its day.
+household with no calendar connected has nothing true to say about its day. The bin-reminder step is the one step that is
+per device and conditional: it exists only once a waste calendar is connected, so the island's
+"x von y" total comes from `firstStepCountProvider` rather than a constant (see
+[notifications.md](notifications.md)).
 
 **Every step is derived from live state and none of it is stored.** A stored checkbox drifts the
 moment somebody deletes their only list, does not travel to the other parent's phone, and needs a

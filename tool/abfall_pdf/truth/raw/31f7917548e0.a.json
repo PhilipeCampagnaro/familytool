@@ -1,0 +1,20 @@
+{
+  "id": "31f7917548e0",
+  "labeller": "a",
+  "calendar": true,
+  "year": 2026,
+  "covers": "2025-12-29..2026-12-31",
+  "district": "Tour 1 (Rattlar, Usseln) + Gelber Sack Tour 1 (Willingen, Musenbergsiedlung)",
+  "codes": ["1", "G 1"],
+  "legend": {"R (grey box)": "rest", "B (green box)": "bio", "P (blue box)": "papier", "G (yellow box)": "gelb", "SO (red box)": "schadstoff"},
+  "window": ["2026-01", "2026-02", "2026-03", "2026-09"],
+  "bins": {
+    "rest": ["2026-01-12", "2026-02-09", "2026-03-09", "2026-09-21"],
+    "bio": ["2026-01-05", "2026-01-19", "2026-02-02", "2026-02-16", "2026-03-02", "2026-03-16", "2026-03-28", "2026-09-14", "2026-09-28"],
+    "papier": ["2026-01-26", "2026-02-23", "2026-03-23", "2026-09-07"],
+    "gelb": ["2026-01-28", "2026-02-25", "2026-03-25", "2026-09-09"],
+    "schadstoff": []
+  },
+  "unsure": [],
+  "notes": "Single-page year grid, one column per month, coloured code boxes (R/B/P + tour number 1-3, G + Gelber-Sack tour 1-3); Rest/Bio/Papier tours and Gelber Sack tours are separate systems, so Tour 1 of each. Bio Tour 1 moved to Sat 2026-03-28 ahead of Easter week. A 'Dezember 2025' inset precedes January; SO (Sonderabfall) dates fall only in April/October."
+}

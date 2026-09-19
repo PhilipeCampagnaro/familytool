@@ -1,0 +1,27 @@
+{
+  "id": "accf04f055ec",
+  "labeller": "b",
+  "calendar": true,
+  "year": 2026,
+  "covers": "2026-01-01..2026-12-31",
+  "district": "Northeim Bezirk 1",
+  "legend": {
+    "black bin icon": "rest (Hausmüll)",
+    "black bin icon with asterisk": "rest (40-Liter-Behälter mit vierwöchentlicher Leerung; always on the same date as the plain bin icon in this window)",
+    "bottle icon": "glas (Glassammlung)",
+    "flag+carton icon (P)": "papier (Papiersammlung)",
+    "drawstring-bag icon": "gelb (Gelber Sack)",
+    "leaf icon": "bio (Biotonne)",
+    "!": "Feiertagsverschiebung marker (date printed is already the shifted date)"
+  },
+  "window": ["2026-01", "2026-02", "2026-03", "2026-09"],
+  "bins": {
+    "rest": ["2026-01-13", "2026-01-27", "2026-02-10", "2026-02-24", "2026-03-10", "2026-03-24", "2026-09-08", "2026-09-22"],
+    "bio": ["2026-01-06", "2026-01-20", "2026-02-03", "2026-02-17", "2026-03-03", "2026-03-17", "2026-03-30", "2026-09-01", "2026-09-15", "2026-09-29"],
+    "gelb": ["2026-01-06", "2026-02-03", "2026-03-03", "2026-03-30", "2026-09-15"],
+    "papier": ["2026-01-20", "2026-02-17", "2026-03-17", "2026-09-01", "2026-09-29"],
+    "glas": ["2026-01-27", "2026-02-24", "2026-03-24", "2026-09-08"]
+  },
+  "unsure": [],
+  "notes": "Only one district is printed on this PDF ('Northeim Bezirk 1'), so there was no picking between districts. All pickups fall on Tuesdays, alternating gelb+bio, rest(+glas every other time), papier+bio in a roughly 2-week rhythm. The small icon pairs (bag+leaf vs flag+leaf, plain bin vs bin+bottle) were cross-checked against the printed bottom legend at 400dpi to avoid mixing up gelb/papier or rest/glas. One pickup (2026-03-30) carries the Feiertagsverschiebung '!' mark, meaning it was moved off its usual day; it is labelled on the printed (shifted) date."
+}

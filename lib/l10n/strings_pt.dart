@@ -953,14 +953,6 @@ class StringsPt extends AppStrings {
       'as datas: procure no site da sua empresa por "Abfuhrkalender" ou '
       '"Kalender abonnieren" e cole o link aqui.';
   @override
-  String get wasteRequestHint => 'Ainda não temos — peça e a gente configura pra vocês em poucos dias.';
-  @override
-  String get wasteRequestAction => 'Solicitar';
-  @override
-  String get wasteRequested => 'Solicitado — avisamos assim que estiver pronto.';
-  @override
-  String get wasteRequestFailed => 'A solicitação não foi enviada. Tente de novo daqui a pouco.';
-  @override
   String wasteUploadOnlyBody(String town) =>
       '$town não libera as datas de coleta para consulta automática por apps — vejam como trazer o calendário de coleta para cá em poucos passos.';
   @override
@@ -991,6 +983,64 @@ class StringsPt extends AppStrings {
   String get ok => 'OK';
   @override
   String get wasteUploadOnlyLater => 'Só disponível como arquivo — dá para adicionar depois como arquivo de calendário.';
+  @override
+  String get wasteOnTownPage => 'Datas na página da cidade';
+  @override
+  String get onboardWasteFileTitle => 'O calendário de coleta de vocês vem como arquivo';
+  @override
+  String get pdfDistrictLabel => 'Distrito de vocês';
+  @override
+  String get wasteFileAdded => 'Calendário de coleta adicionado como arquivo';
+  @override
+  String wasteOwnPageBody(String town) =>
+      '$town publica o calendário de coleta na própria página — vejam como trazê-lo para cá em poucos passos.';
+  @override
+  String get wasteLinkLater =>
+      'Ainda não encontramos aqui — dá para adicionar o calendário depois como link ou arquivo.';
+  @override
+  List<String> get binFileStepsPdfInApp => [
+    'Abram o calendário de coleta da cidade abaixo.',
+    'Escolham a cidade ou a rua de vocês.',
+    'Toquem no calendário em iCal, ICS ou PDF.',
+    'O Aporah reconhece o arquivo automaticamente e o traz direto para cá.',
+  ];
+  @override
+  List<String> get binFileStepsPdfBrowser => [
+    'Abram o calendário de coleta da cidade abaixo.',
+    'Escolham a cidade ou a rua de vocês.',
+    'Toquem no calendário em iCal, ICS ou PDF.',
+    'Depois enviem o arquivo aqui em "Enviar um arquivo de calendário ou PDF".',
+  ];
+  @override
+  String get townPagePdfOnly =>
+      'Lá o calendário só existe como PDF para imprimir, e o app não consegue ler. Vocês encontram as datas na página da cidade — e, se houver um arquivo iCal, dá para trazê-lo para cá.';
+  @override
+  String get townPageDatesOnly =>
+      'As datas talvez apareçam só na própria página. Procurem uma exportação em iCal ou ICS.';
+  @override
+  String get townPageAppOnly =>
+      'As datas talvez estejam só no app da cidade. Procurem na página uma exportação em iCal ou ICS.';
+  @override
+  String get calendarPagePromptPdf =>
+      'Escolham a rua e baixem o calendário em iCal ou PDF';
+  @override
+  String get calendarPageNotCalendarPdf =>
+      'Isso não é um arquivo de calendário. Procurem por "iCal", "ICS" ou "PDF" na página.';
+  @override
+  String get pdfNotReadableYet =>
+      'Isso é um PDF, e o app não consegue ler. Escolham um arquivo de calendário (iCal ou ICS).';
+  @override
+  String get fileTooLarge =>
+      'Este arquivo é grande demais.';
+  @override
+  String get pickDistrictFirst =>
+      'Escolham o distrito de vocês.';
+  @override
+  String get pdfDistrictIntro =>
+      'O plano vale para vários distritos. Qual é o de vocês? As próximas datas ajudam a reconhecer.';
+  @override
+  String nextPickups(String dates) =>
+      'Próximas: $dates';
   @override
   String get wasteNeedsHouseNumber => 'Digite o endereço com o número — aqui a coleta é planejada por casa.';
   @override
@@ -1050,6 +1100,8 @@ class StringsPt extends AppStrings {
   String get icalLinkNote =>
       'Qualquer calendário que você possa assinar: um clube, uma creche, o trabalho. '
       'O que precisa é o endereço de assinatura (ICS), não a página do calendário.';
+  @override
+  String get uploadCalendarFileOrPdf => 'Enviar um arquivo de calendário ou PDF';
   @override
   String get uploadCalendarFile => 'Enviar um arquivo de calendário';
   @override
@@ -2267,7 +2319,13 @@ class StringsPt extends AppStrings {
   @override
   String get notifyAbfallTitle => 'Coleta de lixo';
   @override
-  String get notifyAbfallSubtitle => 'No dia anterior à coleta';
+  String get notifyAbfallSubtitle => 'Para a lixeira estar na rua a tempo';
+  @override
+  String get notifyAbfallWhen => 'Quando';
+  @override
+  String get abfallDayBefore => 'Na véspera';
+  @override
+  String get abfallSameDay => 'No dia da coleta';
   @override
   String get notifyTaskTimesTitle => 'To-dos com horário';
   @override
@@ -2294,6 +2352,14 @@ class StringsPt extends AppStrings {
   @override
   String reminderMorningOf(String time) => 'No dia às $time';
   @override
+  String get firstStepBinReminder => 'Ativar lembrete da coleta';
+  @override
+  String get firstStepBinReminderBody => 'Na véspera, antes de pôr o lixo para fora.';
+  @override
+  String get reminderAbfallShared => 'Vale para todas as coletas, como nas Configurações';
+  @override
+  String get reminderAbfallCustom => 'Outro horário…';
+  @override
   String reminderCalendarAlready(String label) => 'Seu calendário já lembra: $label';
   @override
   String get reminderDenied => 'As notificações estão desativadas – permita nos ajustes.';
@@ -2309,6 +2375,8 @@ class StringsPt extends AppStrings {
   String noticeAbfallTitle(String bins) => 'Já colocou $bins para fora?';
   @override
   String get noticeAbfallBody => 'A coleta é amanhã cedo.';
+  @override
+  String get noticeAbfallBodyToday => 'A coleta é hoje.';
   @override
   String noticeTaskDue(String time) => 'Para as $time';
   @override

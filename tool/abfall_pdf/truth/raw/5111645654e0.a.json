@@ -1,0 +1,18 @@
+{
+  "id": "5111645654e0",
+  "labeller": "a",
+  "calendar": true,
+  "year": 2026,
+  "covers": "2026-01-01..2026-12-31",
+  "district": "Abfuhrbezirk A",
+  "codes": ["A"],
+  "legend": {"letter A-U in the Bez. column (black)": "gelb + papier (one combined date per Bezirk: 'Abfuhrtermine gelbe Tonne, blaue Papiertonne')", "red letter": "same, Terminverschiebung", "SR (blue)": "schadstoff (Rathausplatz)", "SF (blue)": "schadstoff (Kirchplatz Fedderwardergroden)"},
+  "window": ["2026-01", "2026-02", "2026-03", "2026-09"],
+  "bins": {
+    "gelb": ["2026-01-26", "2026-02-20", "2026-03-20", "2026-09-04"],
+    "papier": ["2026-01-26", "2026-02-20", "2026-03-20", "2026-09-04"],
+    "schadstoff": ["2026-01-10", "2026-02-14", "2026-03-14", "2026-09-12"]
+  },
+  "unsure": [],
+  "notes": "Only gelbe Tonne and blaue Papiertonne; one letter per day covers both bins, so gelb and papier share dates (the legend does not separate them). Jan 26 is a red (shifted) A. Schadstoffmobil SR/SF dates are city-wide, not per Bezirk."
+}

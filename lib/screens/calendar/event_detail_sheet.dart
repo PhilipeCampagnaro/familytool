@@ -268,7 +268,13 @@ void _showEventDetailSheet(BuildContext context, WidgetRef ref) {
             // before *this* appointment *this* phone rings. Absent once it is
             // over, and for an appointment still on its way to the provider —
             // it has no uid yet to key a reminder on.
-            if (_reminderOffered(e, state.now)) ...[const SizedBox(height: 12), _ReminderCard(event: e)],
+            if (_reminderOffered(e, state.now)) ...[
+              const SizedBox(height: 12),
+              _ReminderCard(
+                event: e,
+                abfall: state.calendars.any((c) => c.id == e.calendarId && c.isAbfall),
+              ),
+            ],
             // Notes, on the other hand, are shown empty on purpose: every event
             // has this card, so the sheet has one shape and "there are no notes
             // on this one" is something you can read off it.
@@ -392,10 +398,19 @@ bool _reminderOffered(CalendarEvent e, DateTime now) =>
 ///
 /// When the provider already has an alarm and we have none, the subtitle says
 /// so, which is the whole defence against one appointment ringing twice.
+///
+/// **A bin day is the exception: its row *is* Settings → Mitteilungen →
+/// Müllabfuhr**, read and written there, not a reminder of its own. The bins
+/// already have a household-wide notice the evening before; a second,
+/// per-pickup reminder beside it read "Keine" while the setting was about to
+/// ring, and set to the same evening it rang twice. So the row shows the
+/// setting's hour, "Keine" turns the setting off, and the one choice a menu
+/// cannot hold — another hour — opens the Settings page that can.
 class _ReminderCard extends ConsumerStatefulWidget {
   final CalendarEvent event;
+  final bool abfall;
 
-  const _ReminderCard({required this.event});
+  const _ReminderCard({required this.event, required this.abfall});
 
   @override
   ConsumerState<_ReminderCard> createState() => _ReminderCardState();
@@ -406,6 +421,7 @@ class _ReminderCardState extends ConsumerState<_ReminderCard> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.abfall) return _buildAbfall();
     final e = widget.event;
     final settings = ref.watch(notificationSettingsProvider);
     final current = settings.reminderFor(e);
@@ -435,6 +451,70 @@ class _ReminderCardState extends ConsumerState<_ReminderCard> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildAbfall() {
+    final settings = ref.watch(notificationSettingsProvider);
+    final denied = settings.abfall && settings.loaded && settings.access == NotificationAccess.denied;
+    return KeyedSubtree(
+      key: _anchor,
+      child: SectionCard(
+        children: [
+          SettingsRow(
+            icon: AppIcons.bell,
+            title: L.s.reminder,
+            // "Applies to every pickup" is the menu's caption, where it is
+            // read at the moment of choosing; on the card it wrapped the row
+            // into four lines beside a value that already says it all.
+            subtitle: denied ? L.s.reminderDenied : null,
+            value: settings.abfall ? _abfallLabel(settings.abfallSameDay, settings) : L.s.reminderNone,
+            onTap: _openAbfallMenu,
+          ),
+        ],
+      ),
+    );
+  }
+
+  static String _abfallLabel(bool sameDay, NotificationSettings s) {
+    final minutes = sameDay ? s.abfallMorningMinutes : s.abfallMinutes;
+    final time = formatTimeOfDay(minutes ~/ 60, minutes % 60);
+    return sameDay ? L.s.reminderMorningOf(time) : L.s.reminderDayBefore(time);
+  }
+
+  void _openAbfallMenu() {
+    final settings = ref.read(notificationSettingsProvider);
+    final notifier = ref.read(notificationSettingsProvider.notifier);
+    showAnchoredMenu(
+      context: context,
+      anchorKey: _anchor,
+      title: L.s.reminderAbfallShared,
+      items: [
+        AnchoredMenuItem(
+          label: L.s.reminderNone,
+          icon: settings.abfall ? AppIcons.x : AppIcons.check,
+          symbol: 'bell.slash',
+          selected: !settings.abfall,
+          onSelected: () => notifier.setAbfall(false),
+        ),
+        for (final sameDay in const [false, true])
+          AnchoredMenuItem(
+            label: _abfallLabel(sameDay, settings),
+            icon: settings.abfall && settings.abfallSameDay == sameDay ? AppIcons.check : AppIcons.clock,
+            symbol: 'bell',
+            selected: settings.abfall && settings.abfallSameDay == sameDay,
+            onSelected: () => notifier.setAbfallDay(sameDay: sameDay),
+          ),
+        AnchoredMenuItem(
+          label: L.s.reminderAbfallCustom,
+          icon: AppIcons.clock,
+          symbol: 'clock',
+          onSelected: () {
+            if (!mounted) return;
+            Navigator.of(context).push(MaterialPageRoute(builder: (_) => NotificationsPage()));
+          },
+        ),
+      ],
     );
   }
 

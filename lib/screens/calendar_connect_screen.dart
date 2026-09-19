@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -26,8 +27,8 @@ import '../widgets/avatar.dart';
 import '../widgets/confirmation.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/error_note.dart';
-import '../widgets/glass.dart';
 import '../widgets/address_privacy_note.dart';
+import '../widgets/bin_file_actions.dart';
 import '../widgets/glyph_tile.dart';
 import '../widgets/house_number_field.dart';
 import '../widgets/settings_chrome.dart';
@@ -627,12 +628,14 @@ Future<void> showCalendarConnectSheet(
   List<RemoteCalendar> calendars = const [],
   String? binFileTown,
   String? binFilePage,
+  TownPageFormat? binFileFormat,
   PickedFile? binFile,
 }) async {
   final flow = _ConnectFlow(
     provider: provider,
     binFileTown: binFileTown,
     binFilePage: binFilePage,
+    binFileFormat: binFileFormat,
     notifier: ref.read(calendarConnectionsProvider.notifier),
     repository: ref.read(calendarConnectionRepositoryProvider),
     findConnection: (id) => _byId(ref.read(calendarConnectionsProvider).connections, id),
@@ -670,6 +673,7 @@ Future<void> showCalendarConnectSheet(
       CalendarProvider.ical,
       binFileTown: town,
       binFilePage: flow.coverage?.page,
+      binFileFormat: flow.coverage?.format,
       binFile: flow.carriedFile,
     );
   }
@@ -1724,6 +1728,10 @@ enum _Step {
   /// town's own calendar.
   details,
 
+  /// A printed plan (PDF) holding several Bezirke or Touren: which one is the
+  /// household's. Only exists once the file has been read and said so.
+  district,
+
   /// Accounts: which of the account's calendars belong in Aporah.
   pick,
 
@@ -1759,6 +1767,7 @@ class _ConnectFlow extends ChangeNotifier {
     this.calendars = const [],
     this.binFileTown,
     this.binFilePage,
+    this.binFileFormat,
   }) {
     // Everything the account offers, all ticked. Starting from "all" rather
     // than "none" matches what the connection already means the moment it
@@ -1781,6 +1790,9 @@ class _ConnectFlow extends ChangeNotifier {
   /// The town's own calendar page, when the provider row names one — opened in
   /// the app on iOS so its export comes back as a file (calendar_page_browser.dart).
   final String? binFilePage;
+
+  /// What that page hands out, per the atlas — it picks the instructions.
+  final TownPageFormat? binFileFormat;
 
   final CalendarConnectionsNotifier notifier;
   final CalendarConnectionRepository repository;
@@ -1827,6 +1839,16 @@ class _ConnectFlow extends ChangeNotifier {
   /// ways, never both at once.
   String? pickedIcs;
   String? pickedFileName;
+
+  /// A printed plan instead of a calendar file, base64 as `calendar-link`
+  /// takes it — only ever set while `pdfUploadAvailable`. Like [pickedIcs] it
+  /// replaces the link on submit.
+  String? pickedPdf;
+
+  /// The Bezirke or Touren the plan holds, and the household's pick. One
+  /// district comes back already chosen and the step never shows.
+  List<PdfDistrict> pdfChoices = const [];
+  String? pdfChoice;
 
   /// How far an uploaded file reaches. Null for a link, which has no such day.
   DateTime? probedCoversTo;
@@ -1948,6 +1970,7 @@ class _ConnectFlow extends ChangeNotifier {
       ConnectKind.feed => isFerien ? const [_Step.region] : const [_Step.address],
     },
     if (_needsDetails) _Step.details,
+    if (pdfChoices.length > 1) _Step.district,
     if (calendars.isNotEmpty) _Step.pick,
     _Step.name,
     _Step.done,
@@ -2099,6 +2122,12 @@ class _ConnectFlow extends ChangeNotifier {
         } else {
           await _checkIcs();
         }
+      case _Step.district:
+        if (pdfChoice == null) {
+          _fail(L.s.pickDistrictFirst);
+          return;
+        }
+        _advance();
       case _Step.pick:
         if (selected.isEmpty) {
           // A connection that syncs nothing is not a connection. Said here
@@ -2191,31 +2220,6 @@ class _ConnectFlow extends ChangeNotifier {
     // or a listing that came back empty. The calendars of an account that *did*
     // offer a list are named one by one, in [calendarNames].
     return connection?.displayName ?? provider.label;
-  }
-
-  // -- request ----------------------------------------------------------------
-
-  /// The spinner on "Anfragen" while the town is being filed.
-  bool requesting = false;
-
-  /// No vendor of ours serves the address: file the town so we go and find
-  /// one. The step then says so where the button was, and the server keeps
-  /// the request, so coming back a week later finds it already filed.
-  Future<void> requestAbfall() async {
-    final at = address;
-    final found = coverage;
-    if (at == null || found == null || found.supported || found.requested || requesting) return;
-    requesting = true;
-    error = null;
-    _notify();
-    try {
-      await repository.requestAbfall(at, stateCode: ferienStateOf(at));
-      coverage = found.asRequested();
-    } catch (_) {
-      error = L.s.wasteRequestFailed;
-    }
-    requesting = false;
-    _notify();
   }
 
   // -- login ------------------------------------------------------------------
@@ -2548,8 +2552,10 @@ class _ConnectFlow extends ChangeNotifier {
     // Reading also deletes the picker's copy: from here the calendar exists as
     // a sealed row on the server, and a spare plaintext one in our sandbox is
     // nothing but a liability.
-    final text = await readPickedText(file);
+    final bytes = await readPickedBytes(file);
     if (_disposed) return;
+    if (bytes != null && isPdfBytes(bytes)) return _checkPdf(file.name, bytes);
+    final text = bytes == null ? null : _decodeText(bytes);
     if (text == null || text.trim().isEmpty) {
       _fail(L.s.calendarFileUnreadable);
       return;
@@ -2569,6 +2575,9 @@ class _ConnectFlow extends ChangeNotifier {
       if (_disposed) return;
       busy = false;
       pickedIcs = text;
+      pickedPdf = null;
+      pdfChoices = const [];
+      pdfChoice = null;
       linkUrl.clear();
       probedName = probe.name;
       probedEvents = probe.events;
@@ -2580,6 +2589,63 @@ class _ConnectFlow extends ChangeNotifier {
       pickedFileName = null;
       _fail(connectErrorText(e));
     }
+  }
+
+  static String _decodeText(Uint8List bytes) {
+    try {
+      return utf8.decode(bytes);
+    } on FormatException {
+      return latin1.decode(bytes, allowInvalid: true);
+    }
+  }
+
+  /// A printed plan: sent to the server, which reads the dates off it and says
+  /// which Bezirke it holds. Refused here, with a sentence, while the server
+  /// cannot read one yet — and when it is too large to be a plan.
+  Future<void> _checkPdf(String fileName, Uint8List bytes) async {
+    if (!pdfUploadAvailable) {
+      _fail(L.s.pdfNotReadableYet);
+      return;
+    }
+    if (bytes.length > pdfUploadMaxBytes) {
+      _fail(L.s.fileTooLarge);
+      return;
+    }
+    busy = true;
+    error = null;
+    pickedFileName = fileName;
+    _notify();
+    final encoded = base64Encode(bytes);
+    try {
+      final probe = await notifier.checkCalendarLink(
+        provider: provider,
+        pdf: encoded,
+        fileName: fileName,
+        abfallTown: binFileTown,
+      );
+      if (_disposed) return;
+      busy = false;
+      pickedPdf = encoded;
+      pickedIcs = null;
+      linkUrl.clear();
+      pdfChoices = probe.choices;
+      pdfChoice = probe.choices.length == 1 ? probe.choices.single.id : null;
+      probedName = probe.name;
+      probedEvents = probe.events;
+      probedCoversTo = probe.coversTo;
+      _advance();
+    } catch (e) {
+      if (_disposed) return;
+      busy = false;
+      pickedFileName = null;
+      _fail(connectErrorText(e));
+    }
+  }
+
+  void pickDistrict(String id) {
+    pdfChoice = id;
+    error = null;
+    _notify();
   }
 
   /// The link is checked on the way *off* the details step, so a dead one is
@@ -2699,8 +2765,10 @@ class _ConnectFlow extends ChangeNotifier {
         // three is a column a client may write.
         await notifier.addCalendarLink(
           provider: provider,
-          url: pickedIcs == null ? linkUrl.text.trim() : null,
-          ics: pickedIcs,
+          url: pickedIcs == null && pickedPdf == null ? linkUrl.text.trim() : null,
+          ics: pickedPdf == null ? pickedIcs : null,
+          pdf: pickedPdf,
+          choice: pickedPdf == null ? null : pdfChoice,
           fileName: pickedFileName,
           name: label,
           account: account.text.trim(),
@@ -2824,6 +2892,7 @@ class _ConnectBody extends StatelessWidget {
               _Step.region => _RegionStep(key: const ValueKey('region'), flow: flow),
               _Step.address => _AddressStep(key: const ValueKey('address'), flow: flow),
               _Step.details => _DetailsStep(key: const ValueKey('details'), flow: flow),
+              _Step.district => _DistrictStep(key: const ValueKey('district'), flow: flow),
               _Step.pick => _PickStep(key: const ValueKey('pick'), flow: flow),
               _Step.name => _NameStep(key: const ValueKey('name'), flow: flow),
               // The app's one confirmation, in its beat shape: there is nothing
@@ -2920,7 +2989,13 @@ class _LinkStep extends StatelessWidget {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _BinFileActions(flow: flow, page: flow.binFilePage),
+          BinFileActions(
+            page: flow.binFilePage,
+            format: flow.binFileFormat,
+            enabled: !flow.busy,
+            onFetchFromPage: (page) => flow.fetchFromPage(context, page),
+            onUpload: flow.devicePicksFiles ? () => flow.pickFile(context) : null,
+          ),
           _StepError(flow.error),
           if (flow.busy) _StepBusyRow(L.s.checkingFileEllipsis),
         ],
@@ -3731,17 +3806,26 @@ class _DetailsStep extends StatelessWidget {
         Text(
           supported
               ? L.s.wasteIntro
+              : uploadOnly && coverage.atlas
+              ? L.s.wasteOwnPageBody(town)
               : uploadOnly
               ? L.s.wasteUploadOnlyBody(town)
               : L.s.noVendorForTown(town),
           style: AppText.body.copyWith(color: AppColors.muted),
         ),
         const SizedBox(height: 18),
-        // A town whose provider we may not read: no link field and no request —
-        // there is nothing we are allowed to set up. The town's own page, then
-        // the upload, as two buttons rather than two rows.
+        // A town whose calendar comes in as a file — its provider may not be
+        // read, or nobody we read serves it: no link field, there is nothing we
+        // are allowed to set up. The town's own page, then the upload, as two
+        // buttons rather than two rows.
         if (uploadOnly)
-          _BinFileActions(flow: flow, page: page)
+          BinFileActions(
+            page: page,
+            format: coverage.format,
+            enabled: !flow.busy,
+            onFetchFromPage: (page) => flow.fetchFromPage(context, page),
+            onUpload: flow.devicePicksFiles ? () => flow.pickFile(context) : null,
+          )
         else
           SectionCard(
             radius: AppRadii.card,
@@ -3795,11 +3879,6 @@ class _DetailsStep extends StatelessWidget {
                 ),
               if (supported && flow.rhythms.isNotEmpty)
                 RhythmPicker(choices: flow.rhythms, picked: flow.rhythm, onPick: flow.pickRhythm),
-              // The other way out of an unserved town: have us add its vendor.
-              // Below the link field rather than above it, because a household
-              // holding the link is done now and one without it is done in a
-              // few days.
-              if (!supported && !uploadOnly) _RequestRow(flow: flow),
             ]),
           ),
         _StepError(flow.error),
@@ -3810,143 +3889,42 @@ class _DetailsStep extends StatelessWidget {
   }
 }
 
-/// The two ways a waste calendar comes in as a file, as buttons: the town's
-/// own page (blue, the one to take) and a file already on the phone (glass,
-/// with the upload arrow). Shared by the Abfall step of an upload-only town and
-/// the upload sheet it hands over to.
-///
-/// On iOS the page opens inside the app, because Safari hands the town's .ics
-/// straight to Apple Calendar and leaves nothing to upload; elsewhere it opens
-/// in the browser, which saves the file where the picker finds it.
-class _BinFileActions extends StatelessWidget {
+/// A printed plan's Bezirke or Touren, one row each with its next few dates —
+/// which is how a household that has never heard its Bezirk's name finds it:
+/// the row whose dates match the bins they put out.
+class _DistrictStep extends StatelessWidget {
   final _ConnectFlow flow;
-  final String? page;
 
-  const _BinFileActions({required this.flow, required this.page});
+  const _DistrictStep({super.key, required this.flow});
 
   @override
   Widget build(BuildContext context) {
-    final page = this.page;
-    final inApp = page != null && calendarPageBrowserAvailable;
-    final steps = inApp ? L.s.binFileStepsInApp : L.s.binFileStepsBrowser;
+    final accent = Theme.of(context).colorScheme.primary;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // The way there, numbered, then the buttons that start it — the card
-        // says what will happen on the town's page before anybody is on it.
-        if (page != null) ...[
-          SectionCard(
-            radius: AppRadii.card,
-            children: dividedRows(inset: true, [
-              for (final (index, line) in steps.indexed) _BinFileStepRow(number: index + 1, text: line),
-            ]),
-          ),
-          const SizedBox(height: 18),
-          GlassAccentButton(
-            label: L.s.openTownCalendarPage,
-            icon: AppIcons.arrowSquareOut,
-            expand: true,
-            enabled: !flow.busy,
-            onTap: () => inApp ? flow.fetchFromPage(context, page) : openExternalUrl(page),
-          ),
-          const SizedBox(height: 12),
-        ],
-        if (flow.devicePicksFiles)
-          GlassPillButton(
-            label: L.s.uploadCalendarFile,
-            icon: AppIcons.uploadSimple,
-            expand: true,
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-            onTap: () => flow.pickFile(context),
-          ),
+        _StepHeadline(provider: flow.provider, name: flow.headline),
+        const SizedBox(height: 14),
+        Text(L.s.pdfDistrictIntro, style: AppText.body.copyWith(color: AppColors.muted)),
+        const SizedBox(height: 18),
+        SectionCard(
+          radius: AppRadii.card,
+          children: dividedRows(inset: true, [
+            for (final district in flow.pdfChoices)
+              SettingsRow(
+                title: district.label,
+                subtitle: district.next.isEmpty
+                    ? null
+                    : L.s.nextPickups(district.next.take(3).map((d) => L.s.dayMonthShort(d.day, d.month)).join(' · ')),
+                onTap: () => flow.pickDistrict(district.id),
+                trailing: flow.pdfChoice == district.id
+                    ? AppIcon(AppIcons.check, size: AppGlyph.inline, color: accent, flat: true)
+                    : const SizedBox.shrink(),
+              ),
+          ]),
+        ),
+        _StepError(flow.error),
       ],
-    );
-  }
-}
-
-/// One numbered step of [_BinFileActions]' card — a settings row's geometry
-/// (the leading slot a [GlyphTile] would fill, the same padding), with the
-/// number where the icon goes and the line allowed to wrap.
-class _BinFileStepRow extends StatelessWidget {
-  final int number;
-  final String text;
-
-  const _BinFileStepRow({required this.number, required this.text});
-
-  @override
-  Widget build(BuildContext context) {
-    final accent = Theme.of(context).colorScheme.primary;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 13),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 34,
-            height: 34,
-            child: Center(
-              child: Container(
-                width: 26,
-                height: 26,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(color: accent.withValues(alpha: 0.12), shape: BoxShape.circle),
-                child: Text('$number', style: AppText.rowTitle.copyWith(color: accent, fontWeight: FontWeight.w600)),
-              ),
-            ),
-          ),
-          const SizedBox(width: 13),
-          Expanded(child: Text(text, style: AppText.rowTitle)),
-        ],
-      ),
-    );
-  }
-}
-
-/// "Anfragen" for a town no vendor serves, and the sentence saying we are on
-/// it once tapped. Same row the onboarding's Müllabfuhr line draws, so the two
-/// places a household can hit this wall answer it the same way.
-class _RequestRow extends StatelessWidget {
-  final _ConnectFlow flow;
-
-  const _RequestRow({required this.flow});
-
-  @override
-  Widget build(BuildContext context) {
-    final accent = Theme.of(context).colorScheme.primary;
-    final requested = flow.coverage?.requested == true;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              requested ? L.s.wasteRequested : L.s.wasteRequestHint,
-              style: AppText.label,
-            ),
-          ),
-          const SizedBox(width: 12),
-          if (requested)
-            AppIcon(AppIcons.check, size: 16, color: AppColors.success)
-          else
-            GestureDetector(
-              onTap: flow.requesting ? null : flow.requestAbfall,
-              behavior: HitTestBehavior.opaque,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                decoration: BoxDecoration(
-                  color: accent.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(AppRadii.chip),
-                ),
-                child: flow.requesting
-                    ? SizedBox(
-                        width: 14,
-                        height: 14,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: accent),
-                      )
-                    : Text(L.s.wasteRequestAction, style: AppText.buttonSmall.copyWith(color: accent)),
-              ),
-            ),
-        ],
-      ),
     );
   }
 }

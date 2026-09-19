@@ -1,5 +1,5 @@
 {
- "at": "2026-09-19T08:37:55.288Z",
+ "at": "2026-09-19T13:33:39.374Z",
  "providers": [
   {
    "id": "regioit-aachen",
@@ -7654,6 +7654,964 @@
    ]
   },
   {
+   "id": "awido-awb-altenburg",
+   "name": "AWB Altenburger Land",
+   "displayName": "AWB Altenburger Land",
+   "family": "awido",
+   "state": "TH",
+   "stateConfidence": "assigned",
+   "towns": [
+    {
+     "name": "Altenburg",
+     "state": "TH"
+    },
+    {
+     "name": "Altendorf",
+     "state": "TH"
+    },
+    {
+     "name": "Altkirchen",
+     "state": "TH"
+    },
+    {
+     "name": "Altpoderschau",
+     "state": "TH"
+    },
+    {
+     "name": "Beerwalde",
+     "state": "TH"
+    },
+    {
+     "name": "Beiern",
+     "state": "TH"
+    },
+    {
+     "name": "Bocka",
+     "state": "TH"
+    },
+    {
+     "name": "Boderitz",
+     "state": "TH"
+    },
+    {
+     "name": "Bohra",
+     "state": "TH"
+    },
+    {
+     "name": "Borgishain",
+     "state": "TH"
+    },
+    {
+     "name": "Bornshain",
+     "state": "TH"
+    },
+    {
+     "name": "Bosengröba",
+     "state": "TH"
+    },
+    {
+     "name": "Brandrübel",
+     "state": "TH"
+    },
+    {
+     "name": "Braunshain",
+     "state": "TH"
+    },
+    {
+     "name": "Breesen",
+     "state": "TH"
+    },
+    {
+     "name": "Brossen ",
+     "state": "TH"
+    },
+    {
+     "name": "Bünauroda u. Heizkraftwerk",
+     "state": "TH"
+    },
+    {
+     "name": "Burkersdorf (Nobitz)",
+     "state": "TH"
+    },
+    {
+     "name": "Burkersdorf (Schmölln)",
+     "state": "TH"
+    },
+    {
+     "name": "Buscha",
+     "state": "TH"
+    },
+    {
+     "name": "Dippelsdorf",
+     "state": "TH"
+    },
+    {
+     "name": "Dobitschen",
+     "state": "TH"
+    },
+    {
+     "name": "Dobra",
+     "state": "TH"
+    },
+    {
+     "name": "Dobraschütz",
+     "state": "TH"
+    },
+    {
+     "name": "Dölzig",
+     "state": "TH"
+    },
+    {
+     "name": "Drogen",
+     "state": "TH"
+    },
+    {
+     "name": "Drosen",
+     "state": "TH"
+    },
+    {
+     "name": "Ehrenberg",
+     "state": "TH"
+    },
+    {
+     "name": "Ehrenhain",
+     "state": "TH"
+    },
+    {
+     "name": "Engertsdorf",
+     "state": "TH"
+    },
+    {
+     "name": "Falkenhain",
+     "state": "TH"
+    },
+    {
+     "name": "Fichtenhainichen",
+     "state": "TH"
+    },
+    {
+     "name": "Flemmingen",
+     "state": "TH"
+    },
+    {
+     "name": "Fockendorf",
+     "state": "TH"
+    },
+    {
+     "name": "Frohnsdorf",
+     "state": "TH"
+    },
+    {
+     "name": "Gähsnitz",
+     "state": "TH"
+    },
+    {
+     "name": "Garbisdorf",
+     "state": "TH"
+    },
+    {
+     "name": "Garbus",
+     "state": "TH"
+    },
+    {
+     "name": "Gardschütz",
+     "state": "TH"
+    },
+    {
+     "name": "Gerstenberg",
+     "state": "TH"
+    },
+    {
+     "name": "Gieba",
+     "state": "TH"
+    },
+    {
+     "name": "Gimmel",
+     "state": "TH"
+    },
+    {
+     "name": "Gleina",
+     "state": "TH"
+    },
+    {
+     "name": "Gödern",
+     "state": "TH"
+    },
+    {
+     "name": "Gödissa",
+     "state": "TH"
+    },
+    {
+     "name": "Göhren",
+     "state": "TH"
+    },
+    {
+     "name": "Goldschau",
+     "state": "TH"
+    },
+    {
+     "name": "Göldschen",
+     "state": "TH"
+    },
+    {
+     "name": "Göllnitz",
+     "state": "TH"
+    },
+    {
+     "name": "Göpfersdorf",
+     "state": "TH"
+    },
+    {
+     "name": "Gorma",
+     "state": "TH"
+    },
+    {
+     "name": "Gösdorf",
+     "state": "TH"
+    },
+    {
+     "name": "Gößnitz",
+     "state": "TH"
+    },
+    {
+     "name": "Graicha",
+     "state": "TH"
+    },
+    {
+     "name": "Greipzig",
+     "state": "TH"
+    },
+    {
+     "name": "Gröba",
+     "state": "TH"
+    },
+    {
+     "name": "Großbraunshain",
+     "state": "TH"
+    },
+    {
+     "name": "Großmecka",
+     "state": "TH"
+    },
+    {
+     "name": "Großröda",
+     "state": "TH"
+    },
+    {
+     "name": "Großstechau",
+     "state": "TH"
+    },
+    {
+     "name": "Großstöbnitz",
+     "state": "TH"
+    },
+    {
+     "name": "Großtauschwitz",
+     "state": "TH"
+    },
+    {
+     "name": "Grünberg",
+     "state": "TH"
+    },
+    {
+     "name": "Guteborn",
+     "state": "TH"
+    },
+    {
+     "name": "Hartha",
+     "state": "TH"
+    },
+    {
+     "name": "Hartroda",
+     "state": "TH"
+    },
+    {
+     "name": "Haselbach",
+     "state": "TH"
+    },
+    {
+     "name": "Hauersdorf",
+     "state": "TH"
+    },
+    {
+     "name": "Heiligenleichnam",
+     "state": "TH"
+    },
+    {
+     "name": "Heukendorf",
+     "state": "TH"
+    },
+    {
+     "name": "Heukewalde",
+     "state": "TH"
+    },
+    {
+     "name": "Heyersdorf",
+     "state": "TH"
+    },
+    {
+     "name": "Illsitz",
+     "state": "TH"
+    },
+    {
+     "name": "Ingramsdorf",
+     "state": "TH"
+    },
+    {
+     "name": "Jauern",
+     "state": "TH"
+    },
+    {
+     "name": "Jonaswalde",
+     "state": "TH"
+    },
+    {
+     "name": "Jückelberg",
+     "state": "TH"
+    },
+    {
+     "name": "Kaimnitz",
+     "state": "TH"
+    },
+    {
+     "name": "Kakau",
+     "state": "TH"
+    },
+    {
+     "name": "Kertschütz",
+     "state": "TH"
+    },
+    {
+     "name": "Klausa",
+     "state": "TH"
+    },
+    {
+     "name": "Kleinmückern",
+     "state": "TH"
+    },
+    {
+     "name": "Kleinröda",
+     "state": "TH"
+    },
+    {
+     "name": "Kleinstechau",
+     "state": "TH"
+    },
+    {
+     "name": "Kleintauscha",
+     "state": "TH"
+    },
+    {
+     "name": "Kleintauschwitz",
+     "state": "TH"
+    },
+    {
+     "name": "Knau ",
+     "state": "TH"
+    },
+    {
+     "name": "Kosma",
+     "state": "TH"
+    },
+    {
+     "name": "Kostitz",
+     "state": "TH"
+    },
+    {
+     "name": "Kotteritz, Paditzer Straße",
+     "state": "TH"
+    },
+    {
+     "name": "Kotteritz, Werksiedlung",
+     "state": "TH"
+    },
+    {
+     "name": "Kraasa",
+     "state": "TH"
+    },
+    {
+     "name": "Kraschwitz",
+     "state": "TH"
+    },
+    {
+     "name": "Kratschütz",
+     "state": "TH"
+    },
+    {
+     "name": "Krebitschen",
+     "state": "TH"
+    },
+    {
+     "name": "Kreutzen",
+     "state": "TH"
+    },
+    {
+     "name": "Kriebitzsch",
+     "state": "TH"
+    },
+    {
+     "name": "Kröbern",
+     "state": "TH"
+    },
+    {
+     "name": "Kummer",
+     "state": "TH"
+    },
+    {
+     "name": "Kürbitz ",
+     "state": "TH"
+    },
+    {
+     "name": "Langenleuba-Niederhain",
+     "state": "TH"
+    },
+    {
+     "name": "Lehma",
+     "state": "TH"
+    },
+    {
+     "name": "Lehndorf",
+     "state": "TH"
+    },
+    {
+     "name": "Lehnitzsch",
+     "state": "TH"
+    },
+    {
+     "name": "Löbichau",
+     "state": "TH"
+    },
+    {
+     "name": "Lohma (Langenleuba-Ndh.)",
+     "state": "TH"
+    },
+    {
+     "name": "Lohma (Schmölln)",
+     "state": "TH"
+    },
+    {
+     "name": "Löhmigen",
+     "state": "TH"
+    },
+    {
+     "name": "Löpitz",
+     "state": "TH"
+    },
+    {
+     "name": "Lossen",
+     "state": "TH"
+    },
+    {
+     "name": "Lucka",
+     "state": "TH"
+    },
+    {
+     "name": "Lumpzig",
+     "state": "TH"
+    },
+    {
+     "name": "Lutschütz",
+     "state": "TH"
+    },
+    {
+     "name": "Maltis",
+     "state": "TH"
+    },
+    {
+     "name": "Mehna",
+     "state": "TH"
+    },
+    {
+     "name": "Merlach",
+     "state": "TH"
+    },
+    {
+     "name": "Meucha",
+     "state": "TH"
+    },
+    {
+     "name": "Meuselwitz",
+     "state": "TH"
+    },
+    {
+     "name": "Misselwitz",
+     "state": "TH"
+    },
+    {
+     "name": "Mockern",
+     "state": "TH"
+    },
+    {
+     "name": "Mockzig",
+     "state": "TH"
+    },
+    {
+     "name": "Modelwitz",
+     "state": "TH"
+    },
+    {
+     "name": "Mohlis",
+     "state": "TH"
+    },
+    {
+     "name": "Molbitz",
+     "state": "TH"
+    },
+    {
+     "name": "Monstab",
+     "state": "TH"
+    },
+    {
+     "name": "Mumsdorf",
+     "state": "TH"
+    },
+    {
+     "name": "Münsa + Bahnhäuser",
+     "state": "TH"
+    },
+    {
+     "name": "Münsa, Polnische Hütte",
+     "state": "TH"
+    },
+    {
+     "name": "Naundorf (Starkenberg)",
+     "state": "TH"
+    },
+    {
+     "name": "Neubraunshain",
+     "state": "TH"
+    },
+    {
+     "name": "Neuenmörbitz",
+     "state": "TH"
+    },
+    {
+     "name": "Neupoderschau  ",
+     "state": "TH"
+    },
+    {
+     "name": "Neuposa",
+     "state": "TH"
+    },
+    {
+     "name": "Niederarnsdorf",
+     "state": "TH"
+    },
+    {
+     "name": "Niederleupten",
+     "state": "TH"
+    },
+    {
+     "name": "Nirkendorf",
+     "state": "TH"
+    },
+    {
+     "name": "Nischwitz",
+     "state": "TH"
+    },
+    {
+     "name": "Nitzschka, einschl. Gewerbegeb.",
+     "state": "TH"
+    },
+    {
+     "name": "Nöbdenitz",
+     "state": "TH"
+    },
+    {
+     "name": "Nobitz",
+     "state": "TH"
+    },
+    {
+     "name": "Nobitz,Flugplatz,Industriegelände",
+     "state": "TH"
+    },
+    {
+     "name": "Nödenitzsch",
+     "state": "TH"
+    },
+    {
+     "name": "Oberarnsdorf",
+     "state": "TH"
+    },
+    {
+     "name": "Oberkossa",
+     "state": "TH"
+    },
+    {
+     "name": "Oberleupten",
+     "state": "TH"
+    },
+    {
+     "name": "Oberlödla ",
+     "state": "TH"
+    },
+    {
+     "name": "Oberzetzscha",
+     "state": "TH"
+    },
+    {
+     "name": "Paditz, Bahnhof",
+     "state": "TH"
+    },
+    {
+     "name": "Paditz, ohne Bahnhof",
+     "state": "TH"
+    },
+    {
+     "name": "Pahna",
+     "state": "TH"
+    },
+    {
+     "name": "Pähnitz",
+     "state": "TH"
+    },
+    {
+     "name": "Pflichtendorf",
+     "state": "TH"
+    },
+    {
+     "name": "Platschütz",
+     "state": "TH"
+    },
+    {
+     "name": "Plottendorf",
+     "state": "TH"
+    },
+    {
+     "name": "Podelwitz",
+     "state": "TH"
+    },
+    {
+     "name": "Pöhla",
+     "state": "TH"
+    },
+    {
+     "name": "Ponitz",
+     "state": "TH"
+    },
+    {
+     "name": "Pontewitz",
+     "state": "TH"
+    },
+    {
+     "name": "Pöppschen",
+     "state": "TH"
+    },
+    {
+     "name": "Posa",
+     "state": "TH"
+    },
+    {
+     "name": "Poschwitz",
+     "state": "TH"
+    },
+    {
+     "name": "Pöschwitz",
+     "state": "TH"
+    },
+    {
+     "name": "Posterstein",
+     "state": "TH"
+    },
+    {
+     "name": "Prehna",
+     "state": "TH"
+    },
+    {
+     "name": "Priefel",
+     "state": "TH"
+    },
+    {
+     "name": "Primmelwitz",
+     "state": "TH"
+    },
+    {
+     "name": "Prößdorf",
+     "state": "TH"
+    },
+    {
+     "name": "Rautenberg",
+     "state": "TH"
+    },
+    {
+     "name": "Remsa",
+     "state": "TH"
+    },
+    {
+     "name": "Rodameuschel",
+     "state": "TH"
+    },
+    {
+     "name": "Rödigen",
+     "state": "TH"
+    },
+    {
+     "name": "Rolika",
+     "state": "TH"
+    },
+    {
+     "name": "Romschütz",
+     "state": "TH"
+    },
+    {
+     "name": "Rositz",
+     "state": "TH"
+    },
+    {
+     "name": "Röthenitz",
+     "state": "TH"
+    },
+    {
+     "name": "Runsdorf",
+     "state": "TH"
+    },
+    {
+     "name": "Ruppersdorf",
+     "state": "TH"
+    },
+    {
+     "name": "Saara",
+     "state": "TH"
+    },
+    {
+     "name": "Schelchwitz",
+     "state": "TH"
+    },
+    {
+     "name": "Schelditz",
+     "state": "TH"
+    },
+    {
+     "name": "Schlauditz",
+     "state": "TH"
+    },
+    {
+     "name": "Schloßig",
+     "state": "TH"
+    },
+    {
+     "name": "Schmölln",
+     "state": "TH"
+    },
+    {
+     "name": "Schnauderhainichen ",
+     "state": "TH"
+    },
+    {
+     "name": "Schömbach",
+     "state": "TH"
+    },
+    {
+     "name": "Schönhaide",
+     "state": "TH"
+    },
+    {
+     "name": "Schwanditz",
+     "state": "TH"
+    },
+    {
+     "name": "Selka",
+     "state": "TH"
+    },
+    {
+     "name": "Selleris",
+     "state": "TH"
+    },
+    {
+     "name": "Serbitz",
+     "state": "TH"
+    },
+    {
+     "name": "Sommeritz",
+     "state": "TH"
+    },
+    {
+     "name": "Starkenberg",
+     "state": "TH"
+    },
+    {
+     "name": "Steinwitz",
+     "state": "TH"
+    },
+    {
+     "name": "Stolzenberg",
+     "state": "TH"
+    },
+    {
+     "name": "Stünzhain",
+     "state": "TH"
+    },
+    {
+     "name": "Tanna",
+     "state": "TH"
+    },
+    {
+     "name": "Tannenfeld",
+     "state": "TH"
+    },
+    {
+     "name": "Taupadel",
+     "state": "TH"
+    },
+    {
+     "name": "Tautenhain",
+     "state": "TH"
+    },
+    {
+     "name": "Tegkwitz",
+     "state": "TH"
+    },
+    {
+     "name": "Th.-Müntzer-Siedlung SLN",
+     "state": "TH"
+    },
+    {
+     "name": "Thonhausen",
+     "state": "TH"
+    },
+    {
+     "name": "Trebanz, Bahnhof",
+     "state": "TH"
+    },
+    {
+     "name": "Trebanz, ohne Bahnhof",
+     "state": "TH"
+    },
+    {
+     "name": "Treben",
+     "state": "TH"
+    },
+    {
+     "name": "Trebula",
+     "state": "TH"
+    },
+    {
+     "name": "Unterlödla",
+     "state": "TH"
+    },
+    {
+     "name": "Unterzetzscha",
+     "state": "TH"
+    },
+    {
+     "name": "Untschen",
+     "state": "TH"
+    },
+    {
+     "name": "Vollmershain",
+     "state": "TH"
+    },
+    {
+     "name": "Waltersdorf",
+     "state": "TH"
+    },
+    {
+     "name": "Weißbach",
+     "state": "TH"
+    },
+    {
+     "name": "Wernsdorf",
+     "state": "TH"
+    },
+    {
+     "name": "Wettelswalde",
+     "state": "TH"
+    },
+    {
+     "name": "Wieseberg",
+     "state": "TH"
+    },
+    {
+     "name": "Wiesenmühle",
+     "state": "TH"
+    },
+    {
+     "name": "Wilchwitz",
+     "state": "TH"
+    },
+    {
+     "name": "Wildenbörten",
+     "state": "TH"
+    },
+    {
+     "name": "Windischleuba u. Gewerbegeb.",
+     "state": "TH"
+    },
+    {
+     "name": "Windischleuba, Siedl. Am Schafteich",
+     "state": "TH"
+    },
+    {
+     "name": "Wintersdorf",
+     "state": "TH"
+    },
+    {
+     "name": "Wolperndorf",
+     "state": "TH"
+    },
+    {
+     "name": "Zagkwitz",
+     "state": "TH"
+    },
+    {
+     "name": "Zechau",
+     "state": "TH"
+    },
+    {
+     "name": "Zehma",
+     "state": "TH"
+    },
+    {
+     "name": "Ziegelheim",
+     "state": "TH"
+    },
+    {
+     "name": "Zschaiga",
+     "state": "TH"
+    },
+    {
+     "name": "Zschaschelwitz",
+     "state": "TH"
+    },
+    {
+     "name": "Zschechwitz",
+     "state": "TH"
+    },
+    {
+     "name": "Zschernichen",
+     "state": "TH"
+    },
+    {
+     "name": "Zschernitzsch (ABG), ab Einm. Poststr.",
+     "state": "TH"
+    },
+    {
+     "name": "Zschernitzsch (SLN)",
+     "state": "TH"
+    },
+    {
+     "name": "Zschöpel",
+     "state": "TH"
+    },
+    {
+     "name": "Zschöpperitz",
+     "state": "TH"
+    },
+    {
+     "name": "Zumroda",
+     "state": "TH"
+    },
+    {
+     "name": "Zürchau",
+     "state": "TH"
+    },
+    {
+     "name": "Zweitschen",
+     "state": "TH"
+    }
+   ]
+  },
+  {
    "id": "jumomind-zaw",
    "name": "ZAW Darmstadt-Dieburg",
    "displayName": "ZAW Darmstadt-Dieburg",
@@ -7691,6 +8649,10 @@
     },
     {
      "name": "Griesheim",
+     "state": "HE"
+    },
+    {
+     "name": "Groß",
      "state": "HE"
     },
     {
@@ -7954,6 +8916,10 @@
    "stateConfidence": "verified",
    "towns": [
     {
+     "name": "Ahrensfelde",
+     "state": "BB"
+    },
+    {
      "name": "Ahrensfelde-Ahrensfelde",
      "state": "BB"
     },
@@ -7974,11 +8940,19 @@
      "state": "BB"
     },
     {
+     "name": "Althüttendorf",
+     "state": "BB"
+    },
+    {
      "name": "Althüttendorf-Althüttendorf",
      "state": "BB"
     },
     {
      "name": "Althüttendorf-Neugrimnitz",
+     "state": "BB"
+    },
+    {
+     "name": "Bernau bei Berlin",
      "state": "BB"
     },
     {
@@ -8022,11 +8996,19 @@
      "state": "BB"
     },
     {
+     "name": "Biesenthal",
+     "state": "BB"
+    },
+    {
      "name": "Biesenthal-Biesenthal",
      "state": "BB"
     },
     {
      "name": "Biesenthal-Danewitz",
+     "state": "BB"
+    },
+    {
+     "name": "Breydin",
      "state": "BB"
     },
     {
@@ -8038,7 +9020,15 @@
      "state": "BB"
     },
     {
+     "name": "Britz",
+     "state": "BB"
+    },
+    {
      "name": "Britz-Britz",
+     "state": "BB"
+    },
+    {
+     "name": "Chorin",
      "state": "BB"
     },
     {
@@ -8070,6 +9060,10 @@
      "state": "BB"
     },
     {
+     "name": "Eberswalde",
+     "state": "BB"
+    },
+    {
      "name": "Eberswalde-Eberswalde",
      "state": "BB"
     },
@@ -8090,6 +9084,10 @@
      "state": "BB"
     },
     {
+     "name": "Friedrichswalde",
+     "state": "BB"
+    },
+    {
      "name": "Friedrichswalde-Friedrichswalde",
      "state": "BB"
     },
@@ -8098,7 +9096,15 @@
      "state": "BB"
     },
     {
+     "name": "Hohenfinow",
+     "state": "BB"
+    },
+    {
      "name": "Hohenfinow-Hohenfinow",
+     "state": "BB"
+    },
+    {
+     "name": "Joachimsthal",
      "state": "BB"
     },
     {
@@ -8106,7 +9112,15 @@
      "state": "BB"
     },
     {
+     "name": "Liepe",
+     "state": "BB"
+    },
+    {
      "name": "Liepe-Liepe",
+     "state": "BB"
+    },
+    {
+     "name": "Lunow",
      "state": "BB"
     },
     {
@@ -8115,6 +9129,10 @@
     },
     {
      "name": "Lunow-Stolzenhagen-Stolzenhagen",
+     "state": "BB"
+    },
+    {
+     "name": "Marienwerder",
      "state": "BB"
     },
     {
@@ -8130,6 +9148,10 @@
      "state": "BB"
     },
     {
+     "name": "Melchow",
+     "state": "BB"
+    },
+    {
      "name": "Melchow-Melchow",
      "state": "BB"
     },
@@ -8138,11 +9160,23 @@
      "state": "BB"
     },
     {
+     "name": "Niederfinow",
+     "state": "BB"
+    },
+    {
      "name": "Niederfinow-Niederfinow",
      "state": "BB"
     },
     {
+     "name": "Oderberg",
+     "state": "BB"
+    },
+    {
      "name": "Oderberg-Oderberg",
+     "state": "BB"
+    },
+    {
+     "name": "Panketal",
      "state": "BB"
     },
     {
@@ -8158,6 +9192,10 @@
      "state": "BB"
     },
     {
+     "name": "Parsteinsee",
+     "state": "BB"
+    },
+    {
      "name": "Parsteinsee-Lüdersdorf",
      "state": "BB"
     },
@@ -8166,7 +9204,15 @@
      "state": "BB"
     },
     {
+     "name": "Rüdnitz",
+     "state": "BB"
+    },
+    {
      "name": "Rüdnitz-Rüdnitz",
+     "state": "BB"
+    },
+    {
+     "name": "Schorfheide",
      "state": "BB"
     },
     {
@@ -8206,11 +9252,19 @@
      "state": "BB"
     },
     {
+     "name": "Sydower Fließ",
+     "state": "BB"
+    },
+    {
      "name": "Sydower Fließ-Grüntal",
      "state": "BB"
     },
     {
      "name": "Sydower Fließ-Tempelfelde",
+     "state": "BB"
+    },
+    {
+     "name": "Wandlitz",
      "state": "BB"
     },
     {
@@ -8250,6 +9304,10 @@
      "state": "BB"
     },
     {
+     "name": "Werneuchen",
+     "state": "BB"
+    },
+    {
      "name": "Werneuchen-Hirschfelde",
      "state": "BB"
     },
@@ -8283,6 +9341,10 @@
     },
     {
      "name": "Werneuchen-Willmersdorf",
+     "state": "BB"
+    },
+    {
+     "name": "Ziethen",
      "state": "BB"
     },
     {
@@ -8390,572 +9452,6 @@
     {
      "name": "Recklinghausen",
      "state": "NW"
-    }
-   ]
-  },
-  {
-   "id": "jumomind-rhe",
-   "name": "RH Entsorgung (Rhein-Hunsrück)",
-   "displayName": "RH Entsorgung (Rhein-Hunsrück-Kreis)",
-   "family": "jumomind",
-   "state": "RP",
-   "stateConfidence": "verified",
-   "towns": [
-    {
-     "name": "Alterkülz",
-     "state": "RP"
-    },
-    {
-     "name": "Altweidelbach",
-     "state": "RP"
-    },
-    {
-     "name": "Argenthal",
-     "state": "RP"
-    },
-    {
-     "name": "Bacharach",
-     "state": "RP"
-    },
-    {
-     "name": "Badenhard",
-     "state": "RP"
-    },
-    {
-     "name": "Bärenbach",
-     "state": "RP"
-    },
-    {
-     "name": "Belg",
-     "state": "RP"
-    },
-    {
-     "name": "Belgweiler",
-     "state": "RP"
-    },
-    {
-     "name": "Bell",
-     "state": "RP"
-    },
-    {
-     "name": "Beltheim",
-     "state": "RP"
-    },
-    {
-     "name": "Benzweiler",
-     "state": "RP"
-    },
-    {
-     "name": "Bergenhausen",
-     "state": "RP"
-    },
-    {
-     "name": "Beulich",
-     "state": "RP"
-    },
-    {
-     "name": "Bickenbach",
-     "state": "RP"
-    },
-    {
-     "name": "Biebern",
-     "state": "RP"
-    },
-    {
-     "name": "Birkheim",
-     "state": "RP"
-    },
-    {
-     "name": "Boppard",
-     "state": "RP"
-    },
-    {
-     "name": "Braunshorn",
-     "state": "RP"
-    },
-    {
-     "name": "Bubach",
-     "state": "RP"
-    },
-    {
-     "name": "Buch",
-     "state": "RP"
-    },
-    {
-     "name": "Büchenbeuren",
-     "state": "RP"
-    },
-    {
-     "name": "Budenbach",
-     "state": "RP"
-    },
-    {
-     "name": "Damscheid",
-     "state": "RP"
-    },
-    {
-     "name": "Dichtelbach",
-     "state": "RP"
-    },
-    {
-     "name": "Dickenschied",
-     "state": "RP"
-    },
-    {
-     "name": "Dill",
-     "state": "RP"
-    },
-    {
-     "name": "Dillendorf",
-     "state": "RP"
-    },
-    {
-     "name": "Dommershausen",
-     "state": "RP"
-    },
-    {
-     "name": "Dörth",
-     "state": "RP"
-    },
-    {
-     "name": "Ellern",
-     "state": "RP"
-    },
-    {
-     "name": "Emmelshausen",
-     "state": "RP"
-    },
-    {
-     "name": "Erbach",
-     "state": "RP"
-    },
-    {
-     "name": "Fronhofen",
-     "state": "RP"
-    },
-    {
-     "name": "Gehlweiler",
-     "state": "RP"
-    },
-    {
-     "name": "Gemünden",
-     "state": "RP"
-    },
-    {
-     "name": "Gödenroth",
-     "state": "RP"
-    },
-    {
-     "name": "Gondershausen",
-     "state": "RP"
-    },
-    {
-     "name": "Hahn",
-     "state": "RP"
-    },
-    {
-     "name": "Halsenbach",
-     "state": "RP"
-    },
-    {
-     "name": "Hasselbach",
-     "state": "RP"
-    },
-    {
-     "name": "Hausbay",
-     "state": "RP"
-    },
-    {
-     "name": "Hecken",
-     "state": "RP"
-    },
-    {
-     "name": "Heinzenbach",
-     "state": "RP"
-    },
-    {
-     "name": "Henau",
-     "state": "RP"
-    },
-    {
-     "name": "Hirschfeld",
-     "state": "RP"
-    },
-    {
-     "name": "Hollnich",
-     "state": "RP"
-    },
-    {
-     "name": "Holzbach",
-     "state": "RP"
-    },
-    {
-     "name": "Horn",
-     "state": "RP"
-    },
-    {
-     "name": "Hungenroth",
-     "state": "RP"
-    },
-    {
-     "name": "Kappel",
-     "state": "RP"
-    },
-    {
-     "name": "Karbach",
-     "state": "RP"
-    },
-    {
-     "name": "Kastellaun",
-     "state": "RP"
-    },
-    {
-     "name": "Keidelheim",
-     "state": "RP"
-    },
-    {
-     "name": "Kirchberg",
-     "state": "RP"
-    },
-    {
-     "name": "Kisselbach",
-     "state": "RP"
-    },
-    {
-     "name": "Klosterkumbd",
-     "state": "RP"
-    },
-    {
-     "name": "Kludenbach",
-     "state": "RP"
-    },
-    {
-     "name": "Korweiler",
-     "state": "RP"
-    },
-    {
-     "name": "Kratzenburg",
-     "state": "RP"
-    },
-    {
-     "name": "Külz",
-     "state": "RP"
-    },
-    {
-     "name": "Kümbdchen",
-     "state": "RP"
-    },
-    {
-     "name": "Lahr",
-     "state": "RP"
-    },
-    {
-     "name": "Laubach",
-     "state": "RP"
-    },
-    {
-     "name": "Laudert",
-     "state": "RP"
-    },
-    {
-     "name": "Laufersweiler",
-     "state": "RP"
-    },
-    {
-     "name": "Lautzenhausen",
-     "state": "RP"
-    },
-    {
-     "name": "Leiningen",
-     "state": "RP"
-    },
-    {
-     "name": "Liebshausen",
-     "state": "RP"
-    },
-    {
-     "name": "Lindenschied",
-     "state": "RP"
-    },
-    {
-     "name": "Lingerhahn",
-     "state": "RP"
-    },
-    {
-     "name": "Linkenbach",
-     "state": "RP"
-    },
-    {
-     "name": "Maisborn",
-     "state": "RP"
-    },
-    {
-     "name": "Maitzborn",
-     "state": "RP"
-    },
-    {
-     "name": "Mastershausen",
-     "state": "RP"
-    },
-    {
-     "name": "Mengerschied",
-     "state": "RP"
-    },
-    {
-     "name": "Mermuth",
-     "state": "RP"
-    },
-    {
-     "name": "Metzenhausen",
-     "state": "RP"
-    },
-    {
-     "name": "Michelbach",
-     "state": "RP"
-    },
-    {
-     "name": "Mörschbach",
-     "state": "RP"
-    },
-    {
-     "name": "Mörsdorf",
-     "state": "RP"
-    },
-    {
-     "name": "Morshausen",
-     "state": "RP"
-    },
-    {
-     "name": "Mühlpfad",
-     "state": "RP"
-    },
-    {
-     "name": "Mutterschied",
-     "state": "RP"
-    },
-    {
-     "name": "Nannhausen",
-     "state": "RP"
-    },
-    {
-     "name": "Neuerkirch",
-     "state": "RP"
-    },
-    {
-     "name": "Ney",
-     "state": "RP"
-    },
-    {
-     "name": "Niederburg",
-     "state": "RP"
-    },
-    {
-     "name": "Niederkostenz",
-     "state": "RP"
-    },
-    {
-     "name": "Niederkumbd",
-     "state": "RP"
-    },
-    {
-     "name": "Niedersohren",
-     "state": "RP"
-    },
-    {
-     "name": "Niedert",
-     "state": "RP"
-    },
-    {
-     "name": "Niederweiler",
-     "state": "RP"
-    },
-    {
-     "name": "Norath",
-     "state": "RP"
-    },
-    {
-     "name": "Oberkostenz",
-     "state": "RP"
-    },
-    {
-     "name": "Oberwesel",
-     "state": "RP"
-    },
-    {
-     "name": "Ohlweiler",
-     "state": "RP"
-    },
-    {
-     "name": "Oppertshausen",
-     "state": "RP"
-    },
-    {
-     "name": "Perscheid",
-     "state": "RP"
-    },
-    {
-     "name": "Pfalzfeld",
-     "state": "RP"
-    },
-    {
-     "name": "Pleizenhausen",
-     "state": "RP"
-    },
-    {
-     "name": "Ravengiersburg",
-     "state": "RP"
-    },
-    {
-     "name": "Raversbeuren",
-     "state": "RP"
-    },
-    {
-     "name": "Rayerschied",
-     "state": "RP"
-    },
-    {
-     "name": "Reckershausen",
-     "state": "RP"
-    },
-    {
-     "name": "Reich",
-     "state": "RP"
-    },
-    {
-     "name": "Rheinböllen",
-     "state": "RP"
-    },
-    {
-     "name": "Riegenroth",
-     "state": "RP"
-    },
-    {
-     "name": "Riesweiler",
-     "state": "RP"
-    },
-    {
-     "name": "Rödelhausen",
-     "state": "RP"
-    },
-    {
-     "name": "Rödern",
-     "state": "RP"
-    },
-    {
-     "name": "Rohrbach",
-     "state": "RP"
-    },
-    {
-     "name": "Roth",
-     "state": "RP"
-    },
-    {
-     "name": "Sargenroth",
-     "state": "RP"
-    },
-    {
-     "name": "Schlierschied",
-     "state": "RP"
-    },
-    {
-     "name": "Schnorbach",
-     "state": "RP"
-    },
-    {
-     "name": "Schönborn",
-     "state": "RP"
-    },
-    {
-     "name": "Schwall",
-     "state": "RP"
-    },
-    {
-     "name": "Schwarzen",
-     "state": "RP"
-    },
-    {
-     "name": "Simmern",
-     "state": "RP"
-    },
-    {
-     "name": "Sohren",
-     "state": "RP"
-    },
-    {
-     "name": "Sohrschied",
-     "state": "RP"
-    },
-    {
-     "name": "Spesenroth",
-     "state": "RP"
-    },
-    {
-     "name": "St. Goar",
-     "state": "RP"
-    },
-    {
-     "name": "Steinbach",
-     "state": "RP"
-    },
-    {
-     "name": "Thörlingen",
-     "state": "RP"
-    },
-    {
-     "name": "Tiefenbach",
-     "state": "RP"
-    },
-    {
-     "name": "Todenroth",
-     "state": "RP"
-    },
-    {
-     "name": "Uhler",
-     "state": "RP"
-    },
-    {
-     "name": "Unzenberg",
-     "state": "RP"
-    },
-    {
-     "name": "Urbar",
-     "state": "RP"
-    },
-    {
-     "name": "Utzenhain",
-     "state": "RP"
-    },
-    {
-     "name": "Wahlbach",
-     "state": "RP"
-    },
-    {
-     "name": "Wahlenau",
-     "state": "RP"
-    },
-    {
-     "name": "Wiebelsheim",
-     "state": "RP"
-    },
-    {
-     "name": "Womrath",
-     "state": "RP"
-    },
-    {
-     "name": "Woppenroth",
-     "state": "RP"
-    },
-    {
-     "name": "Würrich",
-     "state": "RP"
-    },
-    {
-     "name": "Wüschheim",
-     "state": "RP"
-    },
-    {
-     "name": "Zilshausen",
-     "state": "RP"
     }
    ]
   },
@@ -9088,6 +9584,10 @@
      "state": "BB"
     },
     {
+     "name": "Boitzenburger Land",
+     "state": "BB"
+    },
+    {
      "name": "Boitzenburger Land - Berkholz",
      "state": "BB"
     },
@@ -9161,6 +9661,10 @@
     },
     {
      "name": "Casekow - Woltersdorf",
+     "state": "BB"
+    },
+    {
+     "name": "Flieth-Stegelitz",
      "state": "BB"
     },
     {
@@ -9293,6 +9797,10 @@
     },
     {
      "name": "Mittenwalde",
+     "state": "BB"
+    },
+    {
+     "name": "Nordwestuckermark",
      "state": "BB"
     },
     {
@@ -9440,6 +9948,10 @@
      "state": "BB"
     },
     {
+     "name": "Oberuckersee",
+     "state": "BB"
+    },
+    {
      "name": "Oberuckersee - Blankenburg",
      "state": "BB"
     },
@@ -9517,6 +10029,10 @@
     },
     {
      "name": "Prenzlau - Seelübbe",
+     "state": "BB"
+    },
+    {
+     "name": "Randowtal",
      "state": "BB"
     },
     {
@@ -9660,6 +10176,10 @@
      "state": "BB"
     },
     {
+     "name": "Temmen-Ringenwalde",
+     "state": "BB"
+    },
+    {
      "name": "Temmen-Ringenwalde - Ringenwalde",
      "state": "BB"
     },
@@ -9737,6 +10257,10 @@
     },
     {
      "name": "Templin - Vietmannsdorf",
+     "state": "BB"
+    },
+    {
+     "name": "Uckerfelde",
      "state": "BB"
     },
     {
@@ -11122,15 +11646,7 @@
    "stateConfidence": "verified",
    "towns": [
     {
-     "name": "Altenbeken-Altenbeken",
-     "state": "NW"
-    },
-    {
-     "name": "Altenbeken-Buke",
-     "state": "NW"
-    },
-    {
-     "name": "Altenbeken-Schwaney",
+     "name": "Altenbeken",
      "state": "NW"
     },
     {
@@ -11138,115 +11654,15 @@
      "state": "NW"
     },
     {
-     "name": "Bad Wünnenberg - Kernstadt",
+     "name": "Bad Wünnenberg",
      "state": "NW"
     },
     {
-     "name": "Bad Wünnenberg-Bleiwäsche",
+     "name": "Borchen",
      "state": "NW"
     },
     {
-     "name": "Bad Wünnenberg-Eilern",
-     "state": "NW"
-    },
-    {
-     "name": "Bad Wünnenberg-Elisenhof",
-     "state": "NW"
-    },
-    {
-     "name": "Bad Wünnenberg-Friedrichsgrund",
-     "state": "NW"
-    },
-    {
-     "name": "Bad Wünnenberg-Fürstenberg",
-     "state": "NW"
-    },
-    {
-     "name": "Bad Wünnenberg-Haaren",
-     "state": "NW"
-    },
-    {
-     "name": "Bad Wünnenberg-Helmern",
-     "state": "NW"
-    },
-    {
-     "name": "Bad Wünnenberg-Leiberg",
-     "state": "NW"
-    },
-    {
-     "name": "Borchen-Alfen",
-     "state": "NW"
-    },
-    {
-     "name": "Borchen-Dörenhagen",
-     "state": "NW"
-    },
-    {
-     "name": "Borchen-Etteln",
-     "state": "NW"
-    },
-    {
-     "name": "Borchen-Kirchborchen",
-     "state": "NW"
-    },
-    {
-     "name": "Borchen-Nordborchen",
-     "state": "NW"
-    },
-    {
-     "name": "Borchen-Schloß Hamborn",
-     "state": "NW"
-    },
-    {
-     "name": "Büren-Ahden",
-     "state": "NW"
-    },
-    {
-     "name": "Büren-Barkhausen",
-     "state": "NW"
-    },
-    {
-     "name": "Büren-Brenken",
-     "state": "NW"
-    },
-    {
-     "name": "Büren-Eickhoff",
-     "state": "NW"
-    },
-    {
-     "name": "Büren-Harth",
-     "state": "NW"
-    },
-    {
-     "name": "Büren-Hegensdorf",
-     "state": "NW"
-    },
-    {
-     "name": "Büren-Hegensdorf-Keddinghausen",
-     "state": "NW"
-    },
-    {
-     "name": "Büren-Siddinghausen",
-     "state": "NW"
-    },
-    {
-     "name": "Büren-Stadtkern",
-     "state": "NW"
-    },
-    {
-     "name": "Büren-Steinhausen",
-     "state": "NW"
-    },
-    {
-     "name": "Büren-Weiberg",
-     "state": "NW"
-    },
-    {
-     "name": "Büren-Weine",
-     "state": "NW"
-    },
-    {
-     "name": "Büren-Wewelsburg",
+     "name": "Büren",
      "state": "NW"
     },
     {
@@ -11258,63 +11674,7 @@
      "state": "NW"
     },
     {
-     "name": "Lichtenau-Asseln",
-     "state": "NW"
-    },
-    {
-     "name": "Lichtenau-Atteln",
-     "state": "NW"
-    },
-    {
-     "name": "Lichtenau-Blankenrode",
-     "state": "NW"
-    },
-    {
-     "name": "Lichtenau-Dalheim",
-     "state": "NW"
-    },
-    {
-     "name": "Lichtenau-Ebbinghausen",
-     "state": "NW"
-    },
-    {
-     "name": "Lichtenau-Grundsteinheim",
-     "state": "NW"
-    },
-    {
-     "name": "Lichtenau-Hakenberg",
-     "state": "NW"
-    },
-    {
-     "name": "Lichtenau-Henglarn",
-     "state": "NW"
-    },
-    {
-     "name": "Lichtenau-Herbram",
-     "state": "NW"
-    },
-    {
-     "name": "Lichtenau-Herbram-Wald",
-     "state": "NW"
-    },
-    {
-     "name": "Lichtenau-Holtheim",
-     "state": "NW"
-    },
-    {
-     "name": "Lichtenau-Husen",
-     "state": "NW"
-    },
-    {
-     "name": "Lichtenau-Iggenhausen",
-     "state": "NW"
-    },
-    {
-     "name": "Lichtenau-Kleinenberg",
-     "state": "NW"
-    },
-    {
-     "name": "Lichtenau-Lichtenau",
+     "name": "Lichtenau",
      "state": "NW"
     },
     {
@@ -14834,6 +15194,588 @@
    ]
   },
   {
+   "id": "abfallio-b3b6d7b7",
+   "name": "ALB Abfallwirtschaft Breisgau-Hochschwarzwald",
+   "displayName": "ALB Abfallwirtschaft Breisgau-Hochschwarzwald",
+   "family": "abfallio",
+   "state": "BW",
+   "stateConfidence": "assigned",
+   "towns": [
+    {
+     "name": "Au",
+     "state": "BW"
+    },
+    {
+     "name": "Auggen",
+     "state": "BW"
+    },
+    {
+     "name": "Bad Krozingen",
+     "state": "BW"
+    },
+    {
+     "name": "Badenweiler",
+     "state": "BW"
+    },
+    {
+     "name": "Ballrechten-Dottingen",
+     "state": "BW"
+    },
+    {
+     "name": "Bollschweil",
+     "state": "BW"
+    },
+    {
+     "name": "Bötzingen",
+     "state": "BW"
+    },
+    {
+     "name": "Breisach",
+     "state": "BW"
+    },
+    {
+     "name": "Breitnau",
+     "state": "BW"
+    },
+    {
+     "name": "Buchenbach",
+     "state": "BW"
+    },
+    {
+     "name": "Buggingen",
+     "state": "BW"
+    },
+    {
+     "name": "Ebringen",
+     "state": "BW"
+    },
+    {
+     "name": "Ehrenkirchen",
+     "state": "BW"
+    },
+    {
+     "name": "Eichstetten",
+     "state": "BW"
+    },
+    {
+     "name": "Eisenbach",
+     "state": "BW"
+    },
+    {
+     "name": "Eschbach",
+     "state": "BW"
+    },
+    {
+     "name": "Feldberg",
+     "state": "BW"
+    },
+    {
+     "name": "Friedenweiler",
+     "state": "BW"
+    },
+    {
+     "name": "Glottertal",
+     "state": "BW"
+    },
+    {
+     "name": "Gottenheim",
+     "state": "BW"
+    },
+    {
+     "name": "Gundelfingen",
+     "state": "BW"
+    },
+    {
+     "name": "Hartheim",
+     "state": "BW"
+    },
+    {
+     "name": "Heitersheim",
+     "state": "BW"
+    },
+    {
+     "name": "Heuweiler",
+     "state": "BW"
+    },
+    {
+     "name": "Hinterzarten",
+     "state": "BW"
+    },
+    {
+     "name": "Horben",
+     "state": "BW"
+    },
+    {
+     "name": "Ihringen",
+     "state": "BW"
+    },
+    {
+     "name": "Kirchzarten",
+     "state": "BW"
+    },
+    {
+     "name": "Lenzkirch",
+     "state": "BW"
+    },
+    {
+     "name": "Löffingen",
+     "state": "BW"
+    },
+    {
+     "name": "March",
+     "state": "BW"
+    },
+    {
+     "name": "Merdingen",
+     "state": "BW"
+    },
+    {
+     "name": "Merzhausen",
+     "state": "BW"
+    },
+    {
+     "name": "Müllheim",
+     "state": "BW"
+    },
+    {
+     "name": "Münstertal",
+     "state": "BW"
+    },
+    {
+     "name": "Neuenburg",
+     "state": "BW"
+    },
+    {
+     "name": "Oberried",
+     "state": "BW"
+    },
+    {
+     "name": "Pfaffenweiler",
+     "state": "BW"
+    },
+    {
+     "name": "Schallstadt",
+     "state": "BW"
+    },
+    {
+     "name": "Schluchsee",
+     "state": "BW"
+    },
+    {
+     "name": "Sölden",
+     "state": "BW"
+    },
+    {
+     "name": "St. Märgen",
+     "state": "BW"
+    },
+    {
+     "name": "St. Peter",
+     "state": "BW"
+    },
+    {
+     "name": "Staufen",
+     "state": "BW"
+    },
+    {
+     "name": "Stegen",
+     "state": "BW"
+    },
+    {
+     "name": "Sulzburg",
+     "state": "BW"
+    },
+    {
+     "name": "Titisee-Neustadt",
+     "state": "BW"
+    },
+    {
+     "name": "Umkirch",
+     "state": "BW"
+    },
+    {
+     "name": "Vogtsburg",
+     "state": "BW"
+    },
+    {
+     "name": "Wittnau",
+     "state": "BW"
+    }
+   ]
+  },
+  {
+   "id": "abfallio-e00c91eb",
+   "name": "Landkreis Görlitz (NEG)",
+   "displayName": "Landkreis Görlitz (NEG)",
+   "family": "abfallio",
+   "state": "SN",
+   "stateConfidence": "assigned",
+   "towns": [
+    {
+     "name": "Bad Muskau",
+     "state": "SN"
+    },
+    {
+     "name": "Beiersdorf",
+     "state": "SN"
+    },
+    {
+     "name": "Bernstadt",
+     "state": "SN"
+    },
+    {
+     "name": "Bertsdorf-Hörnitz",
+     "state": "SN"
+    },
+    {
+     "name": "Boxberg",
+     "state": "SN"
+    },
+    {
+     "name": "Dürrhennersdorf",
+     "state": "SN"
+    },
+    {
+     "name": "Ebersbach-Neugersdorf",
+     "state": "SN"
+    },
+    {
+     "name": "Gablenz",
+     "state": "SN"
+    },
+    {
+     "name": "Görlitz",
+     "state": "SN"
+    },
+    {
+     "name": "Groß-Düben",
+     "state": "SN"
+    },
+    {
+     "name": "Großschönau",
+     "state": "SN"
+    },
+    {
+     "name": "Großschweidnitz",
+     "state": "SN"
+    },
+    {
+     "name": "Hähnichen",
+     "state": "SN"
+    },
+    {
+     "name": "Hainewalde",
+     "state": "SN"
+    },
+    {
+     "name": "Herrnhut",
+     "state": "SN"
+    },
+    {
+     "name": "Hohendubrau",
+     "state": "SN"
+    },
+    {
+     "name": "Horka",
+     "state": "SN"
+    },
+    {
+     "name": "Kodersdorf",
+     "state": "SN"
+    },
+    {
+     "name": "Königshain",
+     "state": "SN"
+    },
+    {
+     "name": "Kottmar",
+     "state": "SN"
+    },
+    {
+     "name": "Krauschwitz",
+     "state": "SN"
+    },
+    {
+     "name": "Kreba-Neudorf",
+     "state": "SN"
+    },
+    {
+     "name": "Kurort Jonsdorf",
+     "state": "SN"
+    },
+    {
+     "name": "Lawalde",
+     "state": "SN"
+    },
+    {
+     "name": "Leutersdorf",
+     "state": "SN"
+    },
+    {
+     "name": "Löbau",
+     "state": "SN"
+    },
+    {
+     "name": "Markersdorf",
+     "state": "SN"
+    },
+    {
+     "name": "Mittelherwigsdorf",
+     "state": "SN"
+    },
+    {
+     "name": "Mücka",
+     "state": "SN"
+    },
+    {
+     "name": "Neißeaue",
+     "state": "SN"
+    },
+    {
+     "name": "Neusalza-Spremberg",
+     "state": "SN"
+    },
+    {
+     "name": "Niesky",
+     "state": "SN"
+    },
+    {
+     "name": "Oderwitz",
+     "state": "SN"
+    },
+    {
+     "name": "Olbersdorf",
+     "state": "SN"
+    },
+    {
+     "name": "Oppach",
+     "state": "SN"
+    },
+    {
+     "name": "Ostritz",
+     "state": "SN"
+    },
+    {
+     "name": "Oybin",
+     "state": "SN"
+    },
+    {
+     "name": "Quitzdorf am See",
+     "state": "SN"
+    },
+    {
+     "name": "Reichenbach",
+     "state": "SN"
+    },
+    {
+     "name": "Rietschen",
+     "state": "SN"
+    },
+    {
+     "name": "Rosenbach",
+     "state": "SN"
+    },
+    {
+     "name": "Rothenburg",
+     "state": "SN"
+    },
+    {
+     "name": "Schleife",
+     "state": "SN"
+    },
+    {
+     "name": "Schönau-Berzdorf",
+     "state": "SN"
+    },
+    {
+     "name": "Schönbach",
+     "state": "SN"
+    },
+    {
+     "name": "Schöpstal",
+     "state": "SN"
+    },
+    {
+     "name": "Seifhennersdorf",
+     "state": "SN"
+    },
+    {
+     "name": "Trebendorf",
+     "state": "SN"
+    },
+    {
+     "name": "Vierkirchen",
+     "state": "SN"
+    },
+    {
+     "name": "Waldhufen",
+     "state": "SN"
+    },
+    {
+     "name": "Weißkeißel",
+     "state": "SN"
+    },
+    {
+     "name": "Weißwasser",
+     "state": "SN"
+    },
+    {
+     "name": "Zittau",
+     "state": "SN"
+    }
+   ]
+  },
+  {
+   "id": "abfallio-04b7561b",
+   "name": "Landratsamt Landshut",
+   "displayName": "Landratsamt Landshut",
+   "family": "abfallio",
+   "state": "BY",
+   "stateConfidence": "assigned",
+   "towns": [
+    {
+     "name": "Adlkofen",
+     "state": "BY"
+    },
+    {
+     "name": "Aham",
+     "state": "BY"
+    },
+    {
+     "name": "Altdorf",
+     "state": "BY"
+    },
+    {
+     "name": "Altfraunhofen",
+     "state": "BY"
+    },
+    {
+     "name": "Baierbach",
+     "state": "BY"
+    },
+    {
+     "name": "Bayerbach b. Erg.",
+     "state": "BY"
+    },
+    {
+     "name": "Bodenkirchen",
+     "state": "BY"
+    },
+    {
+     "name": "Bruckberg",
+     "state": "BY"
+    },
+    {
+     "name": "Buch a. Erlbach",
+     "state": "BY"
+    },
+    {
+     "name": "Eching b. La.",
+     "state": "BY"
+    },
+    {
+     "name": "Ergolding",
+     "state": "BY"
+    },
+    {
+     "name": "Ergoldsbach",
+     "state": "BY"
+    },
+    {
+     "name": "Essenbach",
+     "state": "BY"
+    },
+    {
+     "name": "Furth",
+     "state": "BY"
+    },
+    {
+     "name": "Geisenhausen",
+     "state": "BY"
+    },
+    {
+     "name": "Gerzen",
+     "state": "BY"
+    },
+    {
+     "name": "Hohenthann",
+     "state": "BY"
+    },
+    {
+     "name": "Kröning",
+     "state": "BY"
+    },
+    {
+     "name": "Kumhausen",
+     "state": "BY"
+    },
+    {
+     "name": "Neufahrn i. Ndb.",
+     "state": "BY"
+    },
+    {
+     "name": "Neufraunhofen",
+     "state": "BY"
+    },
+    {
+     "name": "Niederaichbach",
+     "state": "BY"
+    },
+    {
+     "name": "Obersüßbach",
+     "state": "BY"
+    },
+    {
+     "name": "Pfeffenhausen",
+     "state": "BY"
+    },
+    {
+     "name": "Postau",
+     "state": "BY"
+    },
+    {
+     "name": "Rottenburg",
+     "state": "BY"
+    },
+    {
+     "name": "Schalkham",
+     "state": "BY"
+    },
+    {
+     "name": "Tiefenbach",
+     "state": "BY"
+    },
+    {
+     "name": "Velden",
+     "state": "BY"
+    },
+    {
+     "name": "Vilsbiburg",
+     "state": "BY"
+    },
+    {
+     "name": "Vilsheim",
+     "state": "BY"
+    },
+    {
+     "name": "Weihmichl",
+     "state": "BY"
+    },
+    {
+     "name": "Weng",
+     "state": "BY"
+    },
+    {
+     "name": "Wörth a. d. Isar",
+     "state": "BY"
+    },
+    {
+     "name": "Wurmsham",
+     "state": "BY"
+    }
+   ]
+  },
+  {
    "id": "ctrace-bremen",
    "name": "Bremer Stadtreinigung",
    "displayName": "Bremer Stadtreinigung",
@@ -15618,6 +16560,10 @@
      "state": "RP"
     },
     {
+     "name": "Bernkastel",
+     "state": "RP"
+    },
+    {
      "name": "Bernkastel-Kues (Stadtteil Andel)",
      "state": "RP"
     },
@@ -15719,6 +16665,10 @@
     },
     {
      "name": "Bischofsdhron",
+     "state": "RP"
+    },
+    {
+     "name": "Bitburg",
      "state": "RP"
     },
     {
@@ -16974,6 +17924,10 @@
      "state": "RP"
     },
     {
+     "name": "Konz",
+     "state": "RP"
+    },
+    {
      "name": "Konz Stadt",
      "state": "RP"
     },
@@ -17579,6 +18533,10 @@
     },
     {
      "name": "Neuhütten",
+     "state": "RP"
+    },
+    {
+     "name": "Neumagen",
      "state": "RP"
     },
     {
@@ -18470,6 +19428,10 @@
      "state": "RP"
     },
     {
+     "name": "Traben",
+     "state": "RP"
+    },
+    {
      "name": "Traben-Trarbach Fischteiche",
      "state": "RP"
     },
@@ -19310,6 +20272,34 @@
     {
      "name": "Mainz",
      "state": "RP"
+    }
+   ]
+  },
+  {
+   "id": "muellmax-his",
+   "name": "Hanau Infrastruktur Service",
+   "displayName": "Hanau Infrastruktur Service",
+   "family": "muellmax",
+   "state": "HE",
+   "stateConfidence": "assigned",
+   "towns": [
+    {
+     "name": "Hanau",
+     "state": "HE"
+    }
+   ]
+  },
+  {
+   "id": "muellmax-mai",
+   "name": "Stadt Maintal",
+   "displayName": "Stadt Maintal",
+   "family": "muellmax",
+   "state": "HE",
+   "stateConfidence": "assigned",
+   "towns": [
+    {
+     "name": "Maintal",
+     "state": "HE"
     }
    ]
   },
@@ -20264,6 +21254,4026 @@
    ]
   },
   {
+   "id": "athos-ludwigsburg",
+   "name": "AVL Landkreis Ludwigsburg",
+   "displayName": "AVL Landkreis Ludwigsburg",
+   "family": "athos",
+   "state": "BW",
+   "stateConfidence": "assigned",
+   "towns": [
+    {
+     "name": "Affalterbach",
+     "state": "BW"
+    },
+    {
+     "name": "Asperg",
+     "state": "BW"
+    },
+    {
+     "name": "Benningen",
+     "state": "BW"
+    },
+    {
+     "name": "Besigheim",
+     "state": "BW"
+    },
+    {
+     "name": "Bietigheim-Bissingen",
+     "state": "BW"
+    },
+    {
+     "name": "Bönnigheim",
+     "state": "BW"
+    },
+    {
+     "name": "Ditzingen",
+     "state": "BW"
+    },
+    {
+     "name": "Eberdingen",
+     "state": "BW"
+    },
+    {
+     "name": "Erdmannhausen",
+     "state": "BW"
+    },
+    {
+     "name": "Erligheim",
+     "state": "BW"
+    },
+    {
+     "name": "Freiberg",
+     "state": "BW"
+    },
+    {
+     "name": "Freudental",
+     "state": "BW"
+    },
+    {
+     "name": "Gemmrigheim",
+     "state": "BW"
+    },
+    {
+     "name": "Gerlingen",
+     "state": "BW"
+    },
+    {
+     "name": "Grossbottwar",
+     "state": "BW"
+    },
+    {
+     "name": "Hemmingen",
+     "state": "BW"
+    },
+    {
+     "name": "Hessigheim",
+     "state": "BW"
+    },
+    {
+     "name": "Ingersheim",
+     "state": "BW"
+    },
+    {
+     "name": "Kirchheim",
+     "state": "BW"
+    },
+    {
+     "name": "Korntal-Münchingen",
+     "state": "BW"
+    },
+    {
+     "name": "Kornwestheim",
+     "state": "BW"
+    },
+    {
+     "name": "Löchgau",
+     "state": "BW"
+    },
+    {
+     "name": "Ludwigsburg",
+     "state": "BW"
+    },
+    {
+     "name": "Marbach",
+     "state": "BW"
+    },
+    {
+     "name": "Markgröningen",
+     "state": "BW"
+    },
+    {
+     "name": "Möglingen",
+     "state": "BW"
+    },
+    {
+     "name": "Mundelsheim",
+     "state": "BW"
+    },
+    {
+     "name": "Murr",
+     "state": "BW"
+    },
+    {
+     "name": "Oberriexingen",
+     "state": "BW"
+    },
+    {
+     "name": "Oberstenfeld",
+     "state": "BW"
+    },
+    {
+     "name": "Pleidelsheim",
+     "state": "BW"
+    },
+    {
+     "name": "Remseck",
+     "state": "BW"
+    },
+    {
+     "name": "Sachsenheim",
+     "state": "BW"
+    },
+    {
+     "name": "Schwieberdingen",
+     "state": "BW"
+    },
+    {
+     "name": "Sersheim",
+     "state": "BW"
+    },
+    {
+     "name": "Steinheim",
+     "state": "BW"
+    },
+    {
+     "name": "Tamm",
+     "state": "BW"
+    },
+    {
+     "name": "Vaihingen",
+     "state": "BW"
+    },
+    {
+     "name": "Walheim",
+     "state": "BW"
+    }
+   ]
+  },
+  {
+   "id": "athos-ravensburgprivat",
+   "name": "Landratsamt Ravensburg, Kreislaufwirtschaft",
+   "displayName": "Landratsamt Ravensburg, Kreislaufwirtschaft",
+   "family": "athos",
+   "state": "BW",
+   "stateConfidence": "assigned",
+   "towns": [
+    {
+     "name": "Achberg",
+     "state": "BW"
+    },
+    {
+     "name": "Aichstetten",
+     "state": "BW"
+    },
+    {
+     "name": "Aitrach",
+     "state": "BW"
+    },
+    {
+     "name": "Altshausen",
+     "state": "BW"
+    },
+    {
+     "name": "Amtzell",
+     "state": "BW"
+    },
+    {
+     "name": "Argenbühl",
+     "state": "BW"
+    },
+    {
+     "name": "Aulendorf",
+     "state": "BW"
+    },
+    {
+     "name": "Bad Waldsee",
+     "state": "BW"
+    },
+    {
+     "name": "Bad Wurzach",
+     "state": "BW"
+    },
+    {
+     "name": "Baienfurt",
+     "state": "BW"
+    },
+    {
+     "name": "Baindt",
+     "state": "BW"
+    },
+    {
+     "name": "Berg",
+     "state": "BW"
+    },
+    {
+     "name": "Bergatreute",
+     "state": "BW"
+    },
+    {
+     "name": "Bodnegg",
+     "state": "BW"
+    },
+    {
+     "name": "Boms",
+     "state": "BW"
+    },
+    {
+     "name": "Ebenweiler",
+     "state": "BW"
+    },
+    {
+     "name": "Ebersbach-Musbach",
+     "state": "BW"
+    },
+    {
+     "name": "Eichstegen",
+     "state": "BW"
+    },
+    {
+     "name": "Fleischwangen",
+     "state": "BW"
+    },
+    {
+     "name": "Fronreute",
+     "state": "BW"
+    },
+    {
+     "name": "Grünkraut",
+     "state": "BW"
+    },
+    {
+     "name": "Guggenhausen",
+     "state": "BW"
+    },
+    {
+     "name": "Horgenzell",
+     "state": "BW"
+    },
+    {
+     "name": "Hoßkirch",
+     "state": "BW"
+    },
+    {
+     "name": "Isny im Allgäu",
+     "state": "BW"
+    },
+    {
+     "name": "Kißlegg",
+     "state": "BW"
+    },
+    {
+     "name": "Königseggwald",
+     "state": "BW"
+    },
+    {
+     "name": "Leutkirch im Allgäu",
+     "state": "BW"
+    },
+    {
+     "name": "Ravensburg",
+     "state": "BW"
+    },
+    {
+     "name": "Riedhausen",
+     "state": "BW"
+    },
+    {
+     "name": "Schlier",
+     "state": "BW"
+    },
+    {
+     "name": "Unterwaldhausen",
+     "state": "BW"
+    },
+    {
+     "name": "Vogt",
+     "state": "BW"
+    },
+    {
+     "name": "Waldburg",
+     "state": "BW"
+    },
+    {
+     "name": "Wangen im Allgäu",
+     "state": "BW"
+    },
+    {
+     "name": "Weingarten",
+     "state": "BW"
+    },
+    {
+     "name": "Wilhelmsdorf",
+     "state": "BW"
+    },
+    {
+     "name": "Wolfegg",
+     "state": "BW"
+    },
+    {
+     "name": "Wolpertswende",
+     "state": "BW"
+    }
+   ]
+  },
+  {
+   "id": "athos-suedbrandenburg",
+   "name": "SBAZV Südbrandenburg (Teltow-Fläming, Dahme-Spreewald)",
+   "displayName": "SBAZV Südbrandenburg (Teltow-Fläming, Dahme-Spreewald)",
+   "family": "athos",
+   "state": "BB",
+   "stateConfidence": "assigned",
+   "towns": [
+    {
+     "name": "Am Mellensee",
+     "state": "BB"
+    },
+    {
+     "name": "Baruth/Mark",
+     "state": "BB"
+    },
+    {
+     "name": "Bestensee",
+     "state": "BB"
+    },
+    {
+     "name": "Blankenfelde-Mahlow",
+     "state": "BB"
+    },
+    {
+     "name": "Dahme/Mark",
+     "state": "BB"
+    },
+    {
+     "name": "Dahmetal",
+     "state": "BB"
+    },
+    {
+     "name": "Eichwalde",
+     "state": "BB"
+    },
+    {
+     "name": "Groß Köris",
+     "state": "BB"
+    },
+    {
+     "name": "Großbeeren",
+     "state": "BB"
+    },
+    {
+     "name": "Halbe",
+     "state": "BB"
+    },
+    {
+     "name": "Heidesee",
+     "state": "BB"
+    },
+    {
+     "name": "Ihlow",
+     "state": "BB"
+    },
+    {
+     "name": "Jüterbog",
+     "state": "BB"
+    },
+    {
+     "name": "Königs Wusterhausen",
+     "state": "BB"
+    },
+    {
+     "name": "Krausnick-Groß Wasserburg",
+     "state": "BB"
+    },
+    {
+     "name": "Luckenwalde",
+     "state": "BB"
+    },
+    {
+     "name": "Ludwigsfelde",
+     "state": "BB"
+    },
+    {
+     "name": "Märkisch Buchholz",
+     "state": "BB"
+    },
+    {
+     "name": "Mittenwalde",
+     "state": "BB"
+    },
+    {
+     "name": "Münchehofe",
+     "state": "BB"
+    },
+    {
+     "name": "Niederer Fläming",
+     "state": "BB"
+    },
+    {
+     "name": "Niedergörsdorf",
+     "state": "BB"
+    },
+    {
+     "name": "Nuthe-Urstromtal",
+     "state": "BB"
+    },
+    {
+     "name": "Rangsdorf",
+     "state": "BB"
+    },
+    {
+     "name": "Rietzneuendorf-Staakow",
+     "state": "BB"
+    },
+    {
+     "name": "Schließdienst-",
+     "state": "BB"
+    },
+    {
+     "name": "Schönefeld",
+     "state": "BB"
+    },
+    {
+     "name": "Schulzendorf",
+     "state": "BB"
+    },
+    {
+     "name": "Schwerin",
+     "state": "BB"
+    },
+    {
+     "name": "Teupitz",
+     "state": "BB"
+    },
+    {
+     "name": "Trebbin",
+     "state": "BB"
+    },
+    {
+     "name": "Wildau",
+     "state": "BB"
+    },
+    {
+     "name": "Zeuthen",
+     "state": "BB"
+    },
+    {
+     "name": "Zossen",
+     "state": "BB"
+    }
+   ]
+  },
+  {
+   "id": "athos-suedwestsachsen",
+   "name": "ZAS Südwestsachsen (Erzgebirgskreis)",
+   "displayName": "ZAS Südwestsachsen (Erzgebirgskreis)",
+   "family": "athos",
+   "state": "SN",
+   "stateConfidence": "assigned",
+   "towns": [
+    {
+     "name": "Amtsberg",
+     "state": "SN"
+    },
+    {
+     "name": "Annaberg-Buchholz",
+     "state": "SN"
+    },
+    {
+     "name": "Aue-Bad Schlema",
+     "state": "SN"
+    },
+    {
+     "name": "Auerbach",
+     "state": "SN"
+    },
+    {
+     "name": "Bärenstein",
+     "state": "SN"
+    },
+    {
+     "name": "Bockau",
+     "state": "SN"
+    },
+    {
+     "name": "Börnichen/Erzgeb.",
+     "state": "SN"
+    },
+    {
+     "name": "Breitenbrunn",
+     "state": "SN"
+    },
+    {
+     "name": "Burkhardtsdorf",
+     "state": "SN"
+    },
+    {
+     "name": "Crottendorf",
+     "state": "SN"
+    },
+    {
+     "name": "Deutschneudorf",
+     "state": "SN"
+    },
+    {
+     "name": "Drebach",
+     "state": "SN"
+    },
+    {
+     "name": "Ehrenfriedersdorf",
+     "state": "SN"
+    },
+    {
+     "name": "Eibenstock",
+     "state": "SN"
+    },
+    {
+     "name": "Elterlein",
+     "state": "SN"
+    },
+    {
+     "name": "Gelenau",
+     "state": "SN"
+    },
+    {
+     "name": "Geyer",
+     "state": "SN"
+    },
+    {
+     "name": "Gornau/Erzgeb.",
+     "state": "SN"
+    },
+    {
+     "name": "Gornsdorf",
+     "state": "SN"
+    },
+    {
+     "name": "Großolbersdorf",
+     "state": "SN"
+    },
+    {
+     "name": "Großrückerswalde",
+     "state": "SN"
+    },
+    {
+     "name": "Grünhain-Beierfeld",
+     "state": "SN"
+    },
+    {
+     "name": "Grünhainichen",
+     "state": "SN"
+    },
+    {
+     "name": "Heidersdorf",
+     "state": "SN"
+    },
+    {
+     "name": "Hohndorf",
+     "state": "SN"
+    },
+    {
+     "name": "Jahnsdorf/Erzgeb.",
+     "state": "SN"
+    },
+    {
+     "name": "Johanngeorgenstadt",
+     "state": "SN"
+    },
+    {
+     "name": "Jöhstadt",
+     "state": "SN"
+    },
+    {
+     "name": "Königswalde",
+     "state": "SN"
+    },
+    {
+     "name": "Kurort Oberwiesenthal",
+     "state": "SN"
+    },
+    {
+     "name": "Kurort Seiffen",
+     "state": "SN"
+    },
+    {
+     "name": "Lauter-Bernsbach",
+     "state": "SN"
+    },
+    {
+     "name": "Lößnitz",
+     "state": "SN"
+    },
+    {
+     "name": "Lugau/Erzgeb.",
+     "state": "SN"
+    },
+    {
+     "name": "Marienberg",
+     "state": "SN"
+    },
+    {
+     "name": "Mildenau",
+     "state": "SN"
+    },
+    {
+     "name": "Neukirchen",
+     "state": "SN"
+    },
+    {
+     "name": "Niederdorf",
+     "state": "SN"
+    },
+    {
+     "name": "Niederwürschnitz",
+     "state": "SN"
+    },
+    {
+     "name": "Oelsnitz/Erzgeb.",
+     "state": "SN"
+    },
+    {
+     "name": "Olbernhau",
+     "state": "SN"
+    },
+    {
+     "name": "Pockau-Lengefeld",
+     "state": "SN"
+    },
+    {
+     "name": "Raschau-Markersbach",
+     "state": "SN"
+    },
+    {
+     "name": "Scheibenberg",
+     "state": "SN"
+    },
+    {
+     "name": "Schlettau",
+     "state": "SN"
+    },
+    {
+     "name": "Schneeberg",
+     "state": "SN"
+    },
+    {
+     "name": "Schönheide",
+     "state": "SN"
+    },
+    {
+     "name": "Schwarzenberg",
+     "state": "SN"
+    },
+    {
+     "name": "Sehmatal",
+     "state": "SN"
+    },
+    {
+     "name": "Stollberg",
+     "state": "SN"
+    },
+    {
+     "name": "Stützengrün",
+     "state": "SN"
+    },
+    {
+     "name": "Tannenberg",
+     "state": "SN"
+    },
+    {
+     "name": "Thalheim/Erzgeb.",
+     "state": "SN"
+    },
+    {
+     "name": "Thermalbad Wiesenbad",
+     "state": "SN"
+    },
+    {
+     "name": "Thum",
+     "state": "SN"
+    },
+    {
+     "name": "Wolkenstein",
+     "state": "SN"
+    },
+    {
+     "name": "Zschopau",
+     "state": "SN"
+    },
+    {
+     "name": "Zschorlau",
+     "state": "SN"
+    },
+    {
+     "name": "Zwönitz",
+     "state": "SN"
+    }
+   ]
+  },
+  {
+   "id": "athos-vogtland",
+   "name": "Landratsamt Vogtlandkreis",
+   "displayName": "Landratsamt Vogtlandkreis",
+   "family": "athos",
+   "state": "SN",
+   "stateConfidence": "assigned",
+   "towns": [
+    {
+     "name": "Adorf/Vogtl.",
+     "state": "SN"
+    },
+    {
+     "name": "Auerbach/Vogtl.",
+     "state": "SN"
+    },
+    {
+     "name": "Bad Brambach",
+     "state": "SN"
+    },
+    {
+     "name": "Bad Elster",
+     "state": "SN"
+    },
+    {
+     "name": "Bergen",
+     "state": "SN"
+    },
+    {
+     "name": "Bösenbrunn",
+     "state": "SN"
+    },
+    {
+     "name": "Eichigt",
+     "state": "SN"
+    },
+    {
+     "name": "Ellefeld",
+     "state": "SN"
+    },
+    {
+     "name": "Elsterberg",
+     "state": "SN"
+    },
+    {
+     "name": "Falkenstein/Vogtl.",
+     "state": "SN"
+    },
+    {
+     "name": "Greiz",
+     "state": "SN"
+    },
+    {
+     "name": "Grünbach",
+     "state": "SN"
+    },
+    {
+     "name": "Heinsdorfergrund",
+     "state": "SN"
+    },
+    {
+     "name": "Klingenthal",
+     "state": "SN"
+    },
+    {
+     "name": "Lengenfeld",
+     "state": "SN"
+    },
+    {
+     "name": "Limbach",
+     "state": "SN"
+    },
+    {
+     "name": "Markneukirchen",
+     "state": "SN"
+    },
+    {
+     "name": "Mühlental",
+     "state": "SN"
+    },
+    {
+     "name": "Muldenhammer",
+     "state": "SN"
+    },
+    {
+     "name": "Netzschkau",
+     "state": "SN"
+    },
+    {
+     "name": "Neuensalz",
+     "state": "SN"
+    },
+    {
+     "name": "Neumark",
+     "state": "SN"
+    },
+    {
+     "name": "Neustadt/Vogtl.",
+     "state": "SN"
+    },
+    {
+     "name": "Oelsnitz/Vogtl.",
+     "state": "SN"
+    },
+    {
+     "name": "Pausa-Mühltroff",
+     "state": "SN"
+    },
+    {
+     "name": "Plauen",
+     "state": "SN"
+    },
+    {
+     "name": "Pöhl",
+     "state": "SN"
+    },
+    {
+     "name": "Reichenbach im Vogtland",
+     "state": "SN"
+    },
+    {
+     "name": "Rodewisch",
+     "state": "SN"
+    },
+    {
+     "name": "Rosenbach/Vogtl.",
+     "state": "SN"
+    },
+    {
+     "name": "Schöneck/Vogtl.",
+     "state": "SN"
+    },
+    {
+     "name": "Steinberg",
+     "state": "SN"
+    },
+    {
+     "name": "Theuma",
+     "state": "SN"
+    },
+    {
+     "name": "Tirpersdorf",
+     "state": "SN"
+    },
+    {
+     "name": "Treuen",
+     "state": "SN"
+    },
+    {
+     "name": "Triebel/Vogtl.",
+     "state": "SN"
+    },
+    {
+     "name": "Weischlitz",
+     "state": "SN"
+    },
+    {
+     "name": "Werda",
+     "state": "SN"
+    }
+   ]
+  },
+  {
+   "id": "athos-biberach",
+   "name": "AWB Landkreis Biberach",
+   "displayName": "AWB Landkreis Biberach",
+   "family": "athos",
+   "state": "BW",
+   "stateConfidence": "assigned",
+   "towns": [
+    {
+     "name": "Achstetten",
+     "state": "BW"
+    },
+    {
+     "name": "Alleshausen",
+     "state": "BW"
+    },
+    {
+     "name": "Allmannsweiler",
+     "state": "BW"
+    },
+    {
+     "name": "Altheim",
+     "state": "BW"
+    },
+    {
+     "name": "Attenweiler",
+     "state": "BW"
+    },
+    {
+     "name": "Bad Buchau",
+     "state": "BW"
+    },
+    {
+     "name": "Bad Schussenried",
+     "state": "BW"
+    },
+    {
+     "name": "Berkheim",
+     "state": "BW"
+    },
+    {
+     "name": "Betzenweiler",
+     "state": "BW"
+    },
+    {
+     "name": "Biberach",
+     "state": "BW"
+    },
+    {
+     "name": "Burgrieden",
+     "state": "BW"
+    },
+    {
+     "name": "Dettingen",
+     "state": "BW"
+    },
+    {
+     "name": "Dürmentingen",
+     "state": "BW"
+    },
+    {
+     "name": "Dürnau",
+     "state": "BW"
+    },
+    {
+     "name": "Eberhardzell",
+     "state": "BW"
+    },
+    {
+     "name": "Erlenmoos",
+     "state": "BW"
+    },
+    {
+     "name": "Erolzheim",
+     "state": "BW"
+    },
+    {
+     "name": "Ertingen",
+     "state": "BW"
+    },
+    {
+     "name": "Gutenzell-Hürbel",
+     "state": "BW"
+    },
+    {
+     "name": "Hochdorf",
+     "state": "BW"
+    },
+    {
+     "name": "Ingoldingen",
+     "state": "BW"
+    },
+    {
+     "name": "Kanzach",
+     "state": "BW"
+    },
+    {
+     "name": "Kirchberg",
+     "state": "BW"
+    },
+    {
+     "name": "Kirchdorf",
+     "state": "BW"
+    },
+    {
+     "name": "Langenenslingen",
+     "state": "BW"
+    },
+    {
+     "name": "Laupheim",
+     "state": "BW"
+    },
+    {
+     "name": "Maselheim",
+     "state": "BW"
+    },
+    {
+     "name": "Mietingen",
+     "state": "BW"
+    },
+    {
+     "name": "Mittelbiberach",
+     "state": "BW"
+    },
+    {
+     "name": "Moosburg",
+     "state": "BW"
+    },
+    {
+     "name": "Ochsenhausen",
+     "state": "BW"
+    },
+    {
+     "name": "Oggelshausen",
+     "state": "BW"
+    },
+    {
+     "name": "Riedlingen",
+     "state": "BW"
+    },
+    {
+     "name": "Rot a.d. Rot",
+     "state": "BW"
+    },
+    {
+     "name": "Schemmerhofen",
+     "state": "BW"
+    },
+    {
+     "name": "Schwendi",
+     "state": "BW"
+    },
+    {
+     "name": "Seekirch",
+     "state": "BW"
+    },
+    {
+     "name": "Steinhausen",
+     "state": "BW"
+    },
+    {
+     "name": "Tannheim",
+     "state": "BW"
+    },
+    {
+     "name": "Tiefenbach",
+     "state": "BW"
+    },
+    {
+     "name": "Ummendorf",
+     "state": "BW"
+    },
+    {
+     "name": "Unlingen",
+     "state": "BW"
+    },
+    {
+     "name": "Uttenweiler",
+     "state": "BW"
+    },
+    {
+     "name": "Wain",
+     "state": "BW"
+    },
+    {
+     "name": "Warthausen",
+     "state": "BW"
+    }
+   ]
+  },
+  {
+   "id": "athos-lueneburg",
+   "name": "GfA Lüneburg",
+   "displayName": "GfA Lüneburg",
+   "family": "athos",
+   "state": "NI",
+   "stateConfidence": "conflict:BE",
+   "towns": [
+    {
+     "name": "Adendorf",
+     "state": "NI"
+    },
+    {
+     "name": "Amelinghausen",
+     "state": "NI"
+    },
+    {
+     "name": "Amt Neuhaus",
+     "state": "NI"
+    },
+    {
+     "name": "Artlenburg",
+     "state": "NI"
+    },
+    {
+     "name": "Bardowick",
+     "state": "NI"
+    },
+    {
+     "name": "Barendorf",
+     "state": "NI"
+    },
+    {
+     "name": "Barnstedt",
+     "state": "NI"
+    },
+    {
+     "name": "Barum",
+     "state": "NI"
+    },
+    {
+     "name": "Betzendorf",
+     "state": "NI"
+    },
+    {
+     "name": "Bleckede",
+     "state": "NI"
+    },
+    {
+     "name": "Boitze",
+     "state": "NI"
+    },
+    {
+     "name": "Brietlingen",
+     "state": "NI"
+    },
+    {
+     "name": "Dahlem",
+     "state": "NI"
+    },
+    {
+     "name": "Dahlenburg",
+     "state": "NI"
+    },
+    {
+     "name": "Deutsch Evern",
+     "state": "NI"
+    },
+    {
+     "name": "Echem",
+     "state": "NI"
+    },
+    {
+     "name": "Embsen",
+     "state": "NI"
+    },
+    {
+     "name": "Haar",
+     "state": "NI"
+    },
+    {
+     "name": "Handorf",
+     "state": "NI"
+    },
+    {
+     "name": "Hittbergen",
+     "state": "NI"
+    },
+    {
+     "name": "Hohnstorf",
+     "state": "NI"
+    },
+    {
+     "name": "Kaarßen",
+     "state": "NI"
+    },
+    {
+     "name": "Kirchgellersen",
+     "state": "NI"
+    },
+    {
+     "name": "Lüdersburg",
+     "state": "NI"
+    },
+    {
+     "name": "Lüneburg",
+     "state": "NI"
+    },
+    {
+     "name": "Mechtersen",
+     "state": "NI"
+    },
+    {
+     "name": "Melbeck",
+     "state": "NI"
+    },
+    {
+     "name": "Nahrendorf",
+     "state": "NI"
+    },
+    {
+     "name": "Neetze",
+     "state": "NI"
+    },
+    {
+     "name": "Oldendorf / Luhe",
+     "state": "NI"
+    },
+    {
+     "name": "Radbruch",
+     "state": "NI"
+    },
+    {
+     "name": "Rehlingen",
+     "state": "NI"
+    },
+    {
+     "name": "Reinstorf",
+     "state": "NI"
+    },
+    {
+     "name": "Reppenstedt",
+     "state": "NI"
+    },
+    {
+     "name": "Rullstorf",
+     "state": "NI"
+    },
+    {
+     "name": "Scharnebeck",
+     "state": "NI"
+    },
+    {
+     "name": "Soderstorf",
+     "state": "NI"
+    },
+    {
+     "name": "Stapel",
+     "state": "NI"
+    },
+    {
+     "name": "Südergellersen",
+     "state": "NI"
+    },
+    {
+     "name": "Sumte",
+     "state": "NI"
+    },
+    {
+     "name": "Thomasburg",
+     "state": "NI"
+    },
+    {
+     "name": "Tosterglope",
+     "state": "NI"
+    },
+    {
+     "name": "Tripkau",
+     "state": "NI"
+    },
+    {
+     "name": "Vastorf",
+     "state": "NI"
+    },
+    {
+     "name": "Vögelsen",
+     "state": "NI"
+    },
+    {
+     "name": "Wehningen",
+     "state": "NI"
+    },
+    {
+     "name": "Wendisch Evern",
+     "state": "NI"
+    },
+    {
+     "name": "Westergellersen",
+     "state": "NI"
+    },
+    {
+     "name": "Wittorf",
+     "state": "NI"
+    }
+   ]
+  },
+  {
+   "id": "athos-schwarzeelster",
+   "name": "AEV Schwarze Elster (Oberspreewald-Lausitz, Elbe-Elster)",
+   "displayName": "AEV Schwarze Elster (Oberspreewald-Lausitz, Elbe-Elster)",
+   "family": "athos",
+   "state": "BB",
+   "stateConfidence": "assigned",
+   "towns": [
+    {
+     "name": "Bad Liebenwerda",
+     "state": "BB"
+    },
+    {
+     "name": "Crinitz",
+     "state": "BB"
+    },
+    {
+     "name": "Doberlug-Kirchhain",
+     "state": "BB"
+    },
+    {
+     "name": "Elsterwerda",
+     "state": "BB"
+    },
+    {
+     "name": "Falkenberg/Elster",
+     "state": "BB"
+    },
+    {
+     "name": "Fichtwald",
+     "state": "BB"
+    },
+    {
+     "name": "Finsterwalde",
+     "state": "BB"
+    },
+    {
+     "name": "Frauendorf",
+     "state": "BB"
+    },
+    {
+     "name": "Gorden-Staupitz",
+     "state": "BB"
+    },
+    {
+     "name": "Gröden",
+     "state": "BB"
+    },
+    {
+     "name": "Großkmehlen",
+     "state": "BB"
+    },
+    {
+     "name": "Großräschen",
+     "state": "BB"
+    },
+    {
+     "name": "Großthiemig",
+     "state": "BB"
+    },
+    {
+     "name": "Grünewald",
+     "state": "BB"
+    },
+    {
+     "name": "Guteborn",
+     "state": "BB"
+    },
+    {
+     "name": "Heideland",
+     "state": "BB"
+    },
+    {
+     "name": "Hermsdorf",
+     "state": "BB"
+    },
+    {
+     "name": "Herzberg (Elster)",
+     "state": "BB"
+    },
+    {
+     "name": "Hirschfeld",
+     "state": "BB"
+    },
+    {
+     "name": "Hohenbocka",
+     "state": "BB"
+    },
+    {
+     "name": "Hohenbucko",
+     "state": "BB"
+    },
+    {
+     "name": "Hohenleipisch",
+     "state": "BB"
+    },
+    {
+     "name": "Kremitzaue",
+     "state": "BB"
+    },
+    {
+     "name": "Kroppen",
+     "state": "BB"
+    },
+    {
+     "name": "Lauchhammer",
+     "state": "BB"
+    },
+    {
+     "name": "Lebusa",
+     "state": "BB"
+    },
+    {
+     "name": "Lichterfeld-Schacksdorf",
+     "state": "BB"
+    },
+    {
+     "name": "Lindenau",
+     "state": "BB"
+    },
+    {
+     "name": "Massen-Niederlausitz",
+     "state": "BB"
+    },
+    {
+     "name": "Merzdorf",
+     "state": "BB"
+    },
+    {
+     "name": "Mühlberg/Elbe",
+     "state": "BB"
+    },
+    {
+     "name": "Neu-Seeland",
+     "state": "BB"
+    },
+    {
+     "name": "Ort",
+     "state": "BB"
+    },
+    {
+     "name": "Ortrand",
+     "state": "BB"
+    },
+    {
+     "name": "Plessa",
+     "state": "BB"
+    },
+    {
+     "name": "Röderland",
+     "state": "BB"
+    },
+    {
+     "name": "Rückersdorf",
+     "state": "BB"
+    },
+    {
+     "name": "Ruhland",
+     "state": "BB"
+    },
+    {
+     "name": "Sallgast",
+     "state": "BB"
+    },
+    {
+     "name": "Schilda",
+     "state": "BB"
+    },
+    {
+     "name": "Schipkau",
+     "state": "BB"
+    },
+    {
+     "name": "Schönborn",
+     "state": "BB"
+    },
+    {
+     "name": "Schönewalde",
+     "state": "BB"
+    },
+    {
+     "name": "Schraden",
+     "state": "BB"
+    },
+    {
+     "name": "Schwarzbach",
+     "state": "BB"
+    },
+    {
+     "name": "Schwarzheide",
+     "state": "BB"
+    },
+    {
+     "name": "Senftenberg",
+     "state": "BB"
+    },
+    {
+     "name": "Sonnewalde",
+     "state": "BB"
+    },
+    {
+     "name": "Stadt Schlieben",
+     "state": "BB"
+    },
+    {
+     "name": "Tettau",
+     "state": "BB"
+    },
+    {
+     "name": "Tröbitz",
+     "state": "BB"
+    },
+    {
+     "name": "Uebigau-Wahrenbrück",
+     "state": "BB"
+    }
+   ]
+  },
+  {
+   "id": "athos-neckarodenwald",
+   "name": "KWiN Neckar-Odenwald",
+   "displayName": "KWiN Neckar-Odenwald",
+   "family": "athos",
+   "state": "BW",
+   "stateConfidence": "assigned",
+   "towns": [
+    {
+     "name": "Adelsheim",
+     "state": "BW"
+    },
+    {
+     "name": "Aglasterhausen",
+     "state": "BW"
+    },
+    {
+     "name": "Billigheim",
+     "state": "BW"
+    },
+    {
+     "name": "Binau",
+     "state": "BW"
+    },
+    {
+     "name": "Buchen (Odenwald)",
+     "state": "BW"
+    },
+    {
+     "name": "Elztal",
+     "state": "BW"
+    },
+    {
+     "name": "Fahrenbach",
+     "state": "BW"
+    },
+    {
+     "name": "Hardheim",
+     "state": "BW"
+    },
+    {
+     "name": "Haßmersheim",
+     "state": "BW"
+    },
+    {
+     "name": "Höpfingen",
+     "state": "BW"
+    },
+    {
+     "name": "Hüffenhardt",
+     "state": "BW"
+    },
+    {
+     "name": "Limbach",
+     "state": "BW"
+    },
+    {
+     "name": "Mosbach",
+     "state": "BW"
+    },
+    {
+     "name": "Mudau",
+     "state": "BW"
+    },
+    {
+     "name": "Neckargerach",
+     "state": "BW"
+    },
+    {
+     "name": "Neckarzimmern",
+     "state": "BW"
+    },
+    {
+     "name": "Neunkirchen",
+     "state": "BW"
+    },
+    {
+     "name": "Obrigheim",
+     "state": "BW"
+    },
+    {
+     "name": "Osterburken",
+     "state": "BW"
+    },
+    {
+     "name": "Ravenstein",
+     "state": "BW"
+    },
+    {
+     "name": "Rosenberg",
+     "state": "BW"
+    },
+    {
+     "name": "Schefflenz",
+     "state": "BW"
+    },
+    {
+     "name": "Schwarzach",
+     "state": "BW"
+    },
+    {
+     "name": "Seckach",
+     "state": "BW"
+    },
+    {
+     "name": "Waldbrunn",
+     "state": "BW"
+    },
+    {
+     "name": "Walldürn",
+     "state": "BW"
+    },
+    {
+     "name": "Zwingenberg",
+     "state": "BW"
+    }
+   ]
+  },
+  {
+   "id": "athos-straubing",
+   "name": "ZAW Straubing Stadt und Land",
+   "displayName": "ZAW Straubing Stadt und Land",
+   "family": "athos",
+   "state": "BY",
+   "stateConfidence": "verified",
+   "towns": [
+    {
+     "name": "Aholfing",
+     "state": "BY"
+    },
+    {
+     "name": "Aiterhofen",
+     "state": "BY"
+    },
+    {
+     "name": "Ascha",
+     "state": "BY"
+    },
+    {
+     "name": "Atting",
+     "state": "BY"
+    },
+    {
+     "name": "Bogen",
+     "state": "BY"
+    },
+    {
+     "name": "Falkenfels",
+     "state": "BY"
+    },
+    {
+     "name": "Feldkirchen",
+     "state": "BY"
+    },
+    {
+     "name": "Geiselhöring",
+     "state": "BY"
+    },
+    {
+     "name": "Haibach",
+     "state": "BY"
+    },
+    {
+     "name": "Haselbach",
+     "state": "BY"
+    },
+    {
+     "name": "Hunderdorf",
+     "state": "BY"
+    },
+    {
+     "name": "Irlbach",
+     "state": "BY"
+    },
+    {
+     "name": "Kirchroth",
+     "state": "BY"
+    },
+    {
+     "name": "Kollnburg",
+     "state": "BY"
+    },
+    {
+     "name": "Konzell",
+     "state": "BY"
+    },
+    {
+     "name": "Laberweinting",
+     "state": "BY"
+    },
+    {
+     "name": "Leiblfing",
+     "state": "BY"
+    },
+    {
+     "name": "Loitzendorf",
+     "state": "BY"
+    },
+    {
+     "name": "Mallersdorf-Pfaffenberg",
+     "state": "BY"
+    },
+    {
+     "name": "Mariaposching",
+     "state": "BY"
+    },
+    {
+     "name": "Mengkofen",
+     "state": "BY"
+    },
+    {
+     "name": "Mitterfels",
+     "state": "BY"
+    },
+    {
+     "name": "Neukirchen",
+     "state": "BY"
+    },
+    {
+     "name": "Niederwinkling",
+     "state": "BY"
+    },
+    {
+     "name": "Oberschneiding",
+     "state": "BY"
+    },
+    {
+     "name": "Parkstetten",
+     "state": "BY"
+    },
+    {
+     "name": "Perasdorf",
+     "state": "BY"
+    },
+    {
+     "name": "Perkam",
+     "state": "BY"
+    },
+    {
+     "name": "Rain",
+     "state": "BY"
+    },
+    {
+     "name": "Rattenberg",
+     "state": "BY"
+    },
+    {
+     "name": "Rattiszell",
+     "state": "BY"
+    },
+    {
+     "name": "Salching",
+     "state": "BY"
+    },
+    {
+     "name": "Schwarzach",
+     "state": "BY"
+    },
+    {
+     "name": "St. Englmar",
+     "state": "BY"
+    },
+    {
+     "name": "Stallwang",
+     "state": "BY"
+    },
+    {
+     "name": "Steinach",
+     "state": "BY"
+    },
+    {
+     "name": "Straßkirchen",
+     "state": "BY"
+    },
+    {
+     "name": "Straubing",
+     "state": "BY"
+    },
+    {
+     "name": "Wiesenfelden",
+     "state": "BY"
+    },
+    {
+     "name": "Windberg",
+     "state": "BY"
+    }
+   ]
+  },
+  {
+   "id": "athos-verden",
+   "name": "Landkreis Verden",
+   "displayName": "Landkreis Verden",
+   "family": "athos",
+   "state": "NI",
+   "stateConfidence": "verified",
+   "towns": [
+    {
+     "name": "Achim",
+     "state": "NI"
+    },
+    {
+     "name": "Blender",
+     "state": "NI"
+    },
+    {
+     "name": "Dörverden",
+     "state": "NI"
+    },
+    {
+     "name": "Emtinghausen",
+     "state": "NI"
+    },
+    {
+     "name": "Kirchlinteln",
+     "state": "NI"
+    },
+    {
+     "name": "Langwedel",
+     "state": "NI"
+    },
+    {
+     "name": "Ottersberg",
+     "state": "NI"
+    },
+    {
+     "name": "Oyten",
+     "state": "NI"
+    },
+    {
+     "name": "Riede",
+     "state": "NI"
+    },
+    {
+     "name": "Thedinghausen",
+     "state": "NI"
+    },
+    {
+     "name": "Verden (Aller)",
+     "state": "NI"
+    }
+   ]
+  },
+  {
+   "id": "athos-starnberg",
+   "name": "AWISTA Starnberg",
+   "displayName": "AWISTA Starnberg",
+   "family": "athos",
+   "state": "BY",
+   "stateConfidence": "assigned",
+   "towns": [
+    {
+     "name": "Andechs",
+     "state": "BY"
+    },
+    {
+     "name": "Berg",
+     "state": "BY"
+    },
+    {
+     "name": "Feldafing",
+     "state": "BY"
+    },
+    {
+     "name": "Frohnloh",
+     "state": "BY"
+    },
+    {
+     "name": "Gauting",
+     "state": "BY"
+    },
+    {
+     "name": "Gilching",
+     "state": "BY"
+    },
+    {
+     "name": "Herrsching",
+     "state": "BY"
+    },
+    {
+     "name": "Inning",
+     "state": "BY"
+    },
+    {
+     "name": "Krailling",
+     "state": "BY"
+    },
+    {
+     "name": "Pentenried",
+     "state": "BY"
+    },
+    {
+     "name": "Pöcking",
+     "state": "BY"
+    },
+    {
+     "name": "Seefeld",
+     "state": "BY"
+    },
+    {
+     "name": "Starnberg",
+     "state": "BY"
+    },
+    {
+     "name": "Stockdorf",
+     "state": "BY"
+    },
+    {
+     "name": "Tutzing",
+     "state": "BY"
+    },
+    {
+     "name": "Wessling",
+     "state": "BY"
+    },
+    {
+     "name": "Wörthsee",
+     "state": "BY"
+    }
+   ]
+  },
+  {
+   "id": "athos-miltenberg",
+   "name": "Landratsamt Miltenberg",
+   "displayName": "Landratsamt Miltenberg",
+   "family": "athos",
+   "state": "BY",
+   "stateConfidence": "conflict:BW",
+   "towns": [
+    {
+     "name": "Altenbuch",
+     "state": "BY"
+    },
+    {
+     "name": "Amorbach",
+     "state": "BY"
+    },
+    {
+     "name": "Bürgstadt",
+     "state": "BY"
+    },
+    {
+     "name": "Collenberg",
+     "state": "BY"
+    },
+    {
+     "name": "Dorfprozelten",
+     "state": "BY"
+    },
+    {
+     "name": "Eichenbühl",
+     "state": "BY"
+    },
+    {
+     "name": "Elsenfeld",
+     "state": "BY"
+    },
+    {
+     "name": "Erlenbach",
+     "state": "BY"
+    },
+    {
+     "name": "Eschau",
+     "state": "BY"
+    },
+    {
+     "name": "Faulbach",
+     "state": "BY"
+    },
+    {
+     "name": "Großheubach",
+     "state": "BY"
+    },
+    {
+     "name": "Großwallstadt",
+     "state": "BY"
+    },
+    {
+     "name": "Hausen",
+     "state": "BY"
+    },
+    {
+     "name": "Kirchzell",
+     "state": "BY"
+    },
+    {
+     "name": "Kleinheubach",
+     "state": "BY"
+    },
+    {
+     "name": "Kleinwallstadt",
+     "state": "BY"
+    },
+    {
+     "name": "Klingenberg a.Main",
+     "state": "BY"
+    },
+    {
+     "name": "Laudenbach",
+     "state": "BY"
+    },
+    {
+     "name": "Leidersbach",
+     "state": "BY"
+    },
+    {
+     "name": "Miltenberg",
+     "state": "BY"
+    },
+    {
+     "name": "Mömlingen",
+     "state": "BY"
+    },
+    {
+     "name": "Mönchberg",
+     "state": "BY"
+    },
+    {
+     "name": "Neunkirchen",
+     "state": "BY"
+    },
+    {
+     "name": "Niedernberg",
+     "state": "BY"
+    },
+    {
+     "name": "Obernburg",
+     "state": "BY"
+    },
+    {
+     "name": "Röllbach",
+     "state": "BY"
+    },
+    {
+     "name": "Rüdenau",
+     "state": "BY"
+    },
+    {
+     "name": "Schneeberg",
+     "state": "BY"
+    },
+    {
+     "name": "Stadtprozelten",
+     "state": "BY"
+    },
+    {
+     "name": "Sulzbach",
+     "state": "BY"
+    },
+    {
+     "name": "Weilbach",
+     "state": "BY"
+    },
+    {
+     "name": "Wörth",
+     "state": "BY"
+    }
+   ]
+  },
+  {
+   "id": "athos-freudenstadt",
+   "name": "AWB Landkreis Freudenstadt",
+   "displayName": "AWB Landkreis Freudenstadt",
+   "family": "athos",
+   "state": "BW",
+   "stateConfidence": "assigned",
+   "towns": [
+    {
+     "name": "Alpirsbach",
+     "state": "BW"
+    },
+    {
+     "name": "Bad Rippoldsau-Schapbach",
+     "state": "BW"
+    },
+    {
+     "name": "Baiersbronn",
+     "state": "BW"
+    },
+    {
+     "name": "Dornstetten",
+     "state": "BW"
+    },
+    {
+     "name": "Empfingen",
+     "state": "BW"
+    },
+    {
+     "name": "Eutingen im Gäu",
+     "state": "BW"
+    },
+    {
+     "name": "Freudenstadt",
+     "state": "BW"
+    },
+    {
+     "name": "Glatten",
+     "state": "BW"
+    },
+    {
+     "name": "Grömbach",
+     "state": "BW"
+    },
+    {
+     "name": "Horb am Neckar",
+     "state": "BW"
+    },
+    {
+     "name": "Loßburg",
+     "state": "BW"
+    },
+    {
+     "name": "Ort",
+     "state": "BW"
+    },
+    {
+     "name": "Pfalzgrafenweiler",
+     "state": "BW"
+    },
+    {
+     "name": "Schopfloch",
+     "state": "BW"
+    },
+    {
+     "name": "Seewald",
+     "state": "BW"
+    },
+    {
+     "name": "Waldachtal",
+     "state": "BW"
+    },
+    {
+     "name": "Wörnersberg",
+     "state": "BW"
+    }
+   ]
+  },
+  {
+   "id": "athos-fuerth",
+   "name": "Landratsamt Fürth",
+   "displayName": "Landratsamt Fürth",
+   "family": "athos",
+   "state": "BY",
+   "stateConfidence": "assigned",
+   "towns": [
+    {
+     "name": "Ammerndorf",
+     "state": "BY"
+    },
+    {
+     "name": "Cadolzburg",
+     "state": "BY"
+    },
+    {
+     "name": "Großhabersdorf",
+     "state": "BY"
+    },
+    {
+     "name": "Langenzenn",
+     "state": "BY"
+    },
+    {
+     "name": "Oberasbach",
+     "state": "BY"
+    },
+    {
+     "name": "Obermichelbach",
+     "state": "BY"
+    },
+    {
+     "name": "Puschendorf",
+     "state": "BY"
+    },
+    {
+     "name": "Roßtal",
+     "state": "BY"
+    },
+    {
+     "name": "Seukendorf",
+     "state": "BY"
+    },
+    {
+     "name": "Stein",
+     "state": "BY"
+    },
+    {
+     "name": "Tuchenbach",
+     "state": "BY"
+    },
+    {
+     "name": "Veitsbronn",
+     "state": "BY"
+    },
+    {
+     "name": "Wilhermsdorf",
+     "state": "BY"
+    },
+    {
+     "name": "Zirndorf",
+     "state": "BY"
+    }
+   ]
+  },
+  {
+   "id": "athos-alzeyworms",
+   "name": "AWB Landkreis Alzey-Worms",
+   "displayName": "AWB Landkreis Alzey-Worms",
+   "family": "athos",
+   "state": "RP",
+   "stateConfidence": "assigned",
+   "towns": [
+    {
+     "name": "Albig",
+     "state": "RP"
+    },
+    {
+     "name": "Alsheim",
+     "state": "RP"
+    },
+    {
+     "name": "Alzey",
+     "state": "RP"
+    },
+    {
+     "name": "Armsheim",
+     "state": "RP"
+    },
+    {
+     "name": "Bechenheim",
+     "state": "RP"
+    },
+    {
+     "name": "Bechtheim",
+     "state": "RP"
+    },
+    {
+     "name": "Bechtolsheim",
+     "state": "RP"
+    },
+    {
+     "name": "Bermersheim",
+     "state": "RP"
+    },
+    {
+     "name": "Bermersheim vor der Höhe",
+     "state": "RP"
+    },
+    {
+     "name": "Biebelnheim",
+     "state": "RP"
+    },
+    {
+     "name": "Bornheim",
+     "state": "RP"
+    },
+    {
+     "name": "Dintesheim",
+     "state": "RP"
+    },
+    {
+     "name": "Dittelsheim-Heßloch",
+     "state": "RP"
+    },
+    {
+     "name": "Eckelsheim",
+     "state": "RP"
+    },
+    {
+     "name": "Eich",
+     "state": "RP"
+    },
+    {
+     "name": "Eicher See",
+     "state": "RP"
+    },
+    {
+     "name": "Ensheim",
+     "state": "RP"
+    },
+    {
+     "name": "Eppelsheim",
+     "state": "RP"
+    },
+    {
+     "name": "Erbes-Büdesheim",
+     "state": "RP"
+    },
+    {
+     "name": "Esselborn",
+     "state": "RP"
+    },
+    {
+     "name": "Flomborn",
+     "state": "RP"
+    },
+    {
+     "name": "Flonheim",
+     "state": "RP"
+    },
+    {
+     "name": "Flörsheim-Dalsheim",
+     "state": "RP"
+    },
+    {
+     "name": "Framersheim",
+     "state": "RP"
+    },
+    {
+     "name": "Freimersheim",
+     "state": "RP"
+    },
+    {
+     "name": "Frettenheim",
+     "state": "RP"
+    },
+    {
+     "name": "Gabsheim",
+     "state": "RP"
+    },
+    {
+     "name": "Gau-Bickelheim",
+     "state": "RP"
+    },
+    {
+     "name": "Gau-Heppenheim",
+     "state": "RP"
+    },
+    {
+     "name": "Gau-Odernheim",
+     "state": "RP"
+    },
+    {
+     "name": "Gau-Weinheim",
+     "state": "RP"
+    },
+    {
+     "name": "Gimbsheim",
+     "state": "RP"
+    },
+    {
+     "name": "Gumbsheim",
+     "state": "RP"
+    },
+    {
+     "name": "Gundersheim",
+     "state": "RP"
+    },
+    {
+     "name": "Gundheim",
+     "state": "RP"
+    },
+    {
+     "name": "Hamm am Rhein",
+     "state": "RP"
+    },
+    {
+     "name": "Hangen-Weisheim",
+     "state": "RP"
+    },
+    {
+     "name": "Hochborn",
+     "state": "RP"
+    },
+    {
+     "name": "Hohen-Sülzen",
+     "state": "RP"
+    },
+    {
+     "name": "Kettenheim",
+     "state": "RP"
+    },
+    {
+     "name": "Lonsheim",
+     "state": "RP"
+    },
+    {
+     "name": "Mauchenheim",
+     "state": "RP"
+    },
+    {
+     "name": "Mettenheim",
+     "state": "RP"
+    },
+    {
+     "name": "Mölsheim",
+     "state": "RP"
+    },
+    {
+     "name": "Monsheim",
+     "state": "RP"
+    },
+    {
+     "name": "Monzernheim",
+     "state": "RP"
+    },
+    {
+     "name": "Mörstadt",
+     "state": "RP"
+    },
+    {
+     "name": "Nack",
+     "state": "RP"
+    },
+    {
+     "name": "Nieder-Wiesen",
+     "state": "RP"
+    },
+    {
+     "name": "Ober-Flörsheim",
+     "state": "RP"
+    },
+    {
+     "name": "Offenheim",
+     "state": "RP"
+    },
+    {
+     "name": "Offstein",
+     "state": "RP"
+    },
+    {
+     "name": "Osthofen",
+     "state": "RP"
+    },
+    {
+     "name": "Partenheim",
+     "state": "RP"
+    },
+    {
+     "name": "Saulheim",
+     "state": "RP"
+    },
+    {
+     "name": "Schornsheim",
+     "state": "RP"
+    },
+    {
+     "name": "Siefersheim",
+     "state": "RP"
+    },
+    {
+     "name": "Spiesheim",
+     "state": "RP"
+    },
+    {
+     "name": "Stein-Bockenheim",
+     "state": "RP"
+    },
+    {
+     "name": "Sulzheim",
+     "state": "RP"
+    },
+    {
+     "name": "Udenheim",
+     "state": "RP"
+    },
+    {
+     "name": "Vendersheim",
+     "state": "RP"
+    },
+    {
+     "name": "Wachenheim",
+     "state": "RP"
+    },
+    {
+     "name": "Wahlheim",
+     "state": "RP"
+    },
+    {
+     "name": "Wallertheim",
+     "state": "RP"
+    },
+    {
+     "name": "Wendelsheim",
+     "state": "RP"
+    },
+    {
+     "name": "Westhofen",
+     "state": "RP"
+    },
+    {
+     "name": "Wöllstein",
+     "state": "RP"
+    },
+    {
+     "name": "Wonsheim",
+     "state": "RP"
+    },
+    {
+     "name": "Wörrstadt",
+     "state": "RP"
+    }
+   ]
+  },
+  {
+   "id": "athos-ahrweiler",
+   "name": "AWB Landkreis Ahrweiler",
+   "displayName": "AWB Landkreis Ahrweiler",
+   "family": "athos",
+   "state": "RP",
+   "stateConfidence": "assigned",
+   "towns": [
+    {
+     "name": "Adenau",
+     "state": "RP"
+    },
+    {
+     "name": "Ahrbrück",
+     "state": "RP"
+    },
+    {
+     "name": "Altenahr",
+     "state": "RP"
+    },
+    {
+     "name": "Antweiler",
+     "state": "RP"
+    },
+    {
+     "name": "Aremberg",
+     "state": "RP"
+    },
+    {
+     "name": "Bad Breisig",
+     "state": "RP"
+    },
+    {
+     "name": "Bad Neuenahr-Ahrweiler",
+     "state": "RP"
+    },
+    {
+     "name": "Barweiler",
+     "state": "RP"
+    },
+    {
+     "name": "Bauler",
+     "state": "RP"
+    },
+    {
+     "name": "Berg",
+     "state": "RP"
+    },
+    {
+     "name": "Brenk",
+     "state": "RP"
+    },
+    {
+     "name": "Brohl-Lützing",
+     "state": "RP"
+    },
+    {
+     "name": "Burgbrohl",
+     "state": "RP"
+    },
+    {
+     "name": "Dankerath",
+     "state": "RP"
+    },
+    {
+     "name": "Dedenbach",
+     "state": "RP"
+    },
+    {
+     "name": "Dernau",
+     "state": "RP"
+    },
+    {
+     "name": "Dorsel",
+     "state": "RP"
+    },
+    {
+     "name": "Dümpelfeld",
+     "state": "RP"
+    },
+    {
+     "name": "Eichenbach",
+     "state": "RP"
+    },
+    {
+     "name": "Fuchshofen",
+     "state": "RP"
+    },
+    {
+     "name": "Galenberg",
+     "state": "RP"
+    },
+    {
+     "name": "Glees",
+     "state": "RP"
+    },
+    {
+     "name": "Gönnersdorf",
+     "state": "RP"
+    },
+    {
+     "name": "Grafschaft",
+     "state": "RP"
+    },
+    {
+     "name": "Harscheid",
+     "state": "RP"
+    },
+    {
+     "name": "Heckenbach",
+     "state": "RP"
+    },
+    {
+     "name": "Herschbroich",
+     "state": "RP"
+    },
+    {
+     "name": "Hoffeld",
+     "state": "RP"
+    },
+    {
+     "name": "Hohenleimbach",
+     "state": "RP"
+    },
+    {
+     "name": "Honerath",
+     "state": "RP"
+    },
+    {
+     "name": "Hönningen",
+     "state": "RP"
+    },
+    {
+     "name": "Hümmel",
+     "state": "RP"
+    },
+    {
+     "name": "Insul",
+     "state": "RP"
+    },
+    {
+     "name": "Kalenborn",
+     "state": "RP"
+    },
+    {
+     "name": "Kaltenborn",
+     "state": "RP"
+    },
+    {
+     "name": "Kempenich",
+     "state": "RP"
+    },
+    {
+     "name": "Kesseling",
+     "state": "RP"
+    },
+    {
+     "name": "Kirchsahr",
+     "state": "RP"
+    },
+    {
+     "name": "Königsfeld",
+     "state": "RP"
+    },
+    {
+     "name": "Kottenborn",
+     "state": "RP"
+    },
+    {
+     "name": "Leimbach",
+     "state": "RP"
+    },
+    {
+     "name": "Lind",
+     "state": "RP"
+    },
+    {
+     "name": "Mayschoss",
+     "state": "RP"
+    },
+    {
+     "name": "Meuspath",
+     "state": "RP"
+    },
+    {
+     "name": "Müllenbach",
+     "state": "RP"
+    },
+    {
+     "name": "Müsch",
+     "state": "RP"
+    },
+    {
+     "name": "Niederdürenbach",
+     "state": "RP"
+    },
+    {
+     "name": "Niederzissen",
+     "state": "RP"
+    },
+    {
+     "name": "Nürburg",
+     "state": "RP"
+    },
+    {
+     "name": "Oberdürenbach",
+     "state": "RP"
+    },
+    {
+     "name": "Oberzissen",
+     "state": "RP"
+    },
+    {
+     "name": "Ohlenhard",
+     "state": "RP"
+    },
+    {
+     "name": "Pomster",
+     "state": "RP"
+    },
+    {
+     "name": "Quiddelbach",
+     "state": "RP"
+    },
+    {
+     "name": "Rech",
+     "state": "RP"
+    },
+    {
+     "name": "Reifferscheid",
+     "state": "RP"
+    },
+    {
+     "name": "Remagen",
+     "state": "RP"
+    },
+    {
+     "name": "Rodder",
+     "state": "RP"
+    },
+    {
+     "name": "Schalkenbach",
+     "state": "RP"
+    },
+    {
+     "name": "Schuld",
+     "state": "RP"
+    },
+    {
+     "name": "Senscheid",
+     "state": "RP"
+    },
+    {
+     "name": "Sierscheid",
+     "state": "RP"
+    },
+    {
+     "name": "Sinzig",
+     "state": "RP"
+    },
+    {
+     "name": "Spessart",
+     "state": "RP"
+    },
+    {
+     "name": "Trierscheid",
+     "state": "RP"
+    },
+    {
+     "name": "Waldorf",
+     "state": "RP"
+    },
+    {
+     "name": "Wassenach",
+     "state": "RP"
+    },
+    {
+     "name": "Wehr",
+     "state": "RP"
+    },
+    {
+     "name": "Weibern",
+     "state": "RP"
+    },
+    {
+     "name": "Wershofen",
+     "state": "RP"
+    },
+    {
+     "name": "Wiesemscheid",
+     "state": "RP"
+    },
+    {
+     "name": "Wimbach",
+     "state": "RP"
+    },
+    {
+     "name": "Winnerath",
+     "state": "RP"
+    },
+    {
+     "name": "Wirft",
+     "state": "RP"
+    }
+   ]
+  },
+  {
+   "id": "athos-wunsiedel",
+   "name": "KUFi Fichtelgebirge",
+   "displayName": "KUFi Fichtelgebirge",
+   "family": "athos",
+   "state": "BY",
+   "stateConfidence": "assigned",
+   "towns": [
+    {
+     "name": "Arzberg",
+     "state": "BY"
+    },
+    {
+     "name": "Bad Alexandersbad",
+     "state": "BY"
+    },
+    {
+     "name": "Bad Weißenstadt",
+     "state": "BY"
+    },
+    {
+     "name": "Höchstädt i. Fichtelgebirge",
+     "state": "BY"
+    },
+    {
+     "name": "Hohenberg a. d. Eger",
+     "state": "BY"
+    },
+    {
+     "name": "Kirchenlamitz",
+     "state": "BY"
+    },
+    {
+     "name": "Marktleuthen",
+     "state": "BY"
+    },
+    {
+     "name": "Marktredwitz",
+     "state": "BY"
+    },
+    {
+     "name": "Nagel",
+     "state": "BY"
+    },
+    {
+     "name": "Röslau",
+     "state": "BY"
+    },
+    {
+     "name": "Schirnding",
+     "state": "BY"
+    },
+    {
+     "name": "Schönwald",
+     "state": "BY"
+    },
+    {
+     "name": "Selb",
+     "state": "BY"
+    },
+    {
+     "name": "Thiersheim",
+     "state": "BY"
+    },
+    {
+     "name": "Thierstein",
+     "state": "BY"
+    },
+    {
+     "name": "Tröstau",
+     "state": "BY"
+    },
+    {
+     "name": "Wunsiedel",
+     "state": "BY"
+    }
+   ]
+  },
+  {
+   "id": "athos-suedwestpfalz",
+   "name": "Kreisverwaltung Südwestpfalz",
+   "displayName": "Kreisverwaltung Südwestpfalz",
+   "family": "athos",
+   "state": "RP",
+   "stateConfidence": "assigned",
+   "towns": [
+    {
+     "name": "Althornbach",
+     "state": "RP"
+    },
+    {
+     "name": "Battweiler",
+     "state": "RP"
+    },
+    {
+     "name": "Bechhofen",
+     "state": "RP"
+    },
+    {
+     "name": "Biedershausen",
+     "state": "RP"
+    },
+    {
+     "name": "Bobenthal",
+     "state": "RP"
+    },
+    {
+     "name": "Bottenbach",
+     "state": "RP"
+    },
+    {
+     "name": "Bruchweiler-Baerenbach",
+     "state": "RP"
+    },
+    {
+     "name": "Bundenthal",
+     "state": "RP"
+    },
+    {
+     "name": "Busenberg",
+     "state": "RP"
+    },
+    {
+     "name": "Clausen",
+     "state": "RP"
+    },
+    {
+     "name": "Contwig",
+     "state": "RP"
+    },
+    {
+     "name": "Dahn",
+     "state": "RP"
+    },
+    {
+     "name": "Darstein",
+     "state": "RP"
+    },
+    {
+     "name": "Dellfeld",
+     "state": "RP"
+    },
+    {
+     "name": "Dietrichingen",
+     "state": "RP"
+    },
+    {
+     "name": "Dimbach",
+     "state": "RP"
+    },
+    {
+     "name": "Donsieders",
+     "state": "RP"
+    },
+    {
+     "name": "Eppenbrunn",
+     "state": "RP"
+    },
+    {
+     "name": "Erfweiler",
+     "state": "RP"
+    },
+    {
+     "name": "Erlenbach",
+     "state": "RP"
+    },
+    {
+     "name": "Fischbach",
+     "state": "RP"
+    },
+    {
+     "name": "Geiselberg",
+     "state": "RP"
+    },
+    {
+     "name": "Grossbundenbach",
+     "state": "RP"
+    },
+    {
+     "name": "Grosssteinhausen",
+     "state": "RP"
+    },
+    {
+     "name": "Hauenstein",
+     "state": "RP"
+    },
+    {
+     "name": "Heltersberg",
+     "state": "RP"
+    },
+    {
+     "name": "Hermersberg",
+     "state": "RP"
+    },
+    {
+     "name": "Herschberg",
+     "state": "RP"
+    },
+    {
+     "name": "Hettenhausen",
+     "state": "RP"
+    },
+    {
+     "name": "Hilst",
+     "state": "RP"
+    },
+    {
+     "name": "Hinterweidenthal",
+     "state": "RP"
+    },
+    {
+     "name": "Hirschthal",
+     "state": "RP"
+    },
+    {
+     "name": "Hoeheinoed",
+     "state": "RP"
+    },
+    {
+     "name": "Hoeheischweiler",
+     "state": "RP"
+    },
+    {
+     "name": "Hoehfroeschen",
+     "state": "RP"
+    },
+    {
+     "name": "Horbach",
+     "state": "RP"
+    },
+    {
+     "name": "Hornbach",
+     "state": "RP"
+    },
+    {
+     "name": "Kaeshofen",
+     "state": "RP"
+    },
+    {
+     "name": "Kleinbundenbach",
+     "state": "RP"
+    },
+    {
+     "name": "Kleinsteinhausen",
+     "state": "RP"
+    },
+    {
+     "name": "Knopp-Labach",
+     "state": "RP"
+    },
+    {
+     "name": "Kraehenberg",
+     "state": "RP"
+    },
+    {
+     "name": "Kroeppen",
+     "state": "RP"
+    },
+    {
+     "name": "Leimen",
+     "state": "RP"
+    },
+    {
+     "name": "Lemberg",
+     "state": "RP"
+    },
+    {
+     "name": "Ludwigswinkel",
+     "state": "RP"
+    },
+    {
+     "name": "Lug",
+     "state": "RP"
+    },
+    {
+     "name": "Massweiler",
+     "state": "RP"
+    },
+    {
+     "name": "Mauschbach",
+     "state": "RP"
+    },
+    {
+     "name": "Merzalben",
+     "state": "RP"
+    },
+    {
+     "name": "Muenchweiler",
+     "state": "RP"
+    },
+    {
+     "name": "Niederschlettenbach",
+     "state": "RP"
+    },
+    {
+     "name": "Nothweiler",
+     "state": "RP"
+    },
+    {
+     "name": "Nuenschweiler",
+     "state": "RP"
+    },
+    {
+     "name": "Obernheim-Kirchenarnbach",
+     "state": "RP"
+    },
+    {
+     "name": "Obersimten",
+     "state": "RP"
+    },
+    {
+     "name": "Petersberg",
+     "state": "RP"
+    },
+    {
+     "name": "Reifenberg",
+     "state": "RP"
+    },
+    {
+     "name": "Riedelberg",
+     "state": "RP"
+    },
+    {
+     "name": "Rieschweiler-Muehlbach",
+     "state": "RP"
+    },
+    {
+     "name": "Rodalben",
+     "state": "RP"
+    },
+    {
+     "name": "Rosenkopf",
+     "state": "RP"
+    },
+    {
+     "name": "Rumbach",
+     "state": "RP"
+    },
+    {
+     "name": "Ruppertsweiler",
+     "state": "RP"
+    },
+    {
+     "name": "Saalstadt",
+     "state": "RP"
+    },
+    {
+     "name": "Schauerberg",
+     "state": "RP"
+    },
+    {
+     "name": "Schindhard",
+     "state": "RP"
+    },
+    {
+     "name": "Schmalenberg",
+     "state": "RP"
+    },
+    {
+     "name": "Schmitshausen",
+     "state": "RP"
+    },
+    {
+     "name": "Schoenau",
+     "state": "RP"
+    },
+    {
+     "name": "Schwanheim",
+     "state": "RP"
+    },
+    {
+     "name": "Schweix",
+     "state": "RP"
+    },
+    {
+     "name": "Spirkelbach",
+     "state": "RP"
+    },
+    {
+     "name": "Steinalben",
+     "state": "RP"
+    },
+    {
+     "name": "Thaleischweiler-Froeschen",
+     "state": "RP"
+    },
+    {
+     "name": "Trulben",
+     "state": "RP"
+    },
+    {
+     "name": "Vinningen",
+     "state": "RP"
+    },
+    {
+     "name": "Waldfischbach-Burgalben",
+     "state": "RP"
+    },
+    {
+     "name": "Wallhalben",
+     "state": "RP"
+    },
+    {
+     "name": "Walshausen",
+     "state": "RP"
+    },
+    {
+     "name": "Weselberg",
+     "state": "RP"
+    },
+    {
+     "name": "Wiesbach",
+     "state": "RP"
+    },
+    {
+     "name": "Wilgartswiesen",
+     "state": "RP"
+    },
+    {
+     "name": "Winterbach(Pfalz)",
+     "state": "RP"
+    }
+   ]
+  },
+  {
+   "id": "athos-zweibruecken",
+   "name": "UBZ Zweibrücken",
+   "displayName": "UBZ Zweibrücken",
+   "family": "athos",
+   "state": "RP",
+   "stateConfidence": "assigned",
+   "towns": [
+    {
+     "name": "Zweibrücken",
+     "state": "RP"
+    }
+   ]
+  },
+  {
+   "id": "athos-wuerzburg",
+   "name": "team orange Landkreis Würzburg",
+   "displayName": "team orange Landkreis Würzburg",
+   "family": "athos",
+   "state": "BY",
+   "stateConfidence": "conflict:BW",
+   "towns": [
+    {
+     "name": "Altertheim",
+     "state": "BY"
+    },
+    {
+     "name": "Aub",
+     "state": "BY"
+    },
+    {
+     "name": "Bergtheim",
+     "state": "BY"
+    },
+    {
+     "name": "Bieberehren",
+     "state": "BY"
+    },
+    {
+     "name": "Bütthard",
+     "state": "BY"
+    },
+    {
+     "name": "Eibelstadt",
+     "state": "BY"
+    },
+    {
+     "name": "Eisenheim",
+     "state": "BY"
+    },
+    {
+     "name": "Eisingen",
+     "state": "BY"
+    },
+    {
+     "name": "Erlabrunn",
+     "state": "BY"
+    },
+    {
+     "name": "Estenfeld",
+     "state": "BY"
+    },
+    {
+     "name": "Frickenhausen",
+     "state": "BY"
+    },
+    {
+     "name": "Gaukönigshofen",
+     "state": "BY"
+    },
+    {
+     "name": "Gelchsheim",
+     "state": "BY"
+    },
+    {
+     "name": "Gerbrunn",
+     "state": "BY"
+    },
+    {
+     "name": "Geroldshausen",
+     "state": "BY"
+    },
+    {
+     "name": "Giebelstadt",
+     "state": "BY"
+    },
+    {
+     "name": "Greußenheim",
+     "state": "BY"
+    },
+    {
+     "name": "Güntersleben",
+     "state": "BY"
+    },
+    {
+     "name": "Hausen",
+     "state": "BY"
+    },
+    {
+     "name": "Helmstadt",
+     "state": "BY"
+    },
+    {
+     "name": "Hettstadt",
+     "state": "BY"
+    },
+    {
+     "name": "Höchberg",
+     "state": "BY"
+    },
+    {
+     "name": "Holzkirchen",
+     "state": "BY"
+    },
+    {
+     "name": "Kirchheim",
+     "state": "BY"
+    },
+    {
+     "name": "Kist",
+     "state": "BY"
+    },
+    {
+     "name": "Kleinrinderfeld",
+     "state": "BY"
+    },
+    {
+     "name": "Kürnach",
+     "state": "BY"
+    },
+    {
+     "name": "Leinach",
+     "state": "BY"
+    },
+    {
+     "name": "Margetshöchheim",
+     "state": "BY"
+    },
+    {
+     "name": "Neubrunn",
+     "state": "BY"
+    },
+    {
+     "name": "Oberpleichfeld",
+     "state": "BY"
+    },
+    {
+     "name": "Ochsenfurt",
+     "state": "BY"
+    },
+    {
+     "name": "Prosselsheim",
+     "state": "BY"
+    },
+    {
+     "name": "Randersacker",
+     "state": "BY"
+    },
+    {
+     "name": "Reichenberg",
+     "state": "BY"
+    },
+    {
+     "name": "Remlingen",
+     "state": "BY"
+    },
+    {
+     "name": "Riedenheim",
+     "state": "BY"
+    },
+    {
+     "name": "Rimpar",
+     "state": "BY"
+    },
+    {
+     "name": "Rottendorf",
+     "state": "BY"
+    },
+    {
+     "name": "Röttingen",
+     "state": "BY"
+    },
+    {
+     "name": "Sommerhausen",
+     "state": "BY"
+    },
+    {
+     "name": "Sonderhofen",
+     "state": "BY"
+    },
+    {
+     "name": "Tauberrettersheim",
+     "state": "BY"
+    },
+    {
+     "name": "Theilheim",
+     "state": "BY"
+    },
+    {
+     "name": "Thüngersheim",
+     "state": "BY"
+    },
+    {
+     "name": "Uettingen",
+     "state": "BY"
+    },
+    {
+     "name": "Unterpleichfeld",
+     "state": "BY"
+    },
+    {
+     "name": "Veitshöchheim",
+     "state": "BY"
+    },
+    {
+     "name": "Waldbrunn",
+     "state": "BY"
+    },
+    {
+     "name": "Waldbüttelbrunn",
+     "state": "BY"
+    },
+    {
+     "name": "Winterhausen",
+     "state": "BY"
+    },
+    {
+     "name": "Zell",
+     "state": "BY"
+    }
+   ]
+  },
+  {
+   "id": "athos-rheinhunsrueck",
+   "name": "RH Entsorgung (Rhein-Hunsrück)",
+   "displayName": "RH Entsorgung (Rhein-Hunsrück)",
+   "family": "athos",
+   "state": "RP",
+   "stateConfidence": "conflict:RP,RP,NW",
+   "towns": [
+    {
+     "name": "Alterkülz",
+     "state": "RP"
+    },
+    {
+     "name": "Altweidelbach",
+     "state": "RP"
+    },
+    {
+     "name": "Argenthal",
+     "state": "RP"
+    },
+    {
+     "name": "Bacharach",
+     "state": "RP"
+    },
+    {
+     "name": "Badenhard",
+     "state": "RP"
+    },
+    {
+     "name": "Bärenbach",
+     "state": "RP"
+    },
+    {
+     "name": "Belg",
+     "state": "RP"
+    },
+    {
+     "name": "Belgweiler",
+     "state": "RP"
+    },
+    {
+     "name": "Bell",
+     "state": "RP"
+    },
+    {
+     "name": "Beltheim",
+     "state": "RP"
+    },
+    {
+     "name": "Benzweiler",
+     "state": "RP"
+    },
+    {
+     "name": "Bergenhausen",
+     "state": "RP"
+    },
+    {
+     "name": "Beulich",
+     "state": "RP"
+    },
+    {
+     "name": "Bickenbach",
+     "state": "RP"
+    },
+    {
+     "name": "Biebern",
+     "state": "RP"
+    },
+    {
+     "name": "Birkheim",
+     "state": "RP"
+    },
+    {
+     "name": "Boppard",
+     "state": "RP"
+    },
+    {
+     "name": "Braunshorn",
+     "state": "RP"
+    },
+    {
+     "name": "Bubach",
+     "state": "RP"
+    },
+    {
+     "name": "Buch",
+     "state": "RP"
+    },
+    {
+     "name": "Büchenbeuren",
+     "state": "RP"
+    },
+    {
+     "name": "Budenbach",
+     "state": "RP"
+    },
+    {
+     "name": "Damscheid",
+     "state": "RP"
+    },
+    {
+     "name": "Dichtelbach",
+     "state": "RP"
+    },
+    {
+     "name": "Dickenschied",
+     "state": "RP"
+    },
+    {
+     "name": "Dill",
+     "state": "RP"
+    },
+    {
+     "name": "Dillendorf",
+     "state": "RP"
+    },
+    {
+     "name": "Dommershausen",
+     "state": "RP"
+    },
+    {
+     "name": "Dörth",
+     "state": "RP"
+    },
+    {
+     "name": "Ellern",
+     "state": "RP"
+    },
+    {
+     "name": "Emmelshausen",
+     "state": "RP"
+    },
+    {
+     "name": "Erbach",
+     "state": "RP"
+    },
+    {
+     "name": "Fronhofen",
+     "state": "RP"
+    },
+    {
+     "name": "Gehlweiler",
+     "state": "RP"
+    },
+    {
+     "name": "Gemünden",
+     "state": "RP"
+    },
+    {
+     "name": "Gödenroth",
+     "state": "RP"
+    },
+    {
+     "name": "Gondershausen",
+     "state": "RP"
+    },
+    {
+     "name": "Hahn",
+     "state": "RP"
+    },
+    {
+     "name": "Halsenbach",
+     "state": "RP"
+    },
+    {
+     "name": "Hasselbach",
+     "state": "RP"
+    },
+    {
+     "name": "Hausbay",
+     "state": "RP"
+    },
+    {
+     "name": "Hecken",
+     "state": "RP"
+    },
+    {
+     "name": "Heinzenbach",
+     "state": "RP"
+    },
+    {
+     "name": "Henau",
+     "state": "RP"
+    },
+    {
+     "name": "Hirschfeld",
+     "state": "RP"
+    },
+    {
+     "name": "Hollnich",
+     "state": "RP"
+    },
+    {
+     "name": "Holzbach",
+     "state": "RP"
+    },
+    {
+     "name": "Horn",
+     "state": "RP"
+    },
+    {
+     "name": "Hungenroth",
+     "state": "RP"
+    },
+    {
+     "name": "Kappel",
+     "state": "RP"
+    },
+    {
+     "name": "Karbach",
+     "state": "RP"
+    },
+    {
+     "name": "Kastellaun",
+     "state": "RP"
+    },
+    {
+     "name": "Keidelheim",
+     "state": "RP"
+    },
+    {
+     "name": "Kirchberg",
+     "state": "RP"
+    },
+    {
+     "name": "Kisselbach",
+     "state": "RP"
+    },
+    {
+     "name": "Klosterkumbd",
+     "state": "RP"
+    },
+    {
+     "name": "Kludenbach",
+     "state": "RP"
+    },
+    {
+     "name": "Korweiler",
+     "state": "RP"
+    },
+    {
+     "name": "Kratzenburg",
+     "state": "RP"
+    },
+    {
+     "name": "Külz",
+     "state": "RP"
+    },
+    {
+     "name": "Kümbdchen",
+     "state": "RP"
+    },
+    {
+     "name": "Lahr",
+     "state": "RP"
+    },
+    {
+     "name": "Laubach",
+     "state": "RP"
+    },
+    {
+     "name": "Laudert",
+     "state": "RP"
+    },
+    {
+     "name": "Laufersweiler",
+     "state": "RP"
+    },
+    {
+     "name": "Lautzenhausen",
+     "state": "RP"
+    },
+    {
+     "name": "Leiningen",
+     "state": "RP"
+    },
+    {
+     "name": "Liebshausen",
+     "state": "RP"
+    },
+    {
+     "name": "Lindenschied",
+     "state": "RP"
+    },
+    {
+     "name": "Lingerhahn",
+     "state": "RP"
+    },
+    {
+     "name": "Maisborn",
+     "state": "RP"
+    },
+    {
+     "name": "Maitzborn",
+     "state": "RP"
+    },
+    {
+     "name": "Mastershausen",
+     "state": "RP"
+    },
+    {
+     "name": "Mengerschied",
+     "state": "RP"
+    },
+    {
+     "name": "Mermuth",
+     "state": "RP"
+    },
+    {
+     "name": "Metzenhausen",
+     "state": "RP"
+    },
+    {
+     "name": "Michelbach",
+     "state": "RP"
+    },
+    {
+     "name": "Mörschbach",
+     "state": "RP"
+    },
+    {
+     "name": "Mörsdorf",
+     "state": "RP"
+    },
+    {
+     "name": "Morshausen",
+     "state": "RP"
+    },
+    {
+     "name": "Mühlpfad",
+     "state": "RP"
+    },
+    {
+     "name": "Mutterschied",
+     "state": "RP"
+    },
+    {
+     "name": "Nannhausen",
+     "state": "RP"
+    },
+    {
+     "name": "Neuerkirch",
+     "state": "RP"
+    },
+    {
+     "name": "Ney",
+     "state": "RP"
+    },
+    {
+     "name": "Nieder Kostenz",
+     "state": "RP"
+    },
+    {
+     "name": "Niederburg",
+     "state": "RP"
+    },
+    {
+     "name": "Niederkumbd",
+     "state": "RP"
+    },
+    {
+     "name": "Niedersohren",
+     "state": "RP"
+    },
+    {
+     "name": "Niedert",
+     "state": "RP"
+    },
+    {
+     "name": "Niederweiler",
+     "state": "RP"
+    },
+    {
+     "name": "Norath",
+     "state": "RP"
+    },
+    {
+     "name": "Ober Kostenz",
+     "state": "RP"
+    },
+    {
+     "name": "Oberhausen",
+     "state": "RP"
+    },
+    {
+     "name": "Oberwesel",
+     "state": "RP"
+    },
+    {
+     "name": "Ohlweiler",
+     "state": "RP"
+    },
+    {
+     "name": "Oppertshausen",
+     "state": "RP"
+    },
+    {
+     "name": "Perscheid",
+     "state": "RP"
+    },
+    {
+     "name": "Pfalzfeld",
+     "state": "RP"
+    },
+    {
+     "name": "Pleizenhausen",
+     "state": "RP"
+    },
+    {
+     "name": "Ravengiersburg",
+     "state": "RP"
+    },
+    {
+     "name": "Raversbeuren",
+     "state": "RP"
+    },
+    {
+     "name": "Rayerschied",
+     "state": "RP"
+    },
+    {
+     "name": "Reckershausen",
+     "state": "RP"
+    },
+    {
+     "name": "Reich",
+     "state": "RP"
+    },
+    {
+     "name": "Rheinböllen",
+     "state": "RP"
+    },
+    {
+     "name": "Riegenroth",
+     "state": "RP"
+    },
+    {
+     "name": "Riesweiler",
+     "state": "RP"
+    },
+    {
+     "name": "Rödelhausen",
+     "state": "RP"
+    },
+    {
+     "name": "Rödern",
+     "state": "RP"
+    },
+    {
+     "name": "Rohrbach",
+     "state": "RP"
+    },
+    {
+     "name": "Roth",
+     "state": "RP"
+    },
+    {
+     "name": "Sargenroth",
+     "state": "RP"
+    },
+    {
+     "name": "Schlierschied",
+     "state": "RP"
+    },
+    {
+     "name": "Schnorbach",
+     "state": "RP"
+    },
+    {
+     "name": "Schönborn",
+     "state": "RP"
+    },
+    {
+     "name": "Schwall",
+     "state": "RP"
+    },
+    {
+     "name": "Schwarzen",
+     "state": "RP"
+    },
+    {
+     "name": "Simmern",
+     "state": "RP"
+    },
+    {
+     "name": "Sohren",
+     "state": "RP"
+    },
+    {
+     "name": "Sohrschied",
+     "state": "RP"
+    },
+    {
+     "name": "Spesenroth",
+     "state": "RP"
+    },
+    {
+     "name": "St. Goar",
+     "state": "RP"
+    },
+    {
+     "name": "Steinbach",
+     "state": "RP"
+    },
+    {
+     "name": "Thörlingen",
+     "state": "RP"
+    },
+    {
+     "name": "Tiefenbach",
+     "state": "RP"
+    },
+    {
+     "name": "Todenroth",
+     "state": "RP"
+    },
+    {
+     "name": "Uhler",
+     "state": "RP"
+    },
+    {
+     "name": "Unzenberg",
+     "state": "RP"
+    },
+    {
+     "name": "Urbar",
+     "state": "RP"
+    },
+    {
+     "name": "Utzenhain",
+     "state": "RP"
+    },
+    {
+     "name": "Wahlbach",
+     "state": "RP"
+    },
+    {
+     "name": "Wahlenau",
+     "state": "RP"
+    },
+    {
+     "name": "Wiebelsheim",
+     "state": "RP"
+    },
+    {
+     "name": "Womrath",
+     "state": "RP"
+    },
+    {
+     "name": "Woppenroth",
+     "state": "RP"
+    },
+    {
+     "name": "Würrich",
+     "state": "RP"
+    },
+    {
+     "name": "Wüschheim",
+     "state": "RP"
+    },
+    {
+     "name": "Zilshausen",
+     "state": "RP"
+    }
+   ]
+  },
+  {
    "id": "abfallplus-51be67f3",
    "name": "EBE Entsorgungsbetriebe Essen",
    "displayName": "EBE Entsorgungsbetriebe Essen",
@@ -20817,6 +25827,2248 @@
     },
     {
      "name": "Worpswede",
+     "state": "NI"
+    }
+   ]
+  },
+  {
+   "id": "abfallplus-ff692443",
+   "name": "Eigenbetrieb Abfallwirtschaft Ortenaukreis",
+   "displayName": "Eigenbetrieb Abfallwirtschaft Ortenaukreis",
+   "family": "abfallplus",
+   "state": "BW",
+   "stateConfidence": "assigned",
+   "towns": [
+    {
+     "name": "Achern",
+     "state": "BW"
+    },
+    {
+     "name": "Appenweier",
+     "state": "BW"
+    },
+    {
+     "name": "Bad Peterstal-Griesbach",
+     "state": "BW"
+    },
+    {
+     "name": "Berghaupten",
+     "state": "BW"
+    },
+    {
+     "name": "Biberach",
+     "state": "BW"
+    },
+    {
+     "name": "Durbach",
+     "state": "BW"
+    },
+    {
+     "name": "Ettenheim",
+     "state": "BW"
+    },
+    {
+     "name": "Fischerbach",
+     "state": "BW"
+    },
+    {
+     "name": "Friesenheim",
+     "state": "BW"
+    },
+    {
+     "name": "Gengenbach",
+     "state": "BW"
+    },
+    {
+     "name": "Gutach",
+     "state": "BW"
+    },
+    {
+     "name": "Haslach im Kinzigtal",
+     "state": "BW"
+    },
+    {
+     "name": "Hausach",
+     "state": "BW"
+    },
+    {
+     "name": "Hofstetten",
+     "state": "BW"
+    },
+    {
+     "name": "Hohberg",
+     "state": "BW"
+    },
+    {
+     "name": "Hornberg",
+     "state": "BW"
+    },
+    {
+     "name": "Kappel-Grafenhausen",
+     "state": "BW"
+    },
+    {
+     "name": "Kappelrodeck",
+     "state": "BW"
+    },
+    {
+     "name": "Kehl",
+     "state": "BW"
+    },
+    {
+     "name": "Kippenheim",
+     "state": "BW"
+    },
+    {
+     "name": "Lahr",
+     "state": "BW"
+    },
+    {
+     "name": "Lauf",
+     "state": "BW"
+    },
+    {
+     "name": "Lautenbach",
+     "state": "BW"
+    },
+    {
+     "name": "Mahlberg",
+     "state": "BW"
+    },
+    {
+     "name": "Meißenheim",
+     "state": "BW"
+    },
+    {
+     "name": "Mühlenbach",
+     "state": "BW"
+    },
+    {
+     "name": "Neuried",
+     "state": "BW"
+    },
+    {
+     "name": "Nordrach",
+     "state": "BW"
+    },
+    {
+     "name": "Oberharmersbach",
+     "state": "BW"
+    },
+    {
+     "name": "Oberkirch",
+     "state": "BW"
+    },
+    {
+     "name": "Oberwolfach",
+     "state": "BW"
+    },
+    {
+     "name": "Offenburg",
+     "state": "BW"
+    },
+    {
+     "name": "Ohlsbach",
+     "state": "BW"
+    },
+    {
+     "name": "Oppenau",
+     "state": "BW"
+    },
+    {
+     "name": "Ortenberg",
+     "state": "BW"
+    },
+    {
+     "name": "Ottenhöfen",
+     "state": "BW"
+    },
+    {
+     "name": "Renchen",
+     "state": "BW"
+    },
+    {
+     "name": "Rheinau",
+     "state": "BW"
+    },
+    {
+     "name": "Ringsheim",
+     "state": "BW"
+    },
+    {
+     "name": "Rust",
+     "state": "BW"
+    },
+    {
+     "name": "Sasbach",
+     "state": "BW"
+    },
+    {
+     "name": "Sasbachwalden",
+     "state": "BW"
+    },
+    {
+     "name": "Schuttertal",
+     "state": "BW"
+    },
+    {
+     "name": "Schutterwald",
+     "state": "BW"
+    },
+    {
+     "name": "Schwanau",
+     "state": "BW"
+    },
+    {
+     "name": "Seebach",
+     "state": "BW"
+    },
+    {
+     "name": "Seelbach",
+     "state": "BW"
+    },
+    {
+     "name": "Steinach",
+     "state": "BW"
+    },
+    {
+     "name": "Willstätt",
+     "state": "BW"
+    },
+    {
+     "name": "Wolfach",
+     "state": "BW"
+    },
+    {
+     "name": "Zell a. H.",
+     "state": "BW"
+    }
+   ]
+  },
+  {
+   "id": "abfallplus-be047b0b",
+   "name": "Abfallwirtschaft Landkreis Heilbronn",
+   "displayName": "Abfallwirtschaft Landkreis Heilbronn",
+   "family": "abfallplus",
+   "state": "BW",
+   "stateConfidence": "assigned",
+   "towns": [
+    {
+     "name": "Abstatt",
+     "state": "BW"
+    },
+    {
+     "name": "Bad Friedrichshall",
+     "state": "BW"
+    },
+    {
+     "name": "Bad Rappenau",
+     "state": "BW"
+    },
+    {
+     "name": "Bad Wimpfen",
+     "state": "BW"
+    },
+    {
+     "name": "Beilstein",
+     "state": "BW"
+    },
+    {
+     "name": "Brackenheim",
+     "state": "BW"
+    },
+    {
+     "name": "Cleebronn",
+     "state": "BW"
+    },
+    {
+     "name": "Eberstadt",
+     "state": "BW"
+    },
+    {
+     "name": "Ellhofen",
+     "state": "BW"
+    },
+    {
+     "name": "Eppingen",
+     "state": "BW"
+    },
+    {
+     "name": "Erlenbach",
+     "state": "BW"
+    },
+    {
+     "name": "Flein",
+     "state": "BW"
+    },
+    {
+     "name": "Gemmingen",
+     "state": "BW"
+    },
+    {
+     "name": "Güglingen",
+     "state": "BW"
+    },
+    {
+     "name": "Gundelsheim",
+     "state": "BW"
+    },
+    {
+     "name": "Hardthausen",
+     "state": "BW"
+    },
+    {
+     "name": "Ilsfeld",
+     "state": "BW"
+    },
+    {
+     "name": "Ittlingen",
+     "state": "BW"
+    },
+    {
+     "name": "Jagsthausen",
+     "state": "BW"
+    },
+    {
+     "name": "Kirchardt",
+     "state": "BW"
+    },
+    {
+     "name": "Langenbrettach",
+     "state": "BW"
+    },
+    {
+     "name": "Lauffen",
+     "state": "BW"
+    },
+    {
+     "name": "Lehrensteinsfeld",
+     "state": "BW"
+    },
+    {
+     "name": "Leingarten",
+     "state": "BW"
+    },
+    {
+     "name": "Löwenstein",
+     "state": "BW"
+    },
+    {
+     "name": "Massenbachhausen",
+     "state": "BW"
+    },
+    {
+     "name": "Möckmühl",
+     "state": "BW"
+    },
+    {
+     "name": "Neckarsulm",
+     "state": "BW"
+    },
+    {
+     "name": "Neckarwestheim",
+     "state": "BW"
+    },
+    {
+     "name": "Neudenau",
+     "state": "BW"
+    },
+    {
+     "name": "Neuenstadt am Kocher",
+     "state": "BW"
+    },
+    {
+     "name": "Nordheim",
+     "state": "BW"
+    },
+    {
+     "name": "Obersulm",
+     "state": "BW"
+    },
+    {
+     "name": "Oedheim",
+     "state": "BW"
+    },
+    {
+     "name": "Offenau",
+     "state": "BW"
+    },
+    {
+     "name": "Pfaffenhofen",
+     "state": "BW"
+    },
+    {
+     "name": "Roigheim",
+     "state": "BW"
+    },
+    {
+     "name": "Schwaigern",
+     "state": "BW"
+    },
+    {
+     "name": "Siegelsbach",
+     "state": "BW"
+    },
+    {
+     "name": "Talheim",
+     "state": "BW"
+    },
+    {
+     "name": "Untereisesheim",
+     "state": "BW"
+    },
+    {
+     "name": "Untergruppenbach",
+     "state": "BW"
+    },
+    {
+     "name": "Weinsberg",
+     "state": "BW"
+    },
+    {
+     "name": "Widdern",
+     "state": "BW"
+    },
+    {
+     "name": "Wüstenrot",
+     "state": "BW"
+    },
+    {
+     "name": "Zaberfeld",
+     "state": "BW"
+    }
+   ]
+  },
+  {
+   "id": "abfallplus-0d74f933",
+   "name": "AHE Ennepe-Ruhr-Kreis",
+   "displayName": "AHE Ennepe-Ruhr-Kreis",
+   "family": "abfallplus",
+   "state": "NW",
+   "stateConfidence": "assigned",
+   "towns": [
+    {
+     "name": "Breckerfeld",
+     "state": "NW"
+    },
+    {
+     "name": "Ennepetal",
+     "state": "NW"
+    },
+    {
+     "name": "Gevelsberg",
+     "state": "NW"
+    },
+    {
+     "name": "Hagen",
+     "state": "NW"
+    },
+    {
+     "name": "Hattingen",
+     "state": "NW"
+    },
+    {
+     "name": "Herdecke",
+     "state": "NW"
+    },
+    {
+     "name": "Schwelm",
+     "state": "NW"
+    },
+    {
+     "name": "Sprockhövel",
+     "state": "NW"
+    },
+    {
+     "name": "Wetter",
+     "state": "NW"
+    },
+    {
+     "name": "Witten",
+     "state": "NW"
+    }
+   ]
+  },
+  {
+   "id": "abfallplus-4dc39a5b",
+   "name": "Landkreis Bautzen, Abfallamt",
+   "displayName": "Landkreis Bautzen, Abfallamt",
+   "family": "abfallplus",
+   "state": "SN",
+   "stateConfidence": "verified",
+   "towns": [
+    {
+     "name": "Arnsdorf",
+     "state": "SN"
+    },
+    {
+     "name": "Bautzen",
+     "state": "SN"
+    },
+    {
+     "name": "Bernsdorf",
+     "state": "SN"
+    },
+    {
+     "name": "Bischofswerda",
+     "state": "SN"
+    },
+    {
+     "name": "Burkau",
+     "state": "SN"
+    },
+    {
+     "name": "Crostwitz",
+     "state": "SN"
+    },
+    {
+     "name": "Cunewalde",
+     "state": "SN"
+    },
+    {
+     "name": "Demitz-Thumitz",
+     "state": "SN"
+    },
+    {
+     "name": "Doberschau-Gaußig",
+     "state": "SN"
+    },
+    {
+     "name": "Elsterheide",
+     "state": "SN"
+    },
+    {
+     "name": "Elstra",
+     "state": "SN"
+    },
+    {
+     "name": "Frankenthal",
+     "state": "SN"
+    },
+    {
+     "name": "Göda",
+     "state": "SN"
+    },
+    {
+     "name": "Großdubrau",
+     "state": "SN"
+    },
+    {
+     "name": "Großharthau",
+     "state": "SN"
+    },
+    {
+     "name": "Großnaundorf",
+     "state": "SN"
+    },
+    {
+     "name": "Großpostwitz/O.L.",
+     "state": "SN"
+    },
+    {
+     "name": "Großröhrsdorf",
+     "state": "SN"
+    },
+    {
+     "name": "Haselbachtal",
+     "state": "SN"
+    },
+    {
+     "name": "Hochkirch",
+     "state": "SN"
+    },
+    {
+     "name": "Hoyerswerda",
+     "state": "SN"
+    },
+    {
+     "name": "Kamenz",
+     "state": "SN"
+    },
+    {
+     "name": "Königsbrück",
+     "state": "SN"
+    },
+    {
+     "name": "Königswartha",
+     "state": "SN"
+    },
+    {
+     "name": "Kubschütz",
+     "state": "SN"
+    },
+    {
+     "name": "Laußnitz",
+     "state": "SN"
+    },
+    {
+     "name": "Lauta",
+     "state": "SN"
+    },
+    {
+     "name": "Lichtenberg",
+     "state": "SN"
+    },
+    {
+     "name": "Lohsa",
+     "state": "SN"
+    },
+    {
+     "name": "Malschwitz",
+     "state": "SN"
+    },
+    {
+     "name": "Nebelschütz",
+     "state": "SN"
+    },
+    {
+     "name": "Neschwitz",
+     "state": "SN"
+    },
+    {
+     "name": "Neukirch",
+     "state": "SN"
+    },
+    {
+     "name": "Neukirch/Lausitz",
+     "state": "SN"
+    },
+    {
+     "name": "Obergurig",
+     "state": "SN"
+    },
+    {
+     "name": "Ohorn",
+     "state": "SN"
+    },
+    {
+     "name": "Oßling",
+     "state": "SN"
+    },
+    {
+     "name": "Ottendorf-Okrilla",
+     "state": "SN"
+    },
+    {
+     "name": "Panschwitz-Kuckau",
+     "state": "SN"
+    },
+    {
+     "name": "Pulsnitz",
+     "state": "SN"
+    },
+    {
+     "name": "Puschwitz",
+     "state": "SN"
+    },
+    {
+     "name": "Räckelwitz",
+     "state": "SN"
+    },
+    {
+     "name": "Radeberg",
+     "state": "SN"
+    },
+    {
+     "name": "Radibor",
+     "state": "SN"
+    },
+    {
+     "name": "Ralbitz-Rosenthal",
+     "state": "SN"
+    },
+    {
+     "name": "Rammenau",
+     "state": "SN"
+    },
+    {
+     "name": "Schirgiswalde-Kirschau",
+     "state": "SN"
+    },
+    {
+     "name": "Schmölln-Putzkau",
+     "state": "SN"
+    },
+    {
+     "name": "Schwepnitz",
+     "state": "SN"
+    },
+    {
+     "name": "Sohland a. d. Spree",
+     "state": "SN"
+    },
+    {
+     "name": "Spreetal",
+     "state": "SN"
+    },
+    {
+     "name": "Steina",
+     "state": "SN"
+    },
+    {
+     "name": "Steinigtwolmsdorf",
+     "state": "SN"
+    },
+    {
+     "name": "Wachau",
+     "state": "SN"
+    },
+    {
+     "name": "Weißenberg",
+     "state": "SN"
+    },
+    {
+     "name": "Wilthen",
+     "state": "SN"
+    },
+    {
+     "name": "Wittichenau",
+     "state": "SN"
+    },
+    {
+     "name": "Z_Testort",
+     "state": "SN"
+    }
+   ]
+  },
+  {
+   "id": "abfallplus-26bbdbe6",
+   "name": "AWB Landkreis Augsburg",
+   "displayName": "AWB Landkreis Augsburg",
+   "family": "abfallplus",
+   "state": "BY",
+   "stateConfidence": "assigned",
+   "towns": [
+    {
+     "name": "Adelsried",
+     "state": "BY"
+    },
+    {
+     "name": "Allmannshofen",
+     "state": "BY"
+    },
+    {
+     "name": "Altenmünster",
+     "state": "BY"
+    },
+    {
+     "name": "Aystetten",
+     "state": "BY"
+    },
+    {
+     "name": "Biberbach",
+     "state": "BY"
+    },
+    {
+     "name": "Bobingen",
+     "state": "BY"
+    },
+    {
+     "name": "Bonstetten",
+     "state": "BY"
+    },
+    {
+     "name": "Diedorf",
+     "state": "BY"
+    },
+    {
+     "name": "Dinkelscherben",
+     "state": "BY"
+    },
+    {
+     "name": "Ehingen",
+     "state": "BY"
+    },
+    {
+     "name": "Ellgau",
+     "state": "BY"
+    },
+    {
+     "name": "Emersacker",
+     "state": "BY"
+    },
+    {
+     "name": "Fischach",
+     "state": "BY"
+    },
+    {
+     "name": "Gablingen",
+     "state": "BY"
+    },
+    {
+     "name": "Gersthofen",
+     "state": "BY"
+    },
+    {
+     "name": "Gessertshausen",
+     "state": "BY"
+    },
+    {
+     "name": "Graben",
+     "state": "BY"
+    },
+    {
+     "name": "Großaitingen",
+     "state": "BY"
+    },
+    {
+     "name": "Heretsried",
+     "state": "BY"
+    },
+    {
+     "name": "Hiltenfingen",
+     "state": "BY"
+    },
+    {
+     "name": "Horgau",
+     "state": "BY"
+    },
+    {
+     "name": "Kleinaitingen",
+     "state": "BY"
+    },
+    {
+     "name": "Klosterlechfeld",
+     "state": "BY"
+    },
+    {
+     "name": "Königsbrunn",
+     "state": "BY"
+    },
+    {
+     "name": "Kühlenthal",
+     "state": "BY"
+    },
+    {
+     "name": "Kutzenhausen",
+     "state": "BY"
+    },
+    {
+     "name": "Langenneufnach",
+     "state": "BY"
+    },
+    {
+     "name": "Langerringen",
+     "state": "BY"
+    },
+    {
+     "name": "Langweid",
+     "state": "BY"
+    },
+    {
+     "name": "Meitingen",
+     "state": "BY"
+    },
+    {
+     "name": "Mickhausen",
+     "state": "BY"
+    },
+    {
+     "name": "Mittelneufnach",
+     "state": "BY"
+    },
+    {
+     "name": "Neusäß",
+     "state": "BY"
+    },
+    {
+     "name": "Nordendorf",
+     "state": "BY"
+    },
+    {
+     "name": "Oberottmarshausen",
+     "state": "BY"
+    },
+    {
+     "name": "Scherstetten",
+     "state": "BY"
+    },
+    {
+     "name": "Schwabmünchen",
+     "state": "BY"
+    },
+    {
+     "name": "Stadtbergen",
+     "state": "BY"
+    },
+    {
+     "name": "Thierhaupten",
+     "state": "BY"
+    },
+    {
+     "name": "Untermeitingen",
+     "state": "BY"
+    },
+    {
+     "name": "Ustersbach",
+     "state": "BY"
+    },
+    {
+     "name": "Walkertshofen",
+     "state": "BY"
+    },
+    {
+     "name": "Wehringen",
+     "state": "BY"
+    },
+    {
+     "name": "Welden",
+     "state": "BY"
+    },
+    {
+     "name": "Westendorf",
+     "state": "BY"
+    },
+    {
+     "name": "Zusmarshausen",
+     "state": "BY"
+    }
+   ]
+  },
+  {
+   "id": "abfallplus-f35bd08b",
+   "name": "AWB Landkreis Göppingen",
+   "displayName": "AWB Landkreis Göppingen",
+   "family": "abfallplus",
+   "state": "BW",
+   "stateConfidence": "conflict:BY",
+   "towns": [
+    {
+     "name": "Adelberg",
+     "state": "BW"
+    },
+    {
+     "name": "Aichelberg",
+     "state": "BW"
+    },
+    {
+     "name": "Albershausen",
+     "state": "BW"
+    },
+    {
+     "name": "Bad Boll",
+     "state": "BW"
+    },
+    {
+     "name": "Bad Ditzenbach",
+     "state": "BW"
+    },
+    {
+     "name": "Bad Überkingen",
+     "state": "BW"
+    },
+    {
+     "name": "Birenbach",
+     "state": "BW"
+    },
+    {
+     "name": "Böhmenkirch",
+     "state": "BW"
+    },
+    {
+     "name": "Börtlingen",
+     "state": "BW"
+    },
+    {
+     "name": "Deggingen",
+     "state": "BW"
+    },
+    {
+     "name": "Donzdorf",
+     "state": "BW"
+    },
+    {
+     "name": "Drackenstein",
+     "state": "BW"
+    },
+    {
+     "name": "Dürnau",
+     "state": "BW"
+    },
+    {
+     "name": "Ebersbach",
+     "state": "BW"
+    },
+    {
+     "name": "Eislingen",
+     "state": "BW"
+    },
+    {
+     "name": "Eschenbach",
+     "state": "BW"
+    },
+    {
+     "name": "Gammelshausen",
+     "state": "BW"
+    },
+    {
+     "name": "Geislingen",
+     "state": "BW"
+    },
+    {
+     "name": "Gingen",
+     "state": "BW"
+    },
+    {
+     "name": "Göppingen",
+     "state": "BW"
+    },
+    {
+     "name": "Gruibingen",
+     "state": "BW"
+    },
+    {
+     "name": "Hattenhofen",
+     "state": "BW"
+    },
+    {
+     "name": "Heiningen",
+     "state": "BW"
+    },
+    {
+     "name": "Hohenstadt",
+     "state": "BW"
+    },
+    {
+     "name": "Kuchen",
+     "state": "BW"
+    },
+    {
+     "name": "Lauterstein",
+     "state": "BW"
+    },
+    {
+     "name": "Mühlhausen",
+     "state": "BW"
+    },
+    {
+     "name": "Ottenbach",
+     "state": "BW"
+    },
+    {
+     "name": "Rechberghausen",
+     "state": "BW"
+    },
+    {
+     "name": "Salach",
+     "state": "BW"
+    },
+    {
+     "name": "Schlat",
+     "state": "BW"
+    },
+    {
+     "name": "Schlierbach",
+     "state": "BW"
+    },
+    {
+     "name": "Süßen",
+     "state": "BW"
+    },
+    {
+     "name": "Uhingen",
+     "state": "BW"
+    },
+    {
+     "name": "Wangen",
+     "state": "BW"
+    },
+    {
+     "name": "Wäschenbeuren",
+     "state": "BW"
+    },
+    {
+     "name": "Wiesensteig",
+     "state": "BW"
+    },
+    {
+     "name": "Zell u. A.",
+     "state": "BW"
+    }
+   ]
+  },
+  {
+   "id": "abfallplus-0e37304e",
+   "name": "AWB Landkreis Rastatt",
+   "displayName": "AWB Landkreis Rastatt",
+   "family": "abfallplus",
+   "state": "BW",
+   "stateConfidence": "conflict:BY",
+   "towns": [
+    {
+     "name": "Au am Rhein",
+     "state": "BW"
+    },
+    {
+     "name": "Bietigheim",
+     "state": "BW"
+    },
+    {
+     "name": "Bischweier",
+     "state": "BW"
+    },
+    {
+     "name": "Bühl",
+     "state": "BW"
+    },
+    {
+     "name": "Bühlertal",
+     "state": "BW"
+    },
+    {
+     "name": "Durmersheim",
+     "state": "BW"
+    },
+    {
+     "name": "Elchesheim-Illingen",
+     "state": "BW"
+    },
+    {
+     "name": "Forbach",
+     "state": "BW"
+    },
+    {
+     "name": "Gaggenau",
+     "state": "BW"
+    },
+    {
+     "name": "Gernsbach",
+     "state": "BW"
+    },
+    {
+     "name": "Hügelsheim",
+     "state": "BW"
+    },
+    {
+     "name": "Iffezheim",
+     "state": "BW"
+    },
+    {
+     "name": "Kuppenheim",
+     "state": "BW"
+    },
+    {
+     "name": "Lichtenau",
+     "state": "BW"
+    },
+    {
+     "name": "Loffenau",
+     "state": "BW"
+    },
+    {
+     "name": "Muggensturm",
+     "state": "BW"
+    },
+    {
+     "name": "Ötigheim",
+     "state": "BW"
+    },
+    {
+     "name": "Ottersweier",
+     "state": "BW"
+    },
+    {
+     "name": "Rastatt",
+     "state": "BW"
+    },
+    {
+     "name": "Rheinmünster",
+     "state": "BW"
+    },
+    {
+     "name": "Sinzheim",
+     "state": "BW"
+    },
+    {
+     "name": "Steinmauern",
+     "state": "BW"
+    },
+    {
+     "name": "Weisenbach",
+     "state": "BW"
+    }
+   ]
+  },
+  {
+   "id": "abfallplus-2fd91be1",
+   "name": "AZV Rhein-Mosel-Eifel (Landkreis Mayen-Koblenz)",
+   "displayName": "AZV Rhein-Mosel-Eifel (Landkreis Mayen-Koblenz)",
+   "family": "abfallplus",
+   "state": "RP",
+   "stateConfidence": "conflict:NW",
+   "towns": [
+    {
+     "name": "Acht",
+     "state": "RP"
+    },
+    {
+     "name": "Alken",
+     "state": "RP"
+    },
+    {
+     "name": "Andernach",
+     "state": "RP"
+    },
+    {
+     "name": "Anschau",
+     "state": "RP"
+    },
+    {
+     "name": "Arft",
+     "state": "RP"
+    },
+    {
+     "name": "Baar",
+     "state": "RP"
+    },
+    {
+     "name": "Bassenheim",
+     "state": "RP"
+    },
+    {
+     "name": "Bell",
+     "state": "RP"
+    },
+    {
+     "name": "Bendorf",
+     "state": "RP"
+    },
+    {
+     "name": "Bermel",
+     "state": "RP"
+    },
+    {
+     "name": "Boos",
+     "state": "RP"
+    },
+    {
+     "name": "Brey",
+     "state": "RP"
+    },
+    {
+     "name": "Brodenbach",
+     "state": "RP"
+    },
+    {
+     "name": "Burgen",
+     "state": "RP"
+    },
+    {
+     "name": "Dieblich",
+     "state": "RP"
+    },
+    {
+     "name": "Ditscheid",
+     "state": "RP"
+    },
+    {
+     "name": "Einig",
+     "state": "RP"
+    },
+    {
+     "name": "Ettringen",
+     "state": "RP"
+    },
+    {
+     "name": "Gappenach",
+     "state": "RP"
+    },
+    {
+     "name": "Gering",
+     "state": "RP"
+    },
+    {
+     "name": "Gierschnach",
+     "state": "RP"
+    },
+    {
+     "name": "Hatzenport",
+     "state": "RP"
+    },
+    {
+     "name": "Hausten",
+     "state": "RP"
+    },
+    {
+     "name": "Herresbach",
+     "state": "RP"
+    },
+    {
+     "name": "Hirten",
+     "state": "RP"
+    },
+    {
+     "name": "Kalt",
+     "state": "RP"
+    },
+    {
+     "name": "Kaltenengers",
+     "state": "RP"
+    },
+    {
+     "name": "Kehrig",
+     "state": "RP"
+    },
+    {
+     "name": "Kerben",
+     "state": "RP"
+    },
+    {
+     "name": "Kettig",
+     "state": "RP"
+    },
+    {
+     "name": "Kirchwald",
+     "state": "RP"
+    },
+    {
+     "name": "Kobern-Gondorf",
+     "state": "RP"
+    },
+    {
+     "name": "Kollig",
+     "state": "RP"
+    },
+    {
+     "name": "Kottenheim",
+     "state": "RP"
+    },
+    {
+     "name": "Kretz",
+     "state": "RP"
+    },
+    {
+     "name": "Kruft",
+     "state": "RP"
+    },
+    {
+     "name": "Langenfeld",
+     "state": "RP"
+    },
+    {
+     "name": "Langscheid",
+     "state": "RP"
+    },
+    {
+     "name": "Lehmen",
+     "state": "RP"
+    },
+    {
+     "name": "Lind",
+     "state": "RP"
+    },
+    {
+     "name": "Löf",
+     "state": "RP"
+    },
+    {
+     "name": "Lonnig",
+     "state": "RP"
+    },
+    {
+     "name": "Luxem",
+     "state": "RP"
+    },
+    {
+     "name": "Macken",
+     "state": "RP"
+    },
+    {
+     "name": "Mayen",
+     "state": "RP"
+    },
+    {
+     "name": "Mendig",
+     "state": "RP"
+    },
+    {
+     "name": "Mertloch",
+     "state": "RP"
+    },
+    {
+     "name": "Monreal",
+     "state": "RP"
+    },
+    {
+     "name": "Mülheim-Kärlich",
+     "state": "RP"
+    },
+    {
+     "name": "Münk",
+     "state": "RP"
+    },
+    {
+     "name": "Münstermaifeld",
+     "state": "RP"
+    },
+    {
+     "name": "Nachtsheim",
+     "state": "RP"
+    },
+    {
+     "name": "Naunheim",
+     "state": "RP"
+    },
+    {
+     "name": "Nickenich",
+     "state": "RP"
+    },
+    {
+     "name": "Niederfell",
+     "state": "RP"
+    },
+    {
+     "name": "Niederwerth",
+     "state": "RP"
+    },
+    {
+     "name": "Nörtershausen",
+     "state": "RP"
+    },
+    {
+     "name": "Oberfell",
+     "state": "RP"
+    },
+    {
+     "name": "Ochtendung",
+     "state": "RP"
+    },
+    {
+     "name": "Pillig",
+     "state": "RP"
+    },
+    {
+     "name": "Plaidt",
+     "state": "RP"
+    },
+    {
+     "name": "Polch",
+     "state": "RP"
+    },
+    {
+     "name": "Reudelsterz",
+     "state": "RP"
+    },
+    {
+     "name": "Rhens",
+     "state": "RP"
+    },
+    {
+     "name": "Rieden",
+     "state": "RP"
+    },
+    {
+     "name": "Rüber",
+     "state": "RP"
+    },
+    {
+     "name": "Saffig",
+     "state": "RP"
+    },
+    {
+     "name": "Sankt Johann",
+     "state": "RP"
+    },
+    {
+     "name": "Sankt Sebastian",
+     "state": "RP"
+    },
+    {
+     "name": "Siebenbach",
+     "state": "RP"
+    },
+    {
+     "name": "Spay",
+     "state": "RP"
+    },
+    {
+     "name": "Thür",
+     "state": "RP"
+    },
+    {
+     "name": "Trimbs",
+     "state": "RP"
+    },
+    {
+     "name": "Urbar",
+     "state": "RP"
+    },
+    {
+     "name": "Urmitz",
+     "state": "RP"
+    },
+    {
+     "name": "Vallendar",
+     "state": "RP"
+    },
+    {
+     "name": "Virneburg",
+     "state": "RP"
+    },
+    {
+     "name": "Volkesfeld",
+     "state": "RP"
+    },
+    {
+     "name": "Waldesch",
+     "state": "RP"
+    },
+    {
+     "name": "Weiler",
+     "state": "RP"
+    },
+    {
+     "name": "Weißenthurm",
+     "state": "RP"
+    },
+    {
+     "name": "Weitersburg",
+     "state": "RP"
+    },
+    {
+     "name": "Welling",
+     "state": "RP"
+    },
+    {
+     "name": "Welschenbach",
+     "state": "RP"
+    },
+    {
+     "name": "Wierschem",
+     "state": "RP"
+    },
+    {
+     "name": "Winningen",
+     "state": "RP"
+    },
+    {
+     "name": "Wolken",
+     "state": "RP"
+    }
+   ]
+  },
+  {
+   "id": "abfallplus-29ac778f",
+   "name": "Landkreis Cloppenburg",
+   "displayName": "Landkreis Cloppenburg",
+   "family": "abfallplus",
+   "state": "NI",
+   "stateConfidence": "assigned",
+   "towns": [
+    {
+     "name": "Barßel",
+     "state": "NI"
+    },
+    {
+     "name": "Bösel",
+     "state": "NI"
+    },
+    {
+     "name": "Cappeln",
+     "state": "NI"
+    },
+    {
+     "name": "Cloppenburg",
+     "state": "NI"
+    },
+    {
+     "name": "Emstek",
+     "state": "NI"
+    },
+    {
+     "name": "Essen",
+     "state": "NI"
+    },
+    {
+     "name": "Friesoythe",
+     "state": "NI"
+    },
+    {
+     "name": "Garrel",
+     "state": "NI"
+    },
+    {
+     "name": "Lastrup",
+     "state": "NI"
+    },
+    {
+     "name": "Lindern",
+     "state": "NI"
+    },
+    {
+     "name": "Löningen",
+     "state": "NI"
+    },
+    {
+     "name": "Molbergen",
+     "state": "NI"
+    },
+    {
+     "name": "Saterland",
+     "state": "NI"
+    }
+   ]
+  },
+  {
+   "id": "abfallplus-29727e74",
+   "name": "AWB Landkreis Limburg-Weilburg",
+   "displayName": "AWB Landkreis Limburg-Weilburg",
+   "family": "abfallplus",
+   "state": "HE",
+   "stateConfidence": "assigned",
+   "towns": [
+    {
+     "name": "Beselich",
+     "state": "HE"
+    },
+    {
+     "name": "Brechen",
+     "state": "HE"
+    },
+    {
+     "name": "Dornburg",
+     "state": "HE"
+    },
+    {
+     "name": "Elbtal",
+     "state": "HE"
+    },
+    {
+     "name": "Elz",
+     "state": "HE"
+    },
+    {
+     "name": "Hadamar",
+     "state": "HE"
+    },
+    {
+     "name": "Hünfelden",
+     "state": "HE"
+    },
+    {
+     "name": "Limburg",
+     "state": "HE"
+    },
+    {
+     "name": "Löhnberg",
+     "state": "HE"
+    },
+    {
+     "name": "Mengerskirchen",
+     "state": "HE"
+    },
+    {
+     "name": "Merenberg",
+     "state": "HE"
+    },
+    {
+     "name": "Runkel",
+     "state": "HE"
+    },
+    {
+     "name": "Selters",
+     "state": "HE"
+    },
+    {
+     "name": "Villmar",
+     "state": "HE"
+    },
+    {
+     "name": "Waldbrunn",
+     "state": "HE"
+    },
+    {
+     "name": "Weilburg",
+     "state": "HE"
+    },
+    {
+     "name": "Weilmünster",
+     "state": "HE"
+    },
+    {
+     "name": "Weinbach",
+     "state": "HE"
+    }
+   ]
+  },
+  {
+   "id": "abfallplus-254ef8a2",
+   "name": "Landratsamt Ostallgäu",
+   "displayName": "Landratsamt Ostallgäu",
+   "family": "abfallplus",
+   "state": "BY",
+   "stateConfidence": "assigned",
+   "towns": [
+    {
+     "name": "Aitrang",
+     "state": "BY"
+    },
+    {
+     "name": "Baisweil",
+     "state": "BY"
+    },
+    {
+     "name": "Bidingen",
+     "state": "BY"
+    },
+    {
+     "name": "Biessenhofen",
+     "state": "BY"
+    },
+    {
+     "name": "Buchloe",
+     "state": "BY"
+    },
+    {
+     "name": "Eggenthal",
+     "state": "BY"
+    },
+    {
+     "name": "Eisenberg",
+     "state": "BY"
+    },
+    {
+     "name": "Friesenried",
+     "state": "BY"
+    },
+    {
+     "name": "Füssen",
+     "state": "BY"
+    },
+    {
+     "name": "Germaringen",
+     "state": "BY"
+    },
+    {
+     "name": "Görisried",
+     "state": "BY"
+    },
+    {
+     "name": "Günzach",
+     "state": "BY"
+    },
+    {
+     "name": "Halblech",
+     "state": "BY"
+    },
+    {
+     "name": "Hopferau",
+     "state": "BY"
+    },
+    {
+     "name": "Irsee",
+     "state": "BY"
+    },
+    {
+     "name": "Jengen",
+     "state": "BY"
+    },
+    {
+     "name": "Kaltental",
+     "state": "BY"
+    },
+    {
+     "name": "Kraftisried",
+     "state": "BY"
+    },
+    {
+     "name": "Lamerdingen",
+     "state": "BY"
+    },
+    {
+     "name": "Lechbruck",
+     "state": "BY"
+    },
+    {
+     "name": "Lengenwang",
+     "state": "BY"
+    },
+    {
+     "name": "Marktoberdorf",
+     "state": "BY"
+    },
+    {
+     "name": "Mauerstetten",
+     "state": "BY"
+    },
+    {
+     "name": "Nesselwang",
+     "state": "BY"
+    },
+    {
+     "name": "Obergünzburg",
+     "state": "BY"
+    },
+    {
+     "name": "Oberostendorf",
+     "state": "BY"
+    },
+    {
+     "name": "Osterzell",
+     "state": "BY"
+    },
+    {
+     "name": "Pforzen",
+     "state": "BY"
+    },
+    {
+     "name": "Pfronten",
+     "state": "BY"
+    },
+    {
+     "name": "Rettenbach a. A.",
+     "state": "BY"
+    },
+    {
+     "name": "Rieden a. F.",
+     "state": "BY"
+    },
+    {
+     "name": "Rieden b. KF",
+     "state": "BY"
+    },
+    {
+     "name": "Ronsberg",
+     "state": "BY"
+    },
+    {
+     "name": "Roßhaupten",
+     "state": "BY"
+    },
+    {
+     "name": "Rückholz",
+     "state": "BY"
+    },
+    {
+     "name": "Ruderatshofen",
+     "state": "BY"
+    },
+    {
+     "name": "Schwangau",
+     "state": "BY"
+    },
+    {
+     "name": "Seeg",
+     "state": "BY"
+    },
+    {
+     "name": "Stötten a. A.",
+     "state": "BY"
+    },
+    {
+     "name": "Stöttwang",
+     "state": "BY"
+    },
+    {
+     "name": "Unterthingau",
+     "state": "BY"
+    },
+    {
+     "name": "Untrasried",
+     "state": "BY"
+    },
+    {
+     "name": "Waal",
+     "state": "BY"
+    },
+    {
+     "name": "Wald",
+     "state": "BY"
+    },
+    {
+     "name": "Westendorf",
+     "state": "BY"
+    }
+   ]
+  },
+  {
+   "id": "abfallplus-30f9958c",
+   "name": "Landkreis Rottweil, Eigenbetrieb Abfallwirtschaft",
+   "displayName": "Landkreis Rottweil, Eigenbetrieb Abfallwirtschaft",
+   "family": "abfallplus",
+   "state": "BW",
+   "stateConfidence": "conflict:BY",
+   "towns": [
+    {
+     "name": "Aichhalden",
+     "state": "BW"
+    },
+    {
+     "name": "Bösingen",
+     "state": "BW"
+    },
+    {
+     "name": "Deißlingen",
+     "state": "BW"
+    },
+    {
+     "name": "Dietingen",
+     "state": "BW"
+    },
+    {
+     "name": "Dornhan",
+     "state": "BW"
+    },
+    {
+     "name": "Dunningen",
+     "state": "BW"
+    },
+    {
+     "name": "Engstellenbereich",
+     "state": "BW"
+    },
+    {
+     "name": "Epfendorf",
+     "state": "BW"
+    },
+    {
+     "name": "Eschbronn",
+     "state": "BW"
+    },
+    {
+     "name": "Fluorn-Winzeln",
+     "state": "BW"
+    },
+    {
+     "name": "Hardt",
+     "state": "BW"
+    },
+    {
+     "name": "Lauterbach",
+     "state": "BW"
+    },
+    {
+     "name": "Oberndorf",
+     "state": "BW"
+    },
+    {
+     "name": "Rottweil",
+     "state": "BW"
+    },
+    {
+     "name": "Schenkenzell",
+     "state": "BW"
+    },
+    {
+     "name": "Schiltach",
+     "state": "BW"
+    },
+    {
+     "name": "Schramberg",
+     "state": "BW"
+    },
+    {
+     "name": "Sulz",
+     "state": "BW"
+    },
+    {
+     "name": "Villingendorf",
+     "state": "BW"
+    },
+    {
+     "name": "Vöhringen",
+     "state": "BW"
+    },
+    {
+     "name": "Wellendingen",
+     "state": "BW"
+    },
+    {
+     "name": "Zimmern",
+     "state": "BW"
+    }
+   ]
+  },
+  {
+   "id": "abfallplus-58b436d5",
+   "name": "Landratsamt Sigmaringen, Kreisabfallwirtschaft",
+   "displayName": "Landratsamt Sigmaringen, Kreisabfallwirtschaft",
+   "family": "abfallplus",
+   "state": "BW",
+   "stateConfidence": "assigned",
+   "towns": [
+    {
+     "name": "Bad Saulgau",
+     "state": "BW"
+    },
+    {
+     "name": "Beuron",
+     "state": "BW"
+    },
+    {
+     "name": "Bingen",
+     "state": "BW"
+    },
+    {
+     "name": "Gammertingen",
+     "state": "BW"
+    },
+    {
+     "name": "Herbertingen",
+     "state": "BW"
+    },
+    {
+     "name": "Herdwangen-Schönach",
+     "state": "BW"
+    },
+    {
+     "name": "Hettingen",
+     "state": "BW"
+    },
+    {
+     "name": "Hohentengen",
+     "state": "BW"
+    },
+    {
+     "name": "Illmensee",
+     "state": "BW"
+    },
+    {
+     "name": "Inzigkofen",
+     "state": "BW"
+    },
+    {
+     "name": "Krauchenwies",
+     "state": "BW"
+    },
+    {
+     "name": "Leibertingen",
+     "state": "BW"
+    },
+    {
+     "name": "Mengen",
+     "state": "BW"
+    },
+    {
+     "name": "Meßkirch",
+     "state": "BW"
+    },
+    {
+     "name": "Neufra",
+     "state": "BW"
+    },
+    {
+     "name": "Ostrach",
+     "state": "BW"
+    },
+    {
+     "name": "Pfullendorf",
+     "state": "BW"
+    },
+    {
+     "name": "Sauldorf",
+     "state": "BW"
+    },
+    {
+     "name": "Scheer",
+     "state": "BW"
+    },
+    {
+     "name": "Schwenningen",
+     "state": "BW"
+    },
+    {
+     "name": "Sigmaringen",
+     "state": "BW"
+    },
+    {
+     "name": "Sigmaringendorf",
+     "state": "BW"
+    },
+    {
+     "name": "Stetten a.k.M.",
+     "state": "BW"
+    },
+    {
+     "name": "Veringenstadt",
+     "state": "BW"
+    },
+    {
+     "name": "Wald",
+     "state": "BW"
+    },
+    {
+     "name": "Zentrale Kasernen",
+     "state": "BW"
+    }
+   ]
+  },
+  {
+   "id": "abfallplus-1d5df3c2",
+   "name": "abfallwelt Landkreis Kitzingen",
+   "displayName": "abfallwelt Landkreis Kitzingen",
+   "family": "abfallplus",
+   "state": "BY",
+   "stateConfidence": "verified",
+   "towns": [
+    {
+     "name": "Abtswind",
+     "state": "BY"
+    },
+    {
+     "name": "Albertshofen",
+     "state": "BY"
+    },
+    {
+     "name": "Biebelried",
+     "state": "BY"
+    },
+    {
+     "name": "Buchbrunn",
+     "state": "BY"
+    },
+    {
+     "name": "Castell",
+     "state": "BY"
+    },
+    {
+     "name": "Dettelbach",
+     "state": "BY"
+    },
+    {
+     "name": "Geiselwind",
+     "state": "BY"
+    },
+    {
+     "name": "Großlangheim",
+     "state": "BY"
+    },
+    {
+     "name": "Iphofen",
+     "state": "BY"
+    },
+    {
+     "name": "Kitzingen",
+     "state": "BY"
+    },
+    {
+     "name": "Kleinlangheim",
+     "state": "BY"
+    },
+    {
+     "name": "Mainbernheim",
+     "state": "BY"
+    },
+    {
+     "name": "Mainstockheim",
+     "state": "BY"
+    },
+    {
+     "name": "Markt Einersheim",
+     "state": "BY"
+    },
+    {
+     "name": "Marktbreit",
+     "state": "BY"
+    },
+    {
+     "name": "Marktsteft",
+     "state": "BY"
+    },
+    {
+     "name": "Martinsheim",
+     "state": "BY"
+    },
+    {
+     "name": "Nordheim am Main",
+     "state": "BY"
+    },
+    {
+     "name": "Obernbreit",
+     "state": "BY"
+    },
+    {
+     "name": "Prichsenstadt",
+     "state": "BY"
+    },
+    {
+     "name": "Rödelsee",
+     "state": "BY"
+    },
+    {
+     "name": "Rüdenhausen",
+     "state": "BY"
+    },
+    {
+     "name": "Schwarzach am Main",
+     "state": "BY"
+    },
+    {
+     "name": "Segnitz",
+     "state": "BY"
+    },
+    {
+     "name": "Seinsheim",
+     "state": "BY"
+    },
+    {
+     "name": "Sommerach",
+     "state": "BY"
+    },
+    {
+     "name": "Sulzfeld am Main",
+     "state": "BY"
+    },
+    {
+     "name": "Volkach",
+     "state": "BY"
+    },
+    {
+     "name": "Wiesenbronn",
+     "state": "BY"
+    },
+    {
+     "name": "Wiesentheid",
+     "state": "BY"
+    },
+    {
+     "name": "Willanzheim",
+     "state": "BY"
+    }
+   ]
+  },
+  {
+   "id": "abfallplus-2dd1ce4c",
+   "name": "GIB Entsorgung Wesermarsch",
+   "displayName": "GIB Entsorgung Wesermarsch",
+   "family": "abfallplus",
+   "state": "NI",
+   "stateConfidence": "assigned",
+   "towns": [
+    {
+     "name": "Berne",
+     "state": "NI"
+    },
+    {
+     "name": "Brake",
+     "state": "NI"
+    },
+    {
+     "name": "Butjadingen",
+     "state": "NI"
+    },
+    {
+     "name": "Elsfleth",
+     "state": "NI"
+    },
+    {
+     "name": "Jade",
+     "state": "NI"
+    },
+    {
+     "name": "Lemwerder",
+     "state": "NI"
+    },
+    {
+     "name": "Nordenham",
+     "state": "NI"
+    },
+    {
+     "name": "Ovelgoenne",
+     "state": "NI"
+    },
+    {
+     "name": "Stadland",
      "state": "NI"
     }
    ]

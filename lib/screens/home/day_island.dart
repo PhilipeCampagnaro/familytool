@@ -119,14 +119,21 @@ class DayIsland extends ConsumerWidget {
     final steps = ref.watch(firstStepsProvider);
     if (steps.isNotEmpty) {
       final open = ref.watch(firstStepsOpenProvider);
+      final total = ref.watch(firstStepCountProvider);
+      // **The bin reminder alone is not "first steps" any more.** It is the one
+      // step that can come back to a settled household — a phone whose
+      // notifications were switched off — and "Erste Schritte" over a family
+      // that has used the app for months reads as the app having forgotten
+      // them. So the island names the thing itself.
+      final onlyBins = steps.length == 1 && steps.single == FirstStep.binReminder;
       return IslandLine(
         key: const ValueKey('setup'),
         // Footprints, because the thing being named is first steps. The
         // sparkle that was here first said "AI feature" and nothing else.
-        icon: AppIcons.footprints,
-        label: L.s.firstStepsTitle,
-        hint: L.s.homeHintSetup,
-        trailingLabel: L.s.firstStepsProgress(firstStepCount - steps.length, firstStepCount),
+        icon: onlyBins ? AppIcons.bell : AppIcons.footprints,
+        label: onlyBins ? L.s.firstStepBinReminder : L.s.firstStepsTitle,
+        hint: onlyBins ? L.s.firstStepBinReminderBody : L.s.homeHintSetup,
+        trailingLabel: L.s.firstStepsProgress(total - steps.length, total),
         expanded: open,
         onTap: () => ref.read(firstStepsOpenProvider.notifier).state = !open,
       );

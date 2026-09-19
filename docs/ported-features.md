@@ -1423,14 +1423,28 @@ section of [backend.md](backend.md). Uploading is iOS-only, because the picker i
 `UIDocumentPickerViewController` behind `aporah/media` and there is nothing behind it elsewhere.
 Neither fallback is a reason not to add the vendor family properly when one turns up often.
 
-**And there is a third answer, which is the one that grows the map: "Anfragen".** The
-Müllabfuhr row in onboarding and the unsupported step of the connect flow both carry it. A tap
-files the town in `public.abfall_requests` through `abfall-lookup`'s `request` action (see the
-privileged-paths section of [backend.md](backend.md)) and the row turns into "angefragt", on this
-visit and every later one. The queue is the order of work for the next vendor: a town three
-households asked for outranks a big city nobody has. The live census of what is covered today, per
-Bundesland and per provider, is the coverage artifact linked from
-[production-plan.md](production-plan.md); rebuild it after touching `abfall_providers.ts`.
+**A town nobody serves goes to its own page (2026-09-19), which replaced "Anfragen".** The
+Abfuhrkalender Atlas researched the official calendar page of every unserved Gemeinde;
+`tool/abfall_authorities/gen_town_pages.py` compiles it into `abfall/town_pages.ts`, keyed per
+Bundesland by `townKey` (the register's "Wörth a.d.Donau, St" and the geocoder's "Wörth an der
+Donau" are both `wörth donau`) and by `townHead` where that is unique. `resolveAddress` asks it
+last, after every provider and every upload row, and answers `uploadOnly` with `atlas: true`, the
+`page`, and `format` — `ics`, `pdf`, `html` or `app`, a researcher's reading of the page that picks
+the instructions and never removes a button. A town whose name the atlas shares with a served town,
+or whose namesakes in the state have different pages, gets no page and is sent straight to the
+upload. `isUploadOnlyTown` knows the atlas too, so the file lands on the free `abfall:datei`
+connection. In onboarding a file town is a stage of the address step, like the rhythm questions
+(`hasWasteQuestions` includes `uploadOnly`): the page and the upload sit in the same search layout,
+and `OnboardingNotifier.useBinFile` checks and connects the file there, no second sheet; "Weiter"
+goes on without it. Upload rows are matched the same strict way — "Buch am Erlbach" used to reach
+Altötting's MyMüll page through the word "Buch". **The PDF route is built on the client and gated**:
+with `pdfUploadAvailable` the page browser keeps a PDF instead of showing it, the upload sends it
+base64 in `calendar-link`'s `pdf` field (8 MB cap), and a plan with several Bezirke gets a
+`district` step listing each with its next dates before `add` is sent with the `choice`. The parser
+behind it is built separately, in `_shared/abfall/pdf/`. The live census of what is covered today
+is the coverage artifact linked from [production-plan.md](production-plan.md); rebuild it after
+touching `abfall_providers.ts`, and re-run `build_tracker.py` then `gen_town_pages.py` after the
+atlas changes.
 
 Verified end to end against the live vendor APIs, one address per family
 (`geocode → resolveAddress → readAbfallEvents`, 2026-09-17): Aachen/regioit 157 events,

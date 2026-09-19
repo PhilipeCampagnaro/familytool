@@ -6,7 +6,8 @@ import '../models/picked_file.dart';
 import 'external_links.dart';
 
 /// A town's waste-calendar page, opened inside the app so the `.ics` its
-/// export button produces comes back here — `ios/Runner/CalendarPageBrowser.swift`
+/// export button produces — or, with [pdfUploadAvailable], the PDF plan it
+/// prints — comes back here — `ios/Runner/CalendarPageBrowser.swift`
 /// behind the "aporah/calendarPage" channel.
 ///
 /// **iOS only, because only iOS needs it.** Safari hands a `text/calendar`
@@ -17,6 +18,17 @@ const _channel = MethodChannel('aporah/calendarPage');
 
 bool get calendarPageBrowserAvailable => !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
 
+/// Whether a printed PDF plan is taken as the waste calendar — by the page
+/// browser and by the upload. **Off until the server can read one**: the PDF
+/// parser is built beside this, behind `calendar-link`'s `pdf` field, and flips
+/// this when it is deployed. Until then a PDF is refused with a sentence rather
+/// than sent somewhere that would fail on it.
+const pdfUploadAvailable = false;
+
+/// The largest PDF sent up. Real town plans run to 7.5 MB; the cap is checked
+/// here before the file is encoded, and again on the server.
+const pdfUploadMaxBytes = 8 * 1024 * 1024;
+
 /// Opens [url] (https only) and returns the calendar file the household
 /// downloaded there — in the media picker's shape, so [readPickedText] reads
 /// and deletes it — or null when they closed the page without one.
@@ -25,9 +37,12 @@ Future<PickedFile?> fetchCalendarFromPage(String url) async {
   try {
     final picked = await _channel.invokeMapMethod<String, dynamic>('open', {
       'url': url,
+      // A PDF the page shows or hands out is taken like a calendar file, once
+      // there is something to read it.
+      'acceptPdf': pdfUploadAvailable,
       'labels': {
-        'prompt': L.s.calendarPagePrompt,
-        'notCalendar': L.s.calendarPageNotCalendar,
+        'prompt': pdfUploadAvailable ? L.s.calendarPagePromptPdf : L.s.calendarPagePrompt,
+        'notCalendar': pdfUploadAvailable ? L.s.calendarPageNotCalendarPdf : L.s.calendarPageNotCalendar,
         'failed': L.s.calendarPageFailed,
         'ok': L.s.ok,
       },

@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/foundation.dart';
 import '../models/calendar_connection.dart';
+import '../services/calendar_page_browser.dart';
+import '../services/media_picker.dart';
+import '../state/calendar_connections_state.dart';
 import '../state/family_state.dart';
 import '../state/onboarding_state.dart';
 import '../theme/tokens.dart';
@@ -14,6 +18,7 @@ import '../widgets/glass.dart';
 import '../widgets/inline_dropdown.dart';
 import '../widgets/native_switch.dart';
 import '../widgets/address_privacy_note.dart';
+import '../widgets/bin_file_actions.dart';
 import '../widgets/house_number_field.dart';
 import '../widgets/settings_chrome.dart';
 import '../widgets/step_dots.dart';
@@ -1062,6 +1067,7 @@ class _AddressStepState extends ConsumerState<_AddressStep> {
     // The waste questions are a stage of this step: "Weiter" puts them away
     // and shows the calendars, and only the next "Weiter" leaves.
     if (state.askingWaste) {
+      if (state.binFileBusy) return;
       _onboarding.finishWasteQuestions();
       return;
     }
@@ -1191,7 +1197,9 @@ class _AddressStepState extends ConsumerState<_AddressStep> {
                     // is the same trap [PinnedActionLayout] fell into with the
                     // body it sometimes wrapped in a `Stack`.
                     if (state.askingWaste)
-                      GroupLabel(L.s.onboardRhythmTitle)
+                      GroupLabel(
+                        state.found?.abfall?.uploadOnly == true ? L.s.onboardWasteFileTitle : L.s.onboardRhythmTitle,
+                      )
                     else if (state.found != null)
                       GroupLabel(L.s.onboardFoundForYou)
                     else
@@ -1204,6 +1212,7 @@ class _AddressStepState extends ConsumerState<_AddressStep> {
                   ],
                 ),
               ),
+              ..._binFileActions(state),
               AddressPrivacyNote(),
               if (state.found case final found? when !state.askingWaste) ...[
                 const SizedBox(height: 10),
@@ -1305,6 +1314,7 @@ class _AddressStepState extends ConsumerState<_AddressStep> {
   /// did not settle that, then how often each bin is emptied — for that house.
   List<Widget> _wasteQuestions(LocalCalendars found) {
     final coverage = found.abfall!;
+    if (coverage.uploadOnly) return _binFileRows(coverage);
     return [
       if (coverage.houseNumbers.isNotEmpty)
         FieldGroup(
@@ -1350,8 +1360,102 @@ class _AddressStepState extends ConsumerState<_AddressStep> {
   /// labelled blocks: the address you gave, then the calendars found for it.
   /// They are one thing — this address, and what is available at it — so they
   /// are one card, and the address row above them is its first line.
+  /// The waste stage of a town that hands its calendar out as a file — the
+  /// same place the house and rhythm questions are asked, in the same search
+  /// layout: why, the town's own page, the upload. The file is checked and
+  /// connected right here ([OnboardingNotifier.useBinFile]); "Weiter" goes on
+  /// with or without it, because it can still be added from Kalender later.
+  List<Widget> _binFileRows(AbfallCoverage coverage) {
+    final state = ref.watch(onboardingProvider);
+    return [
+      if (state.binFileAdded || _hasBinFile())
+        SettingsRow(
+          icon: AppIcons.recycle,
+          title: L.s.wasteFileAdded,
+          trailing: AppIcon(AppIcons.check, size: 16, color: AppColors.success),
+        )
+      else if (state.binFileBusy)
+        _BusyRow(L.s.checkingFileEllipsis)
+      else if (state.binFileChoices.length > 1)
+        FieldGroup(
+          label: L.s.pdfDistrictLabel,
+          hint: L.s.pdfDistrictIntro,
+          child: Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final district in state.binFileChoices)
+                AnswerChip(
+                  label: district.next.isEmpty
+                      ? district.label
+                      : '${district.label} · ${L.s.dayMonthShort(district.next.first.day, district.next.first.month)}',
+                  selected: false,
+                  onTap: () => _onboarding.pickBinFileDistrict(district.id),
+                ),
+            ],
+          ),
+        ),
+    ];
+  }
+
+  /// Under the card, while the file is still to come: the one file layout the
+  /// Kalender sheet draws too ([BinFileActions]) — why, the steps, the town's
+  /// page, the upload.
+  List<Widget> _binFileActions(OnboardingState state) {
+    final coverage = state.found?.abfall;
+    if (!state.askingWaste || coverage == null || !coverage.uploadOnly) return const [];
+    if (state.binFileAdded || _hasBinFile() || state.binFileChoices.length > 1) return const [];
+    final town = coverage.town.isNotEmpty ? coverage.town : (state.pickedAddress?.town ?? '');
+    return [
+      const SizedBox(height: 16),
+      Text(
+        coverage.atlas ? L.s.wasteOwnPageBody(town) : L.s.wasteUploadOnlyBody(town),
+        style: AppText.body.copyWith(color: AppColors.muted),
+      ),
+      const SizedBox(height: 14),
+      BinFileActions(
+        page: coverage.page,
+        format: coverage.format,
+        enabled: !state.binFileBusy,
+        onSurface: true,
+        onFetchFromPage: _fetchFromTownPage,
+        onUpload: _devicePicksFiles ? _pickBinFile : null,
+      ),
+    ];
+  }
+
+  /// Whether the town's page hands out a file at all, per the atlas — a PDF
+  /// plan counts only while the app can read one.
+  static bool _fileOnPage(TownPageFormat? format) => switch (format) {
+    TownPageFormat.pdf => pdfUploadAvailable,
+    TownPageFormat.html || TownPageFormat.app => false,
+    _ => true,
+  };
+
+  bool _hasBinFile() =>
+      ref.watch(calendarConnectionsProvider.select((s) => s.connections.any((c) => c.isBinFile)));
+
+  static bool get _devicePicksFiles =>
+      !kIsWeb && (defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.android);
+
+  /// The page inside the app (iOS), handing back the file its export produced.
+  Future<void> _fetchFromTownPage(String page) async {
+    FocusScope.of(context).unfocus();
+    final file = await fetchCalendarFromPage(page);
+    if (file != null && mounted) await _onboarding.useBinFile(file);
+  }
+
+  Future<void> _pickBinFile() async {
+    FocusScope.of(context).unfocus();
+    final file = await pickAttachment(AttachmentSource.files);
+    if (file != null && mounted) await _onboarding.useBinFile(file);
+  }
+
   List<Widget> _calendarRows(LocalCalendars found, OnboardingState state) {
     final coverage = found.abfall;
+    // Added on the waste stage — or before, on a replayed tour: the
+    // connection list is the record.
+    final binFileAdded = state.binFileAdded || _hasBinFile();
     final where = coverage == null
         ? null
         : coverage.street == null
@@ -1366,26 +1470,20 @@ class _AddressStepState extends ConsumerState<_AddressStep> {
             ? where
             : coverage?.needsHouseNumber == true
             ? L.s.wasteNeedsHouseNumber
+            // Nothing to switch on here: the file went in on the waste stage,
+            // or it can still go in from Kalender, and the row says which.
             : coverage?.uploadOnly == true
-            ? L.s.wasteUploadOnlyLater
-            : coverage?.requested == true
-            ? L.s.wasteRequested
-            : L.s.wasteRequestHint,
+            ? (binFileAdded
+                  ? L.s.wasteFileAdded
+                  : _fileOnPage(coverage!.format)
+                  ? L.s.wasteUploadOnlyLater
+                  : L.s.wasteOnTownPage)
+            : coverage == null
+            ? null
+            : L.s.wasteLinkLater,
         value: found.hasAbfall ? state.trashCalendar : null,
         onChanged: _onboarding.setTrashCalendar,
-        // The lookup ran and no vendor answered: the row offers to have us
-        // find one. A lookup that *failed* (coverage null) offers nothing —
-        // there is no town to file — and a vendor that only wants the house
-        // number is not missing either.
-        // A town served only by a file has nothing for us to set up either.
-        missingAction: coverage == null || coverage.requested || coverage.needsHouseNumber || coverage.uploadOnly
-            ? null
-            : _MissingAction(
-                label: L.s.wasteRequestAction,
-                busy: state.requestingTrash,
-                onTap: _onboarding.requestTrash,
-              ),
-        done: coverage?.requested == true,
+        done: coverage?.uploadOnly == true && binFileAdded,
       ),
       _CalendarRow(
         icon: AppIcons.graduationCap,
@@ -1398,25 +1496,13 @@ class _AddressStepState extends ConsumerState<_AddressStep> {
   }
 }
 
-/// What a missing calendar's row offers instead of a switch: the one verb that
-/// can still make it exist.
-class _MissingAction {
-  final String label;
-  final bool busy;
-  final VoidCallback onTap;
-
-  const _MissingAction({required this.label, required this.busy, required this.onTap});
-}
-
 /// A calendar the lookup found, with its switch — or one it didn't, greyed and
 /// carrying an X where the switch would be. A **disabled switch** is the thing
 /// this deliberately isn't: it invites a tap that can't do anything, where the
 /// X simply says there is nothing here to turn on.
 ///
-/// The Müllabfuhr row is the exception with a way forward: no vendor of ours
-/// serving the street is *our* gap, not the household's, so instead of the X
-/// it carries [missingAction] — "Anfragen" — and, once tapped, a check and the
-/// sentence saying we are on it ([done]).
+/// The Müllabfuhr row of a town that hands out a file carries a check instead
+/// once the file went in on the waste stage ([done]).
 class _CalendarRow extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -1426,7 +1512,6 @@ class _CalendarRow extends StatelessWidget {
   final bool? value;
   final ValueChanged<bool> onChanged;
 
-  final _MissingAction? missingAction;
   final bool done;
 
   const _CalendarRow({
@@ -1435,7 +1520,6 @@ class _CalendarRow extends StatelessWidget {
     required this.subtitle,
     required this.value,
     required this.onChanged,
-    this.missingAction,
     this.done = false,
   });
 
@@ -1465,11 +1549,11 @@ class _CalendarRow extends StatelessWidget {
               children: [
                 Text(title, style: AppText.rowTitle.copyWith(color: missing ? AppColors.muted : null)),
                 if (subtitle case final line?)
-                  // The request sentence is a sentence, and gets the second line
+                  // The file sentence is a sentence, and gets the second line
                   // an address never needs.
                   Text(
                     line,
-                    maxLines: missing && !done ? 2 : 1,
+                    maxLines: missing ? 2 : 1,
                     overflow: TextOverflow.ellipsis,
                     style: AppText.label,
                   ),
@@ -1480,46 +1564,9 @@ class _CalendarRow extends StatelessWidget {
             NativeSwitch(value: on, onChanged: onChanged)
           else if (done)
             AppIcon(AppIcons.check, size: 16, color: AppColors.success)
-          else if (missingAction case final action?)
-            _SmallPill(label: action.label, busy: action.busy, onTap: action.onTap)
           else
             AppIcon(AppIcons.x, size: 16, color: AppColors.mutedLight),
         ],
-      ),
-    );
-  }
-}
-
-/// The accent-tinted word at the end of a row — the same drawing as the
-/// connect flow's house-number chips, selected — sized to a row's height. A
-/// spinner takes the word's place while the tap is on its way, so the pill
-/// cannot be tapped twice and nothing jumps.
-class _SmallPill extends StatelessWidget {
-  final String label;
-  final bool busy;
-  final VoidCallback onTap;
-
-  const _SmallPill({required this.label, required this.busy, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final accent = Theme.of(context).colorScheme.primary;
-    return GestureDetector(
-      onTap: busy ? null : onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-        decoration: BoxDecoration(
-          color: accent.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(AppRadii.chip),
-        ),
-        child: busy
-            ? SizedBox(
-                width: 14,
-                height: 14,
-                child: CircularProgressIndicator(strokeWidth: 2, color: accent),
-              )
-            : Text(label, style: AppText.buttonSmall.copyWith(color: accent)),
       ),
     );
   }

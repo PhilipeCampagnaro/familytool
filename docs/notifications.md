@@ -27,6 +27,12 @@ become true.
   there); Abfall on; to-dos with a time on; Ausgaben's goals on, which it can afford to be because
   a household with no goals never hears from it, and which names no hour at all. The real prompt is asked when a reminder is set, a
   switch is turned on, or an Abfall calendar is connected — never at launch.
+  The welcome tour connects Abfall without asking, on purpose, to keep the tour to three plain
+  questions. Instead, Home's first steps carry "Müll-Erinnerung einschalten" (`FirstStep.binReminder`)
+  for as long as a waste calendar is connected and this phone cannot ring for it: the bin reminder
+  is switched off, or access is not `authorized`. The quiet grant doesn't count. The step opens
+  this Settings page. When it is the only step left, the island is titled with it instead of
+  "Erste Schritte", because it can come back long after setup, when notifications are switched off.
 - **A CalDAV occurrence that is moved loses its reminder.** A one-off follows its appointment
   anywhere (keyed on calendar + uid); an occurrence of a series is also keyed on its start, because
   CalDAV gives the whole series one UID.

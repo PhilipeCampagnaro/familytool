@@ -10,6 +10,7 @@ import '../../state/family_state.dart';
 import '../../state/notification_state.dart';
 import '../../theme/app_icons.dart';
 import '../../theme/tokens.dart';
+import '../../widgets/anchored_menu.dart';
 import '../../widgets/app_sheet.dart';
 import '../../widgets/native_switch.dart';
 import '../../widgets/settings_chrome.dart';
@@ -111,14 +112,27 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> with Widg
             subtitle: L.s.notifyAbfallSubtitle,
             trailing: NativeSwitch(value: s.abfall, onChanged: notifier.setAbfall),
           ),
-          if (s.abfall)
+          if (s.abfall) ...[
+            // The day before or the day itself, each with its own hour — a bin
+            // day's reminder row in Kalender offers the same two and writes here.
+            KeyedSubtree(
+              key: _abfallDayAnchor,
+              child: SettingsRow(
+                key: const ValueKey('abfall-day'),
+                icon: AppIcons.calendar,
+                title: L.s.notifyAbfallWhen,
+                value: s.abfallSameDay ? L.s.abfallSameDay : L.s.abfallDayBefore,
+                onTap: () => _pickAbfallDay(s.abfallSameDay, notifier),
+              ),
+            ),
             SettingsRow(
               key: const ValueKey('abfall-time'),
               icon: AppIcons.clock,
               title: L.s.notifyTime,
-              value: _clock(s.abfallMinutes),
-              onTap: () => _pickTime(s.abfallMinutes, notifier.setAbfallMinutes),
+              value: _clock(s.abfallAt),
+              onTap: () => _pickTime(s.abfallAt, notifier.setAbfallMinutes),
             ),
+          ],
         ]),
         const SizedBox(height: AppSpacing.blockGap),
         // **The two that name no hour, in one card.** A card here exists to bind
@@ -185,6 +199,25 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> with Widg
   }
 
   String _clock(int minutes) => formatTimeOfDay(minutes ~/ 60, minutes % 60);
+
+  final _abfallDayAnchor = GlobalKey();
+
+  void _pickAbfallDay(bool sameDay, NotificationSettingsNotifier notifier) {
+    showAnchoredMenu(
+      context: context,
+      anchorKey: _abfallDayAnchor,
+      items: [
+        for (final option in const [false, true])
+          AnchoredMenuItem(
+            label: option ? L.s.abfallSameDay : L.s.abfallDayBefore,
+            icon: sameDay == option ? AppIcons.check : AppIcons.calendar,
+            symbol: option ? 'sunrise' : 'moon',
+            selected: sameDay == option,
+            onSelected: () => notifier.setAbfallDay(sameDay: option),
+          ),
+      ],
+    );
+  }
 
   Future<void> _pickTime(int minutes, void Function(int) apply) async {
     final picked = await showTimePicker(

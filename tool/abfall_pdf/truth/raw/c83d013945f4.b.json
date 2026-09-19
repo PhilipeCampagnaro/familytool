@@ -1,0 +1,26 @@
+{
+  "id": "c83d013945f4",
+  "labeller": "b",
+  "calendar": true,
+  "year": 2026,
+  "covers": "2026-01-01..2026-12-31",
+  "district": "1",
+  "codes": ["1"],
+  "legend": {
+    "RM": "rest",
+    "Bio": "bio",
+    "AP": "papier",
+    "WS": "gelb (Wertstoffe)",
+    "W": "gruen (Weihnachtsbaumabfuhr, same Bezirke as Bio; only printed in January)"
+  },
+  "window": ["2026-01", "2026-02", "2026-03", "2026-09"],
+  "bins": {
+    "rest": ["2026-01-12", "2026-01-26", "2026-02-09", "2026-02-23", "2026-03-09", "2026-03-23", "2026-09-07", "2026-09-21"],
+    "bio": ["2026-01-05", "2026-01-19", "2026-02-02", "2026-02-16", "2026-03-02", "2026-03-16", "2026-03-30", "2026-09-14", "2026-09-28"],
+    "papier": ["2026-01-05", "2026-01-19", "2026-02-02", "2026-02-16", "2026-03-02", "2026-03-16", "2026-03-30", "2026-09-14", "2026-09-28"],
+    "gelb": ["2026-01-13", "2026-01-27", "2026-02-10", "2026-02-24", "2026-03-10", "2026-03-24", "2026-09-08", "2026-09-22"],
+    "gruen": ["2026-01-05"]
+  },
+  "unsure": [],
+  "notes": "RM/Bio/AP/WS/W all number the same Bezirke; the printed numbers are not labelled 'Bezirk' or 'Tour' anywhere, so district is just the digit '1', the lowest used. RM/Bio/AP/W run a fixed weekday-per-zone pattern (Mo=zone1, Di=zone2, Mi=zone5, Do=zone3, Fr=zone4); RM only collects zone1 every second Monday, Bio/AP collect zone1 every second Monday on the complementary weeks (so RM-1 and Bio/AP-1 never land on the same date), and WS cycles zones 1-4 on Di-Fr roughly every two weeks with zone1 on Tuesday. Glas, Sperrmüll and Schadstoff are not covered by this calendar at all (no columns for them). Every date's printed weekday was checked against 2026-01-01=Thursday and matched."
+}

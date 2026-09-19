@@ -775,6 +775,15 @@ const _fillSaturation = 1.15;
 /// its corners eat the title.
 const _chipRadius = 999.0;
 
+/// Every chip in the all-day band stands this tall, whatever it holds.
+///
+/// **One height for the row, never one for the to-do.** The to-do chip is the
+/// one with something to press, and it was the one that felt small — but grown
+/// alone it would be the loudest thing in a row of equals. The row grows
+/// together instead, and the to-do's check claims the chip's full height (see
+/// [_UntimedTodoChip]).
+const _bandChipHeight = 34.0;
+
 /// One appointment or timed to-do, standing on the grid.
 class _DayBlock extends StatelessWidget {
   final _TimedEntry entry;
@@ -1573,16 +1582,26 @@ class _DayBand extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final chips = <Widget>[
-      if (holiday case final holiday?) _HolidayChip(holiday: holiday, accent: accent),
+      if (holiday case final holiday?)
+        SizedBox(
+          height: _bandChipHeight,
+          child: _HolidayChip(holiday: holiday, accent: accent),
+        ),
       for (final event in plan.allDay)
         ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: _maxChipWidth),
-          child: _AllDayPill(event: event, headingText: headingText),
+          child: SizedBox(
+            height: _bandChipHeight,
+            child: _AllDayPill(event: event, headingText: headingText),
+          ),
         ),
       for (final task in plan.untimedTodos)
         ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: _maxChipWidth),
-          child: _UntimedTodoChip(task: task, accent: accent),
+          child: SizedBox(
+            height: _bandChipHeight,
+            child: _UntimedTodoChip(task: task, accent: accent),
+          ),
         ),
     ];
 
@@ -1867,14 +1886,38 @@ class _CalendarPageMark extends StatelessWidget {
 ///
 /// The same capsule, outlined rather than filled with a calendar's colour (see
 /// [_todoChip]), and carrying the Board's own check.
+///
+/// **It leads with whose it is**, the way [_TodoBlock] on the grid does: the
+/// assignee's face, or — for a to-do nobody took — the Board's list glyph, at
+/// the size and gap of the Abfall/Ferien marks in the pills beside it. Not a
+/// check: a check on the left and a check circle on the right is one symbol
+/// twice, and the one on the left does nothing.
+///
+/// **The check is drawn at 19pt and pressed at the chip's full height.** A
+/// 19pt target was the whole complaint, and a miss landed on the chip, which
+/// opens the editor — worse than nothing. The circle stays the size of the
+/// Board's own; the zone around it is what grew.
 class _UntimedTodoChip extends ConsumerWidget {
   final BoardTask task;
   final Color accent;
 
   const _UntimedTodoChip({required this.task, required this.accent});
 
+  /// How much of the chip's right end finishes the to-do rather than opening it.
+  static const _checkZone = 34.0;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final assigned = task.assigneeId != null;
+    final who = assigned
+        ? whoBadge(
+            assigneeId: task.assigneeId,
+            visibility: task.visibility,
+            sharedWith: task.sharedWith,
+            members: ref.watch(householdMembersProvider),
+          )
+        : null;
+
     return TweenAnimationBuilder<double>(
       tween: Tween<double>(end: task.done ? 1 : 0),
       duration: const Duration(milliseconds: 260),
@@ -1883,11 +1926,20 @@ class _UntimedTodoChip extends ConsumerWidget {
         behavior: HitTestBehavior.opaque,
         onTap: () => openTaskSheet(context, ref, task: task),
         child: Container(
-          padding: const EdgeInsets.fromLTRB(12, 5, 5, 5),
+          padding: EdgeInsets.only(left: who != null ? 6 : 10),
           decoration: _todoChip(radius: _chipRadius),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
+              if (who != null)
+                Semantics(
+                  label: who.label,
+                  excludeSemantics: true,
+                  child: WhoAvatars(who: who, size: 20, fontSize: 9),
+                )
+              else
+                AppIcon(AppIcons.listChecks, size: 14, color: AppColors.muted),
+              SizedBox(width: who != null ? 7 : 6),
               Flexible(
                 child: StrikeThrough(
                   progress: strike,
@@ -1903,13 +1955,26 @@ class _UntimedTodoChip extends ConsumerWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 7),
-              CheckOffButton(
-                progress: strike,
-                accent: accent,
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
                 onTap: () => ref.read(boardProvider.notifier).toggle(task),
-                size: 19,
-                filled: true,
+                child: SizedBox(
+                  width: _checkZone,
+                  height: double.infinity,
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 6),
+                      child: CheckOffButton(
+                        progress: strike,
+                        accent: accent,
+                        onTap: () => ref.read(boardProvider.notifier).toggle(task),
+                        size: 19,
+                        filled: true,
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ],
           ),

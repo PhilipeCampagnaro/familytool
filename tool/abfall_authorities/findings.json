@@ -1,0 +1,150 @@
+{
+ "pdf_question": "Decided 2026-09-19: no PDF route. PDF-only towns are about one in thirteen (9% of people), concentrated in Thüringen, Rheinland-Pfalz and Sachsen. They get the town's page in the app like every other town, and what they can download is up to the town.",
+ "items": [
+  {
+   "state": "All",
+   "kind": "live",
+   "text": "Done 2026-09-19: 43 of those counties are now live in the app, from the vendor configs their own pages embed: 22 Athos portals, 18 abfall.io / AbfallPlus keys, one AWIDO client and two Müllmax towns. Each resolved a real address end to end through the app's own resolver, robots.txt allows the adapter's path, and no terms reserve the dates. About 1,400 atlas towns (7.7M people), among them Ludwigsburg, Ortenau, Heilbronn, Bautzen, Erzgebirge, Vogtland, Görlitz and Südbrandenburg. Rhein-Hunsrück moved from upload to live through its own Athos portal."
+  },
+  {
+   "state": "All",
+   "kind": "check",
+   "text": "Held back, same rule as Göttingen: Zollernalb, Traunstein, Nordfriesland, Tuttlingen, Oberallgäu/Kempten/Lindau and Vorpommern-Rügen print a container size or rhythm beside the household bin with no way to choose. Neuwied lists every Schadstoffmobil stop in the county. Also open: Donau-Wald (AWG) and Main-Spessart send an incomplete certificate chain the server refuses; Böblingen's publisher answers with no towns; Emsland, Nienburg, Lörrach, Waldshut, Garmisch and Bamberg need a working test address; EVS (all of the Saarland) and the c-trace county services need one row per town."
+  },
+  {
+   "state": "All",
+   "kind": "check",
+   "text": "AbfallPlus keys whose publisher splits long streets into number ranges ('Hauptstraße 1+3, 2-26' in Offenburg, Cloppenburg's 'Bahnhofstrasse (von … bis …)') resolve every other street, but not those. The resolver does not read the ranges yet."
+  },
+  {
+   "state": "All",
+   "kind": "check",
+   "text": "Bug found in the recount: for an upload-only provider the resolver answers from the town name alone, and the name match is a whole word anywhere. So 'Buch am Erlbach' is sent to Altötting's MyMüll page and 'Mülheim-Kärlich' to A.R.T. Trier's, with no street check. A live provider is protected by its street list, an upload one is not. To fix in resolve.ts."
+  },
+  {
+   "state": "All",
+   "kind": "live",
+   "text": "The headline: about 11M people in some 110 counties are on calendar systems the app already has adapters for: abfall.io (36 counties, about 5M), the Athos / WasteManagement servlet (30, 3.9M), AWIDO (28), c-trace (7) and muellmax (6). Each needs a provider row plus a terms and robots.txt check, and those households then get their bins live, with no upload at all. Jumomind (12 counties) is not on this list: every *.jumomind.com host, MyMüll included, disallows our path in robots.txt, so those counties go to upload like the ones already in the app."
+  },
+  {
+   "state": "All",
+   "kind": "live",
+   "text": "Advantic's Abfallmodul (iKISS) appears in 5 more counties (0.6M: Leer, Peine, Goslar, Plön and others) and in the Herford towns in NRW. It is the one new vendor file worth writing."
+  },
+  {
+   "state": "All",
+   "kind": "rule",
+   "text": "All 7,768 unserved towns are researched and 99.96% have an official page. 82% of towns (80% of people) offer an iCal export, 7.6% are PDF only, 5% web-page only and 1% app only. Just 3 towns publish nothing."
+  },
+  {
+   "state": "All",
+   "kind": "check",
+   "text": "423 of 426 distinct pages load for the checker and are about bins. The other 3 are JavaScript apps that load but show no text (Pinneberg's Abfall-Navi, Helgoland, the Bad Kreuznach app)."
+  },
+  {
+   "state": "ST/MV/SH",
+   "kind": "rule",
+   "text": "Sachsen-Anhalt (201 towns), Mecklenburg-Vorpommern (723) and Schleswig-Holstein (1,048) are nearly 100% iCal: one county calendar each, in every county."
+  },
+  {
+   "state": "TH/RP/SN",
+   "kind": "gap",
+   "text": "Most of the PDF-only towns are in Thüringen (123 towns), Rheinland-Pfalz (204, plus 79 app-only) and Sachsen (92, Erzgebirgskreis and Zwickau)."
+  },
+  {
+   "state": "SH",
+   "kind": "live",
+   "text": "Schleswig-Holstein is the cleanest state so far: every Kreis runs one calendar, almost all with iCal. Pinneberg uses regio iT's Abfall-Navi and Segeberg (WZV) uses c-trace, both families with an adapter. Nordfriesland is on abfall.io, and the ZVO (Ostholstein) even has its own /ical endpoint."
+  },
+  {
+   "state": "HE",
+   "kind": "rule",
+   "text": "The rest of Hessen is also mostly town by town: Main-Taunus, Waldeck-Frankenberg (20 towns), Main-Kinzig outside its 12 IKZ towns, and the cities of Gießen and Wetzlar. The Odenwaldkreis (MZVO) and Werra-Meißner (ZVA) run shared calendars."
+  },
+  {
+   "state": "RP",
+   "kind": "gap",
+   "text": "Rheinland-Pfalz has the most PDF-only counties so far: Mayen-Koblenz, Südliche Weinstraße, Landkreis Kaiserslautern and Donnersbergkreis (PDF plus an app). The A.R.T. Region Trier is already live."
+  },
+  {
+   "state": "SN",
+   "kind": "gap",
+   "text": "In Sachsen, the Erzgebirgskreis (ZAS) and Landkreis Zwickau are PDF only. Bautzen, Mittelsachsen (EKM) and ZAOE (Meißen and Sächsische Schweiz) offer iCal."
+  },
+  {
+   "state": "All",
+   "kind": "check",
+   "text": "The first count used a stricter name match than the app. A recount with district names stripped ('Altenbeken-Buke' → Altenbeken) and suffixes removed ('Wörth a.d.Donau') found 104 towns (0.8M people) the app already recognises: 60 live (mostly AWIDO in Bavaria: Regensburg, Rosenheim, Nordschwaben, Aschaffenburg) and 44 upload (Kreis Paderborn via MyMüll, Barnim, Uckermark, Bad Homburg, Konz, Bitburg). They are out of the atlas."
+  },
+  {
+   "state": "NI",
+   "kind": "live",
+   "text": "Niedersachsen follows the same pattern as Bavaria. abfall.io (Cloppenburg, Cuxhaven, Oldenburg), c-trace (Aurich/MKW), AWIDO (Gifhorn) and the WasteManagement servlet (Verden, Nienburg) all have adapters already. Wolfenbüttel, Celle and Grafschaft Bentheim run Jumomind, which is upload only (robots.txt). The Advantic module (Leer, Peine, Goslar) also turned up in the Herford area in NRW, so it is worth one new vendor file."
+  },
+  {
+   "state": "HE",
+   "kind": "rule",
+   "text": "Hessen is split as expected. Kreis Offenbach, the Wetterau and the Hochtaunuskreis leave every town to collect itself, while Kassel, Schwalm-Eder, Limburg-Weilburg and Vogelsberg run one county calendar each. Groß-Gerau, Rheingau-Taunus and Marburg-Biedenkopf are mixed."
+  },
+  {
+   "state": "BY",
+   "kind": "rule",
+   "text": "In Landkreis München every Gemeinde collects itself (20 separate pages). The Landratsamt only offers the LKM Abfall+ app."
+  },
+  {
+   "state": "NI/BY",
+   "kind": "gap",
+   "text": "More PDF only: Freising (a PDF per Gemeinde), Neu-Ulm, Ansbach, Ammerland, Northeim, Wesermarsch and Wilhelmshaven. Wilhelmshaven's only alternative is MyMüll, which our rule excludes."
+  },
+  {
+   "state": "BW/BY",
+   "kind": "live",
+   "text": "The biggest find so far: most county calendars run systems the app already has adapters for. The first 11 batches hold 17 counties on abfall.io widgets (Tuttlingen, Rottweil, Sigmaringen, Calw, Bayreuth and more, keys visible), 17 on the Athos / IT-Consult WasteManagement servlet (ZAW Donau-Wald, Fürth, Miltenberg, Main-Spessart, Neckar-Odenwald and others), 5 on AWIDO (Kelheim, Regensburg, Rosenheim, Weiden), plus c-trace (Main-Tauber, Bayreuth); Eichstätt runs Jumomind, which is upload only. Each needs a provider row and a terms/robots check, not a new vendor file, and can then go live with no upload at all."
+  },
+  {
+   "state": "BW/BY",
+   "kind": "rule",
+   "text": "Outside NRW the county almost always runs one calendar for all its towns. Exceptions so far: Landkreis Konstanz (every town collects itself), Bühl (Rastatt), Bad Kissingen town, Markt Garmisch-Partenkirchen and Wasserburg a. Inn."
+  },
+  {
+   "state": "BW/BY",
+   "kind": "gap",
+   "text": "PDF only so far: Hohenlohekreis (a PDF per town, plus the app 'Abfallinfo HOK'), Baden-Baden, Aschaffenburg, Rosenheim town and Passau city."
+  },
+  {
+   "state": "BY",
+   "kind": "check",
+   "text": "Bamberg's city page answers with a 307 redirect to the checker, and some servlet pages need a cookie consent before the widget loads. Both should open normally in the in-app browser."
+  },
+  {
+   "state": "NW",
+   "kind": "live",
+   "text": "RSAG (Rhein-Sieg-Kreis) runs one street calendar with an ICS file for all 19 towns, built into rsag.de. It is a live-vendor candidate once its terms and robots.txt are checked."
+  },
+  {
+   "state": "NW",
+   "kind": "live",
+   "text": "ESG Soest serves 14 towns of Kreis Soest from one calendar with iCal, and ASTO covers 6 Oberberg towns with an iCal export. Both are candidates."
+  },
+  {
+   "state": "NW",
+   "kind": "live",
+   "text": "SEDRO's abfuhrtermine.info serves six Olpe towns and Kreuztal, and the Herford towns share one Advantic module with a VCAL export (9 towns)."
+  },
+  {
+   "state": "NW",
+   "kind": "gap",
+   "text": "Kreis Paderborn is not PDF only: A.V.E. and the towns name MyMüll as their calendar, and the app already carries both A.V.E. and ASP Paderborn as upload rows with their pages. The first count missed them because the census lists A.V.E.'s towns by district. Hallenberg publishes nothing current at all."
+  },
+  {
+   "state": "NW",
+   "kind": "check",
+   "text": "Bad Laasphe blocks automated requests (403) and Kirchhundem answers with a redirect. The in-app browser is a real WebKit, so both are expected to load there."
+  },
+  {
+   "state": "NW",
+   "kind": "rule",
+   "text": "Every vendor-hosted page (lobbe.app, regioit, insert-it, muellmax, abfallnavi and others) is reached through a link on the town's own site. No MyMüll, no aggregators."
+  }
+ ]
+}

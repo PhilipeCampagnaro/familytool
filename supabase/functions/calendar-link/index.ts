@@ -1,8 +1,8 @@
 /// Connect a school calendar by pasting its link — IServ and WebUntis.
 ///
-///   POST { action: 'check',  provider, url | ics }
-///     -> { ok: true, name, events, covers_to }
-///   POST { action: 'add',    provider, url | (ics, file_name), name,
+///   POST { action: 'check',  provider, url | ics | (pdf, abfall_town, choice?) }
+///     -> { ok: true, name, events, covers_to, choices? }
+///   POST { action: 'add',    provider, url | (ics, file_name) | (pdf, choice?, file_name), name,
 ///                            connection_id? | account, abfall_town? }
 ///     -> { connection_id, external_id, name }
 ///   POST { action: 'remove', connection_id, external_id }
@@ -36,6 +36,7 @@ import { membershipOf } from "../_shared/calendar.ts";
 import { BIN_FILE_ACCOUNT, canAddCalendarAccount } from "../_shared/entitlements.ts";
 import { BIN_FILE_MAX_BYTES, looksLikeBinCalendar } from "../_shared/abfall/bin_file.ts";
 import { isUploadOnlyTown } from "../_shared/abfall/resolve.ts";
+import { type PdfChoiceSummary, pdfToBinIcs } from "../_shared/abfall/pdf/upload.ts";
 import {
   assertCalendarFile,
   type FeedEntry,
@@ -102,6 +103,11 @@ Deno.serve(async (req) => {
     /// the file is that household's waste calendar, and goes onto the free
     /// BIN_FILE_ACCOUNT connection once it is proved to be one.
     abfall_town?: string;
+    /// A town's printed bin calendar, base64, in place of [ics]. Read into an ICS for one
+    /// district here and handled as an uploaded .ics from then on; the PDF is not kept.
+    pdf?: string;
+    /// Which of the PDF's districts (`choices[].id` from a check) the household lives in.
+    choice?: string;
   };
   try {
     body = await req.json();
@@ -120,6 +126,32 @@ Deno.serve(async (req) => {
 
   const provider = body.provider ?? "";
   if (!LABELS[provider]) return fail("Unbekannter Anbieter.");
+
+  // A PDF bin calendar becomes the .ics the file route below keeps. It is only ever a waste
+  // calendar, so it needs the Abfall town like any bin file; its choices go back to the app,
+  // which asks the household for its district before it adds.
+  let pdfChoices: PdfChoiceSummary[] | undefined;
+  if (typeof body.pdf === "string") {
+    if (provider !== "ical") return fail("Für diesen Anbieter geht nur ein Link.");
+    if (typeof body.abfall_town !== "string" || !body.abfall_town.trim()) {
+      return fail("Ein PDF geht nur als Abfallkalender.");
+    }
+    const read = await pdfToBinIcs(body.pdf, {
+      choiceId: typeof body.choice === "string" ? body.choice : undefined,
+      name: body.name?.trim() || "Abfuhrkalender",
+      fileName: body.file_name,
+      today: new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Berlin" }),
+    });
+    if (!read.ok) return fail(read.error);
+    pdfChoices = read.choices;
+    if (!read.ics) {
+      if (action === "add") return fail("Bitte wähle zuerst deinen Bezirk.");
+      return json({ ok: true, name: body.name?.trim() || "Abfuhrkalender", events: 0, covers_to: null, choices: pdfChoices });
+    }
+    body.ics = read.ics;
+    body.file_name = read.fileName;
+    delete body.pdf;
+  }
 
   // An uploaded file is offered on the vendorless tile only. IServ and WebUntis
   // both mint subscription links, and a school calendar frozen on the day it
@@ -200,6 +232,7 @@ Deno.serve(async (req) => {
       name: probe.name,
       events: probe.events,
       covers_to: probe.coversTo,
+      ...(pdfChoices ? { choices: pdfChoices } : {}),
     });
   }
 

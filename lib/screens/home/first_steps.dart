@@ -2,17 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../l10n/l10n.dart';
+import '../../services/local_notifications.dart';
 import '../../state/board_state.dart';
 import '../../state/calendar_state.dart';
 import '../../state/family_state.dart';
 import '../../state/list_state.dart';
 import '../../state/nav_state.dart';
+import '../../state/notification_state.dart';
 import '../../state/tracker_state.dart';
 import '../../theme/app_icons.dart';
 import '../../theme/tokens.dart';
 import '../board_screen.dart';
 import '../calendar_connect_screen.dart';
 import '../settings/family_page.dart';
+import '../settings/notifications_page.dart';
 
 /// The setup checklist Home shows a brand-new household, in the order it is
 /// worth doing.
@@ -22,7 +25,14 @@ import '../settings/family_page.dart';
 /// can save one — `FamilyNotifier.saveAddress` has exactly one caller — so a
 /// step pointing at it would have nowhere to send anybody. Connecting Abfall
 /// asks for the address on the way, which is the door that does exist.
-enum FirstStep { calendar, family, todo, tracker, list }
+///
+/// [binReminder] is the one step that is not every household's: it exists only
+/// once a waste calendar is connected, and it is **this phone's**, not the
+/// household's — the reminder and the OS grant behind it are both per device
+/// (see docs/notifications.md), so each parent sees it until their own phone
+/// can ring. It stands in for asking during the welcome tour, which stays a
+/// tour of three questions.
+enum FirstStep { calendar, binReminder, family, todo, tracker, list }
 
 /// The steps this household has **not** done, newest-first in setup order.
 ///
@@ -40,10 +50,20 @@ enum FirstStep { calendar, family, todo, tracker, list }
 final firstStepsProvider = Provider<List<FirstStep>>((ref) {
   final ready =
       ref.watch(familyProvider.select((s) => s.loaded)) &&
-      ref.watch(calendarProvider.select((s) => s.loaded));
+      ref.watch(calendarProvider.select((s) => s.loaded)) &&
+      ref.watch(notificationSettingsProvider.select((s) => s.loaded));
   if (!ready) return const [];
 
   final hasCalendar = ref.watch(calendarProvider.select((s) => s.calendars.isNotEmpty));
+  final hasAbfall = ref.watch(calendarProvider.select((s) => s.calendars.any((c) => c.isAbfall)));
+  // **Done means the evening notice will actually ring on this phone** — the
+  // bin reminder switched on *and* the OS allowing it out loud. Either one off
+  // is the step still to take. The setting is on by default, so it alone says
+  // nothing, and iOS's quiet grant (taken at launch) files the notice silently
+  // in Notification Centre, which has not got a bin to the kerb.
+  final binReminderSet = ref.watch(
+    notificationSettingsProvider.select((s) => s.abfall && s.access == NotificationAccess.authorized),
+  );
   // **Sending the invitation is the step, not the other parent accepting it.**
   // A household that has just invited somebody has done everything this list
   // can ask of them, and leaving the row standing there reads as the invitation
@@ -57,6 +77,7 @@ final firstStepsProvider = Provider<List<FirstStep>>((ref) {
 
   return [
     if (!hasCalendar) FirstStep.calendar,
+    if (hasAbfall && !binReminderSet) FirstStep.binReminder,
     if (!hasFamily) FirstStep.family,
     if (!hasTodo) FirstStep.todo,
     if (!hasTracker) FirstStep.tracker,
@@ -65,8 +86,13 @@ final firstStepsProvider = Provider<List<FirstStep>>((ref) {
 });
 
 /// How many steps there are in total — what the island's "2 von 5" counts
-/// against.
-final int firstStepCount = FirstStep.values.length;
+/// against. The bin reminder only counts for a household that has bins to be
+/// reminded of; without a waste calendar it would be a step nobody can take,
+/// silently counted as done.
+final firstStepCountProvider = Provider<int>((ref) {
+  final hasAbfall = ref.watch(calendarProvider.select((s) => s.calendars.any((c) => c.isAbfall)));
+  return FirstStep.values.length - (hasAbfall ? 0 : 1);
+});
 
 /// Whether the checklist under the island is unfolded.
 ///
@@ -165,6 +191,7 @@ class _FirstStepRow extends ConsumerWidget {
 
   IconData get _icon => switch (step) {
     FirstStep.calendar => AppIcons.calendarPlus,
+    FirstStep.binReminder => AppIcons.bell,
     FirstStep.family => AppIcons.userPlus,
     FirstStep.todo => AppIcons.checkCircle,
     FirstStep.tracker => AppIcons.circleDashed,
@@ -173,6 +200,7 @@ class _FirstStepRow extends ConsumerWidget {
 
   String get _title => switch (step) {
     FirstStep.calendar => L.s.firstStepCalendar,
+    FirstStep.binReminder => L.s.firstStepBinReminder,
     FirstStep.family => L.s.firstStepFamily,
     FirstStep.todo => L.s.firstStepTodo,
     FirstStep.tracker => L.s.firstStepTracker,
@@ -181,6 +209,7 @@ class _FirstStepRow extends ConsumerWidget {
 
   String get _body => switch (step) {
     FirstStep.calendar => L.s.firstStepCalendarBody,
+    FirstStep.binReminder => L.s.firstStepBinReminderBody,
     FirstStep.family => L.s.firstStepFamilyBody,
     FirstStep.todo => L.s.firstStepTodoBody,
     FirstStep.tracker => L.s.firstStepTrackerBody,
@@ -201,6 +230,10 @@ class _FirstStepRow extends ConsumerWidget {
     switch (step) {
       case FirstStep.calendar:
         Navigator.of(context).push(MaterialPageRoute(builder: (_) => CalendarConnectionsPage()));
+      // The page that already holds all of it — the grant, the Abfall switch,
+      // the day and the hour — rather than a second copy of those controls.
+      case FirstStep.binReminder:
+        Navigator.of(context).push(MaterialPageRoute(builder: (_) => NotificationsPage()));
       case FirstStep.family:
         Navigator.of(context).push(MaterialPageRoute(builder: (_) => FamilyPage()));
       case FirstStep.todo:

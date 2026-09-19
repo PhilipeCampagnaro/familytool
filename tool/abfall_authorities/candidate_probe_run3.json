@@ -1,0 +1,408 @@
+[
+ {
+  "id": "athos-donauwald",
+  "ok": false,
+  "result": [
+   {
+    "family": "athos",
+    "error": "towns: fetch failed"
+   }
+  ]
+ },
+ {
+  "id": "ctrace-segebergwzv-abfallkalender",
+  "ok": true,
+  "result": {
+   "family": "ctrace",
+   "towns": [
+    "Henstedt-Ulzburg"
+   ],
+   "town": "Henstedt-Ulzburg",
+   "street": "Bahnhofstraße",
+   "events": 71,
+   "from": "2026-01-08",
+   "to": "2026-12-29",
+   "bins": [
+    "Wertstoff",
+    "Weihnachtsbaum",
+    "Restabfall",
+    "Papier",
+    "Schadstoffe",
+    "Trödelmarkt"
+   ]
+  }
+ },
+ {
+  "id": "ctrace-web.aurich-abfallkalender",
+  "ok": false,
+  "result": [
+   {
+    "family": "ctrace",
+    "towns": [
+     "Marienhafe"
+    ],
+    "error": "no config for Dorfstraße, Marienhafe"
+   }
+  ]
+ },
+ {
+  "id": "athos-bamberg",
+  "ok": false,
+  "result": [
+   {
+    "family": "athos",
+    "towns": [
+     "Hirschaid"
+    ],
+    "error": "no config for Dorfstraße, Hirschaid"
+   }
+  ]
+ },
+ {
+  "id": "athos-mainspessart",
+  "ok": false,
+  "result": [
+   {
+    "family": "athos",
+    "error": "towns: fetch failed"
+   }
+  ]
+ },
+ {
+  "id": "ctrace-grossgeraulandkreis-abfallkalender",
+  "ok": false,
+  "result": [
+   {
+    "family": "ctrace",
+    "towns": [
+     "Groß-Gerau"
+    ],
+    "error": "no config for Dorfstraße, Groß-Gerau"
+   }
+  ]
+ },
+ {
+  "id": "ctrace-dietzenbach",
+  "ok": false,
+  "result": [
+   {
+    "family": "ctrace",
+    "towns": [
+     "Neu-Isenburg"
+    ],
+    "error": "no config for Dorfstraße, Neu-Isenburg"
+   }
+  ]
+ },
+ {
+  "id": "ctrace-web.hohenloheportal",
+  "ok": false,
+  "result": [
+   {
+    "family": "ctrace",
+    "towns": [
+     "Bretzfeld"
+    ],
+    "error": "no config for Dorfstraße, Bretzfeld"
+   }
+  ]
+ },
+ {
+  "id": "ctrace-bayreuthstadt-abfallkalender",
+  "ok": false,
+  "result": [
+   {
+    "family": "ctrace",
+    "towns": [
+     "Weidenberg"
+    ],
+    "error": "no config for Dorfstraße, Weidenberg"
+   }
+  ]
+ },
+ {
+  "id": "athos-waldshut",
+  "ok": false,
+  "result": [
+   {
+    "family": "athos",
+    "towns": [
+     "Albbruck",
+     "Bad Säckingen",
+     "Bernau",
+     "Bonndorf",
+     "Dachsberg",
+     "Dettighofen",
+     "Dogern",
+     "Eggingen",
+     "Görwihl",
+     "Grafenhausen",
+     "Häusern",
+     "Herrischried",
+     "Höchenschwand",
+     "Hohentengen",
+     "Ibach",
+     "Jestetten",
+     "Klettgau",
+     "Küssaberg",
+     "Lauchringen",
+     "Laufenburg",
+     "Lottstetten",
+     "Murg",
+     "Rickenbach",
+     "St. Blasien",
+     "Stühlingen",
+     "Todtmoos",
+     "Ühlingen-Birkendorf",
+     "Waldshut-Tiengen",
+     "Wehr",
+     "Weilheim",
+     "Wutach",
+     "Wutöschingen"
+    ],
+    "error": "no config for Dorfstraße, Wehr"
+   }
+  ]
+ },
+ {
+  "id": "athos-zweibruecken",
+  "ok": true,
+  "result": {
+   "family": "athos",
+   "towns": [
+    "Zweibrücken"
+   ],
+   "town": "Zweibrücken",
+   "street": "Hauptstraße",
+   "events": 27,
+   "from": "2026-09-23",
+   "to": "2026-12-30",
+   "bins": [
+    "Restabfalltonne",
+    "Biotonne",
+    "Papiertonne",
+    "Gelbe Tonne / Gelber Sack",
+    "Problemstoff-sammlung"
+   ]
+  }
+ },
+ {
+  "id": "athos-emsland",
+  "ok": false,
+  "result": [
+   {
+    "family": "athos",
+    "towns": [
+     "Andervenne",
+     "Bawinkel",
+     "Beesten",
+     "Bockhorst",
+     "Börger",
+     "Breddenberg",
+     "Dersum",
+     "Dohren",
+     "Dörpen",
+     "Emsbüren",
+     "Esterwegen",
+     "Freren",
+     "Fresenburg",
+     "Geeste",
+     "Gersten",
+     "Groß Berßen",
+     "Handrup",
+     "Haren",
+     "Haselünne",
+     "Heede",
+     "Herzlake",
+     "Hilkenbrook",
+     "Hüven",
+     "Klein Berßen",
+     "Kluse",
+     "Lähden",
+     "Lahn",
+     "Langen",
+     "Lathen",
+     "Lehe",
+     "Lengerich",
+     "Lingen",
+     "Lorup",
+     "Lünne",
+     "Meppen",
+     "Messingen",
+     "Neubörger",
+     "Neulehe",
+     "Niederlangen",
+     "Oberlangen",
+     "Papenburg",
+     "Rastdorf",
+     "Renkenberge",
+     "Rhede",
+     "Salzbergen",
+     "Schapen",
+     "Sögel",
+     "Spahnharrenstätte",
+     "Spelle",
+     "Stavern",
+     "Surwold",
+     "Sustrum",
+     "Thuine",
+     "Twist",
+     "Vrees",
+     "Walchum",
+     "Werlte",
+     "Werpeloh",
+     "Wettrup",
+     "Wippingen"
+    ],
+    "error": "no house 10 in Dorfstraße, Haselünne"
+   }
+  ]
+ },
+ {
+  "id": "ctrace-web.stwendel",
+  "ok": false,
+  "result": [
+   {
+    "family": "ctrace",
+    "towns": [
+     "Marpingen"
+    ],
+    "error": "0 events for Dorfstraße, Marpingen"
+   }
+  ]
+ },
+ {
+  "id": "athos-nienburg",
+  "ok": false,
+  "result": [
+   {
+    "family": "athos",
+    "towns": [
+     "Balge",
+     "Bassum",
+     "Binnen",
+     "Bremen",
+     "Bücken",
+     "Diepenau",
+     "Drakenburg",
+     "Estorf",
+     "Eystrup",
+     "Gandesbergen",
+     "Hämelhausen",
+     "Haßbergen",
+     "Hassel (Weser)",
+     "Heemsen",
+     "Hilgermissen",
+     "Hoya",
+     "Hoyerhagen",
+     "Husum",
+     "Landesbergen",
+     "Leese",
+     "Liebenau",
+     "Linsburg",
+     "Marklohe",
+     "Nienburg (Weser)",
+     "Pennigsehl",
+     "Petershagen",
+     "Raddestorf",
+     "Rehburg-Loccum",
+     "Rodewald",
+     "Rohrsen",
+     "Schwarme",
+     "Schweringen",
+     "Steimbke",
+     "Steyerberg",
+     "Stöckse",
+     "Stolzenau",
+     "Stuhr",
+     "Uchte",
+     "Warmsen",
+     "Warpe",
+     "Wietzen"
+    ],
+    "error": "no house 10 in Dorfstraße, Stolzenau"
+   }
+  ]
+ },
+ {
+  "id": "athos-loerrach",
+  "ok": false,
+  "result": [
+   {
+    "family": "athos",
+    "towns": [
+     "AITERN",
+     "BAD BELLINGEN",
+     "BADENWEILER",
+     "BINZEN",
+     "BÖLLEN",
+     "EFRINGEN-KIRCHEN",
+     "EIMELDINGEN",
+     "FISCHINGEN",
+     "FRÖHND",
+     "GRENZACH-WYHLEN",
+     "Häg-Ehrsberg",
+     "HASEL",
+     "HAUSEN IM WIESENTAL",
+     "INZLINGEN",
+     "KANDERN",
+     "KLEINES WIESENTAL",
+     "LÖRRACH",
+     "MALSBURG-MARZELL",
+     "MAULBURG",
+     "RHEINFELDEN (BADEN)",
+     "RÜMMINGEN",
+     "SCHALLBACH",
+     "SCHLIENGEN",
+     "SCHÖNAU IM SCHWARZWALD",
+     "SCHÖNENBERG",
+     "SCHOPFHEIM",
+     "SCHWÖRSTADT",
+     "STEINEN",
+     "TODTNAU",
+     "TUNAU",
+     "UTZENFELD",
+     "WEIL AM RHEIN",
+     "WEMBACH",
+     "WIEDEN",
+     "WITTLINGEN",
+     "Zell im Wiesental"
+    ],
+    "error": "no house 10 in Dorfstraße, WEIL AM RHEIN"
+   }
+  ]
+ },
+ {
+  "id": "athos-garmisch",
+  "ok": false,
+  "result": [
+   {
+    "family": "athos",
+    "towns": [
+     "Bad Bayersoien",
+     "Bad Kohlgrub",
+     "Eschenlohe",
+     "Ettal",
+     "Farchant",
+     "Grainau",
+     "Großweil",
+     "Krün",
+     "Mittenwald",
+     "Murnau a. Staffelsee",
+     "Oberammergau",
+     "Oberau",
+     "Ohlstadt",
+     "Riegsee",
+     "Saulgrub",
+     "Schwaigen",
+     "Seehausen a. Staffelsee",
+     "Spatzenhausen",
+     "Uffing a. Staffelsee",
+     "Unterammergau",
+     "Wallgau"
+    ],
+    "error": "no config for Dorfstraße, Farchant"
+   }
+  ]
+ }
+]

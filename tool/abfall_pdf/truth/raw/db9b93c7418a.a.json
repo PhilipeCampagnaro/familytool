@@ -1,0 +1,21 @@
+{
+  "id": "db9b93c7418a",
+  "labeller": "a",
+  "calendar": true,
+  "year": 2026,
+  "covers": "2026-01-01..2026-12-31",
+  "district": "Müllbezirk 1 + Garten 1 (Ortsteile)",
+  "codes": ["1", "Garten 1"],
+  "legend": {"Bio": "bio", "RM": "rest", "GS": "gelb", "BT": "papier", "Garten": "gruen", "SM": "sperr"},
+  "window": ["2026-01", "2026-02", "2026-03", "2026-09"],
+  "bins": {
+    "rest": ["2026-01-13", "2026-02-09", "2026-03-09", "2026-09-21"],
+    "bio": ["2026-01-07", "2026-01-19", "2026-02-02", "2026-02-16", "2026-03-02", "2026-03-16", "2026-03-30", "2026-09-07", "2026-09-14", "2026-09-21", "2026-09-28"],
+    "papier": ["2026-01-19", "2026-02-16", "2026-03-16", "2026-09-28"],
+    "gelb": ["2026-01-02", "2026-01-26", "2026-02-23", "2026-03-23", "2026-09-07"],
+    "gruen": ["2026-03-30"],
+    "sperr": ["2026-03-16"]
+  },
+  "unsure": [],
+  "notes": "Day-list per month, cells name bins with district numbers (Bio 1, RM 3 + 4, GS 1+ in red for a holiday shift on 2 Jan). Districts only numbered (map on a separate Beiblatt), so Bezirk 1 taken. Garten 1 (Ortsteile)/Garten 2 (Kernstadt) is a separate system; Garten 1 taken. AH (Altholz) and EGG not labelled."
+}

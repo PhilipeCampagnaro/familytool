@@ -1,0 +1,7946 @@
+[
+ {
+  "st": "NW",
+  "kreis": "Rhein-Sieg-Kreis",
+  "scope": "town",
+  "name": "Alfter",
+  "n": 1,
+  "pop": 23719,
+  "fmt": "ics",
+  "url": "https://www.rsag.de/abfallkalender/abfuhrtermine/",
+  "publisher": "RSAG Rhein-Sieg-Abfallwirtschaftsgesellschaft",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Rhein-Sieg-Kreis",
+  "scope": "town",
+  "name": "Bad Honnef, Stadt",
+  "n": 1,
+  "pop": 25061,
+  "fmt": "ics",
+  "url": "https://www.rsag.de/abfallkalender/abfuhrtermine/",
+  "publisher": "RSAG Rhein-Sieg-Abfallwirtschaftsgesellschaft",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Rhein-Sieg-Kreis",
+  "scope": "town",
+  "name": "Bornheim, Stadt",
+  "n": 1,
+  "pop": 48203,
+  "fmt": "ics",
+  "url": "https://www.rsag.de/abfallkalender/abfuhrtermine/",
+  "publisher": "RSAG Rhein-Sieg-Abfallwirtschaftsgesellschaft",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Rhein-Sieg-Kreis",
+  "scope": "town",
+  "name": "Eitorf",
+  "n": 1,
+  "pop": 19172,
+  "fmt": "ics",
+  "url": "https://www.rsag.de/abfallkalender/abfuhrtermine/",
+  "publisher": "RSAG Rhein-Sieg-Abfallwirtschaftsgesellschaft",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Rhein-Sieg-Kreis",
+  "scope": "town",
+  "name": "Hennef (Sieg), Stadt",
+  "n": 1,
+  "pop": 48188,
+  "fmt": "ics",
+  "url": "https://www.rsag.de/abfallkalender/abfuhrtermine/",
+  "publisher": "RSAG Rhein-Sieg-Abfallwirtschaftsgesellschaft",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Rhein-Sieg-Kreis",
+  "scope": "town",
+  "name": "Königswinter, Stadt",
+  "n": 1,
+  "pop": 40574,
+  "fmt": "ics",
+  "url": "https://www.rsag.de/abfallkalender/abfuhrtermine/",
+  "publisher": "RSAG Rhein-Sieg-Abfallwirtschaftsgesellschaft",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Rhein-Sieg-Kreis",
+  "scope": "town",
+  "name": "Lohmar, Stadt",
+  "n": 1,
+  "pop": 30992,
+  "fmt": "ics",
+  "url": "https://www.rsag.de/abfallkalender/abfuhrtermine/",
+  "publisher": "RSAG Rhein-Sieg-Abfallwirtschaftsgesellschaft",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Rhein-Sieg-Kreis",
+  "scope": "town",
+  "name": "Meckenheim, Stadt",
+  "n": 1,
+  "pop": 24925,
+  "fmt": "ics",
+  "url": "https://www.rsag.de/abfallkalender/abfuhrtermine/",
+  "publisher": "RSAG Rhein-Sieg-Abfallwirtschaftsgesellschaft",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Rhein-Sieg-Kreis",
+  "scope": "town",
+  "name": "Much",
+  "n": 1,
+  "pop": 14561,
+  "fmt": "ics",
+  "url": "https://www.rsag.de/abfallkalender/abfuhrtermine/",
+  "publisher": "RSAG Rhein-Sieg-Abfallwirtschaftsgesellschaft",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Rhein-Sieg-Kreis",
+  "scope": "town",
+  "name": "Neunkirchen-Seelscheid",
+  "n": 1,
+  "pop": 20283,
+  "fmt": "ics",
+  "url": "https://www.rsag.de/abfallkalender/abfuhrtermine/",
+  "publisher": "RSAG Rhein-Sieg-Abfallwirtschaftsgesellschaft",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Rhein-Sieg-Kreis",
+  "scope": "town",
+  "name": "Niederkassel, Stadt",
+  "n": 1,
+  "pop": 38485,
+  "fmt": "ics",
+  "url": "https://www.rsag.de/abfallkalender/abfuhrtermine/",
+  "publisher": "RSAG Rhein-Sieg-Abfallwirtschaftsgesellschaft",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Rhein-Sieg-Kreis",
+  "scope": "town",
+  "name": "Rheinbach, Stadt",
+  "n": 1,
+  "pop": 26918,
+  "fmt": "ics",
+  "url": "https://www.rsag.de/abfallkalender/abfuhrtermine/",
+  "publisher": "RSAG Rhein-Sieg-Abfallwirtschaftsgesellschaft",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Rhein-Sieg-Kreis",
+  "scope": "town",
+  "name": "Ruppichteroth",
+  "n": 1,
+  "pop": 10887,
+  "fmt": "ics",
+  "url": "https://www.rsag.de/abfallkalender/abfuhrtermine/",
+  "publisher": "RSAG Rhein-Sieg-Abfallwirtschaftsgesellschaft",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Rhein-Sieg-Kreis",
+  "scope": "town",
+  "name": "Sankt Augustin, Stadt",
+  "n": 1,
+  "pop": 56521,
+  "fmt": "ics",
+  "url": "https://www.rsag.de/abfallkalender/abfuhrtermine/",
+  "publisher": "RSAG Rhein-Sieg-Abfallwirtschaftsgesellschaft",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Rhein-Sieg-Kreis",
+  "scope": "town",
+  "name": "Siegburg, Stadt",
+  "n": 1,
+  "pop": 42445,
+  "fmt": "ics",
+  "url": "https://www.rsag.de/abfallkalender/abfuhrtermine/",
+  "publisher": "RSAG Rhein-Sieg-Abfallwirtschaftsgesellschaft",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Rhein-Sieg-Kreis",
+  "scope": "town",
+  "name": "Swisttal",
+  "n": 1,
+  "pop": 18580,
+  "fmt": "ics",
+  "url": "https://www.rsag.de/abfallkalender/abfuhrtermine/",
+  "publisher": "RSAG Rhein-Sieg-Abfallwirtschaftsgesellschaft",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Rhein-Sieg-Kreis",
+  "scope": "town",
+  "name": "Troisdorf, Stadt",
+  "n": 1,
+  "pop": 75901,
+  "fmt": "ics",
+  "url": "https://www.rsag.de/abfallkalender/abfuhrtermine/",
+  "publisher": "RSAG Rhein-Sieg-Abfallwirtschaftsgesellschaft",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Rhein-Sieg-Kreis",
+  "scope": "town",
+  "name": "Wachtberg",
+  "n": 1,
+  "pop": 20471,
+  "fmt": "ics",
+  "url": "https://www.rsag.de/abfallkalender/abfuhrtermine/",
+  "publisher": "RSAG Rhein-Sieg-Abfallwirtschaftsgesellschaft",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Rhein-Sieg-Kreis",
+  "scope": "town",
+  "name": "Windeck",
+  "n": 1,
+  "pop": 19555,
+  "fmt": "ics",
+  "url": "https://www.rsag.de/abfallkalender/abfuhrtermine/",
+  "publisher": "RSAG Rhein-Sieg-Abfallwirtschaftsgesellschaft",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Soest",
+  "scope": "town",
+  "name": "Anröchte",
+  "n": 1,
+  "pop": 10304,
+  "fmt": "ics",
+  "url": "https://www.esg-soest.de/abfallkalender/anroechte",
+  "publisher": "ESG Entsorgungswirtschaft Soest GmbH",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Soest",
+  "scope": "town",
+  "name": "Bad Sassendorf",
+  "n": 1,
+  "pop": 12194,
+  "fmt": "ics",
+  "url": "https://www.esg-soest.de/abfallkalender/bad-sassendorf",
+  "publisher": "ESG Entsorgungswirtschaft Soest GmbH",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Soest",
+  "scope": "town",
+  "name": "Ense",
+  "n": 1,
+  "pop": 12383,
+  "fmt": "ics",
+  "url": "https://www.esg-soest.de/abfallkalender/ense",
+  "publisher": "ESG Entsorgungswirtschaft Soest GmbH",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Soest",
+  "scope": "town",
+  "name": "Erwitte, Stadt",
+  "n": 1,
+  "pop": 16300,
+  "fmt": "ics",
+  "url": "https://www.esg-soest.de/abfallkalender/erwitte",
+  "publisher": "ESG Entsorgungswirtschaft Soest GmbH",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Soest",
+  "scope": "town",
+  "name": "Geseke, Stadt",
+  "n": 1,
+  "pop": 20930,
+  "fmt": "ics",
+  "url": "https://www.esg-soest.de/abfallkalender/geseke",
+  "publisher": "ESG Entsorgungswirtschaft Soest GmbH",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Soest",
+  "scope": "town",
+  "name": "Lippetal",
+  "n": 1,
+  "pop": 11883,
+  "fmt": "ics",
+  "url": "https://www.esg-soest.de/abfallkalender/lippetal",
+  "publisher": "ESG Entsorgungswirtschaft Soest GmbH",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Soest",
+  "scope": "town",
+  "name": "Lippstadt, Stadt",
+  "n": 1,
+  "pop": 68739,
+  "fmt": "ics",
+  "url": "https://www.esg-soest.de/abfallkalender/lippstadt",
+  "publisher": "ESG Entsorgungswirtschaft Soest GmbH",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Soest",
+  "scope": "town",
+  "name": "Möhnesee",
+  "n": 1,
+  "pop": 11274,
+  "fmt": "ics",
+  "url": "https://www.esg-soest.de/abfallkalender/moehnesee",
+  "publisher": "ESG Entsorgungswirtschaft Soest GmbH",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Soest",
+  "scope": "town",
+  "name": "Rüthen, Stadt",
+  "n": 1,
+  "pop": 10290,
+  "fmt": "ics",
+  "url": "https://www.esg-soest.de/abfallkalender/ruethen",
+  "publisher": "ESG Entsorgungswirtschaft Soest GmbH",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Soest",
+  "scope": "town",
+  "name": "Soest, Stadt",
+  "n": 1,
+  "pop": 47776,
+  "fmt": "ics",
+  "url": "https://www.esg-soest.de/abfallkalender/soest",
+  "publisher": "ESG Entsorgungswirtschaft Soest GmbH",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Soest",
+  "scope": "town",
+  "name": "Warstein, Stadt",
+  "n": 1,
+  "pop": 24988,
+  "fmt": "ics",
+  "url": "https://www.esg-soest.de/abfallkalender/warstein",
+  "publisher": "ESG Entsorgungswirtschaft Soest GmbH",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Soest",
+  "scope": "town",
+  "name": "Welver",
+  "n": 1,
+  "pop": 11999,
+  "fmt": "ics",
+  "url": "https://www.esg-soest.de/abfallkalender/welver",
+  "publisher": "ESG Entsorgungswirtschaft Soest GmbH",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Soest",
+  "scope": "town",
+  "name": "Werl, Stadt",
+  "n": 1,
+  "pop": 29600,
+  "fmt": "ics",
+  "url": "https://www.esg-soest.de/abfallkalender/werl",
+  "publisher": "ESG Entsorgungswirtschaft Soest GmbH",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Soest",
+  "scope": "town",
+  "name": "Wickede (Ruhr)",
+  "n": 1,
+  "pop": 11637,
+  "fmt": "ics",
+  "url": "https://www.esg-soest.de/abfallkalender/wickede-ruhr",
+  "publisher": "ESG Entsorgungswirtschaft Soest GmbH",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Märkischer Kreis",
+  "scope": "town",
+  "name": "Altena, Stadt",
+  "n": 1,
+  "pop": 16621,
+  "fmt": "ics",
+  "url": "https://www.zfa-iserlohn.de/altena/leerungstermine/",
+  "publisher": "Zweckverband für Abfallbeseitigung (ZfA) Iserlohn",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Märkischer Kreis",
+  "scope": "town",
+  "name": "Balve, Stadt",
+  "n": 1,
+  "pop": 11240,
+  "fmt": "ics",
+  "url": "https://www.zfa-iserlohn.de/balve/leerungstermine/",
+  "publisher": "Zweckverband für Abfallbeseitigung (ZfA) Iserlohn",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Märkischer Kreis",
+  "scope": "town",
+  "name": "Hemer, Stadt",
+  "n": 1,
+  "pop": 35005,
+  "fmt": "pdf_only",
+  "url": "https://www.hemer.de/buergerservice/abfallberatung/abfallkalender",
+  "publisher": "Stadt Hemer",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Märkischer Kreis",
+  "scope": "town",
+  "name": "Herscheid",
+  "n": 1,
+  "pop": 6821,
+  "fmt": "pdf_only",
+  "url": "https://www.herscheid.de/leben-in-herscheid/reinigung-entsorgung/abfallentsorgung",
+  "publisher": "Gemeinde Herscheid",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Märkischer Kreis",
+  "scope": "town",
+  "name": "Iserlohn, Stadt",
+  "n": 1,
+  "pop": 91811,
+  "fmt": "ics",
+  "url": "https://www.zfa-iserlohn.de/iserlohn/leerungstermine/",
+  "publisher": "Zweckverband für Abfallbeseitigung (ZfA) Iserlohn",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Märkischer Kreis",
+  "scope": "town",
+  "name": "Kierspe, Stadt",
+  "n": 1,
+  "pop": 16450,
+  "fmt": "ics",
+  "url": "https://www.kierspe.de/de/abfallkalender/",
+  "publisher": "Stadt Kierspe (collection by Lobbe)",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Märkischer Kreis",
+  "scope": "town",
+  "name": "Meinerzhagen, Stadt",
+  "n": 1,
+  "pop": 20019,
+  "fmt": "ics",
+  "url": "https://lobbe.app/",
+  "publisher": "Stadt Meinerzhagen (collection by Lobbe)",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Märkischer Kreis",
+  "scope": "town",
+  "name": "Menden (Sauerland), Stadt",
+  "n": 1,
+  "pop": 52255,
+  "fmt": "ics",
+  "url": "https://www.zfa-iserlohn.de/menden/leerungstermine/",
+  "publisher": "Zweckverband für Abfallbeseitigung (ZfA) Iserlohn",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Märkischer Kreis",
+  "scope": "town",
+  "name": "Nachrodt-Wiblingwerde",
+  "n": 1,
+  "pop": 6159,
+  "fmt": "ics",
+  "url": "https://www.zfa-iserlohn.de/nachrodt-wiblingwerde/leerungstermine/",
+  "publisher": "Zweckverband für Abfallbeseitigung (ZfA) Iserlohn",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Märkischer Kreis",
+  "scope": "town",
+  "name": "Neuenrade, Stadt",
+  "n": 1,
+  "pop": 11621,
+  "fmt": "html_only",
+  "url": "https://www.neuenrade.de/Stadtwerke/Abfallentsorgung/Abfallkalender.htm",
+  "publisher": "Stadtwerke Neuenrade",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Märkischer Kreis",
+  "scope": "town",
+  "name": "Plettenberg, Stadt",
+  "n": 1,
+  "pop": 24429,
+  "fmt": "ics",
+  "url": "https://www.zfa-iserlohn.de/plettenberg/leerungstermine/",
+  "publisher": "Zweckverband für Abfallbeseitigung (ZfA) Iserlohn",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Märkischer Kreis",
+  "scope": "town",
+  "name": "Schalksmühle",
+  "n": 1,
+  "pop": 10463,
+  "fmt": "ics",
+  "url": "https://www.schalksmuehle.de/rathaus-politik/abfall/abfallkalender",
+  "publisher": "Gemeinde Schalksmühle",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Märkischer Kreis",
+  "scope": "town",
+  "name": "Werdohl, Stadt",
+  "n": 1,
+  "pop": 17618,
+  "fmt": "ics",
+  "url": "https://www.zfa-iserlohn.de/werdohl/leerungstermine/",
+  "publisher": "Zweckverband für Abfallbeseitigung (ZfA) Iserlohn",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Oberbergischer Kreis",
+  "scope": "town",
+  "name": "Bergneustadt, Stadt",
+  "n": 1,
+  "pop": 18628,
+  "fmt": "ics",
+  "url": "https://www.asto.de/digital/bergneustadt",
+  "publisher": "ASTO Abfall-Sammel- und Transportverband Oberberg",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Oberbergischer Kreis",
+  "scope": "town",
+  "name": "Gummersbach, Stadt",
+  "n": 1,
+  "pop": 51290,
+  "fmt": "ics",
+  "url": "https://www.asto.de/digital/gummersbach",
+  "publisher": "ASTO Abfall-Sammel- und Transportverband Oberberg",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Oberbergischer Kreis",
+  "scope": "town",
+  "name": "Marienheide",
+  "n": 1,
+  "pop": 13356,
+  "fmt": "ics",
+  "url": "https://www.asto.de/digital/marienheide",
+  "publisher": "ASTO Abfall-Sammel- und Transportverband Oberberg",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Oberbergischer Kreis",
+  "scope": "town",
+  "name": "Waldbröl, Stadt",
+  "n": 1,
+  "pop": 19795,
+  "fmt": "ics",
+  "url": "https://www.asto.de/digital/waldbroel",
+  "publisher": "ASTO Abfall-Sammel- und Transportverband Oberberg",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Oberbergischer Kreis",
+  "scope": "town",
+  "name": "Wiehl, Stadt",
+  "n": 1,
+  "pop": 25164,
+  "fmt": "ics",
+  "url": "https://www.asto.de/digital/wiehl",
+  "publisher": "ASTO Abfall-Sammel- und Transportverband Oberberg",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Oberbergischer Kreis",
+  "scope": "town",
+  "name": "Wipperfürth, Hansestadt",
+  "n": 1,
+  "pop": 21604,
+  "fmt": "ics",
+  "url": "https://www.asto.de/digital/wipperfuerth",
+  "publisher": "ASTO Abfall-Sammel- und Transportverband Oberberg",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Hochsauerlandkreis",
+  "scope": "town",
+  "name": "Bestwig",
+  "n": 1,
+  "pop": 10147,
+  "fmt": "pdf_only",
+  "url": "https://bestwig.de/entwickeln/umwelt/abfallwirtschaft/muellabfuhrkalender",
+  "publisher": "Gemeinde Bestwig",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Hochsauerlandkreis",
+  "scope": "town",
+  "name": "Brilon, Stadt",
+  "n": 1,
+  "pop": 25424,
+  "fmt": "ics",
+  "url": "https://lobbe.app/",
+  "publisher": "Stadt Brilon (collection by Lobbe)",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Hochsauerlandkreis",
+  "scope": "town",
+  "name": "Eslohe (Sauerland)",
+  "n": 1,
+  "pop": 8717,
+  "fmt": "pdf_only",
+  "url": "https://www.eslohe.de/rathaus-politik/buergerservice/abfallentsorgung",
+  "publisher": "Gemeinde Eslohe (collection by Remondis Olpe)",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Hochsauerlandkreis",
+  "scope": "town",
+  "name": "Marsberg, Stadt",
+  "n": 1,
+  "pop": 19555,
+  "fmt": "pdf_only",
+  "url": "https://www.marsberg.de/de/buerger/bauen-und-wohnen/index-abfallentsorgung.php",
+  "publisher": "Stadt Marsberg",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Hochsauerlandkreis",
+  "scope": "town",
+  "name": "Medebach, Hansestadt",
+  "n": 1,
+  "pop": 7906,
+  "fmt": "ics",
+  "url": "https://www.medebach.de/rathaus/umwelt-und-abfall/abfuhrkalender-2026",
+  "publisher": "Hansestadt Medebach",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Hochsauerlandkreis",
+  "scope": "town",
+  "name": "Meschede, Kreis- und  Hochschulstadt",
+  "n": 1,
+  "pop": 29615,
+  "fmt": "ics",
+  "url": "https://lobbe.app/",
+  "publisher": "Stadt Meschede (collection by Lobbe)",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Hochsauerlandkreis",
+  "scope": "town",
+  "name": "Olsberg, Stadt",
+  "n": 1,
+  "pop": 14700,
+  "fmt": "ics",
+  "url": "https://www.olsberg.de/info-service/entsorgung-umwelt/abfallkalender",
+  "publisher": "Stadt Olsberg",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Hochsauerlandkreis",
+  "scope": "town",
+  "name": "Schmallenberg, Stadt",
+  "n": 1,
+  "pop": 24711,
+  "fmt": "pdf_only",
+  "url": "https://www.schmallenberg.de/rathaus-politik/buergerservice/abfallentsorgung",
+  "publisher": "Stadt Schmallenberg (collection by Remondis Olpe)",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Hochsauerlandkreis",
+  "scope": "town",
+  "name": "Sundern (Sauerland), Stadt",
+  "n": 1,
+  "pop": 27654,
+  "fmt": "pdf_only",
+  "url": "https://www.sw-sundern.de/abfall/abfuhrkalender",
+  "publisher": "Stadtwerke Sundern",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Hochsauerlandkreis",
+  "scope": "town",
+  "name": "Winterberg, Stadt",
+  "n": 1,
+  "pop": 13168,
+  "fmt": "ics",
+  "url": "https://www.rathaus-winterberg.de/buerger-service/abfallentsorgung/",
+  "publisher": "Stadt Winterberg (collection by Lobbe)",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Wesel",
+  "scope": "town",
+  "name": "Hamminkeln, Stadt",
+  "n": 1,
+  "pop": 26873,
+  "fmt": "html_only",
+  "url": "https://www.mywastewatcher.de/abfallkalenderdk/?oguid=B3E02353-2090-4EFA-B3C7-AEC81FBC1E6F&theme=Mulberry",
+  "publisher": "Stadt Hamminkeln",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Wesel",
+  "scope": "town",
+  "name": "Hünxe",
+  "n": 1,
+  "pop": 13676,
+  "fmt": "ics",
+  "url": "https://www.huenxe.de/de/stadt-buergerservice/dienstleistungen/abfallkalender-online",
+  "publisher": "Gemeinde Hünxe",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Wesel",
+  "scope": "town",
+  "name": "Kamp-Lintfort, Stadt",
+  "n": 1,
+  "pop": 38217,
+  "fmt": "ics",
+  "url": "https://www.kamp-lintfort.de/service-rathaus/online-service/abfallservice/abfuhrtermine",
+  "publisher": "Stadt Kamp-Lintfort",
+  "configs": {
+   "jumomind": [
+    "mymuell"
+   ]
+  }
+ },
+ {
+  "st": "NW",
+  "kreis": "Wesel",
+  "scope": "town",
+  "name": "Rheinberg, Stadt",
+  "n": 1,
+  "pop": 31172,
+  "fmt": "pdf_only",
+  "url": "https://www.rheinberg.de/abfallservice",
+  "publisher": "DienstLeistungsBetrieb Stadt Rheinberg (DLB)",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Wesel",
+  "scope": "town",
+  "name": "Schermbeck",
+  "n": 1,
+  "pop": 13516,
+  "fmt": "pdf_only",
+  "url": "https://www.schermbeck.de/dienstleistungen/abfallberatungabfallkalender",
+  "publisher": "Gemeinde Schermbeck",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Wesel",
+  "scope": "town",
+  "name": "Wesel, Stadt",
+  "n": 1,
+  "pop": 60785,
+  "fmt": "pdf_only",
+  "url": "https://www.asg-wesel.de/Abfallkalender_55623.html",
+  "publisher": "ASG Wesel (Betrieb für kommunale Dienstleistungen der Stadt Wesel)",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Kleve",
+  "scope": "town",
+  "name": "Kleve, Stadt",
+  "n": 1,
+  "pop": 53028,
+  "fmt": "pdf_only",
+  "url": "https://www.kleve.de/umweltbetriebe-usk/servicebereiche/abfallentsorgung-und-wertstoffe",
+  "publisher": "Umweltbetriebe der Stadt Kleve AöR (USK)",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Kleve",
+  "scope": "town",
+  "name": "Wachtendonk",
+  "n": 1,
+  "pop": 8217,
+  "fmt": "ics",
+  "url": "https://www.wachtendonk.de/rathaus-buergerservice/buergerservice/abfallkalender/",
+  "publisher": "Gemeinde Wachtendonk",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Mettmann",
+  "scope": "town",
+  "name": "Erkrath, Fundort des Neanderthalers, Stadt",
+  "n": 1,
+  "pop": 43706,
+  "fmt": "ics",
+  "url": "https://abfallkalender.regioit.de/kalender-erkrath/",
+  "publisher": "Stadt Erkrath",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Mettmann",
+  "scope": "town",
+  "name": "Haan, Stadt",
+  "n": 1,
+  "pop": 30086,
+  "fmt": "ics",
+  "url": "https://www.haan.de/Abfall-und-Umweltkalender",
+  "publisher": "Stadt Haan",
+  "configs": {
+   "advantic": [
+    "Abfallmodul",
+    "Advantic",
+    "abfallmodul",
+    "advantic"
+   ]
+  }
+ },
+ {
+  "st": "NW",
+  "kreis": "Mettmann",
+  "scope": "town",
+  "name": "Heiligenhaus, Stadt",
+  "n": 1,
+  "pop": 26252,
+  "fmt": "pdf_only",
+  "url": "https://www.heiligenhaus.de/einzelansicht?tx_news_pi1%5Baction%5D=detail&tx_news_pi1%5Bcontroller%5D=News&tx_news_pi1%5Bnews%5D=2144&cHash=c3c471c8ae42bd6cedcba8c2a5589f33",
+  "publisher": "Stadt Heiligenhaus",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Mettmann",
+  "scope": "town",
+  "name": "Hilden, Stadt",
+  "n": 1,
+  "pop": 55157,
+  "fmt": "unknown",
+  "url": "https://www.hilden.de/de/umwelt-klima/abfallwirtschaft/abfuhrkalender-online/",
+  "publisher": "Stadt Hilden (Zentraler Bauhof)",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Mettmann",
+  "scope": "town",
+  "name": "Langenfeld (Rheinland), Stadt",
+  "n": 1,
+  "pop": 59975,
+  "fmt": "pdf_only",
+  "url": "https://www.langenfeld.de/Startseite/Wirtschaft-und-Umwelt/Abfall/Abfallkalender-1.htm",
+  "publisher": "Stadt Langenfeld",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Mettmann",
+  "scope": "town",
+  "name": "Mettmann, Stadt",
+  "n": 1,
+  "pop": 39542,
+  "fmt": "ics",
+  "url": "https://www.umwelt-webmedia.de/index.php?id=e0729b63c4b4515e6aecdececcbb18de",
+  "publisher": "Stadt Mettmann",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Mettmann",
+  "scope": "town",
+  "name": "Monheim am Rhein, Stadt",
+  "n": 1,
+  "pop": 43630,
+  "fmt": "ics",
+  "url": "https://www.monheim.de/service-verwaltung/was-erledige-ich-wo/services/abfallentsorgung/digitaler-abfallkalender",
+  "publisher": "Stadt Monheim am Rhein",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Mettmann",
+  "scope": "town",
+  "name": "Ratingen, Stadt",
+  "n": 1,
+  "pop": 89368,
+  "fmt": "ics",
+  "url": "https://www.umwelt-webmedia.de/index.php?id=b2a854d7f22b13c44c853ac0157d3c07",
+  "publisher": "Stadt Ratingen",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Mettmann",
+  "scope": "town",
+  "name": "Velbert, Stadt",
+  "n": 1,
+  "pop": 82463,
+  "fmt": "html_only",
+  "url": "https://www.tbv-velbert.de/abfall/abfallkalender",
+  "publisher": "Technische Betriebe Velbert AöR",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Mettmann",
+  "scope": "town",
+  "name": "Wülfrath, Stadt",
+  "n": 1,
+  "pop": 20731,
+  "fmt": "ics",
+  "url": "https://www.umwelt-webmedia.de/index.php?id=3d4679ccf1586f4f90ba9fc89d554c74",
+  "publisher": "Stadt Wülfrath",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Minden-Lübbecke",
+  "scope": "town",
+  "name": "Bad Oeynhausen, Stadt",
+  "n": 1,
+  "pop": 50620,
+  "fmt": "ics",
+  "url": "https://abfallkalender.prezero.network/bad-oeynhausen",
+  "publisher": "Stadtwerke Bad Oeynhausen",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Minden-Lübbecke",
+  "scope": "town",
+  "name": "Espelkamp, Stadt",
+  "n": 1,
+  "pop": 25576,
+  "fmt": "ics",
+  "url": "https://www.espelkamp.de/Rathaus/Abfall/",
+  "publisher": "Stadt Espelkamp",
+  "configs": {
+   "advantic": [
+    "Advantic",
+    "advantic"
+   ]
+  }
+ },
+ {
+  "st": "NW",
+  "kreis": "Minden-Lübbecke",
+  "scope": "town",
+  "name": "Hille",
+  "n": 1,
+  "pop": 16274,
+  "fmt": "ics",
+  "url": "https://www.hille.de/Wirtschaft-Wohnen/Wohnen/Abfallkalender/",
+  "publisher": "Gemeinde Hille",
+  "configs": {
+   "advantic": [
+    "Advantic",
+    "advantic"
+   ]
+  }
+ },
+ {
+  "st": "NW",
+  "kreis": "Minden-Lübbecke",
+  "scope": "town",
+  "name": "Hüllhorst",
+  "n": 1,
+  "pop": 13304,
+  "fmt": "ics",
+  "url": "https://serviceportal.huellhorst.de/detail/-/vr-bis-detail/dienstleistung/10883/show",
+  "publisher": "Gemeinde Hüllhorst",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Minden-Lübbecke",
+  "scope": "town",
+  "name": "Petershagen, Stadt",
+  "n": 1,
+  "pop": 25340,
+  "fmt": "ics",
+  "url": "https://petershagen.mein-abfallkalender.online/",
+  "publisher": "Stadt Petershagen",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Minden-Lübbecke",
+  "scope": "town",
+  "name": "Preußisch Oldendorf, Stadt",
+  "n": 1,
+  "pop": 12439,
+  "fmt": "ics",
+  "url": "https://www.preussischoldendorf.de/B%C3%BCrgerservice/Abfallkalender/",
+  "publisher": "Stadt Preußisch Oldendorf",
+  "configs": {
+   "advantic": [
+    "abfallmodul"
+   ]
+  }
+ },
+ {
+  "st": "NW",
+  "kreis": "Minden-Lübbecke",
+  "scope": "town",
+  "name": "Rahden, Stadt",
+  "n": 1,
+  "pop": 16195,
+  "fmt": "pdf_only",
+  "url": "https://www.rahden.de/leben-und-wohnen/versorgung-und-entsorgung/",
+  "publisher": "Stadt Rahden",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Minden-Lübbecke",
+  "scope": "town",
+  "name": "Stemwede",
+  "n": 1,
+  "pop": 13460,
+  "fmt": "pdf_only",
+  "url": "https://www.stemwede.de/bauen-wirtschaft-klimaschutz/abfall/",
+  "publisher": "Gemeinde Stemwede",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Rheinisch-Bergischer Kreis",
+  "scope": "town",
+  "name": "Rösrath, Stadt",
+  "n": 1,
+  "pop": 28709,
+  "fmt": "ics",
+  "url": "https://www.stadtwerke-roesrath.de/service/abfuhrkalender/",
+  "publisher": "StadtWerke Rösrath",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Siegen-Wittgenstein",
+  "scope": "town",
+  "name": "Bad Berleburg, Stadt",
+  "n": 1,
+  "pop": 18400,
+  "fmt": "ics",
+  "url": "https://www.bad-berleburg.de/Leben/Wohnen-Umwelt/Abfallkalender/index.php?La=1&ffmod=abf&ort=&call=0",
+  "publisher": "Stadt Bad Berleburg",
+  "configs": {
+   "advantic": [
+    "Advantic"
+   ]
+  }
+ },
+ {
+  "st": "NW",
+  "kreis": "Siegen-Wittgenstein",
+  "scope": "town",
+  "name": "Burbach",
+  "n": 1,
+  "pop": 14553,
+  "fmt": "ics",
+  "url": "https://awido.cubefour.de/Customer/burbach/mobile/",
+  "publisher": "Gemeinde Burbach",
+  "configs": {
+   "awido": [
+    "burbach"
+   ]
+  }
+ },
+ {
+  "st": "NW",
+  "kreis": "Siegen-Wittgenstein",
+  "scope": "town",
+  "name": "Erndtebrück",
+  "n": 1,
+  "pop": 6792,
+  "fmt": "ics",
+  "url": "https://www.erndtebrueck.de/abfallentsorgung/",
+  "publisher": "Gemeinde Erndtebrück",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Siegen-Wittgenstein",
+  "scope": "town",
+  "name": "Freudenberg, Stadt",
+  "n": 1,
+  "pop": 17355,
+  "fmt": "pdf_only",
+  "url": "https://www.freudenberg-stadt.de/B%C3%BCrgerservice/Ihr-Anliegen/Abfallentsorgung/",
+  "publisher": "Stadt Freudenberg",
+  "configs": {
+   "advantic": [
+    "Advantic"
+   ]
+  }
+ },
+ {
+  "st": "NW",
+  "kreis": "Siegen-Wittgenstein",
+  "scope": "town",
+  "name": "Hilchenbach, Stadt",
+  "n": 1,
+  "pop": 14412,
+  "fmt": "ics",
+  "url": "https://hilchenbach.de/Bauen-und-Wohnen/Abfallentsorgung/Abfallkalender-/Abfallkalender-online/",
+  "publisher": "Stadt Hilchenbach",
+  "configs": {
+   "advantic": [
+    "Advantic",
+    "abfallmodul"
+   ]
+  }
+ },
+ {
+  "st": "NW",
+  "kreis": "Siegen-Wittgenstein",
+  "scope": "town",
+  "name": "Kreuztal, Stadt",
+  "n": 1,
+  "pop": 30905,
+  "fmt": "ics",
+  "url": "https://kreuztal.abfuhrtermine.info/",
+  "publisher": "Stadt Kreuztal",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Siegen-Wittgenstein",
+  "scope": "town",
+  "name": "Bad Laasphe, Stadt",
+  "n": 1,
+  "pop": 13148,
+  "fmt": "unknown",
+  "url": "https://www.stadt-badlaasphe.de/abfallentsorgung/",
+  "publisher": "Stadt Bad Laasphe",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Siegen-Wittgenstein",
+  "scope": "town",
+  "name": "Netphen, Stadt",
+  "n": 1,
+  "pop": 23080,
+  "fmt": "ics",
+  "url": "https://www.netphen.de/Verwaltung-Politik-Service/Dienstleistungen-Service/Abfallentsorgung/",
+  "publisher": "Stadt Netphen",
+  "configs": {
+   "advantic": [
+    "Advantic",
+    "abfallmodul"
+   ]
+  }
+ },
+ {
+  "st": "NW",
+  "kreis": "Siegen-Wittgenstein",
+  "scope": "town",
+  "name": "Neunkirchen",
+  "n": 1,
+  "pop": 12705,
+  "fmt": "ics",
+  "url": "https://www.neunkirchen-siegerland.de/Rathaus-Politik/B%C3%BCrgerservice/Abfalltermine/",
+  "publisher": "Gemeinde Neunkirchen",
+  "configs": {
+   "advantic": [
+    "Abfallmodul",
+    "Advantic",
+    "advantic"
+   ]
+  }
+ },
+ {
+  "st": "NW",
+  "kreis": "Siegen-Wittgenstein",
+  "scope": "town",
+  "name": "Wilnsdorf",
+  "n": 1,
+  "pop": 20039,
+  "fmt": "ics",
+  "url": "https://www.wilnsdorf.de/Leben-Wohnen/Bauen-Wohnen-Umwelt/Abfall/Abfallkalender/",
+  "publisher": "Gemeinde Wilnsdorf",
+  "configs": {
+   "advantic": [
+    "Advantic",
+    "advantic"
+   ]
+  }
+ },
+ {
+  "st": "NW",
+  "kreis": "Olpe",
+  "scope": "town",
+  "name": "Attendorn, Hansestadt",
+  "n": 1,
+  "pop": 23554,
+  "fmt": "ics",
+  "url": "https://attendorn.abfuhrtermine.info/",
+  "publisher": "Hansestadt Attendorn",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Olpe",
+  "scope": "town",
+  "name": "Drolshagen, Stadt",
+  "n": 1,
+  "pop": 11913,
+  "fmt": "ics",
+  "url": "https://drolshagen.abfuhrtermine.info/",
+  "publisher": "Stadt Drolshagen",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Olpe",
+  "scope": "town",
+  "name": "Finnentrop",
+  "n": 1,
+  "pop": 17022,
+  "fmt": "ics",
+  "url": "https://finnentrop.abfuhrtermine.info/",
+  "publisher": "Gemeinde Finnentrop",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Olpe",
+  "scope": "town",
+  "name": "Kirchhundem",
+  "n": 1,
+  "pop": 11509,
+  "fmt": "ics",
+  "url": "https://www.kirchhundem.de/Service/Abfalltermine.php?object=tx,4085.504.1&call=0&kuo=1",
+  "publisher": "Gemeinde Kirchhundem",
+  "configs": {
+   "advantic": [
+    "Advantic",
+    "abfallmodul"
+   ]
+  }
+ },
+ {
+  "st": "NW",
+  "kreis": "Olpe",
+  "scope": "town",
+  "name": "Lennestadt, Stadt",
+  "n": 1,
+  "pop": 24238,
+  "fmt": "ics",
+  "url": "https://lennestadt.abfuhrtermine.info/",
+  "publisher": "Stadt Lennestadt",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Olpe",
+  "scope": "town",
+  "name": "Olpe, Stadt",
+  "n": 1,
+  "pop": 24695,
+  "fmt": "ics",
+  "url": "https://olpe.abfuhrtermine.info/",
+  "publisher": "Kreisstadt Olpe",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Olpe",
+  "scope": "town",
+  "name": "Wenden",
+  "n": 1,
+  "pop": 19415,
+  "fmt": "ics",
+  "url": "https://wenden.abfuhrtermine.info/",
+  "publisher": "Gemeinde Wenden",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Gütersloh",
+  "scope": "town",
+  "name": "Verl, Stadt",
+  "n": 1,
+  "pop": 25762,
+  "fmt": "ics",
+  "url": "https://www.verl.de/service/digitaler-abfallkalender.html",
+  "publisher": "Stadt Verl",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Rhein-Erft-Kreis",
+  "scope": "town",
+  "name": "Bedburg, Stadt",
+  "n": 1,
+  "pop": 25316,
+  "fmt": "unknown",
+  "url": "https://drekopf.bedburg.net",
+  "publisher": "Stadt Bedburg",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Rhein-Erft-Kreis",
+  "scope": "town",
+  "name": "Bergheim, Stadt",
+  "n": 1,
+  "pop": 61611,
+  "fmt": "ics",
+  "url": "https://swbm.de/geschaeftsfelder/abfallentsorgung/abfallkalender/",
+  "publisher": "Stadtwerke Bergheim (SWBM)",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Rhein-Erft-Kreis",
+  "scope": "town",
+  "name": "Brühl, Stadt",
+  "n": 1,
+  "pop": 45555,
+  "fmt": "ics",
+  "url": "https://www.bruehl.de/vv/online-dienste/abfallkalender.php",
+  "publisher": "Stadt Brühl, Abteilung Stadtservice",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Rhein-Erft-Kreis",
+  "scope": "town",
+  "name": "Elsdorf, Stadt",
+  "n": 1,
+  "pop": 21424,
+  "fmt": "ics",
+  "url": "https://www.elsdorf.de/leben-wohnen/abfall",
+  "publisher": "Stadt Elsdorf",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Rhein-Erft-Kreis",
+  "scope": "town",
+  "name": "Erftstadt, Stadt",
+  "n": 1,
+  "pop": 48772,
+  "fmt": "pdf_only",
+  "url": "https://www.erftstadt.de/buergerservice/abfallentsorgung/abfallkalender.php",
+  "publisher": "Stadt Erftstadt",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Rhein-Erft-Kreis",
+  "scope": "town",
+  "name": "Frechen, Stadt",
+  "n": 1,
+  "pop": 52309,
+  "fmt": "ics",
+  "url": "https://www.stadtbetrieb-frechen.de/service/abfallkalender",
+  "publisher": "Stadtbetrieb Frechen GmbH",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Rhein-Erft-Kreis",
+  "scope": "town",
+  "name": "Hürth, Stadt",
+  "n": 1,
+  "pop": 62160,
+  "fmt": "html_only",
+  "url": "https://www.stadtwerke-huerth.de/de/Muellkalender/Muellkalender.html",
+  "publisher": "Stadtwerke Hürth",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Rhein-Erft-Kreis",
+  "scope": "town",
+  "name": "Pulheim, Stadt",
+  "n": 1,
+  "pop": 56150,
+  "fmt": "ics",
+  "url": "https://www.pulheim.de/buergerservice/abfallkalender.php",
+  "publisher": "Stadt Pulheim",
+  "configs": {
+   "abfallplus": [
+    "1f4b995923bf4672893a59abbdd84b16",
+    "8f267426124e1303521396cbbbbe4c22"
+   ]
+  }
+ },
+ {
+  "st": "NW",
+  "kreis": "Rhein-Erft-Kreis",
+  "scope": "town",
+  "name": "Wesseling, Stadt",
+  "n": 1,
+  "pop": 38106,
+  "fmt": "pdf_only",
+  "url": "https://www.stadtwerke-wesseling.de/entsorgung/abfall/abfallkalender/",
+  "publisher": "Entsorgungsbetriebe Wesseling (Stadtwerke Wesseling)",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Ennepe-Ruhr-Kreis",
+  "scope": "town",
+  "name": "Breckerfeld, Hansestadt",
+  "n": 1,
+  "pop": 8816,
+  "fmt": "unknown",
+  "url": "https://ahe.de/abfallkalender/",
+  "publisher": "AHE GmbH (for Hansestadt Breckerfeld)",
+  "configs": {
+   "abfallplus": [
+    "0d74f933a2959ed0133cd88eda556714"
+   ]
+  }
+ },
+ {
+  "st": "NW",
+  "kreis": "Ennepe-Ruhr-Kreis",
+  "scope": "town",
+  "name": "Ennepetal, Stadt der Kluterthöhle",
+  "n": 1,
+  "pop": 29446,
+  "fmt": "unknown",
+  "url": "https://ahe.de/abfallkalender/",
+  "publisher": "AHE GmbH (for Stadt Ennepetal)",
+  "configs": {
+   "abfallplus": [
+    "0d74f933a2959ed0133cd88eda556714"
+   ]
+  }
+ },
+ {
+  "st": "NW",
+  "kreis": "Ennepe-Ruhr-Kreis",
+  "scope": "town",
+  "name": "Gevelsberg, Stadt",
+  "n": 1,
+  "pop": 30006,
+  "fmt": "ics",
+  "url": "https://www.gevelsberg.de/Rathaus/Abfallmodul/",
+  "publisher": "Stadt Gevelsberg (Technische Betriebe)",
+  "configs": {
+   "advantic": [
+    "Abfallmodul",
+    "Advantic",
+    "advantic"
+   ]
+  }
+ },
+ {
+  "st": "NW",
+  "kreis": "Ennepe-Ruhr-Kreis",
+  "scope": "town",
+  "name": "Hattingen, Stadt",
+  "n": 1,
+  "pop": 53044,
+  "fmt": "unknown",
+  "url": "https://insert-it.de/BmsAbfallkalenderHattingen",
+  "publisher": "Stadt Hattingen, Fachbereich Stadtbetriebe",
+  "configs": {
+   "insertit": [
+    "Hattingen"
+   ]
+  }
+ },
+ {
+  "st": "NW",
+  "kreis": "Ennepe-Ruhr-Kreis",
+  "scope": "town",
+  "name": "Herdecke, Stadt",
+  "n": 1,
+  "pop": 22772,
+  "fmt": "ics",
+  "url": "https://www.herdecke.de/portal/seiten/abfuhrkalender-900000008-37460.html",
+  "publisher": "Stadt Herdecke",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Ennepe-Ruhr-Kreis",
+  "scope": "town",
+  "name": "Schwelm, Stadt",
+  "n": 1,
+  "pop": 27953,
+  "fmt": "ics",
+  "url": "https://www.schwelm.de/technischebetriebe/abfall/abfallkalender",
+  "publisher": "Technische Betriebe Schwelm (TBS)",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Ennepe-Ruhr-Kreis",
+  "scope": "town",
+  "name": "Sprockhövel, Stadt",
+  "n": 1,
+  "pop": 24232,
+  "fmt": "unknown",
+  "url": "https://ahe.de/abfallkalender/",
+  "publisher": "AHE GmbH (for Stadt Sprockhövel)",
+  "configs": {
+   "abfallplus": [
+    "0d74f933a2959ed0133cd88eda556714"
+   ]
+  }
+ },
+ {
+  "st": "NW",
+  "kreis": "Ennepe-Ruhr-Kreis",
+  "scope": "town",
+  "name": "Wetter (Ruhr), Stadt",
+  "n": 1,
+  "pop": 26090,
+  "fmt": "ics",
+  "url": "https://stadtbetrieb-wetter.mein-abfallkalender.online/",
+  "publisher": "Stadtbetrieb Wetter (Ruhr) AöR",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Ennepe-Ruhr-Kreis",
+  "scope": "town",
+  "name": "Witten, Stadt",
+  "n": 1,
+  "pop": 91808,
+  "fmt": "pdf_only",
+  "url": "https://www.witten.de/buergerservice/dienstleistungen/abfallkalender-900000474-0.html",
+  "publisher": "Stadt Witten / AHE GmbH",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Höxter",
+  "scope": "town",
+  "name": "Beverungen, Stadt",
+  "n": 1,
+  "pop": 12669,
+  "fmt": "pdf_only",
+  "url": "https://www.beverungen.de/de/stadt/umwelt-moblilitaet/abfallwirtschaft.php",
+  "publisher": "Stadt Beverungen",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Herford",
+  "scope": "town",
+  "name": "Bünde, Stadt",
+  "n": 1,
+  "pop": 46365,
+  "fmt": "ics",
+  "url": "https://www.buende.de/Stadtleben/Umwelt-I-Klima/Abfall/Abfallkalender-online/",
+  "publisher": "Kommunalbetriebe Bünde (Stadt Bünde)",
+  "configs": {
+   "advantic": [
+    "Advantic",
+    "advantic"
+   ]
+  }
+ },
+ {
+  "st": "NW",
+  "kreis": "Herford",
+  "scope": "town",
+  "name": "Enger, Widukindstadt",
+  "n": 1,
+  "pop": 20688,
+  "fmt": "ics",
+  "url": "https://www.enger.de/Leben-in-Enger/Planen-Bauen-Wohnen/Abfall-Stra%C3%9Fenreinigung/Abfallkalender/",
+  "publisher": "Stadt Enger",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Herford",
+  "scope": "town",
+  "name": "Herford, Hansestadt",
+  "n": 1,
+  "pop": 67503,
+  "fmt": "ics",
+  "url": "https://swk.herford.de/Entsorgung/Abfallkalender-/",
+  "publisher": "SWK Herford (Städtische Werke/Kommunalbetrieb Herford)",
+  "configs": {
+   "advantic": [
+    "Advantic",
+    "advantic"
+   ]
+  }
+ },
+ {
+  "st": "NW",
+  "kreis": "Herford",
+  "scope": "town",
+  "name": "Hiddenhausen",
+  "n": 1,
+  "pop": 19669,
+  "fmt": "ics",
+  "url": "https://www.hiddenhausen.de/Rathaus/Services/Abfall/Abfallkalender-online/",
+  "publisher": "Gemeinde Hiddenhausen",
+  "configs": {
+   "advantic": [
+    "Advantic",
+    "advantic"
+   ]
+  }
+ },
+ {
+  "st": "NW",
+  "kreis": "Herford",
+  "scope": "town",
+  "name": "Kirchlengern",
+  "n": 1,
+  "pop": 16334,
+  "fmt": "ics",
+  "url": "https://www.kirchlengern.de/B%C3%BCrgerservice/Abfallkalender-Abfallberatung/",
+  "publisher": "Gemeinde Kirchlengern",
+  "configs": {
+   "advantic": [
+    "Advantic",
+    "advantic"
+   ]
+  }
+ },
+ {
+  "st": "NW",
+  "kreis": "Herford",
+  "scope": "town",
+  "name": "Löhne, Stadt",
+  "n": 1,
+  "pop": 40826,
+  "fmt": "ics",
+  "url": "https://www.loehne.de/Leben-Entdecken/Stadtinfos/Abfall-/Abfallkalender/",
+  "publisher": "Stadt Löhne",
+  "configs": {
+   "advantic": [
+    "Advantic",
+    "advantic"
+   ]
+  }
+ },
+ {
+  "st": "NW",
+  "kreis": "Herford",
+  "scope": "town",
+  "name": "Rödinghausen",
+  "n": 1,
+  "pop": 10064,
+  "fmt": "ics",
+  "url": "https://www.roedinghausen.de/Links/Abfuhrkalender/",
+  "publisher": "Gemeinde Rödinghausen",
+  "configs": {
+   "advantic": [
+    "Advantic",
+    "advantic"
+   ]
+  }
+ },
+ {
+  "st": "NW",
+  "kreis": "Herford",
+  "scope": "town",
+  "name": "Spenge, Stadt",
+  "n": 1,
+  "pop": 14620,
+  "fmt": "ics",
+  "url": "https://www.spenge.de/Rathaus-Politik/Allgemeines-Stadtservice/Abfall/Online-Abfall-Kalender/",
+  "publisher": "Stadt Spenge",
+  "configs": {
+   "advantic": [
+    "Advantic",
+    "advantic"
+   ]
+  }
+ },
+ {
+  "st": "NW",
+  "kreis": "Herford",
+  "scope": "town",
+  "name": "Vlotho, Stadt",
+  "n": 1,
+  "pop": 18335,
+  "fmt": "ics",
+  "url": "https://www.vlotho.de/Leben-in-Vlotho/Abfallkalender-online",
+  "publisher": "Stadt Vlotho",
+  "configs": {
+   "advantic": [
+    "Advantic",
+    "advantic"
+   ]
+  }
+ },
+ {
+  "st": "NW",
+  "kreis": "Recklinghausen",
+  "scope": "town",
+  "name": "Castrop-Rauxel, Stadt",
+  "n": 1,
+  "pop": 73282,
+  "fmt": "ics",
+  "url": "https://www.euv-stadtbetrieb.de/entsorgung-recycling/service/leerungsabfrage",
+  "publisher": "EUV Stadtbetrieb Castrop-Rauxel AöR",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Recklinghausen",
+  "scope": "town",
+  "name": "Datteln, Stadt",
+  "n": 1,
+  "pop": 35473,
+  "fmt": "pdf_only",
+  "url": "https://www.datteln.de/muellabfuhrkalender",
+  "publisher": "Kommunaler Servicebetrieb Datteln (KSD), Stadt Datteln",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Recklinghausen",
+  "scope": "town",
+  "name": "Gladbeck, Stadt",
+  "n": 1,
+  "pop": 75499,
+  "fmt": "ics",
+  "url": "https://www.zb-gladbeck.de/Abfuhrkalender-2326374551.html",
+  "publisher": "Zentraler Betriebshof Gladbeck (ZBG)",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Recklinghausen",
+  "scope": "town",
+  "name": "Haltern am See, Stadt",
+  "n": 1,
+  "pop": 38142,
+  "fmt": "ics",
+  "url": "https://www.muellmax.de/abfallkalender/hal/res/HalStart.php",
+  "publisher": "Stadt Haltern am See",
+  "configs": {
+   "muellmax": [
+    "hal"
+   ]
+  }
+ },
+ {
+  "st": "NW",
+  "kreis": "Recklinghausen",
+  "scope": "town",
+  "name": "Herten, Stadt",
+  "n": 1,
+  "pop": 60941,
+  "fmt": "ics",
+  "url": "https://abfallkalender.durth-roos.de/herten/index.php?von=A&bis=B",
+  "publisher": "Zentraler Betriebshof Herten (ZBH), Stadt Herten",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Recklinghausen",
+  "scope": "town",
+  "name": "Marl, Stadt",
+  "n": 1,
+  "pop": 86766,
+  "fmt": "html_only",
+  "url": "https://muellkalender.sector27.de/muellkalender-marl.html",
+  "publisher": "Zentraler Betriebshof Marl (ZBH)",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Recklinghausen",
+  "scope": "town",
+  "name": "Oer-Erkenschwick, Stadt",
+  "n": 1,
+  "pop": 31404,
+  "fmt": "html_only",
+  "url": "https://muellkalender.sector27.de/muellkalender-oer-erkenschwick.html",
+  "publisher": "Stadt Oer-Erkenschwick (Baubetriebshof)",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Recklinghausen",
+  "scope": "town",
+  "name": "Waltrop, Stadt",
+  "n": 1,
+  "pop": 29177,
+  "fmt": "ics",
+  "url": "https://www.vue-waltrop.de/bereich-abfall/abfallkalender/",
+  "publisher": "Ver- und Entsorgungsbetrieb Waltrop AöR (V+E)",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Rhein-Kreis Neuss",
+  "scope": "town",
+  "name": "Dormagen, Stadt",
+  "n": 1,
+  "pop": 63799,
+  "fmt": "ics",
+  "url": "https://dormagen.mein-abfallkalender.online/",
+  "publisher": "Stadt Dormagen",
+  "configs": {}
+ },
+ {
+  "st": "NW",
+  "kreis": "Lippe",
+  "scope": "town",
+  "name": "Detmold, Stadt",
+  "n": 1,
+  "pop": 74278,
+  "fmt": "ics",
+  "url": "https://abfuhrkalender.detmold.de/",
+  "publisher": "Stadt Detmold, Abfallwirtschaft",
+  "configs": {}
+ },
+ {
+  "st": "BW",
+  "kreis": "Esslingen",
+  "scope": "county",
+  "name": "Esslingen",
+  "n": 44,
+  "pop": 536601,
+  "fmt": "ics",
+  "url": "https://www.awb-es.de/abfuhr/abfuhrtermine/",
+  "publisher": "Abfallwirtschaftsbetrieb Landkreis Esslingen",
+  "configs": {}
+ },
+ {
+  "st": "BW",
+  "kreis": "Ludwigsburg",
+  "scope": "county",
+  "name": "Ludwigsburg",
+  "n": 38,
+  "pop": 529370,
+  "fmt": "ics",
+  "url": "https://kundenportalabfall-lb.de/abfuhrtermine",
+  "publisher": "AVL Abfallverwertungsgesellschaft des Landkreises Ludwigsburg mbH",
+  "configs": {
+   "athos": [
+    "https://kundenportal.avl-lb.de/WasteManagementLudwigsburg"
+   ]
+  }
+ },
+ {
+  "st": "BW",
+  "kreis": "Ortenaukreis",
+  "scope": "county",
+  "name": "Ortenaukreis",
+  "n": 51,
+  "pop": 444858,
+  "fmt": "ics",
+  "url": "https://www.abfallwirtschaft-ortenaukreis.de/abfallkalender-abfuhrtermine/abfallkalender-sperrmuelltermine",
+  "publisher": "Eigenbetrieb Abfallwirtschaft Ortenaukreis",
+  "configs": {
+   "abfallplus": [
+    "ff692443f8b07d99f93674e9e0b6f529"
+   ]
+  }
+ },
+ {
+  "st": "BW",
+  "kreis": "Böblingen",
+  "scope": "county",
+  "name": "Böblingen",
+  "n": 25,
+  "pop": 387422,
+  "fmt": "ics",
+  "url": "https://www.awb-bb.de/abfuhrtermine",
+  "publisher": "Abfallwirtschaftsbetrieb Landkreis Böblingen",
+  "configs": {
+   "abfallplus": [
+    "76bdaac8568082d77e7a90cb41129f9b"
+   ]
+  }
+ },
+ {
+  "st": "BW",
+  "kreis": "Heilbronn",
+  "scope": "county",
+  "name": "Heilbronn",
+  "n": 46,
+  "pop": 353877,
+  "fmt": "ics",
+  "url": "https://www.aw-landkreis-heilbronn.de/abfall-entsorgen/abfuhrtermine/abfallkalender/",
+  "publisher": "Abfallwirtschaft Landkreis Heilbronn (Landratsamt Heilbronn)",
+  "configs": {
+   "abfallplus": [
+    "be047b0bf308c04e4dab7240aa418381"
+   ]
+  }
+ },
+ {
+  "st": "BW",
+  "kreis": "Konstanz",
+  "scope": "town",
+  "name": "Konstanz, Universitätsstadt",
+  "n": 1,
+  "pop": 86919,
+  "fmt": "ics",
+  "url": "https://www.konstanz.de/entsorgungsbetriebe/abfuhrtermine/online-abfuhrkalender",
+  "publisher": "Entsorgungsbetriebe Konstanz",
+  "configs": {}
+ },
+ {
+  "st": "BW",
+  "kreis": "Konstanz",
+  "scope": "town",
+  "name": "Singen (Hohentwiel), Stadt",
+  "n": 1,
+  "pop": 47621,
+  "fmt": "ics",
+  "url": "https://www.stadtwerke-singen.de/abfall/abfallkalender-2026/",
+  "publisher": "Stadtwerke Singen",
+  "configs": {}
+ },
+ {
+  "st": "BW",
+  "kreis": "Konstanz",
+  "scope": "town",
+  "name": "Radolfzell am Bodensee, Stadt",
+  "n": 1,
+  "pop": 31734,
+  "fmt": "ics",
+  "url": "https://radolfzell.muellmann-app.de/",
+  "publisher": "Stadt Radolfzell",
+  "configs": {}
+ },
+ {
+  "st": "BW",
+  "kreis": "Konstanz",
+  "scope": "town",
+  "name": "Stockach, Stadt",
+  "n": 1,
+  "pop": 17646,
+  "fmt": "pdf_only",
+  "url": "https://www.stockach.de/leben-und-service/buergerservice/abfall--und-abwasserbeseitigung",
+  "publisher": "Stadt Stockach",
+  "configs": {}
+ },
+ {
+  "st": "BW",
+  "kreis": "Konstanz",
+  "scope": "town",
+  "name": "Rielasingen-Worblingen",
+  "n": 1,
+  "pop": 12268,
+  "fmt": "pdf_only",
+  "url": "https://www.mzvhegau.de/abholstandorte/rielasingen-worblingen/",
+  "publisher": "Müllabfuhr-Zweckverband Hegau (MZV)",
+  "configs": {}
+ },
+ {
+  "st": "BW",
+  "kreis": "Konstanz",
+  "scope": "town",
+  "name": "Engen, Stadt",
+  "n": 1,
+  "pop": 11311,
+  "fmt": "pdf_only",
+  "url": "https://www.mzvhegau.de/abholstandorte/engen/",
+  "publisher": "Müllabfuhr-Zweckverband Hegau (MZV)",
+  "configs": {}
+ },
+ {
+  "st": "BW",
+  "kreis": "Konstanz",
+  "scope": "town",
+  "name": "Gottmadingen",
+  "n": 1,
+  "pop": 10871,
+  "fmt": "pdf_only",
+  "url": "https://www.mzvhegau.de/abholstandorte/gottmadingen/",
+  "publisher": "Müllabfuhr-Zweckverband Hegau (MZV)",
+  "configs": {}
+ },
+ {
+  "st": "BW",
+  "kreis": "Konstanz",
+  "scope": "town",
+  "name": "Hilzingen",
+  "n": 1,
+  "pop": 9196,
+  "fmt": "pdf_only",
+  "url": "https://www.mzvhegau.de/abholstandorte/hilzingen/",
+  "publisher": "Müllabfuhr-Zweckverband Hegau (MZV)",
+  "configs": {}
+ },
+ {
+  "st": "BW",
+  "kreis": "Konstanz",
+  "scope": "town",
+  "name": "Allensbach",
+  "n": 1,
+  "pop": 7353,
+  "fmt": "ics",
+  "url": "https://www.gemeinde-allensbach.de/wohnen-leben/abfall-recycling/abfuhrkalender",
+  "publisher": "Gemeinde Allensbach",
+  "configs": {}
+ },
+ {
+  "st": "BW",
+  "kreis": "Konstanz",
+  "scope": "town",
+  "name": "Reichenau",
+  "n": 1,
+  "pop": 5189,
+  "fmt": "pdf_only",
+  "url": "https://www.reichenau.de/de/Rathaus-Service/Wohnen-Bauen/Ver-Entsorgung",
+  "publisher": "Gemeinde Reichenau",
+  "configs": {}
+ },
+ {
+  "st": "BW",
+  "kreis": "Konstanz",
+  "scope": "town",
+  "name": "Steißlingen",
+  "n": 1,
+  "pop": 5133,
+  "fmt": "ics",
+  "url": "https://www.steisslingen.de/abfallkalender/",
+  "publisher": "Gemeinde Steißlingen",
+  "configs": {}
+ },
+ {
+  "st": "BW",
+  "kreis": "Konstanz",
+  "scope": "town",
+  "name": "Bodman-Ludwigshafen",
+  "n": 1,
+  "pop": 4838,
+  "fmt": "pdf_only",
+  "url": "https://www.bodman-ludwigshafen.de/de/Rathaus-und-Buergerservice/Buergerservice/Muellkalender",
+  "publisher": "Gemeinde Bodman-Ludwigshafen",
+  "configs": {}
+ },
+ {
+  "st": "BW",
+  "kreis": "Konstanz",
+  "scope": "town",
+  "name": "Tengen, Stadt",
+  "n": 1,
+  "pop": 4818,
+  "fmt": "ics",
+  "url": "https://www.tengen.de/service+_+rathaus/buergerservice/abfallentsorgung/abfallkalender",
+  "publisher": "Stadt Tengen",
+  "configs": {}
+ },
+ {
+  "st": "BW",
+  "kreis": "Konstanz",
+  "scope": "town",
+  "name": "Mühlhausen-Ehingen",
+  "n": 1,
+  "pop": 4054,
+  "fmt": "pdf_only",
+  "url": "https://www.muehlhausen-ehingen.de/de/Muell-und-Abfallentsorgung",
+  "publisher": "Gemeinde Mühlhausen-Ehingen",
+  "configs": {}
+ },
+ {
+  "st": "BW",
+  "kreis": "Konstanz",
+  "scope": "town",
+  "name": "Eigeltingen",
+  "n": 1,
+  "pop": 3821,
+  "fmt": "ics",
+  "url": "https://www.eigeltingen.de/buerger/abfallkalender/",
+  "publisher": "Gemeinde Eigeltingen",
+  "configs": {}
+ },
+ {
+  "st": "BW",
+  "kreis": "Konstanz",
+  "scope": "town",
+  "name": "Orsingen-Nenzingen",
+  "n": 1,
+  "pop": 3588,
+  "fmt": "html_only",
+  "url": "https://www.orsingen-nenzingen.de/aktuelles/Abfallentsorgung/Alle-Muelltermine",
+  "publisher": "Gemeinde Orsingen-Nenzingen",
+  "configs": {}
+ },
+ {
+  "st": "BW",
+  "kreis": "Konstanz",
+  "scope": "town",
+  "name": "Öhningen",
+  "n": 1,
+  "pop": 3559,
+  "fmt": "pdf_only",
+  "url": "https://www.oehningen.de/buergerservice/wohnen/abfall",
+  "publisher": "Gemeinde Öhningen",
+  "configs": {}
+ },
+ {
+  "st": "BW",
+  "kreis": "Konstanz",
+  "scope": "town",
+  "name": "Moos",
+  "n": 1,
+  "pop": 3417,
+  "fmt": "pdf_only",
+  "url": "https://www.moos.de/leben-wohnen/entsorgung-sicherheit/abfall",
+  "publisher": "Gemeinde Moos",
+  "configs": {}
+ },
+ {
+  "st": "BW",
+  "kreis": "Konstanz",
+  "scope": "town",
+  "name": "Volkertshausen",
+  "n": 1,
+  "pop": 3354,
+  "fmt": "html_only",
+  "url": "https://www.volkertshausen.de/leben-wohnen/ver-entsorgung/muelltermine",
+  "publisher": "Gemeinde Volkertshausen",
+  "configs": {}
+ },
+ {
+  "st": "BW",
+  "kreis": "Konstanz",
+  "scope": "town",
+  "name": "Gaienhofen",
+  "n": 1,
+  "pop": 3334,
+  "fmt": "pdf_only",
+  "url": "https://www.gaienhofen.de/de/rathaus/entsorgung-umwelt/abfall",
+  "publisher": "Gemeinde Gaienhofen",
+  "configs": {}
+ },
+ {
+  "st": "BW",
+  "kreis": "Konstanz",
+  "scope": "town",
+  "name": "Gailingen am Hochrhein",
+  "n": 1,
+  "pop": 3044,
+  "fmt": "pdf_only",
+  "url": "https://www.mzvhegau.de/abholstandorte/gailingen/",
+  "publisher": "Müllabfuhr-Zweckverband Hegau (MZV)",
+  "configs": {}
+ },
+ {
+  "st": "BW",
+  "kreis": "Konstanz",
+  "scope": "town",
+  "name": "Mühlingen",
+  "n": 1,
+  "pop": 2720,
+  "fmt": "pdf_only",
+  "url": "https://muehlingen.de/?page_id=1244",
+  "publisher": "Gemeinde Mühlingen",
+  "configs": {}
+ },
+ {
+  "st": "BW",
+  "kreis": "Konstanz",
+  "scope": "town",
+  "name": "Aach, Stadt",
+  "n": 1,
+  "pop": 2377,
+  "fmt": "pdf_only",
+  "url": "https://www.aach.de/de/Aktuelles/Abfallkalender",
+  "publisher": "Stadt Aach",
+  "configs": {}
+ },
+ {
+  "st": "BW",
+  "kreis": "Konstanz",
+  "scope": "town",
+  "name": "Hohenfels",
+  "n": 1,
+  "pop": 2236,
+  "fmt": "pdf_only",
+  "url": "https://www.hohenfels.de/index.php?id=117",
+  "publisher": "Gemeinde Hohenfels",
+  "configs": {}
+ },
+ {
+  "st": "BW",
+  "kreis": "Konstanz",
+  "scope": "town",
+  "name": "Büsingen am Hochrhein",
+  "n": 1,
+  "pop": 1440,
+  "fmt": "pdf_only",
+  "url": "https://www.buesingen.de/de/Rathaus/Abfallentsorgung",
+  "publisher": "Gemeinde Büsingen am Hochrhein",
+  "configs": {}
+ },
+ {
+  "st": "BW",
+  "kreis": "Breisgau-Hochschwarzwald",
+  "scope": "county",
+  "name": "Breisgau-Hochschwarzwald",
+  "n": 50,
+  "pop": 272558,
+  "fmt": "ics",
+  "url": "https://www.breisgau-hochschwarzwald.de/Start/Service+_+Verwaltung/Abfallkalender+und+App.html",
+  "publisher": "Abfallwirtschaft Landkreis Breisgau-Hochschwarzwald (ALB)",
+  "configs": {
+   "abfallio": [
+    "b3b6d7b73b7be61117fedc1dd5ec255a"
+   ]
+  }
+ },
+ {
+  "st": "BW",
+  "kreis": "Ravensburg",
+  "scope": "county",
+  "name": "Ravensburg",
+  "n": 38,
+  "pop": 266162,
+  "fmt": "ics",
+  "url": "https://athos-onlinedienste.rv.de/WasteManagementRavensburgPrivat/WasteManagementServlet?SubmitAction=wasteDisposalServices&InFrameMode=FALSE",
+  "publisher": "Landratsamt Ravensburg, Kreislaufwirtschaft",
+  "configs": {
+   "athos": [
+    "https://athos-onlinedienste.rv.de/WasteManagementRavensburgPrivat"
+   ]
+  }
+ },
+ {
+  "st": "BW",
+  "kreis": "Göppingen",
+  "scope": "county",
+  "name": "Göppingen",
+  "n": 37,
+  "pop": 257737,
+  "fmt": "ics",
+  "url": "https://www.awb-gp.de/termine/abfuhrtermine",
+  "publisher": "Abfallwirtschaftsbetrieb des Landkreises Göppingen (AWB)",
+  "configs": {
+   "abfallplus": [
+    "f35bd08b1d18d9c81fcdee75dbcce5d3"
+   ]
+  }
+ },
+ {
+  "st": "BW",
+  "kreis": "Lörrach",
+  "scope": "county",
+  "name": "Lörrach",
+  "n": 34,
+  "pop": 235759,
+  "fmt": "ics",
+  "url": "https://www.abfallwirtschaft-loerrach-landkreis.de/abfallkalender",
+  "publisher": "Abfallwirtschaft Landkreis Lörrach",
+  "configs": {
+   "athos": [
+    "https://service.abfall-loerrach-landkreis.de/WasteManagementLoerrach"
+   ]
+  }
+ },
+ {
+  "st": "BW",
+  "kreis": "Rastatt",
+  "scope": "county",
+  "name": "Rastatt",
+  "n": 22,
+  "pop": 202129,
+  "fmt": "ics",
+  "url": "https://www.awb-landkreis-rastatt.de/abfallkalender",
+  "publisher": "Abfallwirtschaftsbetrieb des Landkreises Rastatt",
+  "configs": {
+   "abfallplus": [
+    "0e37304e640bce56f77c5506b3dadedb"
+   ]
+  }
+ },
+ {
+  "st": "BW",
+  "kreis": "Rastatt",
+  "scope": "town",
+  "name": "Bühl, Stadt",
+  "n": 1,
+  "pop": 28608,
+  "fmt": "ics",
+  "url": "https://www.buehl.de/abfallkalender",
+  "publisher": "Stadt Bühl",
+  "configs": {}
+ },
+ {
+  "st": "BW",
+  "kreis": "Bodenseekreis",
+  "scope": "county",
+  "name": "Bodenseekreis",
+  "n": 23,
+  "pop": 220804,
+  "fmt": "ics",
+  "url": "https://www.bodenseekreis.de/abfuhrkalender",
+  "publisher": "Abfallwirtschaftsamt Bodenseekreis",
+  "configs": {}
+ },
+ {
+  "st": "BW",
+  "kreis": "Schwarzwald-Baar-Kreis",
+  "scope": "county",
+  "name": "Schwarzwald-Baar-Kreis",
+  "n": 20,
+  "pop": 214065,
+  "fmt": "ics",
+  "url": "https://www.lrasbk.de/abfallkalender",
+  "publisher": "Landratsamt Schwarzwald-Baar-Kreis, Amt für Abfallwirtschaft",
+  "configs": {
+   "abfallplus": [
+    "30628292bdd8b43db86a48f7e0d85f85"
+   ],
+   "advantic": [
+    "Advantic",
+    "advantic"
+   ]
+  }
+ },
+ {
+  "st": "BW",
+  "kreis": "Biberach",
+  "scope": "county",
+  "name": "Biberach",
+  "n": 43,
+  "pop": 202422,
+  "fmt": "ics",
+  "url": "https://www.biberach.de/abfuhrkalender",
+  "publisher": "Abfallwirtschaftsbetrieb Landkreis Biberach",
+  "configs": {
+   "athos": [
+    "https://abfallwirtschaftsbetrieb.biberach.de/WasteManagementBiberach"
+   ]
+  }
+ },
+ {
+  "st": "BW",
+  "kreis": "Alb-Donau-Kreis",
+  "scope": "county",
+  "name": "Alb-Donau-Kreis",
+  "n": 55,
+  "pop": 202354,
+  "fmt": "ics",
+  "url": "https://albdonaukreis.buergerportal.digital/calendar",
+  "publisher": "Abfallwirtschaft Alb-Donau-Kreis (Eigenbetrieb des Landkreises)",
+  "configs": {}
+ },
+ {
+  "st": "BW",
+  "kreis": "Calw",
+  "scope": "county",
+  "name": "Calw",
+  "n": 25,
+  "pop": 161251,
+  "fmt": "ics",
+  "url": "https://www.awg-info.de/unsere-leistungen/abfuhrtermine/uebersicht",
+  "publisher": "AWG Abfallwirtschaft Landkreis Calw GmbH",
+  "configs": {
+   "abfallplus": [
+    "0813ea99f520c462373386564a99a51e"
+   ]
+  }
+ },
+ {
+  "st": "BW",
+  "kreis": "Tuttlingen",
+  "scope": "county",
+  "name": "Tuttlingen",
+  "n": 35,
+  "pop": 145208,
+  "fmt": "ics",
+  "url": "https://www.abfall-tuttlingen.de/Abfalltermine-APP/",
+  "publisher": "Landratsamt Tuttlingen, Abfallwirtschaft",
+  "configs": {
+   "abfallplus": [
+    "3a2f610d6ae42ded9ff419d2b696be0e"
+   ],
+   "advantic": [
+    "Advantic"
+   ]
+  }
+ },
+ {
+  "st": "BW",
+  "kreis": "Neckar-Odenwald-Kreis",
+  "scope": "county",
+  "name": "Neckar-Odenwald-Kreis",
+  "n": 26,
+  "pop": 143242,
+  "fmt": "html_only",
+  "url": "https://www.kwin-online.de/haushalte/abfuhr-termine.html",
+  "publisher": "Kreislaufwirtschaft Neckar-Odenwald (KWiN)",
+  "configs": {
+   "athos": [
+    "https://athos.awn-online.de/WasteManagementNeckarOdenwald"
+   ]
+  }
+ },
+ {
+  "st": "BW",
+  "kreis": "Rottweil",
+  "scope": "county",
+  "name": "Rottweil",
+  "n": 21,
+  "pop": 140237,
+  "fmt": "ics",
+  "url": "https://www.landkreis-rottweil.de/abfallkalender",
+  "publisher": "Landkreis Rottweil, Eigenbetrieb Abfallwirtschaft",
+  "configs": {
+   "abfallplus": [
+    "30f9958cb64ca47a83f40e0a738ddea0"
+   ]
+  }
+ },
+ {
+  "st": "BW",
+  "kreis": "Heidenheim",
+  "scope": "county",
+  "name": "Heidenheim",
+  "n": 11,
+  "pop": 135235,
+  "fmt": "ics",
+  "url": "https://www.abfall-hdh.de/abfuhr-und-entsorgung/abfuhrtermine/",
+  "publisher": "Kreisabfallwirtschaftsbetrieb Heidenheim",
+  "configs": {}
+ },
+ {
+  "st": "BW",
+  "kreis": "Main-Tauber-Kreis",
+  "scope": "county",
+  "name": "Main-Tauber-Kreis",
+  "n": 18,
+  "pop": 133169,
+  "fmt": "ics",
+  "url": "https://www.main-tauber-kreis.de/abfallkalender",
+  "publisher": "Abfallwirtschaftsbetrieb Main-Tauber-Kreis",
+  "configs": {
+   "ctrace": [
+    "web.c-trace.de/maintauberkreis-abfallkalender"
+   ],
+   "advantic": [
+    "Advantic",
+    "advantic"
+   ]
+  }
+ },
+ {
+  "st": "BW",
+  "kreis": "Sigmaringen",
+  "scope": "county",
+  "name": "Sigmaringen",
+  "n": 25,
+  "pop": 132167,
+  "fmt": "ics",
+  "url": "https://www.landkreis-sigmaringen.de/abfallwesen/Entsorgungskalender",
+  "publisher": "Landratsamt Sigmaringen, Kreisabfallwirtschaft",
+  "configs": {
+   "abfallplus": [
+    "58b436d539db805a4fadd93bb87b2693",
+    "b24ea660ffd230210376afd62f54bdda"
+   ]
+  }
+ },
+ {
+  "st": "BW",
+  "kreis": "Freudenstadt",
+  "scope": "county",
+  "name": "Freudenstadt",
+  "n": 16,
+  "pop": 121958,
+  "fmt": "ics",
+  "url": "https://awb-fds.de/service/abfallkalender/",
+  "publisher": "Abfallwirtschaftsbetrieb Landkreis Freudenstadt (AWB)",
+  "configs": {
+   "athos": [
+    "https://awb.kreis-fds.de/WasteManagementFreudenstadt"
+   ]
+  }
+ },
+ {
+  "st": "BW",
+  "kreis": "Hohenlohekreis",
+  "scope": "county",
+  "name": "Hohenlohekreis",
+  "n": 16,
+  "pop": 115644,
+  "fmt": "pdf_only",
+  "url": "https://www.abfallwirtschaft-hohenlohekreis.de/infos-beratung/abfallkalender",
+  "publisher": "Abfallwirtschaft Hohenlohekreis (Landratsamt Hohenlohekreis)",
+  "configs": {
+   "ctrace": [
+    "apps.c-trace.de/web.hohenloheportal"
+   ]
+  }
+ },
+ {
+  "st": "BW",
+  "kreis": "Baden-Baden, Stadtkreis",
+  "scope": "county",
+  "name": "Baden-Baden, Stadtkreis",
+  "n": 1,
+  "pop": 56881,
+  "fmt": "pdf_only",
+  "url": "https://www.stadtwerke-baden-baden.de/de/entsorgung/umweltkalender.php?navid=745143745143",
+  "publisher": "Stadtwerke Baden-Baden",
+  "configs": {}
+ },
+ {
+  "st": "BY",
+  "kreis": "Augsburg",
+  "scope": "county",
+  "name": "Augsburg",
+  "n": 44,
+  "pop": 256872,
+  "fmt": "ics",
+  "url": "https://www.awb-landkreis-augsburg.de/aktuelles/abfuhrtermine",
+  "publisher": "Abfallwirtschaftsbetrieb des Landkreises Augsburg",
+  "configs": {
+   "abfallio": [
+    "c8b9c31d164a0bf5645481ca0b99586b"
+   ],
+   "abfallplus": [
+    "26bbdbe6929dad3dc75d324f55a6990e"
+   ],
+   "ctrace": [
+    "web.c-trace.de/augsburglandkreis"
+   ]
+  }
+ },
+ {
+  "st": "BY",
+  "kreis": "München",
+  "scope": "town",
+  "name": "Haar, St",
+  "n": 1,
+  "pop": 22878,
+  "fmt": "app_only",
+  "url": "https://www.stadt-haar.de/de/leben/Energieversorgung,Muell,Recycling/Abfallwirtschaft/Muellfahrplan",
+  "publisher": "Stadt Haar",
+  "configs": {}
+ },
+ {
+  "st": "BY",
+  "kreis": "München",
+  "scope": "town",
+  "name": "Ottobrunn",
+  "n": 1,
+  "pop": 22829,
+  "fmt": "pdf_only",
+  "url": "https://www.ottobrunn.de/entsorgung-wirtschaft-mobilitaet-umwelt/ver-und-entsorgung/abfallentsorgung",
+  "publisher": "Gemeinde Ottobrunn",
+  "configs": {}
+ },
+ {
+  "st": "BY",
+  "kreis": "München",
+  "scope": "town",
+  "name": "Ismaning",
+  "n": 1,
+  "pop": 18093,
+  "fmt": "ics",
+  "url": "https://ismaning.de/umwelt-energie/abfall/abfallkalender/",
+  "publisher": "Gemeinde Ismaning",
+  "configs": {}
+ },
+ {
+  "st": "BY",
+  "kreis": "München",
+  "scope": "town",
+  "name": "Garching b.München, St",
+  "n": 1,
+  "pop": 17656,
+  "fmt": "pdf_only",
+  "url": "https://www.garching.de/verwaltung-politik/verwaltung/was-erledige-ich-wo_/abfuhrkalender",
+  "publisher": "Stadt Garching b. München",
+  "configs": {}
+ },
+ {
+  "st": "BY",
+  "kreis": "München",
+  "scope": "town",
+  "name": "Gräfelfing",
+  "n": 1,
+  "pop": 13472,
+  "fmt": "pdf_only",
+  "url": "https://www.graefelfing.de/energie-umwelt-abfall/abfallkalender-online.html",
+  "publisher": "Gemeinde Gräfelfing",
+  "configs": {}
+ },
+ {
+  "st": "BY",
+  "kreis": "München",
+  "scope": "town",
+  "name": "Kirchheim b.München",
+  "n": 1,
+  "pop": 13392,
+  "fmt": "pdf_only",
+  "url": "https://www.kirchheim-heimstetten.de/abfall",
+  "publisher": "Gemeinde Kirchheim b. München",
+  "configs": {}
+ },
+ {
+  "st": "BY",
+  "kreis": "München",
+  "scope": "town",
+  "name": "Oberhaching",
+  "n": 1,
+  "pop": 13318,
+  "fmt": "pdf_only",
+  "url": "https://www.oberhaching.de/de/Rathaus-Service/Ver-und-Entsorgung/Abfall-und-Wertstoffe/Entsorgungstermine",
+  "publisher": "Gemeinde Oberhaching",
+  "configs": {}
+ },
+ {
+  "st": "BY",
+  "kreis": "München",
+  "scope": "town",
+  "name": "Unterföhring",
+  "n": 1,
+  "pop": 11866,
+  "fmt": "pdf_only",
+  "url": "https://www.unterfoehring.de/mobilitaet-umwelt/ver-und-entsorgung/abfuhrplan.html",
+  "publisher": "Gemeinde Unterföhring",
+  "configs": {}
+ },
+ {
+  "st": "BY",
+  "kreis": "München",
+  "scope": "town",
+  "name": "Oberschleißheim",
+  "n": 1,
+  "pop": 11857,
+  "fmt": "pdf_only",
+  "url": "https://www.oberschleissheim.de/abfallkalender",
+  "publisher": "Gemeinde Oberschleißheim",
+  "configs": {}
+ },
+ {
+  "st": "BY",
+  "kreis": "München",
+  "scope": "town",
+  "name": "Grünwald",
+  "n": 1,
+  "pop": 11179,
+  "fmt": "ics",
+  "url": "https://www.gemeinde-gruenwald.de/rathaus/umweltamt/abfallwirtschaft/1318.Ihr-personalisierter-Abfuhrkalender.html",
+  "publisher": "Gemeinde Grünwald",
+  "configs": {
+   "abfallplus": [
+    "e178ae90f6a479e37fb998863c3ef141"
+   ]
+  }
+ },
+ {
+  "st": "BY",
+  "kreis": "München",
+  "scope": "town",
+  "name": "Planegg",
+  "n": 1,
+  "pop": 11007,
+  "fmt": "ics",
+  "url": "https://planegg.mein-abfallkalender.online/",
+  "publisher": "Gemeinde Planegg",
+  "configs": {}
+ },
+ {
+  "st": "BY",
+  "kreis": "München",
+  "scope": "town",
+  "name": "Aschheim",
+  "n": 1,
+  "pop": 9149,
+  "fmt": "pdf_only",
+  "url": "https://www.aschheim.de/umwelt-energie/abfallkalender",
+  "publisher": "Gemeinde Aschheim",
+  "configs": {}
+ },
+ {
+  "st": "BY",
+  "kreis": "München",
+  "scope": "town",
+  "name": "Neuried",
+  "n": 1,
+  "pop": 8795,
+  "fmt": "ics",
+  "url": "https://www.neuried.de/abfall-und-wertstoffe/",
+  "publisher": "Gemeinde Neuried",
+  "configs": {}
+ },
+ {
+  "st": "BY",
+  "kreis": "München",
+  "scope": "town",
+  "name": "Sauerlach",
+  "n": 1,
+  "pop": 8063,
+  "fmt": "pdf_only",
+  "url": "https://www.sauerlach.de/rathaus-und-buergerservice/ver-und-entsorgung/abfall-und-wertstoffe",
+  "publisher": "Gemeinde Sauerlach",
+  "configs": {}
+ },
+ {
+  "st": "BY",
+  "kreis": "München",
+  "scope": "town",
+  "name": "Feldkirchen",
+  "n": 1,
+  "pop": 7780,
+  "fmt": "pdf_only",
+  "url": "https://www.feldkirchen.de/umwelt/abfallwirtschaft/abfallkalender",
+  "publisher": "Gemeinde Feldkirchen b. München",
+  "configs": {}
+ },
+ {
+  "st": "BY",
+  "kreis": "München",
+  "scope": "town",
+  "name": "Grasbrunn",
+  "n": 1,
+  "pop": 6581,
+  "fmt": "pdf_only",
+  "url": "https://www.grasbrunn.de/wertstoffmanagement",
+  "publisher": "Gemeinde Grasbrunn",
+  "configs": {}
+ },
+ {
+  "st": "BY",
+  "kreis": "München",
+  "scope": "town",
+  "name": "Schäftlarn",
+  "n": 1,
+  "pop": 5840,
+  "fmt": "ics",
+  "url": "https://www.schaeftlarn.de/muellkalender/",
+  "publisher": "Gemeinde Schäftlarn",
+  "configs": {}
+ },
+ {
+  "st": "BY",
+  "kreis": "München",
+  "scope": "town",
+  "name": "Baierbrunn",
+  "n": 1,
+  "pop": 3376,
+  "fmt": "pdf_only",
+  "url": "https://www.baierbrunn.org/dienste/rathaus/abfallentsorgung/",
+  "publisher": "Gemeinde Baierbrunn",
+  "configs": {}
+ },
+ {
+  "st": "BY",
+  "kreis": "München",
+  "scope": "town",
+  "name": "Straßlach-Dingharting",
+  "n": 1,
+  "pop": 3258,
+  "fmt": "ics",
+  "url": "https://www.isd-strasslach-dingharting.de/de/Abfallentsorgung/Abfuhrkalender",
+  "publisher": "Infrastrukturgesellschaft Straßlach-Dingharting (Gemeinde Straßlach-Dingharting)",
+  "configs": {}
+ },
+ {
+  "st": "BY",
+  "kreis": "Passau",
+  "scope": "county",
+  "name": "Passau",
+  "n": 38,
+  "pop": 194699,
+  "fmt": "ics",
+  "url": "https://www.awg.de/abfallentsorgung/abfuhrkalender",
+  "publisher": "Zweckverband Abfallwirtschaft Donau-Wald (ZAW)",
+  "configs": {
+   "athos": [
+    "https://wastemanagement.awg.de/WasteManagementDonauwald"
+   ]
+  }
+ },
+ {
+  "st": "BY",
+  "kreis": "Freising",
+  "scope": "county",
+  "name": "Freising",
+  "n": 24,
+  "pop": 184564,
+  "fmt": "pdf_only",
+  "url": "https://www.entsorgungskalender.com/index.php?lkid=2",
+  "publisher": "Landratsamt Freising (calendar produced by Eschlbach Verlag / HEINZ Entsorgung)",
+  "configs": {}
+ },
+ {
+  "st": "BY",
+  "kreis": "Neu-Ulm",
+  "scope": "county",
+  "name": "Neu-Ulm",
+  "n": 9,
+  "pop": 49126,
+  "fmt": "pdf_only",
+  "url": "https://www.awb-neu-ulm.de/abfuhrtermine",
+  "publisher": "AWB - Abfallwirtschaftsbetrieb des Landkreises Neu-Ulm",
+  "configs": {}
+ },
+ {
+  "st": "BY",
+  "kreis": "Neu-Ulm",
+  "scope": "town",
+  "name": "Neu-Ulm, GKSt",
+  "n": 1,
+  "pop": 62641,
+  "fmt": "ics",
+  "url": "https://nu.neu-ulm.de/buerger-service/leben-in-neu-ulm/abfall-sauberkeit/abfallkalender",
+  "publisher": "Stadt Neu-Ulm",
+  "configs": {}
+ },
+ {
+  "st": "BY",
+  "kreis": "Neu-Ulm",
+  "scope": "town",
+  "name": "Senden, St",
+  "n": 1,
+  "pop": 23641,
+  "fmt": "pdf_only",
+  "url": "https://www.stadt-senden.de/rathaus-service/umwelt-recycling/broschuere-umwelt-recycling",
+  "publisher": "Stadt Senden",
+  "configs": {}
+ },
+ {
+  "st": "BY",
+  "kreis": "Neu-Ulm",
+  "scope": "town",
+  "name": "Vöhringen, St",
+  "n": 1,
+  "pop": 14044,
+  "fmt": "ics",
+  "url": "https://www.voehringen.de/buergerservice-und-politik/ver-und-entsorgung/abfall-und-entsorgung",
+  "publisher": "Stadt Vöhringen",
+  "configs": {}
+ },
+ {
+  "st": "BY",
+  "kreis": "Neu-Ulm",
+  "scope": "town",
+  "name": "Elchingen",
+  "n": 1,
+  "pop": 9869,
+  "fmt": "pdf_only",
+  "url": "https://www.elchingen.de/index.php?id=93",
+  "publisher": "Gemeinde Elchingen",
+  "configs": {}
+ },
+ {
+  "st": "BY",
+  "kreis": "Neu-Ulm",
+  "scope": "town",
+  "name": "Nersingen",
+  "n": 1,
+  "pop": 9827,
+  "fmt": "pdf_only",
+  "url": "https://www.nersingen.de/wir-fuer-sie/umwelt-energie-versorgung-entsorgung/abfall-wertstoffentsorgung/",
+  "publisher": "Gemeinde Nersingen",
+  "configs": {}
+ },
+ {
+  "st": "BY",
+  "kreis": "Neu-Ulm",
+  "scope": "town",
+  "name": "Bellenberg",
+  "n": 1,
+  "pop": 4694,
+  "fmt": "pdf_only",
+  "url": "https://www.gemeinde-bellenberg.de/abfallentsorgung/",
+  "publisher": "Gemeinde Bellenberg",
+  "configs": {}
+ },
+ {
+  "st": "BY",
+  "kreis": "Nürnberger Land",
+  "scope": "county",
+  "name": "Nürnberger Land",
+  "n": 27,
+  "pop": 168813,
+  "fmt": "ics",
+  "url": "https://abfuhrkalender.nuernberger-land.de/waste_calendar/calendar",
+  "publisher": "Landratsamt Nürnberger Land, Abfallwirtschaft",
+  "configs": {}
+ },
+ {
+  "st": "BY",
+  "kreis": "Traunstein",
+  "scope": "county",
+  "name": "Traunstein",
+  "n": 33,
+  "pop": 168212,
+  "fmt": "ics",
+  "url": "https://www.traunstein.com/buergerservice/abfallwirtschaft/abfall-app-und-kalender",
+  "publisher": "Landratsamt Traunstein, Abfallwirtschaft",
+  "configs": {
+   "abfallplus": [
+    "4f015b3440c907b8ed7d46fc0f09c02a"
+   ]
+  }
+ },
+ {
+  "st": "BY",
+  "kreis": "Würzburg",
+  "scope": "county",
+  "name": "Würzburg",
+  "n": 48,
+  "pop": 150855,
+  "fmt": "ics",
+  "url": "https://www.team-orange.info/3510",
+  "publisher": "team orange – Kommunalunternehmen des Landkreises Würzburg",
+  "configs": {
+   "athos": [
+    "https://athosweb.team-orange.info/WasteManagementWuerzburg"
+   ]
+  }
+ },
+ {
+  "st": "BY",
+  "kreis": "Landshut",
+  "scope": "county",
+  "name": "Landshut",
+  "n": 34,
+  "pop": 156470,
+  "fmt": "ics",
+  "url": "https://www.landkreis-landshut.de/themen/abfall-umwelt-wasser/abfuhrkalender/",
+  "publisher": "Landratsamt Landshut – Abfallwirtschaft",
+  "configs": {
+   "abfallio": [
+    "04b7561b94f2cbaa171cd85bb6aa56de"
+   ]
+  }
+ },
+ {
+  "st": "BY",
+  "kreis": "Schwandorf",
+  "scope": "county",
+  "name": "Schwandorf",
+  "n": 33,
+  "pop": 149312,
+  "fmt": "ics",
+  "url": "https://www.entsorgung-sad.de/",
+  "publisher": "Landratsamt Schwandorf – Abfallwirtschaft",
+  "configs": {}
+ },
+ {
+  "st": "BY",
+  "kreis": "Oberallgäu",
+  "scope": "county",
+  "name": "Oberallgäu",
+  "n": 26,
+  "pop": 148186,
+  "fmt": "ics",
+  "url": "https://www.zak-kempten.de/entsorgen/entsorgungstermine/abfuhrtermine/",
+  "publisher": "Zweckverband für Abfallwirtschaft Kempten (ZAK)",
+  "configs": {
+   "abfallio": [
+    "e2b5b0f129dde22e1993abc2aa4654f8"
+   ]
+  }
+ },
+ {
+  "st": "BY",
+  "kreis": "Bamberg",
+  "scope": "county",
+  "name": "Bamberg",
+  "n": 36,
+  "pop": 147777,
+  "fmt": "ics",
+  "url": "https://www.abfalltermine-bamberg.de/",
+  "publisher": "Landratsamt Bamberg – Fachbereich Abfallwirtschaft",
+  "configs": {}
+ },
+ {
+  "st": "BY",
+  "kreis": "Ostallgäu",
+  "scope": "county",
+  "name": "Ostallgäu",
+  "n": 45,
+  "pop": 142047,
+  "fmt": "ics",
+  "url": "https://www.ostallgaeu.de/buerger-service/abfall-entsorgung/abfuhr-und-sammeltermine",
+  "publisher": "Landratsamt Ostallgäu – Kommunale Abfallwirtschaft",
+  "configs": {
+   "abfallplus": [
+    "254ef8a2f4aa7cd1bff7f372d5dcfc53",
+    "bdc2ff962609c665e3e16527c77877f9"
+   ]
+  }
+ },
+ {
+  "st": "BY",
+  "kreis": "Erlangen-Höchstadt",
+  "scope": "county",
+  "name": "Erlangen-Höchstadt",
+  "n": 23,
+  "pop": 131855,
+  "fmt": "ics",
+  "url": "https://www.erlangen-hoechstadt.de/aktuelles/abfallkalender/",
+  "publisher": "Landratsamt Erlangen-Höchstadt – Kommunale Abfallwirtschaft",
+  "configs": {}
+ },
+ {
+  "st": "BY",
+  "kreis": "Starnberg",
+  "scope": "county",
+  "name": "Starnberg",
+  "n": 13,
+  "pop": 131320,
+  "fmt": "ics",
+  "url": "https://www.awista-starnberg.de/abfallwirtschaftskalender/",
+  "publisher": "AWISTA - Abfallwirtschaft Starnberg KU",
+  "configs": {
+   "athos": [
+    "https://xmlcall.awista-starnberg.de/WasteManagementStarnberg"
+   ]
+  }
+ },
+ {
+  "st": "BY",
+  "kreis": "Pfaffenhofen a.d.Ilm",
+  "scope": "county",
+  "name": "Pfaffenhofen a.d.Ilm",
+  "n": 19,
+  "pop": 130781,
+  "fmt": "ics",
+  "url": "https://www.awp-paf.de/termine/abfuhrtermine/",
+  "publisher": "AWP Abfallwirtschaftsbetrieb Landkreis Pfaffenhofen a.d.Ilm",
+  "configs": {}
+ },
+ {
+  "st": "BY",
+  "kreis": "Weilheim-Schongau",
+  "scope": "county",
+  "name": "Weilheim-Schongau",
+  "n": 31,
+  "pop": 129901,
+  "fmt": "ics",
+  "url": "https://www.eva-abfallentsorgung.de/Service-Center/Downloads%20-%20Infos/Abfuhrkalender%20individuell",
+  "publisher": "EVA GmbH im Auftrag des Landkreises Weilheim-Schongau",
+  "configs": {}
+ },
+ {
+  "st": "BY",
+  "kreis": "Neumarkt i.d.OPf.",
+  "scope": "county",
+  "name": "Neumarkt i.d.OPf.",
+  "n": 17,
+  "pop": 129740,
+  "fmt": "ics",
+  "url": "https://www.abfuhrplan-landkreis-neumarkt.de/",
+  "publisher": "Landratsamt Neumarkt i.d.OPf., Abfallwirtschaft",
+  "configs": {}
+ },
+ {
+  "st": "BY",
+  "kreis": "Eichstätt",
+  "scope": "county",
+  "name": "Eichstätt",
+  "n": 28,
+  "pop": 127748,
+  "fmt": "ics",
+  "url": "https://www.landkreis-eichstaett.de/buergerservice/themen/abfallwirtschaft/muellabfuhrtermine",
+  "publisher": "Landratsamt Eichstätt, Abfallwirtschaft",
+  "configs": {
+   "jumomind": [
+    "mymuell"
+   ]
+  }
+ },
+ {
+  "st": "BY",
+  "kreis": "Miltenberg",
+  "scope": "county",
+  "name": "Miltenberg",
+  "n": 31,
+  "pop": 125712,
+  "fmt": "ics",
+  "url": "https://sperrgut.landkreis-miltenberg.de/WasteManagementMiltenberg/WasteManagementServlet?SubmitAction=wasteDisposalServices",
+  "publisher": "Landratsamt Miltenberg, Kommunale Abfallwirtschaft",
+  "configs": {
+   "athos": [
+    "https://sperrgut.landkreis-miltenberg.de/WasteManagementMiltenberg"
+   ]
+  }
+ },
+ {
+  "st": "BY",
+  "kreis": "Main-Spessart",
+  "scope": "county",
+  "name": "Main-Spessart",
+  "n": 40,
+  "pop": 125282,
+  "fmt": "ics",
+  "url": "https://www.main-spessart.de/themen/umwelt-natur/abfallberatung/abfuhrtermine/index.html",
+  "publisher": "Landratsamt Main-Spessart, Abfallwirtschaft",
+  "configs": {
+   "athos": [
+    "https://abfall.main-spessart.de/WasteManagementMainSpessart"
+   ]
+  }
+ },
+ {
+  "st": "BY",
+  "kreis": "Deggendorf",
+  "scope": "county",
+  "name": "Deggendorf",
+  "n": 26,
+  "pop": 121844,
+  "fmt": "ics",
+  "url": "https://www.awg.de/abfallentsorgung/abfuhrkalender",
+  "publisher": "Zweckverband Abfallwirtschaft Donau-Wald (ZAW Donau-Wald)",
+  "configs": {
+   "athos": [
+    "https://wastemanagement.awg.de/WasteManagementDonauwald"
+   ]
+  }
+ },
+ {
+  "st": "BY",
+  "kreis": "Landsberg am Lech",
+  "scope": "county",
+  "name": "Landsberg am Lech",
+  "n": 30,
+  "pop": 120361,
+  "fmt": "ics",
+  "url": "https://www.abfallberatung-landsberg.de/abfuhrtermine/",
+  "publisher": "Landratsamt Landsberg am Lech – Abfallwirtschaft",
+  "configs": {}
+ },
+ {
+  "st": "BY",
+  "kreis": "Cham",
+  "scope": "county",
+  "name": "Cham",
+  "n": 34,
+  "pop": 118425,
+  "fmt": "ics",
+  "url": "https://www.entsorgung-cham.de/",
+  "publisher": "Landkreis Cham – Kreiswerke Cham, Abfallwirtschaft",
+  "configs": {}
+ },
+ {
+  "st": "BY",
+  "kreis": "Fürth",
+  "scope": "county",
+  "name": "Fürth",
+  "n": 14,
+  "pop": 117719,
+  "fmt": "ics",
+  "url": "https://webdienste.landkreis-fuerth.de/WasteManagementFuerth/WasteManagementServlet?SubmitAction=wasteDisposalServices&InFrameMode=TRUE",
+  "publisher": "Landratsamt Fürth – Abfallwirtschaft",
+  "configs": {
+   "athos": [
+    "https://webdienste.landkreis-fuerth.de/WasteManagementFuerth"
+   ]
+  }
+ },
+ {
+  "st": "BY",
+  "kreis": "Forchheim",
+  "scope": "county",
+  "name": "Forchheim",
+  "n": 28,
+  "pop": 112486,
+  "fmt": "ics",
+  "url": "https://www.abfalltermine-forchheim.de/",
+  "publisher": "Landratsamt Forchheim – Fachbereich 36 Abfallwirtschaft",
+  "configs": {}
+ },
+ {
+  "st": "BY",
+  "kreis": "Bayreuth",
+  "scope": "county",
+  "name": "Bayreuth",
+  "n": 33,
+  "pop": 103215,
+  "fmt": "ics",
+  "url": "https://www.landkreis-bayreuth.de/buergerservice/umwelt-und-abfallwirtschaft/abfallwirtschaft/abfuhrkalender",
+  "publisher": "Landratsamt Bayreuth – Abfallwirtschaft",
+  "configs": {
+   "abfallplus": [
+    "41cec8bb0482f3002c699cc11a9ea678"
+   ]
+  }
+ },
+ {
+  "st": "BY",
+  "kreis": "Bad Kissingen",
+  "scope": "county",
+  "name": "Bad Kissingen",
+  "n": 24,
+  "pop": 78385,
+  "fmt": "ics",
+  "url": "https://abfall-scout.de/abfuhrkalender-online",
+  "publisher": "Kommunalunternehmen des Landkreises Bad Kissingen (Abfallwirtschaft)",
+  "configs": {
+   "abfallplus": [
+    "6df5c07fc6549b5736e29549f465a036"
+   ]
+  }
+ },
+ {
+  "st": "BY",
+  "kreis": "Bad Kissingen",
+  "scope": "town",
+  "name": "Bad Kissingen, GKSt",
+  "n": 1,
+  "pop": 23223,
+  "fmt": "ics",
+  "url": "https://www.badkissingen.de/stadt/behoerdenwegweiser/stdtische-fachbereiche/abfallwirtschaft/38908.Digitaler-Abfuhrkalender-fuer-Ihre-Strasse.html",
+  "publisher": "Stadt Bad Kissingen – Servicebetrieb/Abfallwirtschaft",
+  "configs": {
+   "abfallio": [
+    "74d09bd5a16c81d16e70f404438928df"
+   ]
+  }
+ },
+ {
+  "st": "BY",
+  "kreis": "Amberg-Sulzbach",
+  "scope": "county",
+  "name": "Amberg-Sulzbach",
+  "n": 26,
+  "pop": 101432,
+  "fmt": "ics",
+  "url": "https://www.landkreis-as.de/abfallwirtschaft/abfuhrtermine.php?jahr=2026",
+  "publisher": "Landratsamt Amberg-Sulzbach, Amt für Abfallwirtschaft",
+  "configs": {}
+ },
+ {
+  "st": "BY",
+  "kreis": "Neustadt a.d.Aisch-Bad Windsheim",
+  "scope": "county",
+  "name": "Neustadt a.d.Aisch-Bad Windsheim",
+  "n": 38,
+  "pop": 101043,
+  "fmt": "unknown",
+  "url": "https://sperrmuell.kreis-nea.de/WasteManagementNeustadt/WasteManagementServlet?SubmitAction=wasteDisposalServices",
+  "publisher": "Landratsamt Neustadt a.d.Aisch-Bad Windsheim, Abfallwirtschaft",
+  "configs": {
+   "athos": [
+    "https://sperrmuell.kreis-nea.de/WasteManagementNeustadt"
+   ]
+  }
+ },
+ {
+  "st": "BY",
+  "kreis": "Miesbach",
+  "scope": "county",
+  "name": "Miesbach",
+  "n": 17,
+  "pop": 97152,
+  "fmt": "unknown",
+  "url": "https://www.vivowarngau.de/Abfalltermine-und-kalender",
+  "publisher": "VIVO Kommunalunternehmen für Abfall-Vermeidung, Information und Verwertung im Oberland",
+  "configs": {}
+ },
+ {
+  "st": "BY",
+  "kreis": "Straubing-Bogen",
+  "scope": "county",
+  "name": "Straubing-Bogen",
+  "n": 34,
+  "pop": 96197,
+  "fmt": "ics",
+  "url": "https://www.zaw-sr.de/abfuhrkalender",
+  "publisher": "Zweckverband Abfallwirtschaft Straubing Stadt und Land (ZAW-SR)",
+  "configs": {
+   "athos": [
+    "https://straubing.zaw-sr.de/WasteManagementStraubing"
+   ]
+  }
+ },
+ {
+  "st": "BY",
+  "kreis": "Kitzingen",
+  "scope": "county",
+  "name": "Kitzingen",
+  "n": 31,
+  "pop": 91287,
+  "fmt": "ics",
+  "url": "https://www.abfallwelt.de/service/abfuhrkalender-online/",
+  "publisher": "Landratsamt Kitzingen, Kommunale Abfallwirtschaft (abfallwelt)",
+  "configs": {
+   "abfallplus": [
+    "1d5df3c2a6f64f5636f2c471649a0e6c"
+   ]
+  }
+ },
+ {
+  "st": "BY",
+  "kreis": "Garmisch-Partenkirchen",
+  "scope": "county",
+  "name": "Garmisch-Partenkirchen",
+  "n": 21,
+  "pop": 60991,
+  "fmt": "unknown",
+  "url": "https://www.lra-gap.de/de/abfuhrkalender-online.html",
+  "publisher": "Landratsamt Garmisch-Partenkirchen, Abfallwirtschaft",
+  "configs": {
+   "athos": [
+    "https://abfuhrkalender.lkr-gap.de/webapps/WasteManagementGarmisch"
+   ]
+  }
+ },
+ {
+  "st": "BY",
+  "kreis": "Garmisch-Partenkirchen",
+  "scope": "town",
+  "name": "Garmisch-Partenkirchen, M",
+  "n": 1,
+  "pop": 28305,
+  "fmt": "pdf_only",
+  "url": "https://www.gw-gap.de/muellentsorgung/termine-muellabfuhr",
+  "publisher": "Gemeindewerke Garmisch-Partenkirchen",
+  "configs": {}
+ },
+ {
+  "st": "BY",
+  "kreis": "Hof",
+  "scope": "county",
+  "name": "Hof",
+  "n": 25,
+  "pop": 88364,
+  "fmt": "ics",
+  "url": "https://www.azv-hof.de/privat/abfuhrtermine/abfuhrkalender-landkreis-hof.html",
+  "publisher": "Abfallzweckverband Stadt und Landkreis Hof (AZV Hof)",
+  "configs": {}
+ },
+ {
+  "st": "BY",
+  "kreis": "Haßberge",
+  "scope": "county",
+  "name": "Haßberge",
+  "n": 25,
+  "pop": 82850,
+  "fmt": "ics",
+  "url": "https://awhas.de/privathaushalte/abfuhrtermine.html",
+  "publisher": "Abfallwirtschaft des Landkreises Haßberge",
+  "configs": {}
+ },
+ {
+  "st": "BY",
+  "kreis": "Lindau (Bodensee)",
+  "scope": "county",
+  "name": "Lindau (Bodensee)",
+  "n": 19,
+  "pop": 82411,
+  "fmt": "html_only",
+  "url": "https://www.zak-kempten.de/entsorgen/entsorgungstermine/abfuhrtermine/",
+  "publisher": "Zweckverband für Abfallwirtschaft Kempten (ZAK)",
+  "configs": {
+   "abfallio": [
+    "e2b5b0f129dde22e1993abc2aa4654f8"
+   ]
+  }
+ },
+ {
+  "st": "BY",
+  "kreis": "Rhön-Grabfeld",
+  "scope": "county",
+  "name": "Rhön-Grabfeld",
+  "n": 33,
+  "pop": 74985,
+  "fmt": "ics",
+  "url": "https://www.abfallinfo-rhoen-grabfeld.de/service/abfuhr-wecker",
+  "publisher": "Kommunale Abfallwirtschaft Rhön-Grabfeld (Kommunalunternehmen des Landkreises Rhön-Grabfeld)",
+  "configs": {}
+ },
+ {
+  "st": "BY",
+  "kreis": "Regen",
+  "scope": "county",
+  "name": "Regen",
+  "n": 24,
+  "pop": 77267,
+  "fmt": "ics",
+  "url": "https://www.awg.de/abfallentsorgung/abfuhrkalender",
+  "publisher": "ZAW Donau-Wald",
+  "configs": {
+   "athos": [
+    "https://wastemanagement.awg.de/WasteManagementDonauwald"
+   ]
+  }
+ },
+ {
+  "st": "BY",
+  "kreis": "Bamberg",
+  "scope": "county",
+  "name": "Bamberg",
+  "n": 1,
+  "pop": 77150,
+  "fmt": "unknown",
+  "url": "https://www.stadt.bamberg.de/Schnellnavigation/Suche/Abfuhrkalender.php?object=tx,2730.2450.1",
+  "publisher": "Stadt Bamberg (Bamberg Service)",
+  "configs": {
+   "athos": [
+    "https://ebbweb.stadt.bamberg.de/WasteManagementBamberg"
+   ],
+   "advantic": [
+    "Advantic",
+    "advantic"
+   ]
+  }
+ },
+ {
+  "st": "BY",
+  "kreis": "Freyung-Grafenau",
+  "scope": "county",
+  "name": "Freyung-Grafenau",
+  "n": 24,
+  "pop": 74785,
+  "fmt": "ics",
+  "url": "https://www.awg.de/abfallentsorgung/abfuhrkalender",
+  "publisher": "ZAW Donau-Wald",
+  "configs": {
+   "athos": [
+    "https://wastemanagement.awg.de/WasteManagementDonauwald"
+   ]
+  }
+ },
+ {
+  "st": "BY",
+  "kreis": "Aschaffenburg",
+  "scope": "county",
+  "name": "Aschaffenburg",
+  "n": 1,
+  "pop": 73091,
+  "fmt": "pdf_only",
+  "url": "https://www.stwab.de/Abfall-Stadtreinigung/Muellabfuhr/Muellabfuhr.html",
+  "publisher": "Stadtwerke Aschaffenburg",
+  "configs": {}
+ },
+ {
+  "st": "BY",
+  "kreis": "Bayreuth",
+  "scope": "county",
+  "name": "Bayreuth",
+  "n": 1,
+  "pop": 72940,
+  "fmt": "unknown",
+  "url": "https://web.c-trace.de/bayreuthstadt-abfallkalender/",
+  "publisher": "Stadt Bayreuth (Stadtbauhof)",
+  "configs": {
+   "ctrace": [
+    "web.c-trace.de/bayreuthstadt-abfallkalender"
+   ]
+  }
+ },
+ {
+  "st": "BY",
+  "kreis": "Wunsiedel i.Fichtelgebirge",
+  "scope": "county",
+  "name": "Wunsiedel i.Fichtelgebirge",
+  "n": 17,
+  "pop": 70549,
+  "fmt": "ics",
+  "url": "https://ku-fichtelgebirge.de/abfuhrtermine/",
+  "publisher": "Kommunalunternehmen Umweltschutz Fichtelgebirge (KUFi)",
+  "configs": {
+   "athos": [
+    "https://app.ku-fichtelgebirge.de/WasteManagementWunsiedel"
+   ]
+  }
+ },
+ {
+  "st": "BY",
+  "kreis": "Kelheim",
+  "scope": "county",
+  "name": "Kelheim",
+  "n": 17,
+  "pop": 54557,
+  "fmt": "ics",
+  "url": "https://www.landkreis-kelheim.de/landratsamt/onlinedienste/abfallkalender/",
+  "publisher": "Landratsamt Kelheim - Kommunale Abfallwirtschaft",
+  "configs": {
+   "awido": [
+    "bundles",
+    "kelheim"
+   ]
+  }
+ },
+ {
+  "st": "BY",
+  "kreis": "Kempten (Allgäu)",
+  "scope": "county",
+  "name": "Kempten (Allgäu)",
+  "n": 1,
+  "pop": 67645,
+  "fmt": "ics",
+  "url": "https://www.zak-kempten.de/entsorgen/entsorgungstermine/abfuhrtermine/",
+  "publisher": "Zweckverband für Abfallwirtschaft Kempten (ZAK)",
+  "configs": {
+   "abfallio": [
+    "e2b5b0f129dde22e1993abc2aa4654f8"
+   ]
+  }
+ },
+ {
+  "st": "BY",
+  "kreis": "Rosenheim",
+  "scope": "county",
+  "name": "Rosenheim",
+  "n": 1,
+  "pop": 65274,
+  "fmt": "pdf_only",
+  "url": "https://www.rosenheim.de/buergerservice/ver-und-entsorgung/muellabfuhr/",
+  "publisher": "Stadt Rosenheim - Baubetriebshof Müllabfuhr",
+  "configs": {}
+ },
+ {
+  "st": "BY",
+  "kreis": "Schweinfurt",
+  "scope": "county",
+  "name": "Schweinfurt",
+  "n": 1,
+  "pop": 54481,
+  "fmt": "html_only",
+  "url": "https://www.schweinfurt.de/umweltverkehr/abfall--entsorgung/mllkalender/14894.Aktuelle-Abfuhrtermine-und-Muellkalender.html",
+  "publisher": "Stadt Schweinfurt - Servicebetrieb Bau und Stadtgrün",
+  "configs": {}
+ },
+ {
+  "st": "BY",
+  "kreis": "Passau",
+  "scope": "county",
+  "name": "Passau",
+  "n": 1,
+  "pop": 53039,
+  "fmt": "pdf_only",
+  "url": "https://www.awg.de/abfallentsorgung/abfuhrkalender",
+  "publisher": "Zweckverband Abfallwirtschaft Donau-Wald (AWG Donau-Wald)",
+  "configs": {
+   "athos": [
+    "https://wastemanagement.awg.de/WasteManagementDonauwald"
+   ]
+  }
+ },
+ {
+  "st": "BY",
+  "kreis": "Straubing",
+  "scope": "county",
+  "name": "Straubing",
+  "n": 1,
+  "pop": 49002,
+  "fmt": "ics",
+  "url": "https://www.zaw-sr.de/abfuhrkalender",
+  "publisher": "Zweckverband Abfallwirtschaft Straubing Stadt und Land (ZAW-SR)",
+  "configs": {
+   "athos": [
+    "https://straubing.zaw-sr.de/WasteManagementStraubing"
+   ]
+  }
+ },
+ {
+  "st": "BY",
+  "kreis": "Rosenheim",
+  "scope": "town",
+  "name": "Wasserburg a.Inn, St",
+  "n": 1,
+  "pop": 12375,
+  "fmt": "ics",
+  "url": "https://wasserburg.mein-abfallkalender.online/",
+  "publisher": "Stadt Wasserburg am Inn - Amt für Abfallwirtschaft",
+  "configs": {}
+ },
+ {
+  "st": "BY",
+  "kreis": "Hof",
+  "scope": "county",
+  "name": "Hof",
+  "n": 1,
+  "pop": 46778,
+  "fmt": "ics",
+  "url": "https://www.azv-hof.de/privat/abfuhrtermine/abfuhrkalender-stadt-hof.html",
+  "publisher": "Abfallzweckverband Stadt und Landkreis Hof",
+  "configs": {}
+ },
+ {
+  "st": "BY",
+  "kreis": "Weiden i.d.OPf.",
+  "scope": "county",
+  "name": "Weiden i.d.OPf.",
+  "n": 1,
+  "pop": 42444,
+  "fmt": "ics",
+  "url": "https://www.weiden.de/umwelt/abfall-und-entsorgung/app/abfuhrtermine",
+  "publisher": "Stadt Weiden i.d.OPf.",
+  "configs": {}
+ },
+ {
+  "st": "BY",
+  "kreis": "Coburg",
+  "scope": "county",
+  "name": "Coburg",
+  "n": 1,
+  "pop": 41064,
+  "fmt": "ics",
+  "url": "https://abfuhrkalender.ceb-coburg.de/",
+  "publisher": "Coburger Entsorgungs- und Baubetrieb CEB (Stadt Coburg)",
+  "configs": {}
+ },
+ {
+  "st": "BY",
+  "kreis": "Schwabach",
+  "scope": "county",
+  "name": "Schwabach",
+  "n": 1,
+  "pop": 40835,
+  "fmt": "ics",
+  "url": "https://www.abfuhrplan-schwabach.de/",
+  "publisher": "Stadt Schwabach (Umweltschutzamt)",
+  "configs": {}
+ },
+ {
+  "st": "BY",
+  "kreis": "Ansbach",
+  "scope": "county",
+  "name": "Ansbach",
+  "n": 1,
+  "pop": 40742,
+  "fmt": "pdf_only",
+  "url": "https://www.ansbach.de/B%C3%BCrger/Umwelt-Natur/Abfall-Recycling/Abfuhrpl%C3%A4ne/",
+  "publisher": "Stadt Ansbach",
+  "configs": {
+   "advantic": [
+    "Advantic",
+    "advantic"
+   ]
+  }
+ },
+ {
+  "st": "BY",
+  "kreis": "Neustadt a.d.Waldnaab",
+  "scope": "county",
+  "name": "Neustadt a.d.Waldnaab",
+  "n": 2,
+  "pop": 3546,
+  "fmt": "ics",
+  "url": "https://www.neustadt.de/landratsamt/abteilungen-und-sachgebiete/kommunale-abfallwirtschaft/abfallkalender/",
+  "publisher": "Landratsamt Neustadt a.d. Waldnaab, Kommunale Abfallwirtschaft",
+  "configs": {}
+ },
+ {
+  "st": "BY",
+  "kreis": "Ansbach",
+  "scope": "county",
+  "name": "Ansbach",
+  "n": 1,
+  "pop": 11365,
+  "fmt": "ics",
+  "url": "https://www.landkreis-ansbach.de/Themen/Abfallentsorgung/Abfallkalender/",
+  "publisher": "Landratsamt Ansbach, Abfallwirtschaft",
+  "configs": {
+   "advantic": [
+    "Advantic"
+   ]
+  }
+ },
+ {
+  "st": "BY",
+  "kreis": "Bad Tölz-Wolfratshausen",
+  "scope": "county",
+  "name": "Bad Tölz-Wolfratshausen",
+  "n": 1,
+  "pop": 3203,
+  "fmt": "ics",
+  "url": "https://wgv.cubefour.de/abfuhrkalender.html",
+  "publisher": "WGV Recycling GmbH (Abfallwirtschaft Landkreis Bad Tölz-Wolfratshausen)",
+  "configs": {
+   "awido": [
+    "content",
+    "wgv"
+   ]
+  }
+ },
+ {
+  "st": "BY",
+  "kreis": "Dachau",
+  "scope": "county",
+  "name": "Dachau",
+  "n": 1,
+  "pop": 3342,
+  "fmt": "ics",
+  "url": "https://www.landratsamt-dachau.de/abfall-naturschutz-umwelt/abfall/entsorgungskalender/",
+  "publisher": "Landratsamt Dachau, Kommunale Abfallwirtschaft",
+  "configs": {
+   "awido": [
+    "bundles",
+    "lra-dah"
+   ],
+   "advantic": [
+    "Advantic"
+   ]
+  }
+ },
+ {
+  "st": "NI",
+  "kreis": "Osnabrück",
+  "scope": "county",
+  "name": "Osnabrück",
+  "n": 32,
+  "pop": 336906,
+  "fmt": "ics",
+  "url": "https://www.awigo.de/haushalt/abfallinformationen/abfuhrtermine",
+  "publisher": "AWIGO Abfallwirtschaft Landkreis Osnabrück GmbH",
+  "configs": {}
+ },
+ {
+  "st": "NI",
+  "kreis": "Emsland",
+  "scope": "county",
+  "name": "Emsland",
+  "n": 60,
+  "pop": 334539,
+  "fmt": "ics",
+  "url": "https://www.awb-emsland.de/service/abfuhrkalender/",
+  "publisher": "Abfallwirtschaftsbetrieb Landkreis Emsland",
+  "configs": {
+   "athos": [
+    "https://portal.awb-emsland.de/WasteManagementEmsland"
+   ]
+  }
+ },
+ {
+  "st": "NI",
+  "kreis": "Harburg",
+  "scope": "county",
+  "name": "Harburg",
+  "n": 39,
+  "pop": 219198,
+  "fmt": "ics",
+  "url": "https://www.landkreis-harburg.de/bauen-umwelt/abfallwirtschaft/abfallkalender/",
+  "publisher": "Landkreis Harburg, Abfallwirtschaft",
+  "configs": {}
+ },
+ {
+  "st": "NI",
+  "kreis": "Stade",
+  "scope": "county",
+  "name": "Stade",
+  "n": 38,
+  "pop": 203724,
+  "fmt": "ics",
+  "url": "https://abfall.landkreis-stade.de/abfuhrkalender/",
+  "publisher": "Landkreis Stade, Abfallwirtschaft",
+  "configs": {}
+ },
+ {
+  "st": "NI",
+  "kreis": "Göttingen",
+  "scope": "county",
+  "name": "Göttingen",
+  "n": 38,
+  "pop": 200769,
+  "fmt": "ics",
+  "url": "https://www.landkreisgoettingen.de/Themen-Leistungen/Abfall-Entsorgung/Abfallwirtschaftsbetrieb/Abfallkalender/",
+  "publisher": "Abfallwirtschaftsbetrieb Landkreis Göttingen",
+  "configs": {
+   "abfallplus": [
+    "4b5702d771c82b611c386ebbc7629026"
+   ],
+   "advantic": [
+    "Advantic"
+   ]
+  }
+ },
+ {
+  "st": "NI",
+  "kreis": "Lüneburg",
+  "scope": "county",
+  "name": "Lüneburg",
+  "n": 42,
+  "pop": 178518,
+  "fmt": "ics",
+  "url": "https://gfa-lueneburg.de/service/abfuhrkalender.html",
+  "publisher": "GfA Lüneburg gkAöR",
+  "configs": {
+   "athos": [
+    "https://portal.gfa-lueneburg.de:8443/WasteManagementLueneburg"
+   ]
+  }
+ },
+ {
+  "st": "NI",
+  "kreis": "Cloppenburg",
+  "scope": "county",
+  "name": "Cloppenburg",
+  "n": 13,
+  "pop": 177025,
+  "fmt": "ics",
+  "url": "https://www.lkclp.de/unser-landkre/bauen--umwel/abfall-entsorgung/abfallbehaelter-abfuhr/abfuhrplaene",
+  "publisher": "Landkreis Cloppenburg, Abfallwirtschaft",
+  "configs": {
+   "abfallplus": [
+    "29ac778f07646f919b2aec119d0aedd0"
+   ]
+  }
+ },
+ {
+  "st": "NI",
+  "kreis": "Leer",
+  "scope": "county",
+  "name": "Leer",
+  "n": 19,
+  "pop": 169103,
+  "fmt": "html_only",
+  "url": "https://www.landkreis-leer.de/Themen/Abfall/F%C3%BCr-B%C3%BCrger/Abfuhrtermine/",
+  "publisher": "Landkreis Leer, Abfallwirtschaft",
+  "configs": {
+   "advantic": [
+    "Advantic",
+    "abfallmodul",
+    "advantic"
+   ]
+  }
+ },
+ {
+  "st": "NI",
+  "kreis": "Vechta",
+  "scope": "county",
+  "name": "Vechta",
+  "n": 10,
+  "pop": 146539,
+  "fmt": "ics",
+  "url": "https://www.abfallwirtschaft-vechta.de/CALENDER/index_strassen.php",
+  "publisher": "Abfallwirtschaft Vechta (Landkreis Vechta)",
+  "configs": {}
+ },
+ {
+  "st": "NI",
+  "kreis": "Peine",
+  "scope": "county",
+  "name": "Peine",
+  "n": 7,
+  "pop": 137045,
+  "fmt": "ics",
+  "url": "https://www.ab-peine.de/Abfuhrtermine/",
+  "publisher": "Abfallwirtschafts- & Beschäftigungsbetriebe Landkreis Peine (A+B)",
+  "configs": {
+   "advantic": [
+    "Advantic",
+    "abfallmodul"
+   ]
+  }
+ },
+ {
+  "st": "NI",
+  "kreis": "Heidekreis",
+  "scope": "county",
+  "name": "Heidekreis",
+  "n": 21,
+  "pop": 133778,
+  "fmt": "unknown",
+  "url": "https://www.ahk-heidekreis.de/fuer-privatkunden/abfuhrzeiten.html",
+  "publisher": "Abfallwirtschaft Heidekreis (AHK)",
+  "configs": {}
+ },
+ {
+  "st": "NI",
+  "kreis": "Ammerland",
+  "scope": "county",
+  "name": "Ammerland",
+  "n": 6,
+  "pop": 127751,
+  "fmt": "pdf_only",
+  "url": "https://www.appfuhr.de/",
+  "publisher": "Abfallwirtschaftsbetrieb Landkreis Ammerland",
+  "configs": {}
+ },
+ {
+  "st": "NI",
+  "kreis": "Goslar",
+  "scope": "county",
+  "name": "Goslar",
+  "n": 7,
+  "pop": 126775,
+  "fmt": "ics",
+  "url": "https://www.kwb-goslar.de/Abfallwirtschaft/Abfuhr-und-Termine/Abfuhrtermine/",
+  "publisher": "KreisWirtschaftsBetriebe Goslar",
+  "configs": {
+   "advantic": [
+    "Abfallmodul",
+    "Advantic",
+    "abfallmodul",
+    "advantic"
+   ]
+  }
+ },
+ {
+  "st": "NI",
+  "kreis": "Northeim",
+  "scope": "county",
+  "name": "Northeim",
+  "n": 11,
+  "pop": 125623,
+  "fmt": "pdf_only",
+  "url": "https://www.landkreis-northeim.de/abfall-und-deponien/abfall-abc-abfall-kalender-abfall-app/abfallkalender/",
+  "publisher": "Landkreis Northeim, Kreisabfallwirtschaft",
+  "configs": {}
+ },
+ {
+  "st": "NI",
+  "kreis": "Nienburg (Weser)",
+  "scope": "county",
+  "name": "Nienburg (Weser)",
+  "n": 35,
+  "pop": 120336,
+  "fmt": "ics",
+  "url": "https://www.bawn.de/portal/seiten/abfallkalender-901000650-10009.html",
+  "publisher": "Betrieb Abfallwirtschaft Nienburg/Weser (BAWN)",
+  "configs": {
+   "athos": [
+    "https://webportal.bawn.de/WasteManagementNienburg"
+   ]
+  }
+ },
+ {
+  "st": "NI",
+  "kreis": "Verden",
+  "scope": "county",
+  "name": "Verden",
+  "n": 10,
+  "pop": 105756,
+  "fmt": "ics",
+  "url": "https://lkv.landkreis-verden.de/WasteManagementVerden/WasteManagementServlet?SubmitAction=wasteDisposalServices&InFrameMode=TRUE",
+  "publisher": "Landkreis Verden, Fachdienst Abfall",
+  "configs": {
+   "athos": [
+    "https://lkv.landkreis-verden.de/WasteManagementVerden"
+   ]
+  }
+ },
+ {
+  "st": "NI",
+  "kreis": "Friesland",
+  "scope": "county",
+  "name": "Friesland",
+  "n": 8,
+  "pop": 100411,
+  "fmt": "ics",
+  "url": "https://www.friesland.de/abfallkalender/gebietssuche.html",
+  "publisher": "Landkreis Friesland, Abfallwirtschaft",
+  "configs": {}
+ },
+ {
+  "st": "NI",
+  "kreis": "Uelzen",
+  "scope": "county",
+  "name": "Uelzen",
+  "n": 27,
+  "pop": 91638,
+  "fmt": "unknown",
+  "url": "https://kundenportal.awb.uelzen.de/calendar/",
+  "publisher": "Abfallwirtschaftsbetrieb Landkreis Uelzen (awb)",
+  "configs": {}
+ },
+ {
+  "st": "NI",
+  "kreis": "Helmstedt",
+  "scope": "county",
+  "name": "Helmstedt",
+  "n": 23,
+  "pop": 90227,
+  "fmt": "ics",
+  "url": "https://www.landkreis-helmstedt.de/portal/seiten/abfuhrkalender-900000002-34150.html",
+  "publisher": "Landkreis Helmstedt",
+  "configs": {}
+ },
+ {
+  "st": "NI",
+  "kreis": "Wesermarsch",
+  "scope": "county",
+  "name": "Wesermarsch",
+  "n": 9,
+  "pop": 88936,
+  "fmt": "pdf_only",
+  "url": "https://gib-entsorgung.de/haushalte/abfuhrkalender/",
+  "publisher": "GIB Entsorgung Wesermarsch GmbH (for Landkreis Wesermarsch)",
+  "configs": {
+   "abfallplus": [
+    "2dd1ce4c69e1a02c259502258412c40d"
+   ]
+  }
+ },
+ {
+  "st": "NI",
+  "kreis": "Gifhorn",
+  "scope": "county",
+  "name": "Gifhorn",
+  "n": 33,
+  "pop": 83094,
+  "fmt": "ics",
+  "url": "https://www.abfall-app-gifhorn.de/kalender.html",
+  "publisher": "Landkreis Gifhorn, Abfallbewirtschaftung",
+  "configs": {
+   "awido": [
+    "bundles",
+    "gifhorn"
+   ]
+  }
+ },
+ {
+  "st": "NI",
+  "kreis": "Wilhelmshaven, Stadt",
+  "scope": "county",
+  "name": "Wilhelmshaven, Stadt",
+  "n": 1,
+  "pop": 75745,
+  "fmt": "pdf_only",
+  "url": "https://www.tbw-whv.de/technische-betriebe/abfall/Abfallkalender/",
+  "publisher": "Technische Betriebe Wilhelmshaven (Stadt Wilhelmshaven)",
+  "configs": {
+   "jumomind": [
+    "mymuell"
+   ]
+  }
+ },
+ {
+  "st": "NI",
+  "kreis": "Holzminden",
+  "scope": "county",
+  "name": "Holzminden",
+  "n": 32,
+  "pop": 65581,
+  "fmt": "ics",
+  "url": "http://www.entsorgungskalender-landkreis-holzminden.de/",
+  "publisher": "Abfallwirtschaft Landkreis Holzminden (AWH)",
+  "configs": {}
+ },
+ {
+  "st": "NI",
+  "kreis": "Wittmund",
+  "scope": "county",
+  "name": "Wittmund",
+  "n": 16,
+  "pop": 53201,
+  "fmt": "html_only",
+  "url": "https://www.landkreis-wittmund.de/Leben-Wohnen/Wohnen/Abfall/Abfuhrkalender/",
+  "publisher": "Landkreis Wittmund, Fachdienst Abfallwirtschaft",
+  "configs": {
+   "advantic": [
+    "Abfallmodul",
+    "Advantic"
+   ]
+  }
+ },
+ {
+  "st": "NI",
+  "kreis": "Wittmund",
+  "scope": "town",
+  "name": "Langeoog",
+  "n": 1,
+  "pop": 1358,
+  "fmt": "pdf_only",
+  "url": "https://www.landkreis-wittmund.de/Leben-Wohnen/Wohnen/Abfall/Abfallentsorgung-auf-Langeoog-und-Spiekeroog/",
+  "publisher": "Landkreis Wittmund, Fachdienst Abfallwirtschaft",
+  "configs": {
+   "advantic": [
+    "Advantic"
+   ]
+  }
+ },
+ {
+  "st": "NI",
+  "kreis": "Wittmund",
+  "scope": "town",
+  "name": "Spiekeroog",
+  "n": 1,
+  "pop": 650,
+  "fmt": "pdf_only",
+  "url": "https://www.landkreis-wittmund.de/Leben-Wohnen/Wohnen/Abfall/Abfallentsorgung-auf-Langeoog-und-Spiekeroog/",
+  "publisher": "Landkreis Wittmund, Fachdienst Abfallwirtschaft",
+  "configs": {
+   "advantic": [
+    "Advantic"
+   ]
+  }
+ },
+ {
+  "st": "NI",
+  "kreis": "Emden, Stadt",
+  "scope": "county",
+  "name": "Emden, Stadt",
+  "n": 1,
+  "pop": 49202,
+  "fmt": "ics",
+  "url": "https://www.bee-emden.de/abfall/entsorgungssystem/abfuhrkalender/",
+  "publisher": "Bau- und Entsorgungsbetrieb Emden (BEE)",
+  "configs": {}
+ },
+ {
+  "st": "NI",
+  "kreis": "Lüchow-Dannenberg",
+  "scope": "county",
+  "name": "Lüchow-Dannenberg",
+  "n": 26,
+  "pop": 45115,
+  "fmt": "ics",
+  "url": "https://www.luechow-dannenberg.de/portal/seiten/abfallwirtschaft-900000028-38100.html",
+  "publisher": "Landkreis Lüchow-Dannenberg, Abfallwirtschaft",
+  "configs": {}
+ },
+ {
+  "st": "NI",
+  "kreis": "Cuxhaven",
+  "scope": "county",
+  "name": "Cuxhaven",
+  "n": 20,
+  "pop": 36579,
+  "fmt": "ics",
+  "url": "https://www.landkreis-cuxhaven.de/Themenbereiche/Umwelt-K%C3%BCstenschutz-Abfall/Abfall/index.php?La=1&object=tx,1779.4921.1&kuo=2&sub=0&NavID=1779.172",
+  "publisher": "Landkreis Cuxhaven, Abfallwirtschaft",
+  "configs": {
+   "abfallio": [
+    "49fe8a63a056adbfc43f051f61dd4a44"
+   ],
+   "advantic": [
+    "Advantic",
+    "advantic"
+   ]
+  }
+ },
+ {
+  "st": "NI",
+  "kreis": "Grafschaft Bentheim",
+  "scope": "county",
+  "name": "Grafschaft Bentheim",
+  "n": 17,
+  "pop": 18587,
+  "fmt": "ics",
+  "url": "https://awb.grafschaft-bentheim.de/awb/muellabfuhr/abfuhrtermine.php",
+  "publisher": "Abfallwirtschaftsbetrieb Landkreis Grafschaft Bentheim",
+  "configs": {
+   "jumomind": [
+    "ben"
+   ]
+  }
+ },
+ {
+  "st": "NI",
+  "kreis": "Aurich",
+  "scope": "county",
+  "name": "Aurich",
+  "n": 10,
+  "pop": 17629,
+  "fmt": "ics",
+  "url": "https://mkw-grossefehn.de/abfuhr/abfuhrkalender.html",
+  "publisher": "MKW Materialkreislauf- und Kompostwirtschaft GmbH & Co. KG Landkreis Aurich",
+  "configs": {
+   "ctrace": [
+    "apps.c-trace.de/web.aurich-abfallkalender"
+   ]
+  }
+ },
+ {
+  "st": "NI",
+  "kreis": "Wolfenbüttel",
+  "scope": "county",
+  "name": "Wolfenbüttel",
+  "n": 7,
+  "pop": 17360,
+  "fmt": "ics",
+  "url": "https://www.alw-wf.de/index.php/abfallkalender",
+  "publisher": "Abfallwirtschaft Landkreis Wolfenbüttel (ALW)",
+  "configs": {
+   "jumomind": [
+    "wol"
+   ]
+  }
+ },
+ {
+  "st": "NI",
+  "kreis": "Oldenburg",
+  "scope": "county",
+  "name": "Oldenburg",
+  "n": 8,
+  "pop": 10863,
+  "fmt": "ics",
+  "url": "https://www.oldenburg-kreis.de/umwelt-und-abfall/abfallwirtschaft/onlinedienste-abfallkalender-behaelter-usw-/",
+  "publisher": "Landkreis Oldenburg, Amt für Bodenschutz und Abfallwirtschaft",
+  "configs": {
+   "abfallio": [
+    "27708a019a2e35de7eb4bbe7c851609f",
+    "62d712027aa052eeda6f5068336ad9d8"
+   ]
+  }
+ },
+ {
+  "st": "HE",
+  "kreis": "Offenbach",
+  "scope": "town",
+  "name": "Rodgau, Stadt",
+  "n": 1,
+  "pop": 45277,
+  "fmt": "ics",
+  "url": "https://rodgau.mein-abfallkalender.online/",
+  "publisher": "Stadtwerke Rodgau (Stadt Rodgau)",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Offenbach",
+  "scope": "town",
+  "name": "Dreieich, Stadt",
+  "n": 1,
+  "pop": 41692,
+  "fmt": "ics",
+  "url": "https://dreieich.mein-abfallkalender.online/",
+  "publisher": "DLB Dienstleistungsbetrieb Dreieich und Neu-Isenburg AöR",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Offenbach",
+  "scope": "town",
+  "name": "Neu-Isenburg, Hugenotten- und Waldenserstadt",
+  "n": 1,
+  "pop": 37926,
+  "fmt": "ics",
+  "url": "https://neu-isenburg.mein-abfallkalender.online/",
+  "publisher": "DLB Dienstleistungsbetrieb Dreieich und Neu-Isenburg AöR",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Offenbach",
+  "scope": "town",
+  "name": "Dietzenbach, Kreisstadt",
+  "n": 1,
+  "pop": 35561,
+  "fmt": "ics",
+  "url": "https://www.dietzenbach.de/abfallkalender",
+  "publisher": "Kreisstadt Dietzenbach / Stadtwerke Dietzenbach",
+  "configs": {
+   "ctrace": [
+    "web.c-trace.de/dietzenbach"
+   ],
+   "advantic": [
+    "Advantic"
+   ]
+  }
+ },
+ {
+  "st": "HE",
+  "kreis": "Offenbach",
+  "scope": "town",
+  "name": "Mühlheim am Main, Stadt",
+  "n": 1,
+  "pop": 29194,
+  "fmt": "app_only",
+  "url": "https://www.muehlheim.de/leben-wohnen/wohnen-bauen/entsorgung-stadtreinigung/abfallentsorgung/",
+  "publisher": "Stadt Mühlheim am Main",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Offenbach",
+  "scope": "town",
+  "name": "Rödermark, Stadt",
+  "n": 1,
+  "pop": 28753,
+  "fmt": "ics",
+  "url": "https://roedermark.mein-abfallkalender.online/",
+  "publisher": "Stadt Rödermark",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Offenbach",
+  "scope": "town",
+  "name": "Obertshausen, Stadt",
+  "n": 1,
+  "pop": 25316,
+  "fmt": "ics",
+  "url": "https://obertshausen.mein-abfallkalender.online/",
+  "publisher": "Stadt Obertshausen",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Offenbach",
+  "scope": "town",
+  "name": "Seligenstadt, Einhardstadt",
+  "n": 1,
+  "pop": 21298,
+  "fmt": "ics",
+  "url": "https://www.seligenstadt.de/rathaus-und-politik/rathaus/abteilungen/umwelt/kommunale-abfallentsorgung/my-muell-app/",
+  "publisher": "Stadt Seligenstadt (Umweltamt)",
+  "configs": {
+   "jumomind": [
+    "mymuell"
+   ]
+  }
+ },
+ {
+  "st": "HE",
+  "kreis": "Offenbach",
+  "scope": "town",
+  "name": "Heusenstamm, Stadt",
+  "n": 1,
+  "pop": 19312,
+  "fmt": "ics",
+  "url": "https://heusenstamm.mein-abfallkalender.online/",
+  "publisher": "Stadt Heusenstamm",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Offenbach",
+  "scope": "town",
+  "name": "Hainburg",
+  "n": 1,
+  "pop": 14465,
+  "fmt": "app_only",
+  "url": "https://www.hainburg.de/rathaus-politik/aktuelles/pressemitteilungen/gelbe-saecke-und-muellabfuhrkalender/",
+  "publisher": "Gemeinde Hainburg (Müllabfuhrzweckverband)",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Offenbach",
+  "scope": "town",
+  "name": "Egelsbach",
+  "n": 1,
+  "pop": 10960,
+  "fmt": "ics",
+  "url": "https://egelsbach.mein-abfallkalender.online/",
+  "publisher": "Gemeinde Egelsbach",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Offenbach",
+  "scope": "town",
+  "name": "Mainhausen",
+  "n": 1,
+  "pop": 9483,
+  "fmt": "ics",
+  "url": "https://www.mainhausen.de/bauen-umwelt-abfall/abfallwirtschaft/abfallkalender",
+  "publisher": "Gemeinde Mainhausen",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Wetteraukreis",
+  "scope": "town",
+  "name": "Bad Vilbel, Stadt",
+  "n": 1,
+  "pop": 35961,
+  "fmt": "ics",
+  "url": "https://bad-vilbel.mein-abfallkalender.online/",
+  "publisher": "Stadt Bad Vilbel",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Wetteraukreis",
+  "scope": "town",
+  "name": "Bad Nauheim, Stadt",
+  "n": 1,
+  "pop": 32894,
+  "fmt": "ics",
+  "url": "https://bn.mein-abfallkalender.online/",
+  "publisher": "Stadt Bad Nauheim",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Wetteraukreis",
+  "scope": "town",
+  "name": "Friedberg (Hessen), Kreisstadt",
+  "n": 1,
+  "pop": 30409,
+  "fmt": "ics",
+  "url": "https://www.muellmax.de/abfallkalender/efb/res/EfbStart.php",
+  "publisher": "Stadt Friedberg (Hessen)",
+  "configs": {
+   "muellmax": [
+    "efb"
+   ]
+  }
+ },
+ {
+  "st": "HE",
+  "kreis": "Wetteraukreis",
+  "scope": "town",
+  "name": "Butzbach, Friedrich-Ludwig-Weidig-Stadt",
+  "n": 1,
+  "pop": 27046,
+  "fmt": "ics",
+  "url": "https://stadt-butzbach.mein-abfallkalender.online/",
+  "publisher": "Stadt Butzbach",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Wetteraukreis",
+  "scope": "town",
+  "name": "Karben, Stadt",
+  "n": 1,
+  "pop": 22600,
+  "fmt": "ics",
+  "url": "https://karben.mein-abfallkalender.online/",
+  "publisher": "Stadt Karben",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Wetteraukreis",
+  "scope": "town",
+  "name": "Büdingen, Stadt",
+  "n": 1,
+  "pop": 22411,
+  "fmt": "ics",
+  "url": "https://stadt-buedingen.mein-abfallkalender.online/",
+  "publisher": "Stadt Büdingen",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Wetteraukreis",
+  "scope": "town",
+  "name": "Nidda, Johannes-Pistorius-Stadt",
+  "n": 1,
+  "pop": 17060,
+  "fmt": "ics",
+  "url": "https://nidda.mein-abfallkalender.online/",
+  "publisher": "Stadt Nidda",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Wetteraukreis",
+  "scope": "town",
+  "name": "Altenstadt",
+  "n": 1,
+  "pop": 12764,
+  "fmt": "ics",
+  "url": "https://altenstadt.mein-abfallkalender.online/",
+  "publisher": "Gemeinde Altenstadt",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Wetteraukreis",
+  "scope": "town",
+  "name": "Niddatal, Stadt",
+  "n": 1,
+  "pop": 9861,
+  "fmt": "ics",
+  "url": "https://www.niddatal.de/",
+  "publisher": "Stadt Niddatal",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Wetteraukreis",
+  "scope": "town",
+  "name": "Wölfersheim",
+  "n": 1,
+  "pop": 9417,
+  "fmt": "pdf_only",
+  "url": "https://www.woelfersheim.de/gemeinde-buergerservice/service-verwaltung/ver-und-entsorgung/muellentsorgung/abfallkalender/",
+  "publisher": "Gemeinde Wölfersheim",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Wetteraukreis",
+  "scope": "town",
+  "name": "Florstadt, Stadt",
+  "n": 1,
+  "pop": 9097,
+  "fmt": "pdf_only",
+  "url": "https://florstadt.de/abfallkalender/",
+  "publisher": "Stadt Florstadt",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Wetteraukreis",
+  "scope": "town",
+  "name": "Ortenberg, Stadt",
+  "n": 1,
+  "pop": 8423,
+  "fmt": "pdf_only",
+  "url": "https://www.ortenberg.net/seite/405706/m%C3%BCllkalender.html",
+  "publisher": "Stadt Ortenberg",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Wetteraukreis",
+  "scope": "town",
+  "name": "Reichelsheim (Wetterau), Stadt",
+  "n": 1,
+  "pop": 6961,
+  "fmt": "ics",
+  "url": "https://stadt-reichelsheim.mein-abfallkalender.online/",
+  "publisher": "Stadt Reichelsheim (Wetterau)",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Wetteraukreis",
+  "scope": "town",
+  "name": "Gedern, Stadt",
+  "n": 1,
+  "pop": 6709,
+  "fmt": "ics",
+  "url": "https://gedern.mein-abfallkalender.online/",
+  "publisher": "Stadt Gedern",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Wetteraukreis",
+  "scope": "town",
+  "name": "Wöllstadt",
+  "n": 1,
+  "pop": 6593,
+  "fmt": "ics",
+  "url": "https://woellstadt.mein-abfallkalender.online/",
+  "publisher": "Gemeinde Wöllstadt",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Wetteraukreis",
+  "scope": "town",
+  "name": "Ober-Mörlen",
+  "n": 1,
+  "pop": 5706,
+  "fmt": "ics",
+  "url": "https://ober-moerlen.mein-abfallkalender.online/",
+  "publisher": "Gemeinde Ober-Mörlen",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Wetteraukreis",
+  "scope": "town",
+  "name": "Münzenberg, Stadt",
+  "n": 1,
+  "pop": 5663,
+  "fmt": "ics",
+  "url": "https://muenzenberg.mein-abfallkalender.online/",
+  "publisher": "Stadt Münzenberg",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Wetteraukreis",
+  "scope": "town",
+  "name": "Limeshain",
+  "n": 1,
+  "pop": 5563,
+  "fmt": "pdf_only",
+  "url": "https://www.limeshain.de/leben-wohnen/abfallentsorgung/",
+  "publisher": "Gemeinde Limeshain",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Wetteraukreis",
+  "scope": "town",
+  "name": "Echzell",
+  "n": 1,
+  "pop": 5474,
+  "fmt": "pdf_only",
+  "url": "https://www.echzell.de/leben-wohnen/verschiedenes/abfallbeseitigung/",
+  "publisher": "Gemeinde Echzell",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Wetteraukreis",
+  "scope": "town",
+  "name": "Ranstadt",
+  "n": 1,
+  "pop": 5340,
+  "fmt": "ics",
+  "url": "https://ranstadt.mein-abfallkalender.online/",
+  "publisher": "Gemeinde Ranstadt",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Wetteraukreis",
+  "scope": "town",
+  "name": "Rockenberg",
+  "n": 1,
+  "pop": 4173,
+  "fmt": "pdf_only",
+  "url": "https://www.rockenberg.de/seite/828630/m%C3%BCllkalender.html",
+  "publisher": "Gemeinde Rockenberg",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Wetteraukreis",
+  "scope": "town",
+  "name": "Glauburg",
+  "n": 1,
+  "pop": 3018,
+  "fmt": "ics",
+  "url": "https://glauburg.mein-abfallkalender.online/",
+  "publisher": "Gemeinde Glauburg",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Wetteraukreis",
+  "scope": "town",
+  "name": "Hirzenhain",
+  "n": 1,
+  "pop": 2750,
+  "fmt": "pdf_only",
+  "url": "https://www.hirzenhain.de/seite/207414/abfall.html",
+  "publisher": "Gemeinde Hirzenhain",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Wetteraukreis",
+  "scope": "town",
+  "name": "Kefenrod",
+  "n": 1,
+  "pop": 2616,
+  "fmt": "ics",
+  "url": "https://gemeinde-kefenrod.mein-abfallkalender.online/",
+  "publisher": "Gemeinde Kefenrod",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Bergstraße",
+  "scope": "county",
+  "name": "Bergstraße",
+  "n": 21,
+  "pop": 270687,
+  "fmt": "ics",
+  "url": "https://www.zakb.de/abfallkalender",
+  "publisher": "Zweckverband Abfallwirtschaft Kreis Bergstraße (ZAKB)",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Bergstraße",
+  "scope": "town",
+  "name": "Hirschhorn (Neckar), Stadt",
+  "n": 1,
+  "pop": 3482,
+  "fmt": "pdf_only",
+  "url": "https://www.hirschhorn.de/rathaus-buergerservice/abteilungen/bauen-und-planen/abfuhrkalender/",
+  "publisher": "Stadt Hirschhorn (Neckar)",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Groß-Gerau",
+  "scope": "county",
+  "name": "Groß-Gerau",
+  "n": 7,
+  "pop": 84271,
+  "fmt": "ics",
+  "url": "https://www.awv-gg.de/abfallkalender/individueller-abfallkalender/",
+  "publisher": "Abfallwirtschaftsverband Kreis Groß-Gerau (AWV)",
+  "configs": {
+   "ctrace": [
+    "web.c-trace.de/grossgeraulandkreis-abfallkalender"
+   ]
+  }
+ },
+ {
+  "st": "HE",
+  "kreis": "Groß-Gerau",
+  "scope": "town",
+  "name": "Rüsselsheim am Main, Stadt",
+  "n": 1,
+  "pop": 65627,
+  "fmt": "ics",
+  "url": "https://portal.staedteservice.de/calendar",
+  "publisher": "Städteservice Raunheim Rüsselsheim AöR",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Groß-Gerau",
+  "scope": "town",
+  "name": "Raunheim, Stadt",
+  "n": 1,
+  "pop": 15297,
+  "fmt": "ics",
+  "url": "https://portal.staedteservice.de/calendar",
+  "publisher": "Städteservice Raunheim Rüsselsheim AöR",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Groß-Gerau",
+  "scope": "town",
+  "name": "Mörfelden-Walldorf, Stadt",
+  "n": 1,
+  "pop": 31638,
+  "fmt": "ics",
+  "url": "https://abfallkalender.regioit.de/kalender-moerfelden-walldorf/index.jsp",
+  "publisher": "Stadt Mörfelden-Walldorf",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Groß-Gerau",
+  "scope": "town",
+  "name": "Groß-Gerau, Stadt",
+  "n": 1,
+  "pop": 25388,
+  "fmt": "html_only",
+  "url": "https://www.gross-gerau.de/B%C3%BCrger-Service-Online-Dienste/Ver-und-Entsorgung/Abfuhrtermine-PDF-Abfallkalender/",
+  "publisher": "Kreisstadt Groß-Gerau",
+  "configs": {
+   "advantic": [
+    "Abfallmodul",
+    "Advantic",
+    "abfallmodul",
+    "advantic"
+   ]
+  }
+ },
+ {
+  "st": "HE",
+  "kreis": "Groß-Gerau",
+  "scope": "town",
+  "name": "Kelsterbach, Stadt",
+  "n": 1,
+  "pop": 16622,
+  "fmt": "html_only",
+  "url": "https://www.kelsterbach.de/Stadt-Region/Abfallentsorgung/Abfuhrkalender/",
+  "publisher": "Stadt Kelsterbach",
+  "configs": {
+   "advantic": [
+    "Abfallmodul",
+    "Advantic",
+    "abfallmodul"
+   ]
+  }
+ },
+ {
+  "st": "HE",
+  "kreis": "Groß-Gerau",
+  "scope": "town",
+  "name": "Ginsheim-Gustavsburg, Stadt",
+  "n": 1,
+  "pop": 16488,
+  "fmt": "ics",
+  "url": "https://www.gigu.de/service-rathaus/dienstleistungen-online-rathaus/abfall/abfallkalender/",
+  "publisher": "Stadt Ginsheim-Gustavsburg",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Groß-Gerau",
+  "scope": "town",
+  "name": "Bischofsheim",
+  "n": 1,
+  "pop": 12979,
+  "fmt": "pdf_only",
+  "url": "https://bischofsheim.de/rathaus-und-politik/uebersicht-der-verwaltung/fachbereich-bauen-und-bauhof/fachdienst-bauen/abfall/abfallkalender.html",
+  "publisher": "Gemeinde Bischofsheim",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Marburg-Biedenkopf",
+  "scope": "county",
+  "name": "Marburg-Biedenkopf",
+  "n": 16,
+  "pop": 110672,
+  "fmt": "ics",
+  "url": "https://biedenkopfmzv.buergerportal.digital/calendar",
+  "publisher": "Müllabfuhrzweckverband Biedenkopf",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Marburg-Biedenkopf",
+  "scope": "town",
+  "name": "Marburg, Universitätsstadt",
+  "n": 1,
+  "pop": 73544,
+  "fmt": "ics",
+  "url": "https://marburg.mein-abfallkalender.online/",
+  "publisher": "Dienstleistungsbetrieb der Universitätsstadt Marburg (DBM)",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Marburg-Biedenkopf",
+  "scope": "town",
+  "name": "Stadtallendorf, Stadt",
+  "n": 1,
+  "pop": 21425,
+  "fmt": "ics",
+  "url": "https://stadtallendorf.de/Leben/Ver-und-Entsorgung/Abfallwirtschaft/Abfallkalender/",
+  "publisher": "Stadt Stadtallendorf",
+  "configs": {
+   "advantic": [
+    "Advantic",
+    "abfallmodul"
+   ]
+  }
+ },
+ {
+  "st": "HE",
+  "kreis": "Marburg-Biedenkopf",
+  "scope": "town",
+  "name": "Kirchhain, Stadt",
+  "n": 1,
+  "pop": 16254,
+  "fmt": "ics",
+  "url": "https://www.kirchhain.de/Verwaltung-Politik/Service/Ver-und-Entsorgung/Abfallentsorgung/Abfuhrtermine/",
+  "publisher": "Stadt Kirchhain",
+  "configs": {
+   "advantic": [
+    "Advantic",
+    "advantic"
+   ]
+  }
+ },
+ {
+  "st": "HE",
+  "kreis": "Marburg-Biedenkopf",
+  "scope": "town",
+  "name": "Ebsdorfergrund",
+  "n": 1,
+  "pop": 9207,
+  "fmt": "html_only",
+  "url": "https://www.123abfallkalender.de/Ebsdorfergrund",
+  "publisher": "Gemeinde Ebsdorfergrund",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Marburg-Biedenkopf",
+  "scope": "town",
+  "name": "Weimar (Lahn)",
+  "n": 1,
+  "pop": 7240,
+  "fmt": "ics",
+  "url": "https://www.gemeinde-weimar.de/bauen-wohnen/abfallkalender.html",
+  "publisher": "Gemeinde Weimar (Lahn)",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Marburg-Biedenkopf",
+  "scope": "town",
+  "name": "Rauschenberg, Stadt",
+  "n": 1,
+  "pop": 4463,
+  "fmt": "pdf_only",
+  "url": "https://www.rauschenberg.de/rathaus-politik-buergerservice/abfall-entsorgung",
+  "publisher": "Stadt Rauschenberg",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Kassel",
+  "scope": "county",
+  "name": "Kassel",
+  "n": 28,
+  "pop": 231073,
+  "fmt": "ics",
+  "url": "https://webapp.abfall-kreis-kassel.de/",
+  "publisher": "Abfallentsorgung Kreis Kassel (Eigenbetrieb Landkreis Kassel)",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Main-Taunus-Kreis",
+  "scope": "town",
+  "name": "Hofheim am Taunus, Kreisstadt",
+  "n": 1,
+  "pop": 39259,
+  "fmt": "ics",
+  "url": "https://hofheim.mein-abfallkalender.online/",
+  "publisher": "Magistrat der Stadt Hofheim am Taunus",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Main-Taunus-Kreis",
+  "scope": "town",
+  "name": "Kelkheim (Taunus), Stadt",
+  "n": 1,
+  "pop": 28175,
+  "fmt": "html_only",
+  "url": "https://www.kelkheim.de/mod_abfallkalender/",
+  "publisher": "Magistrat der Stadt Kelkheim (Taunus)",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Main-Taunus-Kreis",
+  "scope": "town",
+  "name": "Bad Soden am Taunus, Stadt",
+  "n": 1,
+  "pop": 23103,
+  "fmt": "ics",
+  "url": "https://bad-soden.mein-abfallkalender.online/",
+  "publisher": "Magistrat der Stadt Bad Soden am Taunus",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Main-Taunus-Kreis",
+  "scope": "town",
+  "name": "Eschborn, Stadt",
+  "n": 1,
+  "pop": 22403,
+  "fmt": "ics",
+  "url": "https://eschborn.mein-abfallkalender.online/",
+  "publisher": "Magistrat der Stadt Eschborn",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Main-Taunus-Kreis",
+  "scope": "town",
+  "name": "Flörsheim am Main, Stadt",
+  "n": 1,
+  "pop": 21344,
+  "fmt": "ics",
+  "url": "https://www.floersheim-umweltkalender.de/abfuhrtermine.html",
+  "publisher": "Stadt Flörsheim am Main (Stadtwerke)",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Main-Taunus-Kreis",
+  "scope": "town",
+  "name": "Hochheim am Main, Stadt",
+  "n": 1,
+  "pop": 18422,
+  "fmt": "ics",
+  "url": "https://hochheim.mein-abfallkalender.online/",
+  "publisher": "Stadtwerke Hochheim am Main",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Main-Taunus-Kreis",
+  "scope": "town",
+  "name": "Schwalbach am Taunus, Stadt",
+  "n": 1,
+  "pop": 15443,
+  "fmt": "ics",
+  "url": "https://www.schwalbach.de/Rathaus-und-Buergerservice/Buergerservice/Abfallentsorgung/Digitaler-Abfallkalender.htm",
+  "publisher": "Magistrat der Stadt Schwalbach am Taunus",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Main-Taunus-Kreis",
+  "scope": "town",
+  "name": "Eppstein, Stadt",
+  "n": 1,
+  "pop": 13070,
+  "fmt": "ics",
+  "url": "https://eppstein.mein-abfallkalender.online/",
+  "publisher": "Magistrat der Stadt Eppstein",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Main-Taunus-Kreis",
+  "scope": "town",
+  "name": "Kriftel",
+  "n": 1,
+  "pop": 11356,
+  "fmt": "ics",
+  "url": "https://www.kriftel.de/rathaus-politik/verwaltung/abfall/",
+  "publisher": "Gemeinde Kriftel",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Main-Taunus-Kreis",
+  "scope": "town",
+  "name": "Liederbach am Taunus",
+  "n": 1,
+  "pop": 8887,
+  "fmt": "pdf_only",
+  "url": "https://www.liederbach.eu/seite/de/cms19092026142035a81d2c69/044:430/-/Abfall_und_Entsorgung.html",
+  "publisher": "Gemeinde Liederbach am Taunus",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Main-Taunus-Kreis",
+  "scope": "town",
+  "name": "Sulzbach (Taunus)",
+  "n": 1,
+  "pop": 8846,
+  "fmt": "pdf_only",
+  "url": "https://www.sulzbach-taunus.de/kundenservice-rathaus/service/dienstleistungen-a-z/abfallkalender",
+  "publisher": "Gemeinde Sulzbach (Taunus)",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Main-Kinzig-Kreis",
+  "scope": "town",
+  "name": "Maintal, Stadt",
+  "n": 1,
+  "pop": 38987,
+  "fmt": "unknown",
+  "url": "https://www.muellmax.de/abfallkalender/mai/res/MaiStart.php",
+  "publisher": "Stadt Maintal (Fachdienst Infrastruktur, Abfallwirtschaft)",
+  "configs": {
+   "muellmax": [
+    "mai"
+   ]
+  }
+ },
+ {
+  "st": "HE",
+  "kreis": "Main-Kinzig-Kreis",
+  "scope": "town",
+  "name": "Gelnhausen, Barbarossastadt, Kreisstadt",
+  "n": 1,
+  "pop": 23290,
+  "fmt": "ics",
+  "url": "https://mymuell.jumomind.com/webmodul/gelnhausen/",
+  "publisher": "Stadt Gelnhausen",
+  "configs": {
+   "jumomind": [
+    "mymuell"
+   ]
+  }
+ },
+ {
+  "st": "HE",
+  "kreis": "Main-Kinzig-Kreis",
+  "scope": "town",
+  "name": "Nidderau, Stadt",
+  "n": 1,
+  "pop": 20119,
+  "fmt": "ics",
+  "url": "https://nidderau.mein-abfallkalender.online/app",
+  "publisher": "Stadt Nidderau",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Main-Kinzig-Kreis",
+  "scope": "town",
+  "name": "Erlensee, Stadt",
+  "n": 1,
+  "pop": 15907,
+  "fmt": "pdf_only",
+  "url": "https://www.erlensee.de/leben-wohnen/nachhaltigkeit/abfall-entsorgung/",
+  "publisher": "Stadt Erlensee / Eigenbetrieb Abfallwirtschaft Main-Kinzig-Kreis (IKZ)",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Main-Kinzig-Kreis",
+  "scope": "town",
+  "name": "Gründau",
+  "n": 1,
+  "pop": 14560,
+  "fmt": "html_only",
+  "url": "https://www.heimat-info.de/gemeinden/gruendau/abfallkalender",
+  "publisher": "Gemeinde Gründau",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Main-Kinzig-Kreis",
+  "scope": "town",
+  "name": "Bad Soden-Salmünster, Stadt",
+  "n": 1,
+  "pop": 13719,
+  "fmt": "ics",
+  "url": "http://www.bad-soden-salmuenster.de/rathaus-verwaltung/entsorgung-abfall",
+  "publisher": "Stadt Bad Soden-Salmünster",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Main-Kinzig-Kreis",
+  "scope": "town",
+  "name": "Schöneck",
+  "n": 1,
+  "pop": 11837,
+  "fmt": "pdf_only",
+  "url": "https://www.schoeneck.de/rathaus-politik/service/abfallentsorgung/abfallkalender-bezirke/",
+  "publisher": "Gemeinde Schöneck / Eigenbetrieb Abfallwirtschaft Main-Kinzig-Kreis (IKZ)",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Main-Kinzig-Kreis",
+  "scope": "town",
+  "name": "Rodenbach",
+  "n": 1,
+  "pop": 11074,
+  "fmt": "unknown",
+  "url": "https://www.rodenbach.de/Leben-Wohnen/Nachhaltigkeit/Abfall-Entsorgung/",
+  "publisher": "Gemeinde Rodenbach",
+  "configs": {
+   "advantic": [
+    "Advantic",
+    "advantic"
+   ]
+  }
+ },
+ {
+  "st": "HE",
+  "kreis": "Main-Kinzig-Kreis",
+  "scope": "town",
+  "name": "Bad Orb, Stadt",
+  "n": 1,
+  "pop": 9934,
+  "fmt": "ics",
+  "url": "https://stadt-bad-orb.de/Rathaus-Politik/%C3%84mterinfos/Abfallwirtschaft/Abfalltourenmodul/",
+  "publisher": "Stadt Bad Orb",
+  "configs": {
+   "advantic": [
+    "Advantic"
+   ]
+  }
+ },
+ {
+  "st": "HE",
+  "kreis": "Main-Kinzig-Kreis",
+  "scope": "town",
+  "name": "Biebergemünd",
+  "n": 1,
+  "pop": 8240,
+  "fmt": "ics",
+  "url": "https://biebergemuend.mein-abfallkalender.online",
+  "publisher": "Gemeinde Biebergemünd",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Main-Kinzig-Kreis",
+  "scope": "town",
+  "name": "Hasselroth",
+  "n": 1,
+  "pop": 7386,
+  "fmt": "ics",
+  "url": "https://www.hasselroth.de/buergerportal/rathaus/abfallentsorgung/muellkalender/",
+  "publisher": "Gemeinde Hasselroth",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Main-Kinzig-Kreis",
+  "scope": "town",
+  "name": "Großkrotzenburg",
+  "n": 1,
+  "pop": 7284,
+  "fmt": "app_only",
+  "url": "https://www.grosskrotzenburg.de/rathaus-politik/service/abfallwirtschaft/",
+  "publisher": "Müllabfuhrzweckverband Hainburg-Großkrotzenburg",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Main-Kinzig-Kreis",
+  "scope": "town",
+  "name": "Neuberg",
+  "n": 1,
+  "pop": 5296,
+  "fmt": "app_only",
+  "url": "https://abfall-mkk.de/ikz-leistungen-fuer-neuberg/",
+  "publisher": "Eigenbetrieb Abfallwirtschaft Main-Kinzig-Kreis (IKZ)",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Main-Kinzig-Kreis",
+  "scope": "town",
+  "name": "Brachttal",
+  "n": 1,
+  "pop": 4844,
+  "fmt": "pdf_only",
+  "url": "https://www.brachttal.de/rathaus-buergerschaft/gemeindeverwaltung/abfallentsorgung/",
+  "publisher": "Gemeinde Brachttal",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Main-Kinzig-Kreis",
+  "scope": "town",
+  "name": "Flörsbachtal",
+  "n": 1,
+  "pop": 2274,
+  "fmt": "pdf_only",
+  "url": "https://www.floersbachtal.de/muelltrennung-ganz-einfach",
+  "publisher": "Gemeinde Flörsbachtal",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Rheingau-Taunus-Kreis",
+  "scope": "county",
+  "name": "Rheingau-Taunus-Kreis",
+  "n": 10,
+  "pop": 122869,
+  "fmt": "ics",
+  "url": "https://www.eaw-rheingau-taunus.de/abfallsammlung/abfuhrtermine",
+  "publisher": "Eigenbetrieb Abfallwirtschaft Rheingau-Taunus-Kreis (EAW)",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Rheingau-Taunus-Kreis",
+  "scope": "town",
+  "name": "Eltville am Rhein, Stadt",
+  "n": 1,
+  "pop": 17031,
+  "fmt": "ics",
+  "url": "https://eltville.mein-abfallkalender.online/",
+  "publisher": "Abfallverband Rheingau / Stadt Eltville am Rhein",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Rheingau-Taunus-Kreis",
+  "scope": "town",
+  "name": "Oestrich-Winkel, Stadt",
+  "n": 1,
+  "pop": 11443,
+  "fmt": "ics",
+  "url": "https://oestrich-winkel.mein-abfallkalender.online/",
+  "publisher": "Abfallverband Rheingau",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Rheingau-Taunus-Kreis",
+  "scope": "town",
+  "name": "Geisenheim, Hochschulstadt",
+  "n": 1,
+  "pop": 11369,
+  "fmt": "ics",
+  "url": "https://geisenheim.mein-abfallkalender.online/",
+  "publisher": "Abfallverband Rheingau",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Rheingau-Taunus-Kreis",
+  "scope": "town",
+  "name": "Rüdesheim am Rhein, Stadt",
+  "n": 1,
+  "pop": 9879,
+  "fmt": "ics",
+  "url": "https://ruedesheim.mein-abfallkalender.online/",
+  "publisher": "Abfallverband Rheingau / Stadt Rüdesheim am Rhein",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Rheingau-Taunus-Kreis",
+  "scope": "town",
+  "name": "Lorch, Stadt",
+  "n": 1,
+  "pop": 3780,
+  "fmt": "ics",
+  "url": "https://lorch-rheingau.mein-abfallkalender.online/",
+  "publisher": "Abfallverband Rheingau",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Rheingau-Taunus-Kreis",
+  "scope": "town",
+  "name": "Kiedrich",
+  "n": 1,
+  "pop": 3873,
+  "fmt": "ics",
+  "url": "https://kiedrich.mein-abfallkalender.online/",
+  "publisher": "Abfallverband Rheingau",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Rheingau-Taunus-Kreis",
+  "scope": "town",
+  "name": "Walluf",
+  "n": 1,
+  "pop": 5407,
+  "fmt": "ics",
+  "url": "https://walluf.mein-abfallkalender.online/",
+  "publisher": "Abfallverband Rheingau",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Schwalm-Eder-Kreis",
+  "scope": "county",
+  "name": "Schwalm-Eder-Kreis",
+  "n": 27,
+  "pop": 180071,
+  "fmt": "ics",
+  "url": "https://www.zva-sek.de/online-dienste/abfallkalender-2026/",
+  "publisher": "Zweckverband Abfallwirtschaft Schwalm-Eder-Kreis (ZVA)",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Hochtaunuskreis",
+  "scope": "town",
+  "name": "Friedrichsdorf, Philipp-Reis-Stadt",
+  "n": 1,
+  "pop": 25871,
+  "fmt": "ics",
+  "url": "https://friedrichsdorf.mein-abfallkalender.online/",
+  "publisher": "Stadt Friedrichsdorf",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Hochtaunuskreis",
+  "scope": "town",
+  "name": "Königstein im Taunus, Stadt",
+  "n": 1,
+  "pop": 16680,
+  "fmt": "ics",
+  "url": "https://www.koenigstein.de/buergerbuero-services/abfallwirtschaft/abfallkalender/",
+  "publisher": "Stadt Königstein im Taunus",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Hochtaunuskreis",
+  "scope": "town",
+  "name": "Usingen, Stadt",
+  "n": 1,
+  "pop": 15683,
+  "fmt": "ics",
+  "url": "https://mymuell.jumomind.com/webmodul/usingen/",
+  "publisher": "Stadt Usingen",
+  "configs": {
+   "jumomind": [
+    "kbl",
+    "mymuell"
+   ]
+  }
+ },
+ {
+  "st": "HE",
+  "kreis": "Hochtaunuskreis",
+  "scope": "town",
+  "name": "Neu-Anspach, Stadt",
+  "n": 1,
+  "pop": 14342,
+  "fmt": "ics",
+  "url": "https://neu-anspach.mein-abfallkalender.online/",
+  "publisher": "Stadt Neu-Anspach",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Hochtaunuskreis",
+  "scope": "town",
+  "name": "Steinbach (Taunus), Stadt",
+  "n": 1,
+  "pop": 10856,
+  "fmt": "ics",
+  "url": "https://www.stadt-steinbach.de/rathaus/buergerservice/abfallwirtschaft/",
+  "publisher": "Stadt Steinbach (Taunus)",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Hochtaunuskreis",
+  "scope": "town",
+  "name": "Schmitten im Taunus",
+  "n": 1,
+  "pop": 9323,
+  "fmt": "ics",
+  "url": "https://mymuell.jumomind.com/webmodul/schmitten/",
+  "publisher": "Gemeinde Schmitten im Taunus",
+  "configs": {
+   "jumomind": [
+    "kbl",
+    "mymuell"
+   ]
+  }
+ },
+ {
+  "st": "HE",
+  "kreis": "Hochtaunuskreis",
+  "scope": "town",
+  "name": "Wehrheim",
+  "n": 1,
+  "pop": 9271,
+  "fmt": "ics",
+  "url": "https://www.wehrheim.de/bauen-umwelt/umwelt-abfallwirtschaft/abfallentsorgung/",
+  "publisher": "Gemeinde Wehrheim",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Hochtaunuskreis",
+  "scope": "town",
+  "name": "Weilrod",
+  "n": 1,
+  "pop": 6856,
+  "fmt": "ics",
+  "url": "https://weilrod.mein-abfallkalender.online/",
+  "publisher": "Gemeinde Weilrod",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Hochtaunuskreis",
+  "scope": "town",
+  "name": "Grävenwiesbach",
+  "n": 1,
+  "pop": 5376,
+  "fmt": "ics",
+  "url": "https://mymuell.jumomind.com/webmodul/graevenwiesbach/",
+  "publisher": "Gemeinde Grävenwiesbach",
+  "configs": {
+   "jumomind": [
+    "mymuell"
+   ]
+  }
+ },
+ {
+  "st": "HE",
+  "kreis": "Hochtaunuskreis",
+  "scope": "town",
+  "name": "Glashütten",
+  "n": 1,
+  "pop": 5311,
+  "fmt": "pdf_only",
+  "url": "https://www.gemeinde-glashuetten.de/umwelt-wirtschaft/ver-und-entsorgung/abfallentsorgung/",
+  "publisher": "Gemeinde Glashütten",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Limburg-Weilburg",
+  "scope": "county",
+  "name": "Limburg-Weilburg",
+  "n": 19,
+  "pop": 173830,
+  "fmt": "ics",
+  "url": "https://www.landkreis-limburg-weilburg.de/leben-im-landkreis/abfallwirtschaft/abfuhrtermine/ihr-abfallkalender",
+  "publisher": "Abfallwirtschaftsbetrieb Landkreis Limburg-Weilburg",
+  "configs": {
+   "abfallplus": [
+    "29727e74d11041d98df0c0d013a846c6"
+   ]
+  }
+ },
+ {
+  "st": "HE",
+  "kreis": "Waldeck-Frankenberg",
+  "scope": "town",
+  "name": "Korbach, Hansestadt, Kreisstadt",
+  "n": 1,
+  "pop": 22901,
+  "fmt": "pdf_only",
+  "url": "https://www.korbach.de/Stadt/Aktuelles-B%C3%BCrgerservice/B%C3%BCrgerservice/Abfallwirtschaft/Abfallkalender.php?object=tx,3889.8698.1",
+  "publisher": "Hansestadt Korbach",
+  "configs": {
+   "advantic": [
+    "Advantic"
+   ]
+  }
+ },
+ {
+  "st": "HE",
+  "kreis": "Waldeck-Frankenberg",
+  "scope": "town",
+  "name": "Frankenberg (Eder), Philipp-Soldan-Stadt",
+  "n": 1,
+  "pop": 17635,
+  "fmt": "ics",
+  "url": "https://abfall.frankenberg.de/online-dienste/abfallkalender-2026/",
+  "publisher": "Stadt Frankenberg (Eder)",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Waldeck-Frankenberg",
+  "scope": "town",
+  "name": "Bad Wildungen, Stadt",
+  "n": 1,
+  "pop": 17364,
+  "fmt": "pdf_only",
+  "url": "https://www.bad-wildungen.de/stadtverwaltung/was-erledige-ich-wo/abfallbeseitigung/",
+  "publisher": "Stadt Bad Wildungen",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Waldeck-Frankenberg",
+  "scope": "town",
+  "name": "Bad Arolsen, Stadt",
+  "n": 1,
+  "pop": 16050,
+  "fmt": "pdf_only",
+  "url": "https://www.zv-kbn.de/de/optigov/?ansicht=dienstleistung&eintrag=2",
+  "publisher": "Zweckverband Kommunale Betriebe Nordwaldeck (KBN)",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Waldeck-Frankenberg",
+  "scope": "town",
+  "name": "Waldeck, Nationalparkstadt",
+  "n": 1,
+  "pop": 6905,
+  "fmt": "ics",
+  "url": "https://www.waldeck-stadt.de/Buergerservice/Muellbeseitigung/Muellkalender.htm",
+  "publisher": "Stadt Waldeck",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Waldeck-Frankenberg",
+  "scope": "town",
+  "name": "Volkmarsen, Stadt",
+  "n": 1,
+  "pop": 6535,
+  "fmt": "pdf_only",
+  "url": "https://www.zv-kbn.de/de/optigov/?ansicht=dienstleistung&eintrag=2",
+  "publisher": "Zweckverband Kommunale Betriebe Nordwaldeck (KBN)",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Waldeck-Frankenberg",
+  "scope": "town",
+  "name": "Edertal, Nationalparkgemeinde",
+  "n": 1,
+  "pop": 6181,
+  "fmt": "pdf_only",
+  "url": "https://edertal.de/de/leben-im-edertal/umwelt-und-klimaschutz/abfallwirtschaft.php",
+  "publisher": "Gemeinde Edertal",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Waldeck-Frankenberg",
+  "scope": "town",
+  "name": "Willingen (Upland)",
+  "n": 1,
+  "pop": 5672,
+  "fmt": "pdf_only",
+  "url": "https://www.rathaus-willingen.de/rathaus-buergerservice/abfallentsorgung/abfallkalender/",
+  "publisher": "Gemeinde Willingen (Upland)",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Waldeck-Frankenberg",
+  "scope": "town",
+  "name": "Vöhl, Nationalparkgemeinde",
+  "n": 1,
+  "pop": 5460,
+  "fmt": "pdf_only",
+  "url": "https://www.voehl.de/index.php/aktuelles/muellabfuhrtermine",
+  "publisher": "Gemeinde Vöhl",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Waldeck-Frankenberg",
+  "scope": "town",
+  "name": "Battenberg (Eder), Stadt",
+  "n": 1,
+  "pop": 5450,
+  "fmt": "pdf_only",
+  "url": "https://www.battenberg-eder.de/dienstleistung/anzeigen/id/6540/abfallentsorgung.html",
+  "publisher": "Stadt Battenberg (Eder)",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Waldeck-Frankenberg",
+  "scope": "town",
+  "name": "Diemelstadt, Stadt",
+  "n": 1,
+  "pop": 5186,
+  "fmt": "pdf_only",
+  "url": "https://www.diemelstadt.de/buergerservice/umwelt-abfall/abfall/",
+  "publisher": "Stadt Diemelstadt",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Waldeck-Frankenberg",
+  "scope": "town",
+  "name": "Burgwald",
+  "n": 1,
+  "pop": 4932,
+  "fmt": "pdf_only",
+  "url": "https://www.burgwald.de/Wohnen-Leben-Bauen/Abfallentsorgung/",
+  "publisher": "Gemeinde Burgwald",
+  "configs": {
+   "advantic": [
+    "Advantic",
+    "advantic"
+   ]
+  }
+ },
+ {
+  "st": "HE",
+  "kreis": "Waldeck-Frankenberg",
+  "scope": "town",
+  "name": "Diemelsee",
+  "n": 1,
+  "pop": 4507,
+  "fmt": "pdf_only",
+  "url": "https://gemeinde-diemelsee.de/abfall-kalender/",
+  "publisher": "Gemeinde Diemelsee",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Waldeck-Frankenberg",
+  "scope": "town",
+  "name": "Twistetal",
+  "n": 1,
+  "pop": 4219,
+  "fmt": "pdf_only",
+  "url": "https://www.twistetal.de/leben-wohnen/muellbeseitigung/",
+  "publisher": "Gemeinde Twistetal",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Waldeck-Frankenberg",
+  "scope": "town",
+  "name": "Lichtenfels, Stadt",
+  "n": 1,
+  "pop": 4051,
+  "fmt": "pdf_only",
+  "url": "https://www.stadt-lichtenfels.de/index.php?mid=95",
+  "publisher": "Stadt Lichtenfels",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Waldeck-Frankenberg",
+  "scope": "town",
+  "name": "Gemünden (Wohra), Stadt",
+  "n": 1,
+  "pop": 3606,
+  "fmt": "pdf_only",
+  "url": "https://www.gemuenden-wohra.de/seite/461536/abfallentsorgung-abfuhrtermine.html",
+  "publisher": "Stadt Gemünden (Wohra)",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Waldeck-Frankenberg",
+  "scope": "town",
+  "name": "Haina (Kloster)",
+  "n": 1,
+  "pop": 3256,
+  "fmt": "pdf_only",
+  "url": "https://www.haina.de/seite/302132/abfallkalender.html",
+  "publisher": "Gemeinde Haina (Kloster)",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Waldeck-Frankenberg",
+  "scope": "town",
+  "name": "Frankenau, Nationalparkstadt",
+  "n": 1,
+  "pop": 2782,
+  "fmt": "pdf_only",
+  "url": "https://www.frankenau.de/seite/178929/abfallentsorgung.html",
+  "publisher": "Stadt Frankenau",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Waldeck-Frankenberg",
+  "scope": "town",
+  "name": "Rosenthal, Stadt",
+  "n": 1,
+  "pop": 2051,
+  "fmt": "pdf_only",
+  "url": "https://www.rosenthaler.de/seite/272769/abfallentsorgung.html",
+  "publisher": "Stadt Rosenthal",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Vogelsbergkreis",
+  "scope": "county",
+  "name": "Vogelsbergkreis",
+  "n": 19,
+  "pop": 101163,
+  "fmt": "ics",
+  "url": "https://www.zav-online.de/abfallkalender",
+  "publisher": "Zweckverband Abfallwirtschaft Vogelsbergkreis (ZAV)",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Hanau, Brüder-Grimm-Stadt",
+  "scope": "town",
+  "name": "Hanau, Brüder-Grimm-Stadt",
+  "n": 1,
+  "pop": 97956,
+  "fmt": "html_only",
+  "url": "https://www.muellmax.de/abfallkalender/his/res/HisStart.php",
+  "publisher": "Hanau Infrastruktur Service (Stadt Hanau)",
+  "configs": {
+   "muellmax": [
+    "his"
+   ]
+  }
+ },
+ {
+  "st": "HE",
+  "kreis": "Werra-Meißner-Kreis",
+  "scope": "county",
+  "name": "Werra-Meißner-Kreis",
+  "n": 13,
+  "pop": 56354,
+  "fmt": "ics",
+  "url": "https://www.zva-wmk.de/termine/pers%C3%B6nlicher-terminkalender-2026",
+  "publisher": "Zweckverband Abfallwirtschaft Werra-Meißner-Kreis",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Werra-Meißner-Kreis",
+  "scope": "town",
+  "name": "Eschwege, Kreisstadt",
+  "n": 1,
+  "pop": 18743,
+  "fmt": "ics",
+  "url": "https://eschwege.mein-abfallkalender.online/",
+  "publisher": "Kreisstadt Eschwege",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Werra-Meißner-Kreis",
+  "scope": "town",
+  "name": "Witzenhausen, Stadt",
+  "n": 1,
+  "pop": 15132,
+  "fmt": "ics",
+  "url": "https://witzenhausen.mein-abfallkalender.online/",
+  "publisher": "Stadt Witzenhausen",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Werra-Meißner-Kreis",
+  "scope": "town",
+  "name": "Sontra, Stadt",
+  "n": 1,
+  "pop": 7466,
+  "fmt": "pdf_only",
+  "url": "https://www.sontra.de/seite/236198/bio-,-rest-und-papierm%C3%BCll.html",
+  "publisher": "Stadt Sontra",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Odenwaldkreis",
+  "scope": "county",
+  "name": "Odenwaldkreis",
+  "n": 12,
+  "pop": 93846,
+  "fmt": "ics",
+  "url": "https://reso-gmbh.abfallkalender.services/",
+  "publisher": "Müllabfuhr-Zweckverband Odenwald (MZVO), operated by RESO GmbH",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Gießen",
+  "scope": "town",
+  "name": "Gießen, Universitätsstadt",
+  "n": 1,
+  "pop": 89179,
+  "fmt": "ics",
+  "url": "https://stadtreinigung.giessen.de/akal/akal1.php",
+  "publisher": "Universitätsstadt Gießen, Stadtreinigungs- und Fuhramt",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Lahn-Dill-Kreis",
+  "scope": "town",
+  "name": "Wetzlar, Stadt",
+  "n": 1,
+  "pop": 54665,
+  "fmt": "ics",
+  "url": "https://www.wetzlar.de/leben-in-wetzlar/abfall-und-entsorgung/abfuhrtermine-2026.php",
+  "publisher": "Stadt Wetzlar, Stadtreinigung/Abfallwirtschaft",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Hersfeld-Rotenburg",
+  "scope": "town",
+  "name": "Bebra, Stadt",
+  "n": 1,
+  "pop": 12945,
+  "fmt": "ics",
+  "url": "https://www.mzv-rotenburg-bebra.de/webkalender.php",
+  "publisher": "Müllabfuhrzweckverband Rotenburg-Bebra (MZV)",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Hersfeld-Rotenburg",
+  "scope": "town",
+  "name": "Rotenburg a. d. Fulda, Stadt",
+  "n": 1,
+  "pop": 12937,
+  "fmt": "ics",
+  "url": "https://www.mzv-rotenburg-bebra.de/webkalender.php",
+  "publisher": "Müllabfuhrzweckverband Rotenburg-Bebra (MZV)",
+  "configs": {}
+ },
+ {
+  "st": "HE",
+  "kreis": "Hersfeld-Rotenburg",
+  "scope": "town",
+  "name": "Ronshausen",
+  "n": 1,
+  "pop": 2271,
+  "fmt": "ics",
+  "url": "https://www.mzv-rotenburg-bebra.de/webkalender.php",
+  "publisher": "Müllabfuhrzweckverband Rotenburg-Bebra (MZV)",
+  "configs": {}
+ },
+ {
+  "st": "RP",
+  "kreis": "Mayen-Koblenz",
+  "scope": "county",
+  "name": "Mayen-Koblenz",
+  "n": 83,
+  "pop": 211305,
+  "fmt": "pdf_only",
+  "url": "https://www.azv-rme.de/buergerservice/abfallentsorgung-im-landkreis-mayen-koblenz/abfuhrtermine/",
+  "publisher": "Abfallzweckverband Rhein-Mosel-Eifel (AZV-RME)",
+  "configs": {
+   "abfallplus": [
+    "2fd91be1ebb9ad8558b44914a983c435"
+   ]
+  }
+ },
+ {
+  "st": "RP",
+  "kreis": "Mainz-Bingen",
+  "scope": "county",
+  "name": "Mainz-Bingen",
+  "n": 62,
+  "pop": 204204,
+  "fmt": "ics",
+  "url": "https://lk.kaw-mainz-bingen.de/de/Abfallentsorgung/Abfallkalender",
+  "publisher": "KAW Kommunale Abfallwirtschaft Mainz und Mainz-Bingen AöR",
+  "configs": {}
+ },
+ {
+  "st": "RP",
+  "kreis": "Neuwied",
+  "scope": "county",
+  "name": "Neuwied",
+  "n": 56,
+  "pop": 173705,
+  "fmt": "html_only",
+  "url": "https://www.abfall-nr.de/abfuhrtermine/persoenlicher-abfuhrkalender",
+  "publisher": "Abfallwirtschaft Landkreis Neuwied",
+  "configs": {
+   "abfallplus": [
+    "de4957b006c53e47f8b9c21bc2c768f0"
+   ]
+  }
+ },
+ {
+  "st": "RP",
+  "kreis": "Bad Kreuznach",
+  "scope": "county",
+  "name": "Bad Kreuznach",
+  "n": 112,
+  "pop": 161658,
+  "fmt": "unknown",
+  "url": "https://abfall-app-bad-kreuznach.de/",
+  "publisher": "Abfallwirtschaftsbetrieb Landkreis Bad Kreuznach",
+  "configs": {}
+ },
+ {
+  "st": "RP",
+  "kreis": "Rhein-Pfalz-Kreis",
+  "scope": "county",
+  "name": "Rhein-Pfalz-Kreis",
+  "n": 25,
+  "pop": 155882,
+  "fmt": "ics",
+  "url": "https://www.rhein-pfalz-kreis.de/verwaltung-region/eigenbetrieb-abfallwirtschaft/beratung-und-informationen/",
+  "publisher": "Eigenbetrieb Abfallwirtschaft Rhein-Pfalz-Kreis",
+  "configs": {}
+ },
+ {
+  "st": "RP",
+  "kreis": "Germersheim",
+  "scope": "county",
+  "name": "Germersheim",
+  "n": 31,
+  "pop": 131383,
+  "fmt": "ics",
+  "url": "https://www.abfallwirtschaft-germersheim.de/online-service/abfall-kalender/abfall-termine-bis-240-liter.html",
+  "publisher": "Abfallwirtschaft Landkreis Germersheim",
+  "configs": {}
+ },
+ {
+  "st": "RP",
+  "kreis": "Alzey-Worms",
+  "scope": "county",
+  "name": "Alzey-Worms",
+  "n": 68,
+  "pop": 129348,
+  "fmt": "ics",
+  "url": "https://www.abfall-alzey-worms.de/mein-anliegen/termine/abfuhrtermine/",
+  "publisher": "Abfallwirtschaftsbetrieb Landkreis Alzey-Worms",
+  "configs": {
+   "athos": [
+    "https://abfall.alzey-worms.de/WasteManagementAlzeyworms"
+   ]
+  }
+ },
+ {
+  "st": "RP",
+  "kreis": "Ahrweiler",
+  "scope": "county",
+  "name": "Ahrweiler",
+  "n": 69,
+  "pop": 126382,
+  "fmt": "html_only",
+  "url": "https://www.meinawb.de/abfuhrtermine",
+  "publisher": "Abfallwirtschaftsbetrieb Landkreis Ahrweiler",
+  "configs": {
+   "athos": [
+    "https://extdienste01.koblenz.de/WasteManagementAhrweiler"
+   ]
+  }
+ },
+ {
+  "st": "RP",
+  "kreis": "Rhein-Lahn-Kreis",
+  "scope": "county",
+  "name": "Rhein-Lahn-Kreis",
+  "n": 132,
+  "pop": 123780,
+  "fmt": "ics",
+  "url": "https://www.rhein-lahn-kreis-abfallwirtschaft.de/html/cs_6615.html",
+  "publisher": "Abfallwirtschaft Rhein-Lahn-Kreis",
+  "configs": {}
+ },
+ {
+  "st": "RP",
+  "kreis": "Altenkirchen (Westerwald)",
+  "scope": "county",
+  "name": "Altenkirchen (Westerwald)",
+  "n": 107,
+  "pop": 118581,
+  "fmt": "ics",
+  "url": "https://www.awb-ak.de/de/abfuhrtermine/abfuhrkalender/",
+  "publisher": "Abfallwirtschaftsbetrieb Landkreis Altenkirchen",
+  "configs": {
+   "awido": [
+    "awb-ak",
+    "bundles"
+   ]
+  }
+ },
+ {
+  "st": "RP",
+  "kreis": "Koblenz, kreisfreie Stadt",
+  "scope": "county",
+  "name": "Koblenz, kreisfreie Stadt",
+  "n": 1,
+  "pop": 113378,
+  "fmt": "ics",
+  "url": "https://servicebetrieb.koblenz.de/abfallwirtschaft/entsorgungstermine-digital/",
+  "publisher": "Kommunaler Servicebetrieb Koblenz",
+  "configs": {}
+ },
+ {
+  "st": "RP",
+  "kreis": "Südliche Weinstraße",
+  "scope": "county",
+  "name": "Südliche Weinstraße",
+  "n": 73,
+  "pop": 110801,
+  "fmt": "pdf_only",
+  "url": "https://www.suedliche-weinstrasse.de/einrichtungen/eww/wertstoffkalender/",
+  "publisher": "Landkreis Südliche Weinstraße – Eigenbetrieb WertstoffWirtschaft (EWW)",
+  "configs": {}
+ },
+ {
+  "st": "RP",
+  "kreis": "Kaiserslautern",
+  "scope": "county",
+  "name": "Kaiserslautern",
+  "n": 48,
+  "pop": 100634,
+  "fmt": "pdf_only",
+  "url": "https://www.kaiserslautern-kreis.de/verwaltung/abfallwirtschaft/abfuhrplaene/",
+  "publisher": "Kreisverwaltung Kaiserslautern – Abfallwirtschaft",
+  "configs": {}
+ },
+ {
+  "st": "RP",
+  "kreis": "Kaiserslautern, kreisfreie Stadt",
+  "scope": "county",
+  "name": "Kaiserslautern, kreisfreie Stadt",
+  "n": 1,
+  "pop": 100426,
+  "fmt": "ics",
+  "url": "https://www.stadtbildpflege-kaiserslautern.de/index.php?id=29",
+  "publisher": "Stadtbildpflege Kaiserslautern",
+  "configs": {}
+ },
+ {
+  "st": "RP",
+  "kreis": "Südwestpfalz",
+  "scope": "county",
+  "name": "Südwestpfalz",
+  "n": 83,
+  "pop": 89474,
+  "fmt": "ics",
+  "url": "https://abfall.lksuedwestpfalz.de/startseite/abfuhrtermine/abfuhrkalender-individuell-icall/",
+  "publisher": "Kreisverwaltung Südwestpfalz, Abfallwirtschaft",
+  "configs": {
+   "athos": [
+    "https://abfallwirtschaft.lksuedwestpfalz.de/WasteManagementSuedwestpfalz"
+   ]
+  }
+ },
+ {
+  "st": "RP",
+  "kreis": "Worms, kreisfreie Stadt",
+  "scope": "county",
+  "name": "Worms, kreisfreie Stadt",
+  "n": 1,
+  "pop": 86753,
+  "fmt": "ics",
+  "url": "https://www.ebwo.de/de/abfallkalender/2026/",
+  "publisher": "Entsorgungs- und Baubetrieb der Stadt Worms (EBWO)",
+  "configs": {}
+ },
+ {
+  "st": "RP",
+  "kreis": "Birkenfeld",
+  "scope": "county",
+  "name": "Birkenfeld",
+  "n": 95,
+  "pop": 82442,
+  "fmt": "html_only",
+  "url": "https://www.awb-bir.de/Service/(0)Abfuhrkalender/",
+  "publisher": "AbfallWirtschaftsBetrieb Nationalparklandkreis Birkenfeld",
+  "configs": {}
+ },
+ {
+  "st": "RP",
+  "kreis": "Bad Dürkheim",
+  "scope": "county",
+  "name": "Bad Dürkheim",
+  "n": 45,
+  "pop": 80355,
+  "fmt": "ics",
+  "url": "https://awb.kreis-bad-duerkheim.de/index.php/abfuhrkalender.html",
+  "publisher": "Abfallwirtschaftsbetrieb Landkreis Bad Dürkheim",
+  "configs": {
+   "awido": [
+    "awb-duerkheim",
+    "bundles"
+   ]
+  }
+ },
+ {
+  "st": "RP",
+  "kreis": "Donnersbergkreis",
+  "scope": "county",
+  "name": "Donnersbergkreis",
+  "n": 79,
+  "pop": 73990,
+  "fmt": "app_only",
+  "url": "https://www.donnersberg.de/buergerservice/themenwelt/abfallentsorgung-wirtschaft/abfall-app/",
+  "publisher": "Kreisverwaltung Donnersbergkreis, Abfallwirtschaft",
+  "configs": {}
+ },
+ {
+  "st": "RP",
+  "kreis": "Kusel",
+  "scope": "county",
+  "name": "Kusel",
+  "n": 92,
+  "pop": 66734,
+  "fmt": "ics",
+  "url": "https://abfallwirtschaft.landkreis-kusel.de",
+  "publisher": "Kreisverwaltung Kusel, Bürgerservice Abfallwirtschaft",
+  "configs": {}
+ },
+ {
+  "st": "RP",
+  "kreis": "Cochem-Zell",
+  "scope": "county",
+  "name": "Cochem-Zell",
+  "n": 85,
+  "pop": 59978,
+  "fmt": "ics",
+  "url": "https://buerger-portal-cochemzell.azurewebsites.net/",
+  "publisher": "Kreisverwaltung Cochem-Zell, Abfallwirtschaft",
+  "configs": {}
+ },
+ {
+  "st": "RP",
+  "kreis": "Speyer, kreisfreie Stadt",
+  "scope": "county",
+  "name": "Speyer, kreisfreie Stadt",
+  "n": 1,
+  "pop": 49564,
+  "fmt": "ics",
+  "url": "https://www.stadtwerke-speyer.de/muellkalender",
+  "publisher": "Stadtwerke Speyer GmbH",
+  "configs": {}
+ },
+ {
+  "st": "RP",
+  "kreis": "Pirmasens, kreisfreie Stadt",
+  "scope": "county",
+  "name": "Pirmasens, kreisfreie Stadt",
+  "n": 1,
+  "pop": 39761,
+  "fmt": "ics",
+  "url": "https://www.pirmasens.de/leben-in-ps/buergerservice/abfallentsorgung/online-abfallkalender/",
+  "publisher": "Stadt Pirmasens",
+  "configs": {}
+ },
+ {
+  "st": "RP",
+  "kreis": "Zweibrücken, kreisfreie Stadt",
+  "scope": "county",
+  "name": "Zweibrücken, kreisfreie Stadt",
+  "n": 1,
+  "pop": 33323,
+  "fmt": "html_only",
+  "url": "https://leerungen.ubzzw.com/WasteManagementZweibruecken/WasteManagementServlet?SubmitAction=wasteDisposalServices&InFrameMode=TRUE",
+  "publisher": "UBZ Umwelt- und Servicebetrieb Zweibrücken",
+  "configs": {
+   "athos": [
+    "https://leerungen.ubzzw.com/WasteManagementZweibruecken"
+   ]
+  }
+ },
+ {
+  "st": "RP",
+  "kreis": "Trier-Saarburg",
+  "scope": "county",
+  "name": "Trier-Saarburg",
+  "n": 1,
+  "pop": 415,
+  "fmt": "ics",
+  "url": "https://www.art-trier.de/abfuhrtermin",
+  "publisher": "Zweckverband Abfallwirtschaft Region Trier (A.R.T.)",
+  "configs": {}
+ },
+ {
+  "st": "RP",
+  "kreis": "Rhein-Hunsrück-Kreis",
+  "scope": "county",
+  "name": "Rhein-Hunsrück-Kreis",
+  "n": 1,
+  "pop": 2847,
+  "fmt": "html_only",
+  "url": "https://aao.rh-entsorgung.de/WasteManagementRheinhunsrueck/WasteManagementServlet?SubmitAction=wasteDisposalServices&InFrameMode=TRUE",
+  "publisher": "Rhein-Hunsrück Entsorgung AöR",
+  "configs": {
+   "athos": [
+    "https://aao.rh-entsorgung.de/WasteManagementRheinhunsrueck"
+   ]
+  }
+ },
+ {
+  "st": "RP",
+  "kreis": "Bernkastel-Wittlich",
+  "scope": "county",
+  "name": "Bernkastel-Wittlich",
+  "n": 4,
+  "pop": 2186,
+  "fmt": "ics",
+  "url": "https://www.art-trier.de/abfuhrtermin",
+  "publisher": "Zweckverband Abfallwirtschaft Region Trier (A.R.T.)",
+  "configs": {}
+ },
+ {
+  "st": "RP",
+  "kreis": "Vulkaneifel",
+  "scope": "county",
+  "name": "Vulkaneifel",
+  "n": 4,
+  "pop": 1553,
+  "fmt": "ics",
+  "url": "https://www.art-trier.de/abfuhrtermin",
+  "publisher": "Zweckverband Abfallwirtschaft Region Trier (A.R.T.)",
+  "configs": {}
+ },
+ {
+  "st": "SN",
+  "kreis": "Erzgebirgskreis",
+  "scope": "county",
+  "name": "Erzgebirgskreis",
+  "n": 59,
+  "pop": 318394,
+  "fmt": "pdf_only",
+  "url": "https://www.za-sws.de/abfallkalender.cfm",
+  "publisher": "Zweckverband Abfallwirtschaft Südwestsachsen (ZAS)",
+  "configs": {
+   "athos": [
+    "https://online-portal.za-sws.de/WasteManagementSuedwestsachsen"
+   ]
+  }
+ },
+ {
+  "st": "SN",
+  "kreis": "Zwickau",
+  "scope": "county",
+  "name": "Zwickau",
+  "n": 33,
+  "pop": 306793,
+  "fmt": "pdf_only",
+  "url": "https://www.landkreis-zwickau.de/tourenplan/tourenplan.aspx",
+  "publisher": "Landratsamt Zwickau, Abfallwirtschaft",
+  "configs": {}
+ },
+ {
+  "st": "SN",
+  "kreis": "Mittelsachsen",
+  "scope": "county",
+  "name": "Mittelsachsen",
+  "n": 52,
+  "pop": 296431,
+  "fmt": "ics",
+  "url": "https://www.ekm-mittelsachsen.de/service-dienstleistungen/entsorgungstermine-abfallkalender",
+  "publisher": "EKM Entsorgungsdienste Kreis Mittelsachsen GmbH",
+  "configs": {}
+ },
+ {
+  "st": "SN",
+  "kreis": "Bautzen",
+  "scope": "county",
+  "name": "Bautzen",
+  "n": 57,
+  "pop": 292608,
+  "fmt": "ics",
+  "url": "https://www.landkreis-bautzen.de/entsorgungstermine.php",
+  "publisher": "Landratsamt Bautzen, Abfallamt",
+  "configs": {
+   "abfallplus": [
+    "4dc39a5bb7e7f0b3ea3b8a15824b4a8d"
+   ]
+  }
+ },
+ {
+  "st": "SN",
+  "kreis": "Leipzig",
+  "scope": "county",
+  "name": "Leipzig",
+  "n": 30,
+  "pop": 260127,
+  "fmt": "unknown",
+  "url": "https://kell-gmbh.de/service/abfallkalender/",
+  "publisher": "KELL GmbH (Kommunalentsorgung Landkreis Leipzig)",
+  "configs": {
+   "abfallplus": [
+    "0d7a92192ba3ae914c028ac37d73e222"
+   ]
+  }
+ },
+ {
+  "st": "SN",
+  "kreis": "Sächsische Schweiz-Osterzgebirge",
+  "scope": "county",
+  "name": "Sächsische Schweiz-Osterzgebirge",
+  "n": 36,
+  "pop": 243996,
+  "fmt": "ics",
+  "url": "https://www.zaoe.de/abfallkalender/entsorgungstermine/",
+  "publisher": "Zweckverband Abfallwirtschaft Oberes Elbtal (ZAOE)",
+  "configs": {}
+ },
+ {
+  "st": "SN",
+  "kreis": "Görlitz",
+  "scope": "county",
+  "name": "Görlitz",
+  "n": 53,
+  "pop": 243958,
+  "fmt": "ics",
+  "url": "https://www.negw.de/abfallkalender-online-abfuhrtermine.html",
+  "publisher": "Landkreis Görlitz, Amt für Abfallwirtschaft (Online-Kalender betrieben durch NEG Niederschlesische Entsorgungsgesellschaft)",
+  "configs": {
+   "abfallio": [
+    "e00c91ebd40b93d6b9cb697d3f0d6a50"
+   ]
+  }
+ },
+ {
+  "st": "SN",
+  "kreis": "Meißen",
+  "scope": "county",
+  "name": "Meißen",
+  "n": 28,
+  "pop": 239221,
+  "fmt": "ics",
+  "url": "https://www.zaoe.de/abfallkalender/entsorgungstermine/abholtermine/",
+  "publisher": "Zweckverband Abfallwirtschaft Oberes Elbtal (ZAOE)",
+  "configs": {}
+ },
+ {
+  "st": "SN",
+  "kreis": "Vogtlandkreis",
+  "scope": "county",
+  "name": "Vogtlandkreis",
+  "n": 37,
+  "pop": 219100,
+  "fmt": "ics",
+  "url": "https://www.vogtlandkreis.de/Service-und-Verwaltung/Infos-und-Services/Abfallentsorgung/Abfuhrtermine/",
+  "publisher": "Landratsamt Vogtlandkreis, Amt für Abfallwirtschaft",
+  "configs": {
+   "athos": [
+    "https://awi.vogtlandkreis.de/WasteManagementVogtland"
+   ],
+   "advantic": [
+    "Advantic"
+   ]
+  }
+ },
+ {
+  "st": "SN",
+  "kreis": "Nordsachsen",
+  "scope": "county",
+  "name": "Nordsachsen",
+  "n": 1,
+  "pop": 16539,
+  "fmt": "ics",
+  "url": "https://www.kreiswerke-delitzsch.de/entsorgung/abfalltermine.html",
+  "publisher": "Kreiswerke Delitzsch GmbH (für den Landkreis Nordsachsen)",
+  "configs": {
+   "abfallio": [
+    "1d78841c5d7fc43ebe52b9dc01f6b962"
+   ],
+   "abfallplus": [
+    "2085afd95285e645e15ee9623d0c5172"
+   ]
+  }
+ },
+ {
+  "st": "SH",
+  "kreis": "Rendsburg-Eckernförde",
+  "scope": "county",
+  "name": "Rendsburg-Eckernförde",
+  "n": 164,
+  "pop": 277460,
+  "fmt": "ics",
+  "url": "https://www.awr.de/service-preise/abfuhrtermine/",
+  "publisher": "Abfallwirtschaft Rendsburg-Eckernförde GmbH (AWR)",
+  "configs": {}
+ },
+ {
+  "st": "SH",
+  "kreis": "Stormarn",
+  "scope": "county",
+  "name": "Stormarn",
+  "n": 54,
+  "pop": 240503,
+  "fmt": "ics",
+  "url": "https://www.awsh.de/service/abfuhrtermine/",
+  "publisher": "Abfallwirtschaft Südholstein GmbH (AWSH)",
+  "configs": {}
+ },
+ {
+  "st": "SH",
+  "kreis": "Herzogtum Lauenburg",
+  "scope": "county",
+  "name": "Herzogtum Lauenburg",
+  "n": 131,
+  "pop": 204622,
+  "fmt": "ics",
+  "url": "https://www.awsh.de/service/abfuhrtermine/",
+  "publisher": "Abfallwirtschaft Südholstein GmbH (AWSH)",
+  "configs": {}
+ },
+ {
+  "st": "SH",
+  "kreis": "Schleswig-Flensburg",
+  "scope": "county",
+  "name": "Schleswig-Flensburg",
+  "n": 123,
+  "pop": 205472,
+  "fmt": "ics",
+  "url": "https://www.asf-online.de/abfuhrtermine/",
+  "publisher": "Abfallwirtschaft Schleswig-Flensburg GmbH (ASF)",
+  "configs": {}
+ },
+ {
+  "st": "SH",
+  "kreis": "Ostholstein",
+  "scope": "county",
+  "name": "Ostholstein",
+  "n": 36,
+  "pop": 201472,
+  "fmt": "ics",
+  "url": "https://www.zvo.com/abfuhrkalender",
+  "publisher": "Zweckverband Ostholstein (ZVO Entsorgung)",
+  "configs": {}
+ },
+ {
+  "st": "SH",
+  "kreis": "Segeberg",
+  "scope": "county",
+  "name": "Segeberg",
+  "n": 94,
+  "pop": 200718,
+  "fmt": "ics",
+  "url": "https://www.wzv.de/entsorgung/abfallkalender",
+  "publisher": "Wege-Zweckverband der Gemeinden des Kreises Segeberg (WZV)",
+  "configs": {
+   "ctrace": [
+    "web.c-trace.de/segebergwzv-abfallkalender"
+   ]
+  }
+ },
+ {
+  "st": "SH",
+  "kreis": "Nordfriesland",
+  "scope": "county",
+  "name": "Nordfriesland",
+  "n": 132,
+  "pop": 169931,
+  "fmt": "ics",
+  "url": "https://www.awnf.de/service/abfuhrtermine/",
+  "publisher": "Abfallwirtschaftsgesellschaft Nordfriesland mbH (AWNF)",
+  "configs": {
+   "abfallplus": [
+    "4b9e7358b3bccd27557591727aa0a0c0"
+   ]
+  }
+ },
+ {
+  "st": "SH",
+  "kreis": "Dithmarschen",
+  "scope": "county",
+  "name": "Dithmarschen",
+  "n": 115,
+  "pop": 133275,
+  "fmt": "ics",
+  "url": "https://www.awd-online.de/abfuhrtermine/",
+  "publisher": "Abfallwirtschaft Dithmarschen GmbH (AWD)",
+  "configs": {}
+ },
+ {
+  "st": "SH",
+  "kreis": "Plön",
+  "scope": "county",
+  "name": "Plön",
+  "n": 85,
+  "pop": 130609,
+  "fmt": "ics",
+  "url": "https://www.kreis-ploen.de/B%C3%BCrgerservice/Termine-Abfallentsorgung/",
+  "publisher": "Kreis Plön, Abfallwirtschaft",
+  "configs": {
+   "advantic": [
+    "Abfallmodul",
+    "Advantic",
+    "abfallmodul"
+   ]
+  }
+ },
+ {
+  "st": "SH",
+  "kreis": "Steinburg",
+  "scope": "county",
+  "name": "Steinburg",
+  "n": 110,
+  "pop": 129911,
+  "fmt": "ics",
+  "url": "https://www.steinburg.de/kreisverwaltung/informationen-der-fachaemter/amt-fuer-umweltschutz/abfallwirtschaft/abfuhrtermine/muellabfuhr.html",
+  "publisher": "Kreis Steinburg, Abfallwirtschaft",
+  "configs": {}
+ },
+ {
+  "st": "SH",
+  "kreis": "Flensburg, Stadt",
+  "scope": "county",
+  "name": "Flensburg, Stadt",
+  "n": 1,
+  "pop": 96326,
+  "fmt": "html_only",
+  "url": "https://www.tbz-flensburg.de/de/abfuhrkalender",
+  "publisher": "Technisches Betriebszentrum Flensburg (TBZ)",
+  "configs": {}
+ },
+ {
+  "st": "SH",
+  "kreis": "Neumünster, Stadt",
+  "scope": "county",
+  "name": "Neumünster, Stadt",
+  "n": 1,
+  "pop": 79809,
+  "fmt": "ics",
+  "url": "https://www.neumuenster.de/verkehr-umwelt/technisches-betriebszentrum/abfallentsorgung/abfallkalender",
+  "publisher": "Stadt Neumünster, Technisches Betriebszentrum",
+  "configs": {
+   "jumomind": [
+    "mymuell"
+   ]
+  }
+ },
+ {
+  "st": "SH",
+  "kreis": "Pinneberg",
+  "scope": "town",
+  "name": "Helgoland",
+  "n": 1,
+  "pop": 1329,
+  "fmt": "html_only",
+  "url": "https://abfall.kreis-pinneberg.de/Service+++Termine/Helgoland-Infos/Abholtermine.html",
+  "publisher": "Kreis Pinneberg, Bürgerservice Abfallwirtschaft",
+  "configs": {}
+ },
+ {
+  "st": "BB",
+  "kreis": "Potsdam-Mittelmark",
+  "scope": "county",
+  "name": "Potsdam-Mittelmark",
+  "n": 37,
+  "pop": 219896,
+  "fmt": "ics",
+  "url": "https://www.apm-niemegk.de/kundenservice/abfuhrtermine/",
+  "publisher": "APM Abfallwirtschaft Potsdam-Mittelmark GmbH",
+  "configs": {}
+ },
+ {
+  "st": "BB",
+  "kreis": "Oberhavel",
+  "scope": "county",
+  "name": "Oberhavel",
+  "n": 18,
+  "pop": 216978,
+  "fmt": "html_only",
+  "url": "https://www.awu-oberhavel.de/fuer-haushalte/zusatzinfos/tourenplan",
+  "publisher": "AWU Abfallwirtschafts-Union Oberhavel GmbH",
+  "configs": {}
+ },
+ {
+  "st": "BB",
+  "kreis": "Oder-Spree",
+  "scope": "county",
+  "name": "Oder-Spree",
+  "n": 37,
+  "pop": 179817,
+  "fmt": "ics",
+  "url": "https://www.kwu-entsorgung.de/?page_id=337",
+  "publisher": "KWU-Entsorgung (Landkreis Oder-Spree)",
+  "configs": {}
+ },
+ {
+  "st": "BB",
+  "kreis": "Teltow-Fläming",
+  "scope": "county",
+  "name": "Teltow-Fläming",
+  "n": 16,
+  "pop": 177688,
+  "fmt": "unknown",
+  "url": "https://www.sbazv.de/entsorgungstermine/restmuell-papier-gelbe-saecke-laubsaecke-weihnachtsbaeume/",
+  "publisher": "Südbrandenburgischer Abfallzweckverband (SBAZV)",
+  "configs": {
+   "athos": [
+    "https://fahrzeuge.sbazv.de/WasteManagementSuedbrandenburg"
+   ]
+  }
+ },
+ {
+  "st": "BB",
+  "kreis": "Havelland",
+  "scope": "county",
+  "name": "Havelland",
+  "n": 26,
+  "pop": 170834,
+  "fmt": "ics",
+  "url": "https://www.abfall-havelland.de/abfuhrtermine",
+  "publisher": "Abfallbehandlungsgesellschaft Havelland mbH",
+  "configs": {}
+ },
+ {
+  "st": "BB",
+  "kreis": "Dahme-Spreewald",
+  "scope": "county",
+  "name": "Dahme-Spreewald",
+  "n": 16,
+  "pop": 123690,
+  "fmt": "unknown",
+  "url": "https://www.sbazv.de/entsorgungstermine/restmuell-papier-gelbe-saecke-laubsaecke-weihnachtsbaeume/",
+  "publisher": "Südbrandenburgischer Abfallzweckverband (SBAZV)",
+  "configs": {
+   "athos": [
+    "https://fahrzeuge.sbazv.de/WasteManagementSuedbrandenburg"
+   ]
+  }
+ },
+ {
+  "st": "BB",
+  "kreis": "Dahme-Spreewald",
+  "scope": "town",
+  "name": "Lübben (Spreewald) / Lubin (Błota), Stadt",
+  "n": 1,
+  "pop": 14028,
+  "fmt": "ics",
+  "url": "https://www.kaev.de/Info-und-Service/Tourenplan/Tourenplan-Abfalltermine.html",
+  "publisher": "Kommunaler Abfallentsorgungsverband \"Niederlausitz\" (KAEV)",
+  "configs": {}
+ },
+ {
+  "st": "BB",
+  "kreis": "Dahme-Spreewald",
+  "scope": "town",
+  "name": "Luckau, Stadt",
+  "n": 1,
+  "pop": 9203,
+  "fmt": "ics",
+  "url": "https://www.kaev.de/Info-und-Service/Tourenplan/Tourenplan-Abfalltermine.html",
+  "publisher": "Kommunaler Abfallentsorgungsverband \"Niederlausitz\" (KAEV)",
+  "configs": {}
+ },
+ {
+  "st": "BB",
+  "kreis": "Dahme-Spreewald",
+  "scope": "town",
+  "name": "Märkische Heide/Markojska Góla",
+  "n": 1,
+  "pop": 3757,
+  "fmt": "ics",
+  "url": "https://www.kaev.de/Info-und-Service/Tourenplan/Tourenplan-Abfalltermine.html",
+  "publisher": "Kommunaler Abfallentsorgungsverband \"Niederlausitz\" (KAEV)",
+  "configs": {}
+ },
+ {
+  "st": "BB",
+  "kreis": "Dahme-Spreewald",
+  "scope": "town",
+  "name": "Heideblick",
+  "n": 1,
+  "pop": 3514,
+  "fmt": "ics",
+  "url": "https://www.kaev.de/Info-und-Service/Tourenplan/Tourenplan-Abfalltermine.html",
+  "publisher": "Kommunaler Abfallentsorgungsverband \"Niederlausitz\" (KAEV)",
+  "configs": {}
+ },
+ {
+  "st": "BB",
+  "kreis": "Dahme-Spreewald",
+  "scope": "town",
+  "name": "Golßen, Stadt",
+  "n": 1,
+  "pop": 2458,
+  "fmt": "ics",
+  "url": "https://www.kaev.de/Info-und-Service/Tourenplan/Tourenplan-Abfalltermine.html",
+  "publisher": "Kommunaler Abfallentsorgungsverband \"Niederlausitz\" (KAEV)",
+  "configs": {}
+ },
+ {
+  "st": "BB",
+  "kreis": "Dahme-Spreewald",
+  "scope": "town",
+  "name": "Schwielochsee/Gójacki Jazor",
+  "n": 1,
+  "pop": 1481,
+  "fmt": "ics",
+  "url": "https://www.kaev.de/Info-und-Service/Tourenplan/Tourenplan-Abfalltermine.html",
+  "publisher": "Kommunaler Abfallentsorgungsverband \"Niederlausitz\" (KAEV)",
+  "configs": {}
+ },
+ {
+  "st": "BB",
+  "kreis": "Dahme-Spreewald",
+  "scope": "town",
+  "name": "Lieberose, Stadt",
+  "n": 1,
+  "pop": 1330,
+  "fmt": "ics",
+  "url": "https://www.kaev.de/Info-und-Service/Tourenplan/Tourenplan-Abfalltermine.html",
+  "publisher": "Kommunaler Abfallentsorgungsverband \"Niederlausitz\" (KAEV)",
+  "configs": {}
+ },
+ {
+  "st": "BB",
+  "kreis": "Dahme-Spreewald",
+  "scope": "town",
+  "name": "Schönwald",
+  "n": 1,
+  "pop": 1226,
+  "fmt": "ics",
+  "url": "https://www.kaev.de/Info-und-Service/Tourenplan/Tourenplan-Abfalltermine.html",
+  "publisher": "Kommunaler Abfallentsorgungsverband \"Niederlausitz\" (KAEV)",
+  "configs": {}
+ },
+ {
+  "st": "BB",
+  "kreis": "Dahme-Spreewald",
+  "scope": "town",
+  "name": "Neu Zauche/Nowa Niwa",
+  "n": 1,
+  "pop": 1036,
+  "fmt": "ics",
+  "url": "https://www.kaev.de/Info-und-Service/Tourenplan/Tourenplan-Abfalltermine.html",
+  "publisher": "Kommunaler Abfallentsorgungsverband \"Niederlausitz\" (KAEV)",
+  "configs": {}
+ },
+ {
+  "st": "BB",
+  "kreis": "Dahme-Spreewald",
+  "scope": "town",
+  "name": "Straupitz (Spreewald)/Tšupc (Błota)",
+  "n": 1,
+  "pop": 916,
+  "fmt": "ics",
+  "url": "https://www.kaev.de/Info-und-Service/Tourenplan/Tourenplan-Abfalltermine.html",
+  "publisher": "Kommunaler Abfallentsorgungsverband \"Niederlausitz\" (KAEV)",
+  "configs": {}
+ },
+ {
+  "st": "BB",
+  "kreis": "Dahme-Spreewald",
+  "scope": "town",
+  "name": "Bersteland",
+  "n": 1,
+  "pop": 846,
+  "fmt": "ics",
+  "url": "https://www.kaev.de/Info-und-Service/Tourenplan/Tourenplan-Abfalltermine.html",
+  "publisher": "Kommunaler Abfallentsorgungsverband \"Niederlausitz\" (KAEV)",
+  "configs": {}
+ },
+ {
+  "st": "BB",
+  "kreis": "Dahme-Spreewald",
+  "scope": "town",
+  "name": "Byhleguhre-Byhlen/Beła Góra-Bělin",
+  "n": 1,
+  "pop": 741,
+  "fmt": "ics",
+  "url": "https://www.kaev.de/Info-und-Service/Tourenplan/Tourenplan-Abfalltermine.html",
+  "publisher": "Kommunaler Abfallentsorgungsverband \"Niederlausitz\" (KAEV)",
+  "configs": {}
+ },
+ {
+  "st": "BB",
+  "kreis": "Dahme-Spreewald",
+  "scope": "town",
+  "name": "Unterspreewald",
+  "n": 1,
+  "pop": 735,
+  "fmt": "ics",
+  "url": "https://www.kaev.de/Info-und-Service/Tourenplan/Tourenplan-Abfalltermine.html",
+  "publisher": "Kommunaler Abfallentsorgungsverband \"Niederlausitz\" (KAEV)",
+  "configs": {}
+ },
+ {
+  "st": "BB",
+  "kreis": "Dahme-Spreewald",
+  "scope": "town",
+  "name": "Kasel-Golzig",
+  "n": 1,
+  "pop": 689,
+  "fmt": "ics",
+  "url": "https://www.kaev.de/Info-und-Service/Tourenplan/Tourenplan-Abfalltermine.html",
+  "publisher": "Kommunaler Abfallentsorgungsverband \"Niederlausitz\" (KAEV)",
+  "configs": {}
+ },
+ {
+  "st": "BB",
+  "kreis": "Dahme-Spreewald",
+  "scope": "town",
+  "name": "Drahnsdorf",
+  "n": 1,
+  "pop": 687,
+  "fmt": "ics",
+  "url": "https://www.kaev.de/Info-und-Service/Tourenplan/Tourenplan-Abfalltermine.html",
+  "publisher": "Kommunaler Abfallentsorgungsverband \"Niederlausitz\" (KAEV)",
+  "configs": {}
+ },
+ {
+  "st": "BB",
+  "kreis": "Dahme-Spreewald",
+  "scope": "town",
+  "name": "Schlepzig/Słopišća",
+  "n": 1,
+  "pop": 615,
+  "fmt": "ics",
+  "url": "https://www.kaev.de/Info-und-Service/Tourenplan/Tourenplan-Abfalltermine.html",
+  "publisher": "Kommunaler Abfallentsorgungsverband \"Niederlausitz\" (KAEV)",
+  "configs": {}
+ },
+ {
+  "st": "BB",
+  "kreis": "Dahme-Spreewald",
+  "scope": "town",
+  "name": "Jamlitz",
+  "n": 1,
+  "pop": 495,
+  "fmt": "ics",
+  "url": "https://www.kaev.de/Info-und-Service/Tourenplan/Tourenplan-Abfalltermine.html",
+  "publisher": "Kommunaler Abfallentsorgungsverband \"Niederlausitz\" (KAEV)",
+  "configs": {}
+ },
+ {
+  "st": "BB",
+  "kreis": "Dahme-Spreewald",
+  "scope": "town",
+  "name": "Alt Zauche-Wußwerk/Stara Niwa-Wózwjerch",
+  "n": 1,
+  "pop": 475,
+  "fmt": "ics",
+  "url": "https://www.kaev.de/Info-und-Service/Tourenplan/Tourenplan-Abfalltermine.html",
+  "publisher": "Kommunaler Abfallentsorgungsverband \"Niederlausitz\" (KAEV)",
+  "configs": {}
+ },
+ {
+  "st": "BB",
+  "kreis": "Dahme-Spreewald",
+  "scope": "town",
+  "name": "Spreewaldheide/Błośańska Góla",
+  "n": 1,
+  "pop": 423,
+  "fmt": "ics",
+  "url": "https://www.kaev.de/Info-und-Service/Tourenplan/Tourenplan-Abfalltermine.html",
+  "publisher": "Kommunaler Abfallentsorgungsverband \"Niederlausitz\" (KAEV)",
+  "configs": {}
+ },
+ {
+  "st": "BB",
+  "kreis": "Dahme-Spreewald",
+  "scope": "town",
+  "name": "Steinreich",
+  "n": 1,
+  "pop": 421,
+  "fmt": "ics",
+  "url": "https://www.kaev.de/Info-und-Service/Tourenplan/Tourenplan-Abfalltermine.html",
+  "publisher": "Kommunaler Abfallentsorgungsverband \"Niederlausitz\" (KAEV)",
+  "configs": {}
+ },
+ {
+  "st": "BB",
+  "kreis": "Barnim",
+  "scope": "county",
+  "name": "Barnim",
+  "n": 1,
+  "pop": 1143,
+  "fmt": "ics",
+  "url": "https://kreiswerke-barnim.de/abfallentsorgung/service/entsorgungstermine/tourenplan-abfallentsorgung",
+  "publisher": "Kreiswerke Barnim GmbH",
+  "configs": {
+   "jumomind": [
+    "bdg"
+   ]
+  }
+ },
+ {
+  "st": "BB",
+  "kreis": "Oberspreewald-Lausitz",
+  "scope": "county",
+  "name": "Oberspreewald-Lausitz",
+  "n": 18,
+  "pop": 71966,
+  "fmt": "ics",
+  "url": "https://www.schwarze-elster.de/abfallentsorgung/abfuhrtermine",
+  "publisher": "Abfallentsorgungsverband Schwarze Elster (AEV)",
+  "configs": {
+   "athos": [
+    "https://athos.schwarze-elster.com/WasteManagementSchwarzeElster"
+   ]
+  }
+ },
+ {
+  "st": "BB",
+  "kreis": "Oberspreewald-Lausitz",
+  "scope": "town",
+  "name": "Lübbenau/Spreewald / Lubnjow/Błota, Stadt",
+  "n": 1,
+  "pop": 15778,
+  "fmt": "ics",
+  "url": "https://www.kaev.de/Info-und-Service/Tourenplan/Tourenplan-Abfalltermine.html",
+  "publisher": "KAEV Niederlausitz (Kommunaler Abfallentsorgungsverband Niederlausitz)",
+  "configs": {}
+ },
+ {
+  "st": "BB",
+  "kreis": "Oberspreewald-Lausitz",
+  "scope": "town",
+  "name": "Vetschau/Spreewald / Wětošow/Błota, Stadt",
+  "n": 1,
+  "pop": 7635,
+  "fmt": "ics",
+  "url": "https://www.kaev.de/Info-und-Service/Tourenplan/Tourenplan-Abfalltermine.html",
+  "publisher": "KAEV Niederlausitz (Kommunaler Abfallentsorgungsverband Niederlausitz)",
+  "configs": {}
+ },
+ {
+  "st": "BB",
+  "kreis": "Oberspreewald-Lausitz",
+  "scope": "town",
+  "name": "Calau/Kalawa, Stadt",
+  "n": 1,
+  "pop": 7626,
+  "fmt": "ics",
+  "url": "https://www.kaev.de/Info-und-Service/Tourenplan/Tourenplan-Abfalltermine.html",
+  "publisher": "KAEV Niederlausitz (Kommunaler Abfallentsorgungsverband Niederlausitz)",
+  "configs": {}
+ },
+ {
+  "st": "BB",
+  "kreis": "Oberspreewald-Lausitz",
+  "scope": "town",
+  "name": "Altdöbern",
+  "n": 1,
+  "pop": 2325,
+  "fmt": "ics",
+  "url": "https://www.kaev.de/Info-und-Service/Tourenplan/Tourenplan-Abfalltermine.html",
+  "publisher": "KAEV Niederlausitz (Kommunaler Abfallentsorgungsverband Niederlausitz)",
+  "configs": {}
+ },
+ {
+  "st": "BB",
+  "kreis": "Oberspreewald-Lausitz",
+  "scope": "town",
+  "name": "Neupetershain/Nowe Wiki",
+  "n": 1,
+  "pop": 1190,
+  "fmt": "ics",
+  "url": "https://www.kaev.de/Info-und-Service/Tourenplan/Tourenplan-Abfalltermine.html",
+  "publisher": "KAEV Niederlausitz (Kommunaler Abfallentsorgungsverband Niederlausitz)",
+  "configs": {}
+ },
+ {
+  "st": "BB",
+  "kreis": "Oberspreewald-Lausitz",
+  "scope": "town",
+  "name": "Luckaitztal",
+  "n": 1,
+  "pop": 746,
+  "fmt": "ics",
+  "url": "https://www.kaev.de/Info-und-Service/Tourenplan/Tourenplan-Abfalltermine.html",
+  "publisher": "KAEV Niederlausitz (Kommunaler Abfallentsorgungsverband Niederlausitz)",
+  "configs": {}
+ },
+ {
+  "st": "BB",
+  "kreis": "Oberspreewald-Lausitz",
+  "scope": "town",
+  "name": "Bronkow",
+  "n": 1,
+  "pop": 527,
+  "fmt": "ics",
+  "url": "https://www.kaev.de/Info-und-Service/Tourenplan/Tourenplan-Abfalltermine.html",
+  "publisher": "KAEV Niederlausitz (Kommunaler Abfallentsorgungsverband Niederlausitz)",
+  "configs": {}
+ },
+ {
+  "st": "BB",
+  "kreis": "Spree-Neiße",
+  "scope": "county",
+  "name": "Spree-Neiße",
+  "n": 28,
+  "pop": 104821,
+  "fmt": "ics",
+  "url": "https://www.eigenbetrieb-abfallwirtschaft.de/termine/abfuhrtermine.html",
+  "publisher": "Eigenbetrieb Abfallwirtschaft Landkreis Spree-Neiße",
+  "configs": {}
+ },
+ {
+  "st": "BB",
+  "kreis": "Ostprignitz-Ruppin",
+  "scope": "county",
+  "name": "Ostprignitz-Ruppin",
+  "n": 23,
+  "pop": 99152,
+  "fmt": "html_only",
+  "url": "https://www.ostprignitz-ruppin.de/Verwaltung/Dezernate/Dezernat-Bauen-Ordnung-und-Umwelt/Bau-und-Umweltamt/Abfallwirtschaft-Müllentsorgung/Tourenplan/index.php?La=1&object=tx,3039.2455.1&kat=&kuo=2&sub=0",
+  "publisher": "Landkreis Ostprignitz-Ruppin, Bau- und Umweltamt (öffentlich-rechtlicher Entsorgungsträger)",
+  "configs": {
+   "advantic": [
+    "Advantic",
+    "abfallmodul"
+   ]
+  }
+ },
+ {
+  "st": "BB",
+  "kreis": "Elbe-Elster",
+  "scope": "county",
+  "name": "Elbe-Elster",
+  "n": 32,
+  "pop": 91897,
+  "fmt": "ics",
+  "url": "https://www.schwarze-elster.de/abfallentsorgung/abfuhrtermine",
+  "publisher": "Abfallentsorgungsverband Schwarze Elster (AEV)",
+  "configs": {
+   "athos": [
+    "https://athos.schwarze-elster.com/WasteManagementSchwarzeElster"
+   ]
+  }
+ },
+ {
+  "st": "BB",
+  "kreis": "Brandenburg an der Havel, Stadt",
+  "scope": "county",
+  "name": "Brandenburg an der Havel, Stadt",
+  "n": 1,
+  "pop": 74113,
+  "fmt": "html_only",
+  "url": "https://www.stadt-brandenburg.de/leben/abfall-und-abwasser/entsorgungstermine",
+  "publisher": "Stadt Brandenburg an der Havel, Amt für Abfallwirtschaft, Bodenschutz und Grünflächen",
+  "configs": {}
+ },
+ {
+  "st": "BB",
+  "kreis": "Frankfurt (Oder), Stadt",
+  "scope": "county",
+  "name": "Frankfurt (Oder), Stadt",
+  "n": 1,
+  "pop": 57107,
+  "fmt": "ics",
+  "url": "https://fdh-ffo.de/entsorgung/abfuhrkalender/",
+  "publisher": "Frankfurter Dienstleistungsholding GmbH (Stadt Frankfurt (Oder))",
+  "configs": {
+   "abfallio": [
+    "727d02ea16b7dd4b34781c8b167d5d9f"
+   ]
+  }
+ },
+ {
+  "st": "BB",
+  "kreis": "Uckermark",
+  "scope": "county",
+  "name": "Uckermark",
+  "n": 2,
+  "pop": 974,
+  "fmt": "ics",
+  "url": "https://www.udg-uckermark.de/index.php/service/termine-tourenplaene/tourenplaene",
+  "publisher": "Uckermärkische Dienstleistungsgesellschaft mbH (UDG)",
+  "configs": {
+   "jumomind": [
+    "udg"
+   ]
+  }
+ },
+ {
+  "st": "BB",
+  "kreis": "Prignitz",
+  "scope": "county",
+  "name": "Prignitz",
+  "n": 5,
+  "pop": 2449,
+  "fmt": "ics",
+  "url": "https://www.landkreis-prignitz.de/de/wirtschaft/Abfallkalender_neu/abfallkalender.php",
+  "publisher": "Landkreis Prignitz, öffentlich-rechtlicher Entsorgungsträger",
+  "configs": {
+   "abfallio": [
+    "4e02f6d50d3e0185467ffe14fabfe174"
+   ]
+  }
+ },
+ {
+  "st": "TH",
+  "kreis": "Wartburgkreis",
+  "scope": "county",
+  "name": "Wartburgkreis",
+  "n": 30,
+  "pop": 154957,
+  "fmt": "ics",
+  "url": "https://www.azv-wak-ea.de/entsorgung/abfallkalender",
+  "publisher": "Abfallwirtschaftszweckverband Wartburgkreis – Stadt Eisenach (AZV)",
+  "configs": {}
+ },
+ {
+  "st": "TH",
+  "kreis": "Schmalkalden-Meiningen",
+  "scope": "county",
+  "name": "Schmalkalden-Meiningen",
+  "n": 38,
+  "pop": 120214,
+  "fmt": "ics",
+  "url": "https://www.schmalkalden-meiningen.hausmuell.info/",
+  "publisher": "Landkreis Schmalkalden-Meiningen (Kreiswerke Schmalkalden-Meiningen GmbH)",
+  "configs": {}
+ },
+ {
+  "st": "TH",
+  "kreis": "Ilm-Kreis",
+  "scope": "county",
+  "name": "Ilm-Kreis",
+  "n": 16,
+  "pop": 106657,
+  "fmt": "html_only",
+  "url": "https://aik.ilm-kreis.de/Abfuhrtermine/",
+  "publisher": "Abfallwirtschaftsbetrieb Ilm-Kreis (AIK)",
+  "configs": {
+   "advantic": [
+    "Abfallmodul",
+    "Advantic",
+    "advantic"
+   ]
+  }
+ },
+ {
+  "st": "TH",
+  "kreis": "Eichsfeld",
+  "scope": "county",
+  "name": "Eichsfeld",
+  "n": 56,
+  "pop": 103694,
+  "fmt": "ics",
+  "url": "https://www.eichsfeldwerke.de/de/entsorgung/entsorgungstermine",
+  "publisher": "Eichsfeldwerke GmbH (EW Entsorgung) for Landkreis Eichsfeld",
+  "configs": {}
+ },
+ {
+  "st": "TH",
+  "kreis": "Saalfeld-Rudolstadt",
+  "scope": "county",
+  "name": "Saalfeld-Rudolstadt",
+  "n": 26,
+  "pop": 100105,
+  "fmt": "ics",
+  "url": "https://www.zaso-online.de/abfuhrtermine/serviceabfrage-abfuhrtermine",
+  "publisher": "Zweckverband Abfallwirtschaft Saale-Orla (ZASO)",
+  "configs": {}
+ },
+ {
+  "st": "TH",
+  "kreis": "Gera, Stadt",
+  "scope": "county",
+  "name": "Gera, Stadt",
+  "n": 1,
+  "pop": 95608,
+  "fmt": "html_only",
+  "url": "https://www.awv-ot.de/www/awvot/abfuhrtermine/leerungstage/",
+  "publisher": "Abfallwirtschaftszweckverband Ostthüringen (AWV-OT)",
+  "configs": {}
+ },
+ {
+  "st": "TH",
+  "kreis": "Unstrut-Hainich-Kreis",
+  "scope": "county",
+  "name": "Unstrut-Hainich-Kreis",
+  "n": 25,
+  "pop": 94613,
+  "fmt": "ics",
+  "url": "https://www.abfallwirtschaft-uhk.de/tourenpläne-als-icalendar-für-das-jahr-2026",
+  "publisher": "Abfallwirtschaftsbetrieb Unstrut-Hainich-Kreis",
+  "configs": {}
+ },
+ {
+  "st": "TH",
+  "kreis": "Greiz",
+  "scope": "county",
+  "name": "Greiz",
+  "n": 42,
+  "pop": 93707,
+  "fmt": "ics",
+  "url": "https://www.awv-ot.de/www/awvot/abfuhrtermine/leerungstage/",
+  "publisher": "AbfallWirtschaftszweckVerband Ostthüringen (AWV-OT)",
+  "configs": {}
+ },
+ {
+  "st": "TH",
+  "kreis": "Altenburger Land",
+  "scope": "county",
+  "name": "Altenburger Land",
+  "n": 29,
+  "pop": 87508,
+  "fmt": "ics",
+  "url": "https://www.awb-altenburg.de/entsorgung/entsorgungskalender/",
+  "publisher": "Dienstleistungsbetrieb Abfallwirtschaft und Kreisstraßenmeisterei Landkreis Altenburger Land",
+  "configs": {
+   "awido": [
+    "awb-altenburg",
+    "bundles"
+   ]
+  }
+ },
+ {
+  "st": "TH",
+  "kreis": "Saale-Holzland-Kreis",
+  "scope": "county",
+  "name": "Saale-Holzland-Kreis",
+  "n": 91,
+  "pop": 83342,
+  "fmt": "pdf_only",
+  "url": "https://www.saaleholzlandkreis.de/de/abfallkalender.html",
+  "publisher": "Landratsamt Saale-Holzland-Kreis, Abfallwirtschaft",
+  "configs": {}
+ },
+ {
+  "st": "TH",
+  "kreis": "Weimarer Land",
+  "scope": "county",
+  "name": "Weimarer Land",
+  "n": 35,
+  "pop": 82392,
+  "fmt": "html_only",
+  "url": "https://portal.muellabfuhr-deutschland.de/weimarer-land/kalender",
+  "publisher": "Kreiswerke Weimarer Land",
+  "configs": {}
+ },
+ {
+  "st": "TH",
+  "kreis": "Nordhausen",
+  "scope": "county",
+  "name": "Nordhausen",
+  "n": 15,
+  "pop": 80762,
+  "fmt": "ics",
+  "url": "https://abfallportal-nordhausen.de/kalender",
+  "publisher": "Landkreis Nordhausen, Abfallwirtschaft",
+  "configs": {}
+ },
+ {
+  "st": "TH",
+  "kreis": "Saale-Orla-Kreis",
+  "scope": "county",
+  "name": "Saale-Orla-Kreis",
+  "n": 59,
+  "pop": 77341,
+  "fmt": "ics",
+  "url": "https://www.zaso-online.de/abfuhrtermine/serviceabfrage-abfuhrtermine",
+  "publisher": "Zweckverband Abfallwirtschaft Saale-Orla (ZASO)",
+  "configs": {}
+ },
+ {
+  "st": "TH",
+  "kreis": "Kyffhäuserkreis",
+  "scope": "county",
+  "name": "Kyffhäuserkreis",
+  "n": 28,
+  "pop": 71738,
+  "fmt": "ics",
+  "url": "https://abfall-kyffhaeuser.de/kalender/",
+  "publisher": "Landratsamt Kyffhäuserkreis, Abfallwirtschaft",
+  "configs": {}
+ },
+ {
+  "st": "TH",
+  "kreis": "Sömmerda",
+  "scope": "county",
+  "name": "Sömmerda",
+  "n": 37,
+  "pop": 67693,
+  "fmt": "ics",
+  "url": "https://portal.muellabfuhr-deutschland.de/soemmerda",
+  "publisher": "Landratsamt Sömmerda, Abfallwirtschaft",
+  "configs": {}
+ },
+ {
+  "st": "TH",
+  "kreis": "Weimar, Stadt",
+  "scope": "town",
+  "name": "Weimar, Stadt",
+  "n": 1,
+  "pop": 65954,
+  "fmt": "html_only",
+  "url": "https://ks-weimar.de/entsorgung/entsorgungsplan-fuer-abfallbehaelter/",
+  "publisher": "Kommunalservice Weimar",
+  "configs": {}
+ },
+ {
+  "st": "TH",
+  "kreis": "Hildburghausen",
+  "scope": "county",
+  "name": "Hildburghausen",
+  "n": 32,
+  "pop": 59987,
+  "fmt": "pdf_only",
+  "url": "https://www.landkreis-hildburghausen.de/?object=tx%7c2902.5&ModID=255&FID=2902.3197.1",
+  "publisher": "Landratsamt Hildburghausen, Amt für Umwelt und Abfallwirtschaft",
+  "configs": {
+   "advantic": [
+    "Advantic"
+   ]
+  }
+ },
+ {
+  "st": "TH",
+  "kreis": "Sonneberg",
+  "scope": "county",
+  "name": "Sonneberg",
+  "n": 8,
+  "pop": 54964,
+  "fmt": "ics",
+  "url": "https://www.abfallwirtschaft-sonneberg.de/abfallkalender",
+  "publisher": "Abfallwirtschaft Landkreis Sonneberg",
+  "configs": {}
+ },
+ {
+  "st": "TH",
+  "kreis": "Suhl, Stadt",
+  "scope": "town",
+  "name": "Suhl, Stadt",
+  "n": 1,
+  "pop": 34685,
+  "fmt": "ics",
+  "url": "https://ebkds.hausmuell.info/",
+  "publisher": "Eigenbetrieb Kommunale Dienste Suhl",
+  "configs": {}
+ },
+ {
+  "st": "TH",
+  "kreis": "Gotha",
+  "scope": "county",
+  "name": "Gotha",
+  "n": 4,
+  "pop": 21308,
+  "fmt": "ics",
+  "url": "https://www.abfallservice-gotha.de/online-services/abfuhrkalender.html",
+  "publisher": "Kommunaler Abfallservice Landkreis Gotha",
+  "configs": {
+   "awido": [
+    "bundles",
+    "gotha"
+   ]
+  }
+ },
+ {
+  "st": "ST",
+  "kreis": "Saalekreis",
+  "scope": "county",
+  "name": "Saalekreis",
+  "n": 20,
+  "pop": 182451,
+  "fmt": "ics",
+  "url": "https://portal.muellabfuhr-deutschland.de/saalekreis/kalender",
+  "publisher": "Landkreis Saalekreis",
+  "configs": {}
+ },
+ {
+  "st": "ST",
+  "kreis": "Salzlandkreis",
+  "scope": "county",
+  "name": "Salzlandkreis",
+  "n": 21,
+  "pop": 180771,
+  "fmt": "ics",
+  "url": "https://www.kwb-slk.de/kalender/abfall-tourenplan---termine.html",
+  "publisher": "Kreiswirtschaftsbetrieb Salzlandkreis",
+  "configs": {}
+ },
+ {
+  "st": "ST",
+  "kreis": "Burgenlandkreis",
+  "scope": "county",
+  "name": "Burgenlandkreis",
+  "n": 33,
+  "pop": 173684,
+  "fmt": "ics",
+  "url": "https://www.awsas.de/service/abfallkalender.html",
+  "publisher": "Abfallwirtschaft Sachsen-Anhalt Süd AöR (AW SAS)",
+  "configs": {}
+ },
+ {
+  "st": "ST",
+  "kreis": "Börde",
+  "scope": "county",
+  "name": "Börde",
+  "n": 34,
+  "pop": 167924,
+  "fmt": "ics",
+  "url": "https://www.ks-boerde.de/entsorgungstermine",
+  "publisher": "Kommunalservice Landkreis Börde AöR",
+  "configs": {}
+ },
+ {
+  "st": "ST",
+  "kreis": "Anhalt-Bitterfeld",
+  "scope": "county",
+  "name": "Anhalt-Bitterfeld",
+  "n": 10,
+  "pop": 153035,
+  "fmt": "ics",
+  "url": "https://www.abikw.de/abfalltourenplan/",
+  "publisher": "Anhalt-Bitterfelder Kreiswerke GmbH",
+  "configs": {}
+ },
+ {
+  "st": "ST",
+  "kreis": "Mansfeld-Südharz",
+  "scope": "county",
+  "name": "Mansfeld-Südharz",
+  "n": 22,
+  "pop": 129029,
+  "fmt": "ics",
+  "url": "https://abfallwirtschaft-msh.de/index.php/eaw-services-hm/eaw-tup-web-hm",
+  "publisher": "Eigenbetrieb Abfallwirtschaft Mansfeld-Südharz (EAW)",
+  "configs": {}
+ },
+ {
+  "st": "ST",
+  "kreis": "Wittenberg",
+  "scope": "county",
+  "name": "Wittenberg",
+  "n": 9,
+  "pop": 121694,
+  "fmt": "ics",
+  "url": "https://www.landkreis-wittenberg.de/landkreis-wittenberg-entdecken/abfallwirtschaft/abfall-entsorgen/abfallkalender-online/",
+  "publisher": "Landkreis Wittenberg, Abfallwirtschaft",
+  "configs": {}
+ },
+ {
+  "st": "ST",
+  "kreis": "Stendal",
+  "scope": "county",
+  "name": "Stendal",
+  "n": 25,
+  "pop": 106538,
+  "fmt": "ics",
+  "url": "https://als-stendal.de/entsorgungstermine/",
+  "publisher": "ALS Dienstleistungsgesellschaft mbH (Landkreis Stendal)",
+  "configs": {}
+ },
+ {
+  "st": "ST",
+  "kreis": "Jerichower Land",
+  "scope": "county",
+  "name": "Jerichower Land",
+  "n": 8,
+  "pop": 88509,
+  "fmt": "ics",
+  "url": "https://www.lkjl.de/de/tourenplan-2026.html",
+  "publisher": "Landkreis Jerichower Land, Öffentliche Abfallwirtschaft",
+  "configs": {}
+ },
+ {
+  "st": "ST",
+  "kreis": "Altmarkkreis Salzwedel",
+  "scope": "county",
+  "name": "Altmarkkreis Salzwedel",
+  "n": 13,
+  "pop": 79980,
+  "fmt": "ics",
+  "url": "https://altmarkkreis-salzwedel.abfall-app.net/?embed=true&hideTitle=true",
+  "publisher": "Altmarkkreis Salzwedel",
+  "configs": {}
+ },
+ {
+  "st": "ST",
+  "kreis": "Dessau-Roßlau, Stadt",
+  "scope": "county",
+  "name": "Dessau-Roßlau, Stadt",
+  "n": 1,
+  "pop": 75402,
+  "fmt": "ics",
+  "url": "https://stadtpflege.dessau-rosslau.de/entsorgung/abfuhrkalender/",
+  "publisher": "Stadtpflege Dessau-Roßlau",
+  "configs": {}
+ },
+ {
+  "st": "ST",
+  "kreis": "Harz",
+  "scope": "county",
+  "name": "Harz",
+  "n": 4,
+  "pop": 23415,
+  "fmt": "ics",
+  "url": "https://www.enwi-hz.de/entsorgung/entsorgungstermine/index.html",
+  "publisher": "enwi Entsorgungswirtschaft des Landkreises Harz AöR",
+  "configs": {
+   "jumomind": [
+    "enwi"
+   ]
+  }
+ },
+ {
+  "st": "MV",
+  "kreis": "Mecklenburgische Seenplatte",
+  "scope": "county",
+  "name": "Mecklenburgische Seenplatte",
+  "n": 146,
+  "pop": 246318,
+  "fmt": "ics",
+  "url": "https://www.lk-mecklenburgische-seenplatte.de/Landkreis/Landratsamt/Fach%C3%A4mter/Umweltamt/Abfall-Abfuhrkalender-Sperrm%C3%BCll-Schadstoffmobil/",
+  "publisher": "Landkreis Mecklenburgische Seenplatte (Umweltamt, Abfallwirtschaft)",
+  "configs": {
+   "advantic": [
+    "Advantic"
+   ]
+  }
+ },
+ {
+  "st": "MV",
+  "kreis": "Vorpommern-Greifswald",
+  "scope": "county",
+  "name": "Vorpommern-Greifswald",
+  "n": 138,
+  "pop": 224956,
+  "fmt": "ics",
+  "url": "https://www.vevg-karlsburg.de/entsorgungsbereiche.html",
+  "publisher": "Ver- und Entsorgungsgesellschaft des Landkreises Vorpommern-Greifswald mbH (VEVG)",
+  "configs": {}
+ },
+ {
+  "st": "MV",
+  "kreis": "Landkreis Rostock",
+  "scope": "county",
+  "name": "Landkreis Rostock",
+  "n": 112,
+  "pop": 218721,
+  "fmt": "ics",
+  "url": "https://www.abfall-lro.de/de/abfuhrtermine/",
+  "publisher": "Eigenbetrieb Abfallwirtschaft Landkreis Rostock",
+  "configs": {}
+ },
+ {
+  "st": "MV",
+  "kreis": "Vorpommern-Rügen",
+  "scope": "county",
+  "name": "Vorpommern-Rügen",
+  "n": 101,
+  "pop": 215203,
+  "fmt": "ics",
+  "url": "https://www.lk-vr.de/Kreisverwaltung/Abfallwirtschaft/Abfuhrtermine/Abfallkalender/",
+  "publisher": "Landkreis Vorpommern-Rügen, Eigenbetrieb Abfallwirtschaft",
+  "configs": {
+   "abfallio": [
+    "1f88b9f44317044375b9bd876914957e"
+   ],
+   "advantic": [
+    "Advantic",
+    "advantic"
+   ]
+  }
+ },
+ {
+  "st": "MV",
+  "kreis": "Ludwigslust-Parchim",
+  "scope": "county",
+  "name": "Ludwigslust-Parchim",
+  "n": 142,
+  "pop": 208092,
+  "fmt": "ics",
+  "url": "https://alp-lup.de/Abfuhrtermine/Abfallkalender/",
+  "publisher": "Abfallwirtschaft Ludwigslust-Parchim AöR",
+  "configs": {
+   "advantic": [
+    "Advantic"
+   ]
+  }
+ },
+ {
+  "st": "MV",
+  "kreis": "Nordwestmecklenburg",
+  "scope": "county",
+  "name": "Nordwestmecklenburg",
+  "n": 82,
+  "pop": 113363,
+  "fmt": "ics",
+  "url": "https://www.geoport-nwm.de/de/abfuhrtermine-geoportal.html",
+  "publisher": "Abfallwirtschaftsbetrieb Landkreis Nordwestmecklenburg",
+  "configs": {}
+ },
+ {
+  "st": "MV",
+  "kreis": "Nordwestmecklenburg",
+  "scope": "town",
+  "name": "Wismar, Hansestadt",
+  "n": 1,
+  "pop": 43329,
+  "fmt": "html_only",
+  "url": "https://www.evb-wismar.de/entsorgung/abfuhrtermine",
+  "publisher": "Entsorgungs- und Verkehrsbetrieb der Hansestadt Wismar (EVB)",
+  "configs": {}
+ },
+ {
+  "st": "MV",
+  "kreis": "Schwerin",
+  "scope": "county",
+  "name": "Schwerin",
+  "n": 1,
+  "pop": 98308,
+  "fmt": "html_only",
+  "url": "https://www.sds-schwerin.de/abfall-strassenreinigung/entsorgungskalender/",
+  "publisher": "SDS - Stadtwirtschaftliche Dienstleistungen Schwerin (Eigenbetrieb der Landeshauptstadt Schwerin)",
+  "configs": {}
+ },
+ {
+  "st": "SL",
+  "kreis": "Saarlouis",
+  "scope": "county",
+  "name": "Saarlouis",
+  "n": 11,
+  "pop": 147994,
+  "fmt": "ics",
+  "url": "https://www.muellmax.de/abfallkalender/evs/res/EvsStart.php",
+  "publisher": "Entsorgungsverband Saar (EVS)",
+  "configs": {
+   "muellmax": [
+    "evs"
+   ]
+  }
+ },
+ {
+  "st": "SL",
+  "kreis": "Saarlouis",
+  "scope": "town",
+  "name": "Saarlouis, Kreisstadt",
+  "n": 1,
+  "pop": 37667,
+  "fmt": "ics",
+  "url": "https://saarlouis.mein-abfallkalender.online/index_html",
+  "publisher": "Kreisstadt Saarlouis",
+  "configs": {}
+ },
+ {
+  "st": "SL",
+  "kreis": "Saarlouis",
+  "scope": "town",
+  "name": "Lebach, Stadt",
+  "n": 1,
+  "pop": 19468,
+  "fmt": "pdf_only",
+  "url": "https://www.lebach.de/lebach/abfall/abfuhrkalender",
+  "publisher": "Lebacher Abfallzweckverband / Stadt Lebach",
+  "configs": {}
+ },
+ {
+  "st": "SL",
+  "kreis": "Regionalverband Saarbrücken",
+  "scope": "county",
+  "name": "Regionalverband Saarbrücken",
+  "n": 8,
+  "pop": 109226,
+  "fmt": "ics",
+  "url": "https://www.muellmax.de/abfallkalender/evs/res/EvsStart.php",
+  "publisher": "Entsorgungsverband Saar (EVS)",
+  "configs": {
+   "muellmax": [
+    "evs"
+   ]
+  }
+ },
+ {
+  "st": "SL",
+  "kreis": "Regionalverband Saarbrücken",
+  "scope": "town",
+  "name": "Völklingen, Stadt",
+  "n": 1,
+  "pop": 40952,
+  "fmt": "pdf_only",
+  "url": "https://www.ezv-vk.de/abfuhrtermine.php",
+  "publisher": "Entsorgungszweckverband Völklingen (EZV)",
+  "configs": {}
+ },
+ {
+  "st": "SL",
+  "kreis": "Saarpfalz-Kreis",
+  "scope": "county",
+  "name": "Saarpfalz-Kreis",
+  "n": 5,
+  "pop": 65257,
+  "fmt": "ics",
+  "url": "https://www.muellmax.de/abfallkalender/evs/res/EvsStart.php",
+  "publisher": "Entsorgungsverband Saar (EVS)",
+  "configs": {
+   "muellmax": [
+    "evs"
+   ]
+  }
+ },
+ {
+  "st": "SL",
+  "kreis": "Saarpfalz-Kreis",
+  "scope": "town",
+  "name": "Homburg, Kreisstadt",
+  "n": 1,
+  "pop": 43382,
+  "fmt": "ics",
+  "url": "https://www.homburg.de/service/abfall-und-entsorgung/abfalltermine/",
+  "publisher": "Kreisstadt Homburg",
+  "configs": {}
+ },
+ {
+  "st": "SL",
+  "kreis": "Saarpfalz-Kreis",
+  "scope": "town",
+  "name": "St. Ingbert, Stadt",
+  "n": 1,
+  "pop": 35453,
+  "fmt": "ics",
+  "url": "https://st-ingbert.mein-abfallkalender.online",
+  "publisher": "Stadt St. Ingbert (ABBS)",
+  "configs": {}
+ },
+ {
+  "st": "SL",
+  "kreis": "Neunkirchen",
+  "scope": "county",
+  "name": "Neunkirchen",
+  "n": 5,
+  "pop": 69174,
+  "fmt": "ics",
+  "url": "https://www.muellmax.de/abfallkalender/evs/res/EvsStart.php",
+  "publisher": "Entsorgungsverband Saar (EVS)",
+  "configs": {
+   "muellmax": [
+    "evs"
+   ]
+  }
+ },
+ {
+  "st": "SL",
+  "kreis": "Neunkirchen",
+  "scope": "town",
+  "name": "Neunkirchen, Kreisstadt",
+  "n": 1,
+  "pop": 47344,
+  "fmt": "pdf_only",
+  "url": "https://www.neunkirchen.de/index.php?id=abfuhrkalender",
+  "publisher": "Kreisstadt Neunkirchen",
+  "configs": {}
+ },
+ {
+  "st": "SL",
+  "kreis": "Neunkirchen",
+  "scope": "town",
+  "name": "Eppelborn",
+  "n": 1,
+  "pop": 16661,
+  "fmt": "ics",
+  "url": "https://www.afze.de/abfuhrkalender.html",
+  "publisher": "Abfallzweckverband Eppelborn (AFZE)",
+  "configs": {}
+ },
+ {
+  "st": "SL",
+  "kreis": "Merzig-Wadern",
+  "scope": "county",
+  "name": "Merzig-Wadern",
+  "n": 6,
+  "pop": 77082,
+  "fmt": "ics",
+  "url": "https://www.muellmax.de/abfallkalender/evs/res/EvsStart.php",
+  "publisher": "Entsorgungsverband Saar (EVS)",
+  "configs": {
+   "muellmax": [
+    "evs"
+   ]
+  }
+ },
+ {
+  "st": "SL",
+  "kreis": "Merzig-Wadern",
+  "scope": "town",
+  "name": "Merzig, Kreisstadt",
+  "n": 1,
+  "pop": 31697,
+  "fmt": "ics",
+  "url": "https://www.merzig.de/leben-in-merzig/abfall-und-abwasser/abfall/abfallkalender/",
+  "publisher": "Kreisstadt Merzig",
+  "configs": {}
+ },
+ {
+  "st": "SL",
+  "kreis": "St. Wendel",
+  "scope": "county",
+  "name": "St. Wendel",
+  "n": 7,
+  "pop": 62372,
+  "fmt": "ics",
+  "url": "https://www.muellmax.de/abfallkalender/evs/res/EvsStart.php",
+  "publisher": "Entsorgungsverband Saar (EVS)",
+  "configs": {
+   "muellmax": [
+    "evs"
+   ]
+  }
+ },
+ {
+  "st": "SL",
+  "kreis": "St. Wendel",
+  "scope": "town",
+  "name": "St. Wendel, Kreisstadt",
+  "n": 1,
+  "pop": 25441,
+  "fmt": "html_only",
+  "url": "https://apps.c-trace.de/web.stwendel/Abfallkalender",
+  "publisher": "Kreisstadt St. Wendel (Umweltamt)",
+  "configs": {
+   "ctrace": [
+    "apps.c-trace.de/web.stwendel"
+   ]
+  }
+ },
+ {
+  "st": "BW",
+  "kreis": "Enzkreis",
+  "scope": "county",
+  "name": "Enzkreis",
+  "n": 28,
+  "pop": 199745,
+  "fmt": "ics",
+  "url": "https://www.abfallwirtschaft-enzkreis.de/entsorgung/leerungstermine.html",
+  "publisher": "Landratsamt Enzkreis – Abfallwirtschaft",
+  "configs": {}
+ },
+ {
+  "st": "BW",
+  "kreis": "Schwäbisch Hall",
+  "scope": "county",
+  "name": "Schwäbisch Hall",
+  "n": 29,
+  "pop": 196681,
+  "fmt": "ics",
+  "url": "https://www.lrasha.de/abfall/muellkalender/abfuhrtermine",
+  "publisher": "Landratsamt Schwäbisch Hall – Abfallwirtschaft",
+  "configs": {}
+ },
+ {
+  "st": "BW",
+  "kreis": "Zollernalbkreis",
+  "scope": "county",
+  "name": "Zollernalbkreis",
+  "n": 25,
+  "pop": 193326,
+  "fmt": "ics",
+  "url": "https://www.zollernalbkreis.de/landratsamt/aemter++und+organisation/Elektronischer+Abfallkalender",
+  "publisher": "Landratsamt Zollernalbkreis – Abfallwirtschaft",
+  "configs": {
+   "abfallio": [
+    "c43bab652cbb25fa84ed515dcfeb9093"
+   ],
+   "abfallplus": [
+    "c43bab652cbb25fa84ed515dcfeb9093"
+   ]
+  }
+ },
+ {
+  "st": "BW",
+  "kreis": "Waldshut",
+  "scope": "county",
+  "name": "Waldshut",
+  "n": 32,
+  "pop": 171579,
+  "fmt": "ics",
+  "url": "https://www.abfall-landkreis-waldshut.de/de/termine/",
+  "publisher": "Eigenbetrieb Abfallwirtschaft Landkreis Waldshut",
+  "configs": {
+   "athos": [
+    "https://eigbeab.landkreis-waldshut.de/WasteManagementWaldshut"
+   ]
+  }
+ },
+ {
+  "st": "BW",
+  "kreis": "Emmendingen",
+  "scope": "county",
+  "name": "Emmendingen",
+  "n": 24,
+  "pop": 169787,
+  "fmt": "ics",
+  "url": "https://www.landkreis-emmendingen.de/verwaltung-service/abfallwirtschaft/abfallkalender",
+  "publisher": "Landratsamt Emmendingen – Abfallwirtschaft",
+  "configs": {}
+ }
+]

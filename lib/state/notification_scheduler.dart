@@ -105,6 +105,10 @@ NoticePlan composeNotices({
   for (final r in settings.reminders) {
     for (final e in events.values) {
       if (!r.matches(e)) continue;
+      // A bin day's reminder is the Abfall notice below, set in Settings; the
+      // sheet no longer offers one of its own, and one left from before would
+      // ring beside it.
+      if (feedKinds[e.calendarId] == 'abfall') continue;
       final at = e.startsAt.subtract(Duration(minutes: r.minutesBefore));
       if (!inWindow(at)) continue;
       final day =
@@ -137,9 +141,9 @@ NoticePlan composeNotices({
       final at = DateTime(
         day.year,
         day.month,
-        day.day - 1,
-        settings.abfallMinutes ~/ 60,
-        settings.abfallMinutes % 60,
+        settings.abfallSameDay ? day.day : day.day - 1,
+        settings.abfallAt ~/ 60,
+        settings.abfallAt % 60,
       );
       if (!inWindow(at)) continue;
       out.add(
@@ -149,7 +153,7 @@ NoticePlan composeNotices({
           // The vendor's own word for the bin — "Bioabfall", "Gelber Sack" —
           // because that is what is written on the calendar the family reads.
           title: L.s.noticeAbfallTitle(L.s.joinAnd(names)),
-          body: L.s.noticeAbfallBody,
+          body: settings.abfallSameDay ? L.s.noticeAbfallBodyToday : L.s.noticeAbfallBody,
           thread: 'abfall',
         ),
       );

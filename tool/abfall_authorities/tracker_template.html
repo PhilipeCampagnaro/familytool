@@ -1,0 +1,223 @@
+<title>Abfuhrkalender Atlas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+:root{
+  --ground:#F4F5F1; --surface:#FFFFFF; --ink:#1B2320; --muted:#5D6963; --faint:#8C9690; --line:#DCE0DA;
+  --accent:#D2601A; --accent-soft:#F7E4D6;
+  --ics:#2D7A57; --pdf:#C28A17; --html:#5C7590; --app:#7C6AA6; --unknown:#A7AFAA; --none:#B6463A; --todo:#E7EAE5;
+  --good-soft:#E1F0E8; --warn-soft:#F6EBD2; --bad-soft:#F5DEDA;
+  --display:"Barlow Semi Condensed","Arial Narrow",system-ui,sans-serif;
+  --body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#121715; --surface:#1A201D; --ink:#E4EAE6; --muted:#9AA69F; --faint:#6E7A73; --line:#2A332F;
+    --accent:#F0894A; --accent-soft:#3A2618;
+    --ics:#4FB183; --pdf:#DDA93C; --html:#7F9AB6; --app:#A393CC; --unknown:#6F7973; --none:#DE6B5E; --todo:#252D29;
+    --good-soft:#1C3328; --warn-soft:#352C16; --bad-soft:#3A201C;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#121715; --surface:#1A201D; --ink:#E4EAE6; --muted:#9AA69F; --faint:#6E7A73; --line:#2A332F;
+  --accent:#F0894A; --accent-soft:#3A2618;
+  --ics:#4FB183; --pdf:#DDA93C; --html:#7F9AB6; --app:#A393CC; --unknown:#6F7973; --none:#DE6B5E; --todo:#252D29;
+  --good-soft:#1C3328; --warn-soft:#352C16; --bad-soft:#3A201C;
+}
+*{box-sizing:border-box}
+body{background:var(--ground);color:var(--ink);font:15px/1.5 var(--body);padding-inline:16px;padding-block:28px 64px}
+.wrap{max-width:1120px;margin:0 auto;display:grid;gap:40px}
+h1,h2{font-family:var(--display);font-weight:700;letter-spacing:.005em;text-wrap:balance;margin:0}
+h1{font-size:clamp(30px,5vw,44px);line-height:1.05}
+h2{font-size:22px}
+.eyebrow{font:600 12px/1 var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+header{display:grid;gap:12px;border-bottom:3px solid var(--accent);padding-bottom:20px}
+header p{margin:0;color:var(--muted);max-width:68ch}
+.num{font-variant-numeric:tabular-nums}
+.figs{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.fig{background:var(--surface);padding:16px 18px;display:grid;gap:2px}
+.fig b{font:600 30px/1.1 var(--display);font-variant-numeric:tabular-nums}
+.fig span{color:var(--muted);font-size:13px}
+.bar{display:flex;height:10px;border-radius:3px;overflow:hidden;background:var(--todo)}
+.bar i{display:block;height:100%}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.dot{width:10px;height:10px;border-radius:2px;display:inline-block}
+section{display:grid;gap:14px}
+.sub{color:var(--muted);margin:0;max-width:70ch}
+.scroll{overflow-x:auto;border:1px solid var(--line);border-radius:6px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th{font:600 12px/1.2 var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap;background:var(--surface);position:sticky;top:0}
+td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+td.r,th.r{text-align:right}
+.pill{display:inline-block;font:600 11px/1 var(--body);letter-spacing:.06em;text-transform:uppercase;padding:5px 8px;border-radius:99px;white-space:nowrap}
+.p-done{background:var(--good-soft);color:var(--ics)}
+.p-running{background:var(--accent-soft);color:var(--accent)}
+.p-queued{background:var(--todo);color:var(--muted)}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:13px;white-space:nowrap}
+.statebar{min-width:160px}
+.findings{display:grid;gap:10px;margin:0;padding:0;list-style:none}
+.findings li{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:baseline;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:12px 14px}
+.k-live{background:var(--good-soft);color:var(--ics)}
+.k-gap{background:var(--bad-soft);color:var(--none)}
+.k-check{background:var(--warn-soft);color:var(--pdf)}
+.k-rule{background:var(--todo);color:var(--muted)}
+.pdfbox{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--pdf);border-radius:6px;padding:16px 18px;display:grid;gap:8px}
+.pdfbox b{font:600 26px/1.1 var(--display)}
+.filters{display:flex;flex-wrap:wrap;gap:10px}
+select,input{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:8px 10px;min-width:0}
+input{flex:1 1 220px}
+select:focus-visible,input:focus-visible,button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+a{color:var(--ink);text-decoration-color:var(--accent);text-underline-offset:3px}
+.host{font-size:13px;word-break:break-all}
+.via{display:block;color:var(--faint);font-size:12px}
+.muted{color:var(--muted)}
+.ok{color:var(--ics)} .bad{color:var(--none)}
+button{font:600 14px var(--body);color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:8px 14px;cursor:pointer;justify-self:start}
+.cover{font-size:12px;color:var(--muted)}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Aporah · Abfall coverage</div>
+    <h1>Abfuhrkalender Atlas</h1>
+    <p>The official calendar page for every German town Aporah doesn't serve yet, so the app can send each household straight to it in place of "Anfragen". Official sources only: the town's or county's own site, or a vendor page that site links to.</p>
+  </header>
+
+  <section>
+    <div class="figs" id="figs"></div>
+    <div class="bar" id="totalbar" aria-label="Researched towns by format"></div>
+    <div class="legend" id="legend"></div>
+  </section>
+
+  <section>
+    <h2>By state</h2>
+    <p class="sub">Bars are weighted by population. In most states the county publishes one calendar for all its towns, so "Counties" also shows who collects: Kreis, Gemeinde or mixed.</p>
+    <div class="scroll"><table>
+      <thead><tr><th>State</th><th>Status</th><th class="r">Towns</th><th class="r">People</th><th>Counties</th><th>Pages found, by format</th><th class="r">iCal</th><th class="r">PDF only</th></tr></thead>
+      <tbody id="states"></tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>PDF only: decided, not built</h2>
+    <div class="pdfbox" id="pdfbox"></div>
+  </section>
+
+  <section>
+    <h2>Findings</h2>
+    <ul class="findings" id="findings"></ul>
+  </section>
+
+  <section>
+    <h2>Directory</h2>
+    <p class="sub">A county row covers every listed town its page serves. Towns that publish their own calendar get a row each. "Loads" means our checker fetched the page and found it talking about bins.</p>
+    <div class="filters">
+      <select id="f-state" aria-label="State"><option value="">All states</option></select>
+      <select id="f-fmt" aria-label="Format"><option value="">All formats</option></select>
+      <input id="f-q" type="search" placeholder="Search town, county, publisher or host" aria-label="Search">
+    </div>
+    <div class="muted num" id="count"></div>
+    <div class="scroll"><table>
+      <thead><tr><th>State</th><th>Covers</th><th>Publisher</th><th>Page</th><th>Format</th><th>Loads</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table></div>
+    <button id="more" hidden>Show more</button>
+  </section>
+</div>
+
+<script>
+const DATA = /*DATA*/null;
+const FMT = [
+  ['ics','iCal export','--ics'],['pdf_only','PDF only','--pdf'],['html_only','Web page only','--html'],
+  ['app_only','App only','--app'],['unknown','Unclear','--unknown'],['none','No page found','--none']];
+const FMT_LABEL = Object.fromEntries(FMT.map(f => [f[0], f[1]]));
+const nf = new Intl.NumberFormat('en');
+const ppl = n => n >= 1e6 ? (n/1e6).toFixed(n >= 1e7 ? 1 : 2) + 'M' : n >= 1e4 ? Math.round(n/1e3) + 'k' : nf.format(n);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const host = u => { try { return new URL(u).host.replace(/^www\./,''); } catch { return u; } };
+
+const S = DATA.states;
+const sum = (f) => S.reduce((n, s) => n + f(s), 0);
+const fmtSum = (key, i) => sum(s => (s.fmt[key] || [0,0])[i]);
+const allTowns = sum(s => s.towns), allPop = sum(s => s.pop), researched = sum(s => s.researched);
+const withPage = researched - fmtSum('none', 0);
+const done = S.filter(s => s.status === 'done').length;
+
+function bar(el, parts, total) {
+  el.innerHTML = parts.filter(p => p[1] > 0).map(([k, v]) => {
+    const f = FMT.find(x => x[0] === k);
+    return `<i style="width:${(v/total*100).toFixed(2)}%;background:var(${f[2]})" title="${f[1]}: ${nf.format(v)}"></i>`;
+  }).join('');
+}
+
+const R = DATA.recognised || {live: [0, 0], upload: [0, 0]};
+document.getElementById('figs').innerHTML = [
+  [nf.format(R.live[0]), `now live in the app · ${ppl(R.live[1])} people (+${nf.format(R.upload[0])} by upload)`],
+  [nf.format(allTowns), 'still unserved towns'],
+  [ppl(allPop), 'people living in them'],
+  [`${nf.format(researched)}`, `towns researched · ${done} of ${S.length} states done`],
+  [researched ? Math.round(withPage/researched*100) + '%' : '–', 'of researched towns have an official page'],
+  [researched ? Math.round(fmtSum('ics',0)/researched*100) + '%' : '–', 'offer an iCal export'],
+].map(([b, s]) => `<div class="fig"><b class="num">${b}</b><span>${s}</span></div>`).join('');
+
+bar(document.getElementById('totalbar'), FMT.map(f => [f[0], fmtSum(f[0], 0)]), allTowns);
+document.getElementById('legend').innerHTML = FMT.map(f => `<span><i class="dot" style="background:var(${f[2]})"></i>${f[1]}</span>`).join('')
+  + `<span><i class="dot" style="background:var(--todo);outline:1px solid var(--line)"></i>Not researched yet</span>`;
+
+document.getElementById('states').innerHTML = S.map(s => {
+  const lv = s.levels, lvTxt = ['kreis','gemeinde','mixed','unknown'].filter(k => lv[k]).map(k => `${lv[k]} ${k === 'kreis' ? 'Kreis' : k === 'gemeinde' ? 'Gemeinde' : k}`).join(' · ');
+  const got = s.researched;
+  const pct = k => got ? Math.round((s.fmt[k]||[0])[0]/got*100) + '%' : '–';
+  return `<tr>
+    <td><b>${esc(s.name)}</b></td>
+    <td><span class="pill p-${s.status}">${s.status}</span>${s.status !== 'done' && s.st !== 'NW' ? `<div class="cover num">${s.batches[0]}/${s.batches[1]} batches</div>` : ''}</td>
+    <td class="r num">${nf.format(s.towns)}</td>
+    <td class="r num">${ppl(s.pop)}</td>
+    <td class="num">${s.counties}${lvTxt ? `<div class="cover">${lvTxt}</div>` : ''}</td>
+    <td class="statebar"><div class="bar" data-st="${s.st}"></div></td>
+    <td class="r num">${pct('ics')}</td>
+    <td class="r num">${pct('pdf_only')}</td></tr>`;
+}).join('');
+for (const s of S) bar(document.querySelector(`.bar[data-st="${s.st}"]`), FMT.map(f => [f[0], (s.fmt[f[0]]||[0,0])[1]]), s.pop);
+
+const pdfTowns = fmtSum('pdf_only', 0), pdfPop = fmtSum('pdf_only', 1);
+document.getElementById('pdfbox').innerHTML = `
+  <div><b class="num">${nf.format(pdfTowns)} towns · ${ppl(pdfPop)} people</b></div>
+  <p class="sub">…live where the only official calendar is a PDF, ${researched ? Math.round(pdfTowns/researched*100) : 0}% of the towns researched. ${esc(DATA.findings.pdf_question)}</p>`;
+
+const KIND = {live:'Live candidate', gap:'Gap', check:'Check', rule:'Rule held'};
+document.getElementById('findings').innerHTML = DATA.findings.items.map(f =>
+  `<li><span class="pill k-${f.kind}">${esc(f.state)} · ${KIND[f.kind] || f.kind}</span><span>${esc(f.text)}</span></li>`).join('');
+
+const fs = document.getElementById('f-state'), ff = document.getElementById('f-fmt'), fq = document.getElementById('f-q');
+fs.innerHTML += S.map(s => `<option value="${s.st}">${esc(s.name)}</option>`).join('');
+ff.innerHTML += FMT.filter(f => f[0] !== 'none').map(f => `<option value="${f[0]}">${f[1]}</option>`).join('') + `<option value="none">No page found</option>`;
+let limit = 200;
+function render() {
+  const q = fq.value.trim().toLowerCase();
+  const rows = DATA.entries.filter(e => (!fs.value || e.st === fs.value)
+    && (!ff.value || (ff.value === 'none' ? !e.url : e.url && e.fmt === ff.value))
+    && (!q || [e.name, e.kreis, e.publisher, e.url].join(' ').toLowerCase().includes(q)))
+    .sort((a, b) => b.pop - a.pop);
+  document.getElementById('count').textContent = `${nf.format(rows.length)} rows · ${nf.format(rows.reduce((n, e) => n + e.n, 0))} towns · ${ppl(rows.reduce((n, e) => n + e.pop, 0))} people`;
+  document.getElementById('rows').innerHTML = rows.slice(0, limit).map(e => {
+    const f = e.url ? FMT.find(x => x[0] === e.fmt) || FMT[4] : FMT[5];
+    const chk = e.check === null ? '<span class="muted">–</span>' : e.check ? '<span class="ok">✓</span>' : `<span class="bad">✗ ${esc(e.status ?? '')}</span>`;
+    return `<tr>
+      <td>${e.st}</td>
+      <td>${e.scope === 'county' ? `<b>${esc(e.kreis)}</b><div class="cover num">county page · ${e.n} towns · ${ppl(e.pop)}</div>` : `<b>${esc(e.name)}</b><div class="cover num">${esc(e.kreis)} · ${ppl(e.pop)}</div>`}</td>
+      <td>${esc(e.publisher || '')}</td>
+      <td class="host">${e.url ? `<a href="${esc(e.url)}" target="_blank" rel="noopener">${esc(host(e.url))}</a>` : '<span class="muted">–</span>'}${e.via ? `<span class="via">linked from ${esc(host(e.via))}</span>` : ''}</td>
+      <td><span class="chip"><i class="dot" style="background:var(${f[2]})"></i>${f[1]}</span></td>
+      <td>${chk}</td></tr>`;
+  }).join('');
+  document.getElementById('more').hidden = rows.length <= limit;
+}
+[fs, ff].forEach(el => el.addEventListener('change', () => { limit = 200; render(); }));
+fq.addEventListener('input', () => { limit = 200; render(); });
+document.getElementById('more').addEventListener('click', () => { limit += 400; render(); });
+render();
+</script>

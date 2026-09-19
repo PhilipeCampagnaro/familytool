@@ -28,6 +28,9 @@ final class CalendarPageBrowser: NSObject {
   private weak var navigation: UINavigationController?
   private weak var webView: WKWebView?
   private var labels: [String: String] = [:]
+  /// Whether a PDF plan counts as the calendar — `pdfUploadAvailable` on the
+  /// Dart side, off until the server can read one.
+  private var acceptPdf = false
   private var observations: [NSKeyValueObservation] = []
   private var backItem: UIBarButtonItem?
   private var forwardItem: UIBarButtonItem?
@@ -47,6 +50,7 @@ final class CalendarPageBrowser: NSObject {
       return
     }
     labels = arguments["labels"] as? [String: String] ?? [:]
+    acceptPdf = arguments["acceptPdf"] as? Bool ?? false
     present(url, result)
   }
 
@@ -139,12 +143,29 @@ final class CalendarPageBrowser: NSObject {
     return Self.calendarExtensions.contains((name as NSString).pathExtension.lowercased())
   }
 
-  /// A finished download: handed back if it opens like an iCalendar file,
-  /// otherwise thrown away with a word to the household, who stay on the page.
+  /// A printed plan. WebKit would happily show it inline, which is exactly
+  /// what must not happen once it is wanted: shown, it is a picture of dates;
+  /// downloaded, it is a file the server can read.
+  private func isPdf(_ response: URLResponse) -> Bool {
+    guard acceptPdf else { return false }
+    if response.mimeType?.lowercased() == "application/pdf" { return true }
+    let name = response.suggestedFilename ?? response.url?.lastPathComponent ?? ""
+    return (name as NSString).pathExtension.lowercased() == "pdf"
+  }
+
+  /// A finished download: handed back if it opens like an iCalendar file (or,
+  /// with [acceptPdf], like a PDF), otherwise thrown away with a word to the
+  /// household, who stay on the page.
   private func examine(_ file: URL, name: String) {
     let head = (try? FileHandle(forReadingFrom: file)).flatMap { handle -> Data? in
       defer { try? handle.close() }
       return try? handle.read(upToCount: 4096)
+    }
+    if acceptPdf, let head, head.starts(with: Array("%PDF".utf8)) {
+      let base = (name as NSString).deletingPathExtension
+      navigation?.dismiss(animated: true)
+      finish(["path": file.path, "name": "\(base.isEmpty ? "Abfallkalender" : base).pdf", "isImage": false])
+      return
     }
     let text = head.map { String(decoding: $0, as: UTF8.self).uppercased() } ?? ""
     guard text.contains("BEGIN:VCALENDAR") else {
@@ -208,7 +229,9 @@ extension CalendarPageBrowser: WKNavigationDelegate {
   ) {
     // A calendar, or anything the web view could not show — an octet-stream
     // with a `.ics` name, say. Whatever it is gets examined once it is here.
-    if isCalendar(navigationResponse.response) || !navigationResponse.canShowMIMEType {
+    if isCalendar(navigationResponse.response) || isPdf(navigationResponse.response)
+      || !navigationResponse.canShowMIMEType
+    {
       decisionHandler(.download)
     } else {
       decisionHandler(.allow)

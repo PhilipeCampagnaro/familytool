@@ -109,7 +109,21 @@ class NotificationSettings {
   /// The evening before a waste pickup. Pickup is at six in the morning, so the
   /// only reminder that can still get a bin to the kerb is the night before.
   final bool abfall;
+
+  /// The hour on the evening before — the default, and the one that can still
+  /// get a bin to the kerb for a six o'clock pickup.
   final int abfallMinutes;
+
+  /// Ring on the morning of the pickup instead, at [abfallMorningMinutes]. For
+  /// a street collected at noon, or a household whose bins go out at dawn.
+  ///
+  /// **Each day keeps its own hour**, rather than one hour moved between them:
+  /// 19:00 carried over to the morning of the pickup is after the lorry.
+  final bool abfallSameDay;
+  final int abfallMorningMinutes;
+
+  /// The hour the bin notice rings at, on whichever day [abfallSameDay] picks.
+  int get abfallAt => abfallSameDay ? abfallMorningMinutes : abfallMinutes;
 
   /// A to-do that names an hour. Setting one is the user asking to be reminded.
   final bool taskTimes;
@@ -144,6 +158,8 @@ class NotificationSettings {
     this.briefMinutes = 7 * 60,
     this.abfall = true,
     this.abfallMinutes = 19 * 60,
+    this.abfallSameDay = false,
+    this.abfallMorningMinutes = 6 * 60,
     this.taskTimes = true,
     this.budgets = true,
     this.announcedBudgets = const {},
@@ -164,6 +180,8 @@ class NotificationSettings {
     int? briefMinutes,
     bool? abfall,
     int? abfallMinutes,
+    bool? abfallSameDay,
+    int? abfallMorningMinutes,
     bool? taskTimes,
     bool? budgets,
     Map<String, DateTime>? announcedBudgets,
@@ -175,6 +193,8 @@ class NotificationSettings {
     briefMinutes: briefMinutes ?? this.briefMinutes,
     abfall: abfall ?? this.abfall,
     abfallMinutes: abfallMinutes ?? this.abfallMinutes,
+    abfallSameDay: abfallSameDay ?? this.abfallSameDay,
+    abfallMorningMinutes: abfallMorningMinutes ?? this.abfallMorningMinutes,
     taskTimes: taskTimes ?? this.taskTimes,
     budgets: budgets ?? this.budgets,
     announcedBudgets: announcedBudgets ?? this.announcedBudgets,
@@ -186,6 +206,8 @@ const _kBrief = 'notify_brief';
 const _kBriefMinutes = 'notify_brief_minutes';
 const _kAbfall = 'notify_abfall';
 const _kAbfallMinutes = 'notify_abfall_minutes';
+const _kAbfallSameDay = 'notify_abfall_same_day';
+const _kAbfallMorningMinutes = 'notify_abfall_morning_minutes';
 const _kTaskTimes = 'notify_task_times';
 const _kBudgets = 'notify_budgets';
 const _kAnnouncedBudgets = 'notify_budgets_announced';
@@ -216,6 +238,8 @@ class NotificationSettingsNotifier extends StateNotifier<NotificationSettings> {
         briefMinutes: prefs.getInt(_kBriefMinutes),
         abfall: prefs.getBool(_kAbfall),
         abfallMinutes: prefs.getInt(_kAbfallMinutes),
+        abfallSameDay: prefs.getBool(_kAbfallSameDay),
+        abfallMorningMinutes: prefs.getInt(_kAbfallMorningMinutes),
         taskTimes: prefs.getBool(_kTaskTimes),
         budgets: prefs.getBool(_kBudgets),
         announcedBudgets: _decodeAnnounced(prefs.getString(_kAnnouncedBudgets)),
@@ -239,6 +263,8 @@ class NotificationSettingsNotifier extends StateNotifier<NotificationSettings> {
       await prefs.setInt(_kBriefMinutes, state.briefMinutes);
       await prefs.setBool(_kAbfall, state.abfall);
       await prefs.setInt(_kAbfallMinutes, state.abfallMinutes);
+      await prefs.setBool(_kAbfallSameDay, state.abfallSameDay);
+      await prefs.setInt(_kAbfallMorningMinutes, state.abfallMorningMinutes);
       await prefs.setBool(_kTaskTimes, state.taskTimes);
       await prefs.setBool(_kBudgets, state.budgets);
       await prefs.setString(
@@ -296,7 +322,17 @@ class NotificationSettingsNotifier extends StateNotifier<NotificationSettings> {
 
   void setAbfall(bool value) => _set(state.copyWith(abfall: value), asks: value);
 
-  void setAbfallMinutes(int minutes) => _set(state.copyWith(abfallMinutes: minutes));
+  /// On, on the day given. What a bin day's own reminder row writes: one tap
+  /// that both switches the notice on and says which day.
+  void setAbfallDay({required bool sameDay}) =>
+      _set(state.copyWith(abfall: true, abfallSameDay: sameDay), asks: true);
+
+  /// The hour for whichever day is picked — each day keeps its own.
+  void setAbfallMinutes(int minutes) => _set(
+    state.abfallSameDay
+        ? state.copyWith(abfallMorningMinutes: minutes)
+        : state.copyWith(abfallMinutes: minutes),
+  );
 
   void setTaskTimes(bool value) => _set(state.copyWith(taskTimes: value), asks: value);
 

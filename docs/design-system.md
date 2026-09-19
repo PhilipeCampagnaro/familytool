@@ -362,6 +362,14 @@ them down the same path as a control, so they come out of the flat font. Do not 
 `batteryCharging`, `gasPump`, `headphones`, `iceCream` and `recycle` all have rounded-rect
 under-layers too, and in each of those the rectangle is a screen, a door, a battery body.
 
+## `BinFileActions` (`bin_file_actions.dart`) — the one layout for a waste calendar that is a file
+
+Every town whose bins come in as a file shows exactly this, wherever it is asked: the Kalender
+sheet's Abfall step, the upload sheet, and the onboarding's address step. Numbered steps, the blue
+"Abfallkalender der Stadt öffnen", and one upload button under it. **One upload button for every
+kind of file** — a PDF plan joins it as a new label, never as a third button — and a town the app
+reads live never shows it at all. Don't draw a second version of it with settings rows.
+
 ## `GlyphTile` (`glyph_tile.dart`) — the square a settings glyph sits in
 
 Reserves the footprint and centres an `AppIcon` in it. Nothing else: no fill, no rim, no shadow.

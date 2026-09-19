@@ -1,0 +1,25 @@
+{
+  "id": "c957ac1d1548",
+  "labeller": "a",
+  "calendar": true,
+  "year": 2026,
+  "covers": "2025-12-22..2027-01-03",
+  "district": "Bruchmühlbach",
+  "codes": ["Bruchmühlbach (Mo.)"],
+  "legend": {"R": "rest", "S": "gelb", "B": "bio", "P": "papier", "Termine Umweltmobil": "schadstoff (inferred)"},
+  "window": ["2026-01", "2026-02", "2026-03", "2026-09"],
+  "bins": {
+    "rest": ["2026-01-05", "2026-01-19", "2026-02-02", "2026-02-16", "2026-03-02", "2026-03-16", "2026-03-30", "2026-09-14", "2026-09-28"],
+    "gelb": ["2026-01-05", "2026-01-19", "2026-02-02", "2026-02-16", "2026-03-02", "2026-03-16", "2026-03-30", "2026-09-14", "2026-09-28"],
+    "bio": ["2026-01-12", "2026-01-26", "2026-02-09", "2026-02-23", "2026-03-09", "2026-03-23", "2026-09-07", "2026-09-21"],
+    "papier": ["2026-01-12", "2026-02-09", "2026-03-09", "2026-09-21"],
+    "schadstoff": ["2026-01-30", "2026-02-07", "2026-02-27", "2026-03-27"]
+  },
+  "unsure": [
+    "2026-01-30 schadstoff: date read clearly under 'Termine Umweltmobil', but the calendar never says the Umweltmobil takes Schadstoffe; classification inferred",
+    "2026-02-07 schadstoff: same Umweltmobil classification caveat (Saturday stop, Waldstraße Sportplatz)",
+    "2026-02-27 schadstoff: same Umweltmobil classification caveat",
+    "2026-03-27 schadstoff: same Umweltmobil classification caveat"
+  ],
+  "notes": "Table of villages x calendar weeks; each cell gives the bins for that week, collected on the village's weekday (Bruchmühlbach = Monday), so dates are the Monday of each KW. KW1 Monday is 2025-12-29 and KW36 Monday is 2026-08-31, both outside the window; KW14 Monday 2026-03-30 and KW40 Monday 2026-09-28 are inside. No shifted holiday dates are printed (only a general Feiertag rule)."
+}

@@ -70,7 +70,7 @@ task:
   Mo/Do tracker reports five failures a week of a perfect record.
 - **Localization: German, English, Portuguese and Spanish, and every user-facing string goes
   through [lib/l10n/](lib/l10n/).** `AppStrings` declares them and `StringsDe`/`StringsEn`/
-  `StringsPt`/`StringsEs` answer them — 965 members each — and `L.s.someString` reads the live one.
+  `StringsPt`/`StringsEs` answer them — 983 members each — and `L.s.someString` reads the live one.
   Because `AppStrings` is abstract, a string you add to one language and forget in another **fails
   to compile** — that is the point, so don't work around it with a map or a `??`. Portuguese is
   **Brazilian (pt-BR)** and Spanish is peninsular (es-ES), matched on bare language codes, so a
@@ -207,9 +207,16 @@ task:
   its terms reserve the dates for non-commercial use or its `robots.txt` disallows our path — so its
   towns resolve to "Nur als Datei" and the household is sent to the `ical` tile's upload, whose
   file lands on the one connection the plan does not count (`abfall:datei`); check a new vendor's
-  terms and `robots.txt` before it ships. **A town nobody serves is not a dead end**: the
-  Müllabfuhr row offers "Anfragen", which files the town in `public.abfall_requests` — the queue
-  that decides which vendor comes next — and the coverage artifact linked from
+  terms and `robots.txt` before it ships. **A town nobody serves is not a dead end either**: it
+  resolves the same way, `uploadOnly` with `atlas: true`, and carries the town's official calendar
+  page and what that page hands out (`format`), from the Abfuhrkalender Atlas compiled into
+  `abfall/town_pages.ts` by `tool/abfall_authorities/gen_town_pages.py`. Those towns are matched
+  by `townKey`, never by the loose `townMatches`: with no street list behind a name, "Buch" must not
+  stand for "Buch a.Erlbach". "Anfragen" and its queue are gone (`abfall_requests` keeps its old
+  rows). **A PDF plan is taken only while `pdfUploadAvailable`** in
+  [lib/services/calendar_page_browser.dart](lib/services/calendar_page_browser.dart) is true —
+  off until the parser behind `calendar-link`'s `pdf` field is deployed; a PDF holding several
+  Bezirke asks which one on its own step. The coverage artifact linked from
   [docs/production-plan.md](docs/production-plan.md) is the census of what is served today.
 - **Weather is per event, comes from the DWD via Bright Sky, and is decoration.** `weatherProvider`
   ([lib/state/weather_state.dart](lib/state/weather_state.dart)) resolves each appointment's place
@@ -265,8 +272,10 @@ task:
   **A list's "Teilen" goes straight to the system share sheet** (`_shareListOut` in
   [lib/screens/list_screen.dart](lib/screens/list_screen.dart), `aporah/share`): it mints a
   seven-day invitation, revokes it again if the sheet was closed unsent, and the guests and open
-  invitations live in the list's edit sheet under "Geteilt mit". Boxes and tasks still use
-  [lib/widgets/share_sheet.dart](lib/widgets/share_sheet.dart). Sharing has no plan limit. **A share always may edit and the
+  invitations live in the list's edit sheet under "Geteilt mit". Boxes still use
+  [lib/widgets/share_sheet.dart](lib/widgets/share_sheet.dart); **a to-do or a tracker has no
+  Teilen at all** — `shareable_kind` still names `task` for the rows already out there, but no
+  screen offers it. Sharing has no plan limit. **A share always may edit and the
   sheet does not ask** — `can_edit` survives on the rows and in the policies, defaulted `true`,
   but read-only was a mode the database enforced and no screen ever drew, so the guest saw every
   control and had every tap refused. Bringing it back means building the read-only UI, not

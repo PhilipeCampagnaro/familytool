@@ -153,12 +153,21 @@ class CalendarConnectionsNotifier extends StateNotifier<CalendarConnectionsState
   ///
   /// [ics] is the same question for a picked file: is this a calendar, what
   /// does it call itself, and how far does it run.
-  Future<({String? name, int events, DateTime? coversTo})> checkCalendarLink({
+  Future<({String? name, int events, DateTime? coversTo, List<PdfDistrict> choices})> checkCalendarLink({
     required CalendarProvider provider,
     String? url,
     String? ics,
+    String? pdf,
+    String? fileName,
     String? abfallTown,
-  }) => _repo.checkCalendarLink(provider: provider, url: url, ics: ics, abfallTown: abfallTown);
+  }) => _repo.checkCalendarLink(
+    provider: provider,
+    url: url,
+    ics: ics,
+    pdf: pdf,
+    fileName: fileName,
+    abfallTown: abfallTown,
+  );
 
   /// Adds one pasted calendar — to a new account, or to one that exists.
   ///
@@ -170,6 +179,8 @@ class CalendarConnectionsNotifier extends StateNotifier<CalendarConnectionsState
     required String name,
     String? url,
     String? ics,
+    String? pdf,
+    String? choice,
     String? fileName,
     String? account,
     String? abfallTown,
@@ -178,6 +189,8 @@ class CalendarConnectionsNotifier extends StateNotifier<CalendarConnectionsState
       provider: provider,
       url: url,
       ics: ics,
+      pdf: pdf,
+      choice: choice,
       fileName: fileName,
       name: name,
       account: account,

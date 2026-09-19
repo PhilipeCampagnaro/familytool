@@ -1,0 +1,21 @@
+{
+  "id": "316fe2d35f06",
+  "labeller": "a",
+  "calendar": true,
+  "year": 2026,
+  "covers": "2026-01-01..2026-12-31",
+  "district": "Abfuhrbezirk 1 + Schadstoffmobil A",
+  "codes": ["1", "A"],
+  "legend": {"Restabfall 14-tägige Abfuhr (grey column)": "rest", "Bio-Tonne (brown column)": "bio", "Blaue Tonne (blue column)": "papier", "Gelbe Tonne/Gelber Sack (yellow column)": "gelb", "Weihnachtsbäume / Grünschnitt (olive column)": "gruen", "Schadstoffe A/B (red column)": "schadstoff"},
+  "window": ["2026-01", "2026-02", "2026-03", "2026-09"],
+  "bins": {
+    "rest": ["2026-01-08", "2026-01-22", "2026-02-05", "2026-02-19", "2026-03-05", "2026-03-19", "2026-09-03", "2026-09-17"],
+    "bio": ["2026-01-12", "2026-01-26", "2026-02-09", "2026-02-23", "2026-03-09", "2026-03-23", "2026-09-07", "2026-09-14", "2026-09-21", "2026-09-28"],
+    "papier": ["2026-01-07", "2026-01-21", "2026-02-04", "2026-02-18", "2026-03-04", "2026-03-18", "2026-09-02", "2026-09-16", "2026-09-30"],
+    "gelb": ["2026-01-13", "2026-01-27", "2026-02-10", "2026-02-24", "2026-03-10", "2026-03-24", "2026-09-08", "2026-09-22"],
+    "gruen": ["2026-01-09", "2026-01-19", "2026-03-16"],
+    "schadstoff": ["2026-01-22", "2026-02-19", "2026-03-19", "2026-09-17"]
+  },
+  "unsure": [],
+  "notes": "Calendar is PDF pages 1 (Jan-Jun) and 16 (Jul-Dec); cells hold district numbers (1-4, '1+4', 'Alle') per bin column, Schadstoffmobil uses separate stop codes A/B (A = Wesseling/Urfeld stops, p.7). rest = 14-day grey column only; the pink 'Restabfall wöchentlich' column (optional weekly service, in-between weeks: 1 = 2026-01-02, 01-15, 01-29, 02-12, 02-26, 03-12, 03-26, 09-10, 09-24) is NOT included. gruen = Weihnachtsbäume (Jan 9 '1+4', Jan 19 'Alle') and Grünschnitt (Mar 16); Grünschnitt is on request only; no gruen column in Sep. Every date cross-checked against the image of the text version on PDF pages 17-18 (read as rendered images, not the text layer)."
+}

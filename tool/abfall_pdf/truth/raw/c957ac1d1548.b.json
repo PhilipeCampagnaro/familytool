@@ -1,0 +1,24 @@
+{
+  "id": "c957ac1d1548",
+  "labeller": "b",
+  "calendar": true,
+  "year": 2026,
+  "covers": "2026-01-01..2026-12-31",
+  "district": "Bruchmühlbach",
+  "codes": ["RS", "BP", "B"],
+  "legend": {
+    "R (in code RS)": "rest",
+    "S (in code RS)": "gelb",
+    "B (in code BP or alone)": "bio",
+    "P (in code BP)": "papier"
+  },
+  "window": ["2026-01", "2026-02", "2026-03", "2026-09"],
+  "bins": {
+    "rest": ["2026-01-05", "2026-01-19", "2026-02-02", "2026-02-16", "2026-03-02", "2026-03-16", "2026-03-30", "2026-09-14", "2026-09-28"],
+    "gelb": ["2026-01-05", "2026-01-19", "2026-02-02", "2026-02-16", "2026-03-02", "2026-03-16", "2026-03-30", "2026-09-14", "2026-09-28"],
+    "bio": ["2026-01-12", "2026-01-26", "2026-02-09", "2026-02-23", "2026-03-09", "2026-03-23", "2026-09-07", "2026-09-21"],
+    "papier": ["2026-01-12", "2026-02-09", "2026-03-09", "2026-09-21"]
+  },
+  "unsure": [],
+  "notes": "Table is a wall calendar with weekday rows (Mo-So) and week columns grouped by month; each village has one weekday row (Bruchmühlbach = Mo.) and a two-letter code per week meaning two bins collected same day (RS = Restabfall+Gelber Sack, BP = Bioabfall+Papier) or a single letter for a lone pickup (B = Bioabfall only). Legend only spells out single letters R/S/B/P; combined codes read as read literally as their two component letters, both confirmed by the printed legend order and by cross-checking the repeating RS,BP,RS,B 4-week cycle across two independent page crops. Picked first village row 'Bruchmühlbach' per protocol (first name in the village list). Dates grouped visually under a month header sometimes belong to the tail of the previous month (e.g. the '30' column shown under APRIL is actually 2026-03-30, a Monday); verified against the given 2026-01-01=Thursday anchor for every date used."
+}

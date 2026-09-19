@@ -180,14 +180,21 @@ bool _looksLikeImage(String name) {
 /// calendar anywhere on the device once the upload has been sealed server-side,
 /// and nothing in the app ever wants to read it again.
 Future<String?> readPickedText(PickedFile picked) async {
+  final bytes = await readPickedBytes(picked);
+  if (bytes == null) return null;
+  try {
+    return utf8.decode(bytes);
+  } on FormatException {
+    return latin1.decode(bytes, allowInvalid: true);
+  }
+}
+
+/// [readPickedText] for a file that is not text — a PDF plan — with the same
+/// promise: the picker's copy is gone once this returns.
+Future<Uint8List?> readPickedBytes(PickedFile picked) async {
   final file = File(picked.path);
   try {
-    final bytes = await file.readAsBytes();
-    try {
-      return utf8.decode(bytes);
-    } on FormatException {
-      return latin1.decode(bytes, allowInvalid: true);
-    }
+    return await file.readAsBytes();
   } on FileSystemException {
     return null;
   } finally {
@@ -195,7 +202,12 @@ Future<String?> readPickedText(PickedFile picked) async {
       await file.delete();
     } on FileSystemException {
       // A file we could not delete is a stray copy in our own sandbox, not a
-      // failed upload — the caller has the text and must not be told otherwise.
+      // failed upload — the caller has the bytes and must not be told otherwise.
     }
   }
 }
+
+/// Whether [bytes] are a PDF, by the signature every PDF opens with rather than
+/// by a file name a town's server made up.
+bool isPdfBytes(List<int> bytes) =>
+    bytes.length > 4 && bytes[0] == 0x25 && bytes[1] == 0x50 && bytes[2] == 0x44 && bytes[3] == 0x46;

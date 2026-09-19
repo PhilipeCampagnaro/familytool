@@ -1,0 +1,1074 @@
+[
+ [
+  {
+   "kreis": "Rhein-Sieg-Kreis",
+   "kreis_key": "05382",
+   "towns": [
+    {
+     "ars": "053820004004",
+     "name": "Alfter",
+     "plz": "53347",
+     "population": 23719
+    },
+    {
+     "ars": "053820008008",
+     "name": "Bad Honnef, Stadt",
+     "plz": "53604",
+     "population": 25061
+    },
+    {
+     "ars": "053820012012",
+     "name": "Bornheim, Stadt",
+     "plz": "53332",
+     "population": 48203
+    },
+    {
+     "ars": "053820016016",
+     "name": "Eitorf",
+     "plz": "53783",
+     "population": 19172
+    },
+    {
+     "ars": "053820020020",
+     "name": "Hennef (Sieg), Stadt",
+     "plz": "53773",
+     "population": 48188
+    },
+    {
+     "ars": "053820024024",
+     "name": "Königswinter, Stadt",
+     "plz": "53639",
+     "population": 40574
+    },
+    {
+     "ars": "053820028028",
+     "name": "Lohmar, Stadt",
+     "plz": "53797",
+     "population": 30992
+    },
+    {
+     "ars": "053820032032",
+     "name": "Meckenheim, Stadt",
+     "plz": "53340",
+     "population": 24925
+    },
+    {
+     "ars": "053820036036",
+     "name": "Much",
+     "plz": "53804",
+     "population": 14561
+    },
+    {
+     "ars": "053820040040",
+     "name": "Neunkirchen-Seelscheid",
+     "plz": "53819",
+     "population": 20283
+    },
+    {
+     "ars": "053820044044",
+     "name": "Niederkassel, Stadt",
+     "plz": "53859",
+     "population": 38485
+    },
+    {
+     "ars": "053820048048",
+     "name": "Rheinbach, Stadt",
+     "plz": "53359",
+     "population": 26918
+    },
+    {
+     "ars": "053820052052",
+     "name": "Ruppichteroth",
+     "plz": "53809",
+     "population": 10887
+    },
+    {
+     "ars": "053820056056",
+     "name": "Sankt Augustin, Stadt",
+     "plz": "53757",
+     "population": 56521
+    },
+    {
+     "ars": "053820060060",
+     "name": "Siegburg, Stadt",
+     "plz": "53721",
+     "population": 42445
+    },
+    {
+     "ars": "053820064064",
+     "name": "Swisttal",
+     "plz": "53913",
+     "population": 18580
+    },
+    {
+     "ars": "053820068068",
+     "name": "Troisdorf, Stadt",
+     "plz": "53840",
+     "population": 75901
+    },
+    {
+     "ars": "053820072072",
+     "name": "Wachtberg",
+     "plz": "53343",
+     "population": 20471
+    },
+    {
+     "ars": "053820076076",
+     "name": "Windeck",
+     "plz": "51570",
+     "population": 19555
+    }
+   ]
+  },
+  {
+   "kreis": "Unna",
+   "kreis_key": "05978",
+   "towns": [
+    {
+     "ars": "059780012012",
+     "name": "Fröndenberg/Ruhr, Stadt",
+     "plz": "58730",
+     "population": 20504
+    }
+   ]
+  }
+ ],
+ [
+  {
+   "kreis": "Soest",
+   "kreis_key": "05974",
+   "towns": [
+    {
+     "ars": "059740004004",
+     "name": "Anröchte",
+     "plz": "59609",
+     "population": 10304
+    },
+    {
+     "ars": "059740008008",
+     "name": "Bad Sassendorf",
+     "plz": "59505",
+     "population": 12194
+    },
+    {
+     "ars": "059740012012",
+     "name": "Ense",
+     "plz": "59469",
+     "population": 12383
+    },
+    {
+     "ars": "059740016016",
+     "name": "Erwitte, Stadt",
+     "plz": "59597",
+     "population": 16300
+    },
+    {
+     "ars": "059740020020",
+     "name": "Geseke, Stadt",
+     "plz": "59590",
+     "population": 20930
+    },
+    {
+     "ars": "059740024024",
+     "name": "Lippetal",
+     "plz": "59510",
+     "population": 11883
+    },
+    {
+     "ars": "059740028028",
+     "name": "Lippstadt, Stadt",
+     "plz": "59555",
+     "population": 68739
+    },
+    {
+     "ars": "059740032032",
+     "name": "Möhnesee",
+     "plz": "59519",
+     "population": 11274
+    },
+    {
+     "ars": "059740036036",
+     "name": "Rüthen, Stadt",
+     "plz": "59602",
+     "population": 10290
+    },
+    {
+     "ars": "059740040040",
+     "name": "Soest, Stadt",
+     "plz": "59494",
+     "population": 47776
+    },
+    {
+     "ars": "059740044044",
+     "name": "Warstein, Stadt",
+     "plz": "59581",
+     "population": 24988
+    },
+    {
+     "ars": "059740048048",
+     "name": "Welver",
+     "plz": "59514",
+     "population": 11999
+    },
+    {
+     "ars": "059740052052",
+     "name": "Werl, Stadt",
+     "plz": "59457",
+     "population": 29600
+    },
+    {
+     "ars": "059740056056",
+     "name": "Wickede (Ruhr)",
+     "plz": "58739",
+     "population": 11637
+    }
+   ]
+  },
+  {
+   "kreis": "Paderborn",
+   "kreis_key": "05774",
+   "towns": [
+    {
+     "ars": "057740004004",
+     "name": "Altenbeken",
+     "plz": "33184",
+     "population": 9161
+    },
+    {
+     "ars": "057740012012",
+     "name": "Borchen",
+     "plz": "33178",
+     "population": 13721
+    },
+    {
+     "ars": "057740016016",
+     "name": "Büren, Stadt",
+     "plz": "33142",
+     "population": 21593
+    },
+    {
+     "ars": "057740028028",
+     "name": "Lichtenau, Stadt",
+     "plz": "33165",
+     "population": 10985
+    },
+    {
+     "ars": "057740040040",
+     "name": "Bad Wünnenberg, Stadt",
+     "plz": "33181",
+     "population": 12418
+    }
+   ]
+  }
+ ],
+ [
+  {
+   "kreis": "Märkischer Kreis",
+   "kreis_key": "05962",
+   "towns": [
+    {
+     "ars": "059620004004",
+     "name": "Altena, Stadt",
+     "plz": "58762",
+     "population": 16621
+    },
+    {
+     "ars": "059620008008",
+     "name": "Balve, Stadt",
+     "plz": "58802",
+     "population": 11240
+    },
+    {
+     "ars": "059620016016",
+     "name": "Hemer, Stadt",
+     "plz": "58675",
+     "population": 35005
+    },
+    {
+     "ars": "059620020020",
+     "name": "Herscheid",
+     "plz": "58849",
+     "population": 6821
+    },
+    {
+     "ars": "059620024024",
+     "name": "Iserlohn, Stadt",
+     "plz": "58636",
+     "population": 91811
+    },
+    {
+     "ars": "059620028028",
+     "name": "Kierspe, Stadt",
+     "plz": "58566",
+     "population": 16450
+    },
+    {
+     "ars": "059620036036",
+     "name": "Meinerzhagen, Stadt",
+     "plz": "58540",
+     "population": 20019
+    },
+    {
+     "ars": "059620040040",
+     "name": "Menden (Sauerland), Stadt",
+     "plz": "58706",
+     "population": 52255
+    },
+    {
+     "ars": "059620044044",
+     "name": "Nachrodt-Wiblingwerde",
+     "plz": "58769",
+     "population": 6159
+    },
+    {
+     "ars": "059620048048",
+     "name": "Neuenrade, Stadt",
+     "plz": "58809",
+     "population": 11621
+    },
+    {
+     "ars": "059620052052",
+     "name": "Plettenberg, Stadt",
+     "plz": "58840",
+     "population": 24429
+    },
+    {
+     "ars": "059620056056",
+     "name": "Schalksmühle",
+     "plz": "58579",
+     "population": 10463
+    },
+    {
+     "ars": "059620060060",
+     "name": "Werdohl, Stadt",
+     "plz": "58791",
+     "population": 17618
+    }
+   ]
+  },
+  {
+   "kreis": "Oberbergischer Kreis",
+   "kreis_key": "05374",
+   "towns": [
+    {
+     "ars": "053740004004",
+     "name": "Bergneustadt, Stadt",
+     "plz": "51702",
+     "population": 18628
+    },
+    {
+     "ars": "053740012012",
+     "name": "Gummersbach, Stadt",
+     "plz": "51643",
+     "population": 51290
+    },
+    {
+     "ars": "053740024024",
+     "name": "Marienheide",
+     "plz": "51709",
+     "population": 13356
+    },
+    {
+     "ars": "053740044044",
+     "name": "Waldbröl, Stadt",
+     "plz": "51545",
+     "population": 19795
+    },
+    {
+     "ars": "053740048048",
+     "name": "Wiehl, Stadt",
+     "plz": "51674",
+     "population": 25164
+    },
+    {
+     "ars": "053740052052",
+     "name": "Wipperfürth, Hansestadt",
+     "plz": "51688",
+     "population": 21604
+    }
+   ]
+  }
+ ],
+ [
+  {
+   "kreis": "Hochsauerlandkreis",
+   "kreis_key": "05958",
+   "towns": [
+    {
+     "ars": "059580008008",
+     "name": "Bestwig",
+     "plz": "59909",
+     "population": 10147
+    },
+    {
+     "ars": "059580012012",
+     "name": "Brilon, Stadt",
+     "plz": "59929",
+     "population": 25424
+    },
+    {
+     "ars": "059580016016",
+     "name": "Eslohe (Sauerland)",
+     "plz": "59889",
+     "population": 8717
+    },
+    {
+     "ars": "059580020020",
+     "name": "Hallenberg, Stadt",
+     "plz": "59969",
+     "population": 4367
+    },
+    {
+     "ars": "059580024024",
+     "name": "Marsberg, Stadt",
+     "plz": "34431",
+     "population": 19555
+    },
+    {
+     "ars": "059580028028",
+     "name": "Medebach, Hansestadt",
+     "plz": "59964",
+     "population": 7906
+    },
+    {
+     "ars": "059580032032",
+     "name": "Meschede, Kreis- und  Hochschulstadt",
+     "plz": "59872",
+     "population": 29615
+    },
+    {
+     "ars": "059580036036",
+     "name": "Olsberg, Stadt",
+     "plz": "59939",
+     "population": 14700
+    },
+    {
+     "ars": "059580040040",
+     "name": "Schmallenberg, Stadt",
+     "plz": "57392",
+     "population": 24711
+    },
+    {
+     "ars": "059580044044",
+     "name": "Sundern (Sauerland), Stadt",
+     "plz": "59846",
+     "population": 27654
+    },
+    {
+     "ars": "059580048048",
+     "name": "Winterberg, Stadt",
+     "plz": "59955",
+     "population": 13168
+    }
+   ]
+  },
+  {
+   "kreis": "Wesel",
+   "kreis_key": "05170",
+   "towns": [
+    {
+     "ars": "051700012012",
+     "name": "Hamminkeln, Stadt",
+     "plz": "46499",
+     "population": 26873
+    },
+    {
+     "ars": "051700016016",
+     "name": "Hünxe",
+     "plz": "46569",
+     "population": 13676
+    },
+    {
+     "ars": "051700020020",
+     "name": "Kamp-Lintfort, Stadt",
+     "plz": "47475",
+     "population": 38217
+    },
+    {
+     "ars": "051700032032",
+     "name": "Rheinberg, Stadt",
+     "plz": "47495",
+     "population": 31172
+    },
+    {
+     "ars": "051700036036",
+     "name": "Schermbeck",
+     "plz": "46514",
+     "population": 13516
+    },
+    {
+     "ars": "051700048048",
+     "name": "Wesel, Stadt",
+     "plz": "46483",
+     "population": 60785
+    }
+   ]
+  },
+  {
+   "kreis": "Kleve",
+   "kreis_key": "05154",
+   "towns": [
+    {
+     "ars": "051540036036",
+     "name": "Kleve, Stadt",
+     "plz": "47533",
+     "population": 53028
+    },
+    {
+     "ars": "051540060060",
+     "name": "Wachtendonk",
+     "plz": "47669",
+     "population": 8217
+    }
+   ]
+  }
+ ],
+ [
+  {
+   "kreis": "Mettmann",
+   "kreis_key": "05158",
+   "towns": [
+    {
+     "ars": "051580004004",
+     "name": "Erkrath, Fundort des Neanderthalers, Stadt",
+     "plz": "40699",
+     "population": 43706
+    },
+    {
+     "ars": "051580008008",
+     "name": "Haan, Stadt",
+     "plz": "42781",
+     "population": 30086
+    },
+    {
+     "ars": "051580012012",
+     "name": "Heiligenhaus, Stadt",
+     "plz": "42579",
+     "population": 26252
+    },
+    {
+     "ars": "051580016016",
+     "name": "Hilden, Stadt",
+     "plz": "40721",
+     "population": 55157
+    },
+    {
+     "ars": "051580020020",
+     "name": "Langenfeld (Rheinland), Stadt",
+     "plz": "40764",
+     "population": 59975
+    },
+    {
+     "ars": "051580024024",
+     "name": "Mettmann, Stadt",
+     "plz": "40822",
+     "population": 39542
+    },
+    {
+     "ars": "051580026026",
+     "name": "Monheim am Rhein, Stadt",
+     "plz": "40789",
+     "population": 43630
+    },
+    {
+     "ars": "051580028028",
+     "name": "Ratingen, Stadt",
+     "plz": "40878",
+     "population": 89368
+    },
+    {
+     "ars": "051580032032",
+     "name": "Velbert, Stadt",
+     "plz": "42551",
+     "population": 82463
+    },
+    {
+     "ars": "051580036036",
+     "name": "Wülfrath, Stadt",
+     "plz": "42489",
+     "population": 20731
+    }
+   ]
+  },
+  {
+   "kreis": "Minden-Lübbecke",
+   "kreis_key": "05770",
+   "towns": [
+    {
+     "ars": "057700004004",
+     "name": "Bad Oeynhausen, Stadt",
+     "plz": "32545",
+     "population": 50620
+    },
+    {
+     "ars": "057700008008",
+     "name": "Espelkamp, Stadt",
+     "plz": "32339",
+     "population": 25576
+    },
+    {
+     "ars": "057700012012",
+     "name": "Hille",
+     "plz": "32479",
+     "population": 16274
+    },
+    {
+     "ars": "057700016016",
+     "name": "Hüllhorst",
+     "plz": "32609",
+     "population": 13304
+    },
+    {
+     "ars": "057700028028",
+     "name": "Petershagen, Stadt",
+     "plz": "32469",
+     "population": 25340
+    },
+    {
+     "ars": "057700036036",
+     "name": "Preußisch Oldendorf, Stadt",
+     "plz": "32361",
+     "population": 12439
+    },
+    {
+     "ars": "057700040040",
+     "name": "Rahden, Stadt",
+     "plz": "32369",
+     "population": 16195
+    },
+    {
+     "ars": "057700044044",
+     "name": "Stemwede",
+     "plz": "32351",
+     "population": 13460
+    }
+   ]
+  },
+  {
+   "kreis": "Rheinisch-Bergischer Kreis",
+   "kreis_key": "05378",
+   "towns": [
+    {
+     "ars": "053780028028",
+     "name": "Rösrath, Stadt",
+     "plz": "51503",
+     "population": 28709
+    }
+   ]
+  }
+ ],
+ [
+  {
+   "kreis": "Siegen-Wittgenstein",
+   "kreis_key": "05970",
+   "towns": [
+    {
+     "ars": "059700004004",
+     "name": "Bad Berleburg, Stadt",
+     "plz": "57319",
+     "population": 18400
+    },
+    {
+     "ars": "059700008008",
+     "name": "Burbach",
+     "plz": "57299",
+     "population": 14553
+    },
+    {
+     "ars": "059700012012",
+     "name": "Erndtebrück",
+     "plz": "57339",
+     "population": 6792
+    },
+    {
+     "ars": "059700016016",
+     "name": "Freudenberg, Stadt",
+     "plz": "57258",
+     "population": 17355
+    },
+    {
+     "ars": "059700020020",
+     "name": "Hilchenbach, Stadt",
+     "plz": "57271",
+     "population": 14412
+    },
+    {
+     "ars": "059700024024",
+     "name": "Kreuztal, Stadt",
+     "plz": "57223",
+     "population": 30905
+    },
+    {
+     "ars": "059700028028",
+     "name": "Bad Laasphe, Stadt",
+     "plz": "57334",
+     "population": 13148
+    },
+    {
+     "ars": "059700032032",
+     "name": "Netphen, Stadt",
+     "plz": "57250",
+     "population": 23080
+    },
+    {
+     "ars": "059700036036",
+     "name": "Neunkirchen",
+     "plz": "57290",
+     "population": 12705
+    },
+    {
+     "ars": "059700044044",
+     "name": "Wilnsdorf",
+     "plz": "57234",
+     "population": 20039
+    }
+   ]
+  },
+  {
+   "kreis": "Olpe",
+   "kreis_key": "05966",
+   "towns": [
+    {
+     "ars": "059660004004",
+     "name": "Attendorn, Hansestadt",
+     "plz": "57439",
+     "population": 23554
+    },
+    {
+     "ars": "059660008008",
+     "name": "Drolshagen, Stadt",
+     "plz": "57489",
+     "population": 11913
+    },
+    {
+     "ars": "059660012012",
+     "name": "Finnentrop",
+     "plz": "57413",
+     "population": 17022
+    },
+    {
+     "ars": "059660016016",
+     "name": "Kirchhundem",
+     "plz": "57399",
+     "population": 11509
+    },
+    {
+     "ars": "059660020020",
+     "name": "Lennestadt, Stadt",
+     "plz": "57368",
+     "population": 24238
+    },
+    {
+     "ars": "059660024024",
+     "name": "Olpe, Stadt",
+     "plz": "57462",
+     "population": 24695
+    },
+    {
+     "ars": "059660028028",
+     "name": "Wenden",
+     "plz": "57482",
+     "population": 19415
+    }
+   ]
+  },
+  {
+   "kreis": "Mülheim an der Ruhr, Stadt",
+   "kreis_key": "05117",
+   "towns": [
+    {
+     "ars": "051170000000",
+     "name": "Mülheim an der Ruhr, Stadt",
+     "plz": "45468",
+     "population": 173050
+    }
+   ]
+  },
+  {
+   "kreis": "Gütersloh",
+   "kreis_key": "05754",
+   "towns": [
+    {
+     "ars": "057540044044",
+     "name": "Verl, Stadt",
+     "plz": "33415",
+     "population": 25762
+    }
+   ]
+  }
+ ],
+ [
+  {
+   "kreis": "Rhein-Erft-Kreis",
+   "kreis_key": "05362",
+   "towns": [
+    {
+     "ars": "053620004004",
+     "name": "Bedburg, Stadt",
+     "plz": "50181",
+     "population": 25316
+    },
+    {
+     "ars": "053620008008",
+     "name": "Bergheim, Stadt",
+     "plz": "50126",
+     "population": 61611
+    },
+    {
+     "ars": "053620012012",
+     "name": "Brühl, Stadt",
+     "plz": "50321",
+     "population": 45555
+    },
+    {
+     "ars": "053620016016",
+     "name": "Elsdorf, Stadt",
+     "plz": "50189",
+     "population": 21424
+    },
+    {
+     "ars": "053620020020",
+     "name": "Erftstadt, Stadt",
+     "plz": "50374",
+     "population": 48772
+    },
+    {
+     "ars": "053620024024",
+     "name": "Frechen, Stadt",
+     "plz": "50226",
+     "population": 52309
+    },
+    {
+     "ars": "053620028028",
+     "name": "Hürth, Stadt",
+     "plz": "50354",
+     "population": 62160
+    },
+    {
+     "ars": "053620036036",
+     "name": "Pulheim, Stadt",
+     "plz": "50259",
+     "population": 56150
+    },
+    {
+     "ars": "053620040040",
+     "name": "Wesseling, Stadt",
+     "plz": "50389",
+     "population": 38106
+    }
+   ]
+  },
+  {
+   "kreis": "Ennepe-Ruhr-Kreis",
+   "kreis_key": "05954",
+   "towns": [
+    {
+     "ars": "059540004004",
+     "name": "Breckerfeld, Hansestadt",
+     "plz": "58339",
+     "population": 8816
+    },
+    {
+     "ars": "059540008008",
+     "name": "Ennepetal, Stadt der Kluterthöhle",
+     "plz": "58256",
+     "population": 29446
+    },
+    {
+     "ars": "059540012012",
+     "name": "Gevelsberg, Stadt",
+     "plz": "58285",
+     "population": 30006
+    },
+    {
+     "ars": "059540016016",
+     "name": "Hattingen, Stadt",
+     "plz": "45525",
+     "population": 53044
+    },
+    {
+     "ars": "059540020020",
+     "name": "Herdecke, Stadt",
+     "plz": "58313",
+     "population": 22772
+    },
+    {
+     "ars": "059540024024",
+     "name": "Schwelm, Stadt",
+     "plz": "58332",
+     "population": 27953
+    },
+    {
+     "ars": "059540028028",
+     "name": "Sprockhövel, Stadt",
+     "plz": "45549",
+     "population": 24232
+    },
+    {
+     "ars": "059540032032",
+     "name": "Wetter (Ruhr), Stadt",
+     "plz": "58300",
+     "population": 26090
+    },
+    {
+     "ars": "059540036036",
+     "name": "Witten, Stadt",
+     "plz": "58452",
+     "population": 91808
+    }
+   ]
+  },
+  {
+   "kreis": "Höxter",
+   "kreis_key": "05762",
+   "towns": [
+    {
+     "ars": "057620008008",
+     "name": "Beverungen, Stadt",
+     "plz": "37688",
+     "population": 12669
+    }
+   ]
+  }
+ ],
+ [
+  {
+   "kreis": "Herford",
+   "kreis_key": "05758",
+   "towns": [
+    {
+     "ars": "057580004004",
+     "name": "Bünde, Stadt",
+     "plz": "32257",
+     "population": 46365
+    },
+    {
+     "ars": "057580008008",
+     "name": "Enger, Widukindstadt",
+     "plz": "32130",
+     "population": 20688
+    },
+    {
+     "ars": "057580012012",
+     "name": "Herford, Hansestadt",
+     "plz": "32052",
+     "population": 67503
+    },
+    {
+     "ars": "057580016016",
+     "name": "Hiddenhausen",
+     "plz": "32120",
+     "population": 19669
+    },
+    {
+     "ars": "057580020020",
+     "name": "Kirchlengern",
+     "plz": "32278",
+     "population": 16334
+    },
+    {
+     "ars": "057580024024",
+     "name": "Löhne, Stadt",
+     "plz": "32584",
+     "population": 40826
+    },
+    {
+     "ars": "057580028028",
+     "name": "Rödinghausen",
+     "plz": "32289",
+     "population": 10064
+    },
+    {
+     "ars": "057580032032",
+     "name": "Spenge, Stadt",
+     "plz": "32139",
+     "population": 14620
+    },
+    {
+     "ars": "057580036036",
+     "name": "Vlotho, Stadt",
+     "plz": "32602",
+     "population": 18335
+    }
+   ]
+  },
+  {
+   "kreis": "Recklinghausen",
+   "kreis_key": "05562",
+   "towns": [
+    {
+     "ars": "055620004004",
+     "name": "Castrop-Rauxel, Stadt",
+     "plz": "44575",
+     "population": 73282
+    },
+    {
+     "ars": "055620008008",
+     "name": "Datteln, Stadt",
+     "plz": "45711",
+     "population": 35473
+    },
+    {
+     "ars": "055620014014",
+     "name": "Gladbeck, Stadt",
+     "plz": "45964",
+     "population": 75499
+    },
+    {
+     "ars": "055620016016",
+     "name": "Haltern am See, Stadt",
+     "plz": "45721",
+     "population": 38142
+    },
+    {
+     "ars": "055620020020",
+     "name": "Herten, Stadt",
+     "plz": "45699",
+     "population": 60941
+    },
+    {
+     "ars": "055620024024",
+     "name": "Marl, Stadt",
+     "plz": "45772",
+     "population": 86766
+    },
+    {
+     "ars": "055620028028",
+     "name": "Oer-Erkenschwick, Stadt",
+     "plz": "45739",
+     "population": 31404
+    },
+    {
+     "ars": "055620036036",
+     "name": "Waltrop, Stadt",
+     "plz": "45731",
+     "population": 29177
+    }
+   ]
+  },
+  {
+   "kreis": "Rhein-Kreis Neuss",
+   "kreis_key": "05162",
+   "towns": [
+    {
+     "ars": "051620004004",
+     "name": "Dormagen, Stadt",
+     "plz": "41539",
+     "population": 63799
+    }
+   ]
+  },
+  {
+   "kreis": "Lippe",
+   "kreis_key": "05766",
+   "towns": [
+    {
+     "ars": "057660020020",
+     "name": "Detmold, Stadt",
+     "plz": "32756",
+     "population": 74278
+    }
+   ]
+  }
+ ]
+]

@@ -10,7 +10,6 @@ import '../models/who.dart';
 import '../state/auth_state.dart';
 import '../state/board_state.dart';
 import '../state/nav_state.dart';
-import '../state/sharing_state.dart';
 import '../state/family_state.dart';
 import '../theme/tokens.dart';
 import 'calendar_screen.dart';
@@ -23,7 +22,6 @@ import '../widgets/collapsing_header.dart';
 import '../widgets/floating_pill.dart';
 import '../widgets/glass.dart';
 import '../widgets/segmented_control.dart';
-import '../widgets/share_sheet.dart';
 import '../widgets/swipe_actions.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/error_note.dart';
@@ -665,28 +663,10 @@ class BoardScreen extends ConsumerWidget {
                 noun: isTracker ? L.s.theTracker : L.s.theTask,
                 avatarSize: 52,
               ),
-              // Only on an existing task: an external link needs a row to point
-              // at, and a task that has not been saved yet has no id. Its own
-              // action, never folded into "Für wen?" — see [showShareSheet].
-              //
-              // **A tracker is never offered it.** `public.shareable_kind` names
-              // no value for one, and a link handing an outsider a page of the
-              // household's habits has no reader worth the leak.
-              if (task != null && ref.watch(canShareExternallyProvider)) ...[
-                const SizedBox(height: 14),
-                OutlinedSheetAction(
-                  icon: AppIcons.userPlus,
-                  label: L.s.share,
-                  onTap: () => showShareSheet(
-                    context,
-                    kind: ShareableKind.task,
-                    resourceId: task.id,
-                    resourceName: task.text,
-                  ),
-                ),
-              ],
+              // No "Teilen" here, for a to-do or a tracker: only a list goes
+              // outside the household.
               if (task != null) ...[
-                const SizedBox(height: 10),
+                const SizedBox(height: 14),
                 OutlinedSheetAction(
                   icon: AppIcons.trash,
                   label: L.s.deleteTask,

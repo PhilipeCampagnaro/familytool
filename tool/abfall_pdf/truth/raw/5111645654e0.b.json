@@ -1,0 +1,21 @@
+{
+  "id": "5111645654e0",
+  "labeller": "b",
+  "calendar": true,
+  "year": 2026,
+  "covers": "2026-01-01..2026-12-31",
+  "district": "A",
+  "codes": ["A"],
+  "legend": {
+    "SR": "schadstoff (Schadstoffmobil Rathausplatz, 8-12 Uhr)",
+    "SF": "schadstoff (Schadstoffmobil Kirchplatz Fedderwardergroden, 8-12 Uhr)"
+  },
+  "window": ["2026-01", "2026-02", "2026-03", "2026-09"],
+  "bins": {
+    "gelb": ["2026-01-26", "2026-02-20", "2026-03-20", "2026-09-04"],
+    "papier": ["2026-01-26", "2026-02-20", "2026-03-20", "2026-09-04"],
+    "schadstoff": ["2026-01-10", "2026-02-14", "2026-03-14", "2026-09-12"]
+  },
+  "unsure": [],
+  "notes": "Single 'Bez.' column of letters A-U drives both Gelbe Tonne and Blaue Papiertonne on the same day (one Bezirk = one pickup day for both bins); the street-to-Bezirk lookup ('Straßenverzeichnis 2026') isn't in this PDF, so district A was picked as the alphabetically-first letter per protocol. Each of the four labelled months has exactly one Bezirk-A day. The two Schadstoffmobil dates per month (SR=Rathausplatz, SF=Kirchplatz Fedderwardergroden) run on a citywide schedule independent of the Bezirk letters, so both are listed even though they aren't specifically tied to district A."
+}

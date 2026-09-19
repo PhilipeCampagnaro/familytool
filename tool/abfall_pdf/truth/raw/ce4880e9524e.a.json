@@ -1,0 +1,25 @@
+{
+  "id": "ce4880e9524e",
+  "labeller": "a",
+  "calendar": true,
+  "year": 2026,
+  "covers": "2026-01-01..2026-12-31",
+  "district": "Hohenfels",
+  "codes": [],
+  "legend": {"Restmüll": "rest", "Bio / Bio Sommer": "bio", "Papier": "papier", "grüner Punkt": "gelb", "Sperrmüll": "sperr", "Problemmüll": "schadstoff", "Häckselaktion": "gruen"},
+  "window": ["2026-01", "2026-02", "2026-03", "2026-09"],
+  "bins": {
+    "rest": ["2026-01-09", "2026-02-04", "2026-03-04", "2026-09-16"],
+    "bio": ["2026-01-13", "2026-01-26", "2026-02-09", "2026-02-23", "2026-03-09", "2026-03-23", "2026-09-07", "2026-09-14", "2026-09-21", "2026-09-28"],
+    "papier": ["2026-01-02", "2026-01-27", "2026-02-24", "2026-03-24", "2026-09-08"],
+    "gelb": ["2026-01-17", "2026-02-13", "2026-03-13", "2026-09-25"],
+    "sperr": ["2026-03-20", "2026-09-25"],
+    "schadstoff": ["2026-02-24"],
+    "gruen": ["2026-03-14"]
+  },
+  "unsure": [
+    "2026-03-14 gruen: 'Häckselaktion' is a drop-off shredding event at a car park (footnote), not clearly a pickup; may not belong under gruen",
+    "2026-02-24 schadstoff: printed as 'Papier/Problemmüll'; footnote describes Problemstoffsammlung as a stationary collection at two sites, counted here as schadstoff"
+  ],
+  "notes": "Single-town calendar, text labels in a column per month (no colour legend for bins; row colours are weekend/holiday/school-holiday shading). 'Bio Sommer' = extra summer Bio pickups, counted as bio. Jan 17 grüner Punkt falls on a Saturday as printed. Altholz and Elektro-/Kühlgeräte not labelled."
+}

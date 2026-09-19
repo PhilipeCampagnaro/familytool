@@ -1,0 +1,20 @@
+{
+  "id": "31f7917548e0",
+  "labeller": "b",
+  "calendar": true,
+  "year": 2026,
+  "covers": "2026-01-01..2026-12-31",
+  "district": "Tour 1 (Restmüll/Bioabfall/Altpapier: Rattlar, Usseln) + Tour 1 (Gelber Sack: Willingen, Musenbergsiedlung)",
+  "codes": ["1", "1"],
+  "legend": {"R (grey box)": "rest", "P (blue box)": "papier", "B (green box)": "bio", "G (yellow box)": "gelb", "SO (red box)": "schadstoff"},
+  "window": ["2026-01", "2026-02", "2026-03", "2026-09"],
+  "bins": {
+    "rest": ["2026-01-12", "2026-02-09", "2026-03-09", "2026-09-21"],
+    "bio": ["2026-01-05", "2026-01-19", "2026-02-02", "2026-02-16", "2026-03-02", "2026-03-16", "2026-09-14", "2026-09-28"],
+    "papier": ["2026-01-26", "2026-02-23", "2026-03-23", "2026-09-07"],
+    "gelb": ["2026-01-28", "2026-02-25", "2026-03-25", "2026-09-09"],
+    "schadstoff": []
+  },
+  "unsure": [],
+  "notes": "Restmüll, Bioabfall and Altpapier share one Tour 1/2/3 system ('Tour 1: Rattlar, Usseln'); Gelber Sack has its own, independently-numbered Tour 1/2/3 covering different villages ('Tour 1: Willingen, Musenbergsiedlung, Neerdar'). Both happen to use the digit '1', so I took Tour 1 of each per the two-systems rule even though the number is the same. Restmüll Tour 1 is printed only once a month (not fortnightly), Altpapier and Gelber Sack Tour 1 also once a month, Bioabfall Tour 1 twice a month - read exactly as printed rather than adjusted toward a more typical-looking rhythm. Sonderabfall (SO, schadstoff) only has three dates all year per the page-2 text (09.04, 13.04, 05.10.2026), none of which fall in January, February, March or September, so 'schadstoff' is correctly empty for this district in the window, not unlabelled. No glas or gruen (Grünschnitt) pickups are printed in this calendar at all."
+}

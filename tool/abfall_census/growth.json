@@ -487,7 +487,7 @@
    "state": "NW",
    "pop": 190,
    "status": "covered",
-   "via": "HEB Hagener Entsorgungsbetrieb",
+   "via": "AHE Ennepe-Ruhr-Kreis, HEB Hagener Entsorgungsbetrieb",
    "note": ""
   },
   {
@@ -923,6 +923,14 @@
    "towns": 4708,
    "cities": 69,
    "what": "Jede URL eines Live-Probe-Laufs (1.132 Anfragen, 115 Hosts) gegen die robots.txt ihres Hosts geprüft. Düsseldorf, Rostock und Dresden (echte Nutzungsbedingung „nicht kommerziell“) sowie Paderborn, Kreis Paderborn, Salzgitter, Ingolstadt, Recklinghausen, Stuttgart, Trier, Mönchengladbach, Siegen und alle 21 Jumomind-Kreise (robots.txt sperrt) laufen jetzt über den Datei-Upload: die App erkennt die Stadt, fragt den Anbieter nichts und schickt den Haushalt mit Link zur Stadtseite zum Upload. AWIDO bleibt live — nur der ICS-Ersatzweg über /Customer/ war gesperrt und ist entfernt. Würzburg bleibt live (offene Lizenz, Quelle an jedem Termin). Nach der Umstellung geht keine einzige Anfrage mehr an einen gesperrten Pfad."
+  },
+  {
+   "date": "19.09.2026",
+   "title": "43 Kreise aus dem Abfuhrkalender-Atlas",
+   "providers": 241,
+   "towns": 6416,
+   "cities": 80,
+   "what": "Aus dem Atlas der offiziellen Kalenderseiten: 43 Landkreise und Städte, deren eigene Seite ein Anbietersystem einbettet, das die App schon liest (22 Athos, 18 abfall.io/AbfallPlus, 1 AWIDO, 2 Müllmax). Jede Zeile hat eine echte Adresse über resolveAddress end-to-end gelesen, robots.txt erlaubt den Pfad, keine Nutzungsbedingung behält die Termine vor. Rund 1.400 bisher nicht versorgte Orte mit 7,7 Mio. Einwohnern, darunter Ludwigsburg, Ortenau, Heilbronn, Bautzen, Erzgebirge, Vogtland, Görlitz und Südbrandenburg. Rhein-Hunsrück kommt jetzt live aus dem eigenen Athos-Portal statt per Upload. Zurückgestellt: Kreise, die Behältergrößen ohne Auswahl nebeneinander drucken (wie Göttingen), zwei Server mit unvollständiger Zertifikatskette, und Kreise, deren Testadresse noch nicht aufgelöst ist."
   }
  ]
 }

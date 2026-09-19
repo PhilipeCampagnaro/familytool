@@ -1,0 +1,20 @@
+{
+  "id": "accf04f055ec",
+  "labeller": "a",
+  "calendar": true,
+  "year": 2026,
+  "covers": "2026-01-01..2026-12-31",
+  "district": "Northeim Bezirk 1",
+  "codes": [],
+  "legend": {"black bin icon": "rest (Hausmüll)", "black bin icon with *": "rest (40-Liter-Behälter, vierwöchentlich; always beside a plain Hausmüll icon)", "bottle icon": "glas", "P paper-bundle icon": "papier", "bag with recycling logo": "gelb", "leaf icon": "bio", "!": "Feiertagsverschiebung"},
+  "window": ["2026-01", "2026-02", "2026-03", "2026-09"],
+  "bins": {
+    "rest": ["2026-01-13", "2026-01-27", "2026-02-10", "2026-02-24", "2026-03-10", "2026-03-24", "2026-09-08", "2026-09-22"],
+    "bio": ["2026-01-06", "2026-01-20", "2026-02-03", "2026-02-17", "2026-03-03", "2026-03-17", "2026-03-30", "2026-09-01", "2026-09-15", "2026-09-29"],
+    "papier": ["2026-01-20", "2026-02-17", "2026-03-17", "2026-09-01", "2026-09-29"],
+    "gelb": ["2026-01-06", "2026-02-03", "2026-03-03", "2026-03-30", "2026-09-15"],
+    "glas": ["2026-01-27", "2026-02-24", "2026-03-24", "2026-09-08"]
+  },
+  "unsure": [],
+  "notes": "Single-district sheet, icons per day. 40-litre 4-weekly bins (star) fall on 01-13, 02-10, 03-10, 09-22 and are included in rest as those days also carry the plain Hausmüll icon. Mar 30 (Mo) gelb+bio marked '!' (holiday shift). Schadstoffmobil dates (11.05., 06.10.) are outside the window."
+}

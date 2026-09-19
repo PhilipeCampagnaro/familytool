@@ -1,0 +1,26 @@
+{
+  "id": "1530681cc580",
+  "labeller": "b",
+  "calendar": true,
+  "year": 2026,
+  "covers": "2026-01-01..2026-12-31",
+  "district": "Bezirk 1 (Lechenich, Konradsheim)",
+  "codes": ["grau", "braun", "blau", "gelb", "gruen"],
+  "legend": {
+    "graue Tonne": "rest",
+    "braune Tonne": "bio",
+    "blaue Tonne": "papier",
+    "gelbe Tonne": "gelb",
+    "Weihnachtsbäume (grün)": "gruen"
+  },
+  "window": ["2026-01", "2026-02", "2026-03", "2026-09"],
+  "bins": {
+    "rest": ["2026-01-06", "2026-01-20", "2026-02-03", "2026-02-18", "2026-03-03", "2026-03-17", "2026-03-30", "2026-09-01", "2026-09-15", "2026-09-29"],
+    "bio": ["2026-01-12", "2026-01-26", "2026-02-09", "2026-02-23", "2026-03-09", "2026-03-23", "2026-09-07", "2026-09-14", "2026-09-21", "2026-09-28"],
+    "papier": ["2026-01-02", "2026-01-15", "2026-01-29", "2026-02-12", "2026-02-26", "2026-03-12", "2026-03-26", "2026-09-10", "2026-09-24"],
+    "gelb": ["2026-01-08", "2026-01-22", "2026-02-05", "2026-02-20", "2026-03-05", "2026-03-19", "2026-09-03", "2026-09-17"],
+    "gruen": ["2026-01-19"]
+  },
+  "unsure": [],
+  "notes": "Pages 1-2 are the day-by-day colour-block calendar for 'Mein Abfuhrbezirk: 1 Lechenich, Konradsheim' (title printed at top right of p1); only one district is printed in this PDF so no district choice was needed. Each day has at most one coloured block with a small '1' (collection-round number, not a second date). Legend (bottom of p1/p2): grey=graue Tonne(rest), brown=braune Tonne(bio), blue=blaue Tonne(papier), yellow=gelbe Tonne(gelb), plus a green block labelled 'Weihnachtsbäume' (Christmas-tree pickup on 2026-01-19 only), recorded under 'gruen' per the protocol's Christbaum note. Read from close crops of the März and September columns at 500dpi; every date's printed weekday was checked against the 2026-01-01=Thursday anchor and matched, including the odd grey (rest) pickup on Monday 2026-03-30 that breaks the usual Tuesday rhythm. Page 3 confirms Biotonne is emptied weekly May-November and every 14 days December-April, which matches the weekly Monday bio pattern read for September versus the biweekly Monday pattern read for Jan-Mar. Did not open pages beyond p1-p3 since Jan/Feb/Mar/Sep data is complete from the two calendar pages; a street-cleaning calendar may exist further in the 16-page PDF but was not needed and not opened for bin dates."
+}

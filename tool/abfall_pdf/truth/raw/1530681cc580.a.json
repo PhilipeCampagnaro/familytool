@@ -1,0 +1,87 @@
+{
+  "id": "1530681cc580",
+  "labeller": "a",
+  "calendar": true,
+  "year": 2026,
+  "covers": "2026-01-01..2026-12-31",
+  "district": "Bezirk 1: Lechenich, Konradsheim",
+  "codes": [
+    "1"
+  ],
+  "legend": {
+    "grey box '1'": "rest",
+    "brown box '1'": "bio",
+    "blue box '1'": "papier",
+    "yellow box '1'": "gelb",
+    "light green box '1' (Weihnachtsbäume)": "gruen",
+    "Schadstoffmobil table (brochure p.6), Lechenich row": "schadstoff",
+    "Strauchwerk/Grünabfälle Abfuhrtermine box (brochure p.3)": "gruen"
+  },
+  "window": [
+    "2026-01",
+    "2026-02",
+    "2026-03",
+    "2026-09"
+  ],
+  "bins": {
+    "rest": [
+      "2026-01-06",
+      "2026-01-20",
+      "2026-02-03",
+      "2026-02-18",
+      "2026-03-03",
+      "2026-03-17",
+      "2026-03-30",
+      "2026-09-01",
+      "2026-09-15",
+      "2026-09-29"
+    ],
+    "bio": [
+      "2026-01-12",
+      "2026-01-26",
+      "2026-02-09",
+      "2026-02-23",
+      "2026-03-09",
+      "2026-03-23",
+      "2026-09-07",
+      "2026-09-14",
+      "2026-09-21",
+      "2026-09-28"
+    ],
+    "papier": [
+      "2026-01-02",
+      "2026-01-15",
+      "2026-01-29",
+      "2026-02-12",
+      "2026-02-26",
+      "2026-03-12",
+      "2026-03-26",
+      "2026-09-10",
+      "2026-09-24"
+    ],
+    "gelb": [
+      "2026-01-08",
+      "2026-01-22",
+      "2026-02-05",
+      "2026-02-20",
+      "2026-03-05",
+      "2026-03-19",
+      "2026-09-03",
+      "2026-09-17"
+    ],
+    "gruen": [
+      "2026-01-19",
+      "2026-03-10"
+    ],
+    "schadstoff": [
+      "2026-01-09",
+      "2026-02-06",
+      "2026-03-06",
+      "2026-09-04"
+    ]
+  },
+  "unsure": [
+    "2026-03-10 gruen: Strauchwerk/Grünabfall date printed for all Stadtteile, but it is only collected on prior request with an Abholkarte (gebührenpflichtig), and it is in the brochure text, not the bin grid"
+  ],
+  "notes": "Bin grid is pages 1-2 only (one column per month, day rows, coloured boxes each marked '1' for Bezirk 1); pages 3-16 are an info brochure. Holiday shifts are printed in place (e.g. Restmüll Wed 2026-02-18 after Rosenmontag, Mon 2026-03-30). Biotonne weekly from May to November, so September has four bio dates. Schadstoff dates come from a separate table keyed by town, not by Bezirk. Schadstoffmobil stop used is Lechenich (Kirmesplatz); Konradsheim has no stop of its own."
+}

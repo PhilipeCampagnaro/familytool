@@ -713,6 +713,52 @@ class RhythmOption {
   const RhythmOption({required this.id, this.every});
 }
 
+/// One Bezirk or Tour of a printed waste plan: a PDF usually holds the whole
+/// town, so the household says which one is theirs, helped by the next few
+/// dates of each — the same question [RhythmChoice] asks of a bin. [id] goes
+/// back to the server as it came.
+class PdfDistrict {
+  final String id;
+  final String label;
+  final List<DateTime> next;
+
+  const PdfDistrict({required this.id, required this.label, this.next = const []});
+
+  static List<PdfDistrict> listFrom(Object? raw) {
+    if (raw is! List) return const [];
+    return [
+      for (final entry in raw)
+        if (entry is Map && entry['id'] != null && entry['label'] is String)
+          PdfDistrict(
+            id: '${entry['id']}',
+            label: entry['label'] as String,
+            next: [
+              for (final d in (entry['next'] is List ? entry['next'] as List : const []))
+                if (d is String && DateTime.tryParse(d) != null) DateTime.parse(d),
+            ],
+          ),
+    ];
+  }
+}
+
+/// What a town's own calendar page hands out, per the Abfuhrkalender Atlas:
+/// a calendar file, a printable PDF plan, dates shown only on the page, or
+/// dates only in the town's own app.
+enum TownPageFormat {
+  ics,
+  pdf,
+  html,
+  app;
+
+  static TownPageFormat? fromWire(Object? raw) => switch (raw) {
+    'ics' => ics,
+    'pdf' => pdf,
+    'html' => html,
+    'app' => app,
+    _ => null,
+  };
+}
+
 /// Whether a picked address is served by a waste vendor we can read.
 class AbfallCoverage {
   final bool supported;
@@ -731,12 +777,6 @@ class AbfallCoverage {
   /// connection. Nothing here is a credential — these APIs are all keyless.
   final Map<String, dynamic>? config;
 
-  /// Only meaningful when not [supported]: this household has already asked
-  /// for a calendar here, so the row says so rather than offering the button
-  /// a second time. Set by the server from `abfall_requests`, and flipped on
-  /// the client the moment a request goes through.
-  final bool requested;
-
   /// The vendor plans per house and the address came without a usable house
   /// number — Berlin's BSR, where Karl-Marx-Allee 1, 3 and 12 are three
   /// calendars. [config] is the street and cannot be read yet: the row asks
@@ -745,13 +785,23 @@ class AbfallCoverage {
   /// the choices when the number exists in more than one postcode.
   final bool needsHouseNumber;
 
-  /// The town is served, but only by a provider whose terms or robots.txt rule
-  /// out fetching its dates for us (`upload` in the server's
-  /// `abfall_providers.ts`). Not [supported], nothing to request either: the
-  /// household downloads the file from the town and adds it through the `ical`
-  /// tile's upload. [page] is where the town hands the file out, when known.
+  /// Not [supported], and the calendar comes in as a file: the household
+  /// downloads it from the town and adds it through the `ical` tile's upload.
+  /// Two reasons land here — a provider whose terms or robots.txt rule out
+  /// fetching its dates for us (`upload` in the server's `abfall_providers.ts`),
+  /// or, with [atlas], a town nobody we read serves at all. [page] is where the
+  /// town hands the file out, when known.
   final bool uploadOnly;
   final String? page;
+
+  /// The answer came from the Abfuhrkalender Atlas rather than from a provider:
+  /// no vendor refused us, the town simply publishes its own calendar.
+  final bool atlas;
+
+  /// What [page] hands out, where the atlas says. It is a researcher's reading
+  /// of the page, not a promise, so it shapes the instructions and never takes
+  /// a route away.
+  final TownPageFormat? format;
 
   const AbfallCoverage({
     required this.supported,
@@ -759,10 +809,11 @@ class AbfallCoverage {
     this.street,
     this.houseNumbers = const [],
     this.config,
-    this.requested = false,
     this.needsHouseNumber = false,
     this.uploadOnly = false,
     this.page,
+    this.atlas = false,
+    this.format,
   });
 
   factory AbfallCoverage.fromMap(Map<String, dynamic> map) => AbfallCoverage(
@@ -771,27 +822,16 @@ class AbfallCoverage {
     street: map['street'] as String?,
     houseNumbers: _houseNumbers(map['hausNrList']),
     config: map['config'] is Map ? Map<String, dynamic>.from(map['config'] as Map) : null,
-    requested: map['requested'] == true,
     needsHouseNumber: map['needsHouseNumber'] == true,
     uploadOnly: map['uploadOnly'] == true,
     page: _httpsUrl(map['page']),
+    atlas: map['atlas'] == true,
+    format: TownPageFormat.fromWire(map['format']),
   );
 
   /// Only an https link is opened from here — it came off the network.
   static String? _httpsUrl(Object? raw) =>
       raw is String && raw.startsWith('https://') && raw.length < 300 ? raw : null;
-
-  AbfallCoverage asRequested() => AbfallCoverage(
-    supported: supported,
-    town: town,
-    street: street,
-    houseNumbers: houseNumbers,
-    config: config,
-    requested: true,
-    needsHouseNumber: needsHouseNumber,
-    uploadOnly: uploadOnly,
-    page: page,
-  );
 
   /// Whether [config] can be connected as it stands.
   bool get connectable => supported && config != null && !needsHouseNumber;

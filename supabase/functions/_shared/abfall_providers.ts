@@ -176,6 +176,7 @@ const AWIDO: Array<[string, string]> = [
   ['wgv', 'WGV Recycling (Quarzbichl)'],
   ['zaso', 'ZV Abfallwirtschaft Saale-Orla'],
   ['zv-muc-so', 'Zweckverband München-Südost'],
+  ['awb-altenburg', 'AWB Altenburger Land'],
 ]
 const AWIDO_PROVIDERS: AbfallProvider[] = AWIDO.map(([client, name]) => ({
   id: `awido-${client}`, name, family: 'awido' as const, client,
@@ -198,7 +199,8 @@ const JUMOMIND: Array<[string, string]> = [
   ['lue', 'Lübbecke'],
   ['sbm', 'Minden'],
   ['ksr', 'ZBH Recklinghausen'],
-  ['rhe', 'RH Entsorgung (Rhein-Hunsrück)'],
+  // 'rhe' (RH Entsorgung, Rhein-Hunsrück) left 2026-09-19: its own Athos tenant
+  // (athos-rheinhunsrueck) serves the same towns and may be read.
   ['udg', 'UDG Uckermark'],
   ['esn', 'Neustadt an der Weinstraße'],
   ['zac', 'ZA Celle'],
@@ -279,6 +281,12 @@ const ABFALLIO: Array<[string, string, string?]> = [
   ['d92f59ef4066ae6d299478996d1d8430', 'Stadt Pritzwalk (Prignitz)'],
   ['4f06df48f154246415e57ce12b26abe5', 'Amt Putlitz/Berge (Prignitz)'],
   ['b870ecfa6e1f882680758d374ba3fa2d', 'Stadt Wittenberge (Prignitz)'],
+  // Found 2026-09-19 on each authority's own calendar page (the Abfuhrkalender
+  // Atlas, tool/abfall_authorities): read end to end by candidate probe, robots.txt
+  // allowing the adapter's path, no terms reserving the dates.
+  ['b3b6d7b73b7be61117fedc1dd5ec255a', 'ALB Abfallwirtschaft Breisgau-Hochschwarzwald'],
+  ['e00c91ebd40b93d6b9cb697d3f0d6a50', 'Landkreis Görlitz (NEG)'],
+  ['04b7561b94f2cbaa171cd85bb6aa56de', 'Landratsamt Landshut'],
 ]
 // Towns on a key that come from the town's own service instead. MüllALARM is
 // Schönmackers' app — the contracted collector in most of its towns — but
@@ -333,6 +341,30 @@ const ABFALLPLUS: AbfallProvider[] = [
   { id: 'abfallplus-80acad6c', name: 'Wirtschaftsbetriebe Duisburg', family: 'abfallplus', state: 'NW', key: '80acad6c77fe9342ebafad29a8c58bf6', town: 'Duisburg' },
   { id: 'abfallplus-2085afd9', name: 'ASG Nordsachsen', family: 'abfallplus', state: 'SN', key: '2085afd95285e645e15ee9623d0c5172' },
   { id: 'abfallplus-8b016df0', name: 'ASO Abfall-Service Osterholz', family: 'abfallplus', state: 'NI', key: '8b016df0116d1d5094fa339bebea0c65' },
+  // Found 2026-09-19 on each authority's own calendar page (the Abfuhrkalender
+  // Atlas, tool/abfall_authorities): read end to end by candidate probe, robots.txt
+  // allowing the adapter's path, no terms reserving the dates.
+  // Cloppenburg and Rottweil print Restmüll in several rhythms; the household
+  // picks its own (RhythmChoice). Held back for the same reason as Göttingen:
+  // Zollernalb, Traunstein, Nordfriesland and Tuttlingen list a container size
+  // beside the household bin with no way to choose; Neuwied lists every
+  // Schadstoffmobil stop in the county; Böblingen's publisher answers with no
+  // cities; Grünwald's key lists 14 Gemeinden and is only confirmed as Grünwald's.
+  { id: 'abfallplus-ff692443', name: 'Eigenbetrieb Abfallwirtschaft Ortenaukreis', family: 'abfallplus', state: 'BW', key: 'ff692443f8b07d99f93674e9e0b6f529' },
+  { id: 'abfallplus-be047b0b', name: 'Abfallwirtschaft Landkreis Heilbronn', family: 'abfallplus', state: 'BW', key: 'be047b0bf308c04e4dab7240aa418381' },
+  { id: 'abfallplus-0d74f933', name: 'AHE Ennepe-Ruhr-Kreis', family: 'abfallplus', state: 'NW', key: '0d74f933a2959ed0133cd88eda556714' },
+  { id: 'abfallplus-4dc39a5b', name: 'Landkreis Bautzen, Abfallamt', family: 'abfallplus', state: 'SN', key: '4dc39a5bb7e7f0b3ea3b8a15824b4a8d' },
+  { id: 'abfallplus-26bbdbe6', name: 'AWB Landkreis Augsburg', family: 'abfallplus', state: 'BY', key: '26bbdbe6929dad3dc75d324f55a6990e' },
+  { id: 'abfallplus-f35bd08b', name: 'AWB Landkreis Göppingen', family: 'abfallplus', state: 'BW', key: 'f35bd08b1d18d9c81fcdee75dbcce5d3' },
+  { id: 'abfallplus-0e37304e', name: 'AWB Landkreis Rastatt', family: 'abfallplus', state: 'BW', key: '0e37304e640bce56f77c5506b3dadedb' },
+  { id: 'abfallplus-2fd91be1', name: 'AZV Rhein-Mosel-Eifel (Landkreis Mayen-Koblenz)', family: 'abfallplus', state: 'RP', key: '2fd91be1ebb9ad8558b44914a983c435' },
+  { id: 'abfallplus-29ac778f', name: 'Landkreis Cloppenburg', family: 'abfallplus', state: 'NI', key: '29ac778f07646f919b2aec119d0aedd0' },
+  { id: 'abfallplus-29727e74', name: 'AWB Landkreis Limburg-Weilburg', family: 'abfallplus', state: 'HE', key: '29727e74d11041d98df0c0d013a846c6' },
+  { id: 'abfallplus-254ef8a2', name: 'Landratsamt Ostallgäu', family: 'abfallplus', state: 'BY', key: '254ef8a2f4aa7cd1bff7f372d5dcfc53' },
+  { id: 'abfallplus-30f9958c', name: 'Landkreis Rottweil, Eigenbetrieb Abfallwirtschaft', family: 'abfallplus', state: 'BW', key: '30f9958cb64ca47a83f40e0a738ddea0' },
+  { id: 'abfallplus-58b436d5', name: 'Landratsamt Sigmaringen, Kreisabfallwirtschaft', family: 'abfallplus', state: 'BW', key: '58b436d539db805a4fadd93bb87b2693' },
+  { id: 'abfallplus-1d5df3c2', name: 'abfallwelt Landkreis Kitzingen', family: 'abfallplus', state: 'BY', key: '1d5df3c2a6f64f5636f2c471649a0e6c' },
+  { id: 'abfallplus-2dd1ce4c', name: 'GIB Entsorgung Wesermarsch', family: 'abfallplus', state: 'NI', key: '2dd1ce4c69e1a02c259502258412c40d' },
 ]
 
 // C-Trace — ASP.NET waste calendars (session redirect + plain-text Ort/Strasse/
@@ -539,6 +571,8 @@ const MUELLMAX: AbfallProvider[] = [
   { id: 'muellmax-tbr', name: 'Technische Betriebe Remscheid', family: 'muellmax', state: 'NW', town: 'Remscheid', client: 'tbr' },
   { id: 'muellmax-awm', name: 'AWM Abfallwirtschaftsbetriebe Münster', family: 'muellmax', state: 'NW', town: 'Münster', client: 'awm' },
   { id: 'muellmax-ebm', name: 'Entsorgungsbetrieb der Stadt Mainz', family: 'muellmax', state: 'RP', town: 'Mainz', client: 'ebm' },
+  { id: 'muellmax-his', name: 'Hanau Infrastruktur Service', family: 'muellmax', state: 'HE', town: 'Hanau', client: 'his' },
+  { id: 'muellmax-mai', name: 'Stadt Maintal', family: 'muellmax', state: 'HE', town: 'Maintal', client: 'mai' },
 ]
 
 const AHA: AbfallProvider[] = [
@@ -573,6 +607,59 @@ const ATHOS: AbfallProvider[] = [
     host: 'https://onlineservices.abfallwirtschaft-pforzheim.de/WasteManagementPforzheim' },
   { id: 'athos-zke-saarbruecken', name: 'ZKE Zentraler Kommunaler Entsorgungsbetrieb Saarbrücken', family: 'athos', state: 'SL', town: 'Saarbrücken',
     host: 'https://info.zke-sb.de/WasteManagementSaarbruecken' },
+  // Found 2026-09-19 on each authority's own calendar page (the Abfuhrkalender
+  // Atlas, tool/abfall_authorities): read end to end by candidate probe, robots.txt
+  // allowing the adapter's path, no terms reserving the dates.
+  // Rhein-Hunsrück's own tenant: its towns were upload-only through jumomind-rhe,
+  // and the resolver takes a provider it may read before an upload one.
+  // Not listed: Donau-Wald (AWG) and Main-Spessart send an incomplete certificate
+  // chain that Deno refuses; Emsland, Nienburg, Lörrach, Waldshut, Garmisch and
+  // Bamberg did not resolve a test address yet; Neustadt/Aisch lists a yellow
+  // bin and a yellow container side by side.
+  { id: 'athos-ludwigsburg', name: 'AVL Landkreis Ludwigsburg', family: 'athos', state: 'BW',
+    host: 'https://kundenportal.avl-lb.de/WasteManagementLudwigsburg' },
+  { id: 'athos-ravensburgprivat', name: 'Landratsamt Ravensburg, Kreislaufwirtschaft', family: 'athos', state: 'BW',
+    host: 'https://athos-onlinedienste.rv.de/WasteManagementRavensburgPrivat' },
+  { id: 'athos-suedbrandenburg', name: 'SBAZV Südbrandenburg (Teltow-Fläming, Dahme-Spreewald)', family: 'athos', state: 'BB',
+    host: 'https://fahrzeuge.sbazv.de/WasteManagementSuedbrandenburg' },
+  { id: 'athos-suedwestsachsen', name: 'ZAS Südwestsachsen (Erzgebirgskreis)', family: 'athos', state: 'SN',
+    host: 'https://online-portal.za-sws.de/WasteManagementSuedwestsachsen' },
+  { id: 'athos-vogtland', name: 'Landratsamt Vogtlandkreis', family: 'athos', state: 'SN',
+    host: 'https://awi.vogtlandkreis.de/WasteManagementVogtland' },
+  { id: 'athos-biberach', name: 'AWB Landkreis Biberach', family: 'athos', state: 'BW',
+    host: 'https://abfallwirtschaftsbetrieb.biberach.de/WasteManagementBiberach' },
+  { id: 'athos-lueneburg', name: 'GfA Lüneburg', family: 'athos', state: 'NI',
+    host: 'https://portal.gfa-lueneburg.de:8443/WasteManagementLueneburg' },
+  { id: 'athos-schwarzeelster', name: 'AEV Schwarze Elster (Oberspreewald-Lausitz, Elbe-Elster)', family: 'athos', state: 'BB',
+    host: 'https://athos.schwarze-elster.com/WasteManagementSchwarzeElster' },
+  { id: 'athos-neckarodenwald', name: 'KWiN Neckar-Odenwald', family: 'athos', state: 'BW',
+    host: 'https://athos.awn-online.de/WasteManagementNeckarOdenwald' },
+  { id: 'athos-straubing', name: 'ZAW Straubing Stadt und Land', family: 'athos', state: 'BY',
+    host: 'https://straubing.zaw-sr.de/WasteManagementStraubing' },
+  { id: 'athos-verden', name: 'Landkreis Verden', family: 'athos', state: 'NI',
+    host: 'https://lkv.landkreis-verden.de/WasteManagementVerden' },
+  { id: 'athos-starnberg', name: 'AWISTA Starnberg', family: 'athos', state: 'BY',
+    host: 'https://xmlcall.awista-starnberg.de/WasteManagementStarnberg' },
+  { id: 'athos-miltenberg', name: 'Landratsamt Miltenberg', family: 'athos', state: 'BY',
+    host: 'https://sperrgut.landkreis-miltenberg.de/WasteManagementMiltenberg' },
+  { id: 'athos-freudenstadt', name: 'AWB Landkreis Freudenstadt', family: 'athos', state: 'BW',
+    host: 'https://awb.kreis-fds.de/WasteManagementFreudenstadt' },
+  { id: 'athos-fuerth', name: 'Landratsamt Fürth', family: 'athos', state: 'BY',
+    host: 'https://webdienste.landkreis-fuerth.de/WasteManagementFuerth' },
+  { id: 'athos-alzeyworms', name: 'AWB Landkreis Alzey-Worms', family: 'athos', state: 'RP',
+    host: 'https://abfall.alzey-worms.de/WasteManagementAlzeyworms' },
+  { id: 'athos-ahrweiler', name: 'AWB Landkreis Ahrweiler', family: 'athos', state: 'RP',
+    host: 'https://extdienste01.koblenz.de/WasteManagementAhrweiler' },
+  { id: 'athos-wunsiedel', name: 'KUFi Fichtelgebirge', family: 'athos', state: 'BY',
+    host: 'https://app.ku-fichtelgebirge.de/WasteManagementWunsiedel' },
+  { id: 'athos-suedwestpfalz', name: 'Kreisverwaltung Südwestpfalz', family: 'athos', state: 'RP',
+    host: 'https://abfallwirtschaft.lksuedwestpfalz.de/WasteManagementSuedwestpfalz' },
+  { id: 'athos-zweibruecken', name: 'UBZ Zweibrücken', family: 'athos', state: 'RP', town: 'Zweibrücken',
+    host: 'https://leerungen.ubzzw.com/WasteManagementZweibruecken' },
+  { id: 'athos-wuerzburg', name: 'team orange Landkreis Würzburg', family: 'athos', state: 'BY',
+    host: 'https://athosweb.team-orange.info/WasteManagementWuerzburg' },
+  { id: 'athos-rheinhunsrueck', name: 'RH Entsorgung (Rhein-Hunsrück)', family: 'athos', state: 'RP',
+    host: 'https://aao.rh-entsorgung.de/WasteManagementRheinhunsrueck' },
 ]
 
 const SRH: AbfallProvider[] = [
@@ -597,6 +684,10 @@ const SRH: AbfallProvider[] = [
 // had none and was the guard's one gap, was replaced on 2026-09-18 by one
 // allowlisted row per state (MYMUELL_OFFICIAL).
 const PROVIDER_STATES: Record<string, string> = {
+  'abfallio-b3b6d7b7': 'BW',
+  'abfallio-e00c91eb': 'SN',
+  'abfallio-04b7561b': 'BY',
+  'awido-awb-altenburg': 'TH',
   'abfallio-040b38fe': 'NI',
   'abfallio-1e959241': 'BB',
   'abfallplus-51be67f3': 'NW',

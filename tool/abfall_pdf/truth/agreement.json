@@ -1,0 +1,117 @@
+[
+ {
+  "id": "0c7c5454a01a",
+  "status": "merged",
+  "agree": 21,
+  "total": 21,
+  "rate": 1,
+  "disputes": []
+ },
+ {
+  "id": "14b6545e582a",
+  "status": "merged",
+  "agree": 47,
+  "total": 48,
+  "rate": 0.979,
+  "disputes": [
+   "2026-01-02 papier (a only)"
+  ]
+ },
+ {
+  "id": "1530681cc580",
+  "status": "merged",
+  "agree": 38,
+  "total": 39,
+  "rate": 0.974,
+  "disputes": [
+   "2026-03-10 gruen (a only)",
+   "2026-01-09 schadstoff (a only; other has no schadstoff)",
+   "2026-02-06 schadstoff (a only; other has no schadstoff)",
+   "2026-03-06 schadstoff (a only; other has no schadstoff)",
+   "2026-09-04 schadstoff (a only; other has no schadstoff)"
+  ]
+ },
+ {
+  "id": "316fe2d35f06",
+  "status": "merged",
+  "agree": 42,
+  "total": 42,
+  "rate": 1,
+  "disputes": []
+ },
+ {
+  "id": "31f7917548e0",
+  "status": "merged",
+  "agree": 20,
+  "total": 21,
+  "rate": 0.952,
+  "disputes": [
+   "2026-03-28 bio (a only)"
+  ]
+ },
+ {
+  "id": "5111645654e0",
+  "status": "merged",
+  "agree": 12,
+  "total": 12,
+  "rate": 1,
+  "disputes": []
+ },
+ {
+  "id": "5f8d09bd5628",
+  "status": "merged",
+  "agree": 42,
+  "total": 42,
+  "rate": 1,
+  "disputes": []
+ },
+ {
+  "id": "accf04f055ec",
+  "status": "merged",
+  "agree": 32,
+  "total": 32,
+  "rate": 1,
+  "disputes": []
+ },
+ {
+  "id": "c83d013945f4",
+  "status": "merged",
+  "agree": 35,
+  "total": 35,
+  "rate": 1,
+  "disputes": []
+ },
+ {
+  "id": "c957ac1d1548",
+  "status": "merged",
+  "agree": 30,
+  "total": 30,
+  "rate": 1,
+  "disputes": [
+   "2026-01-30 schadstoff (a only; other has no schadstoff)",
+   "2026-02-07 schadstoff (a only; other has no schadstoff)",
+   "2026-02-27 schadstoff (a only; other has no schadstoff)",
+   "2026-03-27 schadstoff (a only; other has no schadstoff)"
+  ]
+ },
+ {
+  "id": "ce4880e9524e",
+  "status": "merged",
+  "agree": 25,
+  "total": 26,
+  "rate": 0.962,
+  "disputes": [
+   "2026-03-14 gruen (a only; other has no gruen)"
+  ]
+ },
+ {
+  "id": "db9b93c7418a",
+  "status": "merged",
+  "agree": 25,
+  "total": 25,
+  "rate": 1,
+  "disputes": [
+   "2026-03-30 gruen (a only; other has no gruen)"
+  ]
+ }
+]

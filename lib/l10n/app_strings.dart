@@ -824,13 +824,6 @@ abstract class AppStrings {
   String wasteFor(String street);
   String wasteForTown(String town);
   String noVendorForTown(String town);
-  /// The Müllabfuhr row when no vendor serves the address: the sentence that
-  /// replaces "nicht gefunden", the button, and what the row says once it is
-  /// tapped. See the request queue in docs/backend.md.
-  String get wasteRequestHint;
-  String get wasteRequestAction;
-  String get wasteRequested;
-  String get wasteRequestFailed;
   /// A town served only by a provider we may not fetch from (terms of use or
   /// robots.txt): the sentence on the details step, the row opening the town's
   /// own calendar page, the address row's line, and the onboarding's.
@@ -838,6 +831,36 @@ abstract class AppStrings {
   String get openTownCalendarPage;
   String get wasteUploadOnlyShort;
   String get wasteUploadOnlyLater;
+  /// The onboarding's Müllabfuhr row for a town whose page has no file to
+  /// give (a PDF plan, dates on the page, the town's app).
+  String get wasteOnTownPage;
+  /// The onboarding's waste stage for a file town: its heading, the line once
+  /// the file went in, and the label over a printed plan's Bezirk chips.
+  String get onboardWasteFileTitle;
+  String get wasteFileAdded;
+  String get pdfDistrictLabel;
+  /// A town nobody we read serves, sent to its own page by the Abfuhrkalender
+  /// Atlas: the details step's sentence, and the onboarding row's line when
+  /// there is not even a page.
+  String wasteOwnPageBody(String town);
+  String get wasteLinkLater;
+  /// The steps once a printed PDF plan is taken as well (pdfUploadAvailable).
+  List<String> get binFileStepsPdfInApp;
+  List<String> get binFileStepsPdfBrowser;
+  /// What the town's page hands out, per the atlas, where that is not a file.
+  String get townPagePdfOnly;
+  String get townPageDatesOnly;
+  String get townPageAppOnly;
+  /// The page browser's prompt and refusal once it takes PDFs too.
+  String get calendarPagePromptPdf;
+  String get calendarPageNotCalendarPdf;
+  /// A PDF picked while the server cannot read one, and one too large to send.
+  String get pdfNotReadableYet;
+  String get fileTooLarge;
+  /// Which Bezirk of a printed plan is the household's.
+  String get pickDistrictFirst;
+  String get pdfDistrictIntro;
+  String nextPickups(String dates);
   /// The town's page opened inside the app (iOS), so its iCal export comes
   /// back as a file: the row's line, the prompt over the page, and the two
   /// things that can go wrong there.
@@ -910,6 +933,9 @@ abstract class AppStrings {
   // day, where a link keeps itself current. Saying so at the moment of choosing
   // is the difference between a calendar that quietly goes empty next January
   // and one the household knows to replace.
+  /// The Abfall upload button once a PDF plan is taken too (pdfUploadAvailable):
+  /// a household holding last year's PDF would not guess that it counts.
+  String get uploadCalendarFileOrPdf;
   String get uploadCalendarFile;
   String get uploadCalendarFileHint;
   String get calendarFileNote;
@@ -1790,6 +1816,9 @@ abstract class AppStrings {
   String get notifyBriefSubtitle;
   String get notifyAbfallTitle;
   String get notifyAbfallSubtitle;
+  String get notifyAbfallWhen;
+  String get abfallDayBefore;
+  String get abfallSameDay;
   String get notifyTaskTimesTitle;
   String get notifyTaskTimesSubtitle;
 
@@ -1810,6 +1839,10 @@ abstract class AppStrings {
   /// An all-day event's two choices, which are clock times rather than offsets.
   String reminderDayBefore(String time);
   String reminderMorningOf(String time);
+  String get firstStepBinReminder;
+  String get firstStepBinReminderBody;
+  String get reminderAbfallShared;
+  String get reminderAbfallCustom;
 
   /// The provider already has an alarm on this appointment — said so the user
   /// does not set a second one by accident.
@@ -1826,6 +1859,7 @@ abstract class AppStrings {
   /// what is printed on the calendar, so it stays as the vendor wrote it.
   String noticeAbfallTitle(String bins);
   String get noticeAbfallBody;
+  String get noticeAbfallBodyToday;
   String noticeTaskDue(String time);
 
   /// A budget past its limit, or running ahead of the month with time left to

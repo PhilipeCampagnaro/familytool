@@ -10,10 +10,11 @@ import { ABFALL_PROVIDERS, type AbfallProvider } from "../abfall_providers.ts";
 import {
   type AbfallConfig, fetchWithTimeout, type GeoAddress, JSON_HEADERS, normStreet,
   type ResolveResult, type RhythmChoice, type RhythmTag, type StreetOption, streetStem,
-  type SyncedEvent, type Town, townMatches, type VendorAdapter,
+  type SyncedEvent, type Town, townHead, townKey, townMatches, type VendorAdapter,
 } from "./core.ts";
 import { cityState, PROVIDER_STATE, stateCode } from "./geo.ts";
 import { adapterFor } from "./registry.ts";
+import { TOWN_PAGE_URLS, TOWN_PAGES } from "./town_pages.ts";
 import { UPLOAD_TOWNS } from "./upload_towns.ts";
 
 // ── Upload-only providers (see `upload` in abfall_providers.ts) ─────────────
@@ -34,16 +35,73 @@ function uploadTowns(p: AbfallProvider): Town[] {
   return names.map((name) => ({ vendor: p.family, name, provider: p.id }))
 }
 
-/// Whether `town` is one of the upload-only towns — from the registry alone,
-/// with no network. `calendar-link` asks it before a bin file goes onto the
-/// free connection (see BIN_FILE_ACCOUNT in entitlements.ts).
-export function isUploadOnlyTown(town: string): boolean {
-  const tl = (town || '').trim().toLowerCase()
-  if (tl.length < 3) return false
-  for (const p of UPLOAD.values()) {
-    if (uploadTowns(p).some((t) => townMatches(t.name.toLowerCase(), tl))) return true
+// The keys an upload-only provider's towns answer to — strict, because there is
+// no street list behind them to catch a wrong town (see `townKey` in core.ts).
+// "Bitburg-Mötsch" also answers to "bitburg" because the provider lists Bitburg
+// by district, which is only believed when two or more of its names share the
+// part before the hyphen: a lone "Mülheim-Kärlich" is not Mülheim.
+const _uploadKeys = new Map<string, Set<string>>()
+function uploadKeys(p: AbfallProvider): Set<string> {
+  let keys = _uploadKeys.get(p.id)
+  if (keys) return keys
+  keys = new Set()
+  const bases = new Map<string, number>()
+  const names = uploadTowns(p).map((t) => t.name)
+  for (const name of names) {
+    const whole = name.split(' - ')[0]
+    keys.add(townKey(name))
+    keys.add(townKey(whole))
+    const hy = whole.indexOf('-')
+    if (hy > 0) {
+      const base = townKey(whole.slice(0, hy))
+      bases.set(base, (bases.get(base) ?? 0) + 1)
+    }
   }
-  return false
+  for (const [base, n] of bases) if (n >= 2 && base) keys.add(base)
+  keys.delete('')
+  _uploadKeys.set(p.id, keys)
+  return keys
+}
+
+function uploadTownMatches(p: AbfallProvider, town: string): boolean {
+  const key = townKey(town)
+  return key.length >= 3 && uploadKeys(p).has(key)
+}
+
+/// The official page of a town no provider serves, from the Abfuhrkalender
+/// Atlas (abfall/town_pages.ts): the whole name first, then the name before its
+/// first connector where the atlas found that unique. Without a Bundesland the
+/// name has to mean one page in every state that knows it.
+export function townPage(
+  town: string, state?: string | null,
+): { page?: string; format?: 'ics' | 'pdf' | 'html' | 'app' } | null {
+  const key = townKey(town)
+  const head = townHead(town)
+  if (key.length < 3) return null
+  const lookup = (st: string): number | undefined => {
+    const byKey = TOWN_PAGES[st]
+    if (!byKey) return undefined
+    return byKey[key] ?? (head.length >= 3 ? byKey[head] : undefined)
+  }
+  let ix: number | undefined
+  if (state) ix = lookup(state)
+  else {
+    const hits = new Set(Object.keys(TOWN_PAGES).map(lookup).filter((i) => i !== undefined))
+    if (hits.size === 1) ix = [...hits][0]
+  }
+  if (ix === undefined) return null
+  const [page, format] = TOWN_PAGE_URLS[ix]
+  return { ...(page ? { page } : {}), ...(format ? { format } : {}) }
+}
+
+/// Whether `town` is one of the upload-only towns — from the registry and the
+/// atlas alone, with no network. `calendar-link` asks it before a bin file goes
+/// onto the free connection (see BIN_FILE_ACCOUNT in entitlements.ts).
+export function isUploadOnlyTown(town: string): boolean {
+  const tl = (town || '').trim()
+  if (tl.length < 3) return false
+  for (const p of UPLOAD.values()) if (uploadTownMatches(p, tl)) return true
+  return townPage(tl) !== null
 }
 
 // Cheap in-memory cache so the provider fan-out only runs once per warm instance.
@@ -99,6 +157,15 @@ export async function resolveAddress(addr: GeoAddress): Promise<ResolveResult> {
   // Upload-only is the last answer, not the first: the postcode may still lead
   // to a provider we are allowed to read.
   let uploadOnly = direct
+  // And last of all the town's own page, from the atlas: nobody we read serves
+  // it, so the household fetches the file there. Named by the address's own
+  // town when the atlas knows it, else by the municipality the postcode names.
+  const state = stateCode(addr.state) ?? stateCode(cityState(addr.town))
+  const atlas = (name: string): ResolveResult | null => {
+    const found = townPage(name, state)
+    return found ? { supported: false, uploadOnly: true, atlas: true, town: name, ...found } : null
+  }
+  let fromAtlas = atlas(townName)
 
   if (addr.postcode) {
     try {
@@ -117,11 +184,12 @@ export async function resolveAddress(addr: GeoAddress): Promise<ResolveResult> {
           const viaPlz = await matchTownAndStreet(towns, n, addr)
           if (viaPlz && !viaPlz.uploadOnly) return settleHouseNumber(viaPlz, addr)
           uploadOnly ??= viaPlz
+          fromAtlas ??= atlas(n)
         }
       }
     } catch { /* fall through to unsupported */ }
   }
-  return uploadOnly ?? { supported: false, town: townName }
+  return uploadOnly ?? fromAtlas ?? { supported: false, town: townName }
 }
 
 // The app asks for the house number with the address, so a vendor that answers
@@ -151,6 +219,7 @@ async function matchTownAndStreet(
   towns: Town[], townName: string, addr: GeoAddress,
 ): Promise<ResolveResult | null> {
   const tl = townName.toLowerCase()
+  const addrKey = townKey(townName)
   // The Bundesland the address is in, from the geocoder or — for the three
   // city-states, where Photon names none — from the city itself.
   const addrState = stateCode(addr.state) ?? stateCode(cityState(addr.town))
@@ -159,15 +228,22 @@ async function matchTownAndStreet(
     return !!addrState && !!provider && provider !== addrState
   }
   const candidates = towns
-    .filter((t) => townMatches(t.name.toLowerCase(), tl))
+    .filter((t) => {
+      const blocked = UPLOAD.get(t.provider)
+      if (blocked) return uploadTownMatches(blocked, townName)
+      // The vendor's "Buch a. Erlbach" is the geocoder's "Buch am Erlbach".
+      return townMatches(t.name.toLowerCase(), tl) || (addrKey.length >= 3 && townKey(t.name) === addrKey)
+    })
     // **A town in another Bundesland is a different town with the same name.**
     // 37 names in the registry are served in more than one state, and where the
     // vendor publishes one schedule for the whole town it accepts any street,
     // so the match succeeds and the household is handed a stranger's bin days.
     // See the note on PROVIDER_STATES in abfall_providers.ts.
     .filter((t) => !wrongState(t))
-    // Exact town-name matches first.
-    .sort((a, b) => Number(b.name.toLowerCase() === tl) - Number(a.name.toLowerCase() === tl))
+    // Exact town-name matches first, then the same name spelled differently.
+    .sort((a, b) =>
+      Number(b.name.toLowerCase() === tl) - Number(a.name.toLowerCase() === tl) ||
+      Number(townKey(b.name) === addrKey) - Number(townKey(a.name) === addrKey))
     .slice(0, 6)
   if (!candidates.length) return null
 

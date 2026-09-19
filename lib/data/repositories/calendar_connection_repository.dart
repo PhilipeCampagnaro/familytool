@@ -321,22 +321,32 @@ class CalendarConnectionRepository {
   /// picked, for a calendar that is published as a download and not as a link.
   /// Exactly one of [url] and [ics] is sent, and everything after this point —
   /// the check, the sealing, the parse on every refresh — is the same road.
-  Future<({String? name, int events, DateTime? coversTo})> checkCalendarLink({
+  ///
+  /// [pdf] is a third way in, for a town that prints its plan: the file's bytes
+  /// in base64, turned into a calendar by the server. A PDF usually holds every
+  /// Bezirk or Tour of the town, so the answer lists them as [PdfDistrict]s and
+  /// [addCalendarLink] is told which one is the household's. Only sent while
+  /// `pdfUploadAvailable` says the server can read one.
+  Future<({String? name, int events, DateTime? coversTo, List<PdfDistrict> choices})> checkCalendarLink({
     required CalendarProvider provider,
     String? url,
     String? ics,
+    String? pdf,
+    String? fileName,
     String? abfallTown,
   }) async {
     final body = await _invoke('calendar-link', {
       'action': 'check',
       'provider': provider.wire,
-      if (ics != null) 'ics': ics else 'url': url?.trim() ?? '',
+      if (pdf != null) 'pdf': pdf else if (ics != null) 'ics': ics else 'url': url?.trim() ?? '',
+      if (pdf != null) 'file_name': ?fileName,
       'abfall_town': ?abfallTown,
     });
     return (
       name: body['name'] as String?,
       events: (body['events'] as num?)?.toInt() ?? 0,
       coversTo: _dateOrNull(body['covers_to']),
+      choices: PdfDistrict.listFrom(body['choices']),
     );
   }
 
@@ -368,11 +378,17 @@ class CalendarConnectionRepository {
   /// whose provider we may not fetch from. The function checks the town and
   /// the file's contents and puts it on the free Abfall-file connection
   /// ([CalendarConnection.binFileAccount]), which the plan does not count.
+  ///
+  /// [pdf] with [choice] adds the one Bezirk of a printed plan that
+  /// [checkCalendarLink] listed; from there it is an uploaded file like any
+  /// other.
   Future<({String? connectionId, String? externalId})> addCalendarLink({
     required CalendarProvider provider,
     required String name,
     String? url,
     String? ics,
+    String? pdf,
+    String? choice,
     String? fileName,
     String? account,
     String? abfallTown,
@@ -380,7 +396,8 @@ class CalendarConnectionRepository {
     final body = await _invoke('calendar-link', {
       'action': 'add',
       'provider': provider.wire,
-      if (ics != null) 'ics': ics else 'url': url?.trim() ?? '',
+      if (pdf != null) 'pdf': pdf else if (ics != null) 'ics': ics else 'url': url?.trim() ?? '',
+      if (pdf != null) 'choice': ?choice,
       'file_name': ?fileName,
       'name': name.trim(),
       if (account != null && account.trim().isNotEmpty) 'account': account.trim(),
@@ -484,17 +501,6 @@ class CalendarConnectionRepository {
   Future<AbfallCoverage> resolveAddress(GeoAddress address) async {
     final body = await _invoke('abfall-lookup', {'action': 'resolve', 'address': address.toMap()});
     return AbfallCoverage.fromMap(Map<String, dynamic>.from(body['result'] as Map));
-  }
-
-  /// Files the town of an address no vendor serves, so the map grows from what
-  /// households ask for. `stateCode` is the Bundesland for grouping the queue;
-  /// the street never leaves the device — a vendor is found per municipality.
-  Future<void> requestAbfall(GeoAddress address, {String? stateCode}) async {
-    await _invoke('abfall-lookup', {
-      'action': 'request',
-      'address': address.toMap(),
-      'state': ?stateCode,
-    });
   }
 
   /// Validates a pasted ICS link by counting the events in it. A link that

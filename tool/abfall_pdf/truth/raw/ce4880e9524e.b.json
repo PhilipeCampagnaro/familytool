@@ -1,0 +1,21 @@
+{
+  "id": "ce4880e9524e",
+  "labeller": "b",
+  "calendar": true,
+  "year": 2026,
+  "covers": "2026-01-01..2026-12-31",
+  "district": "Hohenfels",
+  "codes": [],
+  "legend": {"Restmüll": "rest", "Bio / Bio Sommer": "bio", "Papier": "papier", "grüner Punkt": "gelb", "Sperrmüll": "sperr", "Problemmüll": "schadstoff"},
+  "window": ["2026-01", "2026-02", "2026-03", "2026-09"],
+  "bins": {
+    "rest": ["2026-01-09", "2026-02-04", "2026-03-04", "2026-09-16"],
+    "bio": ["2026-01-13", "2026-01-26", "2026-02-09", "2026-02-23", "2026-03-09", "2026-03-23", "2026-09-07", "2026-09-14", "2026-09-21", "2026-09-28"],
+    "papier": ["2026-01-02", "2026-01-27", "2026-02-24", "2026-03-24", "2026-09-08"],
+    "gelb": ["2026-01-17", "2026-02-13", "2026-03-13", "2026-09-25"],
+    "sperr": ["2026-03-20", "2026-09-25"],
+    "schadstoff": ["2026-02-24"]
+  },
+  "unsure": [],
+  "notes": "Single town, whole-year one calendar, no district split. Each day cell carries a plain-text label (Restmüll/Bio/Papier/grüner Punkt/Sperrmüll/Altholz/Problemmüll) rather than a colour code; the background shading (orange weekends, yellow bands) is decorative/week-numbering, not a bin marker, so only labelled cells were counted. 'Bio Sommer' (a weekly summer-season Biotonne pickup, Jun-Sep) was counted under bio like plain 'Bio'. Feb 24 and Sep 25 each carry two labels in one cell ('Papier/Problemmüll' and 'grüner Punkt/Sperrmüll'); both bins were recorded for those dates. 'Altholz' (Jan/Mar/Sep) and 'Elektro- u. Kühlgeräte' (Feb 10, Sep 9) have no matching key and were left out, as was the one-off 'Häckselaktion' (Mar 14, a branch-chipping drop-off event rather than a Grünschnitt bin route). All counted dates cross-checked against their printed weekday letters against 2026-01-01=Thursday; no mismatches."
+}

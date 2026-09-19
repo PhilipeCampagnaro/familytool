@@ -166,6 +166,14 @@ export interface ResolveResult {
   // where the town hands out its calendar, when we know it.
   uploadOnly?: boolean
   page?: string
+  // What `page` hands out, where the Abfuhrkalender Atlas says: 'ics' a
+  // calendar file, 'pdf' a printable plan, 'html' dates on the page only, 'app'
+  // only the town's own app. Absent for a provider row, which says nothing.
+  format?: 'ics' | 'pdf' | 'html' | 'app'
+  // The answer came from the atlas, not from a provider row: nobody we know
+  // serves the town, so there is no vendor that refused us — only the town's
+  // own page, if the atlas found one (`page` may be absent).
+  atlas?: boolean
 }
 
 // Fold a name to plain a–z so that two spellings of the same street compare
@@ -228,6 +236,42 @@ export function streetStem(s: string): string {
 export function townMatches(candidate: string, target: string): boolean {
   if (candidate === target) return true
   return containsWord(candidate, target) || containsWord(target, candidate)
+}
+
+// ── Town keys: the strict match for towns nobody reads ──────────────────────
+//
+// `townMatches` is loose on purpose — a live provider still has to find the
+// street, which is the real test. A town served only by a file, or only by its
+// own page, has no street list behind it, so the name is the whole evidence and
+// "Buch" must not stand for "Buch a.Erlbach". `townKey` folds the register's and
+// the geocoder's spellings of one name together ("Wörth a.d.Donau, St" and
+// "Wörth an der Donau" are both "wörth donau"); `townHead` is the name before
+// its first connector ("wörth"), used only where it is unique.
+//
+// MUST stay identical to town_key/town_head in
+// tool/abfall_authorities/gen_town_pages.py, which computes the keys of
+// abfall/town_pages.ts.
+const TOWN_CONNECTORS = new Set([
+  'a', 'am', 'an', 'der', 'die', 'dem', 'den', 'd', 'i', 'im', 'in', 'b', 'bei',
+  'ob', 'o', 'v', 'vor', 'vd', 'u', 'und', 'zu', 'zum', 'zur',
+])
+
+function townTokens(name: string): string[] {
+  const s = (name || '').toLowerCase().split(',')[0].replace(/\([^)]*\)/g, ' ')
+  return s.split(/[\s./]+/).filter(Boolean).map((t) => t === 'st' ? 'sankt' : t)
+}
+
+export function townKey(name: string): string {
+  return townTokens(name).filter((t) => !TOWN_CONNECTORS.has(t)).join(' ')
+}
+
+export function townHead(name: string): string {
+  const head: string[] = []
+  for (const t of townTokens(name)) {
+    if (TOWN_CONNECTORS.has(t)) break
+    head.push(t)
+  }
+  return head.join(' ')
 }
 
 export function containsWord(haystack: string, needle: string): boolean {

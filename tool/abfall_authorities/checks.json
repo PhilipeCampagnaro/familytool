@@ -1,0 +1,3836 @@
+{
+ "https://www.abfallwirtschaft-hohenlohekreis.de/infos-beratung/abfallkalender": {
+  "status": 200,
+  "final": "https://www.abfallwirtschaft-hohenlohekreis.de/infos-beratung/abfallkalender",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.stadtwerke-baden-baden.de/de/entsorgung/umweltkalender.php?navid=745143745143": {
+  "status": 200,
+  "final": "https://www.stadtwerke-baden-baden.de/de/entsorgung/umweltkalender.php?navid=745143745143",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://abfall-scout.de/abfuhrkalender-online": {
+  "status": 200,
+  "final": "https://abfall-scout.de/abfuhrkalender-online",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://abfuhrkalender.ceb-coburg.de/": {
+  "status": 200,
+  "final": "https://abfuhrkalender.ceb-coburg.de/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://albdonaukreis.buergerportal.digital/calendar": {
+  "status": 200,
+  "final": "https://albdonaukreis.buergerportal.digital/calendar/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://athos-onlinedienste.rv.de/WasteManagementRavensburgPrivat/WasteManagementServlet?SubmitAction=wasteDisposalServices&InFrameMode=FALSE": {
+  "status": 200,
+  "final": "https://athos-onlinedienste.rv.de/WasteManagementRavensburgPrivat/WasteManagementServlet?SubmitAction=wasteDisposalServices&InFrameMode=FALSE",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://awb-fds.de/service/abfallkalender/": {
+  "status": 200,
+  "final": "https://awb-fds.de/service/abfallkalender/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://awhas.de/privathaushalte/abfuhrtermine.html": {
+  "status": 200,
+  "final": "https://awhas.de/privathaushalte/abfuhrtermine.html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://ku-fichtelgebirge.de/abfuhrtermine/": {
+  "status": 200,
+  "final": "https://ku-fichtelgebirge.de/abfuhrtermine/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://kundenportalabfall-lb.de/abfuhrtermine": {
+  "status": 200,
+  "final": "https://kundenportalabfall-lb.de/abfuhrtermine",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://muehlingen.de/?page_id=1244": {
+  "status": 200,
+  "final": "https://muehlingen.de/?page_id=1244",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://radolfzell.muellmann-app.de/": {
+  "status": 200,
+  "final": "https://radolfzell.muellmann-app.de/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://sperrgut.landkreis-miltenberg.de/WasteManagementMiltenberg/WasteManagementServlet?SubmitAction=wasteDisposalServices": {
+  "status": 200,
+  "final": "https://sperrgut.landkreis-miltenberg.de/WasteManagementMiltenberg/WasteManagementServlet?SubmitAction=wasteDisposalServices",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://sperrmuell.kreis-nea.de/WasteManagementNeustadt/WasteManagementServlet?SubmitAction=wasteDisposalServices": {
+  "status": 200,
+  "final": "https://sperrmuell.kreis-nea.de/WasteManagementNeustadt/WasteManagementServlet?SubmitAction=wasteDisposalServices",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://wasserburg.mein-abfallkalender.online/": {
+  "status": 200,
+  "final": "https://wasserburg.mein-abfallkalender.online/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://web.c-trace.de/bayreuthstadt-abfallkalender/": {
+  "status": 200,
+  "final": "https://web.c-trace.de/bayreuthstadt-abfallkalender/(S(tvcy5edhu0kprhhvqsap4wjm))/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://webdienste.landkreis-fuerth.de/WasteManagementFuerth/WasteManagementServlet?SubmitAction=wasteDisposalServices&InFrameMode=TRUE": {
+  "status": 200,
+  "final": "https://webdienste.landkreis-fuerth.de/WasteManagementFuerth/WasteManagementServlet?SubmitAction=wasteDisposalServices&InFrameMode=TRUE",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.aach.de/de/Aktuelles/Abfallkalender": {
+  "status": 200,
+  "final": "https://www.aach.de/de/Aktuelles/Abfallkalender",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.abfall-hdh.de/abfuhr-und-entsorgung/abfuhrtermine/": {
+  "status": 200,
+  "final": "https://www.abfall-hdh.de/abfuhr-und-entsorgung/abfuhrtermine/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.abfall-tuttlingen.de/Abfalltermine-APP/": {
+  "status": 200,
+  "final": "https://www.abfall-tuttlingen.de/Abfalltermine-APP/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.abfall.landkreis-rosenheim.de/termine/abfuhrkalender.html": {
+  "status": 200,
+  "final": "https://www.abfall.landkreis-rosenheim.de/termine/abfuhrkalender.html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.abfallberatung-landsberg.de/abfuhrtermine/": {
+  "status": 200,
+  "final": "https://www.abfallberatung-landsberg.de/abfuhrtermine/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.abfallinfo-rhoen-grabfeld.de/service/abfuhr-wecker": {
+  "status": 200,
+  "final": "https://www.abfallinfo-rhoen-grabfeld.de/service/abfuhr-wecker",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.abfalltermine-bamberg.de/": {
+  "status": 200,
+  "final": "https://www.abfalltermine-bamberg.de/Bamberg/Landkreis/Bischberg",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.abfalltermine-forchheim.de/": {
+  "status": 200,
+  "final": "https://www.abfalltermine-forchheim.de/Forchheim/Landkreis/Forchheim%20-%20Hauptstra%C3%9Fe",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.abfallwelt.de/service/abfuhrkalender-online/": {
+  "status": 200,
+  "final": "https://www.abfallwelt.de/service/abfuhrkalender-online/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.abfallwirtschaft-loerrach-landkreis.de/abfallkalender": {
+  "status": 200,
+  "final": "https://www.abfallwirtschaft-loerrach-landkreis.de/abfallkalender",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.abfallwirtschaft-ortenaukreis.de/abfallkalender-abfuhrtermine/abfallkalender-sperrmuelltermine": {
+  "status": 200,
+  "final": "https://www.abfallwirtschaft-ortenaukreis.de/abfallkalender-abfuhrtermine/abfallkalender-sperrmuelltermine",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.abfuhrplan-landkreis-neumarkt.de/": {
+  "status": 200,
+  "final": "https://www.abfuhrplan-landkreis-neumarkt.de/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.aw-landkreis-heilbronn.de/abfall-entsorgen/abfuhrtermine/abfallkalender/": {
+  "status": 200,
+  "final": "https://www.aw-landkreis-heilbronn.de/abfall-entsorgen/abfuhrtermine/abfallkalender/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.awb-bb.de/abfuhrtermine": {
+  "status": 200,
+  "final": "https://www.awb-bb.de/abfuhrtermine",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.awb-es.de/abfuhr/abfuhrtermine/": {
+  "status": 200,
+  "final": "https://www.awb-es.de/abfuhr/abfuhrtermine/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.awb-gp.de/termine/abfuhrtermine": {
+  "status": 200,
+  "final": "https://www.awb-gp.de/termine/abfuhrtermine",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.awb-landkreis-rastatt.de/abfallkalender": {
+  "status": 200,
+  "final": "https://www.awb-landkreis-rastatt.de/abfallkalender",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.awg-info.de/unsere-leistungen/abfuhrtermine/uebersicht": {
+  "status": 200,
+  "final": "https://www.awg-info.de/unsere-leistungen/abfuhrtermine/uebersicht",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.awg.de/abfallentsorgung/abfuhrkalender": {
+  "status": 200,
+  "final": "https://www.awg.de/abfallentsorgung/abfuhrkalender",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.awista-starnberg.de/abfallwirtschaftskalender/": {
+  "status": 200,
+  "final": "https://www.awista-starnberg.de/abfallwirtschaftskalender/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.awp-paf.de/termine/abfuhrtermine/": {
+  "status": 200,
+  "final": "https://www.awp-paf.de/termine/abfuhrtermine/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.azv-hof.de/privat/abfuhrtermine/abfuhrkalender-landkreis-hof.html": {
+  "status": 200,
+  "final": "https://www.azv-hof.de/privat/abfuhrtermine/abfuhrkalender-landkreis-hof.html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.azv-hof.de/privat/abfuhrtermine/abfuhrkalender-stadt-hof.html": {
+  "status": 200,
+  "final": "https://www.azv-hof.de/privat/abfuhrtermine/abfuhrkalender-stadt-hof.html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.badkissingen.de/stadt/behoerdenwegweiser/stdtische-fachbereiche/abfallwirtschaft/38908.Digitaler-Abfuhrkalender-fuer-Ihre-Strasse.html": {
+  "status": 200,
+  "final": "https://www.badkissingen.de/stadt/behoerdenwegweiser/stdtische-fachbereiche/abfallwirtschaft/38908.Digitaler-Abfuhrkalender-fuer-Ihre-Strasse.html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.biberach.de/abfuhrkalender": {
+  "status": 200,
+  "final": "https://www.biberach.de/abfuhrkalender",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.bodenseekreis.de/abfuhrkalender": {
+  "status": 200,
+  "final": "https://www.bodenseekreis.de/umwelt-landnutzung/abfallentsorgung-privat/termine/abfuhrkalender/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.bodman-ludwigshafen.de/de/Rathaus-und-Buergerservice/Buergerservice/Muellkalender": {
+  "status": 200,
+  "final": "https://www.bodman-ludwigshafen.de/de/Rathaus-und-Buergerservice/Buergerservice/Muellkalender",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.breisgau-hochschwarzwald.de/Start/Service+_+Verwaltung/Abfallkalender+und+App.html": {
+  "status": 200,
+  "final": "https://www.breisgau-hochschwarzwald.de/Start/Service+_+Verwaltung/Abfallkalender+und+App.html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.buehl.de/abfallkalender": {
+  "status": 200,
+  "final": "https://www.buehl.de/abfallkalender",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.buesingen.de/de/Rathaus/Abfallentsorgung": {
+  "status": 200,
+  "final": "https://www.buesingen.de/de/Rathaus/Abfallentsorgung",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.eigeltingen.de/buerger/abfallkalender/": {
+  "status": 200,
+  "final": "https://www.eigeltingen.de/abfallkalender/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.entsorgung-cham.de/": {
+  "status": 200,
+  "final": "https://pwa.entsorgung-cham.de/termine",
+  "moved_host": true,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.entsorgung-sad.de/": {
+  "status": 200,
+  "final": "https://www.entsorgung-sad.de/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.erlangen-hoechstadt.de/aktuelles/abfallkalender/": {
+  "status": 200,
+  "final": "https://www.erlangen-hoechstadt.de/aktuelles/abfallkalender/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.eva-abfallentsorgung.de/Service-Center/Downloads%20-%20Infos/Abfuhrkalender%20individuell": {
+  "status": 200,
+  "final": "https://www.eva-abfallentsorgung.de/Service-Center/Downloads%20-%20Infos/Abfuhrkalender%20individuell",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.gaienhofen.de/de/rathaus/entsorgung-umwelt/abfall": {
+  "status": 200,
+  "final": "https://www.gaienhofen.de/de/rathaus/entsorgung-umwelt/abfall",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.gemeinde-allensbach.de/wohnen-leben/abfall-recycling/abfuhrkalender": {
+  "status": 200,
+  "final": "https://www.gemeinde-allensbach.de/wohnen-leben/abfall-recycling/abfuhrkalender",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.gw-gap.de/muellentsorgung/termine-muellabfuhr": {
+  "status": 200,
+  "final": "https://www.gw-gap.de/muellentsorgung/termine-muellabfuhr",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.hohenfels.de/index.php?id=117": {
+  "status": 200,
+  "final": "https://www.hohenfels.de/index.php?id=117",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.konstanz.de/entsorgungsbetriebe/abfuhrtermine/online-abfuhrkalender": {
+  "status": 200,
+  "final": "https://www.konstanz.de/entsorgungsbetriebe/abfuhrtermine/online-abfuhrkalender",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.kwin-online.de/haushalte/abfuhr-termine.html": {
+  "status": 200,
+  "final": "https://www.kwin-online.de/haushalte/abfuhr-termine.html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.landkreis-as.de/abfallwirtschaft/abfuhrtermine.php?jahr=2026": {
+  "status": 200,
+  "final": "https://www.landkreis-as.de/abfallwirtschaft/abfuhrtermine.php?jahr=2026",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.landkreis-bayreuth.de/buergerservice/umwelt-und-abfallwirtschaft/abfallwirtschaft/abfuhrkalender": {
+  "status": 200,
+  "final": "https://www.landkreis-bayreuth.de/buergerservice/umwelt-und-abfallwirtschaft/abfallwirtschaft/abfuhrkalender",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.landkreis-eichstaett.de/buergerservice/themen/abfallwirtschaft/muellabfuhrtermine": {
+  "status": 200,
+  "final": "https://www.landkreis-eichstaett.de/buergerservice/themen/abfallwirtschaft/muellabfuhrtermine",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.landkreis-kelheim.de/landratsamt/onlinedienste/abfallkalender/": {
+  "status": 200,
+  "final": "https://www.landkreis-kelheim.de/landratsamt/onlinedienste/abfallkalender/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.landkreis-landshut.de/themen/abfall-umwelt-wasser/abfuhrkalender/": {
+  "status": 200,
+  "final": "https://www.landkreis-landshut.de/themen/abfall-umwelt-wasser/abfuhrkalender/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.landkreis-regensburg.de/buergerservice/abfallratgeber/entsorgungskalender/": {
+  "status": 200,
+  "final": "https://www.landkreis-regensburg.de/buergerservice/abfallratgeber/entsorgungskalender/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.landkreis-rottweil.de/abfallkalender": {
+  "status": 200,
+  "final": "https://www.landkreis-rottweil.de/abfallkalender",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.landkreis-sigmaringen.de/abfallwesen/Entsorgungskalender": {
+  "status": 200,
+  "final": "https://www.landkreis-sigmaringen.de/abfallwesen/Entsorgungskalender",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.lra-gap.de/de/abfuhrkalender-online.html": {
+  "status": 200,
+  "final": "https://www.lra-gap.de/de/abfuhrkalender-online.html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.lrasbk.de/abfallkalender": {
+  "status": 200,
+  "final": "https://www.lrasbk.de/abfallkalender",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.main-spessart.de/themen/umwelt-natur/abfallberatung/abfuhrtermine/index.html": {
+  "status": 200,
+  "final": "https://www.main-spessart.de/themen/umwelt-natur/abfallberatung/abfuhrtermine/index.html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.main-tauber-kreis.de/abfallkalender": {
+  "status": 200,
+  "final": "https://www.main-tauber-kreis.de/abfallkalender",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.moos.de/leben-wohnen/entsorgung-sicherheit/abfall": {
+  "status": 200,
+  "final": "https://www.moos.de/leben-wohnen/entsorgung-sicherheit/abfall",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.muehlhausen-ehingen.de/de/Muell-und-Abfallentsorgung": {
+  "status": 200,
+  "final": "https://www.muehlhausen-ehingen.de/de/Muell-und-Abfallentsorgung",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.mzvhegau.de/abholstandorte/engen/": {
+  "status": 200,
+  "final": "https://www.mzvhegau.de/abholstandorte/engen/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.mzvhegau.de/abholstandorte/gailingen/": {
+  "status": 200,
+  "final": "https://www.mzvhegau.de/abholstandorte/gailingen/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.mzvhegau.de/abholstandorte/gottmadingen/": {
+  "status": 200,
+  "final": "https://www.mzvhegau.de/abholstandorte/gottmadingen/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.mzvhegau.de/abholstandorte/hilzingen/": {
+  "status": 200,
+  "final": "https://www.mzvhegau.de/abholstandorte/hilzingen/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.mzvhegau.de/abholstandorte/rielasingen-worblingen/": {
+  "status": 200,
+  "final": "https://www.mzvhegau.de/abholstandorte/rielasingen-worblingen/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.oehningen.de/buergerservice/wohnen/abfall": {
+  "status": 200,
+  "final": "https://www.oehningen.de/buergerservice/wohnen/abfall",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.orsingen-nenzingen.de/aktuelles/Abfallentsorgung/Alle-Muelltermine": {
+  "status": 200,
+  "final": "https://www.orsingen-nenzingen.de/aktuelles/Abfallentsorgung/Alle-Muelltermine",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.ostallgaeu.de/buerger-service/abfall-entsorgung/abfuhr-und-sammeltermine": {
+  "status": 200,
+  "final": "https://www.ostallgaeu.de/buerger-service/abfall-entsorgung/abfuhr-und-sammeltermine",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.reichenau.de/de/Rathaus-Service/Wohnen-Bauen/Ver-Entsorgung": {
+  "status": 200,
+  "final": "https://www.reichenau.de/de/Rathaus-Service/Wohnen-Bauen/Ver-Entsorgung",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.rosenheim.de/buergerservice/ver-und-entsorgung/muellabfuhr/": {
+  "status": 200,
+  "final": "https://www.rosenheim.de/buergerservice/ver-und-entsorgung/muellabfuhr/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.schweinfurt.de/umweltverkehr/abfall--entsorgung/mllkalender/14894.Aktuelle-Abfuhrtermine-und-Muellkalender.html": {
+  "status": 200,
+  "final": "https://www.schweinfurt.de/umweltverkehr/abfall--entsorgung/mllkalender/14894.Aktuelle-Abfuhrtermine-und-Muellkalender.html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.stadt.bamberg.de/Schnellnavigation/Suche/Abfuhrkalender.php?object=tx,2730.2450.1": {
+  "status": 200,
+  "final": "https://www.stadt.bamberg.de/Schnellnavigation/Suche/Abfuhrkalender.php?object=tx,2730.2450.1",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.stadtwerke-singen.de/abfall/abfallkalender-2026/": {
+  "status": 200,
+  "final": "https://www.stadtwerke-singen.de/abfall/abfallkalender-2026/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.steisslingen.de/abfallkalender/": {
+  "status": 200,
+  "final": "https://www.steisslingen.de/abfallkalender/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.stockach.de/leben-und-service/buergerservice/abfall--und-abwasserbeseitigung": {
+  "status": 200,
+  "final": "https://www.stockach.de/leben-und-service/buergerservice/abfall--und-abwasserbeseitigung",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.stwab.de/Abfall-Stadtreinigung/Muellabfuhr/Muellabfuhr.html": {
+  "status": 200,
+  "final": "https://www.stwab.de/Abfall-Stadtreinigung/Muellabfuhr/Muellabfuhr.html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.team-orange.info/3510": {
+  "status": 200,
+  "final": "https://www.team-orange.info/formulare/3510..html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.tengen.de/service+_+rathaus/buergerservice/abfallentsorgung/abfallkalender": {
+  "status": 200,
+  "final": "https://www.tengen.de/service+_+rathaus/buergerservice/abfallentsorgung/abfallkalender",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.vivowarngau.de/Abfalltermine-und-kalender": {
+  "status": 200,
+  "final": "https://www.vivowarngau.de/Abfalltermine-und-kalender",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.volkertshausen.de/leben-wohnen/ver-entsorgung/muelltermine": {
+  "status": 200,
+  "final": "https://www.volkertshausen.de/leben-wohnen/ver-entsorgung/muelltermine",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.weiden.de/umwelt/abfall-und-entsorgung/app/abfuhrtermine": {
+  "status": 200,
+  "final": "https://www.weiden.de/umwelt/abfall-und-entsorgung/app/abfuhrtermine",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.zak-kempten.de/entsorgen/entsorgungstermine/abfuhrtermine/": {
+  "status": 200,
+  "final": "https://www.zak-kempten.de/entsorgen/entsorgungstermine/abfuhrtermine/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.zaw-sr.de/abfuhrkalender": {
+  "status": 200,
+  "final": "https://www.zaw-sr.de/abfuhrkalender",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "http://www.entsorgungskalender-landkreis-holzminden.de/": {
+  "status": 200,
+  "final": "http://www.entsorgungskalender-landkreis-holzminden.de/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://abfall.landkreis-stade.de/abfuhrkalender/": {
+  "status": 200,
+  "final": "https://abfall.landkreis-stade.de/abfuhrkalender/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://abfallkalender.regioit.de/kalender-moerfelden-walldorf/index.jsp": {
+  "status": 200,
+  "final": "https://abfallkalender.regioit.de/kalender-moerfelden-walldorf/index.jsp",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://abfuhrkalender.nuernberger-land.de/waste_calendar/calendar": {
+  "status": 200,
+  "final": "https://abfuhrkalender.nuernberger-land.de/waste_calendar/calendar",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://altenstadt.mein-abfallkalender.online/": {
+  "status": 200,
+  "final": "https://altenstadt.mein-abfallkalender.online/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://avive-ebe.de/abfuhrtermine/": {
+  "status": 200,
+  "final": "https://avive-ebe.de/abfuhrtermine/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://awb.grafschaft-bentheim.de/awb/muellabfuhr/abfuhrtermine.php": {
+  "status": 200,
+  "final": "https://awb.grafschaft-bentheim.de/awb/muellabfuhr/abfuhrtermine.php",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://awido.cubefour.de/Customer/coburg/AppPresenter.aspx": {
+  "status": 200,
+  "final": "https://awido.cubefour.de/Customer/coburg/AppPresenter.aspx",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://bad-vilbel.mein-abfallkalender.online/": {
+  "status": 200,
+  "final": "https://bad-vilbel.mein-abfallkalender.online/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://biedenkopfmzv.buergerportal.digital/calendar": {
+  "status": 200,
+  "final": "https://biedenkopfmzv.buergerportal.digital/calendar/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://bischofsheim.de/rathaus-und-politik/uebersicht-der-verwaltung/fachbereich-bauen-und-bauhof/fachdienst-bauen/abfall/abfallkalender.html": {
+  "status": 200,
+  "final": "https://bischofsheim.de/rathaus-und-politik/uebersicht-der-verwaltung/fachbereich-bauen-und-bauhof/fachdienst-bauen/abfall/abfallkalender.html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://bn.mein-abfallkalender.online/": {
+  "status": 200,
+  "final": "https://bn.mein-abfallkalender.online/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://dreieich.mein-abfallkalender.online/": {
+  "status": 200,
+  "final": "https://dreieich.mein-abfallkalender.online/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://egelsbach.mein-abfallkalender.online/": {
+  "status": 200,
+  "final": "https://egelsbach.mein-abfallkalender.online/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://eltville.mein-abfallkalender.online/": {
+  "status": 200,
+  "final": "https://eltville.mein-abfallkalender.online/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://florstadt.de/abfallkalender/": {
+  "status": 200,
+  "final": "https://florstadt.de/abfallkalender/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://friedrichsdorf.mein-abfallkalender.online/": {
+  "status": 200,
+  "final": "https://friedrichsdorf.mein-abfallkalender.online/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://gedern.mein-abfallkalender.online/": {
+  "status": 200,
+  "final": "https://gedern.mein-abfallkalender.online/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://geisenheim.mein-abfallkalender.online/": {
+  "status": 200,
+  "final": "https://geisenheim.mein-abfallkalender.online/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://gemeinde-kefenrod.mein-abfallkalender.online/": {
+  "status": 200,
+  "final": "https://gemeinde-kefenrod.mein-abfallkalender.online/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://gfa-lueneburg.de/service/abfuhrkalender.html": {
+  "status": 200,
+  "final": "https://gfa-lueneburg.de/service/abfuhrkalender.html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://gib-entsorgung.de/haushalte/abfuhrkalender/": {
+  "status": 200,
+  "final": "https://gib-entsorgung.de/haushalte/abfuhrkalender/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://glauburg.mein-abfallkalender.online/": {
+  "status": 200,
+  "final": "https://glauburg.mein-abfallkalender.online/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://heusenstamm.mein-abfallkalender.online/": {
+  "status": 200,
+  "final": "https://heusenstamm.mein-abfallkalender.online/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://ismaning.de/umwelt-energie/abfall/abfallkalender/": {
+  "status": 200,
+  "final": "https://ismaning.de/umwelt-energie/abfall/abfallkalender/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://karben.mein-abfallkalender.online/": {
+  "status": 200,
+  "final": "https://karben.mein-abfallkalender.online/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://kaw.landkreis-guenzburg.de/online-dienste/abfuhrkalender.html": {
+  "status": 200,
+  "final": "https://kaw.landkreis-guenzburg.de/online-dienste/abfuhrkalender.html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://kiedrich.mein-abfallkalender.online/": {
+  "status": 200,
+  "final": "https://kiedrich.mein-abfallkalender.online/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://kundenportal.awb.uelzen.de/calendar/": {
+  "status": 200,
+  "final": "https://kundenportal.awb.uelzen.de/calendar/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://lkv.landkreis-verden.de/WasteManagementVerden/WasteManagementServlet?SubmitAction=wasteDisposalServices&InFrameMode=TRUE": {
+  "status": 200,
+  "final": "https://lkv.landkreis-verden.de/WasteManagementVerden/WasteManagementServlet?SubmitAction=wasteDisposalServices&InFrameMode=TRUE",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://lorch-rheingau.mein-abfallkalender.online/": {
+  "status": 200,
+  "final": "https://lorch-rheingau.mein-abfallkalender.online/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://lra-ab.cubefour.de/abfuhrkalender.html": {
+  "status": 200,
+  "final": "https://lra-ab.cubefour.de/abfuhrkalender.html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://marburg.mein-abfallkalender.online/": {
+  "status": 200,
+  "final": "https://marburg.mein-abfallkalender.online/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://mkw-grossefehn.de/abfuhr/abfuhrkalender.html": {
+  "status": 200,
+  "final": "https://mkw-grossefehn.de/abfuhr/abfuhrkalender.html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://muenzenberg.mein-abfallkalender.online/": {
+  "status": 200,
+  "final": "https://muenzenberg.mein-abfallkalender.online/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://mymuell.jumomind.com/webmodul/graevenwiesbach/": {
+  "status": 200,
+  "final": "https://mymuell.jumomind.com/webmodul/graevenwiesbach/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://mymuell.jumomind.com/webmodul/schmitten/": {
+  "status": 200,
+  "final": "https://mymuell.jumomind.com/webmodul/schmitten/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://mymuell.jumomind.com/webmodul/usingen/": {
+  "status": 200,
+  "final": "https://mymuell.jumomind.com/webmodul/usingen/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://neu-anspach.mein-abfallkalender.online/": {
+  "status": 200,
+  "final": "https://neu-anspach.mein-abfallkalender.online/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://neu-isenburg.mein-abfallkalender.online/": {
+  "status": 200,
+  "final": "https://neu-isenburg.mein-abfallkalender.online/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://nidda.mein-abfallkalender.online/": {
+  "status": 200,
+  "final": "https://nidda.mein-abfallkalender.online/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://nu.neu-ulm.de/buerger-service/leben-in-neu-ulm/abfall-sauberkeit/abfallkalender": {
+  "status": 200,
+  "final": "https://nu.neu-ulm.de/buerger-service/leben-in-neu-ulm/abfall-sauberkeit/abfallkalender",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://ober-moerlen.mein-abfallkalender.online/": {
+  "status": 200,
+  "final": "https://ober-moerlen.mein-abfallkalender.online/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://obertshausen.mein-abfallkalender.online/": {
+  "status": 200,
+  "final": "https://obertshausen.mein-abfallkalender.online/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://oestrich-winkel.mein-abfallkalender.online/": {
+  "status": 200,
+  "final": "https://oestrich-winkel.mein-abfallkalender.online/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://planegg.mein-abfallkalender.online/": {
+  "status": 200,
+  "final": "https://planegg.mein-abfallkalender.online/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://portal.staedteservice.de/calendar": {
+  "status": 200,
+  "final": "https://portal.staedteservice.de/calendar/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://ranstadt.mein-abfallkalender.online/": {
+  "status": 200,
+  "final": "https://ranstadt.mein-abfallkalender.online/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://rodgau.mein-abfallkalender.online/": {
+  "status": 200,
+  "final": "https://rodgau.mein-abfallkalender.online/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://roedermark.mein-abfallkalender.online/": {
+  "status": 200,
+  "final": "https://roedermark.mein-abfallkalender.online/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://ros.jumomind.com/webmodul/rosbach/": {
+  "status": 200,
+  "final": "https://ros.jumomind.com/webmodul/rosbach/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://ruedesheim.mein-abfallkalender.online/": {
+  "status": 200,
+  "final": "https://ruedesheim.mein-abfallkalender.online/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://stadt-buedingen.mein-abfallkalender.online/": {
+  "status": 200,
+  "final": "https://stadt-buedingen.mein-abfallkalender.online/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://stadt-butzbach.mein-abfallkalender.online/": {
+  "status": 200,
+  "final": "https://stadt-butzbach.mein-abfallkalender.online/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://stadt-reichelsheim.mein-abfallkalender.online/": {
+  "status": 200,
+  "final": "https://stadt-reichelsheim.mein-abfallkalender.online/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://stadtallendorf.de/Leben/Ver-und-Entsorgung/Abfallwirtschaft/Abfallkalender/": {
+  "status": 200,
+  "final": "https://stadtallendorf.de/Leben/Ver-und-Entsorgung/Abfallwirtschaft/Abfallkalender/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://walluf.mein-abfallkalender.online/": {
+  "status": 200,
+  "final": "https://walluf.mein-abfallkalender.online/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://webapp.abfall-kreis-kassel.de/": {
+  "status": 200,
+  "final": "https://webapp.abfall-kreis-kassel.de/abfallkalender",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://weilrod.mein-abfallkalender.online/": {
+  "status": 200,
+  "final": "https://weilrod.mein-abfallkalender.online/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://wgv.cubefour.de/abfuhrkalender.html": {
+  "status": 200,
+  "final": "https://wgv.cubefour.de/abfuhrkalender.html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://woellstadt.mein-abfallkalender.online/": {
+  "status": 200,
+  "final": "https://woellstadt.mein-abfallkalender.online/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.123abfallkalender.de/Ebsdorfergrund": {
+  "status": 200,
+  "final": "https://www.123abfallkalender.de/abfallkalender/rpecasvg-ebsdorfergrund",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.ab-peine.de/Abfuhrtermine/": {
+  "status": 200,
+  "final": "https://www.ab-peine.de/Abfuhrtermine/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.abfall-app-gifhorn.de/kalender.html": {
+  "status": 200,
+  "final": "https://www.abfall-app-gifhorn.de/kalender.html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.abfallwirtschaft-vechta.de/CALENDER/index_strassen.php": {
+  "status": 200,
+  "final": "https://www.abfallwirtschaft-vechta.de/CALENDER/index_strassen.php",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.abfuhrplan-schwabach.de/": {
+  "status": 200,
+  "final": "https://www.abfuhrplan-schwabach.de/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.ahk-heidekreis.de/fuer-privatkunden/abfuhrzeiten.html": {
+  "status": 200,
+  "final": "https://www.ahk-heidekreis.de/fuer-privatkunden/abfuhrzeiten.html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.alw-wf.de/index.php/abfallkalender": {
+  "status": 200,
+  "final": "https://www.alw-wf.de/index.php/abfallkalender",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.ansbach.de/B%C3%BCrger/Umwelt-Natur/Abfall-Recycling/Abfuhrpl%C3%A4ne/": {
+  "status": 200,
+  "final": "https://www.ansbach.de/B%C3%BCrger/Umwelt-Natur/Abfall-Recycling/Abfuhrpl%C3%A4ne/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.appfuhr.de/": {
+  "status": 200,
+  "final": "https://www.appfuhr.de/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.aschheim.de/umwelt-energie/abfallkalender": {
+  "status": 200,
+  "final": "https://www.aschheim.de/umwelt-energie/abfallkalender",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.awb-emsland.de/service/abfuhrkalender/": {
+  "status": 200,
+  "final": "https://www.awb-emsland.de/service/abfuhrkalender/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.awb-landkreis-augsburg.de/aktuelles/abfuhrtermine": {
+  "status": 200,
+  "final": "https://www.awb-landkreis-augsburg.de/aktuelles/abfuhrtermine",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.awb-neu-ulm.de/abfuhrtermine": {
+  "status": 200,
+  "final": "https://www.awb-neu-ulm.de/abfuhrtermine",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.awigo.de/haushalt/abfallinformationen/abfuhrtermine": {
+  "status": 200,
+  "final": "https://www.awigo.de/haushalt/abfallinformationen/abfuhrtermine",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.awv-gg.de/abfallkalender/individueller-abfallkalender/": {
+  "status": 200,
+  "final": "https://www.awv-gg.de/abfallkalender/individueller-abfallkalender/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.awv-isar-inn.de/informationen/abfuhrkalender/": {
+  "status": 200,
+  "final": "https://www.awv-isar-inn.de/informationen/abfuhrkalender/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.awv-nordschwaben.de/tonnenabfuhr/abfuhrkalender.html": {
+  "status": 200,
+  "final": "https://www.awv-nordschwaben.de/tonnenabfuhr/abfuhrkalender.html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.bad-homburg.de/abfallkalender": {
+  "status": 200,
+  "final": "https://www.bad-homburg.de/abfallkalender",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.baierbrunn.org/dienste/rathaus/abfallentsorgung/": {
+  "status": 200,
+  "final": "https://www.baierbrunn.org/dienste/rathaus/abfallentsorgung/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.bawn.de/portal/seiten/abfallkalender-901000650-10009.html": {
+  "status": 200,
+  "final": "https://www.bawn.de/portal/seiten/abfallkalender-901000650-10009.html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.bee-emden.de/abfall/entsorgungssystem/abfuhrkalender/": {
+  "status": 200,
+  "final": "https://www.bee-emden.de/abfall/entsorgungssystem/abfuhrkalender/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.dietzenbach.de/abfallkalender": {
+  "status": 200,
+  "final": "https://www.dietzenbach.de/abfallkalender",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.eaw-rheingau-taunus.de/abfallsammlung/abfuhrtermine": {
+  "status": 200,
+  "final": "https://www.eaw-rheingau-taunus.de/abfallsammlung/abfuhrtermine",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.echzell.de/leben-wohnen/verschiedenes/abfallbeseitigung/": {
+  "status": 200,
+  "final": "https://www.echzell.de/leben-wohnen/verschiedenes/abfallbeseitigung/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.elchingen.de/index.php?id=93": {
+  "status": 200,
+  "final": "https://www.elchingen.de/index.php?id=93",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.entsorgungskalender.com/index.php?lkid=2": {
+  "status": 200,
+  "final": "https://www.entsorgungskalender.com/index.php?lkid=2",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.feldkirchen.de/umwelt/abfallwirtschaft/abfallkalender": {
+  "status": 200,
+  "final": "https://www.feldkirchen.de/umwelt/abfallwirtschaft/abfallkalender",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.friesland.de/abfallkalender/gebietssuche.html": {
+  "status": 200,
+  "final": "https://www.friesland.de/abfallkalender/gebietssuche.html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.garching.de/verwaltung-politik/verwaltung/was-erledige-ich-wo_/abfuhrkalender": {
+  "status": 200,
+  "final": "https://www.garching.de/verwaltung-politik/verwaltung/was-erledige-ich-wo_/abfuhrkalender",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.gemeinde-bellenberg.de/abfallentsorgung/": {
+  "status": 200,
+  "final": "https://www.gemeinde-bellenberg.de/abfallentsorgung/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.gemeinde-glashuetten.de/umwelt-wirtschaft/ver-und-entsorgung/abfallentsorgung/": {
+  "status": 200,
+  "final": "https://www.gemeinde-glashuetten.de/umwelt-wirtschaft/ver-und-entsorgung/abfallentsorgung/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.gemeinde-gruenwald.de/rathaus/umweltamt/abfallwirtschaft/1318.Ihr-personalisierter-Abfuhrkalender.html": {
+  "status": 200,
+  "final": "https://www.gemeinde-gruenwald.de/rathaus/umweltamt/abfallwirtschaft/1318.Ihr-personalisierter-Abfuhrkalender.html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.gemeinde-weimar.de/bauen-wohnen/abfallkalender.html": {
+  "status": 200,
+  "final": "https://www.gemeinde-weimar.de/bauen-wohnen/abfallkalender.html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.gigu.de/service-rathaus/dienstleistungen-online-rathaus/abfall/abfallkalender/": {
+  "status": 200,
+  "final": "https://www.gigu.de/service-rathaus/dienstleistungen-online-rathaus/abfall/abfallkalender/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.graefelfing.de/energie-umwelt-abfall/abfallkalender-online.html": {
+  "status": 200,
+  "final": "https://www.graefelfing.de/energie-umwelt-abfall/abfallkalender-online.html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.grasbrunn.de/wertstoffmanagement": {
+  "status": 200,
+  "final": "https://www.grasbrunn.de/wertstoffmanagement",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.gross-gerau.de/B%C3%BCrger-Service-Online-Dienste/Ver-und-Entsorgung/Abfuhrtermine-PDF-Abfallkalender/": {
+  "status": 200,
+  "final": "https://www.gross-gerau.de/B%C3%BCrger-Service-Online-Dienste/Ver-und-Entsorgung/Abfuhrtermine-PDF-Abfallkalender/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.hainburg.de/rathaus-politik/aktuelles/pressemitteilungen/gelbe-saecke-und-muellabfuhrkalender/": {
+  "status": 200,
+  "final": "https://www.hainburg.de/rathaus-politik/aktuelles/pressemitteilungen/gelbe-saecke-und-muellabfuhrkalender/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.hirschhorn.de/rathaus-buergerservice/abteilungen/bauen-und-planen/abfuhrkalender/": {
+  "status": 200,
+  "final": "https://www.hirschhorn.de/rathaus-buergerservice/abteilungen/bauen-und-planen/abfuhrkalender/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.hirzenhain.de/seite/207414/abfall.html": {
+  "status": 200,
+  "final": "https://www.hirzenhain.de/seite/207414/abfall.html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.isd-strasslach-dingharting.de/de/Abfallentsorgung/Abfuhrkalender": {
+  "status": 200,
+  "final": "https://www.isd-strasslach-dingharting.de/Abfall/Abfuhrkalender-und-App",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.kelsterbach.de/Stadt-Region/Abfallentsorgung/Abfuhrkalender/": {
+  "status": 200,
+  "final": "https://kelsterbach.de/Stadt-Region/Abfallentsorgung/Abfuhrkalender/",
+  "moved_host": true,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.kirchhain.de/Verwaltung-Politik/Service/Ver-und-Entsorgung/Abfallentsorgung/Abfuhrtermine/": {
+  "status": 200,
+  "final": "https://www.kirchhain.de/Verwaltung-Politik/Service/Ver-und-Entsorgung/Abfallentsorgung/Abfuhrtermine/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.kirchheim-heimstetten.de/abfall": {
+  "status": 200,
+  "final": "https://www.kirchheim-heimstetten.de/abfall",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.koenigstein.de/buergerbuero-services/abfallwirtschaft/abfallkalender/": {
+  "status": 200,
+  "final": "https://www.koenigstein.de/buergerbuero-services/abfallwirtschaft/abfallkalender/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.kwb-goslar.de/Abfallwirtschaft/Abfuhr-und-Termine/Abfuhrtermine/": {
+  "status": 200,
+  "final": "https://www.kwb-goslar.de/Abfallwirtschaft/Abfuhr-und-Termine/Abfuhrtermine/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.landkreis-ansbach.de/Themen/Abfallentsorgung/Abfallkalender/": {
+  "status": 200,
+  "final": "https://www.landkreis-ansbach.de/Themen/Abfallentsorgung/Abfallkalender/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.landkreis-cuxhaven.de/Themenbereiche/Umwelt-K%C3%BCstenschutz-Abfall/Abfall/index.php?La=1&object=tx,1779.4921.1&kuo=2&sub=0&NavID=1779.172": {
+  "status": 200,
+  "final": "https://www.landkreis-cuxhaven.de/Quicknavigation/Aktuelles/Abfall-Kalender-Begleittext-neu.php?object=tx,1779.4921.1&kuo=1&sub=0",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.landkreis-erding.de/buerger-verwaltung/abfallwirtschaft/abfuhrkalender-interaktiv/": {
+  "status": 200,
+  "final": "https://www.landkreis-erding.de/buerger-verwaltung/abfallwirtschaft/abfuhrkalender-interaktiv/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.landkreis-harburg.de/bauen-umwelt/abfallwirtschaft/abfallkalender/": {
+  "status": 200,
+  "final": "https://www.landkreis-harburg.de/?ruri=%2Fbauen-umwelt%2Fabfallwirtschaft%2Fabfallkalender%2F%3Fvs%3D1",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.landkreis-helmstedt.de/portal/seiten/abfuhrkalender-900000002-34150.html": {
+  "status": 200,
+  "final": "https://www.landkreis-helmstedt.de/portal/seiten/abfuhrkalender-900000002-34150.html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.landkreis-leer.de/Themen/Abfall/F%C3%BCr-B%C3%BCrger/Abfuhrtermine/": {
+  "status": 200,
+  "final": "https://www.landkreis-leer.de/Themen/Abfall/F%C3%BCr-B%C3%BCrger/Abfuhrtermine/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.landkreis-limburg-weilburg.de/leben-im-landkreis/abfallwirtschaft/abfuhrtermine/ihr-abfallkalender": {
+  "status": 200,
+  "final": "https://www.landkreis-limburg-weilburg.de/leben-im-landkreis/abfallwirtschaft/abfuhrtermine/ihr-abfallkalender",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.landkreis-northeim.de/abfall-und-deponien/abfall-abc-abfall-kalender-abfall-app/abfallkalender/": {
+  "status": 200,
+  "final": "https://www.landkreis-northeim.de/abfall-und-deponien/abfall-abc-abfall-kalender-abfall-app/abfallkalender/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.landkreis-schweinfurt.de/abfuhrkalender": {
+  "status": 200,
+  "final": "https://www.landkreis-schweinfurt.de/abfuhrkalender",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.landkreis-wittmund.de/Leben-Wohnen/Wohnen/Abfall/Abfallentsorgung-auf-Langeoog-und-Spiekeroog/": {
+  "status": 200,
+  "final": "https://www.landkreis-wittmund.de/Leben-Wohnen/Wohnen/Abfall/Abfallentsorgung-auf-Langeoog-und-Spiekeroog/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.landkreis-wittmund.de/Leben-Wohnen/Wohnen/Abfall/Abfuhrkalender/": {
+  "status": 200,
+  "final": "https://www.landkreis-wittmund.de/Leben-Wohnen/Wohnen/Abfall/Abfuhrkalender/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.landkreis-wug.de/abfall/abfuhrkalender/": {
+  "status": 200,
+  "final": "https://www.landkreis-wug.de/abfall/abfuhrkalender/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.landkreisbetriebe.de/rund-um-die-tonne/abfuhrtermine.html": {
+  "status": 200,
+  "final": "https://www.landkreisbetriebe.de/rund-um-die-tonne/abfuhrtermine.html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.landkreisgoettingen.de/Themen-Leistungen/Abfall-Entsorgung/Abfallwirtschaftsbetrieb/Abfallkalender/": {
+  "status": 200,
+  "final": "https://www.landkreisgoettingen.de/Themen-Leistungen/Abfall-Entsorgung/Abfallwirtschaftsbetrieb/Abfallkalender/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.landratsamt-dachau.de/abfall-naturschutz-umwelt/abfall/entsorgungskalender/": {
+  "status": 200,
+  "final": "https://www.landratsamt-dachau.de/Abfall-Naturschutz-Umwelt/Kommunale-Abfallwirtschaft/Entsorgungskalender/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.landratsamt-unterallgaeu.de/buergerservice/abfallentsorgung/abfuhrkalender": {
+  "status": 200,
+  "final": "https://www.landratsamt-unterallgaeu.de/buergerservice/abfallentsorgung/abfuhrkalender",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.limeshain.de/leben-wohnen/abfallentsorgung/": {
+  "status": 200,
+  "final": "https://www.limeshain.de/leben-wohnen/abfallentsorgung/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.lkclp.de/unser-landkre/bauen--umwel/abfall-entsorgung/abfallbehaelter-abfuhr/abfuhrplaene": {
+  "status": 200,
+  "final": "https://www.lkclp.de/unser-landkre/bauen--umwel/abfall-entsorgung/abfallbehaelter-abfuhr/abfuhrplaene",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.lkr-lif.de/landratsamt/umwelt/abfallwirtschaft/abfallwirtschaft/abfallkalender/1286.Abfallkalender-Landkreis-Lichtenfels.html": {
+  "status": 200,
+  "final": "https://www.lkr-lif.de/landratsamt/umwelt/abfallwirtschaft/abfallwirtschaft/abfallkalender/1286.Abfallkalender-Landkreis-Lichtenfels.html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.lra-aoe.de/buergerservice/online-dienstleistungen/abfallkalender/": {
+  "status": 200,
+  "final": "https://www.lra-aoe.de/buergerservice/online-dienstleistungen/abfallkalender/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.lra-bgl.de/abfallkalender/": {
+  "status": 200,
+  "final": "https://www.lra-bgl.de/abfallkalender/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.luechow-dannenberg.de/portal/seiten/abfallwirtschaft-900000028-38100.html": {
+  "status": 200,
+  "final": "https://www.luechow-dannenberg.de/portal/seiten/abfallwirtschaft-900000028-38100.html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.mainhausen.de/bauen-umwelt-abfall/abfallwirtschaft/abfallkalender": {
+  "status": 200,
+  "final": "https://www.mainhausen.de/bauen-umwelt-abfall/abfallwirtschaft/abfallkalender",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.muehlheim.de/leben-wohnen/wohnen-bauen/entsorgung-stadtreinigung/abfallentsorgung/": {
+  "status": 200,
+  "final": "https://www.muehlheim.de/leben-wohnen/wohnen-bauen/entsorgung-stadtreinigung/abfallentsorgung/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.muellmax.de/abfallkalender/efb/res/EfbStart.php": {
+  "status": 200,
+  "final": "https://www.muellmax.de/abfallkalender/efb/res/EfbStart.php",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.muellmax.de/abfallkalender/his/res/HisStart.php": {
+  "status": 200,
+  "final": "https://www.muellmax.de/abfallkalender/his/res/HisStart.php",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.nersingen.de/wir-fuer-sie/umwelt-energie-versorgung-entsorgung/abfall-wertstoffentsorgung/": {
+  "status": 200,
+  "final": "https://www.nersingen.de/wir-fuer-sie/umwelt-energie-versorgung-entsorgung/abfall-wertstoffentsorgung/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.neuried.de/abfall-und-wertstoffe/": {
+  "status": 200,
+  "final": "https://www.neuried.de/abfall-und-wertstoffe/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.neustadt.de/landratsamt/abteilungen-und-sachgebiete/kommunale-abfallwirtschaft/abfallkalender/": {
+  "status": 200,
+  "final": "https://www.neustadt.de/landratsamt/abteilungen-und-sachgebiete/kommunale-abfallwirtschaft/abfallkalender/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.niddatal.de/": {
+  "status": 200,
+  "final": "https://www.niddatal.de/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.oberhaching.de/de/Rathaus-Service/Ver-und-Entsorgung/Abfall-und-Wertstoffe/Entsorgungstermine": {
+  "status": 200,
+  "final": "https://www.oberhaching.de/de/Rathaus-Service/Ver-und-Entsorgung/Abfall-und-Wertstoffe/Entsorgungstermine",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.oberschleissheim.de/abfallkalender": {
+  "status": 200,
+  "final": "https://www.oberschleissheim.de/abfallkalender",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.oldenburg-kreis.de/umwelt-und-abfall/abfallwirtschaft/onlinedienste-abfallkalender-behaelter-usw-/": {
+  "status": 200,
+  "final": "https://www.oldenburg-kreis.de/umwelt-und-abfall/abfallwirtschaft/onlinedienste-abfallkalender-behaelter-usw-/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.ortenberg.net/seite/405706/m%C3%BCllkalender.html": {
+  "status": 200,
+  "final": "https://www.ortenberg.net/seite/405706/m%C3%BCllkalender.html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.ottobrunn.de/entsorgung-wirtschaft-mobilitaet-umwelt/ver-und-entsorgung/abfallentsorgung": {
+  "status": 200,
+  "final": "https://www.ottobrunn.de/entsorgung-wirtschaft-mobilitaet-umwelt/ver-und-entsorgung/abfallentsorgung",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.pullach.de/service/abfall-entsorgung/abfallkalender/": {
+  "status": 200,
+  "final": "https://www.pullach.de/service/abfall-entsorgung/abfallkalender/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.rauschenberg.de/rathaus-politik-buergerservice/abfall-entsorgung": {
+  "status": 200,
+  "final": "https://www.rauschenberg.de/rathaus-politik-buergerservice/abfall-entsorgung",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.rockenberg.de/seite/828630/m%C3%BCllkalender.html": {
+  "status": 200,
+  "final": "https://www.rockenberg.de/seite/828630/m%C3%BCllkalender.html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.sauerlach.de/rathaus-und-buergerservice/ver-und-entsorgung/abfall-und-wertstoffe": {
+  "status": 200,
+  "final": "https://www.sauerlach.de/rathaus-und-buergerservice/ver-und-entsorgung/abfall-und-wertstoffe",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.schaeftlarn.de/muellkalender/": {
+  "status": 200,
+  "final": "https://www.schaeftlarn.de/muellkalender/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.seligenstadt.de/rathaus-und-politik/rathaus/abteilungen/umwelt/kommunale-abfallentsorgung/my-muell-app/": {
+  "status": 200,
+  "final": "https://www.seligenstadt.de/rathaus-und-politik/rathaus/abteilungen/umwelt/kommunale-abfallentsorgung/my-muell-app/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.stadt-haar.de/de/leben/Energieversorgung,Muell,Recycling/Abfallwirtschaft/Muellfahrplan": {
+  "status": 200,
+  "final": "https://www.stadt-haar.de/de/leben/Energieversorgung,Muell,Recycling/Abfallwirtschaft/Muellfahrplan",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.stadt-senden.de/rathaus-service/umwelt-recycling/broschuere-umwelt-recycling": {
+  "status": 200,
+  "final": "https://www.stadt-senden.de/rathaus-service/umwelt-recycling/broschuere-umwelt-recycling",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.stadt-steinbach.de/rathaus/buergerservice/abfallwirtschaft/": {
+  "status": 200,
+  "final": "https://www.stadt-steinbach.de/rathaus/buergerservice/abfallwirtschaft/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.tbw-whv.de/technische-betriebe/abfall/Abfallkalender/": {
+  "status": 200,
+  "final": "https://www.tbw-whv.de/technische-betriebe/abfall/Abfallkalender/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.traunstein.com/buergerservice/abfallwirtschaft/abfall-app-und-kalender": {
+  "status": 200,
+  "final": "https://www.traunstein.com/buergerservice/abfallwirtschaft/abfall-app-und-kalender",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.unterfoehring.de/mobilitaet-umwelt/ver-und-entsorgung/abfuhrplan.html": {
+  "status": 200,
+  "final": "https://www.unterfoehring.de/mobilitaet-umwelt/ver-und-entsorgung/abfuhrplan.html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.voehringen.de/buergerservice-und-politik/ver-und-entsorgung/abfall-und-entsorgung": {
+  "status": 200,
+  "final": "https://www.voehringen.de/buergerservice-und-politik/ver-und-entsorgung/abfall-und-entsorgung",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.wehrheim.de/bauen-umwelt/umwelt-abfallwirtschaft/abfallentsorgung/": {
+  "status": 200,
+  "final": "https://www.wehrheim.de/bauen-umwelt/umwelt-abfallwirtschaft/abfallentsorgung/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.woelfersheim.de/gemeinde-buergerservice/service-verwaltung/ver-und-entsorgung/muellentsorgung/abfallkalender/": {
+  "status": 200,
+  "final": "https://www.woelfersheim.de/gemeinde-buergerservice/service-verwaltung/ver-und-entsorgung/muellentsorgung/abfallkalender/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.zacelle.de/muellabfuhr/abfuhrtermine/": {
+  "status": 200,
+  "final": "https://www.zacelle.de/muellabfuhr/abfuhrtermine/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.zakb.de/abfallkalender": {
+  "status": 200,
+  "final": "https://www.zakb.de/abfallkalender",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.zav-online.de/abfallkalender": {
+  "status": 200,
+  "final": "https://www.zav-online.de/abfallkalender",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.zva-sek.de/online-dienste/abfallkalender-2026/": {
+  "status": 200,
+  "final": "https://www.zva-sek.de/online-dienste/abfallkalender-2026/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "http://www.bad-soden-salmuenster.de/rathaus-verwaltung/entsorgung-abfall": {
+  "status": 200,
+  "final": "https://www.badsoden-salmuenster.de/rathaus-verwaltung/entsorgung-abfall",
+  "moved_host": true,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://abfall-app-bad-kreuznach.de/": {
+  "status": 200,
+  "final": "https://abfall-app-bad-kreuznach.de/",
+  "moved_host": false,
+  "bins": false,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": false
+ },
+ "https://abfall-mkk.de/ikz-leistungen-fuer-neuberg/": {
+  "status": 200,
+  "final": "https://abfall-mkk.de/ikz-leistungen-fuer-neuberg/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://abfall.frankenberg.de/online-dienste/abfallkalender-2026/": {
+  "status": 200,
+  "final": "https://abfall.frankenberg.de/online-dienste/abfallkalender-2026/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://abfall.kreis-pinneberg.de/Abfall-Navi.html": {
+  "status": 200,
+  "final": "https://abfall.kreis-pinneberg.de/Abfall-Navi.html",
+  "moved_host": false,
+  "bins": false,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": false
+ },
+ "https://abfall.kreis-pinneberg.de/Service+++Termine/Helgoland-Infos/Abholtermine.html": {
+  "status": 200,
+  "final": "https://abfall.kreis-pinneberg.de/Service+++Termine/Helgoland-Infos/Abholtermine.html",
+  "moved_host": false,
+  "bins": false,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": false
+ },
+ "https://abfall.lksuedwestpfalz.de/startseite/abfuhrtermine/abfuhrkalender-individuell-icall/": {
+  "status": 200,
+  "final": "https://abfall.lksuedwestpfalz.de/startseite/abfuhrtermine/abfuhrkalender-individuell-icall/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://awb.kreis-bad-duerkheim.de/index.php/abfuhrkalender.html": {
+  "status": 200,
+  "final": "https://awb.kreis-bad-duerkheim.de/index.php/abfuhrkalender.html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://awido.cubefour.de/Customer/azv-hef-rof/mobile/": {
+  "status": 200,
+  "final": "https://awido.cubefour.de/Customer/azv-hef-rof/mobile/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://bad-soden.mein-abfallkalender.online/": {
+  "status": 200,
+  "final": "https://bad-soden.mein-abfallkalender.online/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://biebergemuend.mein-abfallkalender.online": {
+  "status": 200,
+  "final": "https://biebergemuend.mein-abfallkalender.online",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://edertal.de/de/leben-im-edertal/umwelt-und-klimaschutz/abfallwirtschaft.php": {
+  "status": 200,
+  "final": "https://www.edertal.de/de/leben-im-edertal/umwelt-und-klimaschutz/abfallwirtschaft.php",
+  "moved_host": true,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://eppstein.mein-abfallkalender.online/": {
+  "status": 200,
+  "final": "https://eppstein.mein-abfallkalender.online/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://eschborn.mein-abfallkalender.online/": {
+  "status": 200,
+  "final": "https://eschborn.mein-abfallkalender.online/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://eschwege.mein-abfallkalender.online/": {
+  "status": 200,
+  "final": "https://eschwege.mein-abfallkalender.online/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://gemeinde-diemelsee.de/abfall-kalender/": {
+  "status": 200,
+  "final": "https://gemeinde-diemelsee.de/abfall-kalender/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://hochheim.mein-abfallkalender.online/": {
+  "status": 200,
+  "final": "https://hochheim.mein-abfallkalender.online/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://hofheim.mein-abfallkalender.online/": {
+  "status": 200,
+  "final": "https://hofheim.mein-abfallkalender.online/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://kell-gmbh.de/service/abfallkalender/": {
+  "status": 200,
+  "final": "https://kell-gmbh.de/service/abfallkalender/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://lk.kaw-mainz-bingen.de/de/Abfallentsorgung/Abfallkalender": {
+  "status": 200,
+  "final": "https://lk.kaw-mainz-bingen.de/de/Abfallentsorgung/Abfallkalender",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://mymuell.jumomind.com/webmodul/gelnhausen/": {
+  "status": 200,
+  "final": "https://mymuell.jumomind.com/webmodul/gelnhausen/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://nidderau.mein-abfallkalender.online/app": {
+  "status": 200,
+  "final": "https://nidderau.mein-abfallkalender.online/app",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://reso-gmbh.abfallkalender.services/": {
+  "status": 200,
+  "final": "https://reso-gmbh.abfallkalender.services/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://servicebetrieb.koblenz.de/abfallwirtschaft/entsorgungstermine-digital/": {
+  "status": 200,
+  "final": "https://servicebetrieb.koblenz.de/abfallwirtschaft/entsorgungstermine-digital/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://stadt-bad-orb.de/Rathaus-Politik/%C3%84mterinfos/Abfallwirtschaft/Abfalltourenmodul/": {
+  "status": 200,
+  "final": "https://stadt-bad-orb.de/Rathaus-Politik/%C3%84mterinfos/Abfallwirtschaft/Abfalltourenmodul/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://stadtreinigung.giessen.de/akal/akal1.php": {
+  "status": 200,
+  "final": "https://stadtreinigung.giessen.de/akal/akal1.php",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://witzenhausen.mein-abfallkalender.online/": {
+  "status": 200,
+  "final": "https://witzenhausen.mein-abfallkalender.online/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.abfall-alzey-worms.de/mein-anliegen/termine/abfuhrtermine/": {
+  "status": 200,
+  "final": "https://www.abfall-alzey-worms.de/mein-anliegen/termine/abfuhrtermine/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.abfall-nr.de/abfuhrtermine/persoenlicher-abfuhrkalender": {
+  "status": 200,
+  "final": "https://www.abfall-nr.de/abfuhrtermine/persoenlicher-abfuhrkalender",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.abfallwirtschaft-germersheim.de/online-service/abfall-kalender/abfall-termine-bis-240-liter.html": {
+  "status": 200,
+  "final": "https://www.abfallwirtschaft-germersheim.de/online-service/abfall-kalender/abfall-termine-bis-240-liter.html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.art-trier.de/abfuhrtermin": {
+  "status": 200,
+  "final": "https://www.art-trier.de/abfuhrtermin",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.asf-online.de/abfuhrtermine/": {
+  "status": 200,
+  "final": "https://www.asf-online.de/abfuhrtermine/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.awb-ak.de/de/abfuhrtermine/abfuhrkalender/": {
+  "status": 200,
+  "final": "https://www.awb-ak.de/de/abfuhrtermine/abfuhrkalender/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.awb-bir.de/Service/(0)Abfuhrkalender/": {
+  "status": 200,
+  "final": "https://www.awb-bir.de/Service/(0)Abfuhrkalender/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.awd-online.de/abfuhrtermine/": {
+  "status": 200,
+  "final": "https://www.awd-online.de/abfuhrtermine/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.awnf.de/service/abfuhrtermine/": {
+  "status": 200,
+  "final": "https://www.awnf.de/service/abfuhrtermine/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.awr.de/service-preise/abfuhrtermine/": {
+  "status": 200,
+  "final": "https://www.awr.de/service-preise/abfuhrtermine/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.awsh.de/service/abfuhrtermine/": {
+  "status": 200,
+  "final": "https://www.awsh.de/service/abfuhrtermine/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.azv-rme.de/buergerservice/abfallentsorgung-im-landkreis-mayen-koblenz/abfuhrtermine/": {
+  "status": 200,
+  "final": "https://www.azv-rme.de/buergerservice/abfallentsorgung-im-landkreis-mayen-koblenz/abfuhrtermine/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.bad-wildungen.de/stadtverwaltung/was-erledige-ich-wo/abfallbeseitigung/": {
+  "status": 200,
+  "final": "https://www.bad-wildungen.de/stadtverwaltung/was-erledige-ich-wo/abfallbeseitigung/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.battenberg-eder.de/dienstleistung/anzeigen/id/6540/abfallentsorgung.html": {
+  "status": 200,
+  "final": "https://www.battenberg-eder.de/dienstleistung/anzeigen/id/6540/abfallentsorgung.html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.brachttal.de/rathaus-buergerschaft/gemeindeverwaltung/abfallentsorgung/": {
+  "status": 200,
+  "final": "https://www.brachttal.de/rathaus-buergerschaft/gemeindeverwaltung/abfallentsorgung/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.burgwald.de/Wohnen-Leben-Bauen/Abfallentsorgung/": {
+  "status": 200,
+  "final": "https://www.burgwald.de/Wohnen-Leben-Bauen/Abfallentsorgung/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.diemelstadt.de/buergerservice/umwelt-abfall/abfall/": {
+  "status": 200,
+  "final": "https://www.diemelstadt.de/buergerservice/umwelt-abfall/abfall/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.donnersberg.de/buergerservice/themenwelt/abfallentsorgung-wirtschaft/abfall-app/": {
+  "status": 200,
+  "final": "https://www.donnersberg.de/buergerservice/themenwelt/abfallentsorgung-wirtschaft/abfall-app/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.ebwo.de/de/abfallkalender/2026/": {
+  "status": 200,
+  "final": "https://www.ebwo.de/de/abfallkalender/2026/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.ekm-mittelsachsen.de/service-dienstleistungen/entsorgungstermine-abfallkalender": {
+  "status": 200,
+  "final": "https://www.ekm-mittelsachsen.de/service-dienstleistungen/entsorgungstermine-abfallkalender",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.erlensee.de/leben-wohnen/nachhaltigkeit/abfall-entsorgung/": {
+  "status": 200,
+  "final": "https://www.erlensee.de/leben-wohnen/nachhaltigkeit/abfall-entsorgung/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.floersbachtal.de/muelltrennung-ganz-einfach": {
+  "status": 200,
+  "final": "https://www.floersbachtal.de/muelltrennung-ganz-einfach/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.floersheim-umweltkalender.de/abfuhrtermine.html": {
+  "status": 200,
+  "final": "https://www.floersheim-umweltkalender.de/abfuhrtermine.html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.frankenau.de/seite/178929/abfallentsorgung.html": {
+  "status": 200,
+  "final": "https://www.frankenau.de/seite/178929/abfallentsorgung.html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.gemuenden-wohra.de/seite/461536/abfallentsorgung-abfuhrtermine.html": {
+  "status": 200,
+  "final": "https://www.gemuenden-wohra.de/seite/461536/abfallentsorgung-abfuhrtermine.html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.grosskrotzenburg.de/rathaus-politik/service/abfallwirtschaft/": {
+  "status": 200,
+  "final": "https://www.grosskrotzenburg.de/rathaus-politik/service/abfallwirtschaft/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.haina.de/seite/302132/abfallkalender.html": {
+  "status": 200,
+  "final": "https://www.haina.de/seite/302132/abfallkalender.html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.hasselroth.de/buergerportal/rathaus/abfallentsorgung/muellkalender/": {
+  "status": 200,
+  "final": "https://www.hasselroth.de/buergerportal/rathaus/abfallentsorgung/muellkalender/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.heimat-info.de/gemeinden/gruendau/abfallkalender": {
+  "status": 200,
+  "final": "https://www.heimat-info.de/gemeinden/gruendau/abfallkalender",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.kaiserslautern-kreis.de/verwaltung/abfallwirtschaft/abfuhrplaene/": {
+  "status": 200,
+  "final": "https://www.kaiserslautern-kreis.de/verwaltung/abfallwirtschaft/abfuhrplaene/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.kelkheim.de/mod_abfallkalender/": {
+  "status": 200,
+  "final": "https://kelkheim.de/mod_abfallkalender/",
+  "moved_host": true,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.korbach.de/Stadt/Aktuelles-B%C3%BCrgerservice/B%C3%BCrgerservice/Abfallwirtschaft/Abfallkalender.php?object=tx,3889.8698.1": {
+  "status": 200,
+  "final": "https://www.korbach.de/Kurzmen%C3%BC/Abfallkalender.php?object=tx,3889.8698.1",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.kreis-ploen.de/B%C3%BCrgerservice/Termine-Abfallentsorgung/": {
+  "status": 200,
+  "final": "https://www.kreis-ploen.de/B%C3%BCrgerservice/Termine-Abfallentsorgung/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.kriftel.de/rathaus-politik/verwaltung/abfall/": {
+  "status": 200,
+  "final": "https://www.kriftel.de/rathaus-politik/verwaltung/abfall/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.landkreis-bautzen.de/entsorgungstermine.php": {
+  "status": 200,
+  "final": "https://www.landkreis-bautzen.de/entsorgungstermine.php",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.landkreis-zwickau.de/tourenplan/tourenplan.aspx": {
+  "status": 200,
+  "final": "https://www.landkreis-zwickau.de/tourenplan/tourenplan.aspx",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.liederbach.eu/seite/de/cms19092026142035a81d2c69/044:430/-/Abfall_und_Entsorgung.html": {
+  "status": 200,
+  "final": "https://www.liederbach.eu/seite/de/cms19092026142035a81d2c69/044:430/-/Abfall_und_Entsorgung.html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.meinawb.de/abfuhrtermine": {
+  "status": 200,
+  "final": "https://www.meinawb.de/abfuhrtermine",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.muellmax.de/abfallkalender/mai/res/MaiStart.php": {
+  "status": 200,
+  "final": "https://www.muellmax.de/abfallkalender/mai/res/MaiStart.php",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.mzv-rotenburg-bebra.de/webkalender.php": {
+  "status": 200,
+  "final": "https://www.mzv-rotenburg-bebra.de/webkalender.php",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.neumuenster.de/verkehr-umwelt/technisches-betriebszentrum/abfallentsorgung/abfallkalender": {
+  "status": 200,
+  "final": "https://www.neumuenster.de/verkehr-umwelt/technisches-betriebszentrum/abfallentsorgung/abfallkalender",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.rathaus-willingen.de/rathaus-buergerservice/abfallentsorgung/abfallkalender/": {
+  "status": 200,
+  "final": "https://www.rathaus-willingen.de/rathaus-buergerservice/abfallentsorgung/abfallkalender/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.rhein-lahn-kreis-abfallwirtschaft.de/html/cs_6615.html": {
+  "status": 200,
+  "final": "https://www.rhein-lahn-kreis-abfallwirtschaft.de/html/cs_6615.html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.rhein-pfalz-kreis.de/verwaltung-region/eigenbetrieb-abfallwirtschaft/beratung-und-informationen/": {
+  "status": 200,
+  "final": "https://www.rhein-pfalz-kreis.de/verwaltung-region/eigenbetrieb-abfallwirtschaft/beratung-und-informationen/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.rodenbach.de/Leben-Wohnen/Nachhaltigkeit/Abfall-Entsorgung/": {
+  "status": 200,
+  "final": "https://www.rodenbach.de/Leben-Wohnen/Nachhaltigkeit/Abfall-Entsorgung/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.rosenthaler.de/seite/272769/abfallentsorgung.html": {
+  "status": 200,
+  "final": "https://www.rosenthaler.de/seite/272769/abfallentsorgung.html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.schoeneck.de/rathaus-politik/service/abfallentsorgung/abfallkalender-bezirke/": {
+  "status": 200,
+  "final": "https://www.schoeneck.de/rathaus-politik/service/abfallentsorgung/abfallkalender-bezirke/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.schwalbach.de/Rathaus-und-Buergerservice/Buergerservice/Abfallentsorgung/Digitaler-Abfallkalender.htm": {
+  "status": 200,
+  "final": "https://www.schwalbach.de/Rathaus-und-Buergerservice/Buergerservice/Abfallentsorgung/Digitaler-Abfallkalender.htm",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.sontra.de/seite/236198/bio-,-rest-und-papierm%C3%BCll.html": {
+  "status": 200,
+  "final": "https://www.sontra.de/seite/236198/bio-,-rest-und-papierm%C3%BCll.html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.stadt-lichtenfels.de/index.php?mid=95": {
+  "status": 200,
+  "final": "https://www.stadt-lichtenfels.de/index.php?mid=95",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.stadtbildpflege-kaiserslautern.de/index.php?id=29": {
+  "status": 200,
+  "final": "https://www.stadtbildpflege-kaiserslautern.de/index.php?id=29",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.steinburg.de/kreisverwaltung/informationen-der-fachaemter/amt-fuer-umweltschutz/abfallwirtschaft/abfuhrtermine/muellabfuhr.html": {
+  "status": 200,
+  "final": "https://www.steinburg.de/kreisverwaltung/informationen-der-fachaemter/amt-fuer-umweltschutz/abfallwirtschaft/abfuhrtermine/muellabfuhr.html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.suedliche-weinstrasse.de/einrichtungen/eww/wertstoffkalender/": {
+  "status": 200,
+  "final": "https://www.suedliche-weinstrasse.de/einrichtungen/eww/wertstoffkalender/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.sulzbach-taunus.de/kundenservice-rathaus/service/dienstleistungen-a-z/abfallkalender": {
+  "status": 200,
+  "final": "https://www.sulzbach-taunus.de/kundenservice-rathaus/service/dienstleistungen-a-z/abfallkalender",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.tbz-flensburg.de/de/abfuhrkalender": {
+  "status": 200,
+  "final": "https://tbz-flensburg.de/de/abfuhrkalender",
+  "moved_host": true,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.twistetal.de/leben-wohnen/muellbeseitigung/": {
+  "status": 200,
+  "final": "https://www.twistetal.de/leben-wohnen/muellbeseitigung/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.voehl.de/index.php/aktuelles/muellabfuhrtermine": {
+  "status": 200,
+  "final": "https://www.voehl.de/index.php/aktuelles/muellabfuhrtermine",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.waldeck-stadt.de/Buergerservice/Muellbeseitigung/Muellkalender.htm": {
+  "status": 200,
+  "final": "https://www.waldeck-stadt.de/Buergerservice/Muellbeseitigung/Muellkalender.htm",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.wetzlar.de/leben-in-wetzlar/abfall-und-entsorgung/abfuhrtermine-2026.php": {
+  "status": 200,
+  "final": "https://www.wetzlar.de/leben-in-wetzlar/abfall-und-entsorgung/abfuhrtermine-2026.php",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.wzv.de/entsorgung/abfallkalender": {
+  "status": 200,
+  "final": "https://www.wzv.de/entsorgung/abfallkalender",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.za-sws.de/abfallkalender.cfm": {
+  "status": 200,
+  "final": "https://www.za-sws.de/abfallkalender.cfm",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.zaoe.de/abfallkalender/entsorgungstermine/": {
+  "status": 200,
+  "final": "https://www.zaoe.de/abfallkalender/entsorgungstermine/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.zv-kbn.de/de/optigov/?ansicht=dienstleistung&eintrag=2": {
+  "status": 200,
+  "final": "https://www.zv-kbn.de/de/optigov/?ansicht=dienstleistung&eintrag=2",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.zva-wmk.de/termine/pers%C3%B6nlicher-terminkalender-2026": {
+  "status": 200,
+  "final": "https://www.zva-wmk.de/termine/pers%C3%B6nlicher-terminkalender-2026",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.zvo.com/abfuhrkalender": {
+  "status": 200,
+  "final": "https://www.zvo.com/abfuhrkalender",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://aao.rh-entsorgung.de/WasteManagementRheinhunsrueck/WasteManagementServlet?SubmitAction=wasteDisposalServices&InFrameMode=TRUE": {
+  "status": 200,
+  "final": "https://aao.rh-entsorgung.de/WasteManagementRheinhunsrueck/WasteManagementServlet?SubmitAction=wasteDisposalServices&InFrameMode=TRUE",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://abfall-kyffhaeuser.de/kalender/": {
+  "status": 200,
+  "final": "https://abfall-kyffhaeuser.de/kalender/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://abfallportal-nordhausen.de/kalender": {
+  "status": 200,
+  "final": "https://abfallportal-nordhausen.de/kalender/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://abfallwirtschaft-msh.de/index.php/eaw-services-hm/eaw-tup-web-hm": {
+  "status": 200,
+  "final": "https://abfallwirtschaft-msh.de/index.php/eaw-services-hm/eaw-tup-web-hm",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://abfallwirtschaft.landkreis-kusel.de": {
+  "status": 200,
+  "final": "https://abfallwirtschaft.landkreis-kusel.de",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://aik.ilm-kreis.de/Abfuhrtermine/": {
+  "status": 200,
+  "final": "https://aik.ilm-kreis.de/Abfuhrtermine/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://alp-lup.de/Abfuhrtermine/Abfallkalender/": {
+  "status": 200,
+  "final": "https://alp-lup.de/Abfuhrtermine/Abfallkalender/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://als-stendal.de/entsorgungstermine/": {
+  "status": 200,
+  "final": "https://als-stendal.de/entsorgungstermine/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://altmarkkreis-salzwedel.abfall-app.net/?embed=true&hideTitle=true": {
+  "status": 200,
+  "final": "https://altmarkkreis-salzwedel.abfall-app.net/?embed=true&hideTitle=true",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://apps.c-trace.de/web.stwendel/Abfallkalender": {
+  "status": 200,
+  "final": "https://apps.c-trace.de/web.stwendel/Abfallkalender",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://buerger-portal-cochemzell.azurewebsites.net/": {
+  "status": 200,
+  "final": "https://buerger-portal-cochemzell.azurewebsites.net/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://ebkds.hausmuell.info/": {
+  "status": 200,
+  "final": "https://ebkds.hausmuell.info/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://fdh-ffo.de/entsorgung/abfuhrkalender/": {
+  "status": 200,
+  "final": "https://fdh-ffo.de/entsorgung/abfuhrkalender/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://kreiswerke-barnim.de/abfallentsorgung/service/entsorgungstermine/tourenplan-abfallentsorgung": {
+  "status": 200,
+  "final": "https://kreiswerke-barnim.de/abfallentsorgung/service/entsorgungstermine/tourenplan-abfallentsorgung",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://ks-weimar.de/entsorgung/entsorgungsplan-fuer-abfallbehaelter/": {
+  "status": 200,
+  "final": "https://ks-weimar.de/entsorgung/entsorgungsplan-fuer-abfallbehaelter/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://leerungen.ubzzw.com/WasteManagementZweibruecken/WasteManagementServlet?SubmitAction=wasteDisposalServices&InFrameMode=TRUE": {
+  "status": 200,
+  "final": "https://leerungen.ubzzw.com/WasteManagementZweibruecken/WasteManagementServlet?SubmitAction=wasteDisposalServices&InFrameMode=TRUE",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://portal.muellabfuhr-deutschland.de/saalekreis/kalender": {
+  "status": 200,
+  "final": "https://portal.muellabfuhr-deutschland.de/saalekreis/kalender",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://portal.muellabfuhr-deutschland.de/soemmerda": {
+  "status": 200,
+  "final": "https://portal.muellabfuhr-deutschland.de/soemmerda",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://portal.muellabfuhr-deutschland.de/weimarer-land/kalender": {
+  "status": 200,
+  "final": "https://portal.muellabfuhr-deutschland.de/weimarer-land/kalender",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://saarlouis.mein-abfallkalender.online/index_html": {
+  "status": 200,
+  "final": "https://saarlouis.mein-abfallkalender.online/index_html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://st-ingbert.mein-abfallkalender.online": {
+  "status": 200,
+  "final": "https://st-ingbert.mein-abfallkalender.online",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://stadtpflege.dessau-rosslau.de/entsorgung/abfuhrkalender/": {
+  "status": 200,
+  "final": "https://stadtpflege.dessau-rosslau.de/entsorgung/abfuhrkalender/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.abfall-havelland.de/abfuhrtermine": {
+  "status": 200,
+  "final": "https://www.abfall-havelland.de/abfuhrtermine",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.abfall-lro.de/de/abfuhrtermine/": {
+  "status": 200,
+  "final": "https://www.abfall-lro.de/de/abfuhrtermine/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.abfallservice-gotha.de/online-services/abfuhrkalender.html": {
+  "status": 200,
+  "final": "https://www.abfallservice-gotha.de/online-services/abfuhrkalender.html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.abfallwirtschaft-sonneberg.de/abfallkalender": {
+  "status": 200,
+  "final": "https://www.abfallwirtschaft-sonneberg.de/abfallkalender",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.abfallwirtschaft-uhk.de/tourenpläne-als-icalendar-für-das-jahr-2026": {
+  "status": 200,
+  "final": "https://www.abfallwirtschaft-uhk.de/tourenpl%C3%A4ne-als-icalendar-f%C3%BCr-das-jahr-2026",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.abikw.de/abfalltourenplan/": {
+  "status": 200,
+  "final": "https://www.abikw.de/abfalltourenplan/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.afze.de/abfuhrkalender.html": {
+  "status": 200,
+  "final": "https://www.afze.de/abfuhrkalender.html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.apm-niemegk.de/kundenservice/abfuhrtermine/": {
+  "status": 200,
+  "final": "https://www.apm-niemegk.de/kundenservice/abfuhrtermine/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.awb-altenburg.de/entsorgung/entsorgungskalender/": {
+  "status": 200,
+  "final": "https://www.awb-altenburg.de/entsorgung/entsorgungskalender/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.awsas.de/service/abfallkalender.html": {
+  "status": 200,
+  "final": "https://www.awsas.de/service/abfallkalender.html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.awu-oberhavel.de/fuer-haushalte/zusatzinfos/tourenplan": {
+  "status": 200,
+  "final": "https://www.awu-oberhavel.de/fuer-haushalte/zusatzinfos/tourenplan",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.awv-ot.de/www/awvot/abfuhrtermine/leerungstage/": {
+  "status": 200,
+  "final": "https://www.awv-ot.de/www/awvot/abfuhrtermine/leerungstage/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.azv-wak-ea.de/entsorgung/abfallkalender": {
+  "status": 200,
+  "final": "https://www.azv-wak-ea.de/entsorgung/abfallkalender",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.eichsfeldwerke.de/de/entsorgung/entsorgungstermine": {
+  "status": 200,
+  "final": "https://www.eichsfeldwerke.de/de/entsorgung/entsorgungstermine",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.eigenbetrieb-abfallwirtschaft.de/termine/abfuhrtermine.html": {
+  "status": 200,
+  "final": "https://www.eigenbetrieb-abfallwirtschaft.de/termine/abfuhrtermine.html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.enwi-hz.de/entsorgung/entsorgungstermine/index.html": {
+  "status": 200,
+  "final": "https://www.enwi-hz.de/entsorgung/entsorgungstermine/index.html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.evb-wismar.de/entsorgung/abfuhrtermine": {
+  "status": 200,
+  "final": "https://www.evb-wismar.de/entsorgung/abfuhrtermine",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.ezv-vk.de/abfuhrtermine.php": {
+  "status": 200,
+  "final": "https://www.ezv-vk.de/abfuhrtermine.php",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.geoport-nwm.de/de/abfuhrtermine-geoportal.html": {
+  "status": 200,
+  "final": "https://www.geoport-nwm.de/de/abfuhrtermine-geoportal.html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.homburg.de/service/abfall-und-entsorgung/abfalltermine/": {
+  "status": 200,
+  "final": "https://www.homburg.de/service/abfall-und-entsorgung/abfalltermine/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.kaev.de/Info-und-Service/Tourenplan/Tourenplan-Abfalltermine.html": {
+  "status": 200,
+  "final": "https://www.kaev.de/Info-und-Service/Tourenplan/Tourenplan-Abfalltermine.html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.kreiswerke-delitzsch.de/entsorgung/abfalltermine.html": {
+  "status": 200,
+  "final": "https://www.kreiswerke-delitzsch.de/entsorgung/abfalltermine.html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.ks-boerde.de/entsorgungstermine": {
+  "status": 200,
+  "final": "https://www.ks-boerde.de/entsorgungstermine",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.kwb-slk.de/kalender/abfall-tourenplan---termine.html": {
+  "status": 200,
+  "final": "https://www.kwb-slk.de/kalender/abfall-tourenplan---termine.html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.kwu-entsorgung.de/?page_id=337": {
+  "status": 200,
+  "final": "https://www.kwu-entsorgung.de/?page_id=337",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.landkreis-hildburghausen.de/?object=tx%7c2902.5&ModID=255&FID=2902.3197.1": {
+  "status": 200,
+  "final": "https://www.landkreis-hildburghausen.de/Aktuelles/Startseite-weitere-Themen.php?object=tx,2902.11.1",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.landkreis-prignitz.de/de/wirtschaft/Abfallkalender_neu/abfallkalender.php": {
+  "status": 200,
+  "final": "https://www.landkreis-prignitz.de/de/wirtschaft/Abfallkalender_neu/abfallkalender.php",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.landkreis-wittenberg.de/landkreis-wittenberg-entdecken/abfallwirtschaft/abfall-entsorgen/abfallkalender-online/": {
+  "status": 200,
+  "final": "https://www.landkreis-wittenberg.de/landkreis-wittenberg-entdecken/abfallwirtschaft/abfall-entsorgen/abfallkalender-online/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.lebach.de/lebach/abfall/abfuhrkalender": {
+  "status": 200,
+  "final": "https://www.lebach.de/lebach/abfall/abfuhrkalender",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.lk-mecklenburgische-seenplatte.de/Landkreis/Landratsamt/Fach%C3%A4mter/Umweltamt/Abfall-Abfuhrkalender-Sperrm%C3%BCll-Schadstoffmobil/": {
+  "status": 200,
+  "final": "https://www.lk-mecklenburgische-seenplatte.de/Landkreis/Landratsamt/Fach%C3%A4mter/Umweltamt/Abfall-Abfuhrkalender-Sperrm%C3%BCll-Schadstoffmobil/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.lk-vr.de/Kreisverwaltung/Abfallwirtschaft/Abfuhrtermine/Abfallkalender/": {
+  "status": 200,
+  "final": "https://www.lk-vr.de/Kreisverwaltung/Abfallwirtschaft/Abfuhrtermine/Abfallkalender/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.lkjl.de/de/tourenplan-2026.html": {
+  "status": 200,
+  "final": "https://www.lkjl.de/de/tourenplan-2026.html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.maerkisch-oderland.de/entsorgungsbetrieb/online-services/tourenplan": {
+  "status": 200,
+  "final": "https://www.maerkisch-oderland.de/entsorgungsbetrieb/online-services/tourenplan",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.merzig.de/leben-in-merzig/abfall-und-abwasser/abfall/abfallkalender/": {
+  "status": 200,
+  "final": "https://www.merzig.de/leben-in-merzig/abfall-und-abwasser/abfall/abfallkalender/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.muellmax.de/abfallkalender/evs/res/EvsStart.php": {
+  "status": 200,
+  "final": "https://www.muellmax.de/abfallkalender/evs/res/EvsStart.php",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.negw.de/abfallkalender-online-abfuhrtermine.html": {
+  "status": 200,
+  "final": "https://www.negw.de/abfallkalender-online-abfuhrtermine.html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.neunkirchen.de/index.php?id=abfuhrkalender": {
+  "status": 200,
+  "final": "https://www.neunkirchen.de/index.php?id=abfuhrkalender",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.ostprignitz-ruppin.de/Verwaltung/Dezernate/Dezernat-Bauen-Ordnung-und-Umwelt/Bau-und-Umweltamt/Abfallwirtschaft-Müllentsorgung/Tourenplan/index.php?La=1&object=tx,3039.2455.1&kat=&kuo=2&sub=0": {
+  "status": 200,
+  "final": "https://www.ostprignitz-ruppin.de/Verwaltung/Dezernate/Dezernat-Bauen-Ordnung-und-Umwelt/Bau-und-Umweltamt/Abfallwirtschaft-M%C3%BCllentsorgung/Tourenplan/index.php?La=1&object=tx,3039.2455.1&kat=&kuo=2&sub=0",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.pirmasens.de/leben-in-ps/buergerservice/abfallentsorgung/online-abfallkalender/": {
+  "status": 200,
+  "final": "https://www.pirmasens.de/leben-in-ps/buergerservice/abfallentsorgung/online-abfallkalender/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.saaleholzlandkreis.de/de/abfallkalender.html": {
+  "status": 200,
+  "final": "https://www.saaleholzlandkreis.de/datei/anzeigen/id/6210/2026_abfallkalender_shk.pdf",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.sbazv.de/entsorgungstermine/restmuell-papier-gelbe-saecke-laubsaecke-weihnachtsbaeume/": {
+  "status": 200,
+  "final": "https://www.sbazv.de/entsorgungstermine/restmuell-papier-gelbe-saecke-laubsaecke-weihnachtsbaeume/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.schmalkalden-meiningen.hausmuell.info/": {
+  "status": 200,
+  "final": "https://www.schmalkalden-meiningen.hausmuell.info/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.schwarze-elster.de/abfallentsorgung/abfuhrtermine": {
+  "status": 200,
+  "final": "https://www.schwarze-elster.de/abfallentsorgung/abfuhrtermine",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.sds-schwerin.de/abfall-strassenreinigung/entsorgungskalender/": {
+  "status": 200,
+  "final": "https://www.sds-schwerin.de/abfall-strassenreinigung/entsorgungskalender/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.stadt-brandenburg.de/leben/abfall-und-abwasser/entsorgungstermine": {
+  "status": 200,
+  "final": "https://www.stadt-brandenburg.de/leben/abfall-und-abwasser/entsorgungstermine",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.stadtwerke-speyer.de/muellkalender": {
+  "status": 200,
+  "final": "https://www.stadtwerke-speyer.de/muellkalender",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.udg-uckermark.de/index.php/service/termine-tourenplaene/tourenplaene": {
+  "status": 200,
+  "final": "https://www.udg-uckermark.de/index.php/service/termine-tourenplaene/tourenplaene",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.vevg-karlsburg.de/entsorgungsbereiche.html": {
+  "status": 200,
+  "final": "https://www.vevg-karlsburg.de/entsorgungsbereiche.html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.vogtlandkreis.de/Service-und-Verwaltung/Infos-und-Services/Abfallentsorgung/Abfuhrtermine/": {
+  "status": 200,
+  "final": "https://www.vogtlandkreis.de/Service-und-Verwaltung/Infos-und-Services/Abfallentsorgung/Abfuhrtermine/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.zaoe.de/abfallkalender/entsorgungstermine/abholtermine/": {
+  "status": 200,
+  "final": "https://www.zaoe.de/abfallkalender/entsorgungstermine/abholtermine/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.zaso-online.de/abfuhrtermine/serviceabfrage-abfuhrtermine": {
+  "status": 200,
+  "final": "https://www.zaso-online.de/abfuhrtermine/serviceabfrage-abfuhrtermine",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.abfall-landkreis-waldshut.de/de/termine/": {
+  "status": 200,
+  "final": "https://www.abfall-landkreis-waldshut.de/de/termine/",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": false,
+  "ok": true
+ },
+ "https://www.abfallwirtschaft-enzkreis.de/entsorgung/leerungstermine.html": {
+  "status": 200,
+  "final": "https://www.abfallwirtschaft-enzkreis.de/entsorgung/leerungstermine.html",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.landkreis-emmendingen.de/verwaltung-service/abfallwirtschaft/abfallkalender": {
+  "status": 200,
+  "final": "https://www.landkreis-emmendingen.de/verwaltung-service/abfallwirtschaft/abfallkalender",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.lrasha.de/abfall/muellkalender/abfuhrtermine": {
+  "status": 200,
+  "final": "https://www.lrasha.de/abfall/muellkalender/abfuhrtermine",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": true,
+  "pdf_hint": true,
+  "ok": true
+ },
+ "https://www.zollernalbkreis.de/landratsamt/aemter++und+organisation/Elektronischer+Abfallkalender": {
+  "status": 200,
+  "final": "https://www.zollernalbkreis.de/landratsamt/aemter++und+organisation/Elektronischer+Abfallkalender",
+  "moved_host": false,
+  "bins": true,
+  "ics_hint": false,
+  "pdf_hint": true,
+  "ok": true
+ }
+}

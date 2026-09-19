@@ -48,6 +48,7 @@ import '../l10n/l10n.dart';
 import 'board_screen.dart';
 import 'calendar_connect_screen.dart';
 import 'list_screen.dart';
+import 'settings/notifications_page.dart';
 import '../theme/app_icons.dart';
 
 part 'calendar/event_form.dart';

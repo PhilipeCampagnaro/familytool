@@ -1,0 +1,31 @@
+{
+  "id": "5f8d09bd5628",
+  "labeller": "b",
+  "calendar": true,
+  "year": 2026,
+  "covers": "2026-01-01..2026-12-31",
+  "district": "Baierbrunn",
+  "codes": ["Restmüll", "Biomüll", "Gelber Sack", "Papiertonne", "Gartenabfälle", "Sperrmüll/Christbaumabh./Aktionen", "Giftmobil"],
+  "legend": {
+    "Restmüll": "rest",
+    "Biomüll": "bio",
+    "Gelber Sack": "gelb",
+    "Papiertonne": "papier",
+    "Gartenabfälle": "gruen",
+    "Christbaumabh. (purple band, same key as Sperrmüll)": "gruen",
+    "Sperrmüll (purple band, sometimes combined as 'Sperrmüll/Restmüll' or 'Sperrmüll/Biomüll')": "sperr",
+    "Giftmobil": "schadstoff"
+  },
+  "window": ["2026-01", "2026-02", "2026-03", "2026-09"],
+  "bins": {
+    "rest": ["2026-01-02", "2026-01-15", "2026-01-29", "2026-02-12", "2026-02-26", "2026-03-12", "2026-03-26", "2026-09-10", "2026-09-24"],
+    "bio": ["2026-01-09", "2026-01-22", "2026-02-05", "2026-02-19", "2026-03-05", "2026-03-19", "2026-09-03", "2026-09-17"],
+    "gelb": ["2026-01-13", "2026-01-27", "2026-02-10", "2026-02-24", "2026-03-10", "2026-03-24", "2026-09-08", "2026-09-22"],
+    "papier": ["2026-01-03", "2026-01-30", "2026-02-27", "2026-03-27", "2026-09-11"],
+    "gruen": ["2026-01-10", "2026-02-14", "2026-03-07", "2026-03-21", "2026-09-05", "2026-09-26"],
+    "sperr": ["2026-02-26", "2026-09-10"],
+    "schadstoff": ["2026-01-12", "2026-02-02", "2026-03-02", "2026-09-07"]
+  },
+  "unsure": [],
+  "notes": "Single whole-Gemeinde calendar, no district/Bezirk split (label_set.json lists only town 'Baierbrunn'), so no district choice was needed. Each day carries a plain-text label directly ('Restmüll', 'Biomüll', etc.), not a letter code, printed in a coloured band; the bottom legend maps each colour to its label. Two days in the window are combined pickups printed as 'Sperrmüll/Restmüll' (2026-02-26) and 'Sperrmüll/Restmüll' (2026-09-10, spelled the same though the legend swatch calls the colour 'Sperrmüll/Christbaumabh./Aktionen'); both dates were added to both 'rest' and 'sperr'. 'Gartenabfälle' is recorded as 'gruen' per the protocol's Grünschnitt/Gartenabfälle/Christbaum wording, and the single 'Christbaumabh.' day (2026-01-10, also mentioned by name on page 1's Abfall-ABC as the FWW Baierbrunn pickup on 10.01.2026) was recorded under 'gruen' for the same reason. 'Giftmobil' (a mobile hazardous-waste collection point, visiting monthly) is recorded as 'schadstoff'. A pink band marks 'Schulferien' on many other days; it carries no bin label and was not counted. All dates cross-checked against the given 2026-01-01=Thursday anchor for the printed weekday and matched. Read from 300dpi crops of the September/October block and the a1/a2/b1/c1 page tiles; the whole PDF is a native vector/text calendar, not scanned, so text was crisp throughout."
+}

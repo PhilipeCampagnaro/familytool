@@ -1,0 +1,22 @@
+{
+  "id": "db9b93c7418a",
+  "labeller": "b",
+  "calendar": true,
+  "year": 2026,
+  "covers": "2026-01-01..2026-12-31",
+  "district": "1",
+  "codes": ["1"],
+  "legend": {"Bio": "bio", "RM": "rest", "GS": "gelb", "BT": "papier", "SM": "sperr"},
+  "window": ["2026-01", "2026-02", "2026-03", "2026-09"],
+  "bins": {
+    "rest": ["2026-01-13", "2026-02-09", "2026-03-09", "2026-09-21"],
+    "bio": ["2026-01-07", "2026-01-19", "2026-02-02", "2026-02-16", "2026-03-02", "2026-03-16", "2026-03-30", "2026-09-07", "2026-09-14", "2026-09-21", "2026-09-28"],
+    "papier": ["2026-01-19", "2026-02-16", "2026-03-16", "2026-09-28"],
+    "gelb": ["2026-01-02", "2026-01-26", "2026-02-23", "2026-03-23", "2026-09-07"],
+    "sperr": ["2026-03-16"]
+  },
+  "unsure": [
+    "2026-03-30 gruen: 'Bio 1, Garten 1 (Ortsteile)' and 2026-03-31 'Bio 2, Garten 2 (Kernstadt)' name Garten pickups, but the '1'/'2' looks like an Ortsteile/Kernstadt split rather than the Bezirk 1-7 numbering used for Bio/RM/BT/GS, so I could not tell whether either belongs to district 1 - left out of bins entirely rather than guessed."
+  ],
+  "notes": "One district-number system (1,2,3+4,5+6,7) is reused for Bio, RM (Restmüll), BT (Blaue Tonne = Papier) and GS (Gelber Sack), so district '1' is read the same way across all four; a 'Bitte beachten Sie die Müllbezirke, die ab 1.1.2026 gelten - siehe Beiblatt!' note refers to a street-to-district attachment not present in this PDF, so which real streets are district 1 is unknown but not needed for the code. Bio is collected only twice a month in Jan/Feb (its own standalone week plus the BT week) but weekly by September, and district 1's Jan 2 Gelber Sack pickup is printed as 'GS 1+ 3 + 4' with the '1' in red - read as district 1 grouped with 3 and 4 for that one compressed New-Year collection, not a footnote. SM (Sperrmüll) only appears for district 1 once in the window, in March. AH (Altholz) and EGG (Elektrogroßgeräte) dates are printed but are not in the labelled bin set, so they are omitted. No glas or schadstoff pickups are printed at all - glass goes to a drop-off container, not a scheduled collection."
+}

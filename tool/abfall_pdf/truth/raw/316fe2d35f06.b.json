@@ -1,0 +1,21 @@
+{
+  "id": "316fe2d35f06",
+  "labeller": "b",
+  "calendar": true,
+  "year": 2026,
+  "covers": "2026-01-01..2026-12-31",
+  "district": "Bezirk 1 + Bezirk A",
+  "codes": ["1", "A"],
+  "legend": {"Restabfall (14-tägig)": "rest", "Biotonne": "bio", "Blaue Tonne": "papier", "Gelbe Tonne / Gelber Sack": "gelb", "Grünschnitt / Weihnachtsbäume": "gruen", "Schadstoffe": "schadstoff"},
+  "window": ["2026-01", "2026-02", "2026-03", "2026-09"],
+  "bins": {
+    "rest": ["2026-01-08", "2026-01-22", "2026-02-05", "2026-02-19", "2026-03-05", "2026-03-19", "2026-09-03", "2026-09-17"],
+    "bio": ["2026-01-12", "2026-01-26", "2026-02-09", "2026-02-23", "2026-03-09", "2026-03-23", "2026-09-07", "2026-09-14", "2026-09-21", "2026-09-28"],
+    "papier": ["2026-01-07", "2026-01-21", "2026-02-04", "2026-02-18", "2026-03-04", "2026-03-18", "2026-09-02", "2026-09-16", "2026-09-30"],
+    "gelb": ["2026-01-13", "2026-01-27", "2026-02-10", "2026-02-24", "2026-03-10", "2026-03-24", "2026-09-08", "2026-09-22"],
+    "gruen": ["2026-01-09", "2026-01-19", "2026-03-16"],
+    "schadstoff": ["2026-01-22", "2026-02-19", "2026-03-19", "2026-09-17"]
+  },
+  "unsure": [],
+  "notes": "This 18-page PDF combines all four Abfuhrbezirke (1-4, for Restabfall/Bio/Papier/Gelb/Grünschnitt/Weihnachtsbäume) plus a separate two-value Schadstoffe system (Bezirk A/B) into one dense colour-coded grid on p1 (Jan-Jun) and p16 (Jul-Dec, file numbering) — too easy to misread a cell's district by colour, so I instead used the plain-text 'Abfuhrtermine 2026' pages that list every district's dates by name; the front matter (p1 footer) points to them as printed page 14, which the out/png set did not render (it stopped at file p16 of an 18-page PDF). I rendered PDF pages 17 and 18 myself with PyMuPDF get_pixmap (an image render, not text extraction) into the scratch folder and read the dates from those images, same as any other tile. Picked 'Bezirk 1' (first/lowest numeric district) and 'Bezirk A' (first lettered district for Schadstoffe) per the tie-break rule. Bezirk 1 also has a second, parallel 'Restabfall (wöchentlich)' weekly track with its own different dates (e.g. Jan 2/15/29) — a different collection frequency for the same numbered district, presumably for a different property type on the same street grid; I used only the 'Restabfall (14-tägig)' column, listed first on the page, for 'rest', and left the weekly track out entirely rather than mixing two schedules under one bin key. 'Weihnachtsbäume' (Christmas-tree collection) is counted under gruen per the label key's 'Christbaum'; its Jan 19 'Alle Bezirke' catch-up date is included alongside Bezirk 1&4's Jan 9 date. 'Elektrogroßgeräte' has no matching key and was left out entirely. September has no Grünschnitt row for any district. Bio is weekly during September for Bezirk 1 (7/14/21/28), same seasonal step-up seen in the other two labelled calendars. Dates come from clean typeset text rather than a scan, and I spot-checked several against the weekday letters printed on the p1/p16 grid pages (which show the same year's dates independent of district) with no mismatches."
+}

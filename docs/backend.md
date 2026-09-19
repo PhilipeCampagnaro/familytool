@@ -31,7 +31,8 @@ out loud: *"Zugewiesen an Lea — für alle sichtbar."* The backend splits it in
 External sharing is deliberately **not** part of the "Für wen?" picker. Mixing outsiders into the
 family avatar row would make a mis-tap leak family data; it gets its own "Teilen" action. For a
 list that action is the system share sheet with a link minted for it (`expires_in_days: 7`, revoked
-at once if the sheet is closed unsent); boxes and tasks keep the Teilen sheet. Expiry only stops new
+at once if the sheet is closed unsent); boxes keep the Teilen sheet, and a to-do offers no Teilen at
+all. Expiry only stops new
 redemptions — `revoke_link_guests` fires on `revoked_at`, so guests who joined in time stay.
 
 **Every external share may edit, and the sheet no longer asks.** `share_links.can_edit` and
@@ -55,7 +56,7 @@ the split exists because the two behave differently in the one place a household
 | Verpasst | Überfällig, and it stays | a gap in the record, and nothing else |
 | Erledigt | off the list | recorded, and back on the next scheduled day |
 | Verlauf | none | `public.tracker_checks`, one row per day kept |
-| Extern teilbar | yes | **no** — `shareable_kind` names no value for it |
+| Extern teilbar | **no** in the app — the Teilen button is gone (2026-09-19); `shareable_kind` still names `task` | **no** — `shareable_kind` names no value for it |
 
 **`due_time` is an hour, not a deadline.** It is a nullable `time without time zone` beside
 `due_date`, which stays a `date`: the pair is a local wall-clock reading, so a to-do due Donnerstag
@@ -309,17 +310,11 @@ credentials to obtain.
 
 One more sits beside them without a credential in it: `abfall-lookup`, the address search, the
 vendor coverage check and the ICS probe behind Ferien and Abfall setup. It is a function rather
-than client-side fetches because no municipal waste server sends CORS headers. It also holds the
-**one write the Abfall flow has for a town nobody serves**: `{action: "request"}` files the town,
-postcode and Bundesland in `public.abfall_requests` (`20260917073307_abfall_requests.sql`), and
-`resolve` reports `requested: true` on the next visit so the row says "angefragt" instead of
-offering the button twice. `authenticated` holds no INSERT grant — the same lock as
-`list_plan_runs` — and the row carries no street: a vendor is found per municipality, and the
-household's street already lives on `families.address`. The queue is read by hand,
-`select * from abfall_requests where status = 'open' order by created_at`, and a row is moved to
-`done` with `resolved_provider` set to the id from `abfall_providers.ts` once the vendor ships. Set
-`APORAH_REQUESTS_TO` on the function to also get a mail per new request; without it the table is
-the whole record.
+than client-side fetches because no municipal waste server sends CORS headers. It writes nothing. A town nobody
+serves used to be filed in `public.abfall_requests` by a `request` action ("Anfragen"); since
+2026-09-19 `resolve` answers such a town with its official calendar page from the Abfuhrkalender
+Atlas instead (`uploadOnly`, `atlas`, `page`, `format`), and the action is gone. The table and its
+rows stay, unread and unwritten; `APORAH_REQUESTS_TO` no longer does anything.
 
 **No calendar event is ever stored — from a connected account or from anywhere else.**
 `calendar-events` proxies Google, Outlook, iCloud, IServ and WebUntis on every refresh and returns
