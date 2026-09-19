@@ -10,6 +10,7 @@ import '../models/visibility.dart';
 import '../services/supabase.dart';
 import 'auth_state.dart';
 import 'family_state.dart';
+import 'realtime_state.dart';
 import '../l10n/l10n.dart';
 
 /// The Board's trackers, the days they were kept, and the rhythm the create
@@ -443,9 +444,11 @@ final trackerRepositoryProvider = Provider<TrackerRepository>(
 
 /// Rebuilt when the signed-in user or their household changes, and only then.
 final trackerProvider = StateNotifierProvider<TrackerNotifier, TrackerState>((ref) {
-  return TrackerNotifier(
+  final notifier = TrackerNotifier(
     ref.watch(trackerRepositoryProvider),
     ref.watch(currentUserIdProvider),
     ref.watch(familyProvider.select((s) => s.household?.id)),
   );
+  reloadOnFamilyChange(ref, const {'trackers', 'tracker_checks'}, notifier.load);
+  return notifier;
 });

@@ -1263,6 +1263,11 @@ final calendarProvider = StateNotifierProvider<CalendarNotifier, CalendarScreenS
     signedIn: userId != null,
     channel: ref.watch(familyChannelProvider),
   );
-  reloadOnFamilyChange(ref, const {CalendarNotifier.kCalendarTopic}, notifier.refreshFromElsewhere);
+  reloadOnFamilyChange(
+    ref,
+    const {CalendarNotifier.kCalendarTopic},
+    notifier.refreshFromElsewhere,
+    catchUp: false,
+  );
   return notifier;
 });

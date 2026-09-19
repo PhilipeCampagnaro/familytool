@@ -473,6 +473,23 @@ class HouseholdNotifier extends StateNotifier<FamilyState> {
     });
 
     if (!mounted) return null;
+
+    // A re-read (somebody joined, renamed, a resume) keeps the faces already
+    // signed, or every avatar in the app blinks to initials until the signing
+    // round trip below comes back. Same path, same picture.
+    final previous = {for (final m in state.members) m.userId: m};
+    for (var i = 0; i < members.length; i++) {
+      final old = previous[members[i].userId];
+      if (old?.avatarUrl != null && old!.avatarPath == members[i].avatarPath) {
+        members[i] = members[i].copyWith(avatarUrl: old.avatarUrl);
+      }
+    }
+    final oldHousehold = state.household;
+    final keptHouseholdUrl = oldHousehold?.avatarPath != null && oldHousehold!.avatarPath == familyAvatarPath
+        ? oldHousehold.avatarUrl
+        : null;
+    final keptInvites = state.invites;
+
     // **Published here, with two things still missing on purpose.** This is
     // the gate `_RootGate` is waiting on, and behind it are the four screens'
     // own loads — so anything that can arrive a moment later must not be in
@@ -489,10 +506,12 @@ class HouseholdNotifier extends StateNotifier<FamilyState> {
               address: familyRow['address'] as String?,
               onboardingDone: familyRow['onboarding_done'] as bool? ?? false,
               avatarPath: familyAvatarPath,
+              avatarUrl: keptHouseholdUrl,
               plan: Plan.fromWire(familyRow['plan'] as String?),
               planExpiresAt: DateTime.tryParse(familyRow['plan_expires_at'] as String? ?? ''),
             ),
       members: members,
+      invites: keptInvites,
       loaded: true,
     );
 
@@ -519,7 +538,9 @@ class HouseholdNotifier extends StateNotifier<FamilyState> {
     final invites = results[1] as List<PendingInvite>;
 
     if (!mounted) return;
-    if (signed.isEmpty && invites.isEmpty) return;
+    // The last condition is a re-read after an invitation was accepted: the
+    // pending one kept from before must go even though nothing replaces it.
+    if (signed.isEmpty && invites.isEmpty && state.invites.isEmpty) return;
     state = state.copyWith(
       household: household == null || household.avatarPath == null
           ? null

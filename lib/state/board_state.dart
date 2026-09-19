@@ -623,6 +623,6 @@ final boardProvider = StateNotifierProvider<BoardNotifier, BoardState>((ref) {
     ref.watch(currentUserIdProvider),
     ref.watch(familyProvider.select((s) => s.household?.id)),
   );
-  reloadOnFamilyChange(ref, const {'tasks', 'trackers', 'tracker_checks'}, notifier.load);
+  reloadOnFamilyChange(ref, const {'tasks'}, notifier.load);
   return notifier;
 });

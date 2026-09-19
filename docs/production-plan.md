@@ -364,16 +364,32 @@ worst interaction in the app and it is the one the product is sold on.
 - [x] Calendar invalidation over the same channel. **The calendar is the one thing a trigger cannot
       announce** — storing no events means there is no row to fire on — so the writing device says
       so itself and everyone re-reads through `calendar-events`.
-- [ ] **Verify against a running client, on two devices.** Nothing below has been exercised.
-- [ ] **`realtime.messages` has no partitions on this project and pg_cron is absent**, so
-      `realtime.send` currently warns and drops every message it is handed — it catches its own
-      insert failure by design. This is expected to fix itself: Supabase's Realtime service
-      provisions partitions when it first runs for a tenant, and nothing has ever connected. It is
-      also self-correcting in the only way that matters — with no client connected there is nobody
-      to miss a dropped message. **Confirm it after the first connection**:
-      `select count(*) from pg_inherits i join pg_class p on p.oid = i.inhparent where p.relname = 'messages';`
-      If it is still zero once a device has been online, the trigger path is dead and every
-      announcement has to come from the client.
+- [ ] **Verify against a running client, on two devices** — now with the fixes below.
+- [x] **`realtime.messages` is partitioned and the trigger path is live** (confirmed 2026-09-19: seven
+      daily partitions, both members' writes landing on `family:<uuid>`). The "dropped for want of a
+      partition" worry is closed.
+- [x] **First two-device test, 2026-09-19: nothing appeared until the app was killed and relaunched.**
+      Four separate gaps, all on the receiving side, since the database was sending correctly:
+      1. *Broadcasts are not replayed*, and supabase_flutter disconnects the socket on pause. A list made
+         while the other phone was locked was announced to nobody, and only Ausgaben and the calendar
+         re-read on resume. Now `FamilyChannel.catchUp()` runs on every resume and on every rejoin
+         after the first (the join hooks survive a rejoin), and every screen but the calendar re-reads
+         once, coalesced.
+      2. *The household roster was never announced.* `family_members`, `families`, `profiles` and
+         `family_invites` now carry the trigger (`20260919193715_family_realtime_roster`), including
+         the old household of a member who moves, and `AppShell` re-reads `familyProvider` on them
+         while keeping the signed faces, so avatars don't blink.
+      3. *The calendar's device-sent announcements were refused.* On a private channel a client send
+         needs an INSERT policy on `realtime.messages`, and there was none, so every
+         `announce()` was silently dropped. Members may now send on their own topic.
+      4. *Trackers never re-read.* `trackers`/`tracker_checks` reloaded the Board's tasks, not
+         `trackerProvider`.
+      The join also reports its status now (it was fire-and-forget, so a refused join looked like a
+      quiet household), and a channel the server closes is reopened.
+- [x] **Cost.** One broadcast per write, delivered to that household's open devices, plus one
+      PostgREST re-read per screen per change or resume. The free tier's 2M messages and 200
+      concurrent connections a month cover many hundreds of active families. Watch *concurrent
+      connections* first as it grows.
 - [ ] **Guests get no live updates.** Somebody outside the household reading through a share link
       has a different `my_family_id()`, so they never join the topic. Fixing it means a
       per-shareable topic.

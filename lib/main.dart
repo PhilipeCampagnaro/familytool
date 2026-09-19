@@ -19,12 +19,12 @@ import 'services/supabase.dart';
 import 'state/auth_state.dart';
 import 'state/calendar_state.dart';
 import 'state/family_state.dart';
+import 'state/realtime_state.dart';
 import 'state/more_state.dart';
 import 'state/nav_state.dart';
 import 'state/notification_scheduler.dart';
 import 'state/notification_state.dart';
 import 'state/settings_state.dart';
-import 'state/spend_state.dart';
 import 'theme/app_icons.dart';
 import 'theme/app_theme.dart';
 import 'theme/tokens.dart';
@@ -347,10 +347,11 @@ class _AppShellState extends ConsumerState<AppShell>
     if (state != AppLifecycleState.resumed) return;
     if (!mounted) return;
     unawaited(ref.read(calendarProvider.notifier).refreshIfStale());
-    // A payment filed while the app was suspended was broadcast to a socket iOS
-    // had already closed, and broadcasts are not replayed. See
-    // [SpendNotifier.refresh].
-    if (spendAvailable) unawaited(ref.read(spendProvider.notifier).refresh());
+    // Anything the household changed while we were away was broadcast to a
+    // socket iOS had already closed, and broadcasts are not replayed — a list
+    // your partner made while your phone was in your pocket. One coalesced
+    // re-read of every screen; see [FamilyChange.catchUp].
+    ref.read(familyChannelProvider)?.catchUp();
     // The grant can have changed in system settings while we were away, and
     // time has passed: this morning's brief is no longer pending.
     unawaited(ref.read(notificationSettingsProvider.notifier).refreshAccess());
@@ -491,6 +492,17 @@ class _AppShellState extends ConsumerState<AppShell>
     // Keeps the device's pending notifications equal to what is on screen, for
     // as long as a household is. See [NoticeScheduler].
     ref.watch(noticeSchedulerProvider);
+
+    // Somebody joining, leaving, renaming themselves or changing their picture.
+    // Here rather than in `familyProvider`, which cannot listen to a channel
+    // that is itself keyed on the household it loads.
+    ref.listen(familyChangesProvider, (_, next) {
+      final change = next.valueOrNull;
+      if (change == null) return;
+      if (change.isCatchUp || householdTables.contains(change.table)) {
+        unawaited(ref.read(familyProvider.notifier).load());
+      }
+    });
 
     // A link tapped on another tab — the calendar icon on a task, the list card
     // in an event's sheet. The shell owns the tab and does that half; the
