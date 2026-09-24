@@ -69,6 +69,56 @@ import UIKit
     if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "AporahLinks") {
       let channel = FlutterMethodChannel(name: "aporah/links", binaryMessenger: registrar.messenger())
       channel.setMethodCallHandler { call, result in
+        // Whether the pasteboard holds a link, **without reading it**.
+        //
+        // `hasURLs` is the whole point of this call: it answers the question
+        // from the OS's own index of what was copied, so it does *not* trip
+        // the "App möchte einfügen" banner that any real read of the
+        // pasteboard trips on iOS 16 and later. That is what lets a button
+        // appear only when there is something to paste — asking the same
+        // question with `UIPasteboard.general.string` would put the banner in
+        // front of the user once per visit to Listen, for a button they had
+        // not pressed.
+        //
+        // The actual read still happens on the Flutter side, on the tap, and
+        // still shows the banner once. That one is correct: the user asked.
+        if call.method == "hasUrl" {
+          result(UIPasteboard.general.hasURLs)
+          return
+        }
+        // The same question plus **which copy this is**.
+        //
+        // `changeCount` increments every time anything is put on the
+        // pasteboard, and reading it costs nothing and shows no banner. It is
+        // the only way to tell "they copied a second recipe" from "that same
+        // link is still sitting there" without looking at the contents — which
+        // is exactly what we are not willing to do to decide whether to offer
+        // something.
+        //
+        // Both values in one call because they are always wanted together and
+        // a channel round trip is the expensive half.
+        // The link itself. **This one reads, and iOS may put its paste banner
+        // up for it** — which is correct here, because the user pressed a
+        // button that says "Importieren".
+        //
+        // `url` before `string`: a pasteboard item written as `public.url`
+        // (which is what a share sheet, a "Link kopieren" and `simctl pbcopy`
+        // of an address all tend to produce) does not always answer to
+        // `.string`, and Flutter's own `Clipboard.getData` asks only for plain
+        // text. Asking for both here is the difference between "we could not
+        // read the clipboard" and the feature working at all.
+        if call.method == "pasteboardUrl" {
+          let board = UIPasteboard.general
+          result(board.url?.absoluteString ?? board.string)
+          return
+        }
+        if call.method == "pasteboardState" {
+          result([
+            "hasUrl": UIPasteboard.general.hasURLs,
+            "changeCount": UIPasteboard.general.changeCount,
+          ])
+          return
+        }
         guard call.method == "open",
               let args = call.arguments as? [String: Any],
               let raw = args["url"] as? String,

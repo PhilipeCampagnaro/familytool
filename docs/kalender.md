@@ -22,9 +22,9 @@ things on two screens showing the same calendars is the thing worth avoiding.
 than content so that everything Home knows about lives in `lib/screens/home/` and this library never
 learns what a tracker or a shopping list is; what it owns is the *shape*. See "Home's four slots"
 below. `_MonthYearRow` keeps the row
-above the chips at a fixed 40 so both views' `_extraHeaderHeight` arithmetic still holds and the
-label doesn't sit at two different heights on two tabs — which is also what made Home's island free,
-since a glyph beside a heading fits the old toggle's slot with room to spare. That row's label is
+above the chips at a fixed height rather than letting the label set its own, so the view's
+`_extraHeaderHeight` arithmetic still holds — which is also what made Home's island free, since a
+glyph beside a heading fits the old toggle's slot with room to spare. That row's label is
 given the full width (`Expanded`, with the switcher's own `layoutBuilder` aligned left) rather than
 left to measure itself against infinity, or the island could not ellipsise an appointment's title.
 
@@ -45,15 +45,19 @@ Three more things differ per tab, all of them parameters rather than a flag on t
   two sides match, not that they are tight. Unlike `leading`, the slot is filled at every stage of
   the collapse, which is what keeps the one way into Settings on screen while the header is
   scrolled away.
-- **The label above the chips.** `_MonthYearRow` takes a **widget**, not a string, because the two
-  tabs put different kinds of thing there: Kalender the visible month, crossfaded as that month
-  changes; Home its status island (`DayIsland`). A grid of numbered squares needs telling which
-  month it is; a day strip is already a row of dates. The `_stripAnchor` that used to drive that
-  label — the leftmost visible day, deliberately not the selected one — is gone with it, and the
-  strip's scroll position now feeds only `_todayVisible`. **A household scrolling the strip weeks
-  out therefore has no month named anywhere on Home**; that was the trade. The crossfade is keyed
-  on whatever widget it is handed, so **every caller must put a `Key` on its child** or the row
-  swaps contents without animating.
+- **The label above the chips, which only Home has.** `_MonthYearRow` takes a **widget**, not a
+  string, because Home puts a status island there (`DayIsland`) rather than a line of text — and
+  `_MonthAndChipsRow.label` is **nullable**, because Kalender has nothing to put there at all. It
+  used to print the visible month, crossfaded as that month changed, on the grounds that a grid of
+  numbered squares needs telling which month it is; every `_MonthBlock` already writes its own name
+  over its own grid, so that was a second answer to a settled question, and the wrong one whenever
+  the scroll had left the selected month. With the row and its gap gone the grid sits 54 points
+  higher. Home never named a month either — a day strip is already a row of dates — and the
+  `_stripAnchor` that used to drive that label, the leftmost visible day, deliberately not the
+  selected one, is gone with it; the strip's scroll position now feeds only `_todayVisible`. **A
+  household scrolling the strip weeks out therefore has no month named anywhere on Home**; that was
+  the trade. The crossfade is keyed on whatever widget it is handed, so **every caller must put a
+  `Key` on its child** or the row swaps contents without animating.
 
 `CalendarWeekScreen` is a wrapper rather than its own screen because everything the week view draws
 — the strip cells, the agenda rows, the chips, the event sheet — is a `part` of this library, and
@@ -160,8 +164,9 @@ list. **Under the sentence is a
 second line naming what it counts** (`homeHint*`): "Noch 1 offen" is a number and an adjective, and
 the island is the one place in the app with no row, no section heading and no list around the count
 to say which of four kinds of thing it means. That line is what makes the row 48 rather than the 40
-a month name takes — `_MonthYearRow.monthHeight` is now a default, and `_WeekView._labelHeight`
-pays the eight points in its own `_extraHeaderHeight`.
+`_MonthYearRow.monthHeight` rests at — that is now a default nobody takes, since Home passes its own
+and Kalender passes no label at all, and `_WeekView._labelHeight` pays the eight points in its own
+`_extraHeaderHeight`.
 
 **The line, its crossfade and its sweep now live in `lib/widgets/status_island.dart`**, lifted out
 of here the moment Ausgaben wanted the same thing about money; `DayIsland` is the ladder and nothing
@@ -285,6 +290,29 @@ clears itself since no destination screen's listener will.
 Infinite bidirectional `CustomScrollView` anchored on the real "today" month via a `center`
 sliver key, so scrolling never runs out in either direction. Tapping a day toggles an inline
 expand/collapse detail card (`state.monthDetailExpanded`) showing that day's agenda, compact.
+
+**A cell's height is built up from named parts, and the biggest of them is the air between the
+weeks** (`_MonthCell`: `dayCircle + _dotGap 4 + _dotBand 8 + _rowAir 14`, 66 at the shipped scale).
+The grid used to run at a 50-point pitch under a 16-point date, and both halves of that were the
+same mistake: six rows of small marks a finger's width apart is one field rather than six weeks, so
+finding a day meant counting rows and aiming carefully rather than reading and tapping. The date is
+now the type scale's `dayNumber` at 18 and the circle its `dayCircle` at 40 — **the rungs moved, not
+the call site**, because a day is the same object in the month grid and in Home's strip and the one
+place that is written down is the scale. The circle had to go with the number: it is a *frame*, and
+on a selected day two of them, an outline with the accent disc inset inside it, so six of its points
+are spent before the date gets any — at 34 a two-digit selected day sat with its glyphs against the
+edge. Because the pitch is derived from the circle, the grid keeps the air between the
+weeks (25 points at the shipped band) whatever the circle and the mark under it do. **What bounds the circle is Home's strip, not the grid**: a
+cell there is about 48 points wide, so there is no room for another step. **Columns were left alone
+on purpose**; seven cells already split the full width and the gap across a row was never the scarce
+one.
+
+**The header no longer names the month.** Every `_MonthBlock` writes its own name over its own grid,
+so the label above the chips was a second answer to a settled question — and the wrong one whenever
+the scroll had left the selected month, since it followed the selection rather than the viewport.
+`_MonthAndChipsRow.label` is now nullable, Kalender passes none, and `_extraHeaderHeight` drops from
+130 to `16 + AppFilterChip.rowHeight + 16`, which lifts the whole grid by 54 points. Home is the
+only caller that still fills the row, with its status island.
 
 **The card opens below the whole month, so opening it can lift the grid** (`_MonthViewState._selectDay`).
 A day in the last week of a month near the bottom of the display opened its card entirely off
@@ -445,11 +473,11 @@ opens the Board's edit sheet **over Kalender** via `openTaskSheet(context, ref, 
 closing it lands back on the day; it does not cross tabs.
 
 **A day that still owes something wears a ring**, in the week strip and the month grid alike:
-`EventDots.todo` draws an empty accent circle ahead of the colour dots, and `openTodoDaysProvider`
-(beside `boardProvider`) is the shared set of `'y-m-d'` keys behind it. A ring rather than another
-dot because every filled dot in that row is a *calendar* of that colour — a to-do drawn as one
-would claim to be a calendar the household hasn't got. It is the unticked circle the agenda card
-and the Board row already use, shrunk to the size of a dot.
+`EventDots.todo` draws an empty accent circle ahead of the day's stroke, and `openTodoDaysProvider`
+(beside `boardProvider`) is the shared set of `'y-m-d'` keys behind it. A ring rather than a slice of
+the stroke because every slice is a *calendar* of that colour — a to-do drawn as one would claim to
+be a calendar the household hasn't got, and would make the day look busier by an appointment. It is
+the unticked circle the agenda card and the Board row already use, shrunk to this band.
 
 Two rules on it. It shows **only while the chip is lit**, so it never points at something the day
 would not show; and it counts **open** to-dos only, because the mark is a scan for what still needs
@@ -531,14 +559,66 @@ its day *and* the day after — which is what "Abfall on the wrong dates" was. `
 restates both ends in UTC for the same reason: a Ferien block spanning a clock change is 42 days
 minus an hour, and `inDays` calls that 41.
 
-## Day dots
+## The day's stroke
 
-`dayColors` returns **one dot per event**, not per calendar. It used to de-duplicate by
-`calendarId`, so four appointments in one Google calendar drew a single dot and a full day read as
-an empty one. Both cells (`_DayStripCell`, `_MonthCell`) `take(3)` and hand the remainder to
-`EventDots.overflowCount`, which turns the fourth slot into a gray "+" badge — so the row can't
-grow past four dots' width however busy the day is. The to-do ring rides ahead of them and is not
-part of that budget; see the to-do overlay section above.
+`dayColors` returns **one colour per event**, not per calendar, in the order the day is listed in,
+each carrying its calendar's colour — the legend above the grid ("Termine je Kalender") names
+exactly that. It used to de-duplicate by `calendarId`, so four appointments in one Google calendar
+drew a single mark and a full day read as an empty one; how busy a day looks at a glance is a
+question about events rather than about how many calendars they are spread across. It is
+**uncapped**: what fits is the widget's arithmetic, because only the widget knows the width and what
+else is sharing the row.
+
+**One filled stroke under the day number, three points longer per event, cut into a slice per event
+by white dividers.** One appointment is 9 points, six is `EventDots.barWidth` (24, derived), and
+every step between is `_barStep`. **The outer ends are round and the inner cuts are straight**, which is the
+difference between one thing divided and several things in a row. The dividers are the page's own
+white (`AppColors.surface`) rather than a gap, because the mark sits on the strip's grey day tile in
+one view and on the page in the other, and a gap would be two different colours in the two places.
+`_EventBar` paints the slices edge to edge under a capsule clip and lays the dividers over the
+joins, rather than insetting each slice — inset slices show the page through the gaps, and the
+rounding error per slice stopped six of them meeting the capsule's ends.
+
+**It is 4.5 points tall, in a 7-point band, and that is the second attempt at the height.** The
+first was 6 in a band of 8, which is close to the weight of the ink above it, so a month of busy
+days read as a grid of stripes with numbers in between — a bar *under* the date rather than a mark
+*on* it. Thin enough and it is an annotation again, which is all it was meant to be; the width is
+what carries the count, so nothing was lost by taking the height down. Both cells measure off
+`EventDots.bandHeight` rather than writing a number, so the month cell's pitch (65) and
+`_DayStripCell._tileHeight` (`30 + bandHeight + letterBand + circle`) followed the change without an
+arithmetic edit.
+
+**The width used to be fixed at 26 on every day**, divided more finely as the day filled up, so
+density carried the count. It reads well in a column of busy Tuesdays and badly everywhere else,
+because the commonest day in a family calendar has exactly one thing on it and it drew the widest
+mark the grid can hold — a month of single appointments was a page of full-length bars saying
+nothing the eye could sort. Length is also the easier of the two comparisons: it is the one a bar
+chart makes, and it survives a glance that a three-way split of 26 points does not. The minimum is
+where a stroke still reads as a stroke — at 4.5 tall, 9 points is twice as wide as it is high, a dash
+rather than the ring beside it or a dot — and the step is what keeps six of them inside the ~26 the
+cell has room for. It started at 11 and came down: the quiet day is the one that wants the least ink,
+and the busy day only has to be longer than it, not long.
+
+The cap is `EventDots._maxSlices` (6) and it is **geometry, not editorial**: about 26 points is what
+the cell can give beside the to-do ring, and at 3 points a slice that is six. Past it the stroke shows
+six and says no more; there is no overflow mark, because a mark hung off the end is the thing the
+stroke was for. So the mark is honest about the first six appointments and vague past them, which is
+the right way round — the difference between one and two is a decision about the day, and the
+difference between eight and nine is not. The to-do ring rides ahead of the stroke, still a
+hollow 6-point circle and deliberately not a slice — a to-do may not take one, or it would claim to
+be a calendar the household hasn't got *and* make the day look busier by one appointment, which is
+the one thing the stroke is for. See the to-do overlay section above.
+
+**Dots were tried twice here and taken out twice, and it was the same fault both times.** A row of
+dots answers by repeating, so it needs a cap to stop it running out of the cell, and the cap is what
+stops it answering: four appointments and eleven draw the same three dots. That was true when the
+rest was said with a trailing "+" (a symbol among colours, taking a dot's worth of the row on exactly
+the days with the least to spare) and still true when it was said with a short rule underneath them
+(better — a property of the group, costing the row no width — but still three dots for both days).
+**Overlapping the dots** to fit five was tried in the same stretch and needed a white rim to keep one
+dot off the next; that rim, drawn in `surface` against a `screenBg` page, was itself the thing an
+earlier pass had got rid of, because it read as a white ring around every dot rather than as the
+invisible gap it was meant to be.
 
 ## The two day-off washes — Feiertag and Ferien
 

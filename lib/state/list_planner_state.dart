@@ -2,6 +2,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/list_plan.dart';
 import '../services/list_planner.dart';
+import '../services/recipe_fetch.dart';
+import '../services/recipe_import.dart';
+import '../services/youtube_import.dart';
 import 'entitlement_state.dart';
 
 /// Which of the screen's four faces is showing.
@@ -141,9 +144,105 @@ class PlannerNotifier extends StateNotifier<PlannerState> {
     state = state.copyWith(dropped: next);
   }
 
+  /// A recipe page turned into a plan, **without the model**.
+  ///
+  /// The household was already reading the page; schema.org's Recipe markup —
+  /// which Google's recipe rich card obliges the site to publish — carries the
+  /// ingredient list in a machine-readable form. So this is a fetch and a
+  /// parse, and the answer lands in the same [PlannerPhase.answer] card as a
+  /// generated plan, because from the card's point of view a plan is a plan.
+  ///
+  /// **It costs nothing and is therefore not counted.** No request to
+  /// `list-plan`, no `list_plan_runs` row, no monthly cap — [PlannerState.usage]
+  /// is carried through untouched. A household on the free plan can import
+  /// every recipe it reads, which is the correct answer: we are not paying for
+  /// any of it.
+  Future<void> runImport(Uri url) async {
+    if (state.phase == PlannerPhase.working) return;
+    // The address is what goes above the answer. It is what the reader handed
+    // over, and a plan captioned with the URL it came from is legible in a way
+    // that a bare dish name from somebody else's page is not.
+    final goal = url.toString();
+    final videoId = youtubeVideoId(url);
+    state = PlannerState(open: true, phase: PlannerPhase.working, goal: goal, usage: state.usage);
+    try {
+      final imported = videoId == null
+          ? parseRecipePage(html: await fetchRecipePage(url), pageUrl: goal)
+          : await _fromVideo(videoId, goal);
+      if (!mounted || !state.open) return;
+      if (imported == null || !imported.plan.isUsable) {
+        state = PlannerState(
+          open: true,
+          phase: PlannerPhase.failed,
+          goal: goal,
+          // Reached the page and found no recipe on it — a different thing
+          // from the network failing, and the copy says so, because "try
+          // again in a moment" is wrong advice for a page that will never
+          // have a recipe on it. A video says so in its own words: the
+          // description is a free-text box, and "no ingredients under this
+          // video" is a fact about that box rather than about the page.
+          failure: videoId == null
+              ? PlannerFailure.noRecipeOnPage
+              : PlannerFailure.noRecipeInVideo,
+          usage: state.usage,
+        );
+        return;
+      }
+      state = PlannerState(
+        open: true,
+        phase: PlannerPhase.answer,
+        goal: goal,
+        plan: imported.plan,
+        usage: state.usage,
+      );
+    } catch (_) {
+      if (!mounted || !state.open) return;
+      state = PlannerState(
+        open: true,
+        phase: PlannerPhase.failed,
+        goal: goal,
+        failure: PlannerFailure.unavailable,
+        usage: state.usage,
+      );
+    }
+  }
+
+  /// A YouTube address: the description first, and the recipe it points at
+  /// second.
+  ///
+  /// **Two fetches at most, and the second only when it is worth it.** The
+  /// description usually holds the list itself; when it does not, a line the
+  /// channel wrote saying "Zum Rezept:" over a link is a good enough reason to
+  /// follow exactly one of them ([recipeLinkInDescription]). Every other link
+  /// under a cooking video is the knife, the book or the shop.
+  ///
+  /// The Liste keeps the **video's** address either way. It is what the reader
+  /// handed over and what they will want to open again — the blog post is
+  /// where the words came from, not where they were.
+  Future<RecipeImport?> _fromVideo(String videoId, String goal) async {
+    final html = await fetchRecipePage(youtubeWatchUrl(videoId));
+    if (!mounted || !state.open) return null;
+    final fromDescription = parseYoutubePage(html: html, pageUrl: goal);
+    if (fromDescription != null) return fromDescription;
+
+    final details = youtubeVideoDetails(html);
+    final linked = details == null ? null : recipeLinkInDescription(details.description);
+    if (linked == null) return null;
+    final page = await fetchRecipePage(linked);
+    if (!mounted || !state.open) return null;
+    return parseRecipePage(html: page, pageUrl: goal);
+  }
+
   Future<void> run(String goal) async {
     final trimmed = goal.trim();
     if (trimmed.isEmpty || state.phase == PlannerPhase.working) return;
+
+    // A page beats a guess. When what arrived is an address rather than a
+    // sentence, the ingredients are already written down on the other end of
+    // it — so read them instead of asking a model to invent a version of the
+    // same recipe. See [runImport].
+    final page = recipePageUrl(trimmed);
+    if (page != null) return runImport(page);
 
     state = PlannerState(open: true, phase: PlannerPhase.working, goal: trimmed, usage: state.usage);
     try {

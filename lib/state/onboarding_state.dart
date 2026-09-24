@@ -10,6 +10,7 @@ import '../models/calendar_connection.dart';
 import '../models/picked_file.dart';
 import '../services/calendar_page_browser.dart';
 import '../services/media_picker.dart';
+import 'auth_state.dart';
 import 'calendar_connections_state.dart';
 import 'family_state.dart';
 
@@ -732,9 +733,18 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
   }
 }
 
-final onboardingProvider = StateNotifierProvider<OnboardingNotifier, OnboardingState>(
-  (ref) => OnboardingNotifier(ref),
-);
+/// **Rebuilt whenever the signed-in user changes**, like every other notifier
+/// that holds one household's answers — and for a sharper reason than most.
+/// This one holds *which step of the tour we are on*, and nothing was
+/// throwing it away: somebody who finished the wizard, signed out and
+/// registered a new account got the brand-new household's tour handed to them
+/// already standing on its celebration, because `step` was still 3 from the
+/// last run. The address, the picked calendars and the invitations typed for
+/// the previous household went the same way.
+final onboardingProvider = StateNotifierProvider<OnboardingNotifier, OnboardingState>((ref) {
+  ref.watch(currentUserIdProvider);
+  return OnboardingNotifier(ref);
+});
 
 /// A file refused on the device, before anything was sent — its sentence is
 /// the one to show.

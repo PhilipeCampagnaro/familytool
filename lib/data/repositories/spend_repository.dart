@@ -151,7 +151,7 @@ class SpendRepository {
   Future<List<SpendDevice>> fetchDevices() async {
     final rows = await _db
         .from('spend_ingest_devices')
-        .select('id, label, device_uid, created_at, last_used_at, revoked_at')
+        .select('id, user_id, label, device_uid, created_at, last_used_at, revoked_at')
         .isFilter('revoked_at', null)
         .order('created_at', ascending: true);
 
@@ -159,6 +159,7 @@ class SpendRepository {
       for (final r in rows)
         SpendDevice(
           id: r['id'] as String,
+          userId: r['user_id'] as String,
           label: r['label'] as String,
           deviceUid: r['device_uid'] as String,
           lastUsedAt: r['last_used_at'] == null
@@ -228,6 +229,16 @@ class SpendEnrolment {
 
 class SpendDevice {
   final String id;
+
+  /// **Whose enrolment this is, and therefore whose name every payment it files
+  /// carries.** `spend-ingest` stamps `payer_id` with this and nothing else —
+  /// not the card, not the phone — so a row read without it says which phone is
+  /// capturing while leaving out the only thing the household is actually
+  /// asking. Two accounts on one handset is not an edge case: the pair
+  /// (`user_id`, `device_uid`) is what `spend-enroll` upserts on, precisely
+  /// because the same handset may be enrolled by each parent in turn.
+  final String userId;
+
   final String label;
 
   /// The id `spend-enroll` keyed the row on — what tells this phone's row from
@@ -237,5 +248,11 @@ class SpendDevice {
 
   final DateTime? lastUsedAt;
 
-  const SpendDevice({required this.id, required this.label, required this.deviceUid, this.lastUsedAt});
+  const SpendDevice({
+    required this.id,
+    required this.userId,
+    required this.label,
+    required this.deviceUid,
+    this.lastUsedAt,
+  });
 }

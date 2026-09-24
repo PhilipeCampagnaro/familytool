@@ -116,6 +116,7 @@ abstract class AppStrings {
   String get unknown;
   String get next;
   String get skip;
+  String get back;
   String get letsGo;
   String get today;
   String get allDay;
@@ -1036,6 +1037,29 @@ abstract class AppStrings {
   String openInvitations(int count, String? until);
   String get sharedOutsideLabel;
 
+  /// The audience sheet's title — "Wer sieht die Liste?". It opens off the
+  /// avatar stack, and answers with the household on one side and the guests on
+  /// the other.
+  String whoSeesTitle(String noun);
+
+  /// Why a private container has no "Teilen" row in its menu. It is the one
+  /// place that says the two controls are connected, so it names the other one.
+  String privateCannotShare(String noun);
+
+  /// Why a container that is shared outward has no "Für wen?" picker: changing
+  /// it to `private` while a guest holds it takes the container away from the
+  /// household and leaves the outsider on it, which is what people hit.
+  String visibilityLockedWhileShared(String noun);
+
+  /// …and how to get it back, where the reader is allowed to do it. Split from
+  /// the sentence above because a kid sees the lock and not the rows that lift
+  /// it — an admin can share a list a kid owns.
+  String get visibilityLockedHowTo;
+
+  /// The same, for a container whose guests live inside the "Teilen" sheet
+  /// rather than on the edit sheet — which is Boxen.
+  String get visibilityLockedHowToInShare;
+
   // ----------------------------------------------------------- visibility --
   String get forWhom;
   String get everyone;
@@ -1190,32 +1214,80 @@ abstract class AppStrings {
   String invitedCount(int count);
 
   // ----------------------------------------------------------------- auth --
+  String get frontDoorTagline;
+
+  /// The household in the front door's animated hero — three people, three
+  /// things they put into the app. Content rather than interface, but it goes
+  /// through [AppStrings] like everything else: it is the first sentence a
+  /// stranger reads, and a German "Müll rausbringen" on a Spanish phone is a
+  /// worse first impression than no picture at all.
+  String get demoMemberMama;
+  String get demoMemberPapa;
+  String get demoMemberKid;
+  String get demoListTitle;
+  String get demoListItem;
+  String get demoEventTitle;
+  String get demoTaskTitle;
+  String get demoTrackerTitle;
+  /// What stands in the empty address field on the sign-in form. A made-up
+  /// address rather than an instruction, because the label above it already
+  /// says what the field is — and it is localised, since `beispiel.de` in an
+  /// English app is a word nobody reads as "example".
+  String get emailPlaceholder;
+
+  /// The one word the sign-up and sign-in forms write out by hand under their
+  /// dot field — Apple's own setup-screen greeting, in the app's voice.
+  ///
+  /// Short on purpose, and shorter than [welcomeToAporah]: it is drawn at a
+  /// headline size in a cursive face, so a sentence would either wrap to three
+  /// lines or shrink to nothing. Spanish says *Hola* rather than a gendered
+  /// *Bienvenido*, which is what its own setup screen says too.
   String get welcomeToAporah;
+  String get greetingWelcome;
+
+  /// [greetingWelcome] for somebody who already has an account.
+  String get greetingWelcomeBack;
+
   String get welcomeBack;
   String get signUpBlurb;
   String get signInBlurb;
   String get yourName;
-  String get atLeast8Chars;
   String get createAccount;
   String get signIn;
   String get haveAccountAlready;
   String get newHereCreateAccount;
-  String get forgotPassword;
   String get almostThere;
-  String confirmMailSent(String email);
-  String get toSignIn;
   String get pleaseEnterName;
   String get noConnectionTryAgain;
   String get pleaseEnterEmailFirst;
-  String get resetMailSent;
-  String get wrongCredentials;
-  String get confirmEmailFirst;
-  String get accountExists;
-  String get passwordTooShort;
-  String get passwordLeaked;
   String get tooManyAttempts;
   String get emailLooksInvalid;
   String get signInFailed;
+  String codeSentTo(String email);
+  String get codeHint;
+  String get verifyCode;
+  String get resendCode;
+  String resendCodeIn(int seconds);
+  String get useOtherEmail;
+  String get codeInvalid;
+  String get noAccountForEmail;
+
+  // ---------------------------------------------------------- incoming links --
+  String get joinHouseholdTitle;
+  String get joinHouseholdBody;
+  String get joinHousehold;
+  String joinedHousehold(String name);
+  String joinNamedHouseholdTitle(String name);
+  String inviteWelcomeBody(String inviter, String household);
+  String inviteWelcomeBodyNoInviter(String household);
+  String inviteJoinNamed(String household);
+  String get inviteSetUpOwn;
+  String get inviteInvalid;
+  String get inviteExpired;
+  String get inviteOtherEmail;
+  String get inviteLeaveFirst;
+  String get inviteAcceptFailed;
+  String get shareLinkInvalid;
 
   // ----------------------------------------------------------------- family --
   String get noHouseholdForAccount;
@@ -1595,6 +1667,13 @@ abstract class AppStrings {
   /// Marks the row that is the phone in the reader's hand.
   String get spendWalletThisDevice;
 
+  /// **This phone is capturing, but not for you.** One handset holds one
+  /// credential, and `spend-ingest` files every payment under the account that
+  /// minted it — so a phone both parents sign into goes on stamping the other
+  /// one's name until somebody activates it again. Naming them is the
+  /// difference between an explanation and a page that looks broken.
+  String spendWalletOtherOwner(String name);
+
   String get spendCatGroceries;
   String get spendCatDrugstore;
   String get spendCatFuel;
@@ -1764,8 +1843,20 @@ abstract class AppStrings {
   String get plannerCreateList;
   String get plannerAgain;
   String get plannerEditGoal;
+
+  /// The way out of a link that held no ingredients: the field comes back
+  /// empty, for the dish's name rather than another address.
+  String get plannerTypeInstead;
   String get plannerListCreated;
   String get plannerUnavailable;
+  String get plannerNoRecipeOnPage;
+
+  /// A video whose description held no ingredients. Names the description
+  /// rather than "the page": nothing failed at our end.
+  String get plannerNoRecipeInVideo;
+  String get plannerPasteLink;
+  String get plannerLinkOnClipboard;
+  String get plannerClipboardUnreadable;
   String get plannerUnusable;
   String get plannerNotConfigured;
   String get plannerMonthlyLimit;
@@ -1817,6 +1908,17 @@ abstract class AppStrings {
   String get notifyAbfallTitle;
   String get notifyAbfallSubtitle;
   String get notifyAbfallWhen;
+
+  /// The always-present last line of the bin card: one tap adds another
+  /// reminder to every pickup. Greyed with [notifyAbfallMax] once the household
+  /// has as many as the 64-request ceiling allows.
+  String get notifyAbfallAdd;
+  String notifyAbfallMax(int count);
+
+  /// A bin day's reminder row in Kalender, when Settings holds more than one —
+  /// the hours themselves are too long to sit in a row's value slot.
+  String reminderCount(int count);
+
   String get abfallDayBefore;
   String get abfallSameDay;
   String get notifyTaskTimesTitle;

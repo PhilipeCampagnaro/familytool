@@ -136,27 +136,37 @@ NoticePlan composeNotices({
       if (!names.contains(e.title)) names.add(e.title);
     }
     for (final MapEntry(key: day, value: names) in bins.entries) {
-      // The calendar day before, not 24 hours before: across a clock change
-      // those are an hour apart.
-      final at = DateTime(
-        day.year,
-        day.month,
-        settings.abfallSameDay ? day.day : day.day - 1,
-        settings.abfallAt ~/ 60,
-        settings.abfallAt % 60,
-      );
-      if (!inWindow(at)) continue;
-      out.add(
-        ScheduledNotice(
-          id: 'abfall:${day.year}-${day.month}-${day.day}',
-          at: at,
-          // The vendor's own word for the bin — "Bioabfall", "Gelber Sack" —
-          // because that is what is written on the calendar the family reads.
-          title: L.s.noticeAbfallTitle(L.s.joinAnd(names)),
-          body: settings.abfallSameDay ? L.s.noticeAbfallBodyToday : L.s.noticeAbfallBody,
-          thread: 'abfall',
-        ),
-      );
+      // **Every reminder the household set, on every pickup.** This is the one
+      // category that multiplies, so it is also the one that could spend the
+      // whole [kNoticeBudget] on the rubbish and let an appointment reminder be
+      // the notice iOS silently drops. `kAbfallReminderLimit` is where that is
+      // held down; nothing here re-decides it.
+      for (final reminder in settings.abfallTimes) {
+        // The calendar day before, not 24 hours before: across a clock change
+        // those are an hour apart.
+        final at = DateTime(
+          day.year,
+          day.month,
+          reminder.sameDay ? day.day : day.day - 1,
+          reminder.minutes ~/ 60,
+          reminder.minutes % 60,
+        );
+        if (!inWindow(at)) continue;
+        out.add(
+          ScheduledNotice(
+            // The hour is in the id, or a second reminder on the same pickup
+            // would replace the first rather than ring beside it.
+            id: 'abfall:${day.year}-${day.month}-${day.day}:'
+                '${reminder.sameDay ? 1 : 0}:${reminder.minutes}',
+            at: at,
+            // The vendor's own word for the bin — "Bioabfall", "Gelber Sack" —
+            // because that is what is written on the calendar the family reads.
+            title: L.s.noticeAbfallTitle(L.s.joinAnd(names)),
+            body: reminder.sameDay ? L.s.noticeAbfallBodyToday : L.s.noticeAbfallBody,
+            thread: 'abfall',
+          ),
+        );
+      }
     }
   }
 

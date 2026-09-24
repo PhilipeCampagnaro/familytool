@@ -46,6 +46,13 @@ object SpendCredential {
     private const val ENDPOINT = "ingest-endpoint"
     private const val API_KEY = "ingest-api-key"
 
+    /// Which account minted the token, so the app can tell a phone that is
+    /// capturing *for the reader* from one that is capturing for the other
+    /// parent. There is one of these files per install, not per signed-in user,
+    /// and `spend-ingest` stamps `payer_id` with whoever enrolled — see the
+    /// note on `tokenOwner()` in `ios/Runner/SpendCapture.swift`.
+    private const val OWNER = "ingest-owner"
+
     /// Survives [clear] on purpose. It is not a credential — it is the name the
     /// server files this device under, and losing it on a revoke would make the
     /// next enrolment add a second row instead of rotating the first.
@@ -59,19 +66,24 @@ object SpendCredential {
     /// background where nobody would ever see it.
     data class Stored(val token: String, val endpoint: String, val apiKey: String)
 
-    fun save(context: Context, token: String, endpoint: String, apiKey: String) {
+    fun save(context: Context, token: String, endpoint: String, apiKey: String, owner: String) {
         prefs(context).edit()
             .putString(TOKEN, encrypt(token))
             .putString(ENDPOINT, encrypt(endpoint))
             .putString(API_KEY, encrypt(apiKey))
+            .putString(OWNER, encrypt(owner))
             .apply()
     }
 
     fun clear(context: Context) {
-        prefs(context).edit().remove(TOKEN).remove(ENDPOINT).remove(API_KEY).apply()
+        prefs(context).edit().remove(TOKEN).remove(ENDPOINT).remove(API_KEY).remove(OWNER).apply()
     }
 
     fun hasToken(context: Context): Boolean = !read(context, TOKEN).isNullOrEmpty()
+
+    /// Null for a token stored before this was written down — Dart reads that as
+    /// "unknown" and falls back to the device list rather than guessing.
+    fun tokenOwner(context: Context): String? = read(context, OWNER)?.ifEmpty { null }
 
     fun load(context: Context): Stored? {
         val token = read(context, TOKEN)

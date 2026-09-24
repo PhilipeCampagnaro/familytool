@@ -5,6 +5,8 @@ import '../../data/repositories/spend_repository.dart';
 import '../../l10n/l10n.dart';
 import '../../services/external_links.dart';
 import '../../services/spend_intent.dart';
+import '../../state/auth_state.dart';
+import '../../state/family_state.dart';
 import '../../state/spend_state.dart';
 import '../../theme/app_icons.dart';
 import '../../theme/tokens.dart';
@@ -93,6 +95,14 @@ class _WalletCapturePageState extends ConsumerState<WalletCapturePage> with Widg
     // the other parent's phone may well be in it.
     final supported = intents.isSupported;
     final needsAccess = intents.usesNotificationAccess;
+    final members = ref.watch(familyProvider).members;
+    final me = ref.watch(currentUserIdProvider);
+
+    /// Whoever the row belongs to. A device outlives a membership, so a name
+    /// that has gone is named as one rather than left blank — the same answer
+    /// the payment sheet gives for a former member's spends.
+    String owner(String userId) =>
+        members.where((m) => m.userId == userId).firstOrNull?.name ?? L.s.spendFormerMember;
 
     return SettingsDetailPage(
       icon: AppIcons.wallet,
@@ -115,6 +125,11 @@ class _WalletCapturePageState extends ConsumerState<WalletCapturePage> with Widg
             enrolled: state.thisDeviceEnrolled,
             access: state.notificationAccess,
             needsAccess: needsAccess,
+            // Named, not just flagged. A phone whose credential belongs to the
+            // other parent is filing real payments under their name, and
+            // "noch nicht aktiviert" on its own would send the reader off to
+            // press a button they have already pressed once.
+            capturingFor: state.captureOwnerId == null ? null : owner(state.captureOwnerId!),
           ),
           const SizedBox(height: AppSpacing.blockGap),
           if (needsAccess) ...[_DisclosureCard(), const SizedBox(height: AppSpacing.blockGap)],
@@ -143,7 +158,19 @@ class _WalletCapturePageState extends ConsumerState<WalletCapturePage> with Widg
                     for (final device in state.devices)
                       _DeviceRow(
                         device: device,
-                        isThisDevice: state.thisDeviceEnrolled && device.deviceUid == state.thisDeviceUid,
+                        // The household's list, so it names whose enrolment each
+                        // row is: that is what every payment the phone files
+                        // will be filed under, and two rows for one handset —
+                        // one per parent — is the ordinary case on a phone that
+                        // has changed hands.
+                        owner: owner(device.userId),
+                        // Matched on the account as well as the handset. Without
+                        // that, the other parent's row on this same phone was
+                        // marked "Dieses Gerät", and revoking it from here took
+                        // their enrolment away instead of this one.
+                        isThisDevice: state.thisDeviceEnrolled &&
+                            device.deviceUid == state.thisDeviceUid &&
+                            device.userId == me,
                       ),
                   ],
           ),
@@ -217,7 +244,17 @@ class _ThisDeviceCard extends StatelessWidget {
   final bool access;
   final bool needsAccess;
 
-  const _ThisDeviceCard({required this.enrolled, required this.access, required this.needsAccess});
+  /// The other member this phone is currently filing payments under, when it is
+  /// holding their credential rather than the reader's. Null in every ordinary
+  /// case — see [SpendState.captureOwnerId].
+  final String? capturingFor;
+
+  const _ThisDeviceCard({
+    required this.enrolled,
+    required this.access,
+    required this.needsAccess,
+    this.capturingFor,
+  });
 
   bool get _complete => needsAccess ? enrolled && access : enrolled;
 
@@ -252,6 +289,27 @@ class _ThisDeviceCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 12),
+              // **Said before anything else, on either platform.** The rest of
+              // the card is setup copy for a phone that is not capturing; this
+              // one is capturing, just not for the reader, and a reader who is
+              // not told that reads a row of numbers with somebody else's name
+              // on it and concludes the totals are wrong.
+              if (capturingFor case final name?) ...[
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    AppIcon(AppIcons.warning, size: 17, color: AppColors.danger),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        L.s.spendWalletOtherOwner(name),
+                        style: AppText.body.copyWith(color: AppColors.inkSecondary),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+              ],
               if (needsAccess)
                 ..._androidBody()
               else if (!enrolled)
@@ -383,9 +441,15 @@ class _DisclosureCard extends StatelessWidget {
 
 class _DeviceRow extends ConsumerStatefulWidget {
   final SpendDevice device;
+
+  /// Whose enrolment this is — and therefore whose name every payment it files
+  /// carries. It leads the subtitle rather than trailing it, because on a
+  /// household list that is the question being asked.
+  final String owner;
+
   final bool isThisDevice;
 
-  const _DeviceRow({required this.device, required this.isThisDevice});
+  const _DeviceRow({required this.device, required this.owner, required this.isThisDevice});
 
   @override
   ConsumerState<_DeviceRow> createState() => _DeviceRowState();
@@ -456,7 +520,11 @@ class _DeviceRowState extends ConsumerState<_DeviceRow> {
     return SettingsRow(
       icon: AppIcons.deviceMobile,
       title: widget.device.label,
-      subtitle: widget.isThisDevice ? '${L.s.spendWalletThisDevice} · $_lastUsed' : _lastUsed,
+      subtitle: [
+        widget.owner,
+        if (widget.isThisDevice) L.s.spendWalletThisDevice,
+        _lastUsed,
+      ].join(' · '),
       // Anchored on the dots rather than the row, so the menu grows out of the
       // thing that was tapped — which is the whole reason this app puts up a
       // `UIMenu` beside the control instead of a sheet at the bottom.

@@ -1,0 +1,13 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["MWJ54A4F3Z.com.aporah.aporah"],
+        "components": [
+          { "/": "/invite/*", "comment": "Household invitation (invite-member)" },
+          { "/": "/share/*", "comment": "Shared list or box (create-share-link)" }
+        ]
+      }
+    ]
+  }
+}

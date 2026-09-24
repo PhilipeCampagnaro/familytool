@@ -118,7 +118,7 @@ Deno.serve(async (req) => {
     return fail("Der Freigabe-Link konnte nicht erstellt werden.", 500);
   }
 
-  const url = `${Deno.env.get("APORAH_WEB_URL") ?? "https://aporah.app"}/share/${token}`;
+  const url = `${Deno.env.get("APORAH_WEB_URL") ?? "https://aporah.io"}/share/${token}`;
 
   let mailSent = false;
   if (body.email) {

@@ -87,6 +87,23 @@ class ShoppingList {
   /// null on every hand-made list. See [ListPlan.recipe].
   final String? recipe;
 
+  /// The recipe page an imported list was built from — **the address, never
+  /// the method**.
+  ///
+  /// This is [recipe]'s counterpart for a list that came off somebody else's
+  /// page rather than out of the model. A *Zubereitungstext* is a Sprachwerk;
+  /// copying one into our database and replicating it to every phone in the
+  /// household is reproduction, and an ingredient list is facts. So the import
+  /// keeps the link instead — which is also the better artefact, because it
+  /// stays right when the page is corrected and it is what the cook actually
+  /// wants at the hob.
+  ///
+  /// Same shape as [recipe] and [eventLink]: written once on create, never
+  /// edited, and **nothing ever fetches it** afterwards — see
+  /// `list_items.link_url` in CLAUDE.md. The import read the page once, when
+  /// the reader asked.
+  final String? sourceUrl;
+
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -96,6 +113,9 @@ class ShoppingList {
 
   /// Whether this list carries anything worth opening a method sheet for.
   bool get hasMethod => steps.isNotEmpty || (recipe?.isNotEmpty ?? false);
+
+  /// Whether this list can say where it came from.
+  bool get hasSource => sourceUrl?.isNotEmpty ?? false;
 
   const ShoppingList({
     required this.id,
@@ -110,6 +130,7 @@ class ShoppingList {
     this.eventLink,
     this.steps = const [],
     this.recipe,
+    this.sourceUrl,
     this.createdAt,
     this.updatedAt,
   }) : isSummary = false;
@@ -131,6 +152,7 @@ class ShoppingList {
       eventLink = null,
       steps = const [],
       recipe = null,
+      sourceUrl = null,
       createdAt = null,
       updatedAt = null,
       isSummary = true;
@@ -152,6 +174,7 @@ class ShoppingList {
           if (s is String && s.trim().isNotEmpty) s.trim(),
       ],
       recipe: _textOrNull(map['recipe']),
+      sourceUrl: _textOrNull(map['source_url']),
       createdAt: _timeFrom(map['created_at']),
       updatedAt: _timeFrom(map['updated_at']),
     );
@@ -185,6 +208,7 @@ class ShoppingList {
         'owner_id': ownerId,
         'steps': steps.isEmpty ? null : steps,
         'recipe': recipe,
+        'source_url': sourceUrl,
       },
     };
   }
@@ -201,6 +225,7 @@ class ShoppingList {
     EventLink? eventLink,
     List<String>? steps,
     String? recipe,
+    String? sourceUrl,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -217,6 +242,7 @@ class ShoppingList {
       eventLink: eventLink ?? this.eventLink,
       steps: steps ?? this.steps,
       recipe: recipe ?? this.recipe,
+      sourceUrl: sourceUrl ?? this.sourceUrl,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

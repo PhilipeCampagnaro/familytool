@@ -7,6 +7,7 @@ import '../../state/calendar_state.dart';
 import '../../state/family_state.dart';
 import '../../state/auth_state.dart';
 import '../../theme/tokens.dart';
+import '../../widgets/anchored_menu.dart';
 import '../../widgets/app_sheet.dart';
 import '../../widgets/avatar.dart';
 import '../../widgets/confirmation.dart';
@@ -474,7 +475,17 @@ class _InviteSentBody extends StatelessWidget {
   }
 }
 
-class _MemberRow extends ConsumerWidget {
+/// One member of the household: their face, their name, the role they hold —
+/// and, for an admin looking at somebody else, the two things that can be done
+/// about it.
+///
+/// Those two live where every other row in the app keeps them: behind the "…"
+/// and behind a swipe ([SwipeToEditDelete]), never on a bin sitting in the row
+/// that removes somebody on a single tap. The role reads as plain text here
+/// rather than as a dropdown for the same reason — one glance down the card
+/// should find one shape of row, and this one already is that shape on your own
+/// row and on a member you can't manage.
+class _MemberRow extends ConsumerStatefulWidget {
   final HouseholdMember member;
   final bool isMe;
 
@@ -485,89 +496,154 @@ class _MemberRow extends ConsumerWidget {
   const _MemberRow({required this.member, required this.isMe, required this.canManage});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_MemberRow> createState() => _MemberRowState();
+}
+
+class _MemberRowState extends ConsumerState<_MemberRow> {
+  /// What both menus hang off — the row's "…", so UIKit's bubble grows out of
+  /// the control that was pressed even when the swipe is what opened it.
+  final _anchor = GlobalKey();
+
+  @override
+  Widget build(BuildContext context) {
+    final member = widget.member;
+    final isMe = widget.isMe;
+
+    // Nobody demotes or removes themselves here. `enforce_last_admin` would
+    // refuse it whenever they are the only admin, and when they aren't,
+    // leaving a household is a different action with different consequences
+    // than being removed from one.
+    final manageable = widget.canManage && !isMe;
+
     final tone = AppTones.list[member.tone % AppTones.list.length];
+
+    final content = Padding(
+      padding: EdgeInsets.fromLTRB(16, 14, manageable ? 6 : 16, 14),
+      child: Row(
+        children: [
+          Avatar(
+            size: 40,
+            bg: tone.bg,
+            fg: tone.fg,
+            initials: member.initials,
+            fontSize: 13,
+            imageUrl: member.avatarUrl,
+          ),
+          const SizedBox(width: 13),
+          Expanded(
+            child: Row(
+              children: [
+                Flexible(
+                  child: Text(
+                    member.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppText.rowTitle,
+                  ),
+                ),
+                if (isMe) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(AppRadii.iconTile),
+                      border: Border.all(color: AppColors.hairline2),
+                    ),
+                    child: Text(L.s.youCaps, style: AppText.microLabel.copyWith(letterSpacing: 0.5)),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(member.role.label, style: AppText.label),
+          if (manageable) ...[
+            const SizedBox(width: 2),
+            RowMoreButton(key: _anchor, onTap: _openMenu),
+          ],
+          // The chevron only where the tap is, same rule as the household
+          // row above: a row that looks tappable and isn't reads as broken.
+          if (isMe) ...[
+            const SizedBox(width: 8),
+            AppIcon(AppIcons.caretRight, size: 16, color: AppColors.mutedLight),
+          ],
+        ],
+      ),
+    );
 
     // My own row is the way into my own profile: the name and the face on it
     // are exactly what that page edits, so a row that showed them and did
     // nothing was the list asking to be used and then refusing. Mine only —
     // there is no page for somebody else's profile, and there shouldn't be.
     // Their name and picture are theirs to change.
-    return GestureDetector(
-      onTap: !isMe
-          ? null
-          : () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => ProfilePage())),
-      behavior: HitTestBehavior.opaque,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        child: Row(
-          children: [
-            Avatar(
-              size: 40,
-              bg: tone.bg,
-              fg: tone.fg,
-              initials: member.initials,
-              fontSize: 13,
-              imageUrl: member.avatarUrl,
-            ),
-            const SizedBox(width: 13),
-            Expanded(
-              child: Row(
-                children: [
-                  Flexible(
-                    child: Text(
-                      member.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppText.rowTitle,
-                    ),
-                  ),
-                  if (isMe) ...[
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(AppRadii.iconTile),
-                        border: Border.all(color: AppColors.hairline2),
-                      ),
-                      child: Text(L.s.youCaps, style: AppText.microLabel.copyWith(letterSpacing: 0.5)),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            // Nobody demotes or removes themselves here. `enforce_last_admin`
-            // would refuse it whenever they are the only admin, and when they
-            // aren't, leaving a household is a different action with different
-            // consequences than being removed from one.
-            if (isMe || !canManage)
-              Text(member.role.label, style: AppText.label)
-            else ...[
-              _RolePicker(
-                role: member.role,
-                onChanged: (r) => ref.read(familyProvider.notifier).setRole(member.userId, r),
-              ),
-              const SizedBox(width: 10),
-              GestureDetector(
-                onTap: () => _confirmRemove(context, ref),
-                behavior: HitTestBehavior.opaque,
-                child: AppIcon(AppIcons.trash, size: 18, color: AppColors.mutedLight),
-              ),
-            ],
-            // The chevron only where the tap is, same rule as the household
-            // row above: a row that looks tappable and isn't reads as broken.
-            if (isMe) ...[
-              const SizedBox(width: 8),
-              AppIcon(AppIcons.caretRight, size: 16, color: AppColors.mutedLight),
-            ],
-          ],
-        ),
-      ),
+    if (isMe) {
+      return GestureDetector(
+        onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => ProfilePage())),
+        behavior: HitTestBehavior.opaque,
+        child: content,
+      );
+    }
+    if (!manageable) return content;
+
+    return SwipeToEditDelete(
+      identity: member.userId,
+      onEdit: _changeRoleAfterSwipe,
+      onDelete: _confirmRemove,
+      child: content,
     );
   }
 
-  void _confirmRemove(BuildContext context, WidgetRef ref) {
+  /// The "…": the roles to move this member between, and the one destructive
+  /// thing, in that order. One flat menu rather than a "Rolle ändern" row that
+  /// opens a second one — a menu that opens a menu costs a tap and can be
+  /// swallowed outright, since [showNativeMenu] drops a request arriving within
+  /// half a second of the last one as the same tap twice.
+  void _openMenu() => showAnchoredMenu(
+    context: context,
+    anchorKey: _anchor,
+    items: [
+      ..._roleItems(),
+      AnchoredMenuItem(
+        label: L.s.remove,
+        icon: AppIcons.trash,
+        symbol: 'trash',
+        destructive: true,
+        onSelected: _confirmRemove,
+      ),
+    ],
+  );
+
+  /// The swipe's pencil: the roles alone, under their own caption — removal is
+  /// the red action right beside it, and repeating it inside the menu the other
+  /// one opens would be the same gesture offering the same thing twice.
+  void _openRoleMenu() =>
+      showAnchoredMenu(context: context, anchorKey: _anchor, title: L.s.role, width: 200, items: _roleItems());
+
+  /// The swipe closes itself *after* the action has run, so the "…" this menu
+  /// hangs off is still 128 points to the left of where it is about to settle.
+  /// Waiting the row out costs a beat and puts the menu on the button rather
+  /// than on the empty strip it was covering.
+  Future<void> _changeRoleAfterSwipe() async {
+    await Future<void>.delayed(const Duration(milliseconds: 240));
+    if (mounted) _openRoleMenu();
+  }
+
+  List<AnchoredMenuItem> _roleItems() => [
+    for (final r in FamilyRole.values)
+      AnchoredMenuItem(
+        label: r.label,
+        icon: _RolePicker.glyph(r).$1,
+        symbol: _RolePicker.glyph(r).$2,
+        selected: r == widget.member.role,
+        onSelected: () {
+          if (r != widget.member.role) {
+            ref.read(familyProvider.notifier).setRole(widget.member.userId, r);
+          }
+        },
+      ),
+  ];
+
+  void _confirmRemove() {
     showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -576,12 +652,12 @@ class _MemberRow extends ConsumerWidget {
         // `reassign_content_on_member_removal` hands their family-visible
         // content to an admin and deletes their private content outright —
         // there is no backdoor into it, by design.
-        content: Text(L.s.removeMemberBody(member.name)),
+        content: Text(L.s.removeMemberBody(widget.member.name)),
         actions: [
           TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: Text(L.s.cancel)),
           TextButton(
             onPressed: () {
-              ref.read(familyProvider.notifier).removeMember(member.userId);
+              ref.read(familyProvider.notifier).removeMember(widget.member.userId);
               Navigator.of(dialogContext).pop();
             },
             child: Text(L.s.remove, style: AppText.rowTitle.copyWith(color: AppColors.danger)),
@@ -592,14 +668,14 @@ class _MemberRow extends ConsumerWidget {
   }
 }
 
-/// The role dropdown on a member row and in the invite sheet: [InlineDropdown]
-/// with the three roles in it.
+/// The role dropdown in the invite sheet: [InlineDropdown] with the three
+/// roles in it.
 ///
 /// A wrapper rather than the control itself, because the *list* is what differs
 /// between callers — the onboarding invite step asks the same question with two
 /// options and its own wording — while every one of them wants the same
 /// hairline box opening the same system menu. Kept under this name because its
-/// two call sites here read as what they are.
+/// call sites here read as what they are.
 class _RolePicker extends StatelessWidget {
   final FamilyRole role;
   final ValueChanged<FamilyRole> onChanged;
@@ -607,8 +683,9 @@ class _RolePicker extends StatelessWidget {
   const _RolePicker({required this.role, required this.onChanged});
 
   /// The glyph a role carries in the menu — Phosphor for the app's own panel,
-  /// an SF Symbol for UIKit's.
-  static (IconData, String) _glyph(FamilyRole role) => switch (role) {
+  /// an SF Symbol for UIKit's. Shared with [_MemberRow], whose "…" lists the
+  /// same three roles without the box around them.
+  static (IconData, String) glyph(FamilyRole role) => switch (role) {
     FamilyRole.admin => (AppIcons.shieldCheck, 'checkmark.shield'),
     FamilyRole.member => (AppIcons.user, 'person'),
     FamilyRole.kid => (AppIcons.baby, 'figure.child'),
@@ -622,7 +699,7 @@ class _RolePicker extends StatelessWidget {
       onChanged: onChanged,
       choices: [
         for (final r in FamilyRole.values)
-          DropdownChoice(value: r, label: r.label, icon: _glyph(r).$1, symbol: _glyph(r).$2),
+          DropdownChoice(value: r, label: r.label, icon: glyph(r).$1, symbol: glyph(r).$2),
       ],
     );
   }
@@ -657,9 +734,10 @@ List<String> _peopleWithoutAccounts(WidgetRef ref) {
 /// One person in the household who has no account: their face, their name, and
 /// a line saying so.
 ///
-/// Shaped like [_MemberRow] but without its role picker — a role on somebody
-/// who cannot sign in would be a control with nothing behind it. What an admin
-/// gets instead is the name and the removal, the only two things there are.
+/// Shaped like [_MemberRow], minus the role — a role on somebody who cannot
+/// sign in would be a control with nothing behind it. What an admin gets here
+/// is the name and the removal, the only two things there are, behind the same
+/// "…" and the same swipe.
 class _PersonRow extends ConsumerWidget {
   final String name;
   final bool canManage;

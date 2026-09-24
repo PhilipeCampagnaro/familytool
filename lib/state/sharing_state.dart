@@ -2,9 +2,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/who.dart';
+import '../services/avatars.dart';
 import '../services/supabase.dart';
 import '../l10n/l10n.dart';
-import 'family_state.dart' show signAvatarUrls;
 
 /// What can be shared outside the household — exactly `public.shareable_kind`.
 ///

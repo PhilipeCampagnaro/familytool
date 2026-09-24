@@ -19,10 +19,23 @@ class NavBarState {
   /// `navRowBottom` handles both.
   final double? barHeight;
 
-  const NavBarState({this.compact = false, this.barHeight});
+  /// Whether the bar is on screen at all — false while a sheet or a pushed
+  /// page covers the shell (`occludedByRoute`), and before the shell exists.
+  ///
+  /// Read by the confirmation chip, which floats in the root overlay above
+  /// every route and so cannot ask the shell's route itself. Parked above a
+  /// bar that isn't there, it hung in the middle of the page, over the very
+  /// buttons the next delete needed; with nothing to clear it drops to the
+  /// bottom edge instead, and rises again when the bar comes back.
+  final bool onScreen;
 
-  NavBarState copyWith({bool? compact, double? barHeight}) =>
-      NavBarState(compact: compact ?? this.compact, barHeight: barHeight ?? this.barHeight);
+  const NavBarState({this.compact = false, this.barHeight, this.onScreen = false});
+
+  NavBarState copyWith({bool? compact, double? barHeight, bool? onScreen}) => NavBarState(
+    compact: compact ?? this.compact,
+    barHeight: barHeight ?? this.barHeight,
+    onScreen: onScreen ?? this.onScreen,
+  );
 }
 
 class NavBarNotifier extends StateNotifier<NavBarState> {
@@ -59,9 +72,27 @@ class NavBarNotifier extends StateNotifier<NavBarState> {
   void setBarHeight(double height) {
     if (state.barHeight != height) state = state.copyWith(barHeight: height);
   }
+
+  void setOnScreen(bool value) {
+    if (state.onScreen != value) state = state.copyWith(onScreen: value);
+  }
 }
 
 final navBarProvider = StateNotifierProvider<NavBarNotifier, NavBarState>((ref) => NavBarNotifier());
+
+/// Which tab is actually on screen.
+///
+/// **The shell's `_index` is local state, and every screen is always mounted**
+/// — the five live in one `IndexedStack` — so "is my screen the one being
+/// looked at?" has no answer inside a screen. Anything that acts on arrival
+/// rather than on a tap needs one: `RecipeLinkWatcher` offers a clipboard link
+/// when the reader reaches Listen, and would otherwise offer it while they were
+/// somewhere else entirely.
+///
+/// Published by the shell, read by screens. Not a way to *change* tab — that is
+/// [tabJumpProvider], which the shell also listens to; a second writable copy
+/// of the same number is how the two drift apart.
+final activeTabProvider = StateProvider<int>((ref) => homeTabIndex);
 
 // ---------------------------------------------------------------------------
 // Jumping from one tab to another

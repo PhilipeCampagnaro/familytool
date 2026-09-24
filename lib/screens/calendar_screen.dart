@@ -708,7 +708,7 @@ const calendarChipRowKey = ValueKey('calendarChipRow');
 /// Identifies the week view's scrolling day strip for tests.
 const calendarDayStripKey = ValueKey('calendarDayStrip');
 
-/// Month/year label, and the calendar filter chip row — the part of the header
+/// The label row, and the calendar filter chip row — the part of the header
 /// that fades/shrinks away entirely as either view collapses, at which point
 /// [_CalendarFilterButton] fades into the title row to take the chips' place.
 /// Shared by both views so the two behave identically.
@@ -716,10 +716,13 @@ class _MonthAndChipsRow extends ConsumerWidget {
   final CalendarScreenState state;
   final Color accent;
 
-  /// A widget rather than a string, because the two tabs put different *kinds*
-  /// of thing here now: Kalender a month name, Home a status pill that can
-  /// carry a glyph, a count and a disclosure chevron. See [_MonthYearRow].
-  final Widget label;
+  /// A widget rather than a string, because the tabs put different *kinds* of
+  /// thing here. See [_MonthYearRow].
+  ///
+  /// **Null is a tab with nothing to say above its chips, and Kalender is
+  /// one** — the row and the gap under it both go, rather than standing empty,
+  /// which is what lifts the grid. Home is the only caller that fills it.
+  final Widget? label;
 
   /// How tall that row is. Kalender keeps [_MonthYearRow.monthHeight], which is
   /// what a month name needs; Home asks for more because its island is two
@@ -739,7 +742,7 @@ class _MonthAndChipsRow extends ConsumerWidget {
   const _MonthAndChipsRow({
     required this.state,
     required this.accent,
-    required this.label,
+    this.label,
     this.labelHeight = _MonthYearRow.monthHeight,
     this.underLabel,
     this.labelTrailing,
@@ -750,9 +753,9 @@ class _MonthAndChipsRow extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _MonthYearRow(height: labelHeight, trailing: labelTrailing, child: label),
+        if (label case final label?) _MonthYearRow(height: labelHeight, trailing: labelTrailing, child: label),
         ?underLabel,
-        const SizedBox(height: 14),
+        if (label != null || underLabel != null) const SizedBox(height: 14),
         SizedBox(
           // The shared chip's own row height — see [AppFilterChip.rowHeight].
           // The row is measured by the collapsing header rather than assumed.
@@ -794,13 +797,19 @@ class _MonthAndChipsRow extends ConsumerWidget {
 /// The label above the chips. Shared by the week view's full header
 /// ([_MonthAndChipsRow]) and the month view's own collapsing header.
 ///
-/// **The label says two different kinds of thing on the two tabs, on purpose.**
-/// Kalender prints the month the grid is showing and crossfades it as that
-/// month changes, because a grid of numbered squares needs telling which month
-/// it is. Home never names a month — the day strip is already a row of dates and
-/// the agenda under it is one day's — and spends the row on its status island
-/// instead: the single most pressing thing about today, or "Dein Tag" when
-/// there is nothing pressing. See `DayIsland`.
+/// **Only Home fills it now.** It spends the row on its status island: the
+/// single most pressing thing about today, or "Dein Tag" when there is nothing
+/// pressing. See `DayIsland`. It never names a month, because the day strip is
+/// already a row of dates and the agenda under it is one day's.
+///
+/// **Kalender used to print the month here and no longer has the row at all.**
+/// A grid of numbered squares does need telling which month it is — but every
+/// `_MonthBlock` already writes its own name over its own grid, so the header's
+/// copy was a second answer to a question that was already answered four
+/// centimetres below, and the two could disagree: the header named the
+/// *selected* month while the scroll was somewhere else entirely. Dropping it
+/// takes 54 points out of the collapsing block and lifts the whole grid by
+/// them, which is the part worth having.
 ///
 /// Which is why this takes a widget. The crossfade below is keyed on whatever
 /// it is given, so **every caller must put a `Key` on its child** or the row
@@ -834,7 +843,11 @@ class _MonthYearRow extends StatelessWidget {
   ///
   /// It is the *default* rather than the only value: Home's island grew a
   /// second line saying what its count is counting, and its own view pays the
-  /// eight points for it. Kalender's month name still sits at 40.
+  /// eight points for it, and Kalender no longer puts a label here at all — so
+  /// nothing rests on the 40 today. It stays as the row's own resting height
+  /// rather than being folded into Home's constant: this row's size is the
+  /// row's business, and the next caller to want a plain heading above the
+  /// chips should get the one that was measured.
   static const monthHeight = 40.0;
 
   @override
@@ -1231,8 +1244,14 @@ class _AllCalendarsChipState extends ConsumerState<_AllCalendarsChip> {
           NativeMenuOption(
             src.name,
             // A waste calendar's entries wear their bins' colours, so the
-            // calendar itself is a bin glyph rather than one more dot.
-            symbol: src.isAbfall ? 'trash' : null,
+            // calendar itself is a glyph rather than one more dot — the
+            // recycling arrows, matching `AppIcons.recycle` on the Flutter
+            // side of this same menu. **Not SF Symbols' `trash`**: that is the
+            // delete can, and it sat in a list of calendars looking like an
+            // offer to throw one away. `arrow.3.trianglepath` is the
+            // recycling mark and has been there since 2019, well under the
+            // 15.0 floor.
+            symbol: src.isAbfall ? 'arrow.3.trianglepath' : null,
             color: src.isAbfall ? null : src.color,
             section: section,
             sectionTitle: title,

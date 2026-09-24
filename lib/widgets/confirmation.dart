@@ -38,10 +38,24 @@ enum ConfirmationMark {
 const confirmationBeat = Duration(milliseconds: 2500);
 
 /// The drawn check's box, and the pen it is drawn with. One size: the mark is
-/// the same object on a beat, on a sheet and on a full page, and a mark that
-/// changed size between them would read as a different mark.
-const double _markSize = 76;
+/// the same object on a beat, on a sheet, on a full page and at the end of the
+/// sign-in code, and a mark that changed size between them would read as a
+/// different mark.
+const double drawnCheckSize = 76;
 const double _markStroke = 4;
+
+/// How long the mark takes to draw itself, and the slice of that each stroke
+/// gets. Public because [DrawnCheck] is played on other clocks than
+/// [ConfirmationView]'s — the six code boxes merging into it are a longer
+/// gesture than the mark itself — and a second set of numbers over there would
+/// be a second mark.
+const drawnCheckDuration = Duration(milliseconds: 680);
+const _ringStroke = Interval(0, 0.6, curve: Curves.easeOutCubic);
+
+/// The tick starts before the ring has closed, the way a hand would: the two
+/// strokes overlap, so it reads as one gesture rather than two animations
+/// queued up.
+const _tickStroke = Interval(0.34, 0.9, curve: Curves.easeOutCubic);
 
 /// How the way out is drawn: the bordered [OutlinedSheetAction] a sheet ends
 /// with, or the accent glass pill a **full screen** ends with — a filled pill
@@ -121,7 +135,7 @@ class ConfirmationView extends StatefulWidget {
 class _ConfirmationViewState extends State<ConfirmationView> with SingleTickerProviderStateMixin {
   late final AnimationController _controller = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 680),
+    duration: drawnCheckDuration,
   )..forward();
 
   /// Only the emoji bounces in; a mark that is *being drawn* must not also be
@@ -129,17 +143,6 @@ class _ConfirmationViewState extends State<ConfirmationView> with SingleTickerPr
   late final CurvedAnimation _pop = CurvedAnimation(
     parent: _controller,
     curve: const Interval(0, 0.5, curve: Curves.easeOutBack),
-  );
-  late final CurvedAnimation _ring = CurvedAnimation(
-    parent: _controller,
-    curve: const Interval(0, 0.6, curve: Curves.easeOutCubic),
-  );
-
-  /// Starts before the ring has closed, the way a hand would: the two strokes
-  /// overlap, so it reads as one gesture rather than two animations queued up.
-  late final CurvedAnimation _tick = CurvedAnimation(
-    parent: _controller,
-    curve: const Interval(0.34, 0.9, curve: Curves.easeOutCubic),
   );
   late final CurvedAnimation _text = CurvedAnimation(
     parent: _controller,
@@ -187,8 +190,6 @@ class _ConfirmationViewState extends State<ConfirmationView> with SingleTickerPr
   void dispose() {
     _dismiss?.cancel();
     _pop.dispose();
-    _ring.dispose();
-    _tick.dispose();
     _text.dispose();
     _controller.dispose();
     super.dispose();
@@ -200,15 +201,9 @@ class _ConfirmationViewState extends State<ConfirmationView> with SingleTickerPr
       // holding a 78pt disc, because a ring expanded out of it and needed the
       // room; the ring is the mark now, so the empty half of that box was pure
       // height in a sheet that is mostly white space already.
-      ConfirmationMark.check => SizedBox(
-        width: _markSize,
-        height: _markSize,
-        child: AnimatedBuilder(
-          animation: _controller,
-          builder: (context, _) => CustomPaint(
-            painter: _DrawnCheckPainter(ring: _ring.value, tick: _tick.value, color: accent),
-          ),
-        ),
+      ConfirmationMark.check => AnimatedBuilder(
+        animation: _controller,
+        builder: (context, _) => DrawnCheck(progress: _controller.value, color: accent),
       ),
       // The emoji itself, at close to the ring's size — the party popper is
       // the illustration, so it doesn't need a plate under it, and it keeps
@@ -308,8 +303,39 @@ class _ConfirmationViewState extends State<ConfirmationView> with SingleTickerPr
 /// hold the middle of a white sheet without going back to a solid disc, and it
 /// survives the dark palette unchanged because both are the one colour.
 ///
-/// A [CustomPainter] rather than [AppIcon]: the check has to be a *path* with a
-/// length to walk along, and a font glyph has neither.
+/// [progress] runs 0 → 1 over [drawnCheckDuration] on whatever controller the
+/// caller already has — [ConfirmationView]'s own, or the longer one the sign-in
+/// screen merges its code boxes on. **This is the app's only check-mark
+/// confirmation**: anything that has just worked draws this, at this size, in
+/// this order, rather than growing a mark of its own.
+class DrawnCheck extends StatelessWidget {
+  final double progress;
+
+  /// Defaults to the theme accent, which is what every caller so far wants.
+  final Color? color;
+
+  const DrawnCheck({super.key, required this.progress, this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    final t = progress.clamp(0.0, 1.0);
+    return SizedBox(
+      width: drawnCheckSize,
+      height: drawnCheckSize,
+      child: CustomPaint(
+        painter: _DrawnCheckPainter(
+          ring: _ringStroke.transform(t),
+          tick: _tickStroke.transform(t),
+          color: color ?? Theme.of(context).colorScheme.primary,
+        ),
+      ),
+    );
+  }
+}
+
+/// The two strokes themselves. A [CustomPainter] rather than [AppIcon]: the
+/// check has to be a *path* with a length to walk along, and a font glyph has
+/// neither.
 class _DrawnCheckPainter extends CustomPainter {
   /// 0 → 1 as the circle closes.
   final double ring;

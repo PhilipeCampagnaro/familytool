@@ -1,52 +1,14 @@
 import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' show FileOptions, FunctionException, SignedUrlSuccess;
+import 'package:supabase_flutter/supabase_flutter.dart' show FileOptions, FunctionException;
 
 import '../models/entitlements.dart';
 import '../models/who.dart';
+import '../services/avatars.dart';
 import '../services/supabase.dart';
 import 'auth_state.dart';
 import '../l10n/l10n.dart';
-
-/// The private bucket the profile pictures live in — see
-/// `supabase/migrations/20260805174643_avatar_pictures.sql`.
-const _avatarBucket = 'avatars';
-
-/// How long a signed avatar URL stays good for.
-///
-/// A week rather than an hour: the URL is re-signed on every
-/// [HouseholdNotifier.load], so the only thing a short expiry would buy is a
-/// broken face in an app that was left open over a weekend.
-const _avatarUrlTtl = Duration(days: 7);
-
-/// Path → signed URL, for a whole roster of `profiles.avatar_url` paths at once.
-///
-/// One request for every face rather than one per face, and a total failure is
-/// not fatal: an empty map means everybody falls back to their initials, which
-/// is exactly what a member without a picture already shows.
-///
-/// Top-level rather than a method on the notifier because the guests on a
-/// shared list need the same treatment ([SharingNotifier.load]) and the storage
-/// read policy already admits them — `avatars_read_visible_profiles` keys on
-/// `can_see_profile`, the same predicate that let them read the profile row.
-Future<Map<String, String>> signAvatarUrls(List<String> paths) async {
-  if (paths.isEmpty) return const {};
-  try {
-    final signed = await AporahSupabase.client.storage
-        .from(_avatarBucket)
-        .createSignedUrlsResult(paths, _avatarUrlTtl.inSeconds);
-    return {
-      // A `SignedUrlFailure` is one member whose object has gone missing, not
-      // a reason to drop the other four faces — hence the per-path result
-      // type rather than the older list-of-urls call.
-      for (final s in signed)
-        if (s is SignedUrlSuccess) s.path: s.signedUrl,
-    };
-  } catch (_) {
-    return const {};
-  }
-}
 
 /// The two avatar letters for a name, derived the same way `handle_new_user`
 /// derives them server-side so a profile written from either end matches.
@@ -103,7 +65,7 @@ class HouseholdMember {
   final String? avatarPath;
 
   /// A signed URL for [avatarPath], resolved at [HouseholdNotifier.load] time
-  /// and good for [_avatarUrlTtl]. Null both when there is no picture and when
+  /// and good for [avatarUrlTtl]. Null both when there is no picture and when
   /// signing failed — the avatar falls back to the initials either way.
   final String? avatarUrl;
 
@@ -788,11 +750,11 @@ class HouseholdNotifier extends StateNotifier<FamilyState> {
     final previous = state.me(uid)?.avatarPath;
 
     try {
-      final storage = AporahSupabase.client.storage.from(_avatarBucket);
+      final storage = AporahSupabase.client.storage.from(avatarBucket);
       await storage.upload(path, file, fileOptions: FileOptions(contentType: _contentTypeFor(extension)));
       await AporahSupabase.client.from('profiles').update({'avatar_url': path}).eq('id', uid);
 
-      final signed = await storage.createSignedUrl(path, _avatarUrlTtl.inSeconds);
+      final signed = await storage.createSignedUrl(path, avatarUrlTtl.inSeconds);
 
       if (mounted) {
         state = state.copyWith(
@@ -837,7 +799,7 @@ class HouseholdNotifier extends StateNotifier<FamilyState> {
     final previous = household.avatarPath;
 
     try {
-      final storage = AporahSupabase.client.storage.from(_avatarBucket);
+      final storage = AporahSupabase.client.storage.from(avatarBucket);
       await storage.upload(
         path,
         file,
@@ -845,7 +807,7 @@ class HouseholdNotifier extends StateNotifier<FamilyState> {
       );
       await AporahSupabase.client.from('families').update({'avatar_url': path}).eq('id', household.id);
 
-      final signed = await storage.createSignedUrl(path, _avatarUrlTtl.inSeconds);
+      final signed = await storage.createSignedUrl(path, avatarUrlTtl.inSeconds);
       if (mounted) {
         state = state.copyWith(
           household: household.copyWith(avatarPath: path, avatarUrl: signed),
@@ -876,7 +838,7 @@ class HouseholdNotifier extends StateNotifier<FamilyState> {
         state = state.copyWith(household: household.copyWith(clearAvatar: true));
       }
       try {
-        await AporahSupabase.client.storage.from(_avatarBucket).remove([previous]);
+        await AporahSupabase.client.storage.from(avatarBucket).remove([previous]);
       } catch (_) {
         // The row no longer points at it; the object is just litter.
       }
@@ -903,7 +865,7 @@ class HouseholdNotifier extends StateNotifier<FamilyState> {
         );
       }
       try {
-        await AporahSupabase.client.storage.from(_avatarBucket).remove([previous]);
+        await AporahSupabase.client.storage.from(avatarBucket).remove([previous]);
       } catch (_) {
         // The row no longer points at it; the object is just litter.
       }

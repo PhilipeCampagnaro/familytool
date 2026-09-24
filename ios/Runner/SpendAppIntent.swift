@@ -60,7 +60,7 @@ struct LogSpendIntent: AppIntent {
   static var title: LocalizedStringResource = "Ausgabe erfassen"
 
   static var description = IntentDescription(
-    "Speichert eine Apple-Pay-Zahlung in Aporah. Am besten mit einer Kurzbefehl-Automation „Wallet\" verbinden."
+    "Speichert eine Apple-Pay-Zahlung in aporah. Am besten mit einer Kurzbefehl-Automation „Wallet\" verbinden."
   )
 
   /// Runs in the background. Opening the app for this would put Aporah on screen
@@ -84,7 +84,7 @@ struct LogSpendIntent: AppIntent {
   var card: String?
 
   static var parameterSummary: some ParameterSummary {
-    Summary("\(\.$amount) bei \(\.$merchant) in Aporah erfassen") {
+    Summary("\(\.$amount) bei \(\.$merchant) in aporah erfassen") {
       \.$date
       \.$card
     }
@@ -123,7 +123,7 @@ enum AporahIntentError: Swift.Error, CustomLocalizedStringResourceConvertible {
   var localizedStringResource: LocalizedStringResource {
     switch self {
     case .notEnrolled:
-      return "Ausgaben-Erfassung ist in Aporah noch nicht aktiviert."
+      return "Ausgaben-Erfassung ist in aporah noch nicht aktiviert."
     case .notSent:
       return "Die Ausgabe konnte nicht gespeichert werden."
     }

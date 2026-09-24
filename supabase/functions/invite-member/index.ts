@@ -101,11 +101,11 @@ Deno.serve(async (req) => {
     .eq("id", membership.family_id)
     .single();
 
-  const link = `${Deno.env.get("APORAH_WEB_URL") ?? "https://aporah.app"}/invite/${token}`;
+  const link = `${Deno.env.get("APORAH_WEB_URL") ?? "https://aporah.io"}/invite/${token}`;
   const mail = await sendMail(
     email,
-    `Einladung zu ${family?.name ?? "Aporah"}`,
-    `<p>Du wurdest zu <strong>${escapeHtml(family?.name ?? "Aporah")}</strong> eingeladen.</p>
+    `Einladung zu ${family?.name ?? "aporah"}`,
+    `<p>Du wurdest zu <strong>${escapeHtml(family?.name ?? "aporah")}</strong> eingeladen.</p>
      <p><a href="${link}">Einladung annehmen</a></p>
      <p>Der Link ist 14 Tage gültig.</p>`,
   );

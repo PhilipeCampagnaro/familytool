@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -48,6 +49,11 @@ typedef UndoRestore = Future<bool> Function();
 /// parked the capsule the better part of a bar's height clear of it, reading as
 /// something that had drifted in from elsewhere on the screen.
 const _chipGap = 14.0;
+
+/// Where the chip sits when there is **no** bar to answer to — a sheet or a
+/// pushed page covers the shell. The least room the home indicator leaves, on
+/// a display that has one; see [NavBarState.onScreen].
+const _chipFloor = 16.0;
 
 /// Where the chip's bottom edge sits, measured from the bottom of the display.
 ///
@@ -110,7 +116,23 @@ class _ToastContent {
   final UndoRestore? undo;
   final VoidCallback? onUndo;
 
-  const _ToastContent(this.message, this.kind, {this.undo, this.onUndo});
+  /// The word on the action, when it is not "Rückgängig". An offer rather than
+  /// a reversal — see [showActionToast].
+  final String? actionLabel;
+
+  /// Takes the chip down by hand. Non-null **only** on a chip with no timer:
+  /// an X beside something that is leaving on its own is a race between the
+  /// reader and the animation.
+  final VoidCallback? onClose;
+
+  const _ToastContent(
+    this.message,
+    this.kind, {
+    this.undo,
+    this.onUndo,
+    this.actionLabel,
+    this.onClose,
+  });
 }
 
 /// A chip that is on screen **now**, with the write it describes still running.
@@ -191,6 +213,52 @@ PendingChip showPendingChip(BuildContext context, String message) {
     );
   }
   return PendingChip._(handle, overlay, bottomInset);
+}
+
+/// An **offer**, in the capsule the app already uses for answers.
+///
+/// Same shape as a confirmation with "Rückgängig" on it, and deliberately so:
+/// there is one transient surface in this app and a second one for suggestions
+/// would be a notification system. The difference is only the word on the
+/// action and that nothing has happened yet.
+///
+/// **Use it sparingly.** A chip that appears without being asked for is an
+/// interruption, and the only one worth making is the one the reader was
+/// obviously about to do by hand.
+void showActionToast(
+  BuildContext context,
+  String message, {
+  required String actionLabel,
+  required VoidCallback onAction,
+}) {
+  final overlay = Overlay.maybeOf(context, rootOverlay: true);
+  final bottomInset = _chipBottom(context);
+  if (overlay == null || !overlay.mounted) return;
+
+  _current?.dismiss();
+  final handle = _ToastHandle();
+  _current = handle;
+  handle.insert(
+    overlay,
+    (context) => _ToastLayer(
+      key: handle.key,
+      bottomInset: bottomInset,
+      // **No timer.** See the note on [_ToastContent.onClose]: this is a
+      // question, and the reader closes it or answers it.
+      stay: null,
+      onGone: handle.remove,
+      content: _ToastContent(
+        message,
+        ToastKind.confirm,
+        actionLabel: actionLabel,
+        onUndo: () {
+          handle.dismiss();
+          onAction();
+        },
+        onClose: handle.dismiss,
+      ),
+    ),
+  );
 }
 
 /// How long a settled chip stays. Kept beside [_show]'s own figures so the two
@@ -339,7 +407,7 @@ class _ToastHandle {
 /// Positioned rather than laid out, because an overlay entry is a `Stack` child
 /// with the whole screen to itself: the capsule hugs its text in the middle of
 /// the strip and everything either side of it stays tappable.
-class _ToastLayer extends StatefulWidget {
+class _ToastLayer extends ConsumerStatefulWidget {
   final double bottomInset;
 
   /// How long it stays before fading out, or **null** for a chip that waits to
@@ -358,10 +426,10 @@ class _ToastLayer extends StatefulWidget {
   });
 
   @override
-  State<_ToastLayer> createState() => _ToastLayerState();
+  ConsumerState<_ToastLayer> createState() => _ToastLayerState();
 }
 
-class _ToastLayerState extends State<_ToastLayer> with SingleTickerProviderStateMixin {
+class _ToastLayerState extends ConsumerState<_ToastLayer> with SingleTickerProviderStateMixin {
   late final AnimationController _controller = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 240),
@@ -441,12 +509,28 @@ class _ToastLayerState extends State<_ToastLayer> with SingleTickerProviderState
     // a 34pt indicator that is 34pt of daylight between the chip and the bar it
     // belongs to, and the chip read as floating loose over the screen rather
     // than as the bar's own answer.
+    //
+    // **And [bottomInset] only means something while the bar is there.** Over
+    // a sheet or a pushed page the bar is gone, and a chip still parked above
+    // where it would be hung in the middle of the page — over the very row the
+    // next delete wanted, until it faded. So it drops to the bottom edge while
+    // the bar is covered and rises back when it returns, read live rather than
+    // at the order: a delete from an event's sheet orders the chip with the
+    // sheet up and shows it after the sheet has gone. Eased rather than jumped,
+    // and only that half — the keyboard's own animation drives the other.
     final keyboard = media.viewInsets.bottom;
-    final bottom = keyboard > 0 ? keyboard + 12 : widget.bottomInset;
-    return Positioned(
-      left: 16,
-      right: 16,
-      bottom: bottom,
+    final barOnScreen = ref.watch(navBarProvider.select((s) => s.onScreen));
+    final floor = math.max(media.viewPadding.bottom, _chipFloor);
+    return TweenAnimationBuilder<double>(
+      tween: Tween(end: barOnScreen ? widget.bottomInset : floor),
+      duration: const Duration(milliseconds: 260),
+      curve: Curves.easeOutCubic,
+      builder: (context, parked, child) => Positioned(
+        left: 16,
+        right: 16,
+        bottom: keyboard > 0 ? keyboard + 12 : parked,
+        child: child!,
+      ),
       child: FadeTransition(
         opacity: _curve,
         child: SlideTransition(
@@ -566,14 +650,40 @@ class _ToastChip extends StatelessWidget {
             Flexible(
               child: Text(message, maxLines: 2, overflow: TextOverflow.ellipsis, style: AppText.buttonSmall),
             ),
-            if (undo != null) ...[
+            // Gated on the callback rather than on [undo]: an offer has an
+            // action and nothing to restore.
+            if (content.onUndo != null) ...[
               const SizedBox(width: 4),
               GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTap: content.onUndo,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  child: Text(L.s.undo, style: AppText.buttonSmall.copyWith(color: accent)),
+                  child: Text(
+                    content.actionLabel ?? L.s.undo,
+                    style: AppText.buttonSmall.copyWith(color: accent),
+                  ),
+                ),
+              ),
+            ],
+            // **An offer waits.** A confirmation reports something that already
+            // happened and is right to leave on its own; an offer is a question,
+            // and a question that withdraws itself after five seconds is one the
+            // reader has to catch. So the chip with no timer carries the way out
+            // instead — the same mark every sheet in the app closes with.
+            if (content.onClose case final close?) ...[
+              const SizedBox(width: 2),
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: close,
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 2, right: 10, top: 6, bottom: 6),
+                  child: AppIcon(
+                    AppIcons.x,
+                    size: AppGlyph.caret,
+                    color: AppColors.muted,
+                    flat: true,
+                  ),
                 ),
               ),
             ],

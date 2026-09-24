@@ -97,6 +97,77 @@ String reminderLabel(int minutes, {required bool allDay}) {
 String budgetNoticeKey(SpendCategory category, DateTime month, SpendBudgetStatus level) =>
     '${category.wire}|${month.year}-${month.month}|${level.name}';
 
+/// 19:00 the evening before — the hour that can still get a bin to the kerb for
+/// a six o'clock pickup, and the one a household starts with.
+const kAbfallEveningDefault = 19 * 60;
+
+/// 06:00 on the day itself, for a street collected at noon or a household whose
+/// bins go out at dawn.
+const kAbfallMorningDefault = 6 * 60;
+
+/// **How many reminders one pickup may carry.**
+///
+/// Not a taste limit: every category in this app draws from iOS's 64 pending
+/// requests, and a bin reminder multiplies by every pickup in the fortnight —
+/// four bins a week at four reminders each is the whole budget spent on the
+/// rubbish, with the dentist dropped silently. Four is enough for "the evening
+/// before, at bedtime, at dawn, and before the lorry" and still leaves room.
+const kAbfallReminderLimit = 4;
+
+/// One bin reminder: which day it rings on relative to the pickup, and the hour
+/// on that day.
+///
+/// **A list of these, rather than one day and one hour**, because a bin missed
+/// is a fortnight of bin — the households that asked for this wanted the
+/// evening before *and* a last word before the lorry, not a choice between
+/// them. The pair is the identity: two reminders on the same day at the same
+/// minute are one reminder, and [NotificationSettingsNotifier] folds them
+/// together rather than scheduling the same notice twice.
+class AbfallReminder implements Comparable<AbfallReminder> {
+  /// Rings on the morning of the pickup rather than the evening before.
+  final bool sameDay;
+
+  /// Minutes past midnight of whichever day [sameDay] picks.
+  final int minutes;
+
+  const AbfallReminder({required this.sameDay, required this.minutes});
+
+  /// Chronological: the evening before comes before the morning of, whatever
+  /// the clocks say, which is why the day is worth a whole day of sort order.
+  int get _order => sameDay ? minutes + 1440 : minutes;
+
+  @override
+  int compareTo(AbfallReminder other) => _order.compareTo(other._order);
+
+  @override
+  bool operator ==(Object other) =>
+      other is AbfallReminder && other.sameDay == sameDay && other.minutes == minutes;
+
+  @override
+  int get hashCode => Object.hash(sameDay, minutes);
+
+  String get label {
+    final time = formatTimeOfDay(minutes ~/ 60, minutes % 60);
+    return sameDay ? L.s.reminderMorningOf(time) : L.s.reminderDayBefore(time);
+  }
+
+  Map<String, Object> toJson() => {'d': sameDay, 'm': minutes};
+
+  static AbfallReminder? fromJson(Object? raw) {
+    if (raw is! Map) return null;
+    final d = raw['d'], m = raw['m'];
+    if (d is! bool || m is! int || m < 0 || m >= 1440) return null;
+    return AbfallReminder(sameDay: d, minutes: m);
+  }
+}
+
+/// Deduplicated, in the order they ring, and never more than
+/// [kAbfallReminderLimit] of them — the one shape the rest of the app may see.
+List<AbfallReminder> normalizeAbfallReminders(Iterable<AbfallReminder> raw) {
+  final unique = {...raw}.toList()..sort();
+  return unique.length > kAbfallReminderLimit ? unique.sublist(0, kAbfallReminderLimit) : unique;
+}
+
 /// What this device will be told, and whether the OS will let it through.
 class NotificationSettings {
   final bool loaded;
@@ -106,24 +177,30 @@ class NotificationSettings {
   final bool brief;
   final int briefMinutes;
 
-  /// The evening before a waste pickup. Pickup is at six in the morning, so the
-  /// only reminder that can still get a bin to the kerb is the night before.
+  /// Whether a waste pickup is announced at all — the master switch over
+  /// [abfallTimes], kept beside the list rather than folded into "the list is
+  /// empty" so that switching the card off and on again returns the hours the
+  /// household set rather than the default.
   final bool abfall;
 
-  /// The hour on the evening before — the default, and the one that can still
-  /// get a bin to the kerb for a six o'clock pickup.
-  final int abfallMinutes;
-
-  /// Ring on the morning of the pickup instead, at [abfallMorningMinutes]. For
-  /// a street collected at noon, or a household whose bins go out at dawn.
+  /// **Every reminder a pickup gets**, in the order they ring, deduplicated and
+  /// capped at [kAbfallReminderLimit]. Pickup is around six in the morning, so
+  /// the evening before is the one that can still get a bin to the kerb — but
+  /// it is no longer the only one a household may have, because an evening
+  /// reminder at 19:00 is easy to answer with "later" and then forget.
   ///
-  /// **Each day keeps its own hour**, rather than one hour moved between them:
-  /// 19:00 carried over to the morning of the pickup is after the lorry.
-  final bool abfallSameDay;
-  final int abfallMorningMinutes;
+  /// Only ever written through `normalizeAbfallReminders`.
+  final List<AbfallReminder> abfallTimes;
 
-  /// The hour the bin notice rings at, on whichever day [abfallSameDay] picks.
-  int get abfallAt => abfallSameDay ? abfallMorningMinutes : abfallMinutes;
+  /// The hour to offer for a day that has no reminder on it yet — the one
+  /// already set there if there is one, so the two presets in an event sheet
+  /// keep saying what the household chose.
+  int abfallHourFor({required bool sameDay}) {
+    for (final r in abfallTimes) {
+      if (r.sameDay == sameDay) return r.minutes;
+    }
+    return sameDay ? kAbfallMorningDefault : kAbfallEveningDefault;
+  }
 
   /// A to-do that names an hour. Setting one is the user asking to be reminded.
   final bool taskTimes;
@@ -157,9 +234,7 @@ class NotificationSettings {
     this.brief = false,
     this.briefMinutes = 7 * 60,
     this.abfall = true,
-    this.abfallMinutes = 19 * 60,
-    this.abfallSameDay = false,
-    this.abfallMorningMinutes = 6 * 60,
+    this.abfallTimes = const [AbfallReminder(sameDay: false, minutes: kAbfallEveningDefault)],
     this.taskTimes = true,
     this.budgets = true,
     this.announcedBudgets = const {},
@@ -179,9 +254,7 @@ class NotificationSettings {
     bool? brief,
     int? briefMinutes,
     bool? abfall,
-    int? abfallMinutes,
-    bool? abfallSameDay,
-    int? abfallMorningMinutes,
+    List<AbfallReminder>? abfallTimes,
     bool? taskTimes,
     bool? budgets,
     Map<String, DateTime>? announcedBudgets,
@@ -192,9 +265,7 @@ class NotificationSettings {
     brief: brief ?? this.brief,
     briefMinutes: briefMinutes ?? this.briefMinutes,
     abfall: abfall ?? this.abfall,
-    abfallMinutes: abfallMinutes ?? this.abfallMinutes,
-    abfallSameDay: abfallSameDay ?? this.abfallSameDay,
-    abfallMorningMinutes: abfallMorningMinutes ?? this.abfallMorningMinutes,
+    abfallTimes: abfallTimes ?? this.abfallTimes,
     taskTimes: taskTimes ?? this.taskTimes,
     budgets: budgets ?? this.budgets,
     announcedBudgets: announcedBudgets ?? this.announcedBudgets,
@@ -205,9 +276,14 @@ class NotificationSettings {
 const _kBrief = 'notify_brief';
 const _kBriefMinutes = 'notify_brief_minutes';
 const _kAbfall = 'notify_abfall';
-const _kAbfallMinutes = 'notify_abfall_minutes';
-const _kAbfallSameDay = 'notify_abfall_same_day';
-const _kAbfallMorningMinutes = 'notify_abfall_morning_minutes';
+const _kAbfallTimes = 'notify_abfall_times';
+
+// The three keys the single bin reminder was stored under, read once by
+// `_loadAbfallTimes` so an install that already had an hour set keeps it, and
+// written by nothing any more.
+const _kLegacyAbfallMinutes = 'notify_abfall_minutes';
+const _kLegacyAbfallSameDay = 'notify_abfall_same_day';
+const _kLegacyAbfallMorningMinutes = 'notify_abfall_morning_minutes';
 const _kTaskTimes = 'notify_task_times';
 const _kBudgets = 'notify_budgets';
 const _kAnnouncedBudgets = 'notify_budgets_announced';
@@ -237,9 +313,7 @@ class NotificationSettingsNotifier extends StateNotifier<NotificationSettings> {
         brief: prefs.getBool(_kBrief) ?? _briefByDefault,
         briefMinutes: prefs.getInt(_kBriefMinutes),
         abfall: prefs.getBool(_kAbfall),
-        abfallMinutes: prefs.getInt(_kAbfallMinutes),
-        abfallSameDay: prefs.getBool(_kAbfallSameDay),
-        abfallMorningMinutes: prefs.getInt(_kAbfallMorningMinutes),
+        abfallTimes: _loadAbfallTimes(prefs),
         taskTimes: prefs.getBool(_kTaskTimes),
         budgets: prefs.getBool(_kBudgets),
         announcedBudgets: _decodeAnnounced(prefs.getString(_kAnnouncedBudgets)),
@@ -262,9 +336,10 @@ class NotificationSettingsNotifier extends StateNotifier<NotificationSettings> {
       await prefs.setBool(_kBrief, state.brief);
       await prefs.setInt(_kBriefMinutes, state.briefMinutes);
       await prefs.setBool(_kAbfall, state.abfall);
-      await prefs.setInt(_kAbfallMinutes, state.abfallMinutes);
-      await prefs.setBool(_kAbfallSameDay, state.abfallSameDay);
-      await prefs.setInt(_kAbfallMorningMinutes, state.abfallMorningMinutes);
+      await prefs.setString(
+        _kAbfallTimes,
+        jsonEncode([for (final r in state.abfallTimes) r.toJson()]),
+      );
       await prefs.setBool(_kTaskTimes, state.taskTimes);
       await prefs.setBool(_kBudgets, state.budgets);
       await prefs.setString(
@@ -320,19 +395,60 @@ class NotificationSettingsNotifier extends StateNotifier<NotificationSettings> {
 
   void setBriefMinutes(int minutes) => _set(state.copyWith(briefMinutes: minutes));
 
-  void setAbfall(bool value) => _set(state.copyWith(abfall: value), asks: value);
-
-  /// On, on the day given. What a bin day's own reminder row writes: one tap
-  /// that both switches the notice on and says which day.
-  void setAbfallDay({required bool sameDay}) =>
-      _set(state.copyWith(abfall: true, abfallSameDay: sameDay), asks: true);
-
-  /// The hour for whichever day is picked — each day keeps its own.
-  void setAbfallMinutes(int minutes) => _set(
-    state.abfallSameDay
-        ? state.copyWith(abfallMorningMinutes: minutes)
-        : state.copyWith(abfallMinutes: minutes),
+  /// **Switching the card back on restores the hours, and an empty list is
+  /// refilled with the default.** The list can only be emptied by removing the
+  /// last reminder, which switches the card off in the same breath — so a card
+  /// that is on always has at least one line under it.
+  void setAbfall(bool value) => _set(
+    state.copyWith(
+      abfall: value,
+      abfallTimes: value && state.abfallTimes.isEmpty
+          ? const [AbfallReminder(sameDay: false, minutes: kAbfallEveningDefault)]
+          : null,
+    ),
+    asks: value,
   );
+
+  /// On, with exactly one reminder on the day given. What a bin day's own
+  /// reminder row writes: the two presets there are one-reminder shortcuts, and
+  /// the row beside them leads to the page where more can be built.
+  void setAbfallDay({required bool sameDay}) => _set(
+    state.copyWith(
+      abfall: true,
+      abfallTimes: [
+        AbfallReminder(sameDay: sameDay, minutes: state.abfallHourFor(sameDay: sameDay)),
+      ],
+    ),
+    asks: true,
+  );
+
+  /// Adds a line. A reminder the household already has is not added twice —
+  /// `normalizeAbfallReminders` folds it back into the one that is there, so
+  /// the tap is a no-op rather than a duplicate notice.
+  void addAbfallReminder(AbfallReminder reminder) => _setAbfallTimes([
+    ...state.abfallTimes,
+    reminder,
+  ]);
+
+  /// Changes one line's day or hour in place. [from] is the reminder as it was
+  /// drawn, which is its whole identity — the list carries no ids because two
+  /// reminders that ring at the same minute on the same day *are* one.
+  void replaceAbfallReminder(AbfallReminder from, AbfallReminder to) => _setAbfallTimes([
+    for (final r in state.abfallTimes)
+      if (r == from) to else r,
+  ]);
+
+  /// Takes a line away, and **switches the card off when it was the last one**:
+  /// a bin reminder that is on and rings at no hour is a switch that lies.
+  void removeAbfallReminder(AbfallReminder reminder) => _setAbfallTimes([
+    for (final r in state.abfallTimes)
+      if (r != reminder) r,
+  ]);
+
+  void _setAbfallTimes(Iterable<AbfallReminder> times) {
+    final next = normalizeAbfallReminders(times);
+    _set(state.copyWith(abfall: next.isNotEmpty && state.abfall, abfallTimes: next));
+  }
 
   void setTaskTimes(bool value) => _set(state.copyWith(taskTimes: value), asks: value);
 
@@ -418,6 +534,36 @@ final notificationSettingsProvider =
     StateNotifierProvider<NotificationSettingsNotifier, NotificationSettings>(
       (ref) => NotificationSettingsNotifier(),
     );
+
+/// The stored bin reminders, or the single one this install used to have.
+///
+/// **The migration is the whole reason this is a function.** A household that
+/// had already moved the notice to 06:00 on the pickup day must not be handed
+/// back 19:00 the evening before because the shape of the setting changed
+/// underneath them, so the old day flag picks which of the two old hours
+/// survives and it becomes the first line. Returns null for a fresh install,
+/// which lets `copyWith` fall through to the default.
+List<AbfallReminder>? _loadAbfallTimes(SharedPreferences prefs) {
+  final raw = prefs.getString(_kAbfallTimes);
+  if (raw != null) {
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is List) {
+        return normalizeAbfallReminders([for (final item in decoded) ?AbfallReminder.fromJson(item)]);
+      }
+    } catch (_) {
+      // Unreadable — fall through to the legacy keys, then to the default.
+    }
+  }
+  final sameDay = prefs.getBool(_kLegacyAbfallSameDay);
+  final evening = prefs.getInt(_kLegacyAbfallMinutes);
+  final morning = prefs.getInt(_kLegacyAbfallMorningMinutes);
+  if (sameDay == null && evening == null && morning == null) return null;
+  final minutes = (sameDay ?? false)
+      ? morning ?? kAbfallMorningDefault
+      : evening ?? kAbfallEveningDefault;
+  return [AbfallReminder(sameDay: sameDay ?? false, minutes: minutes)];
+}
 
 Map<String, DateTime> _decodeAnnounced(String? raw) {
   if (raw == null) return const {};

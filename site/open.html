@@ -1,0 +1,93 @@
+<!doctype html>
+<!--
+  What https://aporah.io/invite/<token> and /share/<token> show when the app
+  did NOT open by itself: aporah isn't installed, the link was opened inside a
+  mail app's own browser (Universal Links don't fire there), or it was pasted
+  into Safari. The button hands the same token to the app over the aporah://
+  scheme, which IncomingLinkNotifier reads exactly like the https link.
+
+  No script from anywhere else and no analytics: the token in this URL is a
+  one-time key to somebody's household, and nothing on this page may send it
+  on. vercel.json sets Referrer-Policy: no-referrer for the same reason.
+-->
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>aporah</title>
+  <style>
+    :root { --bg: #f5f6f8; --card: #fff; --ink: #16181d; --muted: #6b7280; --accent: #1668ff; }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg: #0e0f12; --card: #1a1c21; --ink: #f3f4f6; --muted: #9ca3af; --accent: #4c8dff; }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      padding: 24px 16px; background: var(--bg); color: var(--ink);
+      font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    main { width: 100%; max-width: 400px; background: var(--card); border-radius: 24px; padding: 32px 24px; text-align: center; }
+    h1 { font-size: 24px; margin: 0 0 8px; }
+    p { color: var(--muted); margin: 0 0 24px; }
+    a.button {
+      display: block; padding: 16px; border-radius: 999px; background: var(--accent); color: #fff;
+      font-weight: 600; text-decoration: none;
+    }
+    small { display: block; margin-top: 20px; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <main>
+    <h1 id="title">aporah</h1>
+    <p id="body"></p>
+    <a class="button" id="open" href="#"></a>
+    <small id="hint"></small>
+  </main>
+  <script>
+    (function () {
+      var copy = {
+        de: {
+          invite: 'Du wurdest in einen Haushalt eingeladen.',
+          share: 'Jemand teilt etwas mit dir.',
+          open: 'In aporah öffnen',
+          hint: 'aporah ist noch nicht auf diesem Gerät? Installier die App, melde dich an und tipp den Link danach noch einmal an.'
+        },
+        en: {
+          invite: 'You’ve been invited to a household.',
+          share: 'Someone is sharing something with you.',
+          open: 'Open in aporah',
+          hint: 'Don’t have aporah on this device yet? Install the app, sign in, then tap the link again.'
+        },
+        pt: {
+          invite: 'Você foi convidado para uma família.',
+          share: 'Alguém está compartilhando algo com você.',
+          open: 'Abrir no aporah',
+          hint: 'Ainda não tem o aporah neste celular? Instale o app, entre e toque no link de novo.'
+        },
+        es: {
+          invite: 'Te han invitado a un hogar.',
+          share: 'Alguien está compartiendo algo contigo.',
+          open: 'Abrir en aporah',
+          hint: '¿Aún no tienes aporah en este dispositivo? Instala la app, inicia sesión y vuelve a pulsar el enlace.'
+        }
+      };
+      // Same rule as the app: the phone's language, English when it speaks
+      // none of the four.
+      var lang = (navigator.language || 'en').slice(0, 2).toLowerCase();
+      var t = copy[lang] || copy.en;
+      document.documentElement.lang = copy[lang] ? lang : 'en';
+
+      var parts = location.pathname.split('/').filter(Boolean);
+      var kind = parts[0] === 'invite' || parts[0] === 'share' ? parts[0] : null;
+      var token = parts[1];
+
+      document.getElementById('body').textContent = kind === 'share' ? t.share : t.invite;
+      document.getElementById('hint').textContent = t.hint;
+      var open = document.getElementById('open');
+      open.textContent = t.open;
+      if (kind && token) open.href = 'aporah://' + kind + '/' + encodeURIComponent(token);
+    })();
+  </script>
+</body>
+</html>

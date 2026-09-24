@@ -176,3 +176,65 @@ WhoMeta? visibilityBadge({
   if (visibility == ItemVisibility.family) return null;
   return whoBadge(visibility: visibility, members: members, sharedWith: sharedWith);
 }
+
+/// Everybody who can see one container, split into the two groups that mean
+/// different things: the household, and the people outside it.
+///
+/// The split is not cosmetic. A member is in because of `visibility` plus the
+/// `*_shares` rows — the household branch of `can_read_list` — and a guest is in
+/// because of a `guest_access` grant that sits *outside* the household gate
+/// entirely (docs/backend.md). They are added and removed by different controls
+/// ("Für wen?" and "Teilen"), so a sheet that pooled them into one list of
+/// faces would invite exactly the mis-tap external sharing is kept away from.
+class Audience {
+  /// Household members who may see it, in roster order so two containers shared
+  /// with the same people always draw the same stack.
+  final List<FamilyMember> household;
+
+  /// Guests who have come in through a link. Invitations still out are *not*
+  /// here — nobody has arrived, so there is no face to draw.
+  final List<FamilyMember> guests;
+
+  /// Whose container it is, so the sheet can say so. Empty when the owner is
+  /// somebody this account cannot resolve — a guest looking at a list whose
+  /// household it cannot read.
+  final String ownerId;
+
+  const Audience({this.household = const [], this.guests = const [], this.ownerId = ''});
+
+  /// Every face, household first — what the overlapping stack draws.
+  List<FamilyMember> get all => [...household, ...guests];
+
+  bool get isEmpty => household.isEmpty && guests.isEmpty;
+}
+
+/// Who may see a container, resolved from the three things that decide it:
+/// [visibility], the `*_shares` ids in [sharedWith], and the `guest_access`
+/// rows in [guests].
+///
+/// The rules are `can_read_list`'s household branch, read from the client side:
+/// `family` is everybody, `private` is the owner alone, and `custom` is the
+/// owner plus whoever holds a share row. [guests] is added regardless, because
+/// the guest branch sits outside the household gate — a private list *can* be
+/// shared outward, which is the combination this resolver exists to draw
+/// honestly rather than to hide.
+Audience audienceOf({
+  required ItemVisibility visibility,
+  required String ownerId,
+  required List<FamilyMember> members,
+  List<String> sharedWith = const [],
+  List<FamilyMember> guests = const [],
+}) {
+  final household = switch (visibility) {
+    ItemVisibility.family => members,
+    ItemVisibility.private => [
+      for (final m in members)
+        if (m.id == ownerId) m,
+    ],
+    ItemVisibility.custom => [
+      for (final m in members)
+        if (m.id == ownerId || sharedWith.contains(m.id)) m,
+    ],
+  };
+  return Audience(household: household, guests: guests, ownerId: ownerId);
+}

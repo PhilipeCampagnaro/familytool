@@ -327,14 +327,18 @@ class CalendarScreenState {
     ];
   }
 
-  /// The dots under a day cell — **one per event**, in the order the day is
-  /// listed in, each carrying its calendar's colour.
+  /// The colours behind a day's mark — **one per event**, in the order the day
+  /// is listed in, each carrying its calendar's colour, and **uncapped**.
   ///
   /// It used to de-duplicate by calendar, so four appointments in one Google
-  /// calendar drew a single dot and read as a quiet day. The dot row is how busy
-  /// a day looks at a glance, and that is a question about events, not about how
-  /// many calendars they happen to be spread across. The cells cap the row and
-  /// turn the rest into a "+" badge, so a heavy day stays the same width.
+  /// calendar drew a single mark and read as a quiet day. How busy a day looks
+  /// at a glance is a question about events, not about how many calendars they
+  /// happen to be spread across.
+  ///
+  /// How many of them fit is `EventDots`' arithmetic and not this method's, and
+  /// the cap that used to live here is gone: the budget is a question about
+  /// the width of the mark and what else is sharing the row with it, and only
+  /// the widget drawing it knows either.
   List<Color> dayColors(int y, int m, int d) => [for (final e in eventsFor(y, m, d)) e.srcColor];
 
   /// Whether the household subscribed to a Schulferien feed at all — which is

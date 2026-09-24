@@ -25,6 +25,7 @@ enum SpendCredential {
   private static let tokenAccount = "ingest-token"
   private static let endpointAccount = "ingest-endpoint"
   private static let apiKeyAccount = "ingest-api-key"
+  private static let ownerAccount = "ingest-owner"
 
   struct Stored {
     let token: String
@@ -32,18 +33,37 @@ enum SpendCredential {
     let apiKey: String
   }
 
-  static func save(token: String, endpoint: String, apiKey: String) {
+  static func save(token: String, endpoint: String, apiKey: String, owner: String) {
     write(tokenAccount, token)
     write(endpointAccount, endpoint)
     write(apiKeyAccount, apiKey)
+    write(ownerAccount, owner)
   }
 
   static func clear() {
-    [tokenAccount, endpointAccount, apiKeyAccount].forEach(delete)
+    [tokenAccount, endpointAccount, apiKeyAccount, ownerAccount].forEach(delete)
   }
 
   static func hasToken() -> Bool {
     read(tokenAccount)?.isEmpty == false
+  }
+
+  /// **Which account minted the token that is sitting here.**
+  ///
+  /// There is one Keychain slot per *install*, not per signed-in user, and
+  /// `spend-ingest` stamps every payment with the account that enrolled — so on
+  /// a handset both parents sign into, the token alone cannot say whose money
+  /// the next tap will be filed as. Without this the second account was shown a
+  /// phone that "erfasst Ausgaben" while every payment went on carrying the
+  /// first account's name.
+  ///
+  /// Nil for a token minted before this was written down. Dart treats that as
+  /// "unknown" and falls back to the device list rather than guessing, because
+  /// guessing wrong here either hides a working setup or deletes a credential
+  /// that is doing its job.
+  static func tokenOwner() -> String? {
+    guard let owner = read(ownerAccount), !owner.isEmpty else { return nil }
+    return owner
   }
 
   /// All three or nothing. A token with no endpoint is not a usable credential,
@@ -150,6 +170,9 @@ enum SpendChannel {
     case "hasToken":
       result(SpendCredential.hasToken())
 
+    case "tokenOwner":
+      result(SpendCredential.tokenOwner())
+
     case "storeToken":
       guard let args = call.arguments as? [String: Any],
             let token = args["token"] as? String,
@@ -159,7 +182,12 @@ enum SpendChannel {
         result(FlutterError(code: "bad_args", message: "token, endpoint and api_key required", details: nil))
         return
       }
-      SpendCredential.save(token: token, endpoint: endpoint, apiKey: apiKey)
+      SpendCredential.save(
+        token: token,
+        endpoint: endpoint,
+        apiKey: apiKey,
+        owner: (args["owner"] as? String) ?? ""
+      )
       result(nil)
 
     case "clearToken":

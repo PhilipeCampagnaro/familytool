@@ -54,7 +54,7 @@ class WeatherRepository {
 
   /// Both services ask to be told who is calling, and fair use is easier to
   /// honour when the traffic is identifiable.
-  static const _headers = {'User-Agent': 'Aporah (family organizer app)'};
+  static const _headers = {'User-Agent': 'aporah (family organizer app)'};
   static const _timeout = Duration(seconds: 8);
 
   /// In-flight de-duplication. A calendar refresh resolves every event at once,

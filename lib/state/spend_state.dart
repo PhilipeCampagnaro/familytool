@@ -50,12 +50,30 @@ class SpendState {
   /// The phones allowed to file wallet transactions into this household.
   final List<SpendDevice> devices;
 
-  /// Whether *this* phone is one of them: it holds a token **and** [devices]
-  /// still has an active row for it. The token alone is not enough — a row
-  /// revoked from a device list that could not tell two "iPhone"s apart left the
-  /// token in the Keychain, and the page went on saying "active" while
-  /// `spend-ingest` refused every payment.
+  /// Whether *this* phone is one of them **for the account now signed in**: it
+  /// holds a token that this account minted, and [devices] still has an active
+  /// row for this device under this account. The token alone is not enough, and
+  /// neither is a row matched on the device id.
+  ///
+  /// Both halves were learned the hard way. A row revoked from a device list
+  /// that could not tell two "iPhone"s apart left the token in the Keychain, and
+  /// the page went on saying "active" while `spend-ingest` refused every
+  /// payment. And a handset both parents sign into holds **one** credential
+  /// slot, not one per account, while the device list is household-wide — so the
+  /// second parent saw the first parent's row, was told this phone was
+  /// activated, and every tap went on being filed under the first parent's name
+  /// for as long as nobody thought to check.
   final bool thisDeviceEnrolled;
+
+  /// Who this phone is currently capturing *for*, when that is not the reader.
+  ///
+  /// Null in every ordinary case — no token, or a token this account minted.
+  /// It is set only for the case the page has to be honest about: the credential
+  /// in this phone's store belongs to another member of the household, so a
+  /// payment made on it right now would be filed under their name. Naming them
+  /// is the whole point; "nicht aktiviert" on a phone that is visibly filing
+  /// payments reads as a bug rather than an explanation.
+  final String? captureOwnerId;
 
   /// This phone's `device_uid`, matched against [SpendDevice.deviceUid] to find
   /// its own row. Null until the platform has answered.
@@ -94,6 +112,7 @@ class SpendState {
     this.monthSpends = const [],
     this.devices = const [],
     this.thisDeviceEnrolled = false,
+    this.captureOwnerId,
     this.thisDeviceUid,
     this.devicesChecked = false,
     this.notificationAccess = false,
@@ -140,6 +159,8 @@ class SpendState {
     List<Spend>? monthSpends,
     List<SpendDevice>? devices,
     bool? thisDeviceEnrolled,
+    String? captureOwnerId,
+    bool clearCaptureOwner = false,
     String? thisDeviceUid,
     bool? devicesChecked,
     bool? notificationAccess,
@@ -157,6 +178,7 @@ class SpendState {
     monthSpends: monthSpends ?? this.monthSpends,
     devices: devices ?? this.devices,
     thisDeviceEnrolled: thisDeviceEnrolled ?? this.thisDeviceEnrolled,
+    captureOwnerId: clearCaptureOwner ? null : (captureOwnerId ?? this.captureOwnerId),
     thisDeviceUid: thisDeviceUid ?? this.thisDeviceUid,
     devicesChecked: devicesChecked ?? this.devicesChecked,
     notificationAccess: notificationAccess ?? this.notificationAccess,
@@ -265,21 +287,63 @@ class SpendNotifier extends StateNotifier<SpendState> {
   /// The one false positive is a reinstall that reset `identifierForVendor`: the
   /// token's row carries the old id, so this phone is asked to activate once
   /// more, which upserts a fresh row. That is the honest answer, not a bug.
+  ///
+  /// **Everything here is asked per account, not per handset.** `spend-enroll`
+  /// keys its rows on the pair (`user_id`, `device_uid`) and `spend-ingest`
+  /// stamps `payer_id` from the row, so one phone signed into by both parents
+  /// has two rows and one credential slot. Matching the list on `device_uid`
+  /// alone made the second parent's page say "aktiviert" over the first
+  /// parent's credential, and every payment went on being filed under the first
+  /// parent's name — which is exactly how a household ends up with one person
+  /// apparently doing all of the spending.
+  ///
+  /// **A credential that is not ours is left alone.** Clearing it would silently
+  /// stop the other parent's capture from a screen that never mentioned them,
+  /// and the row it belongs to is still live on the server. The page names them
+  /// instead, through [SpendState.captureOwnerId].
   Future<void> refreshDevices() async {
     if (!_isAdmin) return;
     try {
       final devices = await _repo.fetchDevices();
       final uid = (await _intents.describeDevice()).uid;
-      var mine = await _intents.hasToken();
-      if (mine && uid.isNotEmpty && !devices.any((d) => d.deviceUid == uid)) {
+      final hasToken = await _intents.hasToken();
+
+      // This account's own row for this handset, and anybody else's. Both are
+      // needed: the first decides whether we are enrolled, the second is what
+      // makes a token of unknown provenance readable rather than dangerous.
+      final mineRow = uid.isEmpty
+          ? null
+          : devices.where((d) => d.deviceUid == uid && d.userId == _userId).firstOrNull;
+      final theirRow = uid.isEmpty
+          ? null
+          : devices.where((d) => d.deviceUid == uid && d.userId != _userId).firstOrNull;
+
+      // Null for a token minted before the owner was written down beside it.
+      // Rather than guess, fall back to the device list: our own row means the
+      // token is ours, somebody else's row means it is theirs, and no row at all
+      // means it is the dead token the paragraph above is about.
+      final storedOwner = hasToken ? await _intents.tokenOwner() : null;
+      final ownerId = storedOwner ?? (hasToken ? (mineRow != null ? _userId : theirRow?.userId) : null);
+      final tokenIsMine = hasToken && ownerId == _userId;
+
+      // **With no device id, nothing here concludes anything.** A system that
+      // refuses `identifierForVendor` leaves no row to match, and reading that
+      // as "your row is gone" would delete a credential that works. The token
+      // is then the only answer available, which is the answer this gave before
+      // any of it was per-account.
+      var enrolled = uid.isEmpty ? hasToken : tokenIsMine && mineRow != null;
+      if (uid.isNotEmpty && tokenIsMine && mineRow == null) {
         await _intents.clearToken();
-        mine = false;
+        enrolled = false;
       }
+
       final access = await _intents.hasNotificationAccess();
       if (!mounted) return;
       state = state.copyWith(
         devices: devices,
-        thisDeviceEnrolled: mine,
+        thisDeviceEnrolled: enrolled,
+        captureOwnerId: enrolled || tokenIsMine ? null : ownerId,
+        clearCaptureOwner: enrolled || tokenIsMine || ownerId == null,
         thisDeviceUid: uid.isEmpty ? null : uid,
         devicesChecked: true,
         notificationAccess: access,
@@ -523,9 +587,20 @@ class SpendNotifier extends StateNotifier<SpendState> {
         token: enrolment.token,
         endpoint: '${AporahSupabase.url}/functions/v1/spend-ingest',
         apiKey: AporahSupabase.publishableKey,
+        // Stamped with the account that asked, because that is the account every
+        // payment this token files will be filed under. On a handset the other
+        // parent has already activated, this is the tap that takes it over — the
+        // old token is overwritten and their row goes idle, which their own page
+        // then reports rather than pretending otherwise.
+        owner: _userId ?? '',
       );
       if (!mounted) return true;
-      state = state.copyWith(enrolling: false, thisDeviceEnrolled: true, devicesChecked: true);
+      state = state.copyWith(
+        enrolling: false,
+        thisDeviceEnrolled: true,
+        clearCaptureOwner: true,
+        devicesChecked: true,
+      );
       await refreshDevices();
       return true;
     } on StateError catch (e) {
@@ -566,7 +641,13 @@ class SpendNotifier extends StateNotifier<SpendState> {
       devices: [
         for (final d in before)
           d.id == id
-              ? SpendDevice(id: d.id, label: label, deviceUid: d.deviceUid, lastUsedAt: d.lastUsedAt)
+              ? SpendDevice(
+                  id: d.id,
+                  userId: d.userId,
+                  label: label,
+                  deviceUid: d.deviceUid,
+                  lastUsedAt: d.lastUsedAt,
+                )
               : d,
       ],
     );

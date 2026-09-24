@@ -159,6 +159,8 @@ class StringsPt extends AppStrings {
   @override
   String get skip => 'Pular';
   @override
+  String get back => 'Voltar';
+  @override
   String get letsGo => 'Vamos lá';
   @override
   String get today => 'Hoje';
@@ -710,7 +712,7 @@ class StringsPt extends AppStrings {
   @override
   String get eventSaveFailed => 'Não foi possível salvar o evento.';
   @override
-  String get calendarNotEditable => 'Este calendário não pode ser editado no Aporah.';
+  String get calendarNotEditable => 'Este calendário não pode ser editado no aporah.';
   @override
   String get eventDeleteFailed => 'Não foi possível excluir o evento.';
   @override
@@ -824,7 +826,7 @@ class StringsPt extends AppStrings {
   String get renameCalendar => 'Renomear calendário';
   @override
   String get renameCalendarBody =>
-      'É com este nome que o calendário aparece no Aporah — no calendário, nos filtros e aqui.';
+      'É com este nome que o calendário aparece no aporah — no calendário, nos filtros e aqui.';
   @override
   String get householdOnly => 'Só para a sua família.';
   @override
@@ -857,7 +859,7 @@ class StringsPt extends AppStrings {
   String connectProvider(String provider) => 'Conectar $provider';
   @override
   String redirectNotice(String provider) =>
-      'Você entra no $provider. O Aporah só vê seus calendários — nunca sua senha.';
+      'Você entra no $provider. O aporah só vê seus calendários — nunca sua senha.';
   @override
   String get openingEllipsis => 'Abrindo …';
   @override
@@ -868,17 +870,17 @@ class StringsPt extends AppStrings {
   String get connectedDot => 'Conectada.';
   @override
   String calendarsFoundPickThem(int count) =>
-      'Encontramos $count calendários. Escolha os que você quer ver no Aporah.';
+      'Encontramos $count calendários. Escolha os que você quer ver no aporah.';
   @override
   String get nameYourCalendarBody =>
-      'É assim que o calendário se chama no Aporah. Você pode renomeá-lo agora.';
+      'É assim que o calendário se chama no aporah. Você pode renomeá-lo agora.';
   @override
   String get nameEachCalendarBody =>
-      'É assim que os calendários se chamam no Aporah. Você pode renomeá-los agora.';
+      'É assim que os calendários se chamam no aporah. Você pode renomeá-los agora.';
   @override
   String get whichCalendars => 'Calendários';
   @override
-  String get whichCalendarsHint => 'Só as que você marcar aparecem no Aporah. Dá para mudar isso depois.';
+  String get whichCalendarsHint => 'Só as que você marcar aparecem no aporah. Dá para mudar isso depois.';
   @override
   String get readOnlyCalendar => 'Somente leitura';
   @override
@@ -964,7 +966,7 @@ class StringsPt extends AppStrings {
     'Abram o calendário de coleta da cidade abaixo.',
     'Escolham a rua de vocês.',
     'Toquem no download em iCal ou ICS.',
-    'O Aporah reconhece o arquivo automaticamente e o traz direto para cá.',
+    'O aporah reconhece o arquivo automaticamente e o traz direto para cá.',
   ];
   @override
   List<String> get binFileStepsBrowser => [
@@ -1002,7 +1004,7 @@ class StringsPt extends AppStrings {
     'Abram o calendário de coleta da cidade abaixo.',
     'Escolham a cidade ou a rua de vocês.',
     'Toquem no calendário em iCal, ICS ou PDF.',
-    'O Aporah reconhece o arquivo automaticamente e o traz direto para cá.',
+    'O aporah reconhece o arquivo automaticamente e o traz direto para cá.',
   ];
   @override
   List<String> get binFileStepsPdfBrowser => [
@@ -1146,7 +1148,7 @@ class StringsPt extends AppStrings {
   String get linkStaysAtSchool => ' O link continua na plataforma da escola — a gente só para de guardá-lo.';
   @override
   String get linkedCalendarsNote =>
-      'O Aporah só lê estes calendários. Continue alterando os eventos na plataforma '
+      'O aporah só lê estes calendários. Continue alterando os eventos na plataforma '
       'da escola.';
   @override
   String eventsFoundAtLink(int count) => count == 1 ? '1 evento encontrado' : '$count eventos encontrados';
@@ -1194,7 +1196,7 @@ class StringsPt extends AppStrings {
   String get calendarConnected => 'Calendário conectado';
   @override
   String get calendarNameInAporah =>
-      'É assim que o calendário se chama no Aporah. Você pode renomeá-lo depois.';
+      'É assim que o calendário se chama no aporah. Você pode renomeá-lo depois.';
 
   // -------------------------------------------------------- provider meta --
   @override
@@ -1273,7 +1275,7 @@ class StringsPt extends AppStrings {
   @override
   String get guestRemoveFailed => 'Não foi possível remover o convidado.';
   @override
-  String shareListMessage(String name) => '“$name” no Aporah — é só entrar por este link:';
+  String shareListMessage(String name) => '“$name” no aporah — é só entrar por este link:';
   @override
   String get sharedOutsideTitle => 'Compartilhada com';
   @override
@@ -1284,6 +1286,25 @@ class StringsPt extends AppStrings {
 
   @override
   String get sharedOutsideLabel => 'Compartilhada com gente de fora da família';
+
+  @override
+  String whoSeesTitle(String noun) => 'Quem vê $noun?';
+
+  @override
+  String privateCannotShare(String noun) =>
+      'Privada: só dá para compartilhar quando mais alguém além de você vê $noun. Mude “Para quem?” antes.';
+
+  @override
+  String visibilityLockedWhileShared(String noun) =>
+      'Enquanto $noun estiver compartilhada para fora, “Para quem?” fica como está — senão a família perde o acesso.';
+
+  @override
+  String get visibilityLockedHowTo =>
+      'Remova abaixo todos os convidados e convites em aberto para poder mudar.';
+
+  @override
+  String get visibilityLockedHowToInShare =>
+      'Remova em “Compartilhar” todos os convidados e links para poder mudar.';
 
   // ----------------------------------------------------------- visibility --
   @override
@@ -1484,7 +1505,7 @@ class StringsPt extends AppStrings {
       'Dê um nome e uma foto para a sua família. Você pode mudar os dois depois, quando '
       'quiser.';
   @override
-  String get onboardJoinExistingFamily => 'A sua família já usa o Aporah?';
+  String get onboardJoinExistingFamily => 'A sua família já usa o aporah?';
   @override
   String get onboardJoinExistingFamilyBody =>
       'Então não crie uma nova aqui — peça a alguém da família para convidar você.';
@@ -1538,7 +1559,31 @@ class StringsPt extends AppStrings {
 
   // ----------------------------------------------------------------- auth --
   @override
-  String get welcomeToAporah => 'Boas-vindas ao Aporah';
+  String get frontDoorTagline => 'Tudo o que mantém a família unida — em um só lugar.';
+  @override
+  String get demoMemberMama => 'Mamãe';
+  @override
+  String get demoMemberPapa => 'Papai';
+  @override
+  String get demoMemberKid => 'Lina';
+  @override
+  String get demoListTitle => 'Lista de compras';
+  @override
+  String get demoListItem => 'Pão';
+  @override
+  String get demoEventTitle => 'Treino de futebol';
+  @override
+  String get demoTaskTitle => 'Levar o lixo para fora';
+  @override
+  String get demoTrackerTitle => 'Exercícios';
+  @override
+  String get emailPlaceholder => 'nome@exemplo.com';
+  @override
+  String get greetingWelcome => 'Boas-vindas';
+  @override
+  String get greetingWelcomeBack => 'Que bom te ver';
+  @override
+  String get welcomeToAporah => 'Boas-vindas ao aporah';
   @override
   String get welcomeBack => 'Que bom te ver de novo';
   @override
@@ -1546,11 +1591,9 @@ class StringsPt extends AppStrings {
       'Crie a sua conta. A família é criada automaticamente — você pode convidar '
       'todo mundo depois.';
   @override
-  String get signInBlurb => 'Entre com o seu e-mail.';
+  String get signInBlurb => 'Digite o seu e-mail. A gente manda um código — não precisa de senha.';
   @override
   String get yourName => 'Seu nome';
-  @override
-  String get atLeast8Chars => 'Pelo menos 8 caracteres.';
   @override
   String get createAccount => 'Criar conta';
   @override
@@ -1560,14 +1603,7 @@ class StringsPt extends AppStrings {
   @override
   String get newHereCreateAccount => 'É novo por aqui? Crie uma conta';
   @override
-  String get forgotPassword => 'Esqueceu a senha?';
-  @override
   String get almostThere => 'Falta pouco';
-  @override
-  String confirmMailSent(String email) =>
-      'Mandamos um e-mail para $email. Clique no link e depois é só entrar.';
-  @override
-  String get toSignIn => 'Ir para o login';
   @override
   String get pleaseEnterName => 'Digite o seu nome.';
   @override
@@ -1575,23 +1611,65 @@ class StringsPt extends AppStrings {
   @override
   String get pleaseEnterEmailFirst => 'Digite o seu e-mail primeiro.';
   @override
-  String get resetMailSent => 'Mandamos um e-mail para você redefinir.';
-  @override
-  String get wrongCredentials => 'Esse e-mail ou essa senha não estão certos.';
-  @override
-  String get confirmEmailFirst => 'Confirme o seu e-mail primeiro.';
-  @override
-  String get accountExists => 'Já existe uma conta com este e-mail.';
-  @override
-  String get passwordTooShort => 'Essa senha é curta demais.';
-  @override
-  String get passwordLeaked => 'Esta senha aparece em vazamentos conhecidos. Escolha outra.';
-  @override
   String get tooManyAttempts => 'Tentativas demais. Espere um pouco.';
   @override
   String get emailLooksInvalid => 'Esse e-mail não parece válido.';
   @override
   String get signInFailed => 'Não foi possível entrar. Tente de novo.';
+  @override
+  String codeSentTo(String email) =>
+      'Mandamos um código para $email. Digite ele aqui. Não chegou? Confira também a pasta de spam.';
+  @override
+  String get codeHint => 'Código do e-mail';
+  @override
+  String get verifyCode => 'Confirmar';
+  @override
+  String get resendCode => 'Enviar novo código';
+  @override
+  String resendCodeIn(int seconds) => 'Novo código em $seconds s';
+  @override
+  String get useOtherEmail => 'Usar outro e-mail';
+  @override
+  String get codeInvalid => 'Esse código não está certo ou já expirou.';
+  @override
+  String get noAccountForEmail => 'Ainda não existe conta com este e-mail.';
+
+  // ---------------------------------------------------------- incoming links --
+  @override
+  String get joinHouseholdTitle => 'Entrar em uma família?';
+  @override
+  String get joinHouseholdBody =>
+      'Você foi convidado para uma família. Ao entrar, a sua família atual é apagada — junto com tudo o que você criou nela sozinho.';
+  @override
+  String get joinHousehold => 'Entrar';
+  @override
+  String joinedHousehold(String name) => 'Bem-vindo à $name';
+  @override
+  String joinNamedHouseholdTitle(String name) => 'Entrar em $name?';
+  @override
+  String inviteWelcomeBody(String inviter, String household) =>
+      '$inviter convidou você para $household. Vocês vão compartilhar o calendário, as listas e o board.';
+  @override
+  String inviteWelcomeBodyNoInviter(String household) =>
+      'Você foi convidado para $household. Vocês vão compartilhar o calendário, as listas e o board.';
+  @override
+  String inviteJoinNamed(String household) => 'Entrar em $household';
+  @override
+  String get inviteSetUpOwn => 'Criar minha própria família';
+  @override
+  String get inviteInvalid => 'Este convite não é válido ou já foi usado.';
+  @override
+  String get inviteExpired => 'Este convite expirou. Peça um novo.';
+  @override
+  String get inviteOtherEmail =>
+      'Este convite foi enviado para outro e-mail. Entre com o e-mail que recebeu o convite.';
+  @override
+  String get inviteLeaveFirst =>
+      'Você ainda está em uma família com outros membros. Saia dela primeiro e depois você pode entrar.';
+  @override
+  String get inviteAcceptFailed => 'Não foi possível aceitar o convite. Tente de novo.';
+  @override
+  String get shareLinkInvalid => 'Este link não é válido ou já expirou.';
 
   // --------------------------------------------------------------- family --
   @override
@@ -1633,7 +1711,7 @@ class StringsPt extends AppStrings {
   @override
   String get familyName => 'Nome da família';
   @override
-  String get familyNameHint => 'Como a sua família se chama no Aporah.';
+  String get familyNameHint => 'Como a sua família se chama no aporah.';
   @override
   String get renameFamily => 'Renomear a família';
   @override
@@ -1677,7 +1755,7 @@ class StringsPt extends AppStrings {
   @override
   String get homeHintThinking => 'Montando o seu dia';
   @override
-  String get homeHintSetup => 'Configure o Aporah para a sua família';
+  String get homeHintSetup => 'Configure o aporah para a sua família';
   @override
   String get homeHintOverdue => 'To-dos fora do prazo';
   @override
@@ -1952,7 +2030,7 @@ class StringsPt extends AppStrings {
   String get spendWalletAndroidTitle => 'Registrar os pagamentos automaticamente';
   @override
   String get spendWalletAndroidIntro =>
-      'Quando você paga com o celular, a carteira mostra o valor. O Aporah lê só '
+      'Quando você paga com o celular, a carteira mostra o valor. O aporah lê só '
       'essa notificação e arquiva o gasto — sem banco, sem senha, sem nada para digitar.';
   @override
   String get spendWalletAndroidEnable => 'Ativar este aparelho';
@@ -1969,7 +2047,7 @@ class StringsPt extends AppStrings {
   String get spendWalletAndroidStep1 => 'Ative este aparelho — é isso que deixa ele arquivar gastos.';
   @override
   String get spendWalletAndroidStep2 =>
-      'Ligue o acesso às notificações para o Aporah nas configurações do sistema.';
+      'Ligue o acesso às notificações para o aporah nas configurações do sistema.';
   @override
   String get spendWalletAndroidStep3 => 'Pague com o celular — o gasto aparece aqui sozinho.';
   @override
@@ -1979,11 +2057,11 @@ class StringsPt extends AppStrings {
   @override
   String get spendWalletAccessGranted => 'Acesso liberado';
   @override
-  String get spendWalletDisclosureTitle => 'O que o Aporah lê';
+  String get spendWalletDisclosureTitle => 'O que o aporah lê';
   @override
   String get spendWalletDisclosureBody =>
       'O Android não tem acesso às notificações app por app: liberar é liberar '
-      'tudo. O Aporah só avalia as notificações de pagamento publicadas por apps '
+      'tudo. O aporah só avalia as notificações de pagamento publicadas por apps '
       'de carteira — todas as outras são descartadas na hora, sem ler, sem guardar '
       'e sem contar. O que sai do aparelho é a loja, o valor, os últimos dígitos '
       'do cartão e o horário. Nunca o texto de uma notificação.';
@@ -2022,6 +2100,9 @@ class StringsPt extends AppStrings {
   String get spendWalletDeviceNameHint => 'ex.: iPhone da Ana';
   @override
   String get spendWalletThisDevice => 'Este aparelho';
+  @override
+  String spendWalletOtherOwner(String name) =>
+      'Este aparelho registra gastos para $name — todo pagamento entra com esse nome. Ative de novo para que seus pagamentos fiquem no seu nome.';
 
   @override
   String get spendCatGroceries => 'Mercado';
@@ -2107,7 +2188,7 @@ class StringsPt extends AppStrings {
   // sentido. O preço de verdade vem da App Store e da Play Store quando o
   // faturamento entrar — veja a Fase 4 do docs/production-plan.md.
   @override
-  String get plusName => 'Aporah Plus';
+  String get plusName => 'aporah Plus';
   @override
   String get plusPriceMonthly => 'R\$ 24,90 / mês';
   @override
@@ -2251,9 +2332,28 @@ class StringsPt extends AppStrings {
   @override
   String get plannerEditGoal => 'Dizer de outro jeito';
   @override
+  String get plannerTypeInstead => 'Escrever eu mesmo';
+  @override
   String get plannerListCreated => 'Lista criada';
   @override
   String get plannerUnavailable => 'Agora não deu. Tente de novo daqui a pouco.';
+
+  @override
+  String get plannerPasteLink => 'Importar';
+
+  @override
+  String get plannerLinkOnClipboard => 'Link na área de transferência';
+
+  @override
+  String get plannerClipboardUnreadable =>
+      'Não foi possível ler a área de transferência.';
+
+  @override
+  String get plannerNoRecipeOnPage =>
+      'Não encontramos nenhuma receita nessa página. Escreva o que você quer cozinhar.';
+  @override
+  String get plannerNoRecipeInVideo =>
+      'Esse vídeo não traz os ingredientes na descrição. Escreva o que você quer cozinhar.';
   @override
   String get plannerUnusable =>
       'Não conseguimos montar uma lista com isso. Tente algo mais concreto: um '
@@ -2294,7 +2394,7 @@ class StringsPt extends AppStrings {
   @override
   String get notificationsTitle => 'Notificações';
   @override
-  String get notificationsPageDesc => 'O que o Aporah envia para o seu celular, e quando.';
+  String get notificationsPageDesc => 'O que o aporah envia para o seu celular, e quando.';
   @override
   String get searchTermsNotifications =>
       'notificações lembretes alertas push resumo do dia lixo coleta orçamento gastos mitteilungen';
@@ -2322,6 +2422,12 @@ class StringsPt extends AppStrings {
   String get notifyAbfallSubtitle => 'Para a lixeira estar na rua a tempo';
   @override
   String get notifyAbfallWhen => 'Quando';
+  @override
+  String get notifyAbfallAdd => 'Outro lembrete';
+  @override
+  String notifyAbfallMax(int count) => 'No máximo $count';
+  @override
+  String reminderCount(int count) => '$count lembretes';
   @override
   String get abfallDayBefore => 'Na véspera';
   @override
@@ -2393,7 +2499,7 @@ class StringsPt extends AppStrings {
   String joinAnd(List<String> parts) =>
       parts.length < 2 ? parts.join() : '${parts.sublist(0, parts.length - 1).join(', ')} e ${parts.last}';
   @override
-  String get rateApp => 'Avaliar o Aporah';
+  String get rateApp => 'Avaliar o aporah';
   @override
   String get searchTermsRate => 'avaliar avaliação estrelas app store bewerten rate';
 
@@ -2401,9 +2507,9 @@ class StringsPt extends AppStrings {
   @override
   String get appLockSubtitle => 'Pedido ao abrir o app';
   @override
-  String get appLockLockedTitle => 'O Aporah está bloqueado';
+  String get appLockLockedTitle => 'O aporah está bloqueado';
   @override
-  String get appLockUnlockReason => 'Desbloquear o Aporah';
+  String get appLockUnlockReason => 'Desbloquear o aporah';
   @override
   String get appLockEnableReason => 'Ativar o bloqueio do app';
   @override

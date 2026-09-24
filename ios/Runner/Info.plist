@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Aporah</string>
+	<string>aporah</string>
 	<!-- Only the camera needs a usage description: the photo picker is
 	     PHPickerViewController and the file picker UIDocumentPickerViewController,
 	     both of which run out of process and hand over just what was picked. -->
@@ -18,7 +18,7 @@
 	     Both texts here are the English fallback; the translations are in
 	     <lang>.lproj/InfoPlist.strings. -->
 	<key>NSFaceIDUsageDescription</key>
-	<string>So you can unlock Aporah with Face ID.</string>
+	<string>So you can unlock aporah with Face ID.</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -33,13 +33,13 @@
 	<string>$(FLUTTER_BUILD_NAME)</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
-	<!-- The aporah:// scheme. Three separate flows land back in the app through
-	     it and none of them work without this entry: Supabase's e-mail
-	     confirmation and password reset (aporah://login-callback), an invite
-	     accepted from a mail (aporah://invite/<token>), a list opened from a
-	     share link (aporah://share/<token>), and the calendar OAuth return
-	     (aporah://kalender/verbunden). Every one of these must also be on the
-	     redirect allowlist in the Supabase dashboard. -->
+	<!-- The aporah:// scheme. An invite or share link normally arrives as
+	     https://aporah.io/… (a Universal Link, Runner.entitlements); this is
+	     the fallback the page on that domain hands over when the app did not
+	     open by itself (aporah://invite/<token>, aporah://share/<token>). It
+	     also carries the calendar OAuth return (aporah://kalender/verbunden).
+	     Sign-in is an emailed code, so aporah://login-callback is no longer
+	     used by anything. -->
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>

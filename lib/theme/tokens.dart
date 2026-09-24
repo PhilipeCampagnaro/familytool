@@ -873,7 +873,7 @@ class TypeStep {
 /// | [microLabel] | 11.5 w500 | 12 w500 | 12 w500 |
 /// | [AppText.pageTitle] | 19 w600 | 19 w600 | 20 w600 |
 /// | [weekdayLetter] | 15 w500 | 14 w500 | 13 w500 |
-/// | [dayNumber] | 14 w400 | 16 w600 | 16 w600 |
+/// | [dayNumber] | 14 w400 | 18 w600 | 18 w600 |
 ///
 /// ## The three
 ///
@@ -881,12 +881,14 @@ class TypeStep {
 ///   at Light, and the week strip's weekday letter (15) is *larger* than the
 ///   date under it (14).
 /// - [planB] — the half step. Row titles to 16, subtitles to 13, and every
-///   Light weight lifted to Regular. Chosen so that **nothing around it has to
-///   move**: the day circle keeps its 34 points and the month cell its 38, so
-///   no band, height budget or header constant is recalculated.
+///   Light weight lifted to Regular. Chosen so that **nothing around it had to
+///   move**: no band, height budget or header constant was recalculated. The
+///   calendar has since broken that rule on purpose — the day number went to 18
+///   and the circle to 40 — because a month grid is scanned and aimed at rather
+///   than read, and everything measured off the circle is derived from it.
 /// - [planA] — the full step, onto the sizes iOS uses for the same roles. Row
 ///   titles to 17, titles up a step with them so the hierarchy keeps its
-///   spacing, and the day circle to 36 so the date outweighs its own label.
+///   spacing, and the day circle a step above plan B's.
 ///
 /// Both plans lift the Light weights identically, so the only variable between
 /// them is size. Apple does not set a Light weight below roughly 20pt, because
@@ -968,7 +970,37 @@ class AppTypeScale {
   /// other, for the same day of the same week. A day is the same object in both
   /// views and the cells are the same seventh of the same width, so there was
   /// never a second measurement to make — only a second place to forget.
+  ///
+  /// **It is the largest rung the calendar has, and it sits above the row
+  /// titles rather than below them.** A month grid is not read like a list: it
+  /// is scanned for one number among forty-two, at arm's length, and then
+  /// aimed at with a thumb. At 16 the date was the same size as a Settings row
+  /// and smaller than the month name above it, which is why finding the 17th
+  /// meant leaning in. The number is also the only thing most cells draw — the
+  /// month grid passes `unselectedFill: Colors.transparent`, so a day that is
+  /// neither today, selected nor a day off is a bare glyph on the page — so it
+  /// carries the whole grid's legibility on its own.
+  ///
+  /// It costs no layout of its own: nothing is measured off the number. What
+  /// it did cost was [dayCircle], which had to grow with it — see there.
   final TypeStep dayNumber;
+
+  /// The circle a day number is drawn in, and **it is a frame around the
+  /// number rather than a size in its own right**.
+  ///
+  /// Most days in the month grid draw none of it: it is the today ring, the
+  /// selected fill and the day-off wash, and on a selected day it is *two*
+  /// rings — an outline with the accent disc inset inside it — so six of its
+  /// points are spent before the date gets any. At 34 around an 18pt number
+  /// that left a 28-point disc holding a 24-point line box, and a two-digit
+  /// selected day sat with its glyphs against the edge.
+  ///
+  /// Both views' heights are measured off this, so it is the one number here
+  /// that moves layout: the month grid's row pitch and Home's strip tile both
+  /// follow it, which is why the grid keeps the same air between its weeks at
+  /// 40 as it had at 34. Its ceiling is the strip, not the grid — a cell there
+  /// is about 48 points wide, so the circle has a few points of tile on each
+  /// side left and no room for another step.
   final double dayCircle;
 
   const AppTypeScale({
@@ -1050,8 +1082,8 @@ class AppTypeScale {
     navLabel: TypeStep(10, FontWeight.w500),
     pageTitle: TypeStep(19, FontWeight.w600),
     weekdayLetter: TypeStep(14, FontWeight.w500),
-    dayNumber: TypeStep(16, FontWeight.w600),
-    dayCircle: 34,
+    dayNumber: TypeStep(18, FontWeight.w600),
+    dayCircle: 40,
   );
 
   /// The full step, onto the sizes iOS uses for the same roles.
@@ -1078,8 +1110,8 @@ class AppTypeScale {
     navLabel: TypeStep(10, FontWeight.w500),
     pageTitle: TypeStep(20, FontWeight.w600),
     weekdayLetter: TypeStep(13, FontWeight.w500),
-    dayNumber: TypeStep(16, FontWeight.w600),
-    dayCircle: 36,
+    dayNumber: TypeStep(18, FontWeight.w600),
+    dayCircle: 42,
   );
 }
 
@@ -1165,6 +1197,25 @@ class AppText {
     fontSize: _s.screenTitle.size,
     fontWeight: _s.screenTitle.weight,
     letterSpacing: -0.3,
+    color: AppColors.ink,
+  );
+
+  /// The greeting standing in the middle of the sign-up/sign-in form's dot
+  /// field — the largest type in the app, and the only thing on that band.
+  ///
+  /// Sized off [screenTitle] rather than named, so the type scale still moves
+  /// it, and half again as large because it has a whole hero to itself: at
+  /// [screenTitle] it read as the brand's subtitle rather than as the thing the
+  /// page is saying. Half again is also the ceiling the longest greeting
+  /// allows — German's "Willkommen zurück" is 408pt wide here against the 342 a
+  /// 390pt phone leaves, so it wraps to two lines and the band is built to hold
+  /// them; larger and the short greetings start wrapping too.
+  static TextStyle get greeting => TextStyle(
+    fontFamily: _family,
+    fontSize: _s.screenTitle.size * 1.5,
+    fontWeight: _s.screenTitle.weight,
+    letterSpacing: -0.5,
+    height: 1.2,
     color: AppColors.ink,
   );
 

@@ -32,31 +32,31 @@
       },
       "comment": "The action's name in Shortcuts and Spotlight. This is the string the setup steps in lib/l10n tell the user to look for (spendWalletStep4) — change one and change the other, or the instructions name an action that is not there."
     },
-    "Speichert eine Apple-Pay-Zahlung in Aporah. Am besten mit einer Kurzbefehl-Automation „Wallet\" verbinden.": {
+    "Speichert eine Apple-Pay-Zahlung in aporah. Am besten mit einer Kurzbefehl-Automation „Wallet\" verbinden.": {
       "extractionState": "manual",
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Speichert eine Apple-Pay-Zahlung in Aporah. Am besten mit einer Kurzbefehl-Automation „Wallet\" verbinden."
+            "value": "Speichert eine Apple-Pay-Zahlung in aporah. Am besten mit einer Kurzbefehl-Automation „Wallet\" verbinden."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Saves an Apple Pay payment to Aporah. Best paired with a Shortcuts “Wallet” automation."
+            "value": "Saves an Apple Pay payment to aporah. Best paired with a Shortcuts “Wallet” automation."
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Guarda um pagamento Apple Pay no Aporah. Funciona melhor com uma automação “Carteira” nos Atalhos."
+            "value": "Guarda um pagamento Apple Pay no aporah. Funciona melhor com uma automação “Carteira” nos Atalhos."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Guarda un pago con Apple Pay en Aporah. Funciona mejor con una automatización “Cartera” en Atajos."
+            "value": "Guarda un pago con Apple Pay en aporah. Funciona mejor con una automatización “Cartera” en Atajos."
           }
         }
       }
@@ -177,31 +177,31 @@
         }
       }
     },
-    "Ausgaben-Erfassung ist in Aporah noch nicht aktiviert.": {
+    "Ausgaben-Erfassung ist in aporah noch nicht aktiviert.": {
       "extractionState": "manual",
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ausgaben-Erfassung ist in Aporah noch nicht aktiviert."
+            "value": "Ausgaben-Erfassung ist in aporah noch nicht aktiviert."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Spend capture is not switched on in Aporah yet."
+            "value": "Spend capture is not switched on in aporah yet."
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "O registo de despesas ainda não está ativado no Aporah."
+            "value": "O registo de despesas ainda não está ativado no aporah."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "El registro de gastos todavía no está activado en Aporah."
+            "value": "El registro de gastos todavía no está activado en aporah."
           }
         }
       }

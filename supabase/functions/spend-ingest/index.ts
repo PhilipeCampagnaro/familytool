@@ -29,6 +29,15 @@ import { hashToken } from "../_shared/tokens.ts";
 /// simply spend a second allowance.
 const MAX_WALLET_SPENDS_PER_DAY = 200;
 
+/// **A row only spends the allowance if it claims to be a payment from today.**
+/// Counting every wallet row *written* in the last day counted a backfill too: an
+/// import of a household's own history from the old app wrote hundreds of rows in
+/// one second and then refused every real tap for a day, with an error naming a
+/// cause that was not true. What the cap is actually for is a loop or a stolen
+/// token, and both of those report payments happening *now* — so the window is
+/// applied to `occurred_at` as well, which no import of the past can fill.
+const RECENT_SPEND_WINDOW_MS = 86_400_000;
+
 /// An automation that fires twice — a retry, a double tap on the terminal —
 /// produces two identical posts seconds apart. Same device, same merchant, same
 /// amount inside this window is treated as the same payment. Two genuinely
@@ -84,13 +93,14 @@ Deno.serve(async (req) => {
     return fail("Gerät nicht aktiviert.", 401);
   }
 
-  const dayAgo = new Date(Date.now() - 86_400_000).toISOString();
+  const dayAgo = new Date(Date.now() - RECENT_SPEND_WINDOW_MS).toISOString();
   const { count: todayCount } = await db
     .from("spends")
     .select("id", { count: "exact", head: true })
     .eq("family_id", device.family_id)
     .eq("source", "wallet")
-    .gte("created_at", dayAgo);
+    .gte("created_at", dayAgo)
+    .gte("occurred_at", dayAgo);
 
   if ((todayCount ?? 0) >= MAX_WALLET_SPENDS_PER_DAY) {
     console.warn(`spend-ingest rate limit hit for family ${device.family_id}`);

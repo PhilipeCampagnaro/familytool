@@ -8,6 +8,7 @@ import '../services/app_review.dart';
 import '../state/entitlement_state.dart';
 import '../theme/app_icons.dart';
 import '../theme/tokens.dart';
+import 'dissolve_edge.dart';
 import 'action_bar.dart';
 import 'app_sheet.dart';
 import 'glass.dart';
@@ -343,16 +344,8 @@ class _PlusHero extends StatelessWidget {
               // across a phone reads as a rendering fault, while a fade reads as a
               // picture continuing past the frame. Same reasoning as
               // [PinnedActionBar]'s gradient, one axis down.
-              ClipRect(
-                child: ShaderMask(
-                  shaderCallback: (rect) => LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: const [Colors.white, Colors.white, Colors.transparent],
-                    stops: const [0, 0.86, 1],
-                  ).createShader(rect),
-                  blendMode: BlendMode.dstIn,
-                  child: OverflowBox(
+              DissolveBottom(
+                child: OverflowBox(
                     alignment: Alignment.topCenter,
                     maxHeight: height * _heroOverflow,
                     child: Image.asset(
@@ -360,7 +353,6 @@ class _PlusHero extends StatelessWidget {
                       height: height * _heroOverflow,
                       fit: BoxFit.contain,
                       filterQuality: FilterQuality.medium,
-                    ),
                   ),
                 ),
               ),

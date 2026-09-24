@@ -575,6 +575,104 @@ Non-obvious bits, each one a bug that shipped first:
 
 ## Other shared widgets
 
+- **`DissolveBottom` (`dissolve_edge.dart`)** — a picture that **ends by dissolving** instead of
+  being cut. A hard edge across a screenshot or an illustration reads as something that failed to
+  draw; the same content faded out over its last stretch reads as a picture continuing past the
+  frame. A `ShaderMask` in `BlendMode.dstIn`, so it takes the *alpha* away and whatever is behind
+  comes through — a coloured gradient laid over the top would be a grey smear on the dark palette.
+  One caller today: the Plus paywall's device shots, drawn taller than their band
+  (`_heroOverflow`, 1.62) and top-anchored, so the phone reads large and gives up its empty lower
+  half. Replacing one of those means another phone-shaped export with the interesting half at the
+  top — bezel, notch and status bar belong in the pixels. The sign-in front door used to be the
+  second caller and is now `FrontDoorHero` instead; the widget stays shared because the next
+  screenshot in a band will want it.
+
+- **`FrontDoorHero` (`screens/auth/front_door_hero.dart`)** — the sign-in page's picture: a
+  household using the app, **drawn live** over a dot grid that lights where something is happening.
+  One story, **played once and stopped**, in three movements: four pointers put a list article, an
+  appointment, a to-do and a tracker into four cards; Mama comes back and swipes the whole board
+  off the left edge; and `hero_welcome.png` — the tour's own first illustration, at the size the
+  tour draws it — is carried in from the right on the same drag, over a blue wash in the dot grid.
+  That is the last frame. A loop is wallpaper, and the fifth time the same four cards land is the
+  time a reader stops seeing them.
+  - The tagline types itself out under the illustration, which is why the gray panel below is
+    bare: the promise belongs beside the picture making it, not a full panel away from it. It types
+    by laying out the *whole* line and leaving the unwritten half at zero alpha — revealing a
+    growing substring re-wraps the text on nearly every frame. **It is inside the canvas**, so it
+    is a fixed size and does not follow the phone's type setting; that is the price of it being the
+    picture's caption rather than a paragraph below it.
+  - `_Spark` has a **`core`** (full strength before the falloff starts) and an **`aspect`**, and
+    `DotField` takes a list of **`shades`** — the same struct read as a subtraction. Between them
+    the wash is an even ellipse the shape of the picture rather than a pool in its middle, and the
+    light steps back out from under the sentence. That last part is the fix for "the words are hard
+    to read over the dots", and it is the right shape of fix: a heavier face over the same texture
+    is a heavier thing that is still hard to read.
+  - The four cards wear a **hairline of accent at a fifth strength**, which no card in the app
+    itself does. On a page a card's shadow is edge enough because the card is what you are looking
+    at; here it is a small white rectangle on a white band, and the shadow alone left it floating.
+  - **The arrow is Figma's, not the system's** — broad, tilted, blunt-cornered, filled in the
+    member's tone, with a thick white rim and a shadow lifting it off the page, and a name pill
+    under it. A hairline system cursor is drawn for a desktop at 1:1 and vanishes inside a picture
+    of something else. A round touch blob was tried in between and dropped: it is the better
+    argument about input and the worse one about meaning, because what the picture has to say is
+    "somebody else is in here with you", not "a finger pressed here".
+  - **It borrows, it does not imitate** — the app's own card and shadow, `GlyphTile`,
+    `CheckOffButton`, `formatTimeOfDay`, the grocery catalog's real article pictures, and
+    `AppIcons.circleDashed` for the tracker because that is the mark a tracker wears on the Board,
+    on Home and in the paywall. An act that drew the Ausgaben charts lived here briefly and was
+    cut: the front door is about what the app is *for*, and three screens of product in one hero is
+    none of them.
+  - **Every fixed height in it is a sum, not a guess.** Poppins' line box is **1.5x** its point
+    size, so two rows of `rowTitle` over `microLabel` need 42 points where most faces need 34 —
+    which is exactly how three `RenderFlex` overflows got in. The constants at the top of the file
+    carry the arithmetic; change a type token and redo it.
+  - The layout is a fixed 356x330 canvas scaled by hand — `BoxFit.contain` worked out in
+    `LayoutBuilder` rather than handed to a `FittedBox`, because the dot field is painted in the
+    band's coordinates and the sparks that light it come from the canvas's. **It never scales past
+    1**, or the whole thing reads as a blown-up screenshot. Inside it, text scaling is off
+    (`MediaQuery.withNoTextScaling`): the picture is scaled bodily, and enlarging its type would
+    burst the cards rather than help anybody. Every layer is **keyed**, because the `Stack` is
+    rebuilt from scratch each frame and an unkeyed layer inherits the element of whatever used to
+    sit at its index.
+
+- **`DotField` / `DotSpark` (`dot_field.dart`)** — the **paper both sign-in pictures are drawn
+  on**: a grid of dots that lights up where something is happening. It came out of
+  `front_door_hero.dart` when the form pages grew a picture of their own, and it is shared rather
+  than copied for the obvious reason — two painters would have drifted into two different dot grids
+  on two pages of one flow.
+  - A `DotSpark` is a point, a strength, a falloff `radius`, an optional `core` of undimmed light
+    and an `aspect` that turns the round falloff into the ellipse of a non-round thing. A `ring`
+    makes it a band of light at a radius rather than a disc — the press. `shades` are the same
+    struct read as a **subtraction**, which is how the light is taken back out from under text.
+  - **Spacing and dot size are in the band's own points and never scale.** It is paper, not part of
+    the drawing, and paper whose texture grew on a bigger phone reads as a zoom.
+  - The form pages' `GreetingHero` is the still one: a band a quarter of the display tall (clamped
+    180–250, the way `StepHero` sizes an illustration) with the greeting alone in the middle of it,
+    set in `AppText.greeting` — the app's largest type — on a steady glow, under the same 'aporah'
+    the landing carries. Sized to its own text instead, it was a caption with dots behind it.
+    It was a cursive writing itself out for a while — a wipe travelling along the letters rather
+    than a real stroke, in a second vendored typeface — and both went: the effect read as the trick
+    it was, and one word did not earn a second face on the one page a stranger sees.
+
+- **`StepPage` / `StepTopBar` / `StepHero` / `StepButton` / `stepTopInset` (`step_page.dart`)** —
+  the **full-page step**: a scrolling body running edge to edge under a frosted band, with the
+  app's glass controls standing on it. Two flows use it — the welcome tour's three questions and
+  the sign-in flow's front door → form → code — and it is one widget because the screens either
+  side of "Konto erstellen" must not read as two apps.
+  - It expects a `Scaffold` with `SafeArea(top: false)` around it. **The body runs to the top of
+    the safe area, not to the bottom of the bar**, and each step leaves the room itself with
+    `stepTopInset(context)` in its scroll padding — a `Column` of bar-over-body puts a hard white
+    edge across the illustration the moment anything scrolls.
+  - `StepTopBar` is a **`Stack`, not a `Row`**: the glass buttons are platform views on iOS, and
+    Flutter content laid out *between* two of them never shows on device. `center` is the tour's
+    `StepDots` and is null on a flow that is one of one; `trailing` is the tour's "Überspringen".
+  - `StepButton` is the accent glass pill, and `enabled: false` draws a **different widget** — a
+    flat muted pill — rather than the same one faded, because a platform view cannot be faded.
+    A step that offers a second way on stacks a `GlassPillButton` under it at `stepButtonPadding`,
+    which is what makes the two the same height. The sign-in front door is the one that does.
+  - The tour keeps a private `_StepChrome` over it, holding its own dots and skip, because "step
+    two of three" is the tour's vocabulary and no other stepped flow has it.
+
 - **`SegmentedProgressBar` (`segmented_progress_bar.dart`)** — every horizontal "this much of it"
   bar: the Board's day and a spending goal. Drawn like the Ausgaben donut's arcs — a rounded filled
   piece, a rounded remainder, and daylight between them, with nothing painted under the fill. Empty
@@ -1429,8 +1527,12 @@ Non-obvious bits, each one a bug that shipped first:
   Kalender's week strip and month grid. Board used to have a week strip of its own and no longer
   does: a task's date is a property of the task, so the Board is a grouped list with nothing to
   select.
-- `EventDots` (`event_dots.dart`) — small overlapping source-color dots under a day cell, plus an
-  optional leading ring (`todo`) for a day that still owes a to-do.
+- `EventDots` (`event_dots.dart`) — the mark under a day cell: **one 4.5-point stroke that grows 3
+  points per event (9 → 24) and is cut into a slice per event by white dividers**, up to six; plus
+  an optional leading ring (`todo`) for a day that still owes a to-do, which never takes a slice. It
+  owns its own budget (the caller hands over uncapped colours) and publishes `bandHeight`, which both
+  day cells measure their own heights off. See the day's-stroke section of
+  [kalender.md](kalender.md).
 - `Avatar`, `WhoPicker` — person avatar chip and the "Alle / Nur ich / <person>" picker on
   new-item sheets. `WhoPicker` is the **assignment** axis (a single `who` string) and is what
   Board/Box/Kalender still use.
@@ -1530,10 +1632,12 @@ Non-obvious bits, each one a bug that shipped first:
     size, weight and colour but not `decoration`, so the underline came through under the message
     and under "Rückgängig". `_ToastLayer` declares a `DefaultTextStyle` with
     `decoration: TextDecoration.none` around the whole entry; don't patch a new one at the `Text`.
-  - The chip's own position is computed rather than delegated: `max(viewInsets.bottom,
-    viewPadding.bottom) + navContentInset(…)`, which is what the `Scaffold` used to do for a
-    floating snack bar — above the keyboard while one is up, clear of the home indicator when it
-    isn't.
+  - The chip's own position is computed rather than delegated, and it has three answers: just above
+    the keyboard while one is up; `navBarTop(…) + 14` while the nav bar is on screen; and **down at
+    the home indicator while it isn't** — a sheet or a pushed page covers the shell. The last is read
+    live off `NavBarState.onScreen`, which the shell publishes from `occludedByRoute`, because the
+    chip is ordered with a sheet up and often shown after it has closed. Parked above a bar that
+    wasn't there, it hung mid-page over the buttons the next delete needed.
 - **Undo lives on the delete chip, and it is a re-insert.** `restoreList` / `restoreBox` /
   `restoreTask` / `restoreEvent` / `restoreItem` (one on each of the list and box notifiers)
   recreate what was deleted from the snapshot the delete handed back — items, done state, audience
@@ -1623,6 +1727,33 @@ one.
     first time, when the shell mounts the widget and opens it in the same breath. Seeding the
     controller at 1 for that case is what made the first tap of a session snap the buttons on with
     no animation while every tap after it animated, which reads as a dropped frame.
+- **One door giving way to the next** (`auth_screen.dart`, and the tour's own switcher): the
+  sign-in flow is three steps on one `Scaffold` — front door, form, code — swapped by an
+  `AnimatedSwitcher` keyed on which door, with the tour's exact transition (260ms, fade plus a 3%
+  rise).
+
+- **The code being accepted** (`_CodeBoxes`, `auth_screen.dart`): one 1200ms controller cut into
+  overlapping intervals — the rest of the page fades out, the six boxes slide into one another,
+  what is left rounds off into the confirmation mark's own circle, and **`DrawnCheck` draws itself
+  over the last stretch**. The ending is not a mark of its own: it is the same `DrawnCheck` at the
+  same `drawnCheckSize`, over `drawnCheckDuration`, that every sheet and page confirms with, played
+  on this screen's longer clock because the boxes merging into it is a longer gesture than the mark
+  is. That is what `drawnCheckDuration` and the intervals inside `DrawnCheck` are public for; a
+  second set of numbers here would be a second mark.
+  - **The boxes are never swapped for a single shape**: every one travels to the same rectangle and
+    then rounds together, so there is nothing to cross-fade. Their fill is opaque while they
+    travel, or six translucent boxes sliding through each other would darken as they met — and it
+    is gone by the time the ring closes, because the mark paints its own 8% wash and two of them
+    make one too strong. Both the fill and the border drop their *own* alpha rather than lerping
+    toward `Colors.transparent`, which is transparent **black** and drags a grey through the fade.
+  - The border is handed over to the ring rather than fading first: the arc sweeps round the same
+    circle the border was drawn on, so it reads as the outline being re-drawn by a pen.
+  - It only works because `AuthStatus.codeAccepted` holds the screen: the session exists by then,
+    and without the hold `_RootGate` would swap the shell in on the frame the animation started.
+    `codeAcceptedHold` is the longer of the two numbers on purpose, so the finished mark stands
+    still for a beat — and `_RootGate` watches `familyProvider` during it, so the household fetch
+    and the animation spend the same second.
+
 - **Deliberate exception**: the week view's day strip has no transition of its own — the user
   asked for standard scrolling over week-at-a-time paging. Its only motion is `_revealDate`'s
   `animateTo` (420ms, `Curves.easeOutCubic`) when something *else* moves the strip.

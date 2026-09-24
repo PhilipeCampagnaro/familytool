@@ -25,17 +25,23 @@ class _MonthViewState extends ConsumerState<_MonthView> {
   final ScrollController _scrollController = ScrollController();
   bool _todayVisible = true;
 
-  // The month/year + view-toggle row and the calendar chip row (see
-  // _buildHeader) — the part of the header that fades away as the grid
-  // scrolls, leaving just the title (shrunk + centered) and the filter
-  // dropdown that stands in for the chips + the add button. 16 top padding +
-  // 40 toggle row + 14 gap + 44 chip row + 16 bottom padding. Driven directly
-  // off `_scrollController.offset` (rather than a NestedScrollView sliver, as
-  // the week view uses) since this scroll view already needs its own
-  // controller for the "Heute" visibility check below, and a
-  // `center:`-anchored CustomScrollView doesn't compose with
+  // The calendar chip row (see _buildHeader) — the part of the header that
+  // fades away as the grid scrolls, leaving just the title (shrunk + centered)
+  // and the filter dropdown that stands in for the chips + the add button.
+  // 16 top padding + the chip row + 16 bottom padding, measured off the chip's
+  // own height rather than written down.
+  //
+  // It was 54 points taller, for a month/year label above the chips that named
+  // the *selected* month while every `_MonthBlock` was already writing its own
+  // name over its own grid. Taking it out is what lifts the grid — see
+  // [_MonthAndChipsRow.label].
+  //
+  // Driven directly off `_scrollController.offset` (rather than a
+  // NestedScrollView sliver, as the week view uses) since this scroll view
+  // already needs its own controller for the "Heute" visibility check below,
+  // and a `center:`-anchored CustomScrollView doesn't compose with
   // NestedScrollView's overlap-injection contract.
-  static const _extraHeaderHeight = 130.0;
+  static const _extraHeaderHeight = 16.0 + AppFilterChip.rowHeight + 16.0;
   double _headerT = 0.0;
 
   @override
@@ -150,11 +156,11 @@ class _MonthViewState extends ConsumerState<_MonthView> {
   }
 
   /// The collapsing part of the header: title (shrinking + centering via
-  /// [_TitleRow], same as the week view), with the month/year row
-  /// and the calendar chips fading away underneath as [_headerT] goes 0 (top
-  /// of the grid) to 1 (scrolled in) — at which point the filter dropdown
-  /// fades into the title row to stand in for the chips.
-  Widget _buildHeader(BuildContext context, CalendarScreenState state, Color accent, String monthLabel) {
+  /// [_TitleRow], same as the week view), with the calendar chips fading away
+  /// underneath as [_headerT] goes 0 (top of the grid) to 1 (scrolled in) — at
+  /// which point the filter dropdown fades into the title row to stand in for
+  /// the chips.
+  Widget _buildHeader(BuildContext context, CalendarScreenState state, Color accent) {
     final t = _headerT;
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -180,11 +186,11 @@ class _MonthViewState extends ConsumerState<_MonthView> {
                 opacity: (1 - t).clamp(0.0, 1.0),
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(AppSpacing.screenPad, 16, AppSpacing.screenPad, 16),
-                  child: _MonthAndChipsRow(
-                    state: state,
-                    accent: accent,
-                    label: Text(monthLabel, key: ValueKey(monthLabel), style: AppText.sectionHeading),
-                  ),
+                  // No label: each month writes its own name over its own
+                  // grid, so the header naming one too was a second answer to
+                  // a settled question — and the wrong one whenever the scroll
+                  // had left the selected month.
+                  child: _MonthAndChipsRow(state: state, accent: accent),
                 ),
               ),
             ),
@@ -198,7 +204,6 @@ class _MonthViewState extends ConsumerState<_MonthView> {
   Widget build(BuildContext context) {
     final state = widget.state;
     final accent = widget.accent;
-    final monthLabel = L.s.monthYear(state.selected.m, state.selected.y);
     // Each key appears only once the thing it explains can: Feiertage need a
     // household we have reason to place in Germany, Ferien need the feed to be
     // subscribed. A key to a wash that never shows up is worse than no key.
@@ -207,7 +212,7 @@ class _MonthViewState extends ConsumerState<_MonthView> {
 
     return Column(
       children: [
-        _buildHeader(context, state, accent, monthLabel),
+        _buildHeader(context, state, accent),
         Padding(
           padding: const EdgeInsets.fromLTRB(AppSpacing.screenPad, 6, AppSpacing.screenPad, 0),
           child: Column(
@@ -551,10 +556,40 @@ class _MonthCell extends ConsumerWidget {
     required this.onSelectDay,
   });
 
-  /// The circle, the gap under it and the dot band, plus 5 points of slack —
-  /// derived rather than written down, so a scale that grows the day cannot
-  /// quietly crowd the dots beneath it. At the shipped scale it is still 50.
-  static double get _cellHeight => AppText.dayCircle + 3 + 8 + 5;
+  /// The gap between a day's number and its event stroke, and the band that
+  /// stroke sits in. Deliberately tight: the stroke is what is *in* that day, so
+  /// it reads as belonging to the number above it rather than floating between
+  /// two weeks. The band is [EventDots]' own, so it and the mark inside it
+  /// cannot drift apart.
+  static const _dotGap = 4.0;
+  static const _dotBand = EventDots.bandHeight;
+
+  /// The air between one week and the next, and the one number here that is a
+  /// choice rather than a measurement.
+  ///
+  /// **It is what a month grid is actually navigated by.** Six rows of dates
+  /// with barely a number's height between them is one field of marks, and
+  /// picking the 17th out of it means reading the row above and the row below
+  /// to be sure which week you are in — which is the thing you can watch a
+  /// thumb do: hover, check, then tap. The rows are what separate the weeks,
+  /// so they have to be separated by more than the gap inside a cell, and at
+  /// the shipped scale that puts 25 points of nothing between one week's
+  /// numbers and the next's.
+  ///
+  /// Columns needed none of this. Seven cells already split the full width, a
+  /// day number is about 20 points of ink in a 49-point column, and the space
+  /// between two dates across a row was never the scarce one — it is the
+  /// vertical pitch and the size of the glyph that made the grid read as
+  /// cramped.
+  static const _rowAir = 14.0;
+
+  /// The circle, the gap under it, the mark band and the air below — derived
+  /// rather than written down, so a scale that grows the day cannot quietly
+  /// crowd the mark beneath it, and so a band that changes shape (dots, then a
+  /// stroke) moves the pitch without a number here being touched. At the
+  /// shipped scale it comes to 65, leaving 25 points between one week's numbers
+  /// and the next's — the air is held by construction rather than re-counted.
+  static double get _cellHeight => AppText.dayCircle + _dotGap + _dotBand + _rowAir;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -567,8 +602,6 @@ class _MonthCell extends ConsumerWidget {
       schoolHoliday: ferien.contains(n),
     );
     final colors = state.dayColors(year, month, n);
-    final dots = colors.take(3).toList();
-    final overflowCount = colors.length - 3;
     // Same rule as the week strip's: the ring only appears while the "To-dos"
     // chip is lit, so it always points at something the day can actually show.
     final hasTodo =
@@ -590,13 +623,12 @@ class _MonthCell extends ConsumerWidget {
               unselectedFill: Colors.transparent,
               unselectedTextColor: AppColors.ink,
             ),
-            const SizedBox(height: 3),
+            const SizedBox(height: _dotGap),
             SizedBox(
-              height: 8,
+              height: _dotBand,
               child: Center(
                 child: EventDots(
-                  colors: dots,
-                  overflowCount: overflowCount,
+                  colors: colors,
                   todo: hasTodo,
                   todoColor: accent,
                 ),

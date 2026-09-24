@@ -35,6 +35,8 @@ import 'widgets/paywall_sheet.dart';
 import 'widgets/empty_state.dart';
 import 'widgets/error_note.dart';
 import 'widgets/glass.dart';
+import 'widgets/incoming_link_handler.dart';
+import 'widgets/native_occlusion.dart';
 import 'widgets/native_tab_bar.dart';
 
 Future<void> main() async {
@@ -78,7 +80,7 @@ class AporahApp extends ConsumerWidget {
     L.use(language.name);
 
     return MaterialApp(
-      title: 'Aporah',
+      title: 'aporah',
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(AppPalette.light),
       darkTheme: buildAppTheme(AppPalette.dark),
@@ -117,7 +119,7 @@ class AporahApp extends ConsumerWidget {
       // Not `const`: a canonicalised instance would make the element below
       // identical across a theme flip, and the whole screen tree would be
       // skipped and keep painting the old palette.
-      home: _RootGate(),
+      home: IncomingLinkHandler(child: _RootGate()),
     );
   }
 }
@@ -179,11 +181,36 @@ class _RootGate extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final status = ref.watch(authProvider.select((s) => s.status));
 
+    // **The session ending has to take the navigator stack with it.** This gate
+    // is the *first* route, so swapping it for the login screen leaves whatever
+    // was pushed over it — Settings, where the "Abmelden" row lives, and any
+    // sheet above that — sitting on top, with the login page hidden behind. It
+    // read as a sign-out that did nothing, and then as one that happened later,
+    // whenever the user got round to going back.
+    ref.listen<AuthStatus>(authProvider.select((s) => s.status), (previous, next) {
+      if (previous != AuthStatus.signedIn || next == AuthStatus.signedIn) return;
+      final navigator = Navigator.of(context);
+      // A sign-out arrives on a tap, but it can also arrive from
+      // `onAuthStateChange` — a token that expired, a session revoked from
+      // another device — and that can land mid-frame, where popping is an
+      // error. One frame later is still the same tap as far as anybody can see.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (navigator.mounted) navigator.popUntil((route) => route.isFirst);
+      });
+    });
+
     switch (status) {
       case AuthStatus.unknown:
         return Scaffold(backgroundColor: AppColors.surface);
       case AuthStatus.signedOut:
-      case AuthStatus.awaitingConfirmation:
+      case AuthStatus.awaitingCode:
+        return AuthScreen();
+      case AuthStatus.codeAccepted:
+        // Signed in, still celebrating. Watching the household here rather
+        // than only in the branch below is what makes the animation free: the
+        // fetch and the check run through the same second, so the bare surface
+        // that follows is usually already over.
+        ref.watch(familyProvider);
         return AuthScreen();
       case AuthStatus.signedIn:
         break;
@@ -305,10 +332,14 @@ class _AppShellState extends ConsumerState<AppShell>
     end: Offset.zero,
   ).animate(_fade);
 
+  /// Held for [dispose], where `ref` may no longer be read.
+  late final NavBarNotifier _nav;
+
   @override
   void initState() {
     super.initState();
     _controller.value = 1;
+    _nav = ref.read(navBarProvider.notifier);
     WidgetsBinding.instance.addObserver(this);
     // After the first frame, so neither competes with it. On iOS this is the
     // quiet, dialog-free notification grant the morning brief and the bins ride
@@ -325,6 +356,10 @@ class _AppShellState extends ConsumerState<AppShell>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _controller.dispose();
+    // Signed out: no shell, so no bar for the chip to clear. After the frame,
+    // because a provider may not change while the tree is being torn down.
+    final nav = _nav;
+    Future.microtask(() => nav.setOnScreen(false));
     super.dispose();
   }
 
@@ -484,6 +519,9 @@ class _AppShellState extends ConsumerState<AppShell>
     await _controller.reverse();
     if (!mounted) return;
     setState(() => _index = i);
+    // Published for the screens, which cannot see the shell's own index — see
+    // [activeTabProvider].
+    ref.read(activeTabProvider.notifier).state = i;
     _controller.forward();
   }
 
@@ -546,6 +584,16 @@ class _AppShellState extends ConsumerState<AppShell>
     // Only Kalender compacts the bar, and only while it is the tab on screen.
     final nav = ref.watch(navBarProvider);
     final compact = nav.compact && _compactingTabs.contains(_index);
+    // Published for the confirmation chip, which lives above every route and
+    // cannot see this one — see [NavBarState.onScreen]. Reading
+    // [occludedByRoute] subscribes this build to pushes and pops above the
+    // shell, so it is re-answered exactly when a sheet or page opens or closes.
+    final barOnScreen = !occludedByRoute(context);
+    if (barOnScreen != nav.onScreen) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _nav.setOnScreen(barOnScreen);
+      });
+    }
     // Which of Mehr's two buttons reads as the one in force. Only while that
     // tab is the one on screen — anywhere else neither of them is.
     final moreSection = ref.watch(moreProvider);

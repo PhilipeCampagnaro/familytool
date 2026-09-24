@@ -63,6 +63,23 @@ const _flatFamily = 'PhosphorRegular';
 /// `trash`/`trash2`, `box`/`package`, `user`/`userRound`, and
 /// `circleCheck`/`circleCheckBig` were pairs the old set distinguished on paper
 /// and not on screen.
+///
+/// **[trash] means *delete*, and nothing else.** It is the glyph on every swipe
+/// action, every destructive menu row and every "Entfernen" in the app, so a
+/// feature that borrows it inherits that meaning whether it wants to or not —
+/// which is why waste collection wears [recycle] everywhere it is named (the
+/// connection tile, the Kalender filter, the timeline, the Mitteilungen card,
+/// the onboarding recap) and not the bin it is literally about. The one
+/// exception is `binIconFor` in `lib/data/abfall_bins.dart`, where [trash] is
+/// the *grey residual bin* among six fractions drawn to be told apart — there
+/// it is a picture of one bin, not a mark for the feature.
+///
+/// **And a menu row carries two glyphs, so both have to be changed.** Every
+/// `AnchoredMenuItem` and `NativeMenuOption` names an SF Symbol beside its
+/// `IconData`, because UIKit draws the menu on iOS; the counterpart of
+/// [recycle] there is `arrow.3.trianglepath`, not `trash`. Swapping only the
+/// Flutter half leaves the bin on screen for everybody who actually gets the
+/// system menu, which is most people.
 abstract final class AppIcons {
   static const airplane = IconData(0xe003, fontFamily: _family);
   static const archive = IconData(0xe00d, fontFamily: _family);

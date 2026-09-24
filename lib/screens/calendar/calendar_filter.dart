@@ -106,8 +106,14 @@ class _CalendarFilterButton extends ConsumerWidget {
           NativeMenuOption(
             src.name,
             // A waste calendar's entries wear their bins' colours, so the
-            // calendar itself is a bin glyph rather than one more dot.
-            symbol: src.isAbfall ? 'trash' : null,
+            // calendar itself is a glyph rather than one more dot — the
+            // recycling arrows, matching `AppIcons.recycle` on the Flutter
+            // side of this same menu. **Not SF Symbols' `trash`**: that is the
+            // delete can, and it sat in a list of calendars looking like an
+            // offer to throw one away. `arrow.3.trianglepath` is the
+            // recycling mark and has been there since 2019, well under the
+            // 15.0 floor.
+            symbol: src.isAbfall ? 'arrow.3.trianglepath' : null,
             color: src.isAbfall ? null : src.color,
             section: section,
             sectionTitle: title,
@@ -434,7 +440,7 @@ class _CalendarPickerSurface extends ConsumerWidget {
                     _CalendarPickerRow(
                       label: src.name,
                       color: src.color,
-                      glyph: src.isAbfall ? AppIcons.trash : null,
+                      glyph: src.isAbfall ? AppIcons.recycle : null,
                       checked: shown.contains(src.id),
                       onTap: () => onToggle(src.id),
                     ),
@@ -699,7 +705,7 @@ class _AllCalendarsPickerSurface extends ConsumerWidget {
                         _CalendarPickerRow(
                           label: src.name,
                           color: src.color,
-                          glyph: src.isAbfall ? AppIcons.trash : null,
+                          glyph: src.isAbfall ? AppIcons.recycle : null,
                           // No filter at all means every calendar is showing,
                           // this one included.
                           checked: filter == null || filter.contains(src.id),

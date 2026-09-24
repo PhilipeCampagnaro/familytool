@@ -289,7 +289,18 @@ The `aporah://invite/<token>` and `aporah://share/<token>` schemes that `ios/Run
 documents are **not minted by anything** — that comment describes a route that was never built — and
 no Dart code reads an incoming link on either platform.
 
-- [ ] **Decide the link strategy.** The recommendation is a real `aporah.app` with **Universal Links
+- [x] **Decided 2026-09-19: `aporah.io`, which we own** (verified for Resend, hosted on Vercel).
+      Built: `ios/Runner/Runner.entitlements` (`applinks:aporah.io`), the Android `autoVerify`
+      filter, `site/` (the `apple-app-site-association` file, `open.html` for the case the app did
+      not open, which hands the token over `aporah://`), and `APORAH_WEB_URL` defaults to it.
+      **The entitlements file is not wired into the Xcode build**: a free personal Apple team
+      cannot sign Associated Domains, and the build fails outright. Wire it in (see the file's
+      comment) once the paid Developer Program is active — needed for the App Store anyway.
+      Until then a link opens `open.html` and its button opens the app over `aporah://`.
+      **Not yet live:** `site/` has to be deployed on the domain (today `aporah.io` is the old web
+      app's `family-finance` Vercel project), `assetlinks.json` needs the release signing
+      certificate's SHA-256, and there is no store link on the page yet.
+      *The original reasoning:* the recommendation was a real `aporah.app` with **Universal Links
       and App Links**: `apple-app-site-association` and `assetlinks.json` on the domain, so an
       installed app opens the link directly and everyone else lands on a page that says what Aporah
       is and offers both stores. A bare `aporah://` custom scheme is the cheap alternative and is
@@ -297,7 +308,9 @@ no Dart code reads an incoming link on either platform.
       someone who may not have the app, and a custom scheme shows them a browser error. This needs
       the domain, a static page and a store listing id, so it is weeks of lead time in wall-clock
       even though it is a day of work.
-- [ ] Read an incoming link in Dart and act on it: the token goes to `accept-invite` or
+- [x] Read an incoming link in Dart and act on it (`IncomingLinkNotifier` holds it through
+      sign-up, `IncomingLinkHandler` above `_RootGate` asks before joining, because joining
+      deletes the invitee's own household): the token goes to `accept-invite` or
       `redeem-share-link`, and the app lands on the thing that was shared. Needed for both flows and
       built for neither.
 - [ ] Fix the stale `CFBundleURLTypes` comment once the answer is known.

@@ -757,17 +757,19 @@ class _DayAgenda extends StatelessWidget {
 
 class _DayStripCell extends ConsumerWidget {
   // A cell is three stacked pieces: the forecast, loose above; the rounded
-  // tile; and inside that the weekday letter, the day number and the dots.
+  // tile; and inside that the weekday letter, the day number and the event
+  // stroke.
   //
   //   _weatherBand 48  ( _weatherIcon 30 over _weatherTemp 18 )
   //   _weatherGap   8
-  //   tile             ( 8 + _letterBand + 6 + circle + 8 + _dotBand 8 + 8 )
+  //   tile             ( 8 + _letterBand + 6 + circle + 8 + _dotBand + 8 )
   //   ---------------
   //   cellHeight, and _stripHeight leaves a little over it.
   //
-  // The two variables in that sum — the letter band and the circle — come from
-  // the installed AppTypeScale, so the shipped scale still adds up to the
-  // 92-point tile and the 148-point cell it always did.
+  // Three of those come from elsewhere — the letter band and the circle from
+  // the installed AppTypeScale, the dot band from EventDots — so none of them
+  // is written down here twice. The four fixed paddings are the 30 in
+  // _tileHeight.
 
   /// The forecast, and it sits **outside the tile**, where the weekday letter
   /// used to.
@@ -808,13 +810,16 @@ class _DayStripCell extends ConsumerWidget {
   /// The tile, and above it the whole cell. Both follow the circle and the
   /// band, so the strip re-measures itself when the scale moves instead of
   /// being re-counted by hand.
-  static double get _tileHeight => 38.0 + _letterBand + AppText.dayCircle;
+  static double get _tileHeight => 30.0 + EventDots.bandHeight + _letterBand + AppText.dayCircle;
   static double get cellHeight => _weatherBand + _weatherGap + _tileHeight;
 
-  /// The bottom band, where the calendars' dots and the to-do ring sit. They
-  /// stay with the number: the dots are what is *in* the day, where the
+  /// The bottom band, where the calendars' stroke and the to-do ring sit. They
+  /// stay with the number: the stroke is what is *in* the day, where the
   /// forecast is about the day as a whole and now sits above the tile entirely.
-  static const _dotBand = 8.0;
+  ///
+  /// Taken from [EventDots] rather than written down, so the band and the mark
+  /// inside it cannot drift apart.
+  static const _dotBand = EventDots.bandHeight;
 
   final DateTime date;
   final String letter;
@@ -835,8 +840,6 @@ class _DayStripCell extends ConsumerWidget {
       schoolHoliday: state.isSchoolHoliday(date.year, date.month, date.day),
     );
     final colors = state.dayColors(date.year, date.month, date.day);
-    final dots = colors.take(3).toList();
-    final overflowCount = colors.length - 3;
     // Only while the overlay is on. A ring on a day whose to-do the agenda is
     // not showing points at nothing, and the reader has no way to find out what
     // it meant.
@@ -883,8 +886,7 @@ class _DayStripCell extends ConsumerWidget {
                   height: _dotBand,
                   child: Center(
                     child: EventDots(
-                      colors: dots,
-                      overflowCount: overflowCount,
+                      colors: colors,
                       todo: hasTodo,
                       todoColor: accent,
                     ),

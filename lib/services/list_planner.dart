@@ -50,6 +50,26 @@ enum PlannerFailure {
   /// This user's daily abuse limit is reached. Only a plan without a monthly
   /// cap has one, and no plan is like that today — see the server.
   dailyLimit,
+
+  /// A page was handed over, was read, and had no recipe markup on it.
+  ///
+  /// **Never reached by a generated plan** — only by [PlannerNotifier.runImport].
+  /// Distinct from [unusable] because the advice differs: a goal that confused
+  /// the model is worth rephrasing, and a page with no recipe on it will not
+  /// improve on a second reading, so the copy points at typing the dish
+  /// instead.
+  noRecipeOnPage,
+
+  /// A YouTube video was handed over, the description was read, and it held no
+  /// ingredient list.
+  ///
+  /// Its own value rather than [noRecipeOnPage] because the copy has to name
+  /// the right thing. A recipe page that fails is a page we could not read; a
+  /// video that fails is a channel that did not write its ingredients down,
+  /// which is neither the reader's fault nor fixable by trying again — and
+  /// telling them we "could not read that page" would send them looking for a
+  /// problem at our end.
+  noRecipeInVideo,
 }
 
 /// How much of this month's Vorhaben the household has used, **as the server

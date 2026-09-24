@@ -10,6 +10,7 @@ import '../../models/grocery_unit.dart';
 import '../../models/list_plan.dart';
 import '../../models/shopping_list.dart';
 import '../../services/list_planner.dart';
+import '../../services/recipe_fetch.dart';
 import '../../state/list_planner_state.dart';
 import '../../state/list_state.dart';
 import '../../theme/app_icons.dart';
@@ -83,6 +84,13 @@ class _PlannerCardState extends ConsumerState<PlannerCard> {
     super.dispose();
   }
 
+  /// Whether what is in the field is a page to read rather than a goal to plan.
+  ///
+  /// The same test [PlannerNotifier.run] routes on, asked here so the button
+  /// and the send agree — a button that is enabled for something `run` would
+  /// then hand to the model is worse than either.
+  bool get _isLink => recipePageUrl(_controller.text) != null;
+
   void _send() {
     FocusScope.of(context).unfocus();
     ref.read(plannerProvider.notifier).run(_controller.text);
@@ -100,7 +108,12 @@ class _PlannerCardState extends ConsumerState<PlannerCard> {
   /// it needed — and the chips under it froze half-grown for the same reason.
   /// With the top in view every frame of the shrink is laid out, and the reader
   /// is looking at the field the goal comes back into.
-  Future<void> _again() async {
+  /// [clear] empties the field instead of restoring the goal, for the one
+  /// failure where the goal is the problem rather than the wording: a page that
+  /// held no ingredients. Putting that address back would leave the reader
+  /// selecting and deleting a URL before they could do the thing the sentence
+  /// above the button just told them to do.
+  Future<void> _again({bool clear = false}) async {
     await Scrollable.ensureVisible(
       context,
       duration: _grow,
@@ -110,7 +123,7 @@ class _PlannerCardState extends ConsumerState<PlannerCard> {
     if (!mounted) return;
     _methodOpen = false;
     ref.read(plannerProvider.notifier).editGoal();
-    _controller.text = ref.read(plannerProvider).goal;
+    _controller.text = clear ? '' : ref.read(plannerProvider).goal;
     _controller.selection = TextSelection.collapsed(offset: _controller.text.length);
     _focus.requestFocus();
   }
@@ -291,7 +304,11 @@ class _PlannerCardState extends ConsumerState<PlannerCard> {
           // paywall: it is information about *this* press, and the reader sees
           // it at the moment it matters instead of meeting a refusal after the
           // wait. The number is the server's (see [PlannerUsage]).
-          Expanded(child: _UsageLine(usage: state.usage)),
+          //
+          // Gone while the field holds a link, for that same reason: this press
+          // spends nothing, and a count of remaining Vorhaben beside it would
+          // be answering a question the reader is not asking.
+          Expanded(child: _isLink ? const SizedBox.shrink() : _UsageLine(usage: state.usage)),
           const SizedBox(width: 12),
           // The real accent glass, not a coloured circle: it is the one control
           // on the card and it sits on the card's own white, where an opaque fill
@@ -306,9 +323,17 @@ class _PlannerCardState extends ConsumerState<PlannerCard> {
           // Off, too, once the month is used up: the line beside it says why,
           // and a press that could only come back as a refusal is not one to
           // offer.
+          //
+          // **Unless what is in the field is a link.** An import reads the page
+          // and never asks the model, so it costs nothing and is not counted —
+          // see [PlannerNotifier.runImport]. Leaving the button off for one was
+          // the quota refusing a request that would never have been made: the
+          // reader pasted a recipe, pressed send, and nothing happened at all.
           GlassConfirmButton(
             icon: AppIcons.arrowUp,
-            enabled: _controller.text.trim().isNotEmpty && !(state.usage?.usedUp ?? false),
+            enabled:
+                _controller.text.trim().isNotEmpty &&
+                (_isLink || !(state.usage?.usedUp ?? false)),
             onTap: _send,
           ),
         ],
@@ -343,7 +368,18 @@ class _PlannerCardState extends ConsumerState<PlannerCard> {
     // it. Those three say when (or that) it will work instead, and the island's
     // caret still folds the card away.
     final canRephrase =
-        state.failure == PlannerFailure.unusable || state.failure == PlannerFailure.unavailable;
+        state.failure == PlannerFailure.unusable ||
+        state.failure == PlannerFailure.unavailable;
+    // **A page that held no ingredients is not a badly worded goal.** This one
+    // came through the import path, where there is no question and no model —
+    // the reader pasted an address and it turned out to be an address we
+    // cannot read. Offering to word it differently is nonsense: the URL is the
+    // URL, and rewriting it would take them somewhere else entirely. The
+    // button stays, because there *is* one thing that works from here and the
+    // sentence above already names it, so the button says the same thing and
+    // hands over an empty field to do it in.
+    final noRecipe = state.failure == PlannerFailure.noRecipeOnPage ||
+        state.failure == PlannerFailure.noRecipeInVideo;
     return [
       _GoalLine(goal: state.goal),
       Padding(
@@ -357,9 +393,12 @@ class _PlannerCardState extends ConsumerState<PlannerCard> {
               style: AppText.body.copyWith(color: AppColors.inkSecondary, height: 1.45),
               textAlign: TextAlign.center,
             ),
-            if (canRephrase) ...[
+            if (canRephrase || noRecipe) ...[
               const SizedBox(height: 16),
-              GlassPillButton(label: L.s.plannerEditGoal, onTap: _again),
+              GlassPillButton(
+                label: noRecipe ? L.s.plannerTypeInstead : L.s.plannerEditGoal,
+                onTap: () => _again(clear: noRecipe),
+              ),
             ],
           ],
         ),
@@ -374,6 +413,8 @@ class _PlannerCardState extends ConsumerState<PlannerCard> {
   String _failureText(PlannerState state) => switch (state.failure) {
     PlannerFailure.notConfigured => L.s.plannerNotConfigured,
     PlannerFailure.unusable => L.s.plannerUnusable,
+    PlannerFailure.noRecipeOnPage => L.s.plannerNoRecipeOnPage,
+    PlannerFailure.noRecipeInVideo => L.s.plannerNoRecipeInVideo,
     PlannerFailure.monthlyLimit => switch (state.usage?.resetsAt) {
       final at? => L.s.plannerMonthlyLimitUntil(at.day, monthNames[at.month]),
       null => L.s.plannerMonthlyLimit,
@@ -489,6 +530,9 @@ class _PlannerCardState extends ConsumerState<PlannerCard> {
       // was done, which is the one moment the feature was meant to help.
       steps: plan.steps,
       recipe: plan.recipe,
+      // An imported plan's counterpart to the method: it has no `recipe` to
+      // carry, and the page it was read from is what the cook wants back.
+      sourceUrl: plan.sourceUrl,
     );
     if (created) confirm(L.s.plannerListCreated);
   }

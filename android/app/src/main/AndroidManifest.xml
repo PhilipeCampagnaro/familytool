@@ -25,7 +25,7 @@
     <!-- The app lock. Normal-level, granted at install, no dialog. See BiometricChannel.kt. -->
     <uses-permission android:name="android.permission.USE_BIOMETRIC"/>
     <application
-        android:label="Aporah"
+        android:label="aporah"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
@@ -80,6 +80,23 @@
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="aporah"/>
+            </intent-filter>
+
+            <!-- App Links: https://aporah.io/invite/… and /share/… open the
+                 app rather than the browser. `autoVerify` makes Android fetch
+                 /.well-known/assetlinks.json from the domain and check it names
+                 this package and signing certificate; until it does, the link
+                 falls back to the browser. The hosts must match
+                 incomingLinkHosts in lib/state/incoming_link_state.dart. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="https"/>
+                <data android:host="aporah.io"/>
+                <data android:host="www.aporah.io"/>
+                <data android:pathPrefix="/invite/"/>
+                <data android:pathPrefix="/share/"/>
             </intent-filter>
         </activity>
         <!-- Automatic spend capture. Read the class doc-comment before

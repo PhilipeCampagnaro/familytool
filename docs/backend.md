@@ -161,6 +161,15 @@ deletes it rather than orphaning it. That matches what the UI promises.
 One deliberate and slightly surprising combination is legal: a `private` list — invisible to your
 own household — *can* be shared with an outsider. That is exactly the work-party case.
 
+**Listen and Boxen no longer let you build one, and that is an app decision, not a schema
+change.** A `private` container has no "Teilen" row and a container somebody outside is holding has
+no "Für wen?" picker, so neither order of taps reaches the pair; rows already in that state keep
+working and stay readable from both sides. (One exception, and it is about escape rather than
+policy: a box keeps its guests inside the Teilen sheet, so a box already in the private-plus-guest
+state keeps that row — it is the only way to remove the guest.) It was not the work-party case that produced them — it was making a
+shared list private afterwards, which takes the list off every phone in the household and leaves it
+on the guest's, and from the inside looks exactly like a deletion.
+
 ## What the guest can never reach
 
 A guest is a normal user with their own household who holds one grant into yours. Each of these is
@@ -281,6 +290,12 @@ Four Edge Functions in [supabase/functions/](../supabase/functions/) cover what 
 in SQL (`accept_family_invite`, `redeem_share_link` in `20260803100800_rpc.sql`) because
 supabase-js cannot open a transaction; those functions take a user id and so are executable by
 `service_role` only.
+
+`invite-preview` sits beside `accept-invite` and writes nothing: it answers the household's name
+and the inviter's, and only to the address the invite was sent to, so the app can ask "Willkommen
+bei …" instead of a bare "Einem Haushalt beitreten?". It is its own function rather than a flag on
+`accept-invite` because an older `accept-invite` would ignore the flag and join. Not deployed, it
+404s and the app falls back to the unnamed question.
 
 `remove-member`, `set-role`, revoking a link and kicking a guest need no function — plain RLS
 writes, protected by triggers.
@@ -612,7 +627,17 @@ Not yet done, and all of it is dashboard-only — the MCP has no tool for any of
   built-in mailer only delivers to project team addresses and is rate-limited to a couple per
   hour. Point Authentication → Emails → SMTP at Resend (`info@aporah.io`, the sender the old web
   app already used).
-- **Function secrets:** `RESEND_API_KEY`, `APORAH_MAIL_FROM`, `APORAH_WEB_URL`. Without them
+- **Sign-in is an emailed code, and there is no password.** `AuthNotifier.requestCode` calls
+  `signInWithOtp` (creating the user only when the form asked for a name, so a mistyped address
+  can't become a second household) and `verifyCode` calls `verifyOTP(type: email)`. A code, not a
+  magic link: a link opens in whatever browser the mail app picks. So the **Magic Link** and
+  **Confirm signup** templates must print `{{ .Token }}` — a new address gets the second, a known
+  one the first — and a template still showing only `{{ .ConfirmationURL }}` sends a link the app
+  has no screen for. Sign-up stores `lang` in the user metadata, which is the only way a template
+  learns the language. **App Review cannot read an inbox**, so it needs its own way in before
+  submission.
+- **Function secrets:** `RESEND_API_KEY`, `APORAH_MAIL_FROM`, `APORAH_WEB_URL` (set 2026-09-19;
+  `APORAH_WEB_URL` must be `https://aporah.io` — `aporah.app` does not exist). Without them
   `sendMail` reports `sent: false` rather than lying, and the invite UI falls back to
   "Link kopieren" — the raw token is returned once for exactly this reason.
 - Leaked-password protection, OTP expiry ≤ 1 h, minimum password length. The

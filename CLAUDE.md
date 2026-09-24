@@ -70,7 +70,7 @@ task:
   Mo/Do tracker reports five failures a week of a perfect record.
 - **Localization: German, English, Portuguese and Spanish, and every user-facing string goes
   through [lib/l10n/](lib/l10n/).** `AppStrings` declares them and `StringsDe`/`StringsEn`/
-  `StringsPt`/`StringsEs` answer them — 983 members each — and `L.s.someString` reads the live one.
+  `StringsPt`/`StringsEs` answer them — 1023 members each — and `L.s.someString` reads the live one.
   Because `AppStrings` is abstract, a string you add to one language and forget in another **fails
   to compile** — that is the point, so don't work around it with a map or a `??`. Portuguese is
   **Brazilian (pt-BR)** and Spanish is peninsular (es-ES), matched on bare language codes, so a
@@ -272,9 +272,25 @@ task:
   **A list's "Teilen" goes straight to the system share sheet** (`_shareListOut` in
   [lib/screens/list_screen.dart](lib/screens/list_screen.dart), `aporah/share`): it mints a
   seven-day invitation, revokes it again if the sheet was closed unsent, and the guests and open
-  invitations live in the list's edit sheet under "Geteilt mit". Boxes still use
-  [lib/widgets/share_sheet.dart](lib/widgets/share_sheet.dart); **a to-do or a tracker has no
-  Teilen at all** — `shareable_kind` still names `task` for the rows already out there, but no
+  invitations live in the list's edit sheet under "Geteilt mit". **The two axes are shown together in one place and changed in two, and on a
+  list they are now interlocked**: a list somebody outside is holding has **no "Für wen?" picker**
+  (`_LockedVisibilityNote`), and a `private` list has **no "Teilen" row**. Nothing in the database
+  changed — the guest branch of `can_read_list` still sits outside the household gate, so
+  private-plus-guest remains legal and an old row in that state still works — but it was only ever
+  reached by accident, by making a shared list private afterwards, and it took the list off every
+  phone in the family while leaving it on the outsider's. It read as a deletion. `AudienceStack` +
+  `showAudienceSheet` ([lib/widgets/audience_sheet.dart](lib/widgets/audience_sheet.dart)) are where
+  the answer is *read*: overlapping faces for the household and the guests together, tappable in a
+  list's header, and the sheet behind them is read-only because a third set of controls over one
+  pair of tables is how the two axes drift apart. The guests come down with the lists
+  (`ListRepository.fetchSharedOut`), not per row. Boxes still use
+  [lib/widgets/share_sheet.dart](lib/widgets/share_sheet.dart), **and have the same interlock with
+  one difference that matters**: a box keeps its guests *inside* the Teilen sheet, not on its edit
+  sheet, so a private box that is already shared keeps its Teilen row — hiding it there would leave
+  the owner unable to remove the guest *or* change the visibility, which is a dead end rather than
+  a guard rail. The note says where to go (`visibilityLockedHowToInShare`), and `showShareSheet`
+  takes an `onChanged` so the lock lifts on the tap that removes the last guest.
+  **A to-do or a tracker has no Teilen at all** — `shareable_kind` still names `task` for the rows already out there, but no
   screen offers it. Sharing has no plan limit. **A share always may edit and the
   sheet does not ask** — `can_edit` survives on the rows and in the policies, defaulted `true`,
   but read-only was a mode the database enforced and no screen ever drew, so the guest saw every

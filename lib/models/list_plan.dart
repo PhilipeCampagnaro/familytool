@@ -43,11 +43,21 @@ class ListPlan {
 
   final List<ListPlanItem> items;
 
+  /// The page this plan was read off, when it was imported rather than
+  /// generated — see [ShoppingList.sourceUrl], which is where it ends up.
+  ///
+  /// **Null on everything the model wrote.** A generated plan has no source: it
+  /// is not a copy of a page, which is the whole reason its [recipe] may be
+  /// stored at all. An imported one is the other way round — the link is kept
+  /// and the method is not.
+  final String? sourceUrl;
+
   const ListPlan({
     required this.title,
     required this.kind,
     required this.steps,
     this.recipe,
+    this.sourceUrl,
     required this.items,
   });
 
@@ -94,9 +104,16 @@ class ListPlanItem {
   /// out of it and an older row may still hold a word.
   final String? quantity;
 
-  /// A [GroceryUnit] key, or null for the default (Stück). The prompt gives the
-  /// model the ten keys and nothing else, so it cannot invent a value into a
-  /// column that holds ten; anything it could not express lands in [quantity].
+  /// A [GroceryUnit] key, or null for the default (Stück).
+  ///
+  /// The prompt gives the **model** the ten keys and nothing else, so it cannot
+  /// invent a value; anything it could not express lands in [quantity].
+  ///
+  /// **An imported plan may carry a word instead** — *Stangen*, *Becher*, *TL*
+  /// — because a recipe measures in things nobody shops in, and the column has
+  /// always taken one: `groceryUnitFromKey` returns null for it and
+  /// `groceryUnitLabel` prints it as itself. That is the right home for it and
+  /// [quantity] is not, which is drawn as a badge sized for a number.
   final String? unit;
 
   const ListPlanItem({required this.name, this.quantity, this.unit});

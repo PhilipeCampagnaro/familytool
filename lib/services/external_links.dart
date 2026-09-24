@@ -74,6 +74,112 @@ String? normalizeExternalUrl(String input) {
   return uri.toString();
 }
 
+/// Whether there is a link on the clipboard, **asked without reading it**.
+///
+/// iOS 16 and later shows a banner every time an app reads the pasteboard, and
+/// it is right to: the clipboard is whatever the user last copied anywhere on
+/// the phone. So the question "is there a link to offer?" cannot be answered by
+/// reading — a button that appeared only after interrogating the clipboard
+/// would cost a banner per visit to a screen nobody tapped anything on.
+///
+/// `UIPasteboard.hasURLs` answers from the OS's own index of the copy, with no
+/// banner and no content, which is exactly the amount the app is owed for
+/// deciding whether to draw a button. The read itself happens on the tap, where
+/// the banner is earned.
+///
+/// **Android has no equivalent and needs none**: `ClipboardManager` exposes the
+/// clip's MIME description without a toast, but Flutter has no binding for it,
+/// and Android shows no banner for a plain read anyway — so there the answer is
+/// simply whether the clipboard holds any text at all, and a tap on something
+/// that turns out not to be a link is refused with a word.
+Future<bool> clipboardHasUrl() async {
+  if (kIsWeb) return false;
+  if (defaultTargetPlatform == TargetPlatform.iOS) {
+    try {
+      return await _channel.invokeMethod<bool>('hasUrl') ?? false;
+    } on PlatformException {
+      return false;
+    } on MissingPluginException {
+      return false;
+    }
+  }
+  if (defaultTargetPlatform != TargetPlatform.android) return false;
+  try {
+    return await Clipboard.hasStrings();
+  } catch (_) {
+    return false;
+  }
+}
+
+/// Whether there is a link, and **which copy it is** — still without reading.
+///
+/// [generation] is iOS's `UIPasteboard.changeCount`: it goes up every time
+/// anything is copied, anywhere on the phone. It is what tells a second recipe
+/// from the first one still sitting there, and it is the difference between an
+/// offer that comes back when you copy something new and one that has to be
+/// rationed on a timer because it cannot tell.
+///
+/// **Android has no counterpart**, so it answers `generation: null` and the
+/// caller falls back to rationing by time. `ClipboardManager` does expose a
+/// primary-clip listener, but only to the app that currently has focus — which
+/// is never us at the moment the copy happens.
+typedef ClipboardState = ({bool hasUrl, int? generation});
+
+Future<ClipboardState> clipboardState() async {
+  if (kIsWeb) return (hasUrl: false, generation: null);
+  if (defaultTargetPlatform == TargetPlatform.iOS) {
+    try {
+      final raw = await _channel.invokeMapMethod<String, Object?>('pasteboardState');
+      if (raw != null) {
+        return (hasUrl: raw['hasUrl'] == true, generation: (raw['changeCount'] as num?)?.toInt());
+      }
+    } on PlatformException {
+      // Falls through to [clipboardHasUrl] below.
+    } on MissingPluginException {
+      // Ditto.
+    }
+    // **A native binary that predates this method must not disable the
+    // feature.** `pasteboardState` is newer than `hasUrl`, and a Dart hot
+    // restart reloads neither — so during development the running app answers
+    // "not implemented" here while the Dart side is already asking. Treating
+    // that as "no link on the clipboard" is indistinguishable, from the
+    // outside, from the whole thing being broken; it is how this went silent.
+    //
+    // So the older question is asked instead, and the offer degrades to being
+    // rationed by time rather than by copy.
+  }
+  return (hasUrl: await clipboardHasUrl(), generation: null);
+}
+
+/// The link on the clipboard, or null. **Reads it** — call it on a tap, never
+/// to decide whether to draw something; see [clipboardHasUrl].
+Future<String?> clipboardUrl() async {
+  // iOS first, through the channel: `UIPasteboard.url` catches the item a
+  // share sheet or a "Link kopieren" writes, which is typed `public.url` and
+  // which Flutter's plain-text request can come back empty for. Falls through
+  // to the framework on anything else, including an older native binary.
+  if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
+    try {
+      final native = await _channel.invokeMethod<String>('pasteboardUrl');
+      if (native != null && native.trim().isNotEmpty) {
+        return normalizeExternalUrl(native);
+      }
+    } on PlatformException {
+      // Fall through.
+    } on MissingPluginException {
+      // Fall through.
+    }
+  }
+  try {
+    final data = await Clipboard.getData(Clipboard.kTextPlain);
+    final text = data?.text;
+    if (text == null) return null;
+    return normalizeExternalUrl(text);
+  } catch (_) {
+    return null;
+  }
+}
+
 /// The short name a link is shown under — its host without `www.`, e.g.
 /// `amazon.de`. Never the whole URL: a product URL is sixty characters of
 /// tracking parameters and says less about where it leads than the domain does.

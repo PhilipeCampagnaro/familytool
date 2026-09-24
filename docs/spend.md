@@ -72,6 +72,44 @@ have one, so the gateway check would reject every legitimate post. The device to
 security boundary and it is checked inside the function. It is declared in `supabase/config.toml`
 so a routine `supabase functions deploy` cannot quietly re-secure it.
 
+### The token names a person, and one handset holds exactly one of them
+
+**`payer_id` is the account that pressed "Aktivieren", not the card and not the phone.**
+`spend-ingest` reads it straight off the device row, which is the only thing it has: a locked phone
+presents a token and nothing else. So every question about who spent what is decided at enrolment,
+weeks earlier, by whoever happened to be signed in.
+
+The two halves do not line up on their own, and that is the trap:
+
+- `spend-enroll` upserts on the pair **(`user_id`, `device_uid`)**, so one handset both parents sign
+  into has **two rows** — which is right, and is what makes "Ariane's phone" mean Ariane's payments.
+- The Keychain (and its Android twin) has **one slot per install**, not per signed-in user, and
+  nothing about it is scoped to a session. Whoever activated last owns it.
+
+Read together that means a phone can be holding a credential belonging to somebody other than the
+person looking at the page. Three rules keep that legible rather than silent:
+
+1. **Enrolment is matched per account.** `refreshDevices` looks for a row with *this* `device_uid`
+   **and** *this* `user_id`. Matching on the handset alone told the second parent their phone was
+   activated over the first parent's credential — and every tap went on being filed under the first
+   parent's name, which is how a household ends up with one person apparently doing all the
+   spending. The same pair decides which row the list marks "Dieses Gerät", or a revoke from one
+   account takes the other's enrolment away.
+2. **The owner is stored beside the token** (`ingest-owner`), because the background process that
+   reads it has no session to ask. Null means a token minted before this existed; the device list
+   answers instead, and a token whose owner cannot be established is **left alone** — clearing it
+   would stop the other parent's capture from a screen that never mentioned them.
+3. **Signing out clears the credential.** It is not in the session, and the App Intent never asks
+   whether anybody is signed in, so a phone left signed out would go on filing its owner's payments
+   into a household nobody on it belongs to. The server row stays, so signing back in and pressing
+   "Aktivieren" rotates the same enrolment instead of adding one beside it.
+
+**What none of this fixes is rows already written.** A payment filed under the wrong account stays
+that way: `payer_id` is free to name another member — `spends_update` allows it and the repository
+sends the column — but **no screen offers the choice**, on the manual form or the edit sheet, so
+today the only way to move one is SQL. Check whose account is signed in before handing somebody a
+phone to activate.
+
 ## The merchant rules live in SQL, and only in SQL
 
 `private.classify_merchant(text)` turns a merchant name into a `public.spend_category`, and the
@@ -499,7 +537,8 @@ drawer) is the whole fix, and it is load-bearing rather than tidiness.
 ### The status island says the one thing worth saying
 
 `SpendIsland` (`lib/screens/spend/spend_island.dart`) fills the collapsing block under the page
-title — the slot Home gives its day and Kalender its month name — with **one sentence and a second
+title — the slot Home gives its day, and that Kalender gave its month name until the grid took the
+points back — with **one sentence and a second
 line saying what it counts**. It is the same widget underneath: `StatusIsland` and `IslandLine` in
 `lib/widgets/status_island.dart`, lifted out of `DayIsland` the moment there were two of them.
 

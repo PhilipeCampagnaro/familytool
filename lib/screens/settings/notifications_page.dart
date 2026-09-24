@@ -104,33 +104,63 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> with Widg
             ),
         ]),
         const SizedBox(height: AppSpacing.blockGap),
+        // **One row per reminder, and a line under them that always adds
+        // another.** A bin day is the one thing in this app somebody wants to
+        // be told about more than once — an evening reminder answered with
+        // "later" is the bin still in the hall at six — so the card grew a list
+        // where it had a single day-and-hour pair. Each row carries its whole
+        // answer (the day as the title, the hour as the value) and opens one
+        // menu that can change either or take the line away, rather than
+        // spending two rows on one reminder.
         _group([
           SettingsRow(
             key: const ValueKey('abfall'),
-            icon: AppIcons.trash,
+            // **The recycling arrows, not the bin.** `AppIcons.trash` is this
+            // app's *delete* glyph — it is on every swipe action and every
+            // destructive menu row, including the one that takes a reminder
+            // away three rows down — so on a card that means "waste
+            // collection" it reads as an offer to throw the setting out.
+            // `AppIcons.recycle` is what Abfall wears everywhere else: the
+            // connection tile, the timeline, the onboarding recap.
+            icon: AppIcons.recycle,
             title: L.s.notifyAbfallTitle,
             subtitle: L.s.notifyAbfallSubtitle,
             trailing: NativeSwitch(value: s.abfall, onChanged: notifier.setAbfall),
           ),
           if (s.abfall) ...[
-            // The day before or the day itself, each with its own hour — a bin
-            // day's reminder row in Kalender offers the same two and writes here.
-            KeyedSubtree(
-              key: _abfallDayAnchor,
-              child: SettingsRow(
-                key: const ValueKey('abfall-day'),
-                icon: AppIcons.calendar,
-                title: L.s.notifyAbfallWhen,
-                value: s.abfallSameDay ? L.s.abfallSameDay : L.s.abfallDayBefore,
-                onTap: () => _pickAbfallDay(s.abfallSameDay, notifier),
+            for (final reminder in s.abfallTimes)
+              KeyedSubtree(
+                key: _anchorFor(reminder),
+                child: SettingsRow(
+                  // **A bell on every line, not a moon and a sun.** The day is
+                  // already the row's title, so the glyph had nothing left to
+                  // say — and a column of little moons reads as a theme or a
+                  // night mode rather than as a list of reminders. The two
+                  // days keep their moon and sunrise inside the menu, where
+                  // they are being chosen between.
+                  icon: AppIcons.bell,
+                  key: ValueKey('abfall-${reminder.sameDay}-${reminder.minutes}'),
+                  title: reminder.sameDay ? L.s.abfallSameDay : L.s.abfallDayBefore,
+                  value: _clock(reminder.minutes),
+                  onTap: () => _editAbfallReminder(reminder, notifier),
+                ),
               ),
-            ),
-            SettingsRow(
-              key: const ValueKey('abfall-time'),
-              icon: AppIcons.clock,
-              title: L.s.notifyTime,
-              value: _clock(s.abfallAt),
-              onTap: () => _pickTime(s.abfallAt, notifier.setAbfallMinutes),
+            // **Greyed at the limit rather than gone.** A row that disappears
+            // is a puzzle; one that says "at most four" is an answer — and the
+            // reason it is four is the 64 pending requests every category here
+            // shares. See `kAbfallReminderLimit`.
+            KeyedSubtree(
+              key: _abfallAddAnchor,
+              child: SettingsRow(
+                key: const ValueKey('abfall-add'),
+                icon: AppIcons.plus,
+                title: L.s.notifyAbfallAdd,
+                enabled: s.abfallTimes.length < kAbfallReminderLimit,
+                value: s.abfallTimes.length < kAbfallReminderLimit
+                    ? null
+                    : L.s.notifyAbfallMax(kAbfallReminderLimit),
+                onTap: () => _addAbfallReminder(s, notifier),
+              ),
             ),
           ],
         ]),
@@ -200,20 +230,81 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> with Widg
 
   String _clock(int minutes) => formatTimeOfDay(minutes ~/ 60, minutes % 60);
 
-  final _abfallDayAnchor = GlobalKey();
+  /// One anchor per reminder, kept on its day-and-hour pair — which is the
+  /// reminder's whole identity, so a row that changes becomes a different row
+  /// with a different anchor, exactly as it should.
+  final _abfallAnchors = <String, GlobalKey>{};
+  final _abfallAddAnchor = GlobalKey();
 
-  void _pickAbfallDay(bool sameDay, NotificationSettingsNotifier notifier) {
+  GlobalKey _anchorFor(AbfallReminder r) =>
+      _abfallAnchors.putIfAbsent('${r.sameDay}|${r.minutes}', GlobalKey.new);
+
+  /// Everything one line can answer, in the menu its own row opens: which day
+  /// it rings on, what hour, and whether it stays at all.
+  void _editAbfallReminder(AbfallReminder reminder, NotificationSettingsNotifier notifier) {
     showAnchoredMenu(
       context: context,
-      anchorKey: _abfallDayAnchor,
+      anchorKey: _anchorFor(reminder),
+      title: L.s.notifyAbfallWhen,
       items: [
-        for (final option in const [false, true])
+        for (final sameDay in const [false, true])
           AnchoredMenuItem(
-            label: option ? L.s.abfallSameDay : L.s.abfallDayBefore,
-            icon: sameDay == option ? AppIcons.check : AppIcons.calendar,
-            symbol: option ? 'sunrise' : 'moon',
-            selected: sameDay == option,
-            onSelected: () => notifier.setAbfallDay(sameDay: option),
+            label: sameDay ? L.s.abfallSameDay : L.s.abfallDayBefore,
+            icon: reminder.sameDay == sameDay ? AppIcons.check : (sameDay ? AppIcons.sun : AppIcons.moon),
+            symbol: sameDay ? 'sunrise' : 'moon',
+            selected: reminder.sameDay == sameDay,
+            onSelected: () => notifier.replaceAbfallReminder(
+              reminder,
+              AbfallReminder(sameDay: sameDay, minutes: reminder.minutes),
+            ),
+          ),
+        AnchoredMenuItem(
+          label: L.s.reminderAbfallCustom,
+          icon: AppIcons.clock,
+          symbol: 'clock',
+          onSelected: () => _pickTime(
+            reminder.minutes,
+            (minutes) => notifier.replaceAbfallReminder(
+              reminder,
+              AbfallReminder(sameDay: reminder.sameDay, minutes: minutes),
+            ),
+          ),
+        ),
+        // **Removing the last line switches the card off**, which is why this
+        // is offered even when it is the only one: "no bin reminder at all" is
+        // a thing to be able to say from here, and the switch above agrees with
+        // it afterwards.
+        AnchoredMenuItem(
+          label: L.s.remove,
+          icon: AppIcons.trash,
+          symbol: 'trash',
+          destructive: true,
+          onSelected: () => notifier.removeAbfallReminder(reminder),
+        ),
+      ],
+    );
+  }
+
+  /// The day first, then the hour. **Two steps rather than a guessed default**:
+  /// a time picker alone cannot say "the evening before", and a new line
+  /// dropped in at some hour the app chose is a line the household then has to
+  /// correct.
+  void _addAbfallReminder(NotificationSettings s, NotificationSettingsNotifier notifier) {
+    showAnchoredMenu(
+      context: context,
+      anchorKey: _abfallAddAnchor,
+      title: L.s.notifyAbfallWhen,
+      items: [
+        for (final sameDay in const [false, true])
+          AnchoredMenuItem(
+            label: sameDay ? L.s.abfallSameDay : L.s.abfallDayBefore,
+            icon: sameDay ? AppIcons.sun : AppIcons.moon,
+            symbol: sameDay ? 'sunrise' : 'moon',
+            onSelected: () => _pickTime(
+              s.abfallHourFor(sameDay: sameDay),
+              (minutes) =>
+                  notifier.addAbfallReminder(AbfallReminder(sameDay: sameDay, minutes: minutes)),
+            ),
           ),
       ],
     );

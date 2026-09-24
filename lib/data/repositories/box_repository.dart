@@ -3,7 +3,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../models/box_item.dart';
 import '../../models/visibility.dart';
 import '../../services/supabase.dart';
+import '../../models/who.dart';
 import 'list_repository.dart' show newUuidV4;
+import 'shared_out.dart';
 import '../../l10n/l10n.dart';
 
 /// One round trip's worth of Boxen: every box the signed-in user may see, and
@@ -17,7 +19,19 @@ class BoxSnapshot {
   /// matters for the same reason: a guest has no member picker to offer.
   final Set<String> guestBoxIds;
 
-  const BoxSnapshot({required this.boxes, required this.itemsByBox, required this.guestBoxIds});
+  /// Boxes somebody outside the household can reach or has been invited to, and
+  /// the outsiders themselves — the twins of `ListSnapshot`'s two fields, read
+  /// by the same [sharedOutFor].
+  final Set<String> sharedOutIds;
+  final Map<String, List<FamilyMember>> guestsByBox;
+
+  const BoxSnapshot({
+    required this.boxes,
+    required this.itemsByBox,
+    required this.guestBoxIds,
+    this.sharedOutIds = const {},
+    this.guestsByBox = const {},
+  });
 
   static const empty = BoxSnapshot(boxes: [], itemsByBox: {}, guestBoxIds: {});
 }
@@ -64,6 +78,9 @@ class BoxRepository {
 
     final ids = [for (final r in boxRows) r['id'] as String];
 
+    // Beside the three below rather than after them: it answers a badge, and
+    // nothing else waits on it.
+    final sharedOut = fetchSharedOut(ids);
     final results = await Future.wait([
       _db.from('box_shares').select('box_id, user_id').inFilter('box_id', ids),
       _db
@@ -97,8 +114,15 @@ class BoxRepository {
       ],
       itemsByBox: itemsByBox,
       guestBoxIds: {for (final r in grantRows) r['resource_id'] as String},
+      sharedOutIds: (await sharedOut).ids,
+      guestsByBox: (await sharedOut).guests,
     );
   }
+
+  /// Which of [boxIds] somebody outside the household holds, and who they are —
+  /// [sharedOutFor] for `'box'`. Listen calls the same function with `'list'`.
+  Future<SharedOut> fetchSharedOut(List<String> boxIds) =>
+      sharedOutFor(_db, kind: 'box', resourceIds: boxIds, uid: _uid);
 
   // -------------------------------------------------------------------------
   // Boxes

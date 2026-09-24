@@ -8,6 +8,7 @@ import '../data/repositories/list_repository.dart' show newUuidV4;
 import '../data/repositories/photo_repository.dart';
 import '../models/box_item.dart';
 import '../models/visibility.dart';
+import '../models/who.dart';
 import '../services/supabase.dart';
 import 'auth_state.dart';
 import 'family_state.dart';
@@ -33,6 +34,15 @@ class BoxScreenState {
 
   /// Boxes that reached this account through an external share link.
   final Set<String> guestBoxIds;
+
+  /// Boxes somebody outside the household can reach or has been invited to —
+  /// what puts the audience stack on the row and in the header, and what takes
+  /// the "Für wen?" picker away while it is true.
+  final Set<String> sharedOutIds;
+
+  /// The outsiders themselves, per box. Read with the boxes rather than per row
+  /// — see [BoxRepository.fetchSharedOut].
+  final Map<String, List<FamilyMember>> guestsByBox;
 
   /// `photo_path` → a signed URL for it, for every picture on screen.
   ///
@@ -63,6 +73,8 @@ class BoxScreenState {
     this.boxes = const [],
     this.itemsByBox = const {},
     this.guestBoxIds = const {},
+    this.sharedOutIds = const {},
+    this.guestsByBox = const {},
     this.photoUrls = const {},
     this.newVisibility = ItemVisibility.family,
     this.newSharedWith = const {},
@@ -78,6 +90,8 @@ class BoxScreenState {
     List<StorageBox>? boxes,
     Map<String, List<BoxItem>>? itemsByBox,
     Set<String>? guestBoxIds,
+    Set<String>? sharedOutIds,
+    Map<String, List<FamilyMember>>? guestsByBox,
     Map<String, String>? photoUrls,
     ItemVisibility? newVisibility,
     Set<String>? newSharedWith,
@@ -91,6 +105,8 @@ class BoxScreenState {
       boxes: boxes ?? this.boxes,
       itemsByBox: itemsByBox ?? this.itemsByBox,
       guestBoxIds: guestBoxIds ?? this.guestBoxIds,
+      sharedOutIds: sharedOutIds ?? this.sharedOutIds,
+      guestsByBox: guestsByBox ?? this.guestsByBox,
       photoUrls: photoUrls ?? this.photoUrls,
       newVisibility: newVisibility ?? this.newVisibility,
       newSharedWith: newSharedWith ?? this.newSharedWith,
@@ -164,6 +180,16 @@ class BoxNotifier extends StateNotifier<BoxScreenState> {
   // Lifecycle
   // ---------------------------------------------------------------------------
 
+  /// Re-reads which boxes are shared outside the household, after the share
+  /// sheet sent an invitation, dropped a guest or revoked a link. The twin of
+  /// `ListNotifier.refreshSharedOut`, and the reason the lock on "Für wen?"
+  /// lifts on the same tap that removes the last guest.
+  Future<void> refreshSharedOut() async {
+    final ids = [for (final b in state.boxes) b.id];
+    final shared = await _repo.fetchSharedOut(ids);
+    if (mounted) state = state.copyWith(sharedOutIds: shared.ids, guestsByBox: shared.guests);
+  }
+
   Future<void> load() async {
     if (_userId == null) {
       state = state.copyWith(loading: false);
@@ -180,6 +206,8 @@ class BoxNotifier extends StateNotifier<BoxScreenState> {
         boxes: snapshot.boxes,
         itemsByBox: snapshot.itemsByBox,
         guestBoxIds: snapshot.guestBoxIds,
+        sharedOutIds: snapshot.sharedOutIds,
+        guestsByBox: snapshot.guestsByBox,
         loading: false,
         openId: open ? state.openId : '',
         isDetail: open && state.isDetail,

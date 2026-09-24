@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- NOT WIRED IN YET. A free (personal) Apple team cannot sign the
+	     Associated Domains capability, so this file is not referenced by
+	     CODE_SIGN_ENTITLEMENTS in project.pbxproj. Once the paid Apple
+	     Developer Program is active, set CODE_SIGN_ENTITLEMENTS =
+	     Runner/Runner.entitlements for Debug, Release and Profile. Until then
+	     an invite link opens site/open.html, whose button hands over aporah://.
+
+	     Universal Links: an https://aporah.io/invite/… or /share/… link opens
+	     the app instead of Safari. iOS only believes this once the domain
+	     serves /.well-known/apple-app-site-association naming this app
+	     (MWJ54A4F3Z.com.aporah.aporah); the hosts must match
+	     incomingLinkHosts in lib/state/incoming_link_state.dart. -->
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:aporah.io</string>
+		<string>applinks:www.aporah.io</string>
+	</array>
+</dict>
+</plist>

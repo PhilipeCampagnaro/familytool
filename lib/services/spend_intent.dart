@@ -103,6 +103,25 @@ class SpendIntents {
     return await _invoke<bool>('hasToken') ?? false;
   }
 
+  /// **Which account minted the token this phone is holding.**
+  ///
+  /// There is one credential slot per *install*, not per signed-in user, and
+  /// `spend-ingest` stamps every payment with the account that enrolled — so on
+  /// a handset both parents sign into, [hasToken] answers "yes" to whichever of
+  /// them is looking while the payments go on carrying the other one's name.
+  /// This is the question that tells them apart.
+  ///
+  /// Null when there is no token, and also when the token predates this being
+  /// written down. The two are deliberately not distinguished: the caller has to
+  /// handle "unknown" either way, and it handles it by asking the device list
+  /// rather than guessing — guessing wrong here either hides a working setup or
+  /// deletes a credential that is doing its job.
+  Future<String?> tokenOwner() async {
+    if (!isSupported) return null;
+    final owner = await _invoke<String>('tokenOwner');
+    return (owner == null || owner.isEmpty) ? null : owner;
+  }
+
   /// Whether the user has granted this app notification access.
   ///
   /// Android only; false everywhere else, and the capture page only asks where
@@ -140,9 +159,21 @@ class SpendIntents {
   /// `--dart-define=SUPABASE_URL=…` files its spends there too. Two copies of
   /// that address would be one copy too many, and the wrong one would only show
   /// up as transactions silently landing in the wrong project.
-  Future<void> storeToken({required String token, required String endpoint, required String apiKey}) async {
+  Future<void> storeToken({
+    required String token,
+    required String endpoint,
+    required String apiKey,
+    required String owner,
+  }) async {
     if (!isSupported) return;
-    await _invoke<void>('storeToken', {'token': token, 'endpoint': endpoint, 'api_key': apiKey});
+    await _invoke<void>('storeToken', {
+      'token': token,
+      'endpoint': endpoint,
+      'api_key': apiKey,
+      // Stored beside the token rather than derived from it: the credential is
+      // read by a background process that has no session to ask.
+      'owner': owner,
+    });
   }
 
   Future<void> clearToken() async {

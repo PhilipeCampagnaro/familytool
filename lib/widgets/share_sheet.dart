@@ -23,25 +23,34 @@ import '../theme/app_icons.dart';
 /// `enforce_share_link_author` raises on a kid's insert. The gate here is
 /// courtesy — offering a button that is going to be refused is a worse way of
 /// saying no.
+/// [onChanged] fires whenever a link is minted, revoked or a guest removed —
+/// the caller's cached "is this shared outward" answer is stale from that moment
+/// on, and on a box it is what locks and unlocks the "Für wen?" picker.
 Future<void> showShareSheet(
   BuildContext context, {
   required ShareableKind kind,
   required String resourceId,
   required String resourceName,
+  VoidCallback? onChanged,
 }) {
   return showAppSheet<void>(
     context: context,
     header: SheetPickerHeader(title: L.s.shareTitle),
     heightFactor: 0.8,
-    child: _ShareSheetBody(target: (kind: kind, id: resourceId), resourceName: resourceName),
+    child: _ShareSheetBody(
+      target: (kind: kind, id: resourceId),
+      resourceName: resourceName,
+      onChanged: onChanged,
+    ),
   );
 }
 
 class _ShareSheetBody extends ConsumerStatefulWidget {
   final ShareTarget target;
   final String resourceName;
+  final VoidCallback? onChanged;
 
-  const _ShareSheetBody({required this.target, required this.resourceName});
+  const _ShareSheetBody({required this.target, required this.resourceName, this.onChanged});
 
   @override
   ConsumerState<_ShareSheetBody> createState() => _ShareSheetBodyState();
@@ -62,6 +71,7 @@ class _ShareSheetBodyState extends ConsumerState<_ShareSheetBody> {
     if (_busy) return;
     setState(() => _busy = true);
     await ref.read(sharingProvider(widget.target).notifier).createLink(email: _email.text);
+    widget.onChanged?.call();
     if (!mounted) return;
     _email.clear();
     setState(() => _busy = false);
@@ -138,7 +148,13 @@ class _ShareSheetBodyState extends ConsumerState<_ShareSheetBody> {
           SectionCard(
             children: dividedRows([
               for (final guest in state.guests)
-                GuestRow(guest: guest, onRemove: () => notifier.removeGuest(guest.userId)),
+                GuestRow(
+                  guest: guest,
+                  onRemove: () async {
+                    await notifier.removeGuest(guest.userId);
+                    widget.onChanged?.call();
+                  },
+                ),
             ]),
           ),
         ],
@@ -153,7 +169,13 @@ class _ShareSheetBodyState extends ConsumerState<_ShareSheetBody> {
           SectionCard(
             children: dividedRows([
               for (final link in state.links)
-                _LinkRow(link: link, onRevoke: () => notifier.revokeLink(link.id)),
+                _LinkRow(
+                  link: link,
+                  onRevoke: () async {
+                    await notifier.revokeLink(link.id);
+                    widget.onChanged?.call();
+                  },
+                ),
             ]),
           ),
         ],

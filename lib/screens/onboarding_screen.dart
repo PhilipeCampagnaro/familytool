@@ -22,6 +22,7 @@ import '../widgets/bin_file_actions.dart';
 import '../widgets/house_number_field.dart';
 import '../widgets/settings_chrome.dart';
 import '../widgets/step_dots.dart';
+import '../widgets/step_page.dart';
 import '../widgets/toast_chip.dart';
 import 'calendar_connect_screen.dart';
 import '../l10n/l10n.dart';
@@ -115,98 +116,10 @@ Future<void> _leaveTour(BuildContext context, WidgetRef ref, bool replay, {Widge
   }
 }
 
-/// The wizard's nav bar: the way back, how far in you are, the way out. All
-/// three are the app's glass — a bare `IconButton` and a `TextButton` read as
-/// two grey words floating over the illustration rather than as controls.
-///
-/// A `Stack`, **not** a `Row` — the same rule the sheet header and
-/// `CollapsingScreenTitle` follow (see docs/design-system.md): the glass
-/// buttons are native platform views on iOS, and Flutter content laid out
-/// *between* two of them in a row lands in a composited overlay that never
-/// shows on device. The dots are therefore a full-width layer painted first,
-/// with the two controls aligned over it — which also makes "centred" mean the
-/// screen's centre rather than the centre of whatever space they left over.
-class _TopBar extends StatelessWidget {
-  final int step;
-  final VoidCallback? onBack;
-  final VoidCallback? onSkip;
-
-  const _TopBar({required this.step, this.onBack, this.onSkip});
-
-  /// The bar's own height — 6 above a 44pt row, 2 below — and the one number
-  /// [_StepChrome] and every step's scroll padding have to agree on, since the
-  /// body rests below the bar and scrolls *under* it. A constant rather than a
-  /// measurement because it genuinely is one: the row is a fixed [SizedBox],
-  /// and the dots and the pill are laid out inside it rather than setting it.
-  static const height = 6 + 44 + 2.0;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.screenPad, 6, AppSpacing.screenPad, 2),
-      child: SizedBox(
-        height: 44,
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: Center(
-                child: StepDots(count: _stepCount, index: step),
-              ),
-            ),
-            if (onBack case final back?)
-              Positioned(
-                left: 0,
-                top: 0,
-                bottom: 0,
-                child: Center(
-                  child: GlassIconButton(icon: AppIcons.caretLeft, onTap: back),
-                ),
-              ),
-            if (onSkip case final skip?)
-              Positioned(
-                right: 0,
-                top: 0,
-                bottom: 0,
-                child: Center(
-                  child: GlassPillButton(label: L.s.skip, onTap: skip),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// The room a step's scroll body leaves at the top: the status-bar strip the
-/// wizard no longer hands to a `SafeArea`, plus the nav row standing on it.
-///
-/// Read at the call site rather than threaded through [_StepChrome] — every
-/// `bodyBuilder` already has a `BuildContext`, and one number computed the same
-/// way in both halves is what keeps the bar and the content it rests below in
-/// step.
-double _stepTopInset(BuildContext context) => MediaQuery.paddingOf(context).top + _TopBar.height;
-
-/// The chrome every asking step wears: its scrolling body under the nav row,
-/// on the same frosted material as every other screen in the app.
-///
-/// **The body runs to the top of the safe area, not to the bottom of the bar.**
-/// Each step used to be a `Column` of [_TopBar] over its content, which meant
-/// the scroll viewport began below the bar — so the illustration was sliced by
-/// a hard white edge the moment anything scrolled, and the hero read as
-/// cropped. Here the body fills the whole area and passes *under* the bar
-/// blurred, which is both what the rest of the app does and what the dots and
-/// "Überspringen" need in order to stay legible over a picture.
-///
-/// The band is exactly [_stepTopInset] tall — the notch strip plus the row —
-/// because the blur ramps to nothing at its bottom edge (see
-/// [FrostedHeaderBackground]): a taller one would put that vanishing point in
-/// the middle of the content rather than on the bar's own edge, and a shorter
-/// one would leave the status bar as the hard edge instead.
-///
-/// **Not `const`, like the material it stands on**: it reads [AppColors] inside
-/// `build`, and a canonicalised instance would keep the palette it was born in.
-/// See the rule on [AppColors] and `tool/check_const_palette.dart`.
+/// The wizard's nav row, filled in: [StepPage] with the dots in the middle and
+/// "Überspringen" on the right. A wrapper rather than the call sites naming
+/// both, because "which step of three" is the tour's own vocabulary and no
+/// other stepped flow in the app has it.
 class _StepChrome extends StatelessWidget {
   final int step;
   final VoidCallback? onBack;
@@ -222,100 +135,12 @@ class _StepChrome extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final statusBar = MediaQuery.paddingOf(context).top;
-    return Stack(
-      // Expand rather than the loose default, for the same reason
-      // [PinnedActionLayout] does it: the body is a scroll view, and a loose
-      // stack would shrink-wrap it and leave the bar sitting on the content.
-      fit: StackFit.expand,
-      children: [
-        body,
-        // The band covers the status bar as well as the row, which is the whole
-        // point: the blur has to reach the top of the display or the notch
-        // strip becomes the hard white edge the frost was there to remove.
-        Positioned(
-          top: 0,
-          left: 0,
-          right: 0,
-          height: _stepTopInset(context),
-          child: FrostedHeaderBackground(),
-        ),
-        // Last, so the glass pill and the caret are composited above the
-        // material they refract rather than behind it.
-        Positioned(
-          top: statusBar,
-          left: 0,
-          right: 0,
-          child: _TopBar(step: step, onBack: onBack, onSkip: onSkip),
-        ),
-      ],
-    );
-  }
-}
-
-/// The step's illustration.
-///
-/// **Fitted, not cropped.** The three PNGs are near-square (1.1–1.35:1) and
-/// this used to be a fixed 200pt band at full width — an aspect of ~1.7 — so
-/// `BoxFit.cover` cut a third off the top and bottom of every one of them.
-/// `contain` shows the whole picture, and the cap is a share of the viewport
-/// rather than a constant so the illustration gives way on a small phone
-/// instead of pushing the button below the fold.
-///
-/// No rounded clip: they are cut-outs on transparency, not photos in a card, so
-/// there are no corners to round and nothing to letterbox against — the empty
-/// space beside a portrait one is simply the page.
-class _Hero extends StatelessWidget {
-  final String asset;
-
-  const _Hero(this.asset);
-
-  @override
-  Widget build(BuildContext context) {
-    final maxHeight = (MediaQuery.sizeOf(context).height * 0.32).clamp(150.0, 280.0);
-    return ConstrainedBox(
-      constraints: BoxConstraints(maxHeight: maxHeight),
-      child: Image.asset(asset, fit: BoxFit.contain),
-    );
-  }
-}
-
-/// The pill each step ends with: the app's accent glass, the same material as
-/// every other primary action. It was a flat `Container` in the accent colour
-/// (the old `PrimaryButton`), which was the one filled rectangle left in an app
-/// whose every other button refracts what's behind it.
-class _StepButton extends StatelessWidget {
-  final String label;
-  final VoidCallback onTap;
-
-  /// False parks the step: the invite step holds it while an address sits
-  /// unsent in the field. Drawn as a flat muted pill rather than the glass one
-  /// faded out — on iOS the accent pill is a native platform view, and Flutter
-  /// can't reliably fade or transform one of those (see docs/design-system.md),
-  /// so "off" has to be a different widget rather than the same one at 40%.
-  final bool enabled;
-
-  const _StepButton({required this.label, required this.onTap, this.enabled = true});
-
-  @override
-  Widget build(BuildContext context) {
-    if (!enabled) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: AppColors.surfaceAlt,
-          borderRadius: BorderRadius.circular(AppRadii.bar),
-        ),
-        child: Text(label, style: AppText.buttonLarge.copyWith(color: AppColors.mutedLight)),
-      );
-    }
-    return GlassAccentButton(
-      label: label,
-      onTap: onTap,
-      expand: true,
-      fontSize: 16,
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+    return StepPage(
+      body: body,
+      onBack: onBack,
+      backLabel: L.s.back,
+      center: StepDots(count: _stepCount, index: step),
+      trailing: onSkip == null ? null : GlassPillButton(label: L.s.skip, onTap: onSkip!),
     );
   }
 }
@@ -473,19 +298,19 @@ class _WelcomeStepState extends ConsumerState<_WelcomeStep> {
         // Nothing the user still needs goes away with it: Return submits the
         // field (`onSubmitted` below), a drag on the body drops the focus and
         // brings the button back, and so does a tap on anything else.
-        action: _typing ? null : _StepButton(label: L.s.letsGo, onTap: _next, enabled: _hasName && !_saving),
+        action: _typing ? null : StepButton(label: L.s.letsGo, onTap: _next, enabled: _hasName && !_saving),
         bodyBuilder: (context, bottomInset) => SingleChildScrollView(
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: EdgeInsets.fromLTRB(
             AppSpacing.screenPad,
-            _stepTopInset(context) + 12,
+            stepTopInset(context) + 12,
             AppSpacing.screenPad,
             bottomInset,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const _Hero('assets/onboarding/hero_welcome.png'),
+              const StepHero('assets/onboarding/hero_welcome.png'),
               const SizedBox(height: 28),
               Text(L.s.onboardSetUpFamily, style: AppText.screenTitle),
               const SizedBox(height: 10),
@@ -777,7 +602,7 @@ class _FamilyStepState extends ConsumerState<_FamilyStep> {
         // the user still needs goes away with it.
         action: _typing
             ? null
-            : _StepButton(label: L.s.next, onTap: _goNext, enabled: !_hasUnsentEmail && !_sending),
+            : StepButton(label: L.s.next, onTap: _goNext, enabled: !_hasUnsentEmail && !_sending),
         bodyBuilder: (context, bottomInset) => SingleChildScrollView(
           // The second way back out of the keyboard, for the address that
           // won't send and the field that was tapped by mistake: a drag on
@@ -785,14 +610,14 @@ class _FamilyStepState extends ConsumerState<_FamilyStep> {
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: EdgeInsets.fromLTRB(
             AppSpacing.screenPad,
-            _stepTopInset(context) + 4,
+            stepTopInset(context) + 4,
             AppSpacing.screenPad,
             bottomInset,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const _Hero('assets/onboarding/hero_members.png'),
+              const StepHero('assets/onboarding/hero_members.png'),
               const SizedBox(height: 24),
               Text(L.s.onboardInviteTitle, style: AppText.screenTitle),
               const SizedBox(height: 8),
@@ -1103,14 +928,14 @@ class _AddressStepState extends ConsumerState<_AddressStep> {
         // on what is being typed gives it back.
         action: state.connecting
             ? _InlineBusy()
-            : (_typing ? null : _StepButton(label: L.s.next, onTap: _continue)),
+            : (_typing ? null : StepButton(label: L.s.next, onTap: _continue)),
         bodyBuilder: (context, bottomInset) => SingleChildScrollView(
           // A drag on the body drops the focus, which brings "Weiter" back
           // for the address that was typed and never picked.
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: EdgeInsets.fromLTRB(
             AppSpacing.screenPad,
-            _stepTopInset(context) + 4,
+            stepTopInset(context) + 4,
             AppSpacing.screenPad,
             bottomInset,
           ),
@@ -1140,7 +965,7 @@ class _AddressStepState extends ConsumerState<_AddressStep> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const _Hero('assets/onboarding/hero_address.png'),
+                    const StepHero('assets/onboarding/hero_address.png'),
                     const SizedBox(height: 24),
                     Text(L.s.onboardAddressTitle, style: AppText.screenTitle),
                     const SizedBox(height: 8),
@@ -1678,7 +1503,7 @@ class _DoneStep extends ConsumerWidget {
       // asked for [ConfirmationAction.none] rather than an accent pill. The
       // recap cards are the content here; the way out of the tour is not part
       // of them.
-      action: _StepButton(label: L.s.letsGo, onTap: () => _leaveTour(context, ref, replay)),
+      action: StepButton(label: L.s.letsGo, onTap: () => _leaveTour(context, ref, replay)),
       bodyBuilder: (context, bottomInset) => LayoutBuilder(
         builder: (context, constraints) => SingleChildScrollView(
           padding: EdgeInsets.fromLTRB(AppSpacing.screenPad, topPad, AppSpacing.screenPad, bottomInset),

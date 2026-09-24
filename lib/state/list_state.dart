@@ -11,6 +11,7 @@ import '../data/repositories/list_repository.dart';
 import '../data/repositories/photo_repository.dart';
 import '../models/attachment.dart';
 import '../models/picked_file.dart';
+import '../models/who.dart';
 import '../models/event_link.dart';
 import '../models/shopping_list.dart';
 import '../services/supabase.dart';
@@ -58,8 +59,13 @@ class ListScreenState {
   final Set<String> guestListIds;
 
   /// Lists somebody outside the household can reach or has been invited to —
-  /// the small people icon on the row and in the header.
+  /// what puts the audience stack on the row and in the header.
   final Set<String> sharedOutIds;
+
+  /// The outsiders themselves, per list. Read with the lists rather than per
+  /// row, so the stack on the shelf can draw a guest's face without a round
+  /// trip of its own — see [ListRepository.fetchSharedOut].
+  final Map<String, List<FamilyMember>> guestsByList;
 
   /// Item id → what the row menu's Foto/Kamera/Dateien have attached to it.
   ///
@@ -116,6 +122,7 @@ class ListScreenState {
     this.itemsByList = const {},
     this.guestListIds = const {},
     this.sharedOutIds = const {},
+    this.guestsByList = const {},
     this.attachments = const {},
     this.newVisibility = ListVisibility.family,
     this.newSharedWith = const {},
@@ -176,6 +183,7 @@ class ListScreenState {
     Map<String, List<ShoppingListItem>>? itemsByList,
     Set<String>? guestListIds,
     Set<String>? sharedOutIds,
+    Map<String, List<FamilyMember>>? guestsByList,
     Map<String, List<ItemAttachment>>? attachments,
     ListVisibility? newVisibility,
     Set<String>? newSharedWith,
@@ -194,6 +202,7 @@ class ListScreenState {
       itemsByList: itemsByList ?? this.itemsByList,
       guestListIds: guestListIds ?? this.guestListIds,
       sharedOutIds: sharedOutIds ?? this.sharedOutIds,
+      guestsByList: guestsByList ?? this.guestsByList,
       attachments: attachments ?? this.attachments,
       newVisibility: newVisibility ?? this.newVisibility,
       newSharedWith: newSharedWith ?? this.newSharedWith,
@@ -406,8 +415,8 @@ class ListNotifier extends StateNotifier<ListScreenState> {
   /// sheet sent an invitation or the edit sheet removed a guest.
   Future<void> refreshSharedOut() async {
     final ids = [for (final l in state.lists) l.id];
-    final shared = await _repo.fetchSharedOutIds(ids);
-    if (mounted) state = state.copyWith(sharedOutIds: shared);
+    final shared = await _repo.fetchSharedOut(ids);
+    if (mounted) state = state.copyWith(sharedOutIds: shared.ids, guestsByList: shared.guests);
   }
 
   Future<void> load() async {
@@ -424,6 +433,7 @@ class ListNotifier extends StateNotifier<ListScreenState> {
         itemsByList: snapshot.itemsByList,
         guestListIds: snapshot.guestListIds,
         sharedOutIds: snapshot.sharedOutIds,
+        guestsByList: snapshot.guestsByList,
         loading: false,
         // A list can vanish between two launches (deleted on another device,
         // or a share revoked) while its detail view is the one being restored.
@@ -560,6 +570,7 @@ class ListNotifier extends StateNotifier<ListScreenState> {
     bool openIt = false,
     List<String> steps = const [],
     String? recipe,
+    String? sourceUrl,
   }) async {
     final trimmed = name.trim();
     if (trimmed.isEmpty) return false;
@@ -595,6 +606,7 @@ class ListNotifier extends StateNotifier<ListScreenState> {
       eventLink: eventLink,
       steps: steps,
       recipe: recipe,
+      sourceUrl: sourceUrl,
     );
     state = state.copyWith(
       lists: [...state.lists, optimistic],
@@ -623,6 +635,7 @@ class ListNotifier extends StateNotifier<ListScreenState> {
         // not told about is dropped from the insert and from state alike.
         steps: steps,
         recipe: recipe,
+        sourceUrl: sourceUrl,
       );
       if (!mounted) return false;
       // Appended rather than replaced when it is gone: a [load] that finished
@@ -677,9 +690,18 @@ class ListNotifier extends StateNotifier<ListScreenState> {
     bool openIt = false,
     List<String> steps = const [],
     String? recipe,
+    String? sourceUrl,
   }) async {
     final id = newUuidV4();
-    if (!await createList(name: name, kind: kind, withId: id, openIt: openIt, steps: steps, recipe: recipe)) {
+    if (!await createList(
+      name: name,
+      kind: kind,
+      withId: id,
+      openIt: openIt,
+      steps: steps,
+      recipe: recipe,
+      sourceUrl: sourceUrl,
+    )) {
       return false;
     }
     await _fillList(id, items);

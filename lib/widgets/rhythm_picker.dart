@@ -32,7 +32,13 @@ class RhythmPicker extends StatelessWidget {
             // The bin itself, in its colour, so "Restabfall" and "Papierabfall"
             // are told apart at a glance — the way the cities' own forms do it.
             leading: GlyphTile(
-              icon: binIconFor(choice.bin) ?? AppIcons.trash,
+              // The fallback is the feature's own mark rather than the
+              // delete glyph: a fraction we don't recognise is still waste
+              // collection. It cannot be `AppIcons.trash` for the same reason
+              // it isn't one anywhere else Abfall is named — and it is told
+              // apart from the packaging bin by its muted tone, since
+              // `binColorFor` answered null too.
+              icon: binIconFor(choice.bin) ?? AppIcons.recycle,
               tone: binColorFor(choice.bin) ?? AppColors.muted,
               size: 28,
             ),

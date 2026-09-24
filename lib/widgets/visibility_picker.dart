@@ -50,6 +50,16 @@ class VisibilityPicker extends StatelessWidget {
 
   final double avatarSize;
 
+  /// One more line under the hint while **Nur ich** is the answer, saying that
+  /// this is also the choice that takes external sharing away.
+  ///
+  /// The two controls are in different places — the picker is in the edit
+  /// sheet, "Teilen" is in the header menu — so a private container simply has
+  /// no Teilen row and nothing near it explains the absence. This is the near
+  /// end of that: the tap that makes a list private is the one moment the
+  /// consequence can be stated where somebody is looking.
+  final String? privateNote;
+
   const VisibilityPicker({
     super.key,
     required this.visibility,
@@ -60,6 +70,7 @@ class VisibilityPicker extends StatelessWidget {
     this.currentUserId,
     this.allowMembers = true,
     this.avatarSize = 48,
+    this.privateNote,
   });
 
   @override
@@ -127,6 +138,21 @@ class VisibilityPicker extends StatelessWidget {
           padding: const EdgeInsets.only(top: 4, left: 4, right: 4),
           child: Text(_hint(others), style: AppText.label.copyWith(fontSize: 12)),
         ),
+        if (privateNote case final note? when visibility == ItemVisibility.private)
+          Padding(
+            padding: const EdgeInsets.only(top: 6, left: 4, right: 4),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 1.5),
+                  child: AppIcon(AppIcons.lock, size: 13, color: AppColors.muted),
+                ),
+                const SizedBox(width: 7),
+                Expanded(child: Text(note, style: AppText.label.copyWith(fontSize: 12))),
+              ],
+            ),
+          ),
       ],
     );
   }

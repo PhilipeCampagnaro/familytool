@@ -17,7 +17,8 @@ become true.
   *and* Kotlin, the `aporah/spend` precedent: `LocalNotifications.swift`, `AppReview.swift`,
   `LocalNotifications.kt`, `NoticeReceiver.kt`, `AppReviewChannel.kt`, plus
   `com.google.android.play:review` as a Gradle dependency, which does not reach iOS.
-- **Abfall is 19:00 the evening before, and says so as a question** — *"Bioabfall schon
+- **Abfall is 19:00 the evening before by default, may be several hours, and says so as a
+  question** — *"Bioabfall schon
   rausgestellt?"* — because pickup is around 06:00 and only the night before can still get a bin to
   the kerb. The bin is named with the vendor's own word, the one printed on the calendar.
 - **No quiet hours.** Every notice that exists has a time the user chose (a reminder, the brief,
@@ -155,9 +156,41 @@ occurrences and no more.
 ### Kalender — Abfall
 
 Opt-in per household, **evening before, default 19:00**: "Morgen: Biotonne, Papiertonne." A bin
-put out at 07:00 was put out the night before. This is local, it is one notification, it is the
-reason half of a German family app's users would keep notifications on at all, and `feedKind ==
-'abfall'` plus `binColorFor` already give it everything it needs.
+put out at 07:00 was put out the night before. This is local, it is the reason half of a German
+family app's users would keep notifications on at all, and `feedKind == 'abfall'` plus
+`binColorFor` already give it everything it needs.
+
+**It is the one category a household may have several of, and that is a considered exception to
+the rest of this file.** Everywhere else, more notices about one thing is the failure mode; here it
+is the ask. An evening reminder is answered with "gleich" and the bin is still in the hall at six,
+so `NotificationSettings.abfallTimes` holds a *list* of `AbfallReminder`s — each one a day relative
+to the pickup (the evening before, or the morning of) and an hour on it — and every pickup rings
+once per line. Settings → Mitteilungen draws one row per reminder, day as the title and hour as the
+value, with a line under them that always adds another; the row's own menu changes either half or
+takes the line away, and **removing the last one switches the card off**, so a switch that is on
+always has an hour under it.
+
+Three things about it are load-bearing:
+
+- **`kAbfallReminderLimit` is four, and it is the 64 in disguise.** This is the only category that
+  *multiplies* — four bins a week, times the reminders, inside a fortnight's horizon — so it is the
+  only one that could spend the whole `kNoticeBudget` on the rubbish and leave the dentist to be
+  the request iOS silently drops. Four covers "the evening before, at bedtime, at dawn, before the
+  lorry" and still leaves room. The scheduler does not re-decide it; the cap lives in
+  `normalizeAbfallReminders`, which is also the only thing that writes the list.
+- **The pair `(sameDay, minutes)` is the reminder's whole identity.** There are no ids, because two
+  reminders that ring at the same minute on the same day *are* one reminder — adding a duplicate is
+  a no-op rather than a second notice, and the notice id carries the hour (`abfall:<day>:<d>:<mins>`)
+  so a second line rings beside the first rather than replacing it.
+- **The old single setting migrates rather than resetting.** `notify_abfall_same_day` /
+  `notify_abfall_minutes` / `notify_abfall_morning_minutes` are read once by `_loadAbfallTimes` and
+  become the first line, with the old day flag choosing which of the two stored hours survives. A
+  household that had already moved the notice to 06:00 on the pickup day must not be handed back
+  19:00 the evening before because the shape of the setting changed underneath them.
+
+The bin day's own reminder row in Kalender still offers **two presets and a way out**: each preset
+writes exactly one reminder, so neither is ticked once the household has two, and the row then
+reads "3 Erinnerungen" with "Andere Uhrzeit…" leading to the page that lists them.
 
 ### Home — the morning brief (build this first; it is the highest-value notification in the app)
 
@@ -431,7 +464,7 @@ through Google**, and keeping it out matches the app's stance on the Maps key an
       feed. `CalendarEvent.providerReminderMinutes` replaced the dead string and the row reads it.
       **Written, not type-checked, not deployed** — `supabase functions deploy calendar-events`.
 - [x] **N2 — Settings: Mitteilungen.** Grant state with the action that fits it, four switches,
-      two times, four languages. Quiet hours dropped — see above. **A card binds a switch to the
+      the brief's hour, the bins' list of them, four languages. Quiet hours dropped — see above. **A card binds a switch to the
       hour it fires at, so the two switches with no hour — to-dos, which bring their own, and
       Ausgaben's goals, which have none — share the last card.** The goals switch is Plus + admin
       only and is the only row on the page that is not always there; it costs nothing when it is

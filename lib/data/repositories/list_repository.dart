@@ -5,7 +5,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../models/attachment.dart';
 import '../../models/event_link.dart';
 import '../../models/shopping_list.dart';
+import '../../models/who.dart';
 import '../../services/supabase.dart';
+import 'shared_out.dart';
 import '../../l10n/l10n.dart';
 
 final _random = Random.secure();
@@ -43,18 +45,27 @@ class ListSnapshot {
   final Set<String> guestListIds;
 
   /// Lists somebody outside the household can reach — see
-  /// [ListRepository.fetchSharedOutIds].
+  /// [ListRepository.fetchSharedOut].
   final Set<String> sharedOutIds;
+
+  /// The outsiders themselves, per list, as the faces the audience stack draws
+  /// — see [ListRepository.fetchSharedOut]. A list in [sharedOutIds] can be
+  /// absent here: an invitation that is still out is somebody who has not
+  /// arrived yet and so has no face.
+  final Map<String, List<FamilyMember>> guestsByList;
 
   const ListSnapshot({
     required this.lists,
     required this.itemsByList,
     required this.guestListIds,
     this.sharedOutIds = const {},
+    this.guestsByList = const {},
   });
 
   static const empty = ListSnapshot(lists: [], itemsByList: {}, guestListIds: {});
 }
+
+
 
 /// The only file in the app that knows Listen is stored in PostgREST.
 ///
@@ -75,7 +86,7 @@ class ListRepository {
 
   static const _listColumns =
       'id, family_id, name, icon_asset, kind, owner_id, visibility, position, '
-      'event_calendar_id, event_uid, event_starts_at, steps, recipe, created_at, updated_at';
+      'event_calendar_id, event_uid, event_starts_at, steps, recipe, source_url, created_at, updated_at';
   static const _itemColumns =
       'id, list_id, text, sub, unit, icon_asset, link_url, assignee_id, done, done_by, done_at, position, created_by, created_at, updated_at';
   static const _attachmentColumns = 'id, item_id, storage_path, name, is_image, created_at';
@@ -110,7 +121,7 @@ class ListRepository {
 
     // Beside the three below rather than after them: it answers a badge, and
     // nothing else waits on it.
-    final sharedOut = fetchSharedOutIds(ids);
+    final sharedOut = fetchSharedOut(ids);
     final results = await Future.wait([
       // `list_shares` is readable exactly for the lists that are readable, so
       // this needs no predicate of its own beyond narrowing to what we just
@@ -152,43 +163,16 @@ class ListRepository {
       ],
       itemsByList: itemsByList,
       guestListIds: {for (final r in grantRows) r['resource_id'] as String},
-      sharedOutIds: await sharedOut,
+      sharedOutIds: (await sharedOut).ids,
+      guestsByList: (await sharedOut).guests,
     );
   }
 
   /// Which of [listIds] somebody outside the household can reach, or has been
-  /// invited to: a guest on it other than me, or a link still open.
-  ///
-  /// Never throws — it only decides whether a small icon is drawn, and a list
-  /// without it is still a list. `share_links_select` shows a member only their
-  /// own links (an admin sees all), so a member does not see the icon for an
-  /// invitation another member sent until somebody has come in through it.
-  Future<Set<String>> fetchSharedOutIds(List<String> listIds) async {
-    if (listIds.isEmpty) return const {};
-    try {
-      final results = await Future.wait([
-        _db
-            .from('guest_access')
-            .select('resource_id')
-            .eq('resource_kind', 'list')
-            .inFilter('resource_id', listIds)
-            .neq('user_id', _uid),
-        _db
-            .from('share_links')
-            .select('resource_id')
-            .eq('resource_kind', 'list')
-            .inFilter('resource_id', listIds)
-            .isFilter('revoked_at', null)
-            .or('expires_at.is.null,expires_at.gt.${DateTime.now().toUtc().toIso8601String()}'),
-      ]);
-      return {
-        for (final rows in results)
-          for (final r in rows) r['resource_id'] as String,
-      };
-    } catch (_) {
-      return const {};
-    }
-  }
+  /// invited to, and who those outsiders are — [fetchSharedOut] for `'list'`.
+  /// Boxen calls the same function with `'box'`.
+  Future<SharedOut> fetchSharedOut(List<String> listIds) =>
+      sharedOutFor(_db, kind: 'list', resourceIds: listIds, uid: _uid);
 
   /// The files hanging off a screenful of articles, one statement for all of
   /// them.
@@ -290,6 +274,7 @@ class ListRepository {
     EventLink? eventLink,
     List<String> steps = const [],
     String? recipe,
+    String? sourceUrl,
   }) async {
     final listId = id ?? newUuidV4();
     final ownerId = _uid;
@@ -309,6 +294,7 @@ class ListRepository {
       // Same: written once, with the row, and never by `updateList`.
       steps: steps,
       recipe: recipe,
+      sourceUrl: sourceUrl,
     );
 
     await _db.from('lists').insert({...draft.toMap(forInsert: true), 'id': listId});

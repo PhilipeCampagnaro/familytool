@@ -14,6 +14,7 @@ import '../models/attachment.dart';
 import '../models/event_link.dart';
 import '../models/grocery_unit.dart';
 import '../models/shopping_list.dart';
+import '../models/who.dart';
 import '../services/external_links.dart';
 import '../services/media_picker.dart';
 import '../services/share_out.dart';
@@ -24,6 +25,7 @@ import '../state/nav_state.dart';
 import '../state/sharing_state.dart';
 import '../theme/tokens.dart';
 import 'calendar_screen.dart';
+import 'list/recipe_link_watcher.dart';
 import 'list/list_island.dart';
 import 'list/planner_card.dart';
 import '../widgets/paywall_sheet.dart';
@@ -45,6 +47,7 @@ import '../widgets/markdown_text.dart';
 import '../widgets/overview_screen.dart';
 import '../widgets/search.dart';
 import '../widgets/segmented_control.dart';
+import '../widgets/audience_sheet.dart';
 import '../widgets/share_sheet.dart';
 import '../widgets/swipe_actions.dart';
 import '../widgets/toast_chip.dart';
@@ -207,7 +210,7 @@ class _ListOverview extends ConsumerWidget {
       // `tool/check_const_palette.dart`.
       headerExtra: SizedBox(
         height: ListIsland.rowHeight,
-        child: Row(children: [Expanded(child: ListIsland())]),
+        child: Row(children: [Expanded(child: ListIsland()), RecipeLinkWatcher()]),
       ),
       extraHeight: _extraHeight,
       body: (context) => [
@@ -501,6 +504,20 @@ class _ListSheetBodyState extends ConsumerState<_ListSheetBody> {
     final untouched = name.trim() == (widget.list?.name ?? '');
     final stored = untouched ? widget.list?.iconKey : null;
     final iconKey = widget.draft.picked ?? stored ?? suggestion?.key;
+    // Somebody outside the household holds this list, or has been invited to.
+    // A new list cannot be in that state, and a guest is looking at somebody
+    // else's — neither has an outward share of their own to reason about.
+    //
+    // Deliberately **not** gated on [canShareExternallyProvider]: a kid cannot
+    // mint a link, but an admin can share a list a kid owns, and it is the
+    // owner who gets to change `visibility`. Locking the picker on the fact
+    // rather than on the role is what keeps that list reachable.
+    final list = widget.list;
+    final sharedOut =
+        list != null && !s.guestListIds.contains(list.id) && s.sharedOutIds.contains(list.id);
+    // Removing a guest or pulling an invitation back is the shareable roles'
+    // to do — see `may_share_externally`.
+    final manageShares = sharedOut && ref.watch(canShareExternallyProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -573,28 +590,47 @@ class _ListSheetBodyState extends ConsumerState<_ListSheetBody> {
           ],
         ),
         const SizedBox(height: 14),
-        // Writes `lists.visibility` plus the rows in `list_shares` — not the
-        // old single `who` string, which conflated "who does this" with "who
-        // may see it". The member chips are dropped for a guest: the composite
-        // foreign key behind `list_shares` makes picking somebody outside the
-        // owning household a constraint error, not a polite refusal.
-        VisibilityPicker(
-          visibility: s.newVisibility,
-          sharedWith: s.newSharedWith,
-          onChanged: ref.read(listProvider.notifier).setVisibility,
-          members: ref.watch(householdMembersProvider),
-          currentUserId: ref.watch(currentUserIdProvider),
-          allowMembers: !s.isGuest,
-          noun: L.s.theList,
-        ),
+        // **"Für wen?" is not offered while the list is shared outward**, and
+        // that is the whole fix for the way this used to fail. The two axes are
+        // independent in the database — the guest branch of `can_read_list`
+        // sits outside the household gate — so picking "Nur ich" on a list a
+        // neighbour is holding took it off every phone in the family and left
+        // it on theirs. It looked like the list had been deleted.
+        //
+        // The picker comes back the moment the last guest and the last open
+        // invitation are gone, which is what the section right below does; the
+        // note says so rather than leaving a hole where a control was.
+        if (sharedOut)
+          LockedVisibilityNote(
+            noun: L.s.theList,
+            // The guests and the open invitations are rows on this very sheet,
+            // a section below — see [_SharedOutsideSection]. A kid sees neither
+            // them nor the sentence about them: an admin can share a list a kid
+            // owns, and the lock is on the fact, not on the role.
+            howTo: manageShares ? L.s.visibilityLockedHowTo : null,
+          )
+        else
+          // Writes `lists.visibility` plus the rows in `list_shares` — not the
+          // old single `who` string, which conflated "who does this" with "who
+          // may see it". The member chips are dropped for a guest: the composite
+          // foreign key behind `list_shares` makes picking somebody outside the
+          // owning household a constraint error, not a polite refusal.
+          VisibilityPicker(
+            visibility: s.newVisibility,
+            sharedWith: s.newSharedWith,
+            onChanged: ref.read(listProvider.notifier).setVisibility,
+            members: ref.watch(householdMembersProvider),
+            currentUserId: ref.watch(currentUserIdProvider),
+            allowMembers: !s.isGuest,
+            noun: L.s.theList,
+            // Private and shareable are the two ends of one decision — see the
+            // menu's "Teilen" row, which is the control this sentence is about.
+            privateNote: L.s.privateCannotShare(L.s.theList),
+          ),
         // Who outside the household is in, and the invitations still out. This
         // used to be the Teilen sheet's job; "Teilen" now goes straight to the
         // system share sheet, so the list's own edit sheet is where it lives.
-        if (widget.list case final list?
-            when ref.watch(canShareExternallyProvider) &&
-                !s.guestListIds.contains(list.id) &&
-                s.sharedOutIds.contains(list.id))
-          _SharedOutsideSection(listId: list.id),
+        if (manageShares) _SharedOutsideSection(listId: list.id),
       ],
     );
   }
@@ -647,17 +683,38 @@ Future<void> _shareListOut(BuildContext context, WidgetRef ref, ShoppingList lis
   await lists.refreshSharedOut();
 }
 
-/// Somebody outside the household can reach this list, or has been invited to.
-class _SharedOutsideMark extends StatelessWidget {
-  final double size;
+/// Everybody who can read [list] — the household half from its `visibility` and
+/// its `list_shares` rows, the outside half from the `guest_access` rows read
+/// with the lists ([ListScreenState.guestsByList]).
+///
+/// Null where the app has no honest answer and therefore draws nothing:
+///
+/// - **"Alle Artikel"** is computed across the real lists and has no audience of
+///   its own; every face on it would belong to one of the lists under it.
+/// - **A guest list** lives in somebody else's household, and
+///   `householdMembersProvider` is *this* account's roster — drawing it beside
+///   a stranger's list would put the reader's own family on a list they have
+///   never seen.
+Audience? _listAudience(WidgetRef ref, ListScreenState state, ShoppingList list) {
+  if (list.isSummary || state.guestListIds.contains(list.id)) return null;
+  return audienceOf(
+    visibility: list.visibility,
+    ownerId: list.ownerId,
+    members: ref.watch(householdMembersProvider),
+    sharedWith: list.sharedWith,
+    guests: state.guestsByList[list.id] ?? const [],
+  );
+}
 
-  const _SharedOutsideMark({required this.size});
-
-  @override
-  Widget build(BuildContext context) => Semantics(
-    label: L.s.sharedOutsideLabel,
-    excludeSemantics: true,
-    child: AppIcon(AppIcons.users, size: size, color: AppColors.muted),
+/// The audience sheet for one list, with the noun and the target filled in.
+void _showListAudience(BuildContext context, WidgetRef ref, ShoppingList list, Audience audience) {
+  showAudienceSheet(
+    context: context,
+    target: (kind: ShareableKind.list, id: list.id),
+    audience: audience,
+    noun: L.s.theList,
+    currentUserId: ref.read(currentUserIdProvider),
+    visibility: list.visibility,
   );
 }
 
@@ -824,6 +881,7 @@ class _ListRow extends ConsumerWidget {
     final remaining = its.where((i) => !i.done).length;
     final meta = its.isEmpty ? L.s.empty : (remaining == 0 ? L.s.allDone : L.s.remaining(remaining));
     final metaColor = its.isNotEmpty && remaining == 0 ? AppColors.success : AppColors.muted;
+    final audience = _listAudience(ref, state, list);
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 15),
@@ -884,20 +942,37 @@ class _ListRow extends ConsumerWidget {
               ],
             ),
           ),
-          // Somebody outside the household is in, or has been invited — before
-          // the household's own badge, which answers a different question.
-          if (state.sharedOutIds.contains(list.id))
-            Padding(padding: const EdgeInsets.only(right: 10), child: _SharedOutsideMark(size: 17)),
+          // Somebody outside the household is in, or has been invited: the row
+          // shows *everybody* who can read the list, faces and all, rather than
+          // the anonymous people glyph that used to sit here — that said the
+          // list was shared and never with whom, which is the only question it
+          // made anybody ask.
+          //
+          // It replaces the household badge rather than sitting beside it: the
+          // stack already contains those same faces, and drawing them twice on
+          // one row would read as two different answers.
+          if (audience != null && state.sharedOutIds.contains(list.id))
+            Padding(
+              padding: const EdgeInsets.only(right: 10),
+              child: AudienceStack(
+                audience: audience,
+                // Shared, and nobody has come in through the link yet: the one
+                // outward state with no face behind it.
+                invitationOut: audience.guests.isEmpty,
+                size: 20,
+              ),
+            )
           // Who may see this list, when that is not simply the household. "Alle
           // Artikel" is computed across the real lists and has no audience of
           // its own — it inherits [ListVisibility.family] and so draws nothing,
           // which is the honest answer for a view rather than a row.
-          VisibilityBadge(
-            visibility: list.visibility,
-            sharedWith: list.sharedWith,
-            members: ref.watch(householdMembersProvider),
-            padding: const EdgeInsets.only(right: 10),
-          ),
+          else
+            VisibilityBadge(
+              visibility: list.visibility,
+              sharedWith: list.sharedWith,
+              members: ref.watch(householdMembersProvider),
+              padding: const EdgeInsets.only(right: 10),
+            ),
           AppIcon(AppIcons.caretRight, size: 16, color: AppColors.mutedLight),
         ],
       ),
@@ -1087,8 +1162,22 @@ class _ListDetail extends ConsumerWidget {
                                 // system share sheet — see [_shareListOut]. Absent for kids
                                 // and for a guest looking at somebody else's list, both of
                                 // whom the database refuses.
+                                //
+                                // **And absent on a private list**, which the database
+                                // would allow: the guest branch of `can_read_list` sits
+                                // outside the household gate, so a private list genuinely
+                                // can be handed to an outsider. It reads as a trapdoor —
+                                // the one list nobody in the family can open is the one a
+                                // stranger holds — and the pair only ever arose by
+                                // accident, from making a shared list private afterwards.
+                                // The other half of that is [VisibilityPicker] going away
+                                // while a list is shared; between them the combination is
+                                // no longer reachable. "Wer sieht die Liste?" says why the
+                                // row is missing, because a control that is simply gone
+                                // teaches nothing.
                                 if (ref.watch(canShareExternallyProvider) &&
-                                    !state.guestListIds.contains(open.id))
+                                    !state.guestListIds.contains(open.id) &&
+                                    open.visibility != ListVisibility.private)
                                   AnchoredMenuItem(
                                     label: L.s.share,
                                     icon: AppIcons.userPlus,
@@ -1159,7 +1248,7 @@ class _ListDetail extends ConsumerWidget {
                         // Both chips can be on one list — a Vorhaben started
                         // from an appointment — so they wrap rather than
                         // sitting in a Row that would squeeze the longer one.
-                        if (open.eventLink != null || open.hasMethod) ...[
+                        if (open.eventLink != null || open.hasMethod || open.hasSource) ...[
                           const SizedBox(height: 4),
                           Wrap(
                             spacing: 6,
@@ -1174,15 +1263,31 @@ class _ListDetail extends ConsumerWidget {
                                   onOpen: () => showLinkedEventSheet(context, ref, link),
                                 ),
                               if (open.hasMethod) _MethodChip(list: open),
+                              if (open.sourceUrl case final url?) _SourceChip(url: url),
                             ],
                           ),
                         ],
                       ],
                     ),
                   ),
-                  if (state.sharedOutIds.contains(open.id)) ...[
-                    const SizedBox(width: 10),
-                    _SharedOutsideMark(size: 20),
+                  // The same stack the row wears, and here it is a button: the
+                  // header has a line of its own for it, so the tap that opens
+                  // "Wer sieht die Liste?" has nothing to be mistaken for.
+                  //
+                  // Drawn whatever the answer is, not only on a shared list.
+                  // "Wer sieht das?" is a question about every list, and the
+                  // one place it is asked hardest — a private one — is exactly
+                  // the list that used to show nothing at all.
+                  if (_listAudience(ref, state, open) case final audience?
+                      when !audience.isEmpty || state.sharedOutIds.contains(open.id)) ...[
+                    const SizedBox(width: 4),
+                    AudienceStack(
+                      audience: audience,
+                      invitationOut:
+                          state.sharedOutIds.contains(open.id) && audience.guests.isEmpty,
+                      size: 22,
+                      onTap: () => _showListAudience(context, ref, open, audience),
+                    ),
                   ],
                 ],
               ),
@@ -2902,6 +3007,52 @@ void _editLink(BuildContext context, WidgetRef ref, ShoppingListItem item) {
   );
 }
 
+/// Where an imported list came from — `chefkoch.de`, under its title, opening
+/// the page in the browser.
+///
+/// **It is the import's answer to [_MethodChip], not a second one.** A
+/// generated list carries the method because a model wrote it; an imported list
+/// carries the address because the method is somebody else's to publish. So the
+/// two never appear together, without either needing to know that: a plan has a
+/// `recipe` or a `sourceUrl` and never both.
+///
+/// **The label is the host and nothing else.** A recipe URL is sixty characters
+/// of slug and tracking, and the domain is the part that says whether this is
+/// the Chefkoch one or the one from the Thermomix site. [urlLabel] is the same
+/// function the article link chips use, so a link reads the same wherever it is
+/// drawn.
+class _SourceChip extends StatelessWidget {
+  final String url;
+
+  const _SourceChip({required this.url});
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = Theme.of(context).colorScheme.primary;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      // Out to the browser, which is where the reader already had it open. Not
+      // an in-app tab: it would forget their login and their cookie banner.
+      onTap: () => openExternalUrl(url),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(color: tint(accent, .88), borderRadius: BorderRadius.circular(12)),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AppIcon(AppIcons.link, size: AppGlyph.inline, color: accent, flat: true),
+            const SizedBox(width: 5),
+            Text(
+              urlLabel(url),
+              style: AppText.caption.copyWith(color: accent, fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 /// The method a Vorhaben wrote for this list, under its name.
 ///
 /// **A chip rather than a card at the top of the list.** It sits exactly where
@@ -2913,6 +3064,7 @@ void _editLink(BuildContext context, WidgetRef ref, ShoppingListItem item) {
 ///
 /// Drawn only when there is something behind it ([ShoppingList.hasMethod]),
 /// which is a Vorhaben's list and nothing else.
+
 class _MethodChip extends StatelessWidget {
   final ShoppingList list;
 

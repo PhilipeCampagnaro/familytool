@@ -63,7 +63,7 @@ object LocalNotifications {
                     val title = map["title"] as? String ?: return@mapNotNull null
                     Item(id, at, title, map["body"] as? String ?: "")
                 }
-                replaceAll(context, items, call.argument<String>("channelName") ?: "Aporah")
+                replaceAll(context, items, call.argument<String>("channelName") ?: "aporah")
                 result.success(null)
             }
             else -> result.notImplemented()
@@ -144,7 +144,7 @@ object LocalNotifications {
     /// The channel under the name it was last given from Dart, in the user's
     /// language. "Aporah" only before anything was ever scheduled.
     fun ensureStoredChannel(context: Context) {
-        ensureChannel(context, prefs(context).getString(KEY_CHANNEL_NAME, null) ?: "Aporah")
+        ensureChannel(context, prefs(context).getString(KEY_CHANNEL_NAME, null) ?: "aporah")
     }
 
     private fun arm(context: Context, items: List<Item>) {

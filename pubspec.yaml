@@ -42,6 +42,10 @@ dependencies:
   shared_preferences: ^2.3.3
   flutter_svg: ^2.3.0
   supabase_flutter: ^2.16.0
+  # Already here as supabase_flutter's own dependency (it reads
+  # aporah://login-callback through it); named directly because
+  # IncomingLinkNotifier listens to the same stream for invite and share links.
+  app_links: ^7.2.1
   # Already present transitively (supabase_flutter pulls it in); named here
   # because lib/services/calendar_cache.dart imports it directly.
   path_provider: ^2.1.6

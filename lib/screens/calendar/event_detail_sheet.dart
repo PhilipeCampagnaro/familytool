@@ -468,7 +468,7 @@ class _ReminderCardState extends ConsumerState<_ReminderCard> {
             // read at the moment of choosing; on the card it wrapped the row
             // into four lines beside a value that already says it all.
             subtitle: denied ? L.s.reminderDenied : null,
-            value: settings.abfall ? _abfallLabel(settings.abfallSameDay, settings) : L.s.reminderNone,
+            value: _abfallValue(settings),
             onTap: _openAbfallMenu,
           ),
         ],
@@ -476,11 +476,26 @@ class _ReminderCardState extends ConsumerState<_ReminderCard> {
     );
   }
 
-  static String _abfallLabel(bool sameDay, NotificationSettings s) {
-    final minutes = sameDay ? s.abfallMorningMinutes : s.abfallMinutes;
-    final time = formatTimeOfDay(minutes ~/ 60, minutes % 60);
-    return sameDay ? L.s.reminderMorningOf(time) : L.s.reminderDayBefore(time);
+  /// **A count once there is more than one**, because the hours themselves —
+  /// "Am Vortag um 19:00 · Am selben Tag um 06:00" — do not fit a row's value
+  /// slot, and the page that lists them is one tap away at the bottom of the
+  /// menu.
+  static String _abfallValue(NotificationSettings s) {
+    if (!s.abfall || s.abfallTimes.isEmpty) return L.s.reminderNone;
+    if (s.abfallTimes.length > 1) return L.s.reminderCount(s.abfallTimes.length);
+    return s.abfallTimes.single.label;
   }
+
+  /// The label for one of the two presets, showing the hour the household
+  /// already set on that day where it set one.
+  static String _abfallPreset(bool sameDay, NotificationSettings s) =>
+      AbfallReminder(sameDay: sameDay, minutes: s.abfallHourFor(sameDay: sameDay)).label;
+
+  /// Whether a preset *is* what the settings hold — which means exactly one
+  /// reminder, on that day. A household with two of them is past what these two
+  /// rows can say, and neither is ticked.
+  static bool _abfallPresetChosen(bool sameDay, NotificationSettings s) =>
+      s.abfall && s.abfallTimes.length == 1 && s.abfallTimes.single.sameDay == sameDay;
 
   void _openAbfallMenu() {
     final settings = ref.read(notificationSettingsProvider);
@@ -499,10 +514,10 @@ class _ReminderCardState extends ConsumerState<_ReminderCard> {
         ),
         for (final sameDay in const [false, true])
           AnchoredMenuItem(
-            label: _abfallLabel(sameDay, settings),
-            icon: settings.abfall && settings.abfallSameDay == sameDay ? AppIcons.check : AppIcons.clock,
+            label: _abfallPreset(sameDay, settings),
+            icon: _abfallPresetChosen(sameDay, settings) ? AppIcons.check : AppIcons.clock,
             symbol: 'bell',
-            selected: settings.abfall && settings.abfallSameDay == sameDay,
+            selected: _abfallPresetChosen(sameDay, settings),
             onSelected: () => notifier.setAbfallDay(sameDay: sameDay),
           ),
         AnchoredMenuItem(

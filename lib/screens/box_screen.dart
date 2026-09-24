@@ -6,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/icon_suggestions.dart';
 import '../data/merchant_logos.dart';
 import '../models/box_item.dart';
+import '../models/visibility.dart';
+import '../models/who.dart';
 import '../state/auth_state.dart';
 import '../state/box_state.dart';
 import '../state/family_state.dart';
@@ -14,6 +16,7 @@ import '../state/sharing_state.dart';
 import '../theme/tokens.dart';
 import '../widgets/paywall_sheet.dart';
 import '../widgets/anchored_menu.dart';
+import '../widgets/audience_sheet.dart';
 import '../widgets/app_sheet.dart';
 import '../widgets/avatar.dart';
 import '../widgets/bottom_nav.dart';
@@ -142,7 +145,7 @@ class _BoxOverview extends ConsumerWidget {
                             confirm(L.s.boxDeleted, undo: () => notifier.restoreBox(deleted));
                           }
                         },
-                        child: _BoxRow(box: box, itemCount: state.itemsFor(box.id).length),
+                        child: _BoxRow(box: box, itemCount: state.itemsFor(box.id).length, state: state),
                       ),
                   ]),
                 ),
@@ -201,7 +204,7 @@ class _BoxOverview extends ConsumerWidget {
                   // chevron fall through.
                   behavior: HitTestBehavior.opaque,
                   onTap: () => open(box.id),
-                  child: _BoxRow(box: box, itemCount: state.itemsFor(box.id).length),
+                  child: _BoxRow(box: box, itemCount: state.itemsFor(box.id).length, state: state),
                 ),
             ],
           ),
@@ -398,6 +401,14 @@ class _BoxSheetBodyState extends ConsumerState<_BoxSheetBody> {
     final untouched = name.trim() == (widget.box?.name ?? '');
     final stored = untouched ? widget.box?.iconKey : null;
     final iconKey = widget.draft.picked ?? stored ?? suggestIcon(name, subject: IconSubject.box)?.key;
+    // Somebody outside the household holds this box, or has been invited to. A
+    // new box cannot be in that state, and a guest is looking at somebody
+    // else's. Deliberately not gated on the role: a kid cannot mint a link, but
+    // an admin can share a box a kid owns, and it is the owner who gets to
+    // change `visibility`.
+    final box = widget.box;
+    final sharedOut =
+        box != null && !s.guestBoxIds.contains(box.id) && s.sharedOutIds.contains(box.id);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -456,20 +467,35 @@ class _BoxSheetBodyState extends ConsumerState<_BoxSheetBody> {
           ],
         ),
         const SizedBox(height: 14),
-        // Writes `boxes.visibility` plus the rows in `box_shares` — not the old
-        // single `who` string, which conflated "who does this" with "who may
-        // see it". Member chips are dropped for a guest: the composite foreign
-        // key behind `box_shares` makes picking somebody outside the owning
-        // household a constraint error, not a polite refusal.
-        VisibilityPicker(
-          visibility: s.newVisibility,
-          sharedWith: s.newSharedWith,
-          onChanged: ref.read(boxProvider.notifier).setVisibility,
-          members: ref.watch(householdMembersProvider),
-          currentUserId: ref.watch(currentUserIdProvider),
-          allowMembers: !s.isGuest,
-          noun: L.s.theBox,
-        ),
+        // **"Für wen?" is not offered while the box is shared outward**, for
+        // the reason Listen's edit sheet spells out: the two axes are
+        // independent in the database, so picking "Nur ich" on a box somebody
+        // outside is holding takes it off every phone in the family and leaves
+        // it on theirs. The guests are managed inside "Teilen" here rather than
+        // on this sheet, so the note points there instead of downwards.
+        if (sharedOut)
+          LockedVisibilityNote(
+            noun: L.s.theBox,
+            howTo: ref.watch(canShareExternallyProvider) ? L.s.visibilityLockedHowToInShare : null,
+          )
+        else
+          // Writes `boxes.visibility` plus the rows in `box_shares` — not the old
+          // single `who` string, which conflated "who does this" with "who may
+          // see it". Member chips are dropped for a guest: the composite foreign
+          // key behind `box_shares` makes picking somebody outside the owning
+          // household a constraint error, not a polite refusal.
+          VisibilityPicker(
+            visibility: s.newVisibility,
+            sharedWith: s.newSharedWith,
+            onChanged: ref.read(boxProvider.notifier).setVisibility,
+            members: ref.watch(householdMembersProvider),
+            currentUserId: ref.watch(currentUserIdProvider),
+            allowMembers: !s.isGuest,
+            noun: L.s.theBox,
+            // Private and shareable are the two ends of one decision — see the
+            // menu's "Teilen" row, which is the control this sentence is about.
+            privateNote: L.s.privateCannotShare(L.s.theBox),
+          ),
       ],
     );
   }
@@ -521,7 +547,23 @@ class _BoxDetail extends ConsumerWidget {
               symbol: 'pencil',
               onSelected: () => openBoxSheet(context, ref, box: box),
             ),
-            if (ref.watch(canShareExternallyProvider) && !state.guestBoxIds.contains(box.id))
+            // Its own action, never part of "Für wen?". Absent for kids and for
+            // a guest looking at somebody else's box, both of whom the database
+            // refuses — **and absent on a private box**, which the database
+            // would allow: the guest branch of `can_read_box` sits outside the
+            // household gate, so a private box genuinely can be handed to an
+            // outsider. It reads as a trapdoor, and the pair only ever arose by
+            // accident, from making a shared box private afterwards.
+            //
+            // The exception is a private box that *is* already shared, which is
+            // the shape old rows are in. Here the row stays, because unlike a
+            // list — whose guests are rows on its own edit sheet — a box keeps
+            // them inside this very sheet. Hiding it there would leave the
+            // owner with no way to remove the guest and no way to change the
+            // visibility: a genuine dead end rather than a guard rail.
+            if (ref.watch(canShareExternallyProvider) &&
+                !state.guestBoxIds.contains(box.id) &&
+                (box.visibility != ItemVisibility.private || state.sharedOutIds.contains(box.id)))
               AnchoredMenuItem(
                 label: L.s.share,
                 icon: AppIcons.userPlus,
@@ -531,6 +573,9 @@ class _BoxDetail extends ConsumerWidget {
                   kind: ShareableKind.box,
                   resourceId: box.id,
                   resourceName: box.name,
+                  // Minting or revoking changes whether "Für wen?" is locked, so
+                  // the shelf's cached answer has to be re-read on the spot.
+                  onChanged: () => ref.read(boxProvider.notifier).refreshSharedOut(),
                 ),
               ),
             AnchoredMenuItem(
@@ -563,6 +608,21 @@ class _BoxDetail extends ConsumerWidget {
               // Unfolds when the name is longer than the line, exactly as a
               // list's does — see [ExpandableTitle].
               Expanded(child: ExpandableTitle(text: box.name)),
+              // Who can read this box, and the one place the answer is a
+              // button: the header has a line of its own for it, so the tap has
+              // nothing to be mistaken for. Drawn whatever the answer is — "wer
+              // sieht das?" is a question about every box, and a private one,
+              // which used to show nothing at all, is where it is asked hardest.
+              if (_boxAudience(ref, state, box) case final audience?
+                  when !audience.isEmpty || state.sharedOutIds.contains(box.id)) ...[
+                const SizedBox(width: 4),
+                AudienceStack(
+                  audience: audience,
+                  invitationOut: state.sharedOutIds.contains(box.id) && audience.guests.isEmpty,
+                  size: 22,
+                  onTap: () => _showBoxAudience(context, ref, box, audience),
+                ),
+              ],
             ],
           ),
         ],
@@ -584,6 +644,37 @@ class _BoxDetail extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// Everybody who can read [box] — the household half from its `visibility` and
+/// its `box_shares` rows, the outside half from the `guest_access` rows read
+/// with the boxes ([BoxScreenState.guestsByBox]).
+///
+/// Null for a guest's box: it lives in somebody else's household, and
+/// `householdMembersProvider` is *this* account's roster, so every face it drew
+/// would belong to a family that has never seen the box. The twin of Listen's
+/// `_listAudience`, minus the summary row Boxen has no equivalent of.
+Audience? _boxAudience(WidgetRef ref, BoxScreenState state, StorageBox box) {
+  if (state.guestBoxIds.contains(box.id)) return null;
+  return audienceOf(
+    visibility: box.visibility,
+    ownerId: box.ownerId,
+    members: ref.watch(householdMembersProvider),
+    sharedWith: box.sharedWith,
+    guests: state.guestsByBox[box.id] ?? const [],
+  );
+}
+
+/// The audience sheet for one box, with the noun and the target filled in.
+void _showBoxAudience(BuildContext context, WidgetRef ref, StorageBox box, Audience audience) {
+  showAudienceSheet(
+    context: context,
+    target: (kind: ShareableKind.box, id: box.id),
+    audience: audience,
+    noun: L.s.theBox,
+    currentUserId: ref.read(currentUserIdProvider),
+    visibility: box.visibility,
+  );
 }
 
 /// The box's round icon badge — full size next to the name, small alongside the
@@ -1184,11 +1275,13 @@ class _AddItemRow extends ConsumerWidget {
 class _BoxRow extends ConsumerWidget {
   final StorageBox box;
   final int itemCount;
+  final BoxScreenState state;
 
-  const _BoxRow({required this.box, required this.itemCount});
+  const _BoxRow({required this.box, required this.itemCount, required this.state});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final audience = _boxAudience(ref, state, box);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 15),
       child: Row(
@@ -1207,15 +1300,33 @@ class _BoxRow extends ConsumerWidget {
               ],
             ),
           ),
+          // Somebody outside the household is in, or has been invited: the row
+          // shows *everybody* who can read the box, faces and all. It replaces
+          // the household badge rather than sitting beside it — the stack
+          // already holds those same faces, and drawing them twice on one row
+          // would read as two different answers. Inert here; the tap belongs to
+          // the row, which opens the box.
+          if (audience != null && state.sharedOutIds.contains(box.id))
+            Padding(
+              padding: const EdgeInsets.only(right: 10),
+              child: AudienceStack(
+                audience: audience,
+                // Shared, and nobody has come in through the link yet: the one
+                // outward state with no face behind it.
+                invitationOut: audience.guests.isEmpty,
+                size: 20,
+              ),
+            )
           // Who may see this box, when that is not simply the household — the
           // padlock the "Für wen?" picker put there, or the faces it was shared
           // with. Draws nothing on a family box, which is most of them.
-          VisibilityBadge(
-            visibility: box.visibility,
-            sharedWith: box.sharedWith,
-            members: ref.watch(householdMembersProvider),
-            padding: const EdgeInsets.only(right: 10),
-          ),
+          else
+            VisibilityBadge(
+              visibility: box.visibility,
+              sharedWith: box.sharedWith,
+              members: ref.watch(householdMembersProvider),
+              padding: const EdgeInsets.only(right: 10),
+            ),
           AppIcon(AppIcons.caretRight, size: 16, color: AppColors.mutedLight),
         ],
       ),

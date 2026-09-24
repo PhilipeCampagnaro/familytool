@@ -119,6 +119,11 @@ Color? binColorFor(String title) {
 /// cities' own forms draw: a bin, a leaf, a stack of paper, the recycling
 /// arrows. Null, like [binColorFor], for a fraction we don't recognise.
 IconData? binIconFor(String title) => switch (binColorFor(title)) {
+  // **The one place `AppIcons.trash` is not the delete glyph**: here it is the
+  // grey residual bin among six fractions drawn to be told apart, so it is a
+  // picture of one bin rather than the mark for waste collection — which is
+  // `AppIcons.recycle` everywhere the feature is *named*. See the note on
+  // `AppIcons` itself.
   BinColors.rest => AppIcons.trash,
   BinColors.bio => AppIcons.leaf,
   BinColors.paper => AppIcons.stack,

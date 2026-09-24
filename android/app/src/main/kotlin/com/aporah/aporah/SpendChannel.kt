@@ -22,6 +22,8 @@ object SpendChannel {
         when (call.method) {
             "hasToken" -> result.success(SpendCredential.hasToken(context))
 
+            "tokenOwner" -> result.success(SpendCredential.tokenOwner(context))
+
             "storeToken" -> {
                 val token = call.argument<String>("token")
                 val endpoint = call.argument<String>("endpoint")
@@ -29,7 +31,7 @@ object SpendChannel {
                 if (token.isNullOrEmpty() || endpoint.isNullOrEmpty() || apiKey.isNullOrEmpty()) {
                     result.error("bad_args", "token, endpoint and api_key required", null)
                 } else {
-                    SpendCredential.save(context, token, endpoint, apiKey)
+                    SpendCredential.save(context, token, endpoint, apiKey, call.argument<String>("owner") ?: "")
                     result.success(null)
                 }
             }
