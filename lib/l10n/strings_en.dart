@@ -1340,7 +1340,13 @@ class StringsEn extends AppStrings {
   @override
   String get language => 'Language';
   @override
-  String get darkMode => 'Dark mode';
+  String get appearance => 'Appearance';
+  @override
+  String get appearanceAuto => 'Automatic';
+  @override
+  String get appearanceLight => 'Light';
+  @override
+  String get appearanceDark => 'Dark';
   @override
   String get welcomeTour => 'Welcome tour';
   @override
@@ -1449,7 +1455,7 @@ class StringsEn extends AppStrings {
   @override
   String get searchTermsLanguage => 'language sprache german english deutsch translation';
   @override
-  String get searchTermsDarkMode => 'dark mode appearance light dark night theme dunkelmodus darstellung';
+  String get searchTermsDarkMode => 'dark mode appearance light dark night theme dunkelmodus darstellung automatic system phone match';
   @override
   String get searchTermsTour => 'welcome tour onboarding intro repeat help willkommenstour';
   @override
@@ -2154,6 +2160,33 @@ class StringsEn extends AppStrings {
   String plusActiveUntil(String date) => 'Plus runs until $date';
   @override
   String get plusDebugOverride => 'Test mode: the plan is simulated';
+
+  @override
+  String get plusFreePlan => 'Free';
+
+  @override
+  String get plusWelcome => 'Welcome to Plus!';
+
+  @override
+  String get plusPurchasePending => 'The purchase is waiting for approval. Plus arrives as soon as it goes through.';
+
+  @override
+  String get plusPurchaseFailed => "The purchase didn't go through. Please try again.";
+
+  @override
+  String get plusStoreUnavailable => "The App Store can't be reached right now.";
+
+  @override
+  String get plusOwnedElsewhere => 'This subscription already belongs to another household.';
+
+  @override
+  String get plusRestored => 'Plus has been restored.';
+
+  @override
+  String get plusRestoreNothing => 'No active subscription found to restore.';
+
+  @override
+  String get searchTermsPlus => 'plus subscription buy purchase restore premium';
 
   @override
   String get paywallCalendarsTitle => 'All your calendars';

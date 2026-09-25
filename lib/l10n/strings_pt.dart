@@ -1369,7 +1369,13 @@ class StringsPt extends AppStrings {
   @override
   String get language => 'Idioma';
   @override
-  String get darkMode => 'Modo escuro';
+  String get appearance => 'Aparência';
+  @override
+  String get appearanceAuto => 'Automático';
+  @override
+  String get appearanceLight => 'Claro';
+  @override
+  String get appearanceDark => 'Escuro';
   @override
   String get welcomeTour => 'Tour de boas-vindas';
   @override
@@ -1483,7 +1489,7 @@ class StringsPt extends AppStrings {
   String get searchTermsLanguage =>
       'idioma língua português inglês alemão espanhol tradução language sprache';
   @override
-  String get searchTermsDarkMode => 'modo escuro aparência claro escuro noite tema dunkelmodus dark mode';
+  String get searchTermsDarkMode => 'modo escuro aparência claro escuro noite tema dunkelmodus dark mode automático sistema celular';
   @override
   String get searchTermsTour => 'tour boas-vindas introdução repetir ajuda onboarding willkommenstour';
   @override
@@ -2212,6 +2218,33 @@ class StringsPt extends AppStrings {
   String plusActiveUntil(String date) => 'O Plus vai até $date';
   @override
   String get plusDebugOverride => 'Modo de teste: o plano é simulado';
+
+  @override
+  String get plusFreePlan => 'Grátis';
+
+  @override
+  String get plusWelcome => 'Bem-vindo ao Plus!';
+
+  @override
+  String get plusPurchasePending => 'A compra está aguardando aprovação. O Plus chega assim que ela for concluída.';
+
+  @override
+  String get plusPurchaseFailed => 'A compra não deu certo. Tente de novo.';
+
+  @override
+  String get plusStoreUnavailable => 'A App Store não está disponível agora.';
+
+  @override
+  String get plusOwnedElsewhere => 'Esta assinatura já pertence a outra casa.';
+
+  @override
+  String get plusRestored => 'O Plus foi restaurado.';
+
+  @override
+  String get plusRestoreNothing => 'Nenhuma assinatura ativa encontrada para restaurar.';
+
+  @override
+  String get searchTermsPlus => 'plus assinatura comprar restaurar premium';
 
   @override
   String get paywallCalendarsTitle => 'Todos os seus calendários';

@@ -1081,7 +1081,19 @@ class CalendarNotifier extends StateNotifier<CalendarScreenState> {
       return _failed(L.s.seriesCannotMoveCalendar);
     }
 
-    state = state.copyWith(clearOpenEvent: true);
+    // The detail sheet behind the edit sheet reads [openEvent], so it is handed
+    // the appointment as edited rather than cleared — clearing it left that
+    // sheet standing open with nothing in it. A move to another calendar is the
+    // exception: the appointment it describes is being deleted and its
+    // replacement has no provider uid yet, so the sheet closes instead (see
+    // [_buildEventDetailHeader]). Same calendar keeps the uid, so the edited
+    // copy is still a valid handle for a second edit.
+    final shown = clean.calendarId == event.calendarId ? _asEdited(event, clean) : null;
+    state = shown == null ? state.copyWith(clearOpenEvent: true) : state.copyWith(openEvent: shown);
+    // A failed write puts the calendar back; the open sheet goes back with it.
+    void restoreOpen() {
+      if (shown != null && identical(state.openEvent, shown)) state = state.copyWith(openEvent: event);
+    }
 
     // A whole series is the one edit that is not drawn ahead of the answer.
     // The app is handed expanded occurrences and never the rule behind them, so
@@ -1103,6 +1115,7 @@ class CalendarNotifier extends StateNotifier<CalendarScreenState> {
         await refresh();
         return true;
       } catch (e) {
+        restoreOpen();
         return _failed(_message(e, L.s.changeSaveFailed));
       }
     }
@@ -1140,12 +1153,25 @@ class CalendarNotifier extends StateNotifier<CalendarScreenState> {
       }
     } catch (e) {
       _rollBack(adds: [provisional.id], hides: hidden);
+      restoreOpen();
       return _failed(_message(e, L.s.changeSaveFailed));
     }
 
     _reconcile([provisional.id, ...hidden]);
     return true;
   }
+
+  /// [event] with [draft]'s fields written over it, keeping its ids — what the
+  /// open detail sheet shows after an edit on the same calendar.
+  static CalendarEvent _asEdited(CalendarEvent event, EventDraft draft) => event.copyWith(
+    title: draft.title,
+    startsAt: draft.start,
+    endsAt: draft.end,
+    allDay: draft.allDay,
+    body: draft.notes,
+    loc: draft.location,
+    locSub: draft.location == event.loc ? null : '',
+  );
 
   Future<bool> deleteEvent(CalendarEvent event, {EventScope scope = EventScope.single}) async {
     if (!canEdit(event)) return _failed(L.s.calendarNotEditable);

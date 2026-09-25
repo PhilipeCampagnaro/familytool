@@ -29,6 +29,7 @@
 		B7C4E1A01F0000000000C004 /* AppReview.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7C4E1A01F0000000000C003 /* AppReview.swift */; };
 		B7C4E1A01F0000000000C006 /* ShareSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7C4E1A01F0000000000C005 /* ShareSheet.swift */; };
 		C1A7E0B01F0000000000D002 /* CalendarPageBrowser.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A7E0B01F0000000000D001 /* CalendarPageBrowser.swift */; };
+		D2B8F1C01F0000000000E002 /* StoreKitBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2B8F1C01F0000000000E001 /* StoreKitBridge.swift */; };
 		B7C4E1A01F0000000000C008 /* BiometricLock.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7C4E1A01F0000000000C007 /* BiometricLock.swift */; };
 		A0B1C2DF1F0000000000A001 /* NativeMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0B1C2DE1F0000000000A001 /* NativeMenu.swift */; };
 		A0B1C2E11F0000000000A002 /* GlassButtonPlatformView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0B1C2E01F0000000000A002 /* GlassButtonPlatformView.swift */; };
@@ -96,6 +97,7 @@
 		B7C4E1A01F0000000000C003 /* AppReview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppReview.swift; sourceTree = "<group>"; };
 		B7C4E1A01F0000000000C005 /* ShareSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareSheet.swift; sourceTree = "<group>"; };
 		C1A7E0B01F0000000000D001 /* CalendarPageBrowser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarPageBrowser.swift; sourceTree = "<group>"; };
+		D2B8F1C01F0000000000E001 /* StoreKitBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreKitBridge.swift; sourceTree = "<group>"; };
 		B7C4E1A01F0000000000C007 /* BiometricLock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BiometricLock.swift; sourceTree = "<group>"; };
 		A0B1C2DE1F0000000000A001 /* NativeMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeMenu.swift; sourceTree = "<group>"; };
 		A0B1C2E01F0000000000A002 /* GlassButtonPlatformView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassButtonPlatformView.swift; sourceTree = "<group>"; };
@@ -177,6 +179,7 @@
 				B7C4E1A01F0000000000C003 /* AppReview.swift */,
 				B7C4E1A01F0000000000C005 /* ShareSheet.swift */,
 				C1A7E0B01F0000000000D001 /* CalendarPageBrowser.swift */,
+				D2B8F1C01F0000000000E001 /* StoreKitBridge.swift */,
 				B7C4E1A01F0000000000C007 /* BiometricLock.swift */,
 				A0B1C2DE1F0000000000A001 /* NativeMenu.swift */,
 				A0B1C2E01F0000000000A002 /* GlassButtonPlatformView.swift */,
@@ -358,6 +361,7 @@
 				B7C4E1A01F0000000000C004 /* AppReview.swift in Sources */,
 				B7C4E1A01F0000000000C006 /* ShareSheet.swift in Sources */,
 				C1A7E0B01F0000000000D002 /* CalendarPageBrowser.swift in Sources */,
+				D2B8F1C01F0000000000E002 /* StoreKitBridge.swift in Sources */,
 				B7C4E1A01F0000000000C008 /* BiometricLock.swift in Sources */,
 				A0B1C2DF1F0000000000A001 /* NativeMenu.swift in Sources */,
 				A0B1C2E11F0000000000A002 /* GlassButtonPlatformView.swift in Sources */,

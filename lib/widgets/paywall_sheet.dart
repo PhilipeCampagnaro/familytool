@@ -5,13 +5,16 @@ import '../l10n/l10n.dart';
 import '../models/calendar_connection.dart';
 import '../models/entitlements.dart';
 import '../services/app_review.dart';
+import '../services/store_billing.dart';
 import '../state/entitlement_state.dart';
+import '../state/store_state.dart';
 import '../theme/app_icons.dart';
 import '../theme/tokens.dart';
 import 'dissolve_edge.dart';
 import 'action_bar.dart';
 import 'app_sheet.dart';
 import 'glass.dart';
+import 'toast_chip.dart';
 
 /// **A gate never hides a feature, it explains it.**
 ///
@@ -588,6 +591,7 @@ class _PlusActions extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final entitlements = ref.watch(entitlementProvider);
+    final busy = ref.watch(storeBusyProvider);
     return PinnedActionBar(
       // The body under this one is measured to fit, not scrolled, so the fade
       // has nothing to fade and its usual band is simply a blank row over the
@@ -610,21 +614,76 @@ class _PlusActions extends ConsumerWidget {
             ),
             const SizedBox(height: 8),
           ],
-          // **Nothing is wired to a store yet** — StoreKit 2 and Play Billing
-          // land in Phase 4, behind one Dart interface. Until then this is
-          // deliberately inert rather than absent: every screen that gates
-          // something needs somewhere real to send the reader while the rest of
-          // the app is built, and a button that is missing would hide the one
-          // thing this sheet exists to say.
-          //
           // The app's own accent glass, like every other primary action —
           // [OutlinedSheetAction], which this was, is the white row a sheet
           // ends with for things done *to* an item ("Teilen", "Löschen"), and
           // it left the one thing being sold looking like the least important
           // control on the sheet.
-          GlassAccentButton(icon: AppIcons.sparkle, label: L.s.plusUpgrade, expand: true, onTap: () {}),
+          //
+          // **Inert where there is no store yet** (Android until Play Billing,
+          // the web) rather than absent: the sheet still says what Plus is,
+          // and a missing button would hide the one thing it exists to say.
+          GlassAccentButton(
+            icon: AppIcons.sparkle,
+            label: L.s.plusUpgrade,
+            expand: true,
+            enabled: storeBillingAvailable && !busy,
+            onTap: () => buyPlusFrom(context, ref),
+          ),
         ],
       ),
     );
+  }
+}
+
+/// **Runs the purchase and says what came of it** — the paywall's button and
+/// Settings' Plus row both end here.
+///
+/// The store's own screen does the choosing and the paying; this only turns
+/// its answer into one line. A cancel says nothing at all: the reader closed
+/// the store themselves and knows it. On success the sheet the button sat in
+/// is closed, because the thing it was asking for is now theirs.
+Future<void> buyPlusFrom(BuildContext context, WidgetRef ref, {bool closeOnSuccess = true}) async {
+  final confirm = confirmChipOf(context);
+  final error = confirmChipOf(context, kind: ToastKind.error);
+  final navigator = Navigator.of(context);
+  final answer = await ref.read(storeProvider).buyPlus();
+  switch (answer) {
+    case StoreAnswer.plus:
+      if (closeOnSuccess && navigator.canPop()) navigator.pop();
+      confirm(L.s.plusWelcome);
+    case StoreAnswer.pending:
+      confirm(L.s.plusPurchasePending);
+    case StoreAnswer.ownedElsewhere:
+      error(L.s.plusOwnedElsewhere);
+    case StoreAnswer.failed:
+      error(L.s.plusPurchaseFailed);
+    case StoreAnswer.unavailable:
+      error(L.s.plusStoreUnavailable);
+    case StoreAnswer.cancelled:
+    case StoreAnswer.nothingFound:
+      break;
+  }
+}
+
+/// "Kauf wiederherstellen" — Settings' row, and what App Review looks for on
+/// any app that sells a subscription.
+Future<void> restorePlusFrom(BuildContext context, WidgetRef ref) async {
+  final confirm = confirmChipOf(context);
+  final error = confirmChipOf(context, kind: ToastKind.error);
+  final answer = await ref.read(storeProvider).restore();
+  switch (answer) {
+    case StoreAnswer.plus:
+      confirm(L.s.plusRestored);
+    case StoreAnswer.nothingFound:
+      error(L.s.plusRestoreNothing);
+    case StoreAnswer.ownedElsewhere:
+      error(L.s.plusOwnedElsewhere);
+    case StoreAnswer.failed:
+    case StoreAnswer.unavailable:
+      error(L.s.plusStoreUnavailable);
+    case StoreAnswer.pending:
+    case StoreAnswer.cancelled:
+      break;
   }
 }

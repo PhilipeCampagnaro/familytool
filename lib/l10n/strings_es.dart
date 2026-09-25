@@ -1373,7 +1373,13 @@ class StringsEs extends AppStrings {
   @override
   String get language => 'Idioma';
   @override
-  String get darkMode => 'Modo oscuro';
+  String get appearance => 'Apariencia';
+  @override
+  String get appearanceAuto => 'Automático';
+  @override
+  String get appearanceLight => 'Claro';
+  @override
+  String get appearanceDark => 'Oscuro';
   @override
   String get welcomeTour => 'Visita guiada';
   @override
@@ -1487,7 +1493,7 @@ class StringsEs extends AppStrings {
   String get searchTermsLanguage =>
       'idioma lengua español inglés alemán portugués traducción language sprache';
   @override
-  String get searchTermsDarkMode => 'modo oscuro apariencia claro oscuro noche tema dunkelmodus dark mode';
+  String get searchTermsDarkMode => 'modo oscuro apariencia claro oscuro noche tema dunkelmodus dark mode automático sistema móvil';
   @override
   String get searchTermsTour => 'visita guiada introducción repetir ayuda onboarding willkommenstour';
   @override
@@ -2213,6 +2219,33 @@ class StringsEs extends AppStrings {
   String plusActiveUntil(String date) => 'Plus dura hasta el $date';
   @override
   String get plusDebugOverride => 'Modo de prueba: el plan está simulado';
+
+  @override
+  String get plusFreePlan => 'Gratis';
+
+  @override
+  String get plusWelcome => '¡Bienvenidos a Plus!';
+
+  @override
+  String get plusPurchasePending => 'La compra está pendiente de aprobación. Plus llegará en cuanto se complete.';
+
+  @override
+  String get plusPurchaseFailed => 'La compra no se ha podido completar. Inténtalo de nuevo.';
+
+  @override
+  String get plusStoreUnavailable => 'No se puede acceder a la App Store en este momento.';
+
+  @override
+  String get plusOwnedElsewhere => 'Esta suscripción ya pertenece a otro hogar.';
+
+  @override
+  String get plusRestored => 'Plus se ha restaurado.';
+
+  @override
+  String get plusRestoreNothing => 'No se ha encontrado ninguna suscripción activa que restaurar.';
+
+  @override
+  String get searchTermsPlus => 'plus suscripción comprar restaurar premium';
 
   @override
   String get paywallCalendarsTitle => 'Todos vuestros calendarios';

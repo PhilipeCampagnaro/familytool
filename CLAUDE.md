@@ -70,7 +70,7 @@ task:
   Mo/Do tracker reports five failures a week of a perfect record.
 - **Localization: German, English, Portuguese and Spanish, and every user-facing string goes
   through [lib/l10n/](lib/l10n/).** `AppStrings` declares them and `StringsDe`/`StringsEn`/
-  `StringsPt`/`StringsEs` answer them — 1023 members each — and `L.s.someString` reads the live one.
+  `StringsPt`/`StringsEs` answer them — 1051 members each — and `L.s.someString` reads the live one.
   Because `AppStrings` is abstract, a string you add to one language and forget in another **fails
   to compile** — that is the point, so don't work around it with a map or a `??`. Portuguese is
   **Brazilian (pt-BR)** and Spanish is peninsular (es-ES), matched on bare language codes, so a

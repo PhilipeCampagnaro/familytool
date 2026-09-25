@@ -232,8 +232,26 @@ class _FirstStepRow extends ConsumerWidget {
         Navigator.of(context).push(MaterialPageRoute(builder: (_) => CalendarConnectionsPage()));
       // The page that already holds all of it — the grant, the Abfall switch,
       // the day and the hour — rather than a second copy of those controls.
+      //
+      // **Unless the switch is already on and only the grant is missing.** The
+      // setting defaults to on and iOS's quiet grant is taken at launch, so this
+      // is the usual case — and the page's switch reads "on" while the notice is
+      // filed silently, which sent people to a page with nothing left to switch.
+      // Tapping this step is asking for a reminder that rings, so it asks the OS
+      // for exactly that. iOS puts its prompt up once, so a grant still short
+      // of that afterwards — refused, or a prompt already spent — goes to the
+      // page, whose access row says what only system settings can do.
       case FirstStep.binReminder:
-        Navigator.of(context).push(MaterialPageRoute(builder: (_) => NotificationsPage()));
+        final s = ref.read(notificationSettingsProvider);
+        final navigator = Navigator.of(context);
+        void openPage() => navigator.push(MaterialPageRoute(builder: (_) => NotificationsPage()));
+        if (s.abfall && s.access != NotificationAccess.denied) {
+          ref.read(notificationSettingsProvider.notifier).ensureAccess().then((access) {
+            if (access != NotificationAccess.authorized && navigator.mounted) openPage();
+          });
+        } else {
+          openPage();
+        }
       case FirstStep.family:
         Navigator.of(context).push(MaterialPageRoute(builder: (_) => FamilyPage()));
       case FirstStep.todo:

@@ -25,6 +25,7 @@ import 'state/nav_state.dart';
 import 'state/notification_scheduler.dart';
 import 'state/notification_state.dart';
 import 'state/settings_state.dart';
+import 'state/store_state.dart';
 import 'theme/app_icons.dart';
 import 'theme/app_theme.dart';
 import 'theme/tokens.dart';
@@ -54,16 +55,22 @@ Future<void> main() async {
   runApp(ProviderScope(child: AporahApp()));
 }
 
-/// Dark mode is driven by the app's own "Dunkelmodus" switch in Settings
-/// (persisted by `SettingsNotifier`), **not** by the device appearance — the
-/// family shares one look regardless of each phone's system setting, and the
-/// toggle would otherwise be a no-op whenever it disagreed with the OS.
+/// Dark mode follows the phone's own appearance until somebody sets it in
+/// Settings, and the choice made there wins from then on
+/// ([AppearanceMode], persisted by `SettingsNotifier`). The phone's brightness
+/// is read off the `MediaQuery` that `runApp`'s `View` puts above this widget,
+/// so switching the phone to dark — by hand or at sunset — rebuilds from here.
+/// The palette is still resolved to one of two concrete themes below rather
+/// than handed to `MaterialApp` as `ThemeMode.system`: `AppColors.palette` and
+/// the native views' `setBrightness` need the answer, not the question.
 class AporahApp extends ConsumerWidget {
   const AporahApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final darkMode = ref.watch(settingsProvider.select((s) => s.darkMode));
+    final appearance = ref.watch(settingsProvider.select((s) => s.appearance));
+    final phoneIsDark = MediaQuery.platformBrightnessOf(context) == Brightness.dark;
+    final darkMode = appearance.isDark(phoneIsDark);
     final language = ref.watch(settingsProvider.select((s) => s.language));
     final palette = darkMode ? AppPalette.dark : AppPalette.light;
 
@@ -530,6 +537,11 @@ class _AppShellState extends ConsumerState<AppShell>
     // Keeps the device's pending notifications equal to what is on screen, for
     // as long as a household is. See [NoticeScheduler].
     ref.watch(noticeSchedulerProvider);
+
+    // Listens for App Store transactions from launch — renewals, Ask to Buy
+    // approvals, a purchase whose post never arrived — and delivers them to
+    // `store-verify`. See [storeProvider].
+    ref.watch(storeProvider);
 
     // Somebody joining, leaving, renaming themselves or changing their picture.
     // Here rather than in `familyProvider`, which cannot listen to a channel

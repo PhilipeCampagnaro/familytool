@@ -90,12 +90,24 @@ Widget _buildEventDetailHeader(BuildContext context, WidgetRef ref) {
                 icon: AppIcons.pencilSimple,
                 onTap: () async {
                   final deleted = await _openEditEventSheet(context, ref, event);
-                  // Deleting from inside the edit sheet leaves this one showing
-                  // an appointment that no longer exists — so it goes too, and
-                  // the tap lands back on the calendar.
-                  if (!deleted || !context.mounted) return;
-                  ref.read(calendarProvider.notifier).closeEvent();
-                  Navigator.of(context).pop();
+                  if (!context.mounted) return;
+                  final notifier = ref.read(calendarProvider.notifier);
+                  final shown = ref.read(calendarProvider).openEvent;
+                  // Deleting from inside the edit sheet, or moving the
+                  // appointment to another calendar, leaves this one showing an
+                  // appointment that no longer exists — so it goes too, and the
+                  // tap lands back on the calendar.
+                  if (deleted || shown == null) {
+                    notifier.closeEvent();
+                    Navigator.of(context).pop();
+                    return;
+                  }
+                  // Otherwise it stays, showing the edit. The date line is the
+                  // one field worked out on this side, so a new day re-heads it.
+                  final (a, b) = (shown.startsAt, event.startsAt);
+                  if (a.year != b.year || a.month != b.month || a.day != b.day) {
+                    notifier.openEvent(shown, _dayHeading(shown.startsAt));
+                  }
                 },
               ),
             ),

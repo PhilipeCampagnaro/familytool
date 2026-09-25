@@ -43,15 +43,37 @@ extension AppLanguageLabel on AppLanguage {
   };
 }
 
+/// Light or dark, and who decides. [system] follows the phone's own
+/// appearance — live, so a phone that turns dark at sunset takes the app with
+/// it — and is what a fresh install starts in, exactly as the language follows
+/// the phone until somebody picks one. [light] and [dark] are a choice made in
+/// Settings and win over the phone from then on. `name` is the persisted
+/// string; don't rename a value without a migration.
+enum AppearanceMode {
+  system,
+  light,
+  dark;
+
+  /// Whether the app paints dark, given what the phone is showing right now.
+  /// The phone's brightness is passed in rather than read here: it changes
+  /// without this setting changing, so whoever draws must be the one listening
+  /// (`AporahApp` reads it off `MediaQuery`, and rebuilds when it flips).
+  bool isDark(bool phoneIsDark) => switch (this) {
+    AppearanceMode.system => phoneIsDark,
+    AppearanceMode.light => false,
+    AppearanceMode.dark => true,
+  };
+}
+
 class SettingsScreenState {
   final String name;
   final int avatarTone;
-  final bool darkMode;
+  final AppearanceMode appearance;
   final AppLanguage language;
   const SettingsScreenState({
     this.name = '',
     this.avatarTone = 4,
-    this.darkMode = false,
+    this.appearance = AppearanceMode.system,
     this.language = AppLanguage.de,
   });
 
@@ -60,20 +82,26 @@ class SettingsScreenState {
   /// not a stand-in identity.
   String get displayName => name.trim().isEmpty ? L.s.setUpProfile : name;
 
-  SettingsScreenState copyWith({String? name, int? avatarTone, bool? darkMode, AppLanguage? language}) {
+  SettingsScreenState copyWith({String? name, int? avatarTone, AppearanceMode? appearance, AppLanguage? language}) {
     return SettingsScreenState(
       name: name ?? this.name,
       avatarTone: avatarTone ?? this.avatarTone,
-      darkMode: darkMode ?? this.darkMode,
+      appearance: appearance ?? this.appearance,
       language: language ?? this.language,
     );
   }
 }
 
-const _prefsDarkModeKey = 'settings_dark_mode';
+const _prefsAppearanceKey = 'settings_appearance';
 const _prefsLanguageKey = 'settings_language';
 
-/// Only [SettingsScreenState.darkMode] and [SettingsScreenState.language] live
+/// The bool the app stored before it could follow the phone. Read once to
+/// migrate and then removed. Only `true` is taken as a choice: `_persist`
+/// wrote the flag on every language change too, so a stored `false` mostly
+/// means "never touched the switch" rather than "chose light".
+const _legacyDarkModeKey = 'settings_dark_mode';
+
+/// Only [SettingsScreenState.appearance] and [SettingsScreenState.language] live
 /// here now. The roster, the roles and the invitations moved to
 /// `family_state.dart`, where they are rows rather than session-local mock data
 /// — a role that only this device believes in is worse than no role at all.
@@ -115,13 +143,20 @@ class SettingsNotifier extends StateNotifier<SettingsScreenState> {
   Future<void> _load() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final darkMode = prefs.getBool(_prefsDarkModeKey) ?? false;
+      final appearanceName = prefs.getString(_prefsAppearanceKey);
+      var appearance =
+          AppearanceMode.values.where((m) => m.name == appearanceName).firstOrNull ?? AppearanceMode.system;
+      if (appearanceName == null && prefs.getBool(_legacyDarkModeKey) == true) {
+        appearance = AppearanceMode.dark;
+        await prefs.setString(_prefsAppearanceKey, appearance.name);
+      }
+      await prefs.remove(_legacyDarkModeKey);
       final languageName = prefs.getString(_prefsLanguageKey);
       final stored = AppLanguage.values.where((l) => l.name == languageName).firstOrNull;
       _languageChosen = stored != null;
       final language = stored ?? deviceLanguage();
       if (!mounted) return;
-      state = state.copyWith(darkMode: darkMode, language: language);
+      state = state.copyWith(appearance: appearance, language: language);
     } catch (_) {
       // No local storage available this session — keep running in-memory-only.
     }
@@ -130,7 +165,7 @@ class SettingsNotifier extends StateNotifier<SettingsScreenState> {
   Future<void> _persist() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool(_prefsDarkModeKey, state.darkMode);
+      await prefs.setString(_prefsAppearanceKey, state.appearance.name);
       if (_languageChosen) await prefs.setString(_prefsLanguageKey, state.language.name);
     } catch (_) {
       // Same as above — persistence is best-effort.
@@ -141,8 +176,8 @@ class SettingsNotifier extends StateNotifier<SettingsScreenState> {
 
   void setAvatarTone(int tone) => state = state.copyWith(avatarTone: tone);
 
-  void setDarkMode(bool value) {
-    state = state.copyWith(darkMode: value);
+  void setAppearance(AppearanceMode mode) {
+    state = state.copyWith(appearance: mode);
     _persist();
   }
 

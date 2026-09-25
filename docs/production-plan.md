@@ -516,12 +516,49 @@ longer than the engineering.
       subscriber per month, one form.
 - [ ] Register for Google Play (€25 one-off).
 - [ ] StoreKit 2 and Play Billing behind one Dart interface, so `entitlementProvider` does not know
-      which store it is on.
+      which store it is on. **StoreKit 2 half built 2026-09-24** (Play Billing still to come):
+      `StoreBilling` in [lib/services/store_billing.dart](../lib/services/store_billing.dart) over the
+      `aporah/store` channel (`ios/Runner/StoreKitBridge.swift`), driven by `storeProvider` in
+      [lib/state/store_state.dart](../lib/state/store_state.dart). The monthly/yearly choice is the
+      store's own screen — `SubscriptionStoreView` on iOS 17+, a system action sheet on 15/16 — and
+      every purchase carries the **household id as `appAccountToken`**. A transaction is finished
+      only after `store-verify` accepted it, so an unfinished one is re-delivered on the next start:
+      that is the retry. Compiles for the simulator; **never run against a real store yet.**
 - [ ] A `store-webhook` Edge Function — App Store Server Notifications V2 and Play Real-time
       Developer Notifications — as the **only** writer of the subscription columns. `verify_jwt`
       stays true for neither; both verify their own signature, which makes this the third and
       fourth pinned exception and each needs the same comment in `config.toml` explaining why.
+      **Apple half deployed 2026-09-24** — both functions boot (the `@peculiar/x509` import loads) and
+      refuse junk: a forged JWS gets 401, `store-verify` without a session 401. Not yet fed a real
+      Apple transaction.
+      Two writers, not one: `store-verify` (with a session — the app posts the signed transaction
+      right after buying, after a restore, and for anything left unfinished) and `store-webhook`
+      (`verify_jwt = false`, pinned in `config.toml`). Both check the JWS chain against Apple Root
+      CA – G3, pinned byte for byte in `_shared/app_store.ts`, with `@peculiar/x509` on WebCrypto
+      rather than Apple's Node library. The webhook finds a household by `plan_original_txn_id`,
+      then by `appAccountToken`; it answers 200 to anything it could read, so Apple does not retry
+      what will never become actionable. A sandbox transaction is accepted like a production one —
+      App Review buys in the sandbox. **Xcode StoreKit-configuration purchases are refused**: they
+      are signed by a local certificate, and accepting them would let anyone mint Plus. Test with
+      a sandbox Apple ID instead.
+- [ ] **App Store Connect, before any of the above can be tried** — none of it is code:
+      a subscription group "aporah Plus" with `com.aporah.plus.monthly` (€4.99) and
+      `com.aporah.plus.yearly` (€39.99), each with a 14-day free-trial introductory offer and a
+      localised display name in all four languages; **Family Sharing left off** (the household
+      already is the family, and a shared transaction would arrive under a second Apple ID);
+      Billing Grace Period on; the App Store Server Notifications V2 URL, production *and*
+      sandbox, set to `https://uzhzrwakrtwbpuuupccu.supabase.co/functions/v1/store-webhook`; the
+      Paid Applications agreement, tax and bank details signed; a sandbox tester account. Then
+      publish
+      the privacy page the store screen links to (`https://aporah.io/datenschutz`, `_privacyUrl`
+      in `store_billing.dart`) — App Review rejects a subscription screen without one.
 - [ ] Restore purchases, and a household that already has Plus not being charged twice.
+      **Built for iOS, untried:** Settings carries an "aporah Plus" row (buy when free, the
+      system's own subscription management when Plus) and "Kauf wiederherstellen" beside it. One
+      subscription carries one household — the unique index on `plan_original_txn_id` —
+      and `store-verify` answers `owned_elsewhere` in words rather than a constraint error. A
+      second member subscribing to a household already on Plus is kept off the row and reported
+      (`duplicate`); nothing in the app yet tells that member to cancel theirs.
 - [ ] **Launch in the German storefront only** (decided 2026-09-18). App Store Connect → Pricing
       and Availability, and Play Console → Countries/regions, set to Germany alone; adding a
       country later is a checkbox, not a build or a review. A pilot with one market answers "does

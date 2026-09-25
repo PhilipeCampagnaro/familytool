@@ -25,3 +25,15 @@ verify_jwt = false
 # re-secure it and leave spend tracking silently dead.
 [functions.spend-ingest]
 verify_jwt = false
+
+# store-webhook is the third exception. App Store Server Notifications V2 are
+# posted by Apple's servers with no Authorization header — there is no session
+# behind a renewal at 3am — so the gateway's JWT check would reject every one
+# and Apple would retry them into the void. The function verifies each
+# notification's JWS against Apple's pinned root itself (_shared/app_store.ts),
+# and that signature is the whole security boundary. Declared here rather than
+# passed as a --no-verify-jwt flag so a routine `supabase functions deploy`
+# cannot quietly re-secure it and freeze every household's plan where it is.
+# (store-verify is *not* an exception: the app calls it with a real session.)
+[functions.store-webhook]
+verify_jwt = false

@@ -6,10 +6,17 @@ before writing a new one-off widget. The non-obvious rules are below.
 
 ## Dark mode
 
-Driven by the app's **own** "Dunkelmodus" switch in Settings (`settingsProvider.darkMode`,
-persisted to `shared_preferences`), *not* by the device appearance — the family shares one look
-regardless of each phone's system setting. `AporahApp` watches that flag, installs the matching
-`AppPalette` and picks the `ThemeMode`.
+**Follows the phone until somebody chooses, then the choice wins** — the same rule as the
+language. `settingsProvider.appearance` is an `AppearanceMode` (`system` / `light` / `dark`,
+persisted to `shared_preferences`), and a fresh install starts on `system`. `AporahApp` reads the
+phone's brightness off `MediaQuery.platformBrightnessOf` (live, so a phone that goes dark at
+sunset takes the app along), resolves the two with `AppearanceMode.isDark`, installs the matching
+`AppPalette` and picks a concrete `ThemeMode` — never `ThemeMode.system`, because
+`AppColors.palette` and the native views' `setBrightness` need the answer rather than the
+question. Settings shows it as one "Darstellung" row with an icon-only pill `SegmentedControl` in the
+trailing slot — half circle (Automatisch), sun (Hell), moon (Dunkel) — and the chosen word as the
+row's subtitle. The old `settings_dark_mode` bool is migrated once: `true` becomes `dark`, `false` becomes
+`system` (it was written on every language change, so it rarely meant "chose light").
 
 `AppColors.x` / `AppText.x` / `AppTones` / `AppShadows` are **getters over a mutable global**
 (`AppColors.palette`), not constants. That keeps ~280 call sites untouched, at the cost of the

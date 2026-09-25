@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/entitlements.dart';
 import '../services/spend_intent.dart';
+import '../services/store_billing.dart';
 import '../services/app_review.dart';
 import '../services/local_notifications.dart';
 import '../state/app_lock_state.dart';
@@ -14,6 +15,7 @@ import '../state/list_planner_state.dart';
 import '../state/onboarding_state.dart';
 import '../state/settings_state.dart';
 import '../state/spend_state.dart';
+import '../state/store_state.dart';
 import '../theme/tokens.dart';
 import '../widgets/app_lock_gate.dart';
 import '../widgets/app_sheet.dart';
@@ -21,6 +23,8 @@ import '../widgets/avatar.dart';
 import '../widgets/collapsing_header.dart';
 import '../widgets/glass.dart';
 import '../widgets/native_search_field.dart';
+import '../widgets/paywall_sheet.dart';
+import '../widgets/segmented_control.dart';
 import '../widgets/settings_chrome.dart';
 import 'calendar_connect_screen.dart';
 import '../widgets/native_switch.dart';
@@ -148,6 +152,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final members = ref.watch(householdMembersProvider);
     final appLock = ref.watch(appLockProvider);
 
+    final isPlus = ref.watch(entitlementProvider).isPlus;
     final groups = <List<({String terms, Widget row})>>[
       [
         (
@@ -190,6 +195,37 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ),
       ],
       [
+        // **The plan, and the way to change it.** Free households buy from
+        // here as well as from any paywall — somebody who has decided to pay
+        // should not have to go and hit a limit first. A Plus household is
+        // sent to the store's own management screen, which is the only place a
+        // subscription can be changed or cancelled. Absent where no store
+        // exists yet, rather than a row that does nothing.
+        if (storeBillingAvailable) ...[
+          (
+            terms: L.s.searchTermsPlus,
+            row: SettingsRow(
+              icon: AppIcons.sparkle,
+              title: L.s.plusName,
+              value: isPlus ? L.s.plusActive : L.s.plusFreePlan,
+              onTap: isPlus
+                  ? () => ref.read(storeProvider).manage()
+                  : () => buyPlusFrom(context, ref, closeOnSuccess: false),
+            ),
+          ),
+          // Apple requires a way to restore on any app that sells a
+          // subscription; on Plus there is nothing to restore.
+          if (!isPlus)
+            (
+              terms: L.s.searchTermsPlus,
+              row: SettingsRow(
+                icon: AppIcons.receipt,
+                title: L.s.plusRestore,
+                enabled: !ref.watch(storeBusyProvider),
+                onTap: () => restorePlusFrom(context, ref),
+              ),
+            ),
+        ],
         (
           terms: L.s.searchTermsCalendar,
           row: SettingsRow(
@@ -255,14 +291,51 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             onTap: () => _push(context, LanguagePage()),
           ),
         ),
+        // One row, three answers — the picker iOS and Android both put under
+        // "Appearance", drawn as glyphs so it fits beside the title the way a
+        // switch does: half a circle follows the phone (live), the sun and the
+        // moon are a choice that wins over it. The words stay on each segment
+        // for VoiceOver.
         (
           terms: L.s.searchTermsDarkMode,
           row: SettingsRow(
-            icon: state.darkMode ? AppIcons.moon : AppIcons.sun,
-            title: L.s.darkMode,
-            trailing: NativeSwitch(
-              value: state.darkMode,
-              onChanged: (v) => ref.read(settingsProvider.notifier).setDarkMode(v),
+            icon: AppIcons.palette,
+            title: L.s.appearance,
+            subtitle: switch (state.appearance) {
+              AppearanceMode.system => L.s.appearanceAuto,
+              AppearanceMode.light => L.s.appearanceLight,
+              AppearanceMode.dark => L.s.appearanceDark,
+            },
+            // Three segments of 10pt padding a side around a 21pt glyph, plus
+            // the track's 4pt inset and two 1pt hairlines: 132 left each glyph
+            // 20.7pt and overflowed. 144 leaves a few points of air.
+            trailing: SizedBox(
+              width: 144,
+              child: SegmentedControl<AppearanceMode>(
+                pill: true,
+                value: state.appearance,
+                onChanged: ref.read(settingsProvider.notifier).setAppearance,
+                options: [
+                  SegmentedOption(
+                    value: AppearanceMode.system,
+                    label: L.s.appearanceAuto,
+                    icon: AppIcons.circleHalf,
+                    showLabel: false,
+                  ),
+                  SegmentedOption(
+                    value: AppearanceMode.light,
+                    label: L.s.appearanceLight,
+                    icon: AppIcons.sun,
+                    showLabel: false,
+                  ),
+                  SegmentedOption(
+                    value: AppearanceMode.dark,
+                    label: L.s.appearanceDark,
+                    icon: AppIcons.moon,
+                    showLabel: false,
+                  ),
+                ],
+              ),
             ),
           ),
         ),

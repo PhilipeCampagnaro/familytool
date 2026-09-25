@@ -1,26 +1,609 @@
 <!doctype html>
-<!-- aporah.io's front page. Deliberately almost empty until there is a store
-     listing to link to; the domain exists today for the /invite and /share
-     links (open.html) and the app-association file in .well-known/. -->
+<!-- aporah.io's front page: the old web app's landing page (LandingPage.jsx +
+     LandingCarousel.jsx), carried over as static HTML so the site stays a
+     folder Vercel serves with no build. The styles are landing.css (the old stylesheet
+     on the app's palette and wordmark);
+     the text is in landing-strings.js (de/en/pt/es, the app's four) and the
+     icons in landing-icons.js.
+
+     Text is filled in from data-t keys, icons from data-icon names. The page
+     starts in German; the picker in the nav switches it (stored per browser), and
+     ?lang=xx links straight to one. -->
 <html lang="de">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>aporah</title>
+  <title>Aporah</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Albert+Sans:wght@400;500;600&family=Geist:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="landing.css?v=6">
   <style>
-    :root { --bg: #f5f6f8; --ink: #16181d; --muted: #6b7280; }
-    @media (prefers-color-scheme: dark) { :root { --bg: #0e0f12; --ink: #f3f4f6; --muted: #9ca3af; } }
-    body {
-      margin: 0; min-height: 100vh; display: flex; flex-direction: column; align-items: center;
-      justify-content: center; padding: 24px 16px; text-align: center; background: var(--bg); color: var(--ink);
-      font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    }
-    h1 { font-size: 32px; margin: 0 0 8px; }
-    p { color: var(--muted); margin: 0; }
+    body { margin: 0; background: #F7F8FA; }
+    *, *::before, *::after { box-sizing: border-box; }
+    .landing-nav-menu[hidden], .landing-lang-menu[hidden] { display: none; }
   </style>
+  <script src="landing-icons.js?v=2"></script>
+  <script src="landing-strings.js?v=2"></script>
 </head>
 <body>
-  <h1>aporah</h1>
-  <p>Kalender, Listen, Aufgaben und Boxen für die ganze Familie. Bald im App Store.</p>
+<div class="landing">
+  <!-- ── Nav ── -->
+  <div class="landing-nav-wrap">
+    <nav class="landing-nav">
+      <span class="landing-logo">aporah</span>
+      <div class="landing-nav-links">
+        <a class="landing-nav-link" href="#features" data-t="navFeatures"></a>
+        <a class="landing-nav-link" href="#how" data-t="navHow"></a>
+        <a class="landing-nav-link" href="#pricing" data-t="navPricing"></a>
+      </div>
+      <div class="landing-nav-end">
+      <div class="landing-lang">
+        <button type="button" class="landing-lang-btn js-lang-btn" aria-haspopup="true" aria-expanded="false">
+          <span class="js-lang-code"></span><i data-icon="chevron-down" data-size="16"></i>
+        </button>
+        <div class="landing-lang-menu js-lang-menu" hidden></div>
+      </div>
+      <a class="landing-btn is-primary js-desktop-cta" href="#contact">
+        <span data-t="getStarted"></span>
+        <span class="landing-btn-arrow" aria-hidden="true"><i data-icon="arrow-right" data-size="15"></i><i data-icon="arrow-right" data-size="15"></i></span>
+      </a>
+      <button type="button" class="landing-btn is-primary landing-menu-btn js-menu-btn" aria-expanded="false">
+        <span data-t="menu"></span>
+        <span class="landing-btn-arrow js-menu-icon" aria-hidden="true"><i data-icon="menu" data-size="15"></i></span>
+      </button>
+      </div>
+    </nav>
+    <div class="landing-nav-menu js-menu" hidden>
+      <a class="landing-nav-menu-link" href="#features" data-t="navFeatures"></a>
+      <a class="landing-nav-menu-link" href="#how" data-t="navHow"></a>
+      <a class="landing-nav-menu-link" href="#pricing" data-t="navPricing"></a>
+    </div>
+  </div>
+
+  <!-- ── Hero ── -->
+  <header class="landing-hero">
+    <div class="landing-hero-bg" aria-hidden="true">
+      <div class="landing-hero-stripes">
+        <div><span></span><span></span><span></span><span></span></div>
+        <div><span></span><span></span><span></span><span></span></div>
+      </div>
+      <div class="landing-hero-noise"></div>
+    </div>
+    <div class="landing-container">
+      <div class="landing-hero-grid">
+        <div class="landing-hero-copy">
+          <h1 class="lr lr-left" data-t="heroTitle"></h1>
+          <p class="landing-hero-sub lr lr-left" style="--lr-delay: 0.1s" data-t="heroSub"></p>
+          <div class="landing-hero-buttons lr lr-left" style="--lr-delay: 0.2s">
+            <a class="landing-btn is-primary" href="#contact">
+              <span data-t="getStarted"></span>
+              <span class="landing-btn-arrow" aria-hidden="true"><i data-icon="arrow-right" data-size="15"></i><i data-icon="arrow-right" data-size="15"></i></span>
+            </a>
+            <a class="landing-btn is-ghost" href="#features" data-t="seeFeatures"></a>
+          </div>
+        </div>
+
+        <div class="landing-hero-ui" aria-hidden="true">
+          <div class="landing-widget-card lr lr-right-far lr-tilt-a" style="--lr-delay: 0.1s">
+            <div class="landing-widget-head">
+              <span data-t="widgetTitle"></span>
+              <span data-t="widgetSort"></span>
+            </div>
+            <div class="landing-widget-list js-widget-list"></div>
+            <div class="landing-widget-foot">
+              <span data-t="widgetAll"></span>
+              <i data-icon="arrow-right" data-size="14"></i>
+            </div>
+          </div>
+          <div class="landing-chart-card lr lr-right-far lr-tilt-b" style="--lr-delay: 0.2s">
+            <div class="landing-chart-head">
+              <div>
+                <div class="landing-chart-label" data-t="chartLabel"></div>
+                <div class="landing-chart-value" data-t="chartValue"></div>
+              </div>
+              <div class="landing-chart-delta">
+                <span data-t="chartDeltaValue"></span>
+                <span data-t="chartDeltaLabel"></span>
+              </div>
+            </div>
+            <div class="landing-chart-bars js-chart-bars"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── Phone carousel ── -->
+  <section class="landing-showcase lr lr-up" style="--lr-delay: 0.4s">
+    <div class="landing-carousel js-carousel">
+      <div class="landing-carousel-phonebg" aria-hidden="true"></div>
+      <div class="landing-carousel-bezel" aria-hidden="true"><div class="landing-carousel-island"></div></div>
+      <button type="button" class="landing-carousel-arrow is-prev js-prev" data-t-label="carouselPrev"><i data-icon="chevron-left" data-size="20"></i></button>
+      <button type="button" class="landing-carousel-arrow is-next js-next" data-t-label="carouselNext"><i data-icon="chevron-right" data-size="20"></i></button>
+    </div>
+  </section>
+
+  <!-- ── Process: step accordion ── -->
+  <section class="landing-process" id="how">
+    <div class="landing-container">
+      <div class="landing-steps-panel lr lr-up js-steps" style="--lr-delay: 0.15s"></div>
+    </div>
+  </section>
+
+  <!-- ── Feature tabs ── -->
+  <section class="landing-section" id="features">
+    <div class="landing-container">
+      <div class="landing-section-head is-center">
+        <h2 data-t="featuresTitle"></h2>
+        <p data-t="featuresSub"></p>
+      </div>
+      <div class="landing-feature-block lr lr-up">
+        <div class="landing-feature-tabs js-feature-tabs"></div>
+        <div class="landing-feature-panel">
+          <div class="landing-feature-visual js-feature-visual"></div>
+          <div class="landing-feature-copy">
+            <span class="landing-feature-chip js-feature-chip"></span>
+            <h3 class="js-feature-title"></h3>
+            <p class="js-feature-text"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Integrations ── -->
+  <section class="landing-integrations">
+    <div class="landing-container">
+      <div class="landing-int-info">
+        <div class="landing-section-head">
+          <h2 data-t="integrationsTitle"></h2>
+          <p data-t="integrationsSub"></p>
+          <a class="landing-btn is-primary" href="#contact" style="margin-top: 8px">
+            <span data-t="getStarted"></span>
+            <span class="landing-btn-arrow" aria-hidden="true"><i data-icon="arrow-right" data-size="15"></i><i data-icon="arrow-right" data-size="15"></i></span>
+          </a>
+        </div>
+        <div class="landing-int-steps js-int-steps"></div>
+      </div>
+      <div class="landing-int-divider" aria-hidden="true">
+        <i data-icon="plus" data-size="16"></i><i data-icon="plus" data-size="16"></i><i data-icon="plus" data-size="16"></i><i data-icon="plus" data-size="16"></i>
+      </div>
+      <div class="landing-int-marquee lr js-marquee" aria-hidden="true"></div>
+    </div>
+  </section>
+
+  <!-- ── Pricing ── -->
+  <section class="landing-pricing-outer" id="pricing">
+    <div class="landing-pricing">
+      <div class="landing-pricing-grid">
+        <div class="landing-pricing-left">
+          <div class="landing-section-head">
+            <h2 data-t="pricingTitle"></h2>
+            <p data-t="pricingSub"></p>
+          </div>
+          <div class="landing-plan-list lr lr-left js-plans"></div>
+        </div>
+        <div class="landing-price-card lr lr-right">
+          <div class="landing-price-main">
+            <div class="landing-price-head">
+              <span class="landing-price-icon js-plan-icon"></span>
+              <span class="landing-price-name js-plan-name"></span>
+            </div>
+            <div class="landing-price-amount"><span class="js-plan-price"></span><span class="js-plan-per"></span></div>
+            <p class="landing-price-note js-plan-note"></p>
+            <a class="landing-btn is-yellow" href="#contact">
+              <span data-t="getStarted"></span>
+              <span class="landing-btn-arrow" aria-hidden="true"><i data-icon="arrow-right" data-size="15"></i><i data-icon="arrow-right" data-size="15"></i></span>
+            </a>
+          </div>
+          <ul class="landing-price-list js-price-list"></ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Cases ── -->
+  <section class="landing-section">
+    <div class="landing-container">
+      <div class="landing-section-head is-center">
+        <h2 data-t="casesTitle"></h2>
+        <p data-t="casesSub"></p>
+      </div>
+      <div class="landing-cases-panel lr js-cases"></div>
+    </div>
+  </section>
+
+  <!-- ── FAQ ── -->
+  <section class="landing-faq">
+    <div class="landing-container">
+      <div class="landing-faq-intro">
+        <div class="landing-section-head">
+          <h2 data-t="faqTitle"></h2>
+          <p data-t="faqSub"></p>
+        </div>
+        <a class="landing-btn is-ghost" href="mailto:info@aporah.io" data-t="contactUs"></a>
+      </div>
+      <div class="landing-faq-list lr lr-up-sm js-faq"></div>
+    </div>
+  </section>
+
+  <!-- ── Contact CTA ── -->
+  <section class="landing-cta-outer" id="contact">
+    <div class="landing-cta">
+      <div class="landing-cta-grid">
+        <div class="landing-cta-info lr lr-left">
+          <div class="landing-section-head">
+            <h2 data-t="ctaTitle"></h2>
+            <p data-t="ctaSub"></p>
+          </div>
+          <div class="landing-cta-bottom">
+            <a class="landing-cta-mail" href="mailto:info@aporah.io">info@aporah.io</a>
+          </div>
+        </div>
+        <form class="landing-cta-form lr lr-right js-contact">
+          <label><span data-t="contactName"></span><input name="name" type="text" autocomplete="name"></label>
+          <label><span data-t="contactEmail"></span><input name="email" type="email" autocomplete="email"></label>
+          <label><span data-t="contactMessage"></span><textarea name="message" rows="4"></textarea></label>
+          <button type="submit" class="landing-btn is-yellow">
+            <span data-t="contactSend"></span>
+            <span class="landing-btn-arrow" aria-hidden="true"><i data-icon="arrow-right" data-size="15"></i><i data-icon="arrow-right" data-size="15"></i></span>
+          </button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Footer ── -->
+  <footer class="landing-footer">
+    <div class="landing-footer-panel">
+      <div class="landing-footer-top">
+        <div class="landing-footer-brand">
+          <span class="landing-logo">aporah</span>
+          <p data-t="footerTagline"></p>
+        </div>
+        <div class="landing-footer-cols">
+          <div class="landing-footer-col">
+            <span class="landing-footer-col-title" data-t="footerPages"></span>
+            <a class="landing-footer-link" href="#features" data-t="navFeatures"></a>
+            <a class="landing-footer-link" href="#how" data-t="navHow"></a>
+            <a class="landing-footer-link" href="#pricing" data-t="navPricing"></a>
+          </div>
+          <div class="landing-footer-col">
+            <span class="landing-footer-col-title" data-t="footerContact"></span>
+            <a class="landing-footer-link" href="mailto:info@aporah.io">info@aporah.io</a>
+          </div>
+        </div>
+      </div>
+      <a class="landing-footer-mail" href="mailto:info@aporah.io">info@aporah.io</a>
+      <div class="landing-footer-bottom">
+        <span data-t="footerCopyright"></span>
+        <span data-t="footerNote"></span>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<script>
+(function () {
+  var ICONS = window.LANDING_ICONS, ALL = window.LANDING_STRINGS;
+
+  // A reload always starts at the top: no restored scroll position, and no
+  // jump to a section a link such as #contact left in the address.
+  if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+  if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+  window.scrollTo(0, 0);
+  window.addEventListener('load', function () { window.scrollTo(0, 0); });
+
+  // Language: ?lang= first, then the one picked in the nav, German otherwise
+  // (the launch is German). The picker stores its choice in localStorage.
+  var LANG_KEY = 'aporah-lang';
+  var stored = null;
+  try { stored = localStorage.getItem(LANG_KEY); } catch (e) {}
+  var wanted = [new URLSearchParams(location.search).get('lang'), stored];
+  var lang = 'de';
+  for (var i = 0; i < wanted.length; i++) {
+    var code = (wanted[i] || '').slice(0, 2).toLowerCase();
+    if (ALL[code]) { lang = code; break; }
+  }
+  var S = ALL[lang];
+  document.documentElement.lang = lang;
+  function t(key) { return S[key] != null ? S[key] : key; }
+
+  function icon(name, size, strokeWidth) {
+    return '<svg xmlns="http://www.w3.org/2000/svg" width="' + size + '" height="' + size +
+      '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="' + (strokeWidth || 2) +
+      '" stroke-linecap="round" stroke-linejoin="round">' + ICONS[name] + '</svg>';
+  }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function $(sel) { return document.querySelector(sel); }
+  function $$(sel) { return Array.prototype.slice.call(document.querySelectorAll(sel)); }
+
+  // The app's pastel tones (AppPalette.light.tones: sand, purple, blue,
+  // yellow, rose) — backgrounds only, the way the app uses them.
+  var AVATAR_TONES = ['#DBEAFE', '#F3E8FF', '#F5ECD9', '#FFE4E6'];
+  // The welcome tour's own illustrations, one per step: the house with its pin
+  // for the address, the four faces for the invite, the family looking out.
+  // All three sit on the same blue card; the illustrations are blue already.
+  var STEP_VISUALS = ['address', 'members', 'welcome'].map(function (k) {
+    return 'steps/' + k + '.webp';
+  });
+  var STEP_BACKGROUND = 'linear-gradient(140deg, #DBEAFE 0%, #EEF3FB 60%, #F7F8FA 100%)';
+  // One tone per area, the same one wherever that area appears.
+  var TONE_GRADIENT = {
+    blue: 'linear-gradient(140deg, #DBEAFE 0%, #EEF4FE 100%)',
+    purple: 'linear-gradient(140deg, #F3E8FF 0%, #F9F4FF 100%)',
+    sand: 'linear-gradient(140deg, #F5ECD9 0%, #FBF7EF 100%)',
+    rose: 'linear-gradient(140deg, #FFE4E6 0%, #FFF2F3 100%)',
+    yellow: 'linear-gradient(140deg, #FEF9C3 0%, #FFFCE8 100%)'
+  };
+  var CHART_BARS = [
+    { total: 42, a: 13, b: 13 }, { total: 78, a: 25, b: 13 }, { total: 66, a: 13, b: 35 },
+    { total: 73, a: 39, b: 13 }, { total: 96, a: 30, b: 26 }, { total: 58, a: 18, b: 13 },
+    { total: 84, a: 26, b: 30 }
+  ];
+  var INTEGRATION_TILES = [
+    ['calendar-days', 'mail', 'graduation-cap', 'cloud-sun', 'bell'],
+    ['recycle', 'shopping-cart', 'package', 'camera', 'credit-card'],
+    ['users', 'list-checks', 'repeat', 'link', 'wallet']
+  ];
+  // The app's five areas, in its tab order (Mehr holds Box and Ausgaben).
+  var FEATURES = [
+    { key: 'calendar', icon: 'calendar-days', tone: 'blue' },
+    { key: 'lists', icon: 'shopping-cart', tone: 'rose' },
+    { key: 'board', icon: 'layout-grid', tone: 'purple' },
+    { key: 'box', icon: 'package', tone: 'sand' },
+    { key: 'spend', icon: 'wallet', tone: 'yellow' }
+  ];
+  var CASES = [
+    { key: 'bins', icon: 'recycle', tone: 'yellow' },
+    { key: 'school', icon: 'graduation-cap', tone: 'blue' },
+    { key: 'shopping', icon: 'shopping-cart', tone: 'rose' },
+    { key: 'routines', icon: 'repeat', tone: 'purple' }
+  ];
+  // Monthly and yearly Plus share one feature list; free has its own.
+  var PLANS = ['free', 'plus', 'year'];
+  var PLAN_ICONS = { free: 'heart', plus: 'sparkles', year: 'star' };
+  var PLAN_FEATURES = { free: 'plan_free_features', plus: 'plan_plus_features', year: 'plan_plus_features' };
+
+  // ── Built sections ──
+  $('.js-widget-list').innerHTML = [1, 2, 3].map(function (n, i) {
+    var name = t('widgetRow' + n + 'Name');
+    return '<div class="landing-widget-row lr lr-right' + (i === 0 ? ' is-active' : '') + '" style="--lr-delay: ' + (0.1 + i * 0.1) + 's">' +
+      '<span class="landing-widget-avatar" style="background: ' + AVATAR_TONES[i] + '">' + esc(name.charAt(0)) + '</span>' +
+      '<span class="landing-widget-name"><span>' + esc(name) + '</span><span class="landing-widget-meta">' + esc(t('widgetRow' + n + 'Meta')) + '</span></span>' +
+      (i === 0 ? '<span class="landing-widget-actions">' + icon('pencil', 15) + icon('star', 15) + icon('message-circle', 15) + '<i></i>' + icon('ellipsis-vertical', 15) + '</span>' : '') +
+      '</div>';
+  }).join('');
+
+  $('.js-chart-bars').innerHTML = CHART_BARS.map(function (bar, i) {
+    return '<div class="landing-chart-bar"><span class="landing-chart-bar-fill" style="height: ' + bar.total + '%">' +
+      '<i class="seg-a" style="height: ' + bar.a + '%"></i><i class="seg-b" style="height: ' + bar.b + '%"></i><i class="seg-c" style="flex: 1"></i>' +
+      '</span><span class="landing-chart-day">' + t('chartDays')[i] + '</span></div>';
+  }).join('');
+
+  $('.js-int-steps').innerHTML = [1, 2, 3].map(function (n, i) {
+    return '<div class="landing-int-step lr lr-left" style="--lr-delay: ' + (i * 0.1) + 's"><span class="landing-int-step-num">0' + n + '</span>' + esc(t('intStep' + n)) + '</div>';
+  }).join('');
+
+  $('.js-marquee').innerHTML = INTEGRATION_TILES.map(function (col, ci) {
+    return '<div class="landing-int-col' + (ci === 1 ? ' is-down' : '') + '">' +
+      col.concat(col).map(function (name) { return '<span class="landing-int-tile">' + icon(name, 36, 1.6) + '</span>'; }).join('') + '</div>';
+  }).join('');
+
+  $('.js-cases').innerHTML = CASES.map(function (c) {
+    return '<div class="landing-case-card"><div class="landing-case-visual" style="background: ' + TONE_GRADIENT[c.tone] + '">' +
+      icon(c.icon, 56, 1.4) + '<span class="landing-case-chip">' + esc(t('case_' + c.key + '_chip')) + '</span></div>' +
+      '<div class="landing-case-content"><h3>' + esc(t('case_' + c.key + '_title')) + '</h3><p>' + esc(t('case_' + c.key + '_text')) + '</p></div></div>';
+  }).join('');
+
+  // ── Static text and icons ──
+  $$('[data-t]').forEach(function (el) { el.textContent = t(el.getAttribute('data-t')); });
+  $$('[data-t-label]').forEach(function (el) { el.setAttribute('aria-label', t(el.getAttribute('data-t-label'))); });
+  $$('i[data-icon]').forEach(function (el) {
+    el.outerHTML = icon(el.getAttribute('data-icon'), el.getAttribute('data-size') || 24);
+  });
+
+  // ── Nav: below 810px the CTA becomes a Menu pill with a dropdown ──
+  var navMq = matchMedia('(max-width: 810px)');
+  var menuBtn = $('.js-menu-btn'), menu = $('.js-menu'), menuIcon = $('.js-menu-icon'), cta = $('.js-desktop-cta');
+  function setMenu(open) {
+    menu.hidden = !open;
+    menuBtn.setAttribute('aria-expanded', String(open));
+    menuIcon.innerHTML = icon(open ? 'x' : 'menu', 15);
+  }
+  function applyNav() {
+    cta.style.display = navMq.matches ? 'none' : '';
+    menuBtn.style.display = navMq.matches ? '' : 'none';
+    if (!navMq.matches) setMenu(false);
+  }
+  menuBtn.addEventListener('click', function () { setMenu(menu.hidden); });
+
+  // Language picker: the current code on the button, the four languages in
+  // their own names below it. Picking one stores it and reloads on ?lang=.
+  var LANG_NAMES = { de: 'Deutsch', en: 'English', pt: 'Português', es: 'Español' };
+  var langBtn = $('.js-lang-btn'), langMenu = $('.js-lang-menu');
+  $('.js-lang-code').textContent = lang.toUpperCase();
+  langBtn.setAttribute('aria-label', t('language'));
+  langMenu.innerHTML = Object.keys(LANG_NAMES).map(function (c) {
+    return '<button type="button" class="landing-lang-opt' + (c === lang ? ' is-active' : '') +
+      '" data-lang="' + c + '"><span>' + LANG_NAMES[c] + '</span><span class="landing-lang-opt-code">' +
+      c.toUpperCase() + '</span></button>';
+  }).join('');
+  function setLangMenu(open) {
+    langMenu.hidden = !open;
+    langBtn.setAttribute('aria-expanded', String(open));
+  }
+  langBtn.addEventListener('click', function (e) { e.stopPropagation(); setLangMenu(langMenu.hidden); });
+  document.addEventListener('click', function () { setLangMenu(false); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') setLangMenu(false); });
+  $$('.landing-lang-opt').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var c = b.getAttribute('data-lang');
+      if (c === lang) { setLangMenu(false); return; }
+      try { localStorage.setItem(LANG_KEY, c); } catch (e) {}
+      var url = new URL(location.href);
+      url.searchParams.set('lang', c);
+      location.href = url.toString();
+    });
+  });
+  $$('.js-menu a').forEach(function (a) { a.addEventListener('click', function () { setMenu(false); }); });
+  navMq.addEventListener('change', applyNav);
+  applyNav();
+
+  // ── Steps accordion ──
+  var steps = $('.js-steps');
+  steps.innerHTML = [1, 2, 3].map(function (n, i) {
+    return '<div role="button" tabindex="0" class="landing-step" data-i="' + i + '"><div class="landing-step-content">' +
+      '<span class="landing-step-num">0' + n + '</span><div class="landing-step-wrap"><h3>' + esc(t('step' + n + 'Title')) + '</h3><p>' + esc(t('step' + n + 'Text')) + '</p></div></div>' +
+      '<div class="landing-step-visual" style="background: ' + STEP_BACKGROUND + '"><img src="' + STEP_VISUALS[i] + '" alt="" loading="lazy"></div></div>';
+  }).join('');
+  function openStep(i) {
+    $$('.landing-step').forEach(function (el, j) { el.classList.toggle('is-open', i === j); });
+  }
+  $$('.landing-step').forEach(function (el, i) {
+    ['mouseenter', 'click', 'focus'].forEach(function (ev) { el.addEventListener(ev, function () { openStep(i); }); });
+    el.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openStep(i); } });
+  });
+  openStep(0);
+
+  // ── Feature tabs ──
+  $('.js-feature-tabs').innerHTML = FEATURES.map(function (f) {
+    return '<button type="button" class="landing-feature-tab" data-key="' + f.key + '">' + icon(f.icon, 18) + '<span>' + esc(t('feature_' + f.key + '_tab')) + '</span></button>';
+  }).join('');
+  function setFeature(key) {
+    var f = FEATURES.filter(function (x) { return x.key === key; })[0];
+    $$('.landing-feature-tab').forEach(function (b) { b.classList.toggle('is-active', b.getAttribute('data-key') === key); });
+    var visual = $('.js-feature-visual');
+    visual.style.cssText = 'background: ' + TONE_GRADIENT[f.tone] + '; display: flex; align-items: center; justify-content: center; color: rgba(13, 13, 13, 0.55)';
+    visual.innerHTML = icon(f.icon, 96, 1.2);
+    $('.js-feature-chip').textContent = t('feature_' + key + '_tab');
+    $('.js-feature-title').textContent = t('feature_' + key + '_title');
+    $('.js-feature-text').textContent = t('feature_' + key + '_text');
+  }
+  $$('.landing-feature-tab').forEach(function (b) { b.addEventListener('click', function () { setFeature(b.getAttribute('data-key')); }); });
+  setFeature('calendar');
+
+  // ── Plans ──
+  $('.js-plans').innerHTML = PLANS.map(function (p) {
+    return '<button type="button" class="landing-plan" data-plan="' + p + '"><span><span class="landing-plan-title">' + esc(t('plan_' + p + '_name')) +
+      '</span><span class="landing-plan-sub">' + esc(t('plan_' + p + '_sub')) + '</span></span>' + icon('arrow-right', 18) + '</button>';
+  }).join('');
+  function setPlan(p) {
+    $$('.landing-plan').forEach(function (b) { b.classList.toggle('is-active', b.getAttribute('data-plan') === p); });
+    $('.js-plan-icon').innerHTML = icon(PLAN_ICONS[p], 20);
+    $('.js-plan-name').textContent = t('plan_' + p + '_name');
+    $('.js-plan-price').textContent = t('plan_' + p + '_price');
+    $('.js-plan-per').textContent = t('plan_' + p + '_per');
+    $('.js-plan-note').textContent = t('plan_' + p + '_note');
+    $('.js-price-list').innerHTML = S[PLAN_FEATURES[p]].map(function (line) {
+      return '<li>' + icon('check', 18) + esc(line) + '</li>';
+    }).join('');
+  }
+  $$('.landing-plan').forEach(function (b) { b.addEventListener('click', function () { setPlan(b.getAttribute('data-plan')); }); });
+  setPlan('free');
+
+  // ── FAQ ──
+  var faq = $('.js-faq');
+  faq.innerHTML = [1, 2, 3, 4, 5].map(function (n) {
+    return '<div class="landing-faq-item"><button type="button" class="landing-faq-q">' + esc(t('faq' + n + 'Q')) + icon('plus', 20) +
+      '</button><div class="landing-faq-a"><div><p>' + esc(t('faq' + n + 'A')) + '</p></div></div></div>';
+  }).join('');
+  var faqItems = $$('.landing-faq-item');
+  faqItems.forEach(function (item) {
+    item.querySelector('button').addEventListener('click', function () {
+      var wasOpen = item.classList.contains('is-open');
+      faqItems.forEach(function (o) { o.classList.remove('is-open'); });
+      if (!wasOpen) item.classList.add('is-open');
+    });
+  });
+  faqItems[0].classList.add('is-open');
+
+  // ── Contact form opens a mail ──
+  $('.js-contact').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var fd = new FormData(e.currentTarget);
+    var subject = encodeURIComponent('Aporah - ' + (fd.get('name') || ''));
+    var body = encodeURIComponent((fd.get('message') || '') + '\n\n' + (fd.get('email') || ''));
+    location.href = 'mailto:info@aporah.io?subject=' + subject + '&body=' + body;
+  });
+
+  // ── Phone carousel ──
+  // Five screens rotate through five fixed slots; the middle slot sits inside
+  // the CSS-drawn iPhone frame. Arrows and a swipe advance the rotation.
+  // SCREENS takes up to five image URLs; empty slots show a gradient. One
+  // screen per area, Kalender in the middle (the third phone starts centred).
+  // They are German-only screenshots in every language for now.
+  var SCREENS = ['list', 'tracker', 'calendar', 'box', 'spend'].map(function (k) {
+    return 'screens/' + k + '.jpg';
+  });
+  var SLOTS = [
+    { x: 9.25, w: 17, h: 76, z: 1, blur: true },
+    { x: 28.25, w: 19, h: 94, z: 2, blur: false },
+    { x: 50, w: 21, h: 94, z: 4, blur: false },
+    { x: 71.5, w: 19, h: 94, z: 2, blur: false },
+    { x: 90.5, w: 17, h: 76, z: 1, blur: true }
+  ];
+  // On a phone the bezel is sized from the container height, so the centre
+  // screen fills its inner window and the neighbours peek beside it.
+  var SLOTS_MOBILE = [
+    { x: -6, w: 24, h: 74, z: 1, blur: true },
+    { x: 14, w: 28, h: 86, z: 2, blur: false },
+    { x: 50, w: 34, h: 95, z: 4, blur: false },
+    { x: 86, w: 28, h: 86, z: 2, blur: false },
+    { x: 106, w: 24, h: 74, z: 1, blur: true }
+  ];
+  var PLACEHOLDER_GRADIENTS = [
+    'linear-gradient(160deg, #3b2f24 0%, #7a4a2b 30%, #e8a24c 55%, #b6c9d6 80%, #7fb3d6 100%)',
+    'linear-gradient(160deg, #1f2a1e 0%, #3d5a3a 35%, #9ec49a 65%, #e9e3d0 100%)',
+    'linear-gradient(160deg, #241f36 0%, #4a3b7a 30%, #8f7fd6 55%, #d6c9b6 80%, #e8d9a2 100%)',
+    'linear-gradient(160deg, #10222e 0%, #1f4a5e 35%, #3b82f6 70%, #a2cbe8 100%)',
+    'linear-gradient(160deg, #2e1a10 0%, #6e3b1f 35%, #e86e48 65%, #e8c9a2 100%)'
+  ];
+  var carousel = $('.js-carousel');
+  var phones = [0, 1, 2, 3, 4].map(function (i) {
+    var el = document.createElement('div');
+    el.className = 'landing-carousel-phone';
+    el.style.background = SCREENS[i] ? 'url(' + SCREENS[i] + ') center / cover no-repeat' : PLACEHOLDER_GRADIENTS[i];
+    carousel.insertBefore(el, carousel.firstChild);
+    return el;
+  });
+  var mobileMq = matchMedia('(max-width: 640px)');
+  var offset = 0;
+  function layout() {
+    var slots = mobileMq.matches ? SLOTS_MOBILE : SLOTS;
+    phones.forEach(function (el, i) {
+      var s = slots[(i + offset) % 5];
+      el.classList.toggle('is-edge', s.blur);
+      el.style.left = s.x + '%';
+      el.style.width = s.w + '%';
+      el.style.height = s.h + '%';
+      el.style.zIndex = s.z;
+    });
+  }
+  function next() { offset = (offset + 1) % 5; layout(); }
+  function prev() { offset = (offset + 4) % 5; layout(); }
+  $('.js-next').addEventListener('click', next);
+  $('.js-prev').addEventListener('click', prev);
+  var touchX = null;
+  carousel.addEventListener('touchstart', function (e) { touchX = e.touches[0].clientX; }, { passive: true });
+  carousel.addEventListener('touchend', function (e) {
+    if (touchX === null) return;
+    var dx = e.changedTouches[0].clientX - touchX;
+    touchX = null;
+    if (dx > 40) prev(); else if (dx < -40) next();
+  });
+  mobileMq.addEventListener('change', layout);
+  layout();
+
+  // ── Reveal on view: .lr elements slide/fade in once ──
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); }
+    });
+  }, { threshold: 0.15 });
+  $$('.lr').forEach(function (el) { io.observe(el); });
+})();
+</script>
 </body>
 </html>

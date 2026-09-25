@@ -1105,7 +1105,10 @@ abstract class AppStrings {
   String get profile;
   String get familyMembers;
   String get language;
-  String get darkMode;
+  String get appearance;
+  String get appearanceAuto;
+  String get appearanceLight;
+  String get appearanceDark;
 
   String get welcomeTour;
   String get repeat;
@@ -1754,6 +1757,19 @@ abstract class AppStrings {
   String get plusActive;
   String plusActiveUntil(String date);
   String get plusDebugOverride;
+
+  /// What the Settings row says on a household that has not bought Plus.
+  String get plusFreePlan;
+  String get plusWelcome;
+  String get plusPurchasePending;
+  String get plusPurchaseFailed;
+  String get plusStoreUnavailable;
+
+  /// The subscription is already carrying a different household.
+  String get plusOwnedElsewhere;
+  String get plusRestored;
+  String get plusRestoreNothing;
+  String get searchTermsPlus;
 
   /// **No count in this one.** How many accounts free includes is a number
   /// that has already moved once (one → two, 2026-09-16) and lives in

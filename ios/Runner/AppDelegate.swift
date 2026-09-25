@@ -15,11 +15,13 @@ import UIKit
   private var shareChannel: FlutterMethodChannel?
   private var biometricsChannel: FlutterMethodChannel?
   private var calendarPageChannel: FlutterMethodChannel?
+  private var storeChannel: FlutterMethodChannel?
   private let localNotifications = LocalNotifications()
   private let mediaPicker = MediaPicker()
   private let calendarPageBrowser = CalendarPageBrowser()
   private let mapSnapshot = MapSnapshot()
   private let nativeMenu = NativeMenu()
+  private let storeKit = StoreKitBridge()
 
   override func application(
     _ application: UIApplication,
@@ -219,6 +221,17 @@ import UIKit
         calendarPageBrowser.handle(call, result: result)
       }
       calendarPageChannel = channel
+    }
+    // aporah Plus through StoreKit 2 — see StoreKitBridge.swift and
+    // lib/services/store_billing.dart. Attached here, at engine start, because
+    // Apple asks for the transaction listener to run from launch.
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "AporahStore") {
+      let channel = FlutterMethodChannel(name: "aporah/store", binaryMessenger: registrar.messenger())
+      channel.setMethodCallHandler { [storeKit] call, result in
+        storeKit.handle(call, result: result)
+      }
+      storeKit.attach(channel)
+      storeChannel = channel
     }
   }
 }
